@@ -30,6 +30,7 @@ from opendlp.service_layer.replacement_targets import (
 )
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns, reset_selection_status
+from opendlp.service_layer.selection_history import name_history
 from opendlp.service_layer.selection_report import (
     SelectionReportError,
     build_selection_report,
@@ -230,11 +231,13 @@ def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
             selected_respondents = (
                 get_selected_respondents(uow, result.run_record) if result.run_record.is_completed else []
             )
+            run_names = name_history(uow.selection_run_records.get_history_summaries(assembly_id)).names
 
         return render_template(
             "backoffice/components/db_selection_progress_modal.html",
             assembly=assembly,
             csv_status=csv_status,
+            run_names=run_names,
             run_record=result.run_record,
             log_messages=result.log_messages,
             run_report=result.run_report,

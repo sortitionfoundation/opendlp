@@ -161,7 +161,7 @@ def run_button_visible(admin_logged_in_page: Page):
 def progress_dialog_displayed(admin_logged_in_page: Page):
     modal = admin_logged_in_page.locator("#db-selection-progress-modal-panel")
     expect(modal).to_be_visible()
-    expect(modal.get_by_text("Select replacements from database")).to_be_visible()
+    expect(modal.get_by_text("Replacement selection", exact=False).first).to_be_visible()
 
 
 @then("the replacement selection completes")

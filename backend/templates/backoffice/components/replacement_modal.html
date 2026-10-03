@@ -45,7 +45,7 @@ htmx_poll_url=htmx_poll_url
     </form>
 {% elif show_progress %}
         {# PROGRESS STATE - Task is running #}
-    {{ labeled_value(_("Task:") , replacement_run_record.task_type_verbose) }}
+    {{ labeled_value(_("Task:") , run_names.get(replacement_run_record.task_id, replacement_run_record.task_type_verbose)) }}
     {{ status_badge(replacement_run_record.status.value, _("Status:") ) }}
     {{ spinner(_("Processing…") ) }}
     {{ message_log(replacement_log_messages) }}
@@ -96,7 +96,7 @@ htmx_poll_url=htmx_poll_url
     </form>
 {% elif show_result %}
         {# RESULT STATE - Task finished (selection completed, failed, or cancelled) #}
-    {{ labeled_value(_("Task:") , replacement_run_record.task_type_verbose) }}
+    {{ labeled_value(_("Task:") , run_names.get(replacement_run_record.task_id, replacement_run_record.task_type_verbose)) }}
     {{ status_badge(replacement_run_record.status.value, _("Status:") ) }}
         {# Error message #}
     {% if replacement_run_record.is_failed and replacement_run_record.error_message %}

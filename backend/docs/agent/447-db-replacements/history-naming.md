@@ -260,7 +260,7 @@ view shows everything and no toggle.
    numbered; running runs unnamed-but-labelled; Google Sheets types; a reset
    between eras; a reset after the last selection; non-selection types
    untouched; current era start.
-3. [ ] Route and templates: `render_selection_page` names all runs for the
+3. [x] Route and templates: `render_selection_page` names all runs for the
    assembly, passes `run_names` keyed by task id, and applies the default
    filter and toggle. The history column uses the name, header renamed to
    "Selection", reset rows have no View link. The modal "Task:" line uses the

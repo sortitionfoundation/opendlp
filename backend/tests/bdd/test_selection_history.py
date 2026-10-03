@@ -136,6 +136,21 @@ def user_visits_selection_page(admin_logged_in_page: Page, test_assembly):
     page.goto(Urls.assembly_selection(test_assembly.id))
 
 
+@when("the user visits the selection page showing all runs")
+def user_visits_selection_page_showing_all(admin_logged_in_page: Page, test_assembly):
+    """Navigate to the selection page with every era of the history shown."""
+    page = admin_logged_in_page
+    page.goto(Urls.assembly_selection(test_assembly.id) + "?history=all")
+
+
+@when("the user clicks the Show all runs link")
+def user_clicks_show_all_runs(admin_logged_in_page: Page):
+    """Click the link that reveals the runs from before the current selection."""
+    page = admin_logged_in_page
+    page.get_by_role("link", name="Show all runs").click()
+    page.wait_for_load_state()
+
+
 @when("the user clicks the Next pagination link")
 def user_clicks_next(admin_logged_in_page: Page):
     """Click the Next pagination link."""
@@ -182,7 +197,7 @@ def history_table_displayed(admin_logged_in_page: Page):
 
     # Verify table headers
     expect(page.get_by_role("columnheader", name="Status")).to_be_visible()
-    expect(page.get_by_role("columnheader", name="Task Type")).to_be_visible()
+    expect(page.get_by_role("columnheader", name="Selection", exact=True)).to_be_visible()
     expect(page.get_by_role("columnheader", name="Started By")).to_be_visible()
     expect(page.get_by_role("columnheader", name="Started At")).to_be_visible()
     expect(page.get_by_role("columnheader", name="Completed At")).to_be_visible()
@@ -200,6 +215,15 @@ def view_links_present(admin_logged_in_page: Page):
     page = admin_logged_in_page
     view_links = page.get_by_role("link", name="View")
     expect(view_links.first).to_be_visible()
+
+
+@then("only the current selection is shown with a link to the older runs")
+def only_current_selection_shown(admin_logged_in_page: Page):
+    """The newest completed selection is the whole default view; the rest sit behind a counted link."""
+    page = admin_logged_in_page
+    expect(page.get_by_text("99 older runs are hidden")).to_be_visible()
+    expect(page.get_by_text("Test run 0")).to_be_visible()
+    expect(page.get_by_text("Test run 1", exact=True)).not_to_be_visible()
 
 
 @then("the first page is displayed with 15 runs")

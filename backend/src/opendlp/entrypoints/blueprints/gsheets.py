@@ -12,7 +12,9 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
+from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.users import User
 from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_assembly_management
@@ -40,6 +42,7 @@ from opendlp.service_layer.replacement_targets import (
 )
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import count_held_respondents, count_non_pool_respondents
+from opendlp.service_layer.selection_history import name_history
 from opendlp.service_layer.sortition import (
     InvalidSelection,
     LoadRunResult,
@@ -182,6 +185,32 @@ def _get_replacement_modal_context(
     return None, None, [], "", initial_min_select, initial_max_select, False
 
 
+def _get_history_context(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    page: int,
+    per_page: int,
+    show_all: bool,
+) -> tuple[list[tuple[SelectionRunRecord, User | None]], int, dict[uuid.UUID, str], int]:
+    """One page of the selection history, with a name for every run of the assembly.
+
+    Unless ``show_all`` is set, the page covers only the current era: the run
+    that started it and everything after. Returns (page of (record, user),
+    count of runs in view, run names by task id, count of older runs hidden).
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    summaries = uow.selection_run_records.get_history_summaries(assembly_id)
+    naming = name_history(summaries)
+    era_start = naming.current_era_start
+    older_count = 0 if era_start is None else sum(1 for s in summaries if s.created_at < era_start)
+    since = None if show_all else era_start
+    run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
+        assembly_id, page, per_page, since=since
+    )
+    return run_history, total_count, naming.names, older_count
+
+
 # --- Selection views ---
 
 
@@ -282,8 +311,11 @@ def render_selection_page(
             logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
 
     # Fetch paginated selection history
+    history_show_all = request.args.get("history") == "all"
     with uow:
-        run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(assembly_id, page, per_page)
+        run_history, total_count, run_names, history_older_count = _get_history_context(
+            uow, assembly_id, page, per_page, history_show_all
+        )
         total_pages = (total_count + per_page - 1) // per_page
 
     replacement_modal_open = (
@@ -349,6 +381,9 @@ def render_selection_page(
         assembly=assembly,
         gsheet=gsheet,
         run_history=run_history,
+        run_names=run_names,
+        history_show_all=history_show_all,
+        history_older_count=history_older_count,
         page=page,
         per_page=per_page,
         total_count=total_count,
@@ -428,6 +463,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
 
             # Get run status
             result = get_selection_run_status(uow, run_id)
+            run_names = name_history(uow.selection_run_records.get_history_summaries(assembly_id)).names
 
         if result.run_record is None:
             return "", 404
@@ -445,6 +481,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
             "backoffice/components/selection_progress_modal.html",
             assembly=assembly,
             gsheet=gsheet,
+            run_names=run_names,
             run_record=result.run_record,
             log_messages=result.log_messages,
             run_report=result.run_report,
@@ -475,6 +512,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
 
             # Get run status
             result = get_selection_run_status(uow, run_id)
+            run_names = name_history(uow.selection_run_records.get_history_summaries(assembly_id)).names
 
         if result.run_record is None:
             return "", 404
@@ -500,6 +538,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             "backoffice/components/replacement_modal.html",
             assembly=assembly,
             gsheet=gsheet,
+            run_names=run_names,
             replacement_run_record=result.run_record,
             replacement_log_messages=result.log_messages,
             replacement_translated_report_html=(

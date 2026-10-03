@@ -44,7 +44,7 @@ classes="max-w-3xl"
     </div>
 {% endif %}
     {# Task type #}
-{{ labeled_value(_("Task:") , run_record.task_type_verbose, label_classes="text-body-sm") }}
+{{ labeled_value(_("Task:") , run_names.get(run_record.task_id, run_record.task_type_verbose), label_classes="text-body-sm") }}
     {# Status badge #}
 {{ status_badge(run_record.status.value, _("Status"), label_classes="text-body-sm") }}
     {# Live progress indicator for pending/running #}

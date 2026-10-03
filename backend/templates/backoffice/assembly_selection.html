@@ -172,9 +172,25 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
         </div>
         {# Selection History - Full Width #}
         <div class="mb-8">
-            {% call card(title=_("Selection History"), composed=true) %}
+            {% call card(title=_("Selection History"), id="selection-history", composed=true) %}
                 {% call card_body() %}
                     {% if run_history %}
+                        {# Older eras are hidden unless asked for #}
+                        {% if history_older_count %}
+                            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                {% if history_show_all %}
+                                    {{ _("Showing every run.") }}
+                                    <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) }}#selection-history"
+                                       class="hover:underline"
+                                       style="color: var(--color-primary-action)">{{ _("Show only the current selection") }}</a>
+                                {% else %}
+                                    {{ ngettext("Showing the current selection. %(num)s older run is hidden.", "Showing the current selection. %(num)s older runs are hidden.", history_older_count) }}
+                                    <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, history='all') }}#selection-history"
+                                       class="hover:underline"
+                                       style="color: var(--color-primary-action)">{{ _("Show all runs") }}</a>
+                                {% endif %}
+                            </p>
+                        {% endif %}
                         {# History Table #}
                         <div class="overflow-x-auto">
                             <table class="w-full">
@@ -183,7 +199,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                         <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Status") }}</th>
                                         <th class="text-left py-3 px-4 text-label-md"
-                                            style="color: var(--color-headings)">{{ _("Task Type") }}</th>
+                                            style="color: var(--color-headings)">{{ _("Selection") }}</th>
                                         <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Started By") }}</th>
                                         <th class="text-left py-3 px-4 text-label-md"
@@ -206,8 +222,8 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                                     {{ run_record.status.value.capitalize() }}
                                                 </span>
                                             </td>
-                                            {# Task Type #}
-                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">{{ run_record.task_type_verbose }}</td>
+                                            {# Selection: the run's place in the history #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">{{ run_names[run_record.task_id] }}</td>
                                             {# Started By #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
                                                 {{ user.display_name if user else _("Unknown") }}
@@ -227,9 +243,12 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             {# Actions #}
                                             <td class="py-3 px-4">
                                                 <div class="flex items-center gap-2">
-                                                    <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=run_record.task_id) }}"
-                                                       class="text-label-md hover:underline"
-                                                       style="color: var(--color-primary-action)">{{ _("View") }}</a>
+                                                    {# A reset has nothing to show in the modal #}
+                                                    {% if run_record.task_type.value != 'reset_to_pool' %}
+                                                        <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=run_record.task_id) }}"
+                                                           class="text-label-md hover:underline"
+                                                           style="color: var(--color-primary-action)">{{ _("View") }}</a>
+                                                    {% endif %}
                                                     {# Download button for completed DB selections with results #}
                                                     {% if run_record.task_type.value in ('select_from_db', 'test_select_from_db', 'select_replacement_from_db') and run_record.is_completed and run_record.selected_ids %}
                                                         {% set download_attrs %}
@@ -253,7 +272,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                         total_pages=total_pages,
                         per_page=per_page,
                         total_count=total_count,
-                        base_url=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) ,
+                        base_url=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, history='all' if history_show_all else none) ,
                         item_name=_("runs")
                         ) }}
                     {% else %}
@@ -345,9 +364,25 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
         </div>
         {# Selection History - Full Width #}
         <div class="mb-8">
-            {% call card(title=_("Selection History"), composed=true) %}
+            {% call card(title=_("Selection History"), id="selection-history", composed=true) %}
                 {% call card_body() %}
                     {% if run_history %}
+                        {# Older eras are hidden unless asked for #}
+                        {% if history_older_count %}
+                            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                {% if history_show_all %}
+                                    {{ _("Showing every run.") }}
+                                    <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) }}#selection-history"
+                                       class="hover:underline"
+                                       style="color: var(--color-primary-action)">{{ _("Show only the current selection") }}</a>
+                                {% else %}
+                                    {{ ngettext("Showing the current selection. %(num)s older run is hidden.", "Showing the current selection. %(num)s older runs are hidden.", history_older_count) }}
+                                    <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, history='all') }}#selection-history"
+                                       class="hover:underline"
+                                       style="color: var(--color-primary-action)">{{ _("Show all runs") }}</a>
+                                {% endif %}
+                            </p>
+                        {% endif %}
                         {# History Table #}
                         <div class="overflow-x-auto">
                             <table class="w-full">
@@ -356,7 +391,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                         <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Status") }}</th>
                                         <th class="text-left py-3 px-4 text-label-md"
-                                            style="color: var(--color-headings)">{{ _("Task Type") }}</th>
+                                            style="color: var(--color-headings)">{{ _("Selection") }}</th>
                                         <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Started By") }}</th>
                                         <th class="text-left py-3 px-4 text-label-md"
@@ -379,8 +414,8 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                                     {{ run_record.status.value.capitalize() }}
                                                 </span>
                                             </td>
-                                            {# Task Type #}
-                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">{{ run_record.task_type_verbose }}</td>
+                                            {# Selection: the run's place in the history #}
+                                            <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">{{ run_names[run_record.task_id] }}</td>
                                             {# Started By #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
                                                 {{ user.display_name if user else _("Unknown") }}
@@ -413,7 +448,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                         total_pages=total_pages,
                         per_page=per_page,
                         total_count=total_count,
-                        base_url=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) ,
+                        base_url=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, history='all' if history_show_all else none) ,
                         item_name=_("runs")
                         ) }}
                     {% else %}

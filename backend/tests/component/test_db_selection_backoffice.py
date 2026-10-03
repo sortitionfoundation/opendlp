@@ -534,6 +534,109 @@ class TestCsvSelectionPageIntegration:
         assert "None of the people this run selected" not in selected
 
 
+class TestSelectionHistoryNaming:
+    """The history table names runs by their place in the story and hides older eras by default."""
+
+    def _seed_two_eras(self, fake_store, assembly_id):
+        """An initial selection with one replacement round, a reset, then a fresh initial selection and round."""
+        base = datetime.now(UTC) - timedelta(hours=10)
+        plan = [
+            (SelectionTaskType.SELECT_FROM_DB, SelectionRunStatus.COMPLETED),
+            (SelectionTaskType.SELECT_REPLACEMENT_FROM_DB, SelectionRunStatus.COMPLETED),
+            (SelectionTaskType.SELECT_REPLACEMENT_FROM_DB, SelectionRunStatus.FAILED),
+            (SelectionTaskType.RESET_TO_POOL, SelectionRunStatus.COMPLETED),
+            (SelectionTaskType.SELECT_FROM_DB, SelectionRunStatus.COMPLETED),
+            (SelectionTaskType.SELECT_REPLACEMENT_FROM_DB, SelectionRunStatus.COMPLETED),
+        ]
+        records = []
+        for hours, (task_type, status) in enumerate(plan):
+            records.append(
+                _add_run_record(
+                    fake_store,
+                    assembly_id=assembly_id,
+                    task_id=uuid.uuid4(),
+                    status=status,
+                    task_type=task_type,
+                    selected_ids=[["1"]] if status == SelectionRunStatus.COMPLETED else None,
+                    created_at=base + timedelta(hours=hours),
+                    completed_at=base + timedelta(hours=hours, minutes=5),
+                )
+            )
+        return records
+
+    def test_default_view_shows_only_the_current_era(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """Runs before the latest completed initial selection are hidden behind a link that counts them."""
+        assembly = assembly_with_csv_config
+        records = self._seed_two_eras(fake_store, assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        history = html[html.index('id="selection-history"') :]
+        assert "<th" in history and "Selection</th>" in history
+        assert "Task Type" not in history
+        assert "Initial selection" in history
+        assert "Replacement selection (round 1)" in history
+        assert "(previous)" not in history
+        assert "Reset all to pool" not in history
+        assert "4 older runs are hidden" in history
+        assert "Show all runs" in history
+        assert f"current_selection={records[5].task_id}" in history
+        assert f"current_selection={records[0].task_id}" not in history
+
+    def test_show_all_names_older_eras_as_previous(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """Asking for the whole history lists every run, suffixed by era, and the reset row has no View link."""
+        assembly = assembly_with_csv_config
+        records = self._seed_two_eras(fake_store, assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?history=all")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        history = html[html.index('id="selection-history"') :]
+        assert "Initial selection (previous)" in history
+        assert "Replacement selection (round 1, previous)" in history
+        assert "Replacement selection (failed)" in history
+        assert "Reset all to pool" in history
+        assert "Showing every run." in history
+        assert "Show only the current selection" in history
+        assert f"current_selection={records[3].task_id}" not in history
+        assert f"current_selection={records[0].task_id}" in history
+
+    def test_no_toggle_when_nothing_is_hidden(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        assembly = assembly_with_csv_config
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            completed_at=datetime.now(UTC),
+        )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"Show all runs" not in response.data
+        assert b"Show only the current selection" not in response.data
+
+    def test_modal_task_line_uses_the_history_name(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """The modal opened from a history row agrees with the row, on the page and in the polled fragment."""
+        assembly = assembly_with_csv_config
+        records = self._seed_two_eras(fake_store, assembly.id)
+        run_id = records[1].task_id
+
+        page = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
+        fragment = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+
+        assert page.status_code == 200
+        assert fragment.status_code == 200
+        assert b"Replacement selection (round 1, previous)" in page.data
+        assert b"Replacement selection (round 1, previous)" in fragment.data
+        assert b"Select replacements from database" not in fragment.data
+
+
 class TestCsvSelectionReset:
     """Tests for the CSV selection reset endpoint, asserting FakeStore state."""
 
