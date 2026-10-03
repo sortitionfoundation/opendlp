@@ -254,7 +254,7 @@ view shows everything and no toggle.
    integration test for the service, component test for the route, contract
    tests for both repository changes, unit test that the reset record does
    not count as an active initial selection.
-2. [ ] Service: `name_history(summaries)` pure function implementing the era
+2. [x] Service: `name_history(summaries)` pure function implementing the era
    model with the Q2, Q3 and Q7 decisions. Unit tests cover: single initial
    run; two initial runs; replacement rounds numbering; failed runs not
    numbered; running runs unnamed-but-labelled; Google Sheets types; a reset
