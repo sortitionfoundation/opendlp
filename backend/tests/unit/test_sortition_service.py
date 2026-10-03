@@ -1403,6 +1403,20 @@ class TestActiveInitialSelectionIncludesDbReplacement:
         )
         assert sortition.get_active_initial_selection_run_id(uow, assembly.id) == task_id
 
+    def test_reset_record_is_never_active(self, uow):
+        """A reset is written already complete, so it never swaps the cards for a running-run button."""
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=uuid.uuid4(),
+                task_type=SelectionTaskType.RESET_TO_POOL,
+                status=SelectionRunStatus.COMPLETED,
+            )
+        )
+        assert sortition.get_active_initial_selection_run_id(uow, assembly.id) is None
+
 
 class _FinishedCeleryResult:
     """Stands in for a Celery AsyncResult whose value is already in the result backend."""

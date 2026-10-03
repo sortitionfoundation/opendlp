@@ -559,6 +559,24 @@ class TestCsvSelectionReset:
             assert len(respondents) == 10
             assert all(r.selection_status == RespondentStatus.POOL for r in respondents)
 
+    def test_reset_csv_selection_appears_in_the_history(
+        self, logged_in_admin, assembly_with_csv_config, fake_store, admin_user
+    ):
+        """Resetting writes a completed history row that the selection page lists."""
+        assembly = assembly_with_csv_config
+
+        logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/db/reset", follow_redirects=True)
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
+        assert len(records) == 1
+        assert records[0].task_type == SelectionTaskType.RESET_TO_POOL
+        assert records[0].user_id == admin_user.id
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        assert response.status_code == 200
+        assert b"Reset all to pool" in response.data
+
     @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.reset_selection_status")
     def test_reset_csv_selection_handles_not_found(self, mock_reset, logged_in_admin, assembly_with_csv_config):
         """A NotFoundError from the reset service redirects with a not-found error."""

@@ -264,6 +264,20 @@ class AssemblyGSheet:
         return new_dict
 
 
+@dataclass(frozen=True)
+class RunSummary:
+    """The few fields of a SelectionRunRecord that place it in an assembly's history.
+
+    Loading these for every run of an assembly is cheap, where loading the full
+    records would drag in every run report and selected panel.
+    """
+
+    task_id: uuid.UUID
+    task_type: SelectionTaskType
+    status: SelectionRunStatus
+    created_at: datetime
+
+
 @dataclass
 class SelectionRunRecord:
     """Record of a selection task execution for audit and progress tracking"""

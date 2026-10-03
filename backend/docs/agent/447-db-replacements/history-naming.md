@@ -247,7 +247,7 @@ view shows everything and no toggle.
 
 ## Steps
 
-1. [ ] Domain: `RESET_TO_POOL` task type and label; `RunSummary` dataclass.
+1. [x] Domain: `RESET_TO_POOL` task type and label; `RunSummary` dataclass.
    `reset_selection_status` adds the record with the count in its log
    messages. Repository: `get_history_summaries` on the run record repository
    (SQL and fake), and `since` on `get_by_assembly_id_paginated`. Tests:

@@ -8,7 +8,7 @@ from typing import Any
 
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, TabularData
-from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, RunSummary, SelectionRunRecord
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
@@ -603,7 +603,7 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         return [item for item in self._items if item.is_pending or item.is_running]
 
     def get_by_assembly_id_paginated(
-        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50
+        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50, since: datetime | None = None
     ) -> tuple[list[tuple[SelectionRunRecord, None]], int]:
         """Get paginated SelectionRunRecords for an assembly with user information.
 
@@ -611,7 +611,12 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         """
         # Get all records for the assembly
         all_records = sorted(
-            [item for item in self._items if item.assembly_id == assembly_id],
+            [
+                item
+                for item in self._items
+                if item.assembly_id == assembly_id
+                and (since is None or (item.created_at is not None and item.created_at >= since))
+            ],
             key=lambda r: r.created_at or datetime.min,
             reverse=True,  # Newest first
         )
@@ -625,6 +630,18 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
 
         # Return tuples of (record, None) to match the real repository signature
         return [(record, None) for record in page_records], total_count
+
+    def get_history_summaries(self, assembly_id: uuid.UUID) -> list[RunSummary]:
+        """Get a summary of every SelectionRunRecord for an assembly, oldest first."""
+        records = sorted(
+            [item for item in self._items if item.assembly_id == assembly_id],
+            key=lambda r: r.created_at or datetime.min,
+        )
+        return [
+            RunSummary(task_id=r.task_id, task_type=r.task_type, status=r.status, created_at=r.created_at)
+            for r in records
+            if r.created_at is not None
+        ]
 
 
 class FakeUserBackupCodeRepository(FakeRepository, UserBackupCodeRepository):

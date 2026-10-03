@@ -3,9 +3,11 @@ ABOUTME: Provides functions for respondent creation, CSV import, and validation"
 
 import csv
 import uuid
+from datetime import UTC, datetime
 from io import StringIO
 from typing import Any
 
+from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent, normalise_field_name, pop_normalised
 from opendlp.domain.users import User
@@ -15,6 +17,8 @@ from opendlp.domain.value_objects import (
     RespondentAction,
     RespondentSourceType,
     RespondentStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
 )
 from opendlp.service_layer.derivation_service import (
     apply_derivations,
@@ -342,6 +346,20 @@ def reset_selection_status(
         )
 
     count = uow.respondents.reset_all_to_pool(assembly_id)
+    # The reset is synchronous, so its history row is complete the moment it is written.
+    now = datetime.now(UTC)
+    uow.selection_run_records.add(
+        SelectionRunRecord(
+            assembly_id=assembly_id,
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.RESET_TO_POOL,
+            user_id=user_id,
+            log_messages=[f"Reset {count} respondents to the pool"],
+            created_at=now,
+            completed_at=now,
+        )
+    )
     request_auto_export(uow, assembly_id)
     return count
 
