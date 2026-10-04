@@ -6,19 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 OpenDLP (Open Democratic Lottery Platform) is a Flask web application for supporting Citizens' Assemblies through stratified selection processes. The project follows Domain-Driven Design principles from "Architecture Patterns with Python" with clear separation between domain models, adapters, service layer, and entrypoints.
 
-**Technology Stack:** Flask, SQLAlchemy, PostgreSQL, Redis, following DDD architecture
-
 ## Architecture
-
-The codebase follows a layered architecture:
-
-```txt
-src/opendlp/
-    domain/           # Plain Python domain objects (core business logic)
-    adapters/         # SQLAlchemy models and database adapters
-    service_layer/    # Repository and UnitOfWork abstractions
-    entrypoints/      # Flask routes and web interface
-```
 
 Key architectural principles:
 
@@ -41,16 +29,6 @@ Key architectural principles:
 ### Package Management
 
 All Python packages are managed with `uv` - **never use pip, poetry, or other package managers**.
-
-```bash
-# Initial setup
-uv sync
-uv pip install -e .
-
-# Add dependencies
-uv add package_name
-uv add --group dev package_name  # for dev dependencies
-```
 
 ### System Dependencies (Apple Silicon Macs)
 
@@ -92,11 +70,6 @@ CI=true uv run pytest tests/bdd/
 
 # Run all quality checks (linting, type checking, dependency analysis)
 just check
-
-# Individual quality tools
-uv run mypy                    # Type checking
-uv run deptry src              # Check for obsolete dependencies
-uv tool run prek run -a        # Run linting
 ```
 
 Full test runs can take many minutes. Recommend piping output to a temporary file to capture test failure details without filling context with full output.
@@ -104,22 +77,6 @@ Full test runs can take many minutes. Recommend piping output to a temporary fil
 See [docs/testing.md](docs/testing.md) for complete testing strategy including contract and BDD tests.
 
 ### Running the Application
-
-```bash
-# Local development with Flask
-just run
-
-# Flask shell
-just flask-shell
-
-# Run with Docker
-just start-docker         # Detached mode
-just start-docker-b       # Blocking mode with logs
-
-# Services only (PostgreSQL for local development)
-just start-services-docker
-just stop-services-docker
-```
 
 See [docs/docker.md](docs/docker.md) for complete Docker setup and deployment guide.
 
@@ -137,34 +94,9 @@ PGPASSWORD=abc123 psql -h localhost -p 54321 -U opendlp -d opendlp
 
 Configuration is managed through `src/opendlp/config.py` which loads from environment variables.
 
-### Key Environment Variables
-
-**Required in production:**
-
-- `SECRET_KEY`: Flask secret key (must be set in production)
-- `DATABASE_URL` or `DB_HOST`/`DB_PASSWORD`: PostgreSQL connection
-- `REDIS_HOST`: Redis connection for sessions
-
-**Optional:**
-
-- `FLASK_ENV`: development/testing/production (default: development)
-- `DEBUG`: true/false (default: false)
-- `OAUTH_GOOGLE_CLIENT_ID`/`OAUTH_GOOGLE_CLIENT_SECRET`: Google OAuth
-- `TASK_TIMEOUT_HOURS`: Background task timeout in hours (default: 24)
-- `INVITE_EXPIRY_HOURS`: Invite expiration (default: 168)
-- `EMAIL_ADAPTER`: Email backend type - "console" or "smtp"
-- `SMTP_*`: SMTP configuration for email sending
-
 See [docs/configuration.md](docs/configuration.md) for complete configuration reference.
 
 ## Core Domain Models
-
-### Primary Entities
-
-- **User** (`domain/users.py`): Authentication, roles, permissions
-- **Assembly** (`domain/assembly.py`): Citizens' assembly configuration
-- **UserAssemblyRole** (`domain/users.py`): Assembly-specific permissions
-- **UserInvite** (`domain/user_invites.py`): Invite code system
 
 ### Key Business Rules
 
@@ -228,29 +160,7 @@ A third construct is worse, because it produces no msgid at all:
   exposed to Jinja in `flask_app.py`. See
   [docs/translations.md](docs/translations.md#enum-values-are-not-translatable-strings).
 
-After adding or changing translatable strings, regenerate and check:
-
-```bash
-just translate-regen         # extract + update every catalogue
-just translate-check         # msgfmt --check and pybabel compile; also run by `just check`
-just translate-accept-fuzzy  # clear every fuzzy flag once a reviewer has been through them
-```
-
-Never rewrite a catalogue with `msgattrib` or `msgcat` by hand: they wrap lines
-differently from pybabel, and the whole file rewraps. A pre-commit hook
-normalises staged catalogues to pybabel's wrapping - see
-[docs/translations.md](docs/translations.md#one-wrapping-for-the-catalogues).
-
-`translate-check` is not optional politeness. `pybabel compile` accepts a
-catalogue with duplicate msgids without a murmur and emits a `.mo` missing
-translations, which is how the Hungarian catalogue spent months unable to build
-correctly with nothing reporting a problem. `msgfmt --check` catches duplicates,
-broken placeholders and bad plural forms. It skips fuzzy entries, though, whose
-placeholders `pybabel compile` does check - so the recipe runs both.
-
-Note also that rewording an existing msgid silently discards its translation -
-the string simply reverts to English in every language. Nothing catches this, so
-prefer leaving wording alone unless the change is worth the retranslation.
+After adding or changing translatable strings, load the `translate-catalogues` skill: it regenerates and checks the catalogues, and explains why the check is not optional.
 
 See [docs/translations.md](docs/translations.md) for translation management workflow.
 
@@ -382,26 +292,7 @@ The `docs/agent/` folder contains documentation for AI agents. See [docs/agent/A
 - [JSON API Conventions](docs/agent/json_api_conventions.md) - Response shape, and why a JSON body never contains `str(e)`
 - [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide
 
-**IMPORTANT - Before creating or modifying UI components:**
-
-Read the [Component Accessibility Guide](docs/agent/component_accessibility.md). All components MUST comply with:
-
-- Semantic HTML structure
-- WAI-ARIA attributes (aria-label for icon buttons, aria-pressed for toggles, etc.)
-- Keyboard navigation (focusable, logical tab order, expected shortcuts)
-- Visible focus indicators (prefer browser defaults)
-
-Research complex patterns at https://www.w3.org/WAI/ARIA/apg/patterns/ before implementation.
-
-**IMPORTANT - Before implementing Alpine.js components:**
-
-Check the interactive patterns documentation at `/backoffice/dev/patterns` (dev only) or read the template at `templates/backoffice/patterns.html`. This documents CSP-compatible patterns for dropdowns, forms, and AJAX with working examples and links to existing implementations. Key constraints:
-
-- `x-model` must use flat properties (`x-model="selected"` not `x-model="form.field"`)
-- `@click` handlers cannot have string arguments (`@click="doThing()"` not `@click="doThing('arg')"`)
-- AJAX requests must include `X-CSRFToken` header
-
-The `patterns.html` page is canonical and maintained as a reference. The dev blueprint that serves it (`src/opendlp/entrypoints/blueprints/dev.py`) is **not** a pattern source - it is a dev-only scratch space held to a lower bar, with partial test coverage by design. Don't copy production code from it; see the note at the top of that file for where the real examples are.
+**Before creating or modifying UI components or Alpine.js components:** load the `ui-components` skill. It carries the accessibility requirements and the CSP-compatible Alpine patterns that every component must follow.
 
 **Active development folders** contain specs for current work (e.g., `547-component-redesign/`).
 
