@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-02 15:35+0200\n"
+"POT-Creation-Date: 2026-10-05 09:40+0200\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -657,7 +657,7 @@ msgstr "Adj meg egy teljes http:// vagy https:// című webcímet"
 
 #: src/opendlp/entrypoints/forms.py:132 src/opendlp/entrypoints/forms.py:263
 #: src/opendlp/entrypoints/forms.py:304 src/opendlp/entrypoints/forms.py:315
-#: templates/auth/register.html:62 templates/profile/view.html:11
+#: templates/profile/view.html:11 templates/public/register.html:86
 msgid "Email address"
 msgstr "E-mail cím"
 
@@ -4504,11 +4504,12 @@ msgstr ""
 "OAuth-felhasználóknál nem kapcsolható ki a kétlépcsős azonosítás (nem "
 "használnak ilyet)"
 
-#: templates/base.html:5
+#: templates/base.html:5 templates/public/base.html:19
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
 
 #: templates/base.html:23 templates/base_public.html:25
+#: templates/public/base.html:25
 msgid "Skip to main content"
 msgstr "Ugrás a fő tartalomra"
 
@@ -4560,15 +4561,16 @@ msgstr "Kilépés"
 
 #: templates/auth/forgot_password.html:41 templates/auth/login.html:3
 #: templates/auth/login.html:7 templates/auth/login.html:31
-#: templates/auth/register.html:204 templates/auth/resend_confirmation.html:41
-#: templates/base.html:102 templates/errors/400.html:29
-#: templates/errors/403.html:27 templates/errors/404.html:28
-#: templates/errors/413.html:24 templates/errors/500.html:28
-#: templates/main/index.html:17
+#: templates/auth/resend_confirmation.html:41 templates/base.html:102
+#: templates/errors/400.html:29 templates/errors/403.html:27
+#: templates/errors/404.html:28 templates/errors/413.html:24
+#: templates/errors/500.html:28 templates/main/index.html:17
+#: templates/public/register.html:30
 msgid "Sign in"
 msgstr "Bejelentkezés"
 
 #: templates/base.html:106 templates/main/index.html:31
+#: templates/public/register.html:186
 msgid "Create Account"
 msgstr "Fiók létrehozása"
 
@@ -5112,7 +5114,7 @@ msgstr "Bekapcsolva ekkor"
 msgid "View 2FA audit log"
 msgstr "Kétlépcsős azonosítás eseménynaplójának megtekintése"
 
-#: templates/admin/user_view.html:99 templates/auth/register.html:91
+#: templates/admin/user_view.html:99 templates/public/register.html:162
 msgid "Data Agreement"
 msgstr "Adatkezelési Megállapodás"
 
@@ -5387,73 +5389,6 @@ msgstr "Még nincs fiókod?"
 #: templates/auth/login.html:83
 msgid "Create an account here"
 msgstr "Hozz létre itt egy fiókot"
-
-#: templates/auth/register.html:5 templates/auth/register.html:9
-msgid "Create an Account"
-msgstr "Fiók létrehozása"
-
-#: templates/auth/register.html:12
-#, python-format
-msgid ""
-"You need an invite code to create an account. If you do not have one, "
-"please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>."
-msgstr ""
-"Fiók létrehozásához meghívókódra van szükséged. Ha nincs ilyened, lépj "
-"kapcsolatba az <a href=\"mailto:%(email)s\">OpenDLP "
-"ügyfélszolgálatával</a>."
-
-#: templates/auth/register.html:33 templates/auth/register.html:177
-msgid "Create Account with email"
-msgstr ""
-
-#: templates/auth/register.html:37
-msgid "Choose how to sign up"
-msgstr ""
-
-#: templates/auth/register.html:38
-msgid "How would you like to sign up?"
-msgstr ""
-
-#: templates/auth/register.html:46
-msgid "Google"
-msgstr ""
-
-#: templates/auth/register.html:55
-msgid "Microsoft"
-msgstr ""
-
-#: templates/auth/register.html:72
-msgid "Optional — if you were given an invite code, enter it here."
-msgstr "Nem kötelező – ha kaptál meghívókódot, add meg itt."
-
-#: templates/auth/register.html:93
-msgid "Please read and accept our data agreement to proceed."
-msgstr ""
-"A folytatáshoz kérjük, olvasd el és fogadd el az adatkezelési "
-"megállapodásunkat."
-
-#: templates/auth/register.html:97
-msgid "View data agreement"
-msgstr "Adatkezelési megállapodás megtekintése"
-
-#: templates/auth/register.html:102
-#: templates/components/signup_survey_fields.html:18
-#: templates/components/signup_survey_fields.html:37
-#: templates/profile/edit.html:17 templates/profile/edit.html:32
-msgid "Error"
-msgstr "Hiba történt"
-
-#: templates/auth/register.html:185 templates/auth/register.html:186
-msgid "Create an Account with Google"
-msgstr "Fiók létrehozása Google-fiókkal"
-
-#: templates/auth/register.html:197 templates/auth/register.html:198
-msgid "Create an Account with Microsoft"
-msgstr "Fiók létrehozása Microsoft-fiókkal"
-
-#: templates/auth/register.html:204
-msgid "Already have an account?"
-msgstr "Már van fiókod?"
 
 #: templates/auth/resend_confirmation.html:3
 msgid "Resend Confirmation Email"
@@ -9154,16 +9089,6 @@ msgid_plural "and %(num)s others"
 msgstr[0] "és még %(num)s"
 msgstr[1] "és még %(num)s"
 
-#: templates/components/signup_survey_fields.html:5
-msgid "Tell us a little about yourself"
-msgstr "Mesélj egy kicsit magadról"
-
-#: templates/components/signup_survey_fields.html:6
-msgid "These questions are optional, but your answers help us help you."
-msgstr ""
-"Ezek a kérdések nem kötelezőek, de a válaszaid segítenek, hogy jobban "
-"segíthessünk neked."
-
 #: templates/db_selection/replace.html:2
 msgid "Replacements (DB)"
 msgstr "Résztvevők pótlása (adatbázis)"
@@ -10316,6 +10241,10 @@ msgstr "Jelszó megváltoztatása"
 msgid "Edit Profile"
 msgstr "Profil szerkesztése"
 
+#: templates/profile/edit.html:17 templates/profile/edit.html:32
+msgid "Error"
+msgstr "Hiba történt"
+
 #: templates/profile/set_password.html:2 templates/profile/set_password.html:6
 msgid "Set Password"
 msgstr "Jelszó beállítása"
@@ -10416,6 +10345,76 @@ msgstr "Kezelés"
 #: templates/profile/view.html:198
 msgid "Edit profile"
 msgstr "Profil szerkesztése"
+
+#: templates/public/register.html:10
+msgid "Create an Account"
+msgstr "Fiók létrehozása"
+
+#: templates/public/register.html:23
+msgid "Create an account to OpenDLP"
+msgstr ""
+
+#: templates/public/register.html:24
+msgid "Open Democratic Lottery"
+msgstr ""
+
+#: templates/public/register.html:27
+msgid "Already have an account?"
+msgstr "Már van fiókod?"
+
+#: templates/public/register.html:38
+#, python-format
+msgid ""
+"You need an invite code to create an account. If you do not have one, "
+"please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>."
+msgstr ""
+"Fiók létrehozásához meghívókódra van szükséged. Ha nincs ilyened, lépj "
+"kapcsolatba az <a href=\"mailto:%(email)s\">OpenDLP "
+"ügyfélszolgálatával</a>."
+
+#: templates/public/register.html:56 templates/public/register.html:190
+msgid "Create Account with email"
+msgstr ""
+
+#: templates/public/register.html:65
+msgid "Choose how to sign up"
+msgstr ""
+
+#: templates/public/register.html:66
+msgid "How would you like to sign up?"
+msgstr ""
+
+#: templates/public/register.html:99
+msgid "Optional — if you were given an invite code, enter it here."
+msgstr "Nem kötelező – ha kaptál meghívókódot, add meg itt."
+
+#: templates/public/register.html:154
+msgid "Tell us a little about yourself"
+msgstr "Mesélj egy kicsit magadról"
+
+#: templates/public/register.html:155
+msgid "These questions are optional, but your answers help us help you."
+msgstr ""
+"Ezek a kérdések nem kötelezőek, de a válaszaid segítenek, hogy jobban "
+"segíthessünk neked."
+
+#: templates/public/register.html:165
+msgid "Please read and accept our data agreement to proceed."
+msgstr ""
+"A folytatáshoz kérjük, olvasd el és fogadd el az adatkezelési "
+"megállapodásunkat."
+
+#: templates/public/register.html:170
+msgid "View data agreement"
+msgstr "Adatkezelési megállapodás megtekintése"
+
+#: templates/public/register.html:196
+msgid "Create an Account with Google"
+msgstr "Fiók létrehozása Google-fiókkal"
+
+#: templates/public/register.html:207
+msgid "Create an Account with Microsoft"
+msgstr "Fiók létrehozása Microsoft-fiókkal"
 
 #: templates/register/closed.html:3 templates/register/closed.html:7
 msgid "Registration Closed"

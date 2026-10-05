@@ -160,28 +160,28 @@ class TestOAuthRegistrationForms:
         assert b"Invite Code" in response.data
         assert b"invite code to create an account" in response.data
 
-    def test_register_page_orders_sso_before_shared_and_email_fields(self, client: FlaskClient):
-        """SSO buttons open the form, above the shared invite field and the email/password cluster."""
+    def test_register_page_orders_chooser_shared_then_email_then_submits(self, client: FlaskClient):
+        """The method chooser is first, then the shared fields, the email fields, then the submits."""
         body = client.get("/auth/register").data
+        chooser_pos = body.find(b"registration-method-chooser")
         invite_pos = body.find(b'name="invite_code"')
-        google_pos = body.find(b'value="google"')
         email_pos = body.find(b'name="email"')
-        password_pos = body.find(b'name="password"')
-        # The visible email submit is at the end of the form; rfind skips the hidden default one.
-        email_button_pos = body.rfind(b'value="email"')
+        google_submit_pos = body.find(b'value="google"')
 
-        assert -1 not in (invite_pos, google_pos, email_pos, password_pos, email_button_pos)
-        # SSO buttons first (per the 1053 Figma design), then the shared invite
-        # field, then the email cluster, with the email submit closing the form.
-        assert google_pos < invite_pos < email_pos < password_pos < email_button_pos
+        assert -1 not in (chooser_pos, invite_pos, email_pos, google_submit_pos)
+        # Chooser at the top, shared invite next, the email-only fields in the middle,
+        # and the Google (SSO) submit button down at the foot of the form.
+        assert chooser_pos < invite_pos < email_pos < google_submit_pos
 
     def test_register_enter_key_defaults_to_email_not_oauth(self, client: FlaskClient):
         """The form's first submit button is the email path, so Enter never starts OAuth."""
         body = client.get("/auth/register").data
         first_submit = body.find(b'<button type="submit"')
+        first_tag = body[first_submit : body.find(b">", first_submit)]
         # The implicit-submit default (first submit button) carries action=email.
+        assert b'name="action"' in first_tag
+        assert b'value="email"' in first_tag
         assert body.find(b'value="email"') < body.find(b'value="google"')
-        assert b'name="action" value="email"' in body[first_submit : first_submit + 120]
 
     def test_register_google_with_invalid_invite_fails(self, client: FlaskClient):
         """Invalid invite re-renders the form without reaching OAuth."""
