@@ -30,6 +30,7 @@ from opendlp.service_layer.respondent_export_service import (
     export_respondents_to_gsheet,
     get_respondent_gsheet_config,
     resolve_status_filter,
+    respondent_view_url,
 )
 from tests.fakes import FakeGSheetExportTarget, FakeUnitOfWork
 
@@ -137,14 +138,14 @@ class TestBuildRespondentTable:
 
         table = build_respondent_table([respondent], [], id_column_header="external_id")
 
-        assert table.headers[-5:] == [
+        assert table.headers[-6:-1] == [
             "selection_status",
             "source_type",
             "selection_run_id",
             "created_at",
             "updated_at",
         ]
-        assert table.rows[0][-5:] == [
+        assert table.rows[0][-6:-1] == [
             "SELECTED",
             "CSV_IMPORT",
             str(run_id),
@@ -206,6 +207,39 @@ class TestBuildRespondentTable:
         table = build_respondent_table([first, second, third], [], id_column_header="external_id")
 
         assert [row[0] for row in table.rows] == ["R1", "R2", "R3"]
+
+    def test_view_url_is_the_last_column(self):
+        respondent = Respondent(assembly_id=uuid.uuid4(), external_id="R1")
+
+        table = build_respondent_table(
+            [respondent], [], id_column_header="external_id", application_url="https://opendlp.example.org"
+        )
+
+        assert table.headers[-1] == "view_url"
+        assert table.rows[0][-1] == (
+            f"https://opendlp.example.org/backoffice/assembly/{respondent.assembly_id}/respondents/{respondent.id}"
+        )
+
+    def test_view_url_is_blank_without_an_application_url(self):
+        respondent = Respondent(assembly_id=uuid.uuid4(), external_id="R1")
+
+        table = build_respondent_table([respondent], [], id_column_header="external_id")
+
+        assert table.headers[-1] == "view_url"
+        assert table.rows[0][-1] == ""
+
+
+class TestRespondentViewUrl:
+    def test_builds_absolute_url(self):
+        assembly_id = uuid.uuid4()
+        respondent_id = uuid.uuid4()
+
+        url = respondent_view_url("https://opendlp.example.org", assembly_id, respondent_id)
+
+        assert url == f"https://opendlp.example.org/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+
+    def test_empty_application_url_gives_empty_string(self):
+        assert respondent_view_url("", uuid.uuid4(), uuid.uuid4()) == ""
 
 
 def _seed(uow: FakeUnitOfWork, *, global_role: GlobalRole = GlobalRole.ADMIN) -> tuple[User, Assembly]:

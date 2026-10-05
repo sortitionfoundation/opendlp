@@ -49,7 +49,14 @@ from opendlp.translations import gettext as _
 # Internal, export-only columns recognised and skipped on import. They mirror
 # the extra columns build_respondent_table appends, so an exported file
 # re-imports without colliding with reserved Respondent field names.
-INTERNAL_IMPORT_SKIP_COLUMNS = ("selection_status", "selection_run_id", "source_type", "created_at", "updated_at")
+INTERNAL_IMPORT_SKIP_COLUMNS = (
+    "selection_status",
+    "selection_run_id",
+    "source_type",
+    "created_at",
+    "updated_at",
+    "view_url",
+)
 
 
 def create_respondent(

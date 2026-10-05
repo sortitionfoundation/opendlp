@@ -73,6 +73,7 @@ class TestExportReimportRoundTrip:
         for r in respondents_out:
             assert "selection_status" not in r.attributes
             assert "source_type" not in r.attributes
+            assert "view_url" not in r.attributes
             # Re-imported afresh, status resets to POOL.
             assert r.selection_status == RespondentStatus.POOL
         # stay_on_db round-trips on a fresh create.

@@ -15,6 +15,7 @@ from opendlp.config import (
     InvalidConfig,
     RedisCfg,
     dev_tools_enabled,
+    get_application_url,
     get_config,
     get_max_content_length,
     get_max_csv_upload_bytes,
@@ -231,6 +232,20 @@ class TestGetConfig:
         assert isinstance(config, FlaskConfig)
         assert not isinstance(config, FlaskTestConfig)
         assert not isinstance(config, FlaskProductionConfig)
+
+
+class TestGetApplicationUrl:
+    def test_empty_when_not_set(self, clear_env_vars):
+        clear_env_vars("APPLICATION_URL")
+        assert get_application_url() == ""
+
+    def test_returns_the_value(self, temp_env_vars):
+        temp_env_vars(APPLICATION_URL="https://opendlp.example.org")
+        assert get_application_url() == "https://opendlp.example.org"
+
+    def test_strips_trailing_slash_and_whitespace(self, temp_env_vars):
+        temp_env_vars(APPLICATION_URL=" https://opendlp.example.org/ ")
+        assert get_application_url() == "https://opendlp.example.org"
 
 
 class TestGetTaskTimeoutHours:

@@ -3,6 +3,7 @@ ABOUTME: Builds tabular data, resolves status filters, orchestrates the export""
 
 import uuid
 
+from opendlp import config
 from opendlp.adapters.tabular_export import (
     AbstractGSheetExportTarget,
     AbstractTabularExportTarget,
@@ -32,6 +33,9 @@ _TOP_LEVEL_FIELD_KEYS = frozenset({"email", "eligible", "can_attend", "consent",
 
 # Internal-only columns appended after the schema and attribute columns.
 _INTERNAL_COLUMNS = ("selection_status", "source_type", "selection_run_id", "created_at", "updated_at")
+
+# The final column: a link to the respondent's page in OpenDLP.
+VIEW_URL_COLUMN = "view_url"
 
 
 def resolve_status_filter(raw: str) -> list[RespondentStatus] | None:
@@ -79,13 +83,28 @@ def _serialise_internal(respondent: Respondent, column: str) -> str:
     return respondent.updated_at.isoformat()
 
 
+def respondent_view_url(application_url: str, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
+    """The absolute URL of a respondent's page, or "" when APPLICATION_URL is not set.
+
+    Built by hand rather than with ``url_for`` because the automatic export runs
+    in a Celery worker, with no Flask app to build it. Must match the route of
+    ``respondents.view_respondent``; a test holds the two together.
+    """
+    if not application_url:
+        return ""
+    return f"{application_url}/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+
+
 def build_respondent_table(
     respondents: list[Respondent],
     schema: list[RespondentFieldDefinition],
     id_column_header: str,
+    application_url: str = "",
 ) -> TabularData:
     """Turn respondents into a table: id column, schema fields, leftover
-    attributes (sorted), then internal columns.
+    attributes (sorted), internal columns, then the respondent's view URL.
+
+    The view URL column is always present, but blank when ``application_url`` is empty.
 
     Pure: takes already-fetched domain objects and the resolved id-column
     header, so it can be unit-tested without a UnitOfWork.
@@ -98,7 +117,7 @@ def build_respondent_table(
         leftover_keys.update(k for k in respondent.attributes if k not in schema_key_set)
     leftover = sorted(leftover_keys)
 
-    headers = [id_column_header, *schema_keys, *leftover, *_INTERNAL_COLUMNS]
+    headers = [id_column_header, *schema_keys, *leftover, *_INTERNAL_COLUMNS, VIEW_URL_COLUMN]
 
     rows: list[list[str]] = []
     for respondent in respondents:
@@ -106,6 +125,7 @@ def build_respondent_table(
         row.extend(_serialise_field(respondent, key) for key in schema_keys)
         row.extend(_serialise_field(respondent, key) for key in leftover)
         row.extend(_serialise_internal(respondent, column) for column in _INTERNAL_COLUMNS)
+        row.append(respondent_view_url(application_url, respondent.assembly_id, respondent.id))
         rows.append(row)
 
     return TabularData(headers=headers, rows=rows)
@@ -161,7 +181,7 @@ def _write_export(
     respondents = _fetch_respondents(uow, assembly_id, status_filter)
     schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
     id_column_header = resolve_id_column_header(assembly)
-    table = build_respondent_table(respondents, schema, id_column_header)
+    table = build_respondent_table(respondents, schema, id_column_header, application_url=config.get_application_url())
     target.write_sheet(sheet_title, table)
 
 

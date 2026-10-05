@@ -50,6 +50,29 @@ class TestRespondentExportSmoke:
         # Internal columns present in the export.
         assert "selection_status" in rows[0]
 
+    def test_view_url_opens_the_respondent_page(
+        self, monkeypatch, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        monkeypatch.setenv("APPLICATION_URL", "https://opendlp.example.org/")
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=existing_assembly.id,
+                csv_content=_CSV,
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export")
+
+        rows = _parse(response)
+        prefix = "https://opendlp.example.org/"
+        for row in rows:
+            assert row["view_url"].startswith(prefix)
+            # The hand-built URL must be a real route: following it shows this respondent.
+            page = logged_in_admin.get(row["view_url"].removeprefix(prefix[:-1]))
+            assert page.status_code == 200
+            assert row["external_id"] in page.get_data(as_text=True)
+
 
 class TestGSheetExportSmoke:
     def test_export_to_gsheet_saves_config(
