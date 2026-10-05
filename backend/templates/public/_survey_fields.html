@@ -3,46 +3,77 @@ ABOUTME: Design-system rendering of the optional signup survey fields (SignupSur
 ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTIONS without naming any question
 #}
 {% from "backoffice/components/input.html" import input, textarea, select, radio_group, first_error %}
-{% macro signup_survey_fields(form) %}
-    {% for field in form.survey_fields() %}
-        {% if field.type == "RadioField" %}
-            {% set options = [] %}
-            {% for value, label in field.choices %}
-                {% set _ = options.append({"value": value, "label": label}) %}
-            {% endfor %}
-            {{ radio_group(field.name,
-            label=field.label.text,
-            options=options,
-            value=field.data or "",
-            hint=field.description or "",
-            error=first_error(field.errors))
-            }}
-        {% elif field.type == "SelectField" %}
-            {% set options = [] %}
-            {% for value, label in field.choices %}
-                {% set _ = options.append({"value": value, "label": label}) %}
-            {% endfor %}
-            {{ select(field.name,
-            label=field.label.text,
-            options=options,
-            value=field.data or "",
-            hint=field.description or "",
-            error=first_error(field.errors))
-            }}
-        {% elif field.type == "TextAreaField" %}
+{% macro survey_field(field) %}
+    {% if field.type == "RadioField" %}
+        {% set options = [] %}
+        {% for value, label in field.choices %}
+            {% set _ = options.append({"value": value, "label": label}) %}
+        {% endfor %}
+        {{ radio_group(field.name,
+        label=field.label.text,
+        options=options,
+        value=field.data or "",
+        hint=field.description or "",
+        error=first_error(field.errors))
+        }}
+    {% elif field.type == "SelectField" %}
+        {% set options = [] %}
+        {% for value, label in field.choices %}
+            {% set _ = options.append({"value": value, "label": label}) %}
+        {% endfor %}
+        {{ select(field.name,
+        label=field.label.text,
+        options=options,
+        value=field.data or "",
+        hint=field.description or "",
+        error=first_error(field.errors))
+        }}
+    {% elif field.type == "TextAreaField" %}
+        {# A Length validator's max drives the maxlength attribute and the
+           live character counter (charCount Alpine component). #}
+        {% set ns = namespace(max_len=0) %}
+        {% for validator in field.validators %}
+            {% if validator.max is defined and validator.max and validator.max > 0 %}
+                {% set ns.max_len = validator.max %}
+            {% endif %}
+        {% endfor %}
+        <div class="flex flex-col gap-1.5"
+             {% if ns.max_len %}x-data="charCount" @input="update()"{% endif %}>
             {{ textarea(field.name,
             label=field.label.text,
             value=field.data or "",
             hint=field.description or "",
-            error=first_error(field.errors))
+            error=first_error(field.errors),
+            attrs=('maxlength="' ~ ns.max_len ~ '"') if ns.max_len else "")
             }}
+            {% if ns.max_len %}
+                <p class="text-caption" style="color: var(--color-secondary-text);">
+                    <span x-text="count">0</span>/{{ ns.max_len }} {{ _("characters") }}
+                </p>
+            {% endif %}
+        </div>
+    {% else %}
+        {{ input(field.name,
+        label=field.label.text,
+        value=field.data or "",
+        hint=field.description or "",
+        error=first_error(field.errors))
+        }}
+    {% endif %}
+{% endmacro %}
+{% macro signup_survey_fields(form) %}
+    {# Fields render in the spec's order; the organisation name and size pair up
+       side by side (per the Figma) when both questions are in the spec. #}
+    {% for field in form.survey_fields() %}
+        {% if field.name == "survey_organisation_name" and form.survey_organisation_size is defined %}
+            <div class="grid grid-cols-2 gap-4">
+                {{ survey_field(field) }}
+                {{ survey_field(form.survey_organisation_size) }}
+            </div>
+        {% elif field.name == "survey_organisation_size" and form.survey_organisation_name is defined %}
+            {# rendered beside the organisation name above #}
         {% else %}
-            {{ input(field.name,
-            label=field.label.text,
-            value=field.data or "",
-            hint=field.description or "",
-            error=first_error(field.errors))
-            }}
+            {{ survey_field(field) }}
         {% endif %}
     {% endfor %}
 {% endmacro %}
