@@ -836,6 +836,26 @@ class TestSelectionSteps:
         assert 'disabled aria-disabled="true"' in replacement
         assert "Every place is filled." in replacement
 
+    def test_more_held_than_places_offers_reset_only(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """Lowering the number to select below the held count leaves nothing for a replacement to fill."""
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 6 + [RespondentStatus.CONFIRMED] * 4)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.assemblies.get(assembly.id).number_to_select = 8
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Reset Selected People" in initial
+        assert "Run Selection" not in initial
+        assert _held_count(html) == 10
+        assert "var(--color-success-background)" in initial
+        replacement = _step(html, "replacement-selection-step")
+        assert 'disabled aria-disabled="true"' in replacement
+        assert "Every place is filled." in replacement
+
     def test_withdrawn_people_do_not_block_a_fresh_selection(
         self, logged_in_admin, assembly_with_csv_config, fake_store
     ):
