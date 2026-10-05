@@ -814,7 +814,7 @@ class TestSelectionSteps:
         assert "Reset Selected People" in initial
         assert "Run Selection" not in initial
         assert _held_count(html) == 8
-        assert "var(--color-warning-100)" in initial
+        assert "var(--color-warning-background)" in initial
         replacement = _step(html, "replacement-selection-step")
         assert f'href="/backoffice/assembly/{assembly.id}/selection?replacement_modal=open"' in replacement
         assert "aria-disabled" not in replacement
@@ -831,7 +831,7 @@ class TestSelectionSteps:
         assert "Reset Selected People" in initial
         assert "Run Selection" not in initial
         assert _held_count(html) == 10
-        assert "var(--color-success-100)" in initial
+        assert "var(--color-success-background)" in initial
         replacement = _step(html, "replacement-selection-step")
         assert 'disabled aria-disabled="true"' in replacement
         assert "Every place is filled." in replacement

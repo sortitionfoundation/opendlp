@@ -14,13 +14,13 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
     {% set panel_border = "var(--color-borders-dividers)" %}
     {% set panel_text = "var(--color-body-text)" %}
 {% elif held < assembly.number_to_select %}
-    {% set panel_bg = "var(--color-warning-100)" %}
-    {% set panel_border = "var(--color-warning-400)" %}
-    {% set panel_text = "var(--color-warning-600)" %}
+    {% set panel_bg = "var(--color-warning-background)" %}
+    {% set panel_border = "var(--color-warning-border)" %}
+    {% set panel_text = "var(--color-warning-text)" %}
 {% else %}
-    {% set panel_bg = "var(--color-success-100)" %}
-    {% set panel_border = "var(--color-success-400)" %}
-    {% set panel_text = "var(--color-success-600)" %}
+    {% set panel_bg = "var(--color-success-background)" %}
+    {% set panel_border = "var(--color-success-border)" %}
+    {% set panel_text = "var(--color-success-text)" %}
 {% endif %}
 <ol class="setup-steps mb-8" id="selection-steps">
     {# Step 1: initial selection #}

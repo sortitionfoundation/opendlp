@@ -111,8 +111,10 @@
 
     /* Purpose-named aliases onto the 100/400/600 scale */
     --color-success-background: var(--color-success-100);
+    --color-success-border: var(--color-success-400);
     --color-success-text: var(--color-success-600);
     --color-warning-background: var(--color-warning-100);
+    --color-warning-border: var(--color-warning-400);
     --color-warning-text: var(--color-warning-600);
     --color-error-background: var(--color-error-100);
     --color-error-text: var(--color-error-600);
