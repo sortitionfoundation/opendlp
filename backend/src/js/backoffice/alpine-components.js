@@ -6,6 +6,7 @@ import { autocomplete } from "../components/autocomplete.js";
 import { autoDismissAlert } from "../components/auto-dismiss-alert.js";
 import { bulkTargetsCategory } from "../components/bulk-targets-category.js";
 import { bulkTargetsValueRow } from "../components/bulk-targets-value-row.js";
+import { charCount } from "../components/char-count.js";
 import { dialogLeaveGuard } from "../components/dialog-leave-guard.js";
 import { modal } from "../components/modal.js";
 import { registrationMethod } from "../components/registration-method.js";
@@ -39,6 +40,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("dialogLeaveGuard", dialogLeaveGuard);
   Alpine.data("modal", modal);
   Alpine.data("progressModalDemo", progressModalDemo);
+  Alpine.data("charCount", charCount);
   Alpine.data("registrationMethod", registrationMethod);
   Alpine.data("registrationPageRow", registrationPageRow);
   Alpine.data("replacementSuggestions", replacementSuggestions);

@@ -289,6 +289,32 @@ phase 3; not used on the redesigned page.
 
 ## Session log
 
+- **2026-10-05 (Figma v2 field sync)** — The Figma frame gained field changes;
+  mapped them onto the working form (Gergő confirmed the four conflicts):
+  - **Survey spec** (`SIGNUP_SURVEY_QUESTIONS` — single source, keys unchanged so
+    stored answers survive): `location` relabelled "Which country are you in?"
+    (stays free text — a country dropdown is a follow-up pending a country-data
+    source decision) and moved after `organisation_size`; `organisation_size`
+    relabelled "Size of the organisation"; `process_plan` changed RADIO → SELECT
+    and relabelled "Where are you in your plans for running a deliberative
+    process?" (choices unchanged). Reworded msgids lose their HU translations
+    until retranslated.
+  - **Field order**: email → password → confirm → First/Last name (names moved
+    below the passwords, still inside the email-only reveal, still optional —
+    the Figma's required marks were declined to avoid a backend validation
+    change); organisation name + size pair in a two-column grid (handled in
+    `public/_survey_fields.html`, which now exposes a single-field
+    `survey_field()` macro).
+  - **Char counter**: live `n/2000 characters` under the comment textarea via a
+    new `charCount` Alpine component (`src/js/components/char-count.js`, in the
+    backoffice bundle) + `maxlength`; the max comes from the field's Length
+    validator, NOT the Figma's 200 — tightening the limit would be a backend
+    change nobody asked for.
+  - **Kept against the Figma** (decisions): the method chooser (Figma still
+    draws the pre-chooser SSO-on-top + OR layout), the invite-code field (absent
+    from the frame but functionally required), optional names, free-text country.
+    Beta-notice checkbox still unrendered (no form field).
+
 - **2026-10-05 (rebase + chooser port)** — `919-google-login` was rebased onto newer
   main and gained `68b0ec55`: a **signup-method chooser** (user testing found the
   combined form confusing) — Google / Microsoft / Email toggle buttons at the top;

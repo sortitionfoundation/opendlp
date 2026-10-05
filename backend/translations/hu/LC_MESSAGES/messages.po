@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 09:40+0200\n"
+"POT-Creation-Date: 2026-10-05 10:08+0200\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -289,36 +289,36 @@ msgid "Name deleted"
 msgstr "Név törölve"
 
 #: src/opendlp/domain/user_signup_surveys.py:50
-msgid "Where are you in the world?"
-msgstr "Hol élsz a világban?"
-
-#: src/opendlp/domain/user_signup_surveys.py:54
 msgid "Name of organisation"
 msgstr "Szervezet neve"
 
-#: src/opendlp/domain/user_signup_surveys.py:58
-msgid "Size of organisation"
-msgstr "Szervezet mérete"
+#: src/opendlp/domain/user_signup_surveys.py:54
+msgid "Size of the organisation"
+msgstr ""
 
-#: src/opendlp/domain/user_signup_surveys.py:61
+#: src/opendlp/domain/user_signup_surveys.py:57
 msgid "Just me"
 msgstr "Csak én"
 
-#: src/opendlp/domain/user_signup_surveys.py:62
+#: src/opendlp/domain/user_signup_surveys.py:58
 msgid "2 to 10 people"
 msgstr "2–10 fő"
 
-#: src/opendlp/domain/user_signup_surveys.py:63
+#: src/opendlp/domain/user_signup_surveys.py:59
 msgid "11 to 50 people"
 msgstr "11–50 fő"
 
-#: src/opendlp/domain/user_signup_surveys.py:64
+#: src/opendlp/domain/user_signup_surveys.py:60
 msgid "51 to 250 people"
 msgstr "51–250 fő"
 
-#: src/opendlp/domain/user_signup_surveys.py:65
+#: src/opendlp/domain/user_signup_surveys.py:61
 msgid "More than 250 people"
 msgstr "Több mint 250 fő"
+
+#: src/opendlp/domain/user_signup_surveys.py:66
+msgid "Which country are you in?"
+msgstr ""
 
 #: src/opendlp/domain/user_signup_surveys.py:70
 msgid "Experience of running deliberative processes"
@@ -341,8 +341,8 @@ msgid "I have organised many"
 msgstr "Sokat szerveztem"
 
 #: src/opendlp/domain/user_signup_surveys.py:81
-msgid "Are you wanting to run a deliberative process soon?"
-msgstr "Tervezel a közeljövőben deliberatív folyamatot indítani?"
+msgid "Where are you in your plans for running a deliberative process?"
+msgstr ""
 
 #: src/opendlp/domain/user_signup_surveys.py:84
 msgid "Yes, within the next 3 months"
@@ -10345,6 +10345,10 @@ msgstr "Kezelés"
 #: templates/profile/view.html:198
 msgid "Edit profile"
 msgstr "Profil szerkesztése"
+
+#: templates/public/_survey_fields.html:51
+msgid "characters"
+msgstr ""
 
 #: templates/public/register.html:10
 msgid "Create an Account"

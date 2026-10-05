@@ -104,20 +104,6 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                so they are revealed only for the email method (shown without JS). #}
             <div class="flex flex-col gap-6"
                  {% if sso_enabled %}x-show="method === 'email'"{% endif %}>
-                <div class="grid grid-cols-2 gap-4">
-                    {{ input(form.first_name.name,
-                    label=form.first_name.label.text,
-                    value=form.first_name.data or "",
-                    error=first_error(form.first_name.errors),
-                    attrs='autocomplete="given-name"')
-                    }}
-                    {{ input(form.last_name.name,
-                    label=form.last_name.label.text,
-                    value=form.last_name.data or "",
-                    error=first_error(form.last_name.errors),
-                    attrs='autocomplete="family-name"')
-                    }}
-                </div>
                 {{ input(form.email.name,
                 label=form.email.label.text,
                 type="email",
@@ -146,6 +132,20 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 error=first_error(form.password_confirm.errors),
                 attrs='autocomplete="new-password"')
                 }}
+                <div class="grid grid-cols-2 gap-4">
+                    {{ input(form.first_name.name,
+                    label=form.first_name.label.text,
+                    value=form.first_name.data or "",
+                    error=first_error(form.first_name.errors),
+                    attrs='autocomplete="given-name"')
+                    }}
+                    {{ input(form.last_name.name,
+                    label=form.last_name.label.text,
+                    value=form.last_name.data or "",
+                    error=first_error(form.last_name.errors),
+                    attrs='autocomplete="family-name"')
+                    }}
+                </div>
             </div>
             {# Optional survey - shared across methods. #}
             {% if show_questions %}
