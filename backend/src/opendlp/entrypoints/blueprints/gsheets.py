@@ -41,7 +41,7 @@ from opendlp.service_layer.replacement_targets import (
     run_feasibility_check,
 )
 from opendlp.service_layer.report_translation import translate_run_report_to_html
-from opendlp.service_layer.respondent_service import count_held_respondents, count_non_pool_respondents
+from opendlp.service_layer.respondent_service import count_held_respondents
 from opendlp.service_layer.selection_history import name_history
 from opendlp.service_layer.sortition import (
     InvalidSelection,
@@ -332,7 +332,6 @@ def render_selection_page(
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
     # Determine data source and tab enabled states
-    non_pool_count = 0
     csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
     replacement_plan = None
@@ -347,13 +346,12 @@ def render_selection_page(
         respondents_enabled = csv_status.has_respondents
         selection_enabled = csv_status.selection_enabled
         csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
-        # Count the respondents outside the pool, and those of them holding a place
+        # Count the respondents holding a place: selected or confirmed
         try:
             with uow:
-                non_pool_count = count_non_pool_respondents(uow, assembly_id)
                 csv_held_count = count_held_respondents(uow, assembly_id)
         except ServiceLayerError as count_error:
-            logger.error("Error counting non-pool respondents", error=str(count_error))
+            logger.error("Error counting held respondents", error=str(count_error))
         if replacement_modal_open:
             with uow:
                 replacement_plan, replacement_validation = _get_db_replacement_dialog_context(
@@ -369,10 +367,12 @@ def render_selection_page(
         respondents_enabled = False
         selection_enabled = False
 
+    # Replacements fill places that are held by nobody: some people must hold a
+    # place, and fewer than the assembly needs.
     replacement_enabled = (
         data_source == "csv"
         and csv_settings_confirmed
-        and non_pool_count > 0
+        and 0 < csv_held_count < assembly.number_to_select
         and active_initial_selection_run_id is None
     )
 
@@ -414,7 +414,6 @@ def render_selection_page(
         targets_enabled=targets_enabled,
         respondents_enabled=respondents_enabled,
         selection_enabled=selection_enabled,
-        non_pool_count=non_pool_count,
         csv_held_count=csv_held_count,
         csv_settings_confirmed=csv_settings_confirmed,
         active_initial_selection_run_id=active_initial_selection_run_id,

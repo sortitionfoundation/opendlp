@@ -1,0 +1,149 @@
+{#
+ABOUTME: The Selection tab's two numbered steps: initial selection and replacement selection
+ABOUTME: Database rows show the held count and only the actions that apply; Google Sheets rows offer every action
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_check, icon_warning %}
+{% set is_db = data_source == "csv" %}
+{% set settings_missing = is_db and not csv_settings_confirmed|default(true) %}
+{% set held = csv_held_count|default(0) %}
+{# The status panel's look: neutral before anyone is selected, amber while
+   places are still to fill, green once every place is filled. #}
+{% if not is_db or held == 0 %}
+    {% set panel_bg = "var(--color-subtle-background-panels)" %}
+    {% set panel_border = "var(--color-borders-dividers)" %}
+    {% set panel_text = "var(--color-body-text)" %}
+{% elif held < assembly.number_to_select %}
+    {% set panel_bg = "var(--color-warning-100)" %}
+    {% set panel_border = "var(--color-warning-400)" %}
+    {% set panel_text = "var(--color-warning-600)" %}
+{% else %}
+    {% set panel_bg = "var(--color-success-100)" %}
+    {% set panel_border = "var(--color-success-400)" %}
+    {% set panel_text = "var(--color-success-600)" %}
+{% endif %}
+<ol class="setup-steps mb-8" id="selection-steps">
+    {# Step 1: initial selection #}
+    <li>
+        <div class="selection-step" id="initial-selection-step">
+            <span class="stepper-number" aria-hidden="true">1</span>
+            <div class="flex-1 min-w-0 flex flex-col gap-4 lg:flex-row lg:items-center">
+                <div class="flex-1 min-w-0">
+                    <h2 class="text-heading-sm">{{ _("Initial Selection") }}</h2>
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {% if is_db %}
+                            {{ _("Run the sortition algorithm to select participants from the uploaded CSV data based on demographic targets.") }}
+                        {% else %}
+                            {{ _("Run the sortition algorithm to select participants from the initial pool based on demographic targets.") }}
+                            {{ _("Use 'Check Spreadsheet' to validate your data before running the actual selection.") }}
+                        {% endif %}
+                    </p>
+                    {# Status panel: the number to select, and for the database the places held #}
+                    <div class="rounded-lg px-4 py-2 mt-2 flex items-center gap-2 max-w-xl"
+                         id="selection-status-panel"
+                         style="background-color: {{ panel_bg }}; border: 1px solid {{ panel_border }}; color: {{ panel_text }};">
+                        {% if is_db and held > 0 %}
+                            {% if held < assembly.number_to_select %}
+                                {{ icon_warning(classes="w-6 h-6 flex-shrink-0") }}
+                            {% else %}
+                                {{ icon_check(classes="w-6 h-6 flex-shrink-0") }}
+                            {% endif %}
+                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-body-sm">
+                                {{ _("Number to select:") }}
+                                <span class="text-heading-sm">{{ assembly.number_to_select }}</span>
+                                <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, edit_number=1) }}"
+                                   class="text-label-md hover:underline ml-2"
+                                   style="color: var(--color-primary-action)">{{ _("Edit") }}</a>
+                            </p>
+                            {% if is_db %}
+                                <p class="text-body-sm">
+                                    {{ _("Selected or confirmed:") }}
+                                    <span class="text-heading-sm">{{ held }}</span>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {# Actions #}
+                <div class="flex flex-wrap gap-2 lg:justify-end">
+                    {% if active_initial_selection_run_id %}
+                        {{ button(_("View Running Selection") ,
+                        href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=active_initial_selection_run_id),
+                        variant="primary") }}
+                    {% elif is_db and held > 0 %}
+                        {# Someone holds a place, so the only way to a fresh selection is a reset #}
+                        {# TODO: Replace browser confirm with proper JS confirmation dialog #}
+                        <form method="post"
+                              action="{{ url_for('db_selection_backoffice.reset_db_selection', assembly_id=assembly.id) }}"
+                              class="inline"
+                              x-data
+                              @submit.prevent="$confirm('{{ _("Are you sure you want to reset all selected respondents to the pool? This action cannot be undone.") }}', $el)">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Reset Selected People") , type="submit", variant="danger", disabled=settings_missing) }}
+                        </form>
+                    {% else %}
+                        {% if not is_db %}
+                            <form method="post"
+                                  action="{{ url_for('gsheets.start_selection_load', assembly_id=assembly.id) }}"
+                                  class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                {{ button(_("Check Spreadsheet") , type="submit", variant="secondary") }}
+                            </form>
+                        {% endif %}
+                        {% set run_url = url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) if is_db else url_for('gsheets.start_selection_run', assembly_id=assembly.id) %}
+                        <form method="post" action="{{ run_url }}?test=1" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Run Test Selection") , type="submit", variant="secondary", disabled=settings_missing) }}
+                        </form>
+                        <form method="post" action="{{ run_url }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {{ button(_("Run Selection") , type="submit", variant="primary", disabled=settings_missing) }}
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </li>
+    {# Step 2: replacement selection #}
+    <li>
+        <div class="selection-step" id="replacement-selection-step">
+            <span class="stepper-number" aria-hidden="true">2</span>
+            <div class="flex-1 min-w-0 flex flex-col gap-4 lg:flex-row lg:items-center">
+                <div class="flex-1 min-w-0">
+                    <h2 class="text-heading-sm">{{ _("Replacement Selection") }}</h2>
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Select replacements when original selections decline or cannot participate.") }}
+                    </p>
+                    {# Why the button is disabled, when it is #}
+                    {% if is_db and not replacement_enabled %}
+                        <p class="text-body-sm" id="replacement-step-hint" style="color: var(--color-secondary-text);">
+                            {% if active_initial_selection_run_id %}
+                                {{ _("Wait for the running selection to finish before selecting replacements.") }}
+                            {% elif settings_missing %}
+                                {{ _("Please review and save the selection settings before running selection.") }}
+                            {% elif held == 0 %}
+                                {{ _("Run the initial selection first. Replacements fill the places of people who withdraw afterwards.") }}
+                            {% else %}
+                                {{ _("Every place is filled. Replacements are only needed once someone selected or confirmed has withdrawn.") }}
+                            {% endif %}
+                        </p>
+                    {% elif not is_db %}
+                        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("First check the spreadsheet to see how many replacements can be selected, then choose how many.") }}
+                        </p>
+                    {% endif %}
+                </div>
+                <div class="flex flex-wrap gap-2 lg:justify-end">
+                    {% set replacement_blocked = is_db and not replacement_enabled %}
+                    {{ button(_("Select replacements") ,
+                    href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, replacement_modal='open'),
+                    variant="primary",
+                    disabled=replacement_blocked,
+                    aria_describedby="replacement-step-hint" if replacement_blocked else "") }}
+                </div>
+            </div>
+        </div>
+    </li>
+</ol>

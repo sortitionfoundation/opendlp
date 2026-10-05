@@ -127,6 +127,30 @@ def _add_run_record(fake_store, **kwargs):
         return record
 
 
+def _step(html: str, step_id: str) -> str:
+    """The markup of one step on the selection page, from its row to the next step or the end of the list."""
+    start = html.index(f'id="{step_id}"')
+    end = html.find('class="selection-step"', start + 1)
+    return html[start : end if end != -1 else html.index("</ol>", start)]
+
+
+def _held_count(html: str) -> int:
+    """The 'Selected or confirmed' number in the status panel."""
+    panel = html[html.index("Selected or confirmed:") :]
+    return int(
+        panel[panel.index('<span class="text-heading-sm">') + len('<span class="text-heading-sm">') :].split("<")[0]
+    )
+
+
+def _set_statuses(fake_store, assembly_id, statuses: list[RespondentStatus]) -> None:
+    """Give the first respondents the statuses listed, in order."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        respondents = sorted(uow.respondents.get_by_assembly_id(assembly_id), key=lambda r: r.external_id)
+        for respondent, status in zip(respondents, statuses, strict=False):
+            respondent.selection_status = status
+        uow.commit()
+
+
 class TestCsvSelectionCheckData:
     """Tests for the CSV check data endpoint."""
 
@@ -455,10 +479,12 @@ class TestCsvSelectionPageIntegration:
 
         assert response.status_code == 200
         assert b"Initial Selection" in response.data
-        assert b"Check Data" in response.data
         assert b"Run Test Selection" in response.data
         assert b"Run Selection" in response.data
         assert b"Check Spreadsheet" not in response.data
+        # The database check runs implicitly; there is no button for it
+        assert b"Check Data" not in response.data
+        assert f"/backoffice/assembly/{assembly.id}/selection/db/check".encode() not in response.data
 
     def test_selection_page_shows_view_running_button_when_db_task_running(
         self, logged_in_admin, assembly_with_csv_config, fake_store
@@ -721,7 +747,7 @@ class TestCsvSelectionSelectedCount:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
 
         assert response.status_code == 200
-        assert b"5 respondents are currently selected" in response.data
+        assert _held_count(response.data.decode()) == 5
         assert b"Reset Selected People" in response.data
         assert b"Run Selection" not in response.data
 
@@ -742,7 +768,7 @@ class TestCsvSelectionSelectedCount:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
 
         assert response.status_code == 200
-        assert b"4 respondents are currently selected" in response.data
+        assert _held_count(response.data.decode()) == 4
         assert b"Reset Selected People" in response.data
 
     def test_selection_page_shows_normal_ui_when_no_selection(self, logged_in_admin, assembly_with_csv_config):
@@ -755,6 +781,110 @@ class TestCsvSelectionSelectedCount:
         assert b"Reset Selected People" not in response.data
         assert b"Run Selection" in response.data
         assert b"Run Test Selection" in response.data
+
+
+class TestSelectionSteps:
+    """The two numbered steps show only the actions that apply to the held count."""
+
+    def test_nobody_held_offers_a_run_and_no_replacements(self, logged_in_admin, assembly_with_csv_config):
+        assembly = assembly_with_csv_config
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Run Selection" in initial
+        assert "Run Test Selection" in initial
+        assert "Reset Selected People" not in initial
+        assert _held_count(html) == 0
+        replacement = _step(html, "replacement-selection-step")
+        assert "Select replacements" in replacement
+        assert 'disabled aria-disabled="true"' in replacement
+        assert "Run the initial selection first." in replacement
+        assert 'aria-describedby="replacement-step-hint"' in replacement
+
+    def test_partly_filled_offers_reset_and_replacements(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 6 + [RespondentStatus.CONFIRMED] * 2)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Reset Selected People" in initial
+        assert "Run Selection" not in initial
+        assert _held_count(html) == 8
+        assert "var(--color-warning-100)" in initial
+        replacement = _step(html, "replacement-selection-step")
+        assert f'href="/backoffice/assembly/{assembly.id}/selection?replacement_modal=open"' in replacement
+        assert "aria-disabled" not in replacement
+        assert "replacement-step-hint" not in replacement
+
+    def test_every_place_filled_offers_reset_only(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 10)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Reset Selected People" in initial
+        assert "Run Selection" not in initial
+        assert _held_count(html) == 10
+        assert "var(--color-success-100)" in initial
+        replacement = _step(html, "replacement-selection-step")
+        assert 'disabled aria-disabled="true"' in replacement
+        assert "Every place is filled." in replacement
+
+    def test_withdrawn_people_do_not_block_a_fresh_selection(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        """Someone who withdrew holds no place, so the run buttons come back and there is nothing to reset."""
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.WITHDRAWN, RespondentStatus.TEST_SUBMISSION])
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Run Selection" in initial
+        assert "Reset Selected People" not in initial
+        assert _held_count(html) == 0
+
+    def test_running_selection_hides_reset_and_replacements(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 4)
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.RUNNING,
+            task_type=SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+        )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "View Running Selection" in initial
+        assert "Reset Selected People" not in initial
+        assert "Run Selection" not in initial
+        replacement = _step(html, "replacement-selection-step")
+        assert 'disabled aria-disabled="true"' in replacement
+        assert "Wait for the running selection to finish" in replacement
+
+    def test_settings_not_confirmed_disables_every_action(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert initial.count('disabled aria-disabled="true"') == 2
+        replacement = _step(html, "replacement-selection-step")
+        assert 'disabled aria-disabled="true"' in replacement
 
 
 class TestSaveCsvSettings:

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 08:52+0000\n"
+"POT-Creation-Date: 2026-10-05 09:13+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1630,9 +1630,9 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:164
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:361
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:434
-#: src/opendlp/entrypoints/blueprints/gsheets.py:436
-#: src/opendlp/entrypoints/blueprints/gsheets.py:848
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1131
+#: src/opendlp/entrypoints/blueprints/gsheets.py:435
+#: src/opendlp/entrypoints/blueprints/gsheets.py:847
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1130
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:187
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:273
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:337
@@ -1695,9 +1695,9 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:410
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:431
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:449
-#: src/opendlp/entrypoints/blueprints/gsheets.py:432
-#: src/opendlp/entrypoints/blueprints/gsheets.py:844
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1125
+#: src/opendlp/entrypoints/blueprints/gsheets.py:431
+#: src/opendlp/entrypoints/blueprints/gsheets.py:843
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1124
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:178
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:264
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:328
@@ -2213,8 +2213,8 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:474
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:197
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:413
-#: src/opendlp/entrypoints/blueprints/gsheets.py:912
-#: src/opendlp/entrypoints/blueprints/gsheets.py:971
+#: src/opendlp/entrypoints/blueprints/gsheets.py:911
+#: src/opendlp/entrypoints/blueprints/gsheets.py:970
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:470
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:522
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:877
@@ -2240,23 +2240,23 @@ msgid "An unexpected error occurred while starting the replacement selection"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:267
-#: src/opendlp/entrypoints/blueprints/gsheets.py:636
-#: src/opendlp/entrypoints/blueprints/gsheets.py:781
+#: src/opendlp/entrypoints/blueprints/gsheets.py:635
+#: src/opendlp/entrypoints/blueprints/gsheets.py:780
 msgid "Task cancelled"
 msgstr "A feladat megszakítva"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:277
-#: src/opendlp/entrypoints/blueprints/gsheets.py:646
-#: src/opendlp/entrypoints/blueprints/gsheets.py:791
+#: src/opendlp/entrypoints/blueprints/gsheets.py:645
+#: src/opendlp/entrypoints/blueprints/gsheets.py:790
 #, python-format
 msgid "Cannot cancel task: %(error)s"
 msgstr "A feladat nem szakítható meg: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:281
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:257
-#: src/opendlp/entrypoints/blueprints/gsheets.py:650
-#: src/opendlp/entrypoints/blueprints/gsheets.py:795
-#: src/opendlp/entrypoints/blueprints/gsheets.py:996
+#: src/opendlp/entrypoints/blueprints/gsheets.py:649
+#: src/opendlp/entrypoints/blueprints/gsheets.py:794
+#: src/opendlp/entrypoints/blueprints/gsheets.py:995
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:557
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:980
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1330
@@ -2266,9 +2266,9 @@ msgstr "A feladat nem található"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:285
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:265
-#: src/opendlp/entrypoints/blueprints/gsheets.py:654
-#: src/opendlp/entrypoints/blueprints/gsheets.py:799
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1011
+#: src/opendlp/entrypoints/blueprints/gsheets.py:653
+#: src/opendlp/entrypoints/blueprints/gsheets.py:798
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1010
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:578
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1001
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1351
@@ -2276,9 +2276,9 @@ msgid "You don't have permission to cancel this task"
 msgstr "Nincs jogosultságod a feladat megszakításához"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:289
-#: src/opendlp/entrypoints/blueprints/gsheets.py:658
-#: src/opendlp/entrypoints/blueprints/gsheets.py:803
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1016
+#: src/opendlp/entrypoints/blueprints/gsheets.py:657
+#: src/opendlp/entrypoints/blueprints/gsheets.py:802
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1015
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:587
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1010
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1360
@@ -2340,14 +2340,14 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:182
 #: templates/backoffice/assembly_selection.html:60
-#: templates/backoffice/assembly_selection.html:164
+#: templates/backoffice/components/selection_steps.html:125
 msgid "Please review and save the selection settings before running selection."
 msgstr ""
 "A kiválasztás futtatása előtt nézd át és mentsd el a kiválasztási "
 "beállításokat."
 
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:252
-#: src/opendlp/entrypoints/blueprints/gsheets.py:989
+#: src/opendlp/entrypoints/blueprints/gsheets.py:988
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:545
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:968
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1318
@@ -2365,111 +2365,111 @@ msgstr "A kiválasztási beállítások mentve"
 msgid "An unexpected error occurred"
 msgstr "Váratlan hiba történt"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:440
+#: src/opendlp/entrypoints/blueprints/gsheets.py:439
 msgid "An error occurred while loading the selection page"
 msgstr "Hiba történt a kiválasztási oldal betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:580
-#: src/opendlp/entrypoints/blueprints/gsheets.py:614
-#: src/opendlp/entrypoints/blueprints/gsheets.py:680
-#: src/opendlp/entrypoints/blueprints/gsheets.py:707
+#: src/opendlp/entrypoints/blueprints/gsheets.py:579
+#: src/opendlp/entrypoints/blueprints/gsheets.py:613
+#: src/opendlp/entrypoints/blueprints/gsheets.py:679
+#: src/opendlp/entrypoints/blueprints/gsheets.py:706
 msgid "Please configure Google Sheets first"
 msgstr "Előbb állítsd be a Google Táblázatot"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:584
-#: src/opendlp/entrypoints/blueprints/gsheets.py:618
+#: src/opendlp/entrypoints/blueprints/gsheets.py:583
+#: src/opendlp/entrypoints/blueprints/gsheets.py:617
 msgid "You don't have permission to run selection"
 msgstr "Nincs jogosultságod a kiválasztás futtatásához"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:588
+#: src/opendlp/entrypoints/blueprints/gsheets.py:587
 msgid "An error occurred while starting the validation task"
 msgstr "Hiba történt az ellenőrzési feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:622
+#: src/opendlp/entrypoints/blueprints/gsheets.py:621
 msgid "An error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztási feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:684
-#: src/opendlp/entrypoints/blueprints/gsheets.py:711
+#: src/opendlp/entrypoints/blueprints/gsheets.py:683
+#: src/opendlp/entrypoints/blueprints/gsheets.py:710
 msgid "You don't have permission to manage tabs"
 msgstr "Nincs jogosultságod a munkalapok kezeléséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:688
+#: src/opendlp/entrypoints/blueprints/gsheets.py:687
 msgid "An error occurred while starting the list tabs task"
 msgstr "Hiba történt a munkalapok listázási feladatának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:715
+#: src/opendlp/entrypoints/blueprints/gsheets.py:714
 msgid "An error occurred while starting the delete tabs task"
 msgstr "Hiba történt a munkalapok törlési feladatának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:827
+#: src/opendlp/entrypoints/blueprints/gsheets.py:826
 msgid "Selection run not found"
 msgstr "A kiválasztási futtatás nem található"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:832
+#: src/opendlp/entrypoints/blueprints/gsheets.py:831
 msgid "Selection run does not belong to this assembly"
 msgstr "A kiválasztási futtatás nem ehhez a közösségi gyűléshez tartozik"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:852
+#: src/opendlp/entrypoints/blueprints/gsheets.py:851
 msgid "An error occurred while loading the run details"
 msgstr "Hiba történt a futtatás részleteinek betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:897
+#: src/opendlp/entrypoints/blueprints/gsheets.py:896
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:858
 #, python-format
 msgid "Could not start task to read the spreadsheet: %(error)s"
 msgstr "Nem sikerült elindítani a Google Táblázat beolvasási feladatát: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:902
+#: src/opendlp/entrypoints/blueprints/gsheets.py:901
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:512
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:867
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:917
+#: src/opendlp/entrypoints/blueprints/gsheets.py:916
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:531
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:886
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:932
+#: src/opendlp/entrypoints/blueprints/gsheets.py:931
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:902
 msgid "Number of people to select is required"
 msgstr "A kiválasztandó emberek számát meg kell adni"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:938
+#: src/opendlp/entrypoints/blueprints/gsheets.py:937
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:908
 msgid "Number of people to select must be greater than zero"
 msgstr "A kiválasztandó emberek számának nullánál nagyobbnak kell lennie"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:941
+#: src/opendlp/entrypoints/blueprints/gsheets.py:940
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:911
 msgid "Number of people to select must be a valid integer"
 msgstr "A kiválasztandó emberek számának érvényes egész számnak kell lennie"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:961
+#: src/opendlp/entrypoints/blueprints/gsheets.py:960
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:935
 #, python-format
 msgid "Failed to start replacement task: %(error)s"
 msgstr "A pótlási feladat indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:976
+#: src/opendlp/entrypoints/blueprints/gsheets.py:975
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:954
 msgid "An unexpected error occurred while starting the replacement task"
 msgstr "Váratlan hiba történt a pótlási feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1053
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1052
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:123
 msgid "Google Sheets configuration updated successfully"
 msgstr "Google Táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1056
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1055
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:105
 msgid "Google Sheets configuration created successfully"
 msgstr "Google Táblázat beállításai sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1066
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1065
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:133
 msgid ""
 "Warning: No columns to keep specified. This means the output will only "
@@ -2480,8 +2480,8 @@ msgstr ""
 "kimenet csak a célszámokhoz és a címellenőrzéshez használt jelentkezői "
 "adatoszlopokat fogja tartalmazni. Ez szándékos?"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1093
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1159
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1092
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1158
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:149
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:225
 msgid "You don't have permission to manage Google Sheets for this assembly"
@@ -2489,28 +2489,28 @@ msgstr ""
 "Nincs jogosultságod a közösségi gyűléshez tartozó Google Táblázat "
 "kezeléséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1097
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1096
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:159
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizd a beírt adatokat, és próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1100
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1135
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1099
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1134
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:168
 msgid "An error occurred while saving the Google Sheets configuration"
 msgstr "Hiba történt a Google Táblázat beállításainak mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1147
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1146
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:208
 msgid "Google Sheets configuration removed successfully"
 msgstr "Google Táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1153
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1152
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:216
 msgid "Google Sheets configuration not found"
 msgstr "Google Táblázat beállításai nem találhatóak"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1163
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1162
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:234
 msgid "An error occurred while removing the Google Sheets configuration"
 msgstr "Hiba történt a Google Táblázat beállításainak eltávolításakor"
@@ -4806,8 +4806,8 @@ msgstr "Szerepkör"
 #: templates/admin/invite_view.html:59 templates/admin/invites.html:69
 #: templates/admin/users.html:118 templates/backoffice/assembly_details.html:53
 #: templates/backoffice/assembly_respondents.html:126
-#: templates/backoffice/assembly_selection.html:200
-#: templates/backoffice/assembly_selection.html:392
+#: templates/backoffice/assembly_selection.html:94
+#: templates/backoffice/assembly_selection.html:221
 #: templates/backoffice/components/db_selection_progress_modal.html:48
 #: templates/backoffice/components/db_selection_progress_modal.html:77
 #: templates/backoffice/components/registration_page_list.html:28
@@ -4844,8 +4844,8 @@ msgid "Used At"
 msgstr "Felhasználva"
 
 #: templates/admin/invite_view.html:95
-#: templates/backoffice/assembly_selection.html:229
-#: templates/backoffice/assembly_selection.html:421
+#: templates/backoffice/assembly_selection.html:123
+#: templates/backoffice/assembly_selection.html:250
 #: templates/main/view_assembly_data.html:84
 msgid "Unknown"
 msgstr "Ismeretlen"
@@ -4935,8 +4935,8 @@ msgstr "Lejárat"
 #: templates/admin/invites.html:72 templates/admin/users.html:121
 #: templates/backoffice/assembly_members.html:51
 #: templates/backoffice/assembly_respondents.html:130
-#: templates/backoffice/assembly_selection.html:212
-#: templates/backoffice/assembly_selection.html:404
+#: templates/backoffice/assembly_selection.html:106
+#: templates/backoffice/assembly_selection.html:233
 #: templates/backoffice/components/db_selection_progress_modal.html:81
 #: templates/backoffice/components/registration_page_list.html:32
 #: templates/backoffice/respondent_field_schema/_editor.html:51
@@ -4951,8 +4951,8 @@ msgstr "Műveletek"
 #: templates/backoffice/assembly_dashboard.html:57
 #: templates/backoffice/assembly_dashboard.html:58
 #: templates/backoffice/assembly_respondents.html:140
-#: templates/backoffice/assembly_selection.html:250
-#: templates/backoffice/assembly_selection.html:439
+#: templates/backoffice/assembly_selection.html:144
+#: templates/backoffice/assembly_selection.html:268
 #: templates/backoffice/components/db_selection_progress_modal.html:91
 #: templates/main/view_assembly_data.html:110
 msgid "View"
@@ -5066,12 +5066,11 @@ msgstr "Felhasználó szerkesztése"
 
 #: templates/admin/user_edit.html:20 templates/admin/users.html:160
 #: templates/backoffice/assembly_respondents.html:143
-#: templates/backoffice/assembly_selection.html:83
-#: templates/backoffice/assembly_selection.html:316
 #: templates/backoffice/assembly_view_respondent.html:20
 #: templates/backoffice/assembly_view_respondent.html:224
 #: templates/backoffice/assembly_view_respondent.html:310
 #: templates/backoffice/components/registration_page_list.html:130
+#: templates/backoffice/components/selection_steps.html:58
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:74
 #: templates/backoffice/respondent_field_schema/_editor.html:92
@@ -5606,8 +5605,7 @@ msgid "Dashboard"
 msgstr "Vezérlőpult"
 
 #: templates/backoffice/assembly_dashboard.html:43
-#: templates/backoffice/assembly_selection.html:78
-#: templates/backoffice/assembly_selection.html:311
+#: templates/backoffice/components/selection_steps.html:54
 msgid "Number to select:"
 msgstr "Kiválasztandók száma:"
 
@@ -6329,13 +6327,13 @@ msgid "Please configure a data source in the Data tab first."
 msgstr "Előbb állíts be egy adatforrást az Adatok lapon."
 
 #: templates/backoffice/assembly_respondents.html:177
-#: templates/backoffice/assembly_selection.html:294
+#: templates/backoffice/assembly_selection.html:188
 msgid "Configure Data Source"
 msgstr "Adatforrás beállítása"
 
 #: templates/backoffice/assembly_selection.html:13
-#: templates/backoffice/assembly_selection.html:202
-#: templates/backoffice/assembly_selection.html:394
+#: templates/backoffice/assembly_selection.html:96
+#: templates/backoffice/assembly_selection.html:223
 #: templates/backoffice/components/assembly_tabs.html:65
 #: templates/db_selection/select.html:7 templates/gsheets/select.html:2
 #: templates/gsheets/select.html:8 templates/gsheets/select.html:11
@@ -6348,152 +6346,42 @@ msgstr "Kiválasztás"
 msgid "Go to Data Settings"
 msgstr "Ugrás az adatbeállításokhoz"
 
-#: templates/backoffice/assembly_selection.html:67
-#: templates/backoffice/assembly_selection.html:300
-msgid "Initial Selection"
-msgstr "Kezdeti kiválasztás"
-
-#: templates/backoffice/assembly_selection.html:70
-msgid ""
-"Run the sortition algorithm to select participants from the uploaded CSV "
-"data based on demographic targets."
-msgstr ""
-"Futtasd a sorsolási algoritmust, hogy a feltöltött CSV adatokból "
-"demográfiai célszámok alapján válassz ki résztvevőket."
-
-#: templates/backoffice/assembly_selection.html:93
-#, python-format
-msgid "%(num)s respondent is currently selected"
-msgid_plural "%(num)s respondents are currently selected"
-msgstr[0] ""
-msgstr[1] ""
-
-#: templates/backoffice/assembly_selection.html:96
-msgid ""
-"A selection has already been run. To run a new initial selection, you "
-"must first reset all respondents to the pool."
-msgstr ""
-"Már futott kiválasztás. Új kezdeti kiválasztás futtatásához előbb minden "
-"jelentkezőt vissza kell állítanod Jelentkező állapotba."
-
-#: templates/backoffice/assembly_selection.html:101
-msgid ""
-"Use 'Check Data' to validate your data before running the actual "
-"selection."
-msgstr ""
-"A tényleges kiválasztás futtatása előtt az „Adatok ellenőrzése” gombbal "
-"ellenőrizd az adataidat."
-
-#: templates/backoffice/assembly_selection.html:108
-#: templates/backoffice/assembly_selection.html:325
-msgid "View Running Selection"
-msgstr "Futó kiválasztás megtekintése"
-
-#: templates/backoffice/assembly_selection.html:118
-msgid ""
-"Are you sure you want to reset all selected respondents to the pool? This"
-" action cannot be undone."
-msgstr ""
-"Biztosan visszaállítod az összes kiválasztott jelentkezőt Jelentkező "
-"állapotba? Ez a művelet nem vonható vissza."
-
-#: templates/backoffice/assembly_selection.html:120
-msgid "Reset Selected People"
-msgstr "Kiválasztott emberek visszaállítása"
-
-#: templates/backoffice/assembly_selection.html:126
-#: templates/backoffice/assembly_selection.html:133
-msgid "Check Data"
-msgstr "Adatok ellenőrzése"
-
-#: templates/backoffice/assembly_selection.html:139
-#: templates/backoffice/assembly_selection.html:339
-#: templates/db_selection/select.html:92 templates/gsheets/select.html:33
-msgid "Run Test Selection"
-msgstr "Tesztkiválasztás futtatása"
-
-#: templates/backoffice/assembly_selection.html:145
-#: templates/backoffice/assembly_selection.html:345
-#: templates/db_selection/select.html:87 templates/gsheets/select.html:27
-msgid "Run Selection"
-msgstr "Rétegzett kiválasztás"
-
-#: templates/backoffice/assembly_selection.html:151
-#: templates/backoffice/assembly_selection.html:351
-#: templates/backoffice/components/db_replacement_modal.html:19
-#: templates/backoffice/components/replacement_modal.html:28
-#: templates/db_selection/replace.html:11
-msgid "Replacement Selection"
-msgstr "Résztvevő pótlása"
-
-#: templates/backoffice/assembly_selection.html:154
-#: templates/backoffice/assembly_selection.html:354
-#: templates/backoffice/components/replacement_modal.html:36
-#: templates/backoffice/components/replacement_modal.html:55
-msgid ""
-"Select replacements when original selections decline or cannot "
-"participate."
-msgstr ""
-"Válassz pótszemélyeket, ha az eredetileg kiválasztottak visszalépnek, "
-"vagy nem tudnak részt venni."
-
-#: templates/backoffice/assembly_selection.html:158
-msgid ""
-"Review the places still to fill, adjust the replacement targets if "
-"needed, then run the selection."
-msgstr ""
-
-#: templates/backoffice/assembly_selection.html:160
-msgid "Wait for the running selection to finish before selecting replacements."
-msgstr ""
-
-#: templates/backoffice/assembly_selection.html:162
-msgid ""
-"Run the initial selection first. Replacements fill the places of people "
-"who withdraw afterwards."
-msgstr ""
-
-#: templates/backoffice/assembly_selection.html:169
-#: templates/backoffice/assembly_selection.html:361
-msgid "Go to Replacement Selection"
-msgstr "Ugrás a résztvevők pótlásához"
-
-#: templates/backoffice/assembly_selection.html:175
-#: templates/backoffice/assembly_selection.html:367
+#: templates/backoffice/assembly_selection.html:69
+#: templates/backoffice/assembly_selection.html:196
 msgid "Selection History"
 msgstr "Kiválasztások előzményei"
 
-#: templates/backoffice/assembly_selection.html:182
-#: templates/backoffice/assembly_selection.html:374
+#: templates/backoffice/assembly_selection.html:76
+#: templates/backoffice/assembly_selection.html:203
 msgid "Showing every run."
 msgstr ""
 
-#: templates/backoffice/assembly_selection.html:185
-#: templates/backoffice/assembly_selection.html:377
+#: templates/backoffice/assembly_selection.html:79
+#: templates/backoffice/assembly_selection.html:206
 msgid "Show only the current selection"
 msgstr ""
 
-#: templates/backoffice/assembly_selection.html:187
-#: templates/backoffice/assembly_selection.html:379
+#: templates/backoffice/assembly_selection.html:81
+#: templates/backoffice/assembly_selection.html:208
 #, python-format
 msgid "Showing the current selection. %(num)s older run is hidden."
 msgid_plural "Showing the current selection. %(num)s older runs are hidden."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/backoffice/assembly_selection.html:190
-#: templates/backoffice/assembly_selection.html:382
+#: templates/backoffice/assembly_selection.html:84
+#: templates/backoffice/assembly_selection.html:211
 msgid "Show all runs"
 msgstr ""
 
-#: templates/backoffice/assembly_selection.html:204
-#: templates/backoffice/assembly_selection.html:396
+#: templates/backoffice/assembly_selection.html:98
+#: templates/backoffice/assembly_selection.html:225
 #: templates/main/view_assembly_data.html:56
 msgid "Started By"
 msgstr "Elindította"
 
-#: templates/backoffice/assembly_selection.html:206
-#: templates/backoffice/assembly_selection.html:398
+#: templates/backoffice/assembly_selection.html:100
+#: templates/backoffice/assembly_selection.html:227
 #: templates/backoffice/components/db_selection_progress_modal.html:63
 #: templates/backoffice/components/replacement_modal.html:141
 #: templates/backoffice/components/selection_progress_modal.html:64
@@ -6503,8 +6391,8 @@ msgstr "Elindította"
 msgid "Started At"
 msgstr "Elkezdve"
 
-#: templates/backoffice/assembly_selection.html:208
-#: templates/backoffice/assembly_selection.html:400
+#: templates/backoffice/assembly_selection.html:102
+#: templates/backoffice/assembly_selection.html:229
 #: templates/backoffice/components/db_selection_progress_modal.html:66
 #: templates/backoffice/components/replacement_modal.html:144
 #: templates/backoffice/components/selection_progress_modal.html:67
@@ -6514,8 +6402,8 @@ msgstr "Elkezdve"
 msgid "Completed At"
 msgstr "Befejezve"
 
-#: templates/backoffice/assembly_selection.html:210
-#: templates/backoffice/assembly_selection.html:402
+#: templates/backoffice/assembly_selection.html:104
+#: templates/backoffice/assembly_selection.html:231
 #: templates/backoffice/assembly_view_respondent.html:241
 #: templates/backoffice/targets/bulk_edit_form.html:227
 #: templates/backoffice/targets/bulk_edit_form.html:278
@@ -6524,62 +6412,32 @@ msgstr "Befejezve"
 msgid "Comment"
 msgstr "Megjegyzés"
 
-#: templates/backoffice/assembly_selection.html:255
+#: templates/backoffice/assembly_selection.html:149
 msgid "Download selected CSV"
 msgstr "Kiválasztottak CSV letöltése"
 
-#: templates/backoffice/assembly_selection.html:276
-#: templates/backoffice/assembly_selection.html:452
+#: templates/backoffice/assembly_selection.html:170
+#: templates/backoffice/assembly_selection.html:281
 msgid "runs"
 msgstr "futtatás"
 
-#: templates/backoffice/assembly_selection.html:281
-#: templates/backoffice/assembly_selection.html:457
+#: templates/backoffice/assembly_selection.html:175
+#: templates/backoffice/assembly_selection.html:286
 msgid "No selection runs yet"
 msgstr "Még nincs kiválasztási futtatás"
 
-#: templates/backoffice/assembly_selection.html:283
-#: templates/backoffice/assembly_selection.html:459
+#: templates/backoffice/assembly_selection.html:177
+#: templates/backoffice/assembly_selection.html:288
 msgid "Run your first selection above to see the history here."
 msgstr ""
 "Futtasd le fent az első kiválasztásodat, és itt látni fogod az "
 "előzményeket."
 
-#: templates/backoffice/assembly_selection.html:292
+#: templates/backoffice/assembly_selection.html:186
 msgid "Please use the Data tab to set up your data before running a selection."
 msgstr "A kiválasztás futtatása előtt add meg az adataidat az Adatok lapon."
 
-#: templates/backoffice/assembly_selection.html:303
-msgid ""
-"Run the sortition algorithm to select participants from the initial pool "
-"based on demographic targets."
-msgstr ""
-"Futtasd a sorsolási algoritmust, hogy a kezdeti jelentkezők közül "
-"demográfiai célszámok alapján válassz ki résztvevőket."
-
-#: templates/backoffice/assembly_selection.html:320
-msgid ""
-"Use 'Check Spreadsheet' to validate your data before running the actual "
-"selection."
-msgstr ""
-"A tényleges kiválasztás futtatása előtt a „Táblázat ellenőrzése” gombbal "
-"ellenőrizd az adataidat."
-
-#: templates/backoffice/assembly_selection.html:333
-#: templates/backoffice/components/replacement_modal.html:44
-#: templates/gsheets/replace.html:22 templates/gsheets/select.html:40
-msgid "Check Spreadsheet"
-msgstr "Táblázat ellenőrzése"
-
-#: templates/backoffice/assembly_selection.html:357
-msgid ""
-"First check the spreadsheet to see how many replacements can be selected,"
-" then choose how many."
-msgstr ""
-"Először ellenőrizd a táblázatot, hogy lásd, hány pótszemély választható "
-"ki, majd add meg, hányat szeretnél."
-
-#: templates/backoffice/assembly_selection.html:472
+#: templates/backoffice/assembly_selection.html:301
 #: templates/gsheets/manage_tabs.html:2 templates/gsheets/manage_tabs.html:8
 #: templates/gsheets/manage_tabs.html:11 templates/gsheets/replace.html:16
 #: templates/gsheets/select.html:47 templates/main/view_assembly_data.html:21
@@ -6587,7 +6445,7 @@ msgstr ""
 msgid "Manage Generated Tabs"
 msgstr "Létrehozott munkalapok kezelése"
 
-#: templates/backoffice/assembly_selection.html:475
+#: templates/backoffice/assembly_selection.html:304
 msgid ""
 "View and delete old selection output tabs from your Google Sheets "
 "spreadsheet."
@@ -6595,7 +6453,7 @@ msgstr ""
 "Nézd meg és töröld a régi kiválasztási kimeneti munkalapokat a Google "
 "Táblázatodból."
 
-#: templates/backoffice/assembly_selection.html:478
+#: templates/backoffice/assembly_selection.html:307
 msgid ""
 "Each selection run creates new tabs in your spreadsheet. Use this to "
 "clean up old tabs that are no longer needed."
@@ -6603,7 +6461,7 @@ msgstr ""
 "Minden kiválasztási futtatás új munkalapokat hoz létre a táblázatodban. "
 "Ezzel törölheted a már nem szükséges régi munkalapokat."
 
-#: templates/backoffice/assembly_selection.html:486
+#: templates/backoffice/assembly_selection.html:315
 #: templates/gsheets/manage_tabs.html:41
 msgid "List Old Tabs"
 msgstr "Régi munkalapok listázása"
@@ -6991,6 +6849,13 @@ msgstr "A közösségi gyűlés szakaszai"
 msgid "Breadcrumb"
 msgstr "Morzsamenü"
 
+#: templates/backoffice/components/db_replacement_modal.html:19
+#: templates/backoffice/components/replacement_modal.html:28
+#: templates/backoffice/components/selection_steps.html:115
+#: templates/db_selection/replace.html:11
+msgid "Replacement Selection"
+msgstr "Résztvevő pótlása"
+
 #: templates/backoffice/components/db_replacement_modal.html:22
 #: templates/backoffice/components/db_replacement_modal.html:32
 #, python-format
@@ -7012,6 +6877,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: templates/backoffice/components/db_replacement_modal.html:25
+#: templates/backoffice/components/selection_steps.html:129
 msgid ""
 "Every place is filled. Replacements are only needed once someone selected"
 " or confirmed has withdrawn."
@@ -7496,11 +7362,27 @@ msgstr "Még nincs regisztrációs oldal létrehozva"
 msgid "Use the button above to create one."
 msgstr "A fenti gombbal hozhatsz létre egyet."
 
+#: templates/backoffice/components/replacement_modal.html:36
+#: templates/backoffice/components/replacement_modal.html:55
+#: templates/backoffice/components/selection_steps.html:117
+msgid ""
+"Select replacements when original selections decline or cannot "
+"participate."
+msgstr ""
+"Válassz pótszemélyeket, ha az eredetileg kiválasztottak visszalépnek, "
+"vagy nem tudnak részt venni."
+
 #: templates/backoffice/components/replacement_modal.html:39
 msgid "First check the spreadsheet to see how many replacements can be selected."
 msgstr ""
 "Először ellenőrizd a táblázatot, hogy lásd, hány pótszemély választható "
 "ki."
+
+#: templates/backoffice/components/replacement_modal.html:44
+#: templates/backoffice/components/selection_steps.html:92
+#: templates/gsheets/replace.html:22 templates/gsheets/select.html:40
+msgid "Check Spreadsheet"
+msgstr "Táblázat ellenőrzése"
 
 #: templates/backoffice/components/replacement_modal.html:62
 msgid "Replacements you can select:"
@@ -7568,6 +7450,86 @@ msgstr "Keresési találatok"
 #: templates/backoffice/components/search_dropdown.html:127
 msgid "No results found"
 msgstr "Nincs találat"
+
+#: templates/backoffice/components/selection_steps.html:32
+msgid "Initial Selection"
+msgstr "Kezdeti kiválasztás"
+
+#: templates/backoffice/components/selection_steps.html:35
+msgid ""
+"Run the sortition algorithm to select participants from the uploaded CSV "
+"data based on demographic targets."
+msgstr ""
+"Futtasd a sorsolási algoritmust, hogy a feltöltött CSV adatokból "
+"demográfiai célszámok alapján válassz ki résztvevőket."
+
+#: templates/backoffice/components/selection_steps.html:37
+msgid ""
+"Run the sortition algorithm to select participants from the initial pool "
+"based on demographic targets."
+msgstr ""
+"Futtasd a sorsolási algoritmust, hogy a kezdeti jelentkezők közül "
+"demográfiai célszámok alapján válassz ki résztvevőket."
+
+#: templates/backoffice/components/selection_steps.html:38
+msgid ""
+"Use 'Check Spreadsheet' to validate your data before running the actual "
+"selection."
+msgstr ""
+"A tényleges kiválasztás futtatása előtt a „Táblázat ellenőrzése” gombbal "
+"ellenőrizd az adataidat."
+
+#: templates/backoffice/components/selection_steps.html:62
+msgid "Selected or confirmed:"
+msgstr ""
+
+#: templates/backoffice/components/selection_steps.html:72
+msgid "View Running Selection"
+msgstr "Futó kiválasztás megtekintése"
+
+#: templates/backoffice/components/selection_steps.html:82
+msgid ""
+"Are you sure you want to reset all selected respondents to the pool? This"
+" action cannot be undone."
+msgstr ""
+"Biztosan visszaállítod az összes kiválasztott jelentkezőt Jelentkező "
+"állapotba? Ez a művelet nem vonható vissza."
+
+#: templates/backoffice/components/selection_steps.html:84
+msgid "Reset Selected People"
+msgstr "Kiválasztott emberek visszaállítása"
+
+#: templates/backoffice/components/selection_steps.html:98
+#: templates/db_selection/select.html:92 templates/gsheets/select.html:33
+msgid "Run Test Selection"
+msgstr "Tesztkiválasztás futtatása"
+
+#: templates/backoffice/components/selection_steps.html:102
+#: templates/db_selection/select.html:87 templates/gsheets/select.html:27
+msgid "Run Selection"
+msgstr "Rétegzett kiválasztás"
+
+#: templates/backoffice/components/selection_steps.html:123
+msgid "Wait for the running selection to finish before selecting replacements."
+msgstr ""
+
+#: templates/backoffice/components/selection_steps.html:127
+msgid ""
+"Run the initial selection first. Replacements fill the places of people "
+"who withdraw afterwards."
+msgstr ""
+
+#: templates/backoffice/components/selection_steps.html:134
+msgid ""
+"First check the spreadsheet to see how many replacements can be selected,"
+" then choose how many."
+msgstr ""
+"Először ellenőrizd a táblázatot, hogy lásd, hány pótszemély választható "
+"ki, majd add meg, hányat szeretnél."
+
+#: templates/backoffice/components/selection_steps.html:140
+msgid "Select replacements"
+msgstr ""
 
 #: templates/backoffice/components/split_button.html:62
 msgid "More actions"
