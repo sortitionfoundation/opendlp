@@ -3,12 +3,15 @@ ABOUTME: Covers both the DB and gsheet progress modal templates: progress, secti
 
 import uuid
 from types import SimpleNamespace
+from typing import Any
 
 from flask import Flask, render_template
+from flask_babel import Babel
 
 from opendlp import config
+from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import ProgressInfo, RespondentStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.translations import gettext
 
 
@@ -16,6 +19,8 @@ def _make_app() -> Flask:
     app = Flask(__name__, template_folder=str(config.get_templates_path()))
     app.config["TESTING"] = True
     app.config["WTF_CSRF_ENABLED"] = False
+    # Flask-Babel supplies the datetimeformat filter the finished modals use for a run's dates.
+    Babel(app)
     app.jinja_env.globals["_"] = gettext
     app.jinja_env.globals["gettext"] = gettext
     app.jinja_env.globals["csrf_token"] = lambda: "fake-csrf-token"
@@ -99,24 +104,19 @@ def _make_app() -> Flask:
     return app
 
 
-def _make_run_record(progress_info: ProgressInfo | None, task_type: SelectionTaskType) -> SimpleNamespace:
-    return SimpleNamespace(
+def _make_run_record(
+    progress: dict[str, Any] | None,
+    task_type: SelectionTaskType,
+    status: SelectionRunStatus = SelectionRunStatus.RUNNING,
+    selected_ids: list[list[str]] | None = None,
+) -> SelectionRunRecord:
+    return SelectionRunRecord(
+        assembly_id=uuid.uuid4(),
         task_id=uuid.uuid4(),
         task_type=task_type,
-        task_type_verbose=task_type.value.replace("_", " "),
-        status=SelectionRunStatus.RUNNING,
-        is_pending=False,
-        is_running=True,
-        is_completed=False,
-        is_failed=False,
-        is_cancelled=False,
-        has_finished=False,
-        error_message="",
-        log_messages=[],
-        selected_ids=None,
-        created_at=None,
-        completed_at=None,
-        progress_info=progress_info,
+        status=status,
+        progress=progress,
+        selected_ids=selected_ids,
     )
 
 
@@ -147,7 +147,7 @@ class TestDbSelectionModalWiringsProgressIndicator:
         run_id = uuid.uuid4()
         assembly = _make_assembly()
         run_record = _make_run_record(
-            ProgressInfo(label="Finding diverse panels (45 of 200 rounds)", current=45, total=200),
+            {"phase": "multiplicative_weights", "current": 45, "total": 200},
             SelectionTaskType.SELECT_FROM_DB,
         )
         with app.test_request_context("/"):
@@ -169,7 +169,7 @@ class TestDbSelectionModalWiringsProgressIndicator:
         app = _make_app()
         run_id = uuid.uuid4()
         assembly = _make_assembly()
-        run_record = _make_run_record(ProgressInfo(label="Processing…"), SelectionTaskType.SELECT_FROM_DB)
+        run_record = _make_run_record(None, SelectionTaskType.SELECT_FROM_DB)
         with app.test_request_context("/"):
             html = render_template(
                 "backoffice/components/db_selection_progress_modal.html",
@@ -192,7 +192,7 @@ class TestDbSelectionModalWiringsProgressIndicator:
         app = _make_app()
         run_id = uuid.uuid4()
         assembly = _make_assembly()
-        run_record = _make_run_record(ProgressInfo(label="Processing…"), SelectionTaskType.SELECT_FROM_DB)
+        run_record = _make_run_record(None, SelectionTaskType.SELECT_FROM_DB)
         with app.test_request_context("/"):
             html = render_template(
                 "backoffice/components/db_selection_progress_modal.html",
@@ -209,29 +209,13 @@ class TestDbSelectionModalWiringsProgressIndicator:
 
 
 class TestDbSelectionModalReportLink:
-    def _completed_run_record(self, task_type: SelectionTaskType) -> SimpleNamespace:
-        return SimpleNamespace(
-            task_type=task_type,
-            task_type_verbose=task_type.value.replace("_", " "),
-            status=SelectionRunStatus.COMPLETED,
-            is_pending=False,
-            is_running=False,
-            is_completed=True,
-            is_failed=False,
-            is_cancelled=False,
-            has_finished=True,
-            error_message="",
-            log_messages=[],
-            selected_ids=[["p1", "p2"]],
-            created_at=None,
-            completed_at=None,
-            progress_info=None,
-        )
+    def _completed_run_record(self, task_type: SelectionTaskType) -> SelectionRunRecord:
+        return _make_run_record(None, task_type, status=SelectionRunStatus.COMPLETED, selected_ids=[["p1", "p2"]])
 
     def _render(
         self,
         app: Flask,
-        run_record: SimpleNamespace,
+        run_record: SelectionRunRecord,
         run_id: uuid.UUID,
         assembly: SimpleNamespace,
         log_messages: list[str] | None = None,
@@ -375,7 +359,7 @@ class TestGsheetSelectionModalWiringsProgressIndicator:
         run_id = uuid.uuid4()
         assembly = _make_assembly()
         run_record = _make_run_record(
-            ProgressInfo(label="Reading spreadsheet…", current=0, total=None),
+            {"phase": "read_gsheet"},
             SelectionTaskType.LOAD_GSHEET,
         )
         with app.test_request_context("/"):
@@ -397,7 +381,7 @@ class TestGsheetSelectionModalWiringsProgressIndicator:
         run_id = uuid.uuid4()
         assembly = _make_assembly()
         run_record = _make_run_record(
-            ProgressInfo(label="Writing results back to spreadsheet…", current=0, total=None),
+            {"phase": "write_gsheet"},
             SelectionTaskType.SELECT_GSHEET,
         )
         with app.test_request_context("/"):
@@ -419,11 +403,7 @@ class TestGsheetSelectionModalCompleted:
     def _render(self, log_messages: list[str], translated_report_html: str = "") -> tuple[str, SimpleNamespace]:
         app = _make_app()
         assembly = _make_assembly()
-        run_record = _make_run_record(None, SelectionTaskType.SELECT_GSHEET)
-        run_record.status = SelectionRunStatus.COMPLETED
-        run_record.is_running = False
-        run_record.is_completed = True
-        run_record.has_finished = True
+        run_record = _make_run_record(None, SelectionTaskType.SELECT_GSHEET, status=SelectionRunStatus.COMPLETED)
         gsheet = SimpleNamespace(url="https://docs.google.com/spreadsheets/d/abc")
         with app.test_request_context("/"):
             html = render_template(
