@@ -154,8 +154,9 @@ class TestReplacementCard:
     def test_card_is_enabled_once_people_are_selected(self, logged_in_admin, assembly_after_withdrawal):
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection")
         assert response.status_code == 200
-        assert b"Review the places still to fill" in response.data
         assert b"replacement_modal=open" in response.data
+        # An enabled step carries no hint: the hint only explains a disabled button.
+        assert b"replacement-step-hint" not in response.data
 
     def test_card_waits_for_a_running_selection(self, logged_in_admin, assembly_after_withdrawal, fake_store):
         with FakeUnitOfWork(store=fake_store) as uow:
