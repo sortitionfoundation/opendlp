@@ -289,6 +289,15 @@ phase 3; not used on the redesigned page.
 
 ## Session log
 
+- **2026-10-05 (names required)** — Gergő reversed the earlier "keep optional"
+  decision: First/Last name are now **required** (per the Figma's asterisks).
+  `DataRequired()` added to both fields, `relax_for_oauth()` extended to relax
+  them for the Google/Microsoft paths (provider supplies names), the obsolete
+  "Optional — your first/last name" descriptions removed (this also resolves the
+  review finding about their dropped hints), `required=true` asterisks on the
+  template inputs, and the BDD registration steps now fill the name fields.
+  Full unit+component+e2e (3320) and the 15 registration BDD scenarios pass.
+
 - **2026-10-05 (Figma v2 field sync)** — The Figma frame gained field changes;
   mapped them onto the working form (Gergő confirmed the four conflicts):
   - **Survey spec** (`SIGNUP_SURVEY_QUESTIONS` — single source, keys unchanged so

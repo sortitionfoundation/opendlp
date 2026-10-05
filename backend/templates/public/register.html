@@ -136,12 +136,14 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                     {{ input(form.first_name.name,
                     label=form.first_name.label.text,
                     value=form.first_name.data or "",
+                    required=true,
                     error=first_error(form.first_name.errors),
                     attrs='autocomplete="given-name"')
                     }}
                     {{ input(form.last_name.name,
                     label=form.last_name.label.text,
                     value=form.last_name.data or "",
+                    required=true,
                     error=first_error(form.last_name.errors),
                     attrs='autocomplete="family-name"')
                     }}
