@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-03 11:46+0000\n"
+"POT-Creation-Date: 2026-10-05 08:52+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -7158,8 +7158,6 @@ msgid "%(count)s spare in the pool"
 msgstr ""
 
 #: templates/backoffice/components/db_replacement_modal.html:218
-#: templates/backoffice/components/db_selection_progress_modal.html:122
-#: templates/backoffice/components/db_selection_progress_modal.html:139
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
 #: templates/backoffice/components/modal.html:115
 #: templates/backoffice/components/modal.html:176
@@ -7241,7 +7239,23 @@ msgstr ""
 msgid "None of the people this run selected are in the respondent list any more."
 msgstr ""
 
-#: templates/backoffice/components/db_selection_progress_modal.html:107
+#: templates/backoffice/components/db_selection_progress_modal.html:104
+msgid "CSV Downloads"
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:106
+msgid "Download selected"
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:111
+msgid "Download remaining"
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:116
+msgid "Download summary report"
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:130
 #: templates/backoffice/components/manage_tabs_progress_modal.html:89
 #: templates/backoffice/components/replacement_modal.html:155
 #: templates/backoffice/components/selection_progress_modal.html:77
@@ -7252,31 +7266,19 @@ msgstr ""
 "Ha a háttérbe helyezed a feladatot, később megtalálod az alábbi "
 "Kiválasztások előzményei szakaszban."
 
-#: templates/backoffice/components/db_selection_progress_modal.html:114
+#: templates/backoffice/components/db_selection_progress_modal.html:137
 #: templates/backoffice/components/manage_tabs_progress_modal.html:96
 #: templates/backoffice/components/replacement_modal.html:162
 #: templates/backoffice/components/selection_progress_modal.html:84
 msgid "Cancel Task"
 msgstr "Feladat megszakítása"
 
-#: templates/backoffice/components/db_selection_progress_modal.html:116
+#: templates/backoffice/components/db_selection_progress_modal.html:139
 #: templates/backoffice/components/manage_tabs_progress_modal.html:98
 #: templates/backoffice/components/replacement_modal.html:164
 #: templates/backoffice/components/selection_progress_modal.html:86
 msgid "Put Task in Background"
 msgstr "Feladat háttérbe helyezése"
-
-#: templates/backoffice/components/db_selection_progress_modal.html:123
-msgid "Download summary report"
-msgstr ""
-
-#: templates/backoffice/components/db_selection_progress_modal.html:128
-msgid "Download remaining"
-msgstr ""
-
-#: templates/backoffice/components/db_selection_progress_modal.html:133
-msgid "Download selected"
-msgstr ""
 
 #: templates/backoffice/components/edit_number_to_select_modal.html:11
 msgid "Edit Number to Select"

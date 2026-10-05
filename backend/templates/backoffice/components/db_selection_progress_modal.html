@@ -1,5 +1,5 @@
 {# ABOUTME: DB selection task progress modal using design system macros #}
-{# ABOUTME: Pure HTMX approach - server controls all state, includes the selected respondents and download links for completed selections #}
+{# ABOUTME: Pure HTMX approach - server controls all state, includes the selected respondents and CSV downloads for completed selections #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom, table_cell_status %}
@@ -99,9 +99,32 @@ classes="max-w-3xl"
         {% endif %}
     {% endcall %}
 {% endif %}
-    {# Footer with action buttons #}
-{{ modal_footer_start() }}
+    {# CSV downloads (collapsed) #}
+{% if has_results %}
+    {% call collapsible_section(_("CSV Downloads"), id="db-selection-downloads") %}
+        <div class="flex flex-wrap gap-2">
+            {{ button(_("Download selected") ,
+            href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=current_selection),
+            variant="primary",
+            classes="whitespace-nowrap"
+            ) }}
+            {{ button(_("Download remaining") ,
+            href=url_for('db_selection_backoffice.download_db_remaining', assembly_id=assembly.id, run_id=current_selection),
+            variant="tertiary",
+            classes="whitespace-nowrap"
+            ) }}
+            {{ button(_("Download summary report") ,
+            href=url_for('db_selection_backoffice.download_db_selection_report', assembly_id=assembly.id, run_id=current_selection),
+            variant="tertiary",
+            classes="whitespace-nowrap"
+            ) }}
+        </div>
+    {% endcall %}
+{% endif %}
+    {# Footer with action buttons while the task runs. A finished task has no footer:
+       the header X, the backdrop and Escape all close the modal. #}
 {% if run_record.is_pending or run_record.is_running %}
+    {{ modal_footer_start() }}
     <div class="w-full flex flex-col gap-2">
         <p class="text-body-md mb-2" style="color: var(--color-body-text)">
             {{ _("If you put the task in the background, you can find it later in the Selection History section below.") }}
@@ -116,27 +139,6 @@ classes="max-w-3xl"
             {{ button(_("Put Task in Background") , href=close_url, variant="secondary") }}
         </div>
     </div>
+    {{ modal_footer_end() }}
 {% endif %}
-{% if has_results %}
-    {# Download links sit in the footer, with the selected list as the primary action #}
-    {{ button(_("Close") , href=close_url, variant="tertiary", classes="whitespace-nowrap") }}
-    {{ button(_("Download summary report") ,
-    href=url_for('db_selection_backoffice.download_db_selection_report', assembly_id=assembly.id, run_id=current_selection),
-    variant="tertiary",
-    classes="whitespace-nowrap"
-    ) }}
-    {{ button(_("Download remaining") ,
-    href=url_for('db_selection_backoffice.download_db_remaining', assembly_id=assembly.id, run_id=current_selection),
-    variant="tertiary",
-    classes="whitespace-nowrap"
-    ) }}
-    {{ button(_("Download selected") ,
-    href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=current_selection),
-    variant="primary",
-    classes="whitespace-nowrap"
-    ) }}
-{% elif run_record.has_finished %}
-    {{ button(_("Close") , href=close_url, variant="primary") }}
-{% endif %}
-{{ modal_footer_end() }}
 {% endcall %}

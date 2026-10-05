@@ -275,7 +275,7 @@ class TestDbSelectionModalReportLink:
         assert "Download summary report" in html
         assert "This was a test selection" in html
 
-    def test_download_links_sit_in_the_footer_with_selected_as_primary(self):
+    def test_download_links_sit_in_a_collapsed_section_with_selected_as_primary(self):
         app = _make_app()
         run_id = uuid.uuid4()
         assembly = _make_assembly()
@@ -283,14 +283,24 @@ class TestDbSelectionModalReportLink:
 
         html = self._render(app, run_record, run_id, assembly)
 
-        footer = html[html.index('class="dialog-footer') :]
-        assert "Download selected" in footer
-        assert "Download remaining" in footer
-        assert "Download summary report" in footer
-        assert "Close" in footer
-        primary_start = footer.index("btn--primary")
-        assert "Download selected" in footer[primary_start : primary_start + 400]
+        downloads = _section(html, "CSV Downloads")
+        assert "open" not in downloads[: downloads.index(">")]
+        assert "Download selected" in downloads
+        assert "Download remaining" in downloads
+        assert "Download summary report" in downloads
+        primary_start = downloads.index("btn--primary")
+        assert "Download selected" in downloads[primary_start : primary_start + 400]
         assert "Download Results" not in html
+
+    def test_finished_run_has_no_footer_and_no_close_link(self):
+        app = _make_app()
+        run_id = uuid.uuid4()
+        assembly = _make_assembly()
+
+        for task_type in (SelectionTaskType.SELECT_FROM_DB, SelectionTaskType.TEST_SELECT_FROM_DB):
+            html = self._render(app, self._completed_run_record(task_type), run_id, assembly)
+            assert 'class="dialog-footer' not in html
+            assert ">Close<" not in html
 
     def test_banner_carries_the_closing_log_message(self):
         app = _make_app()
