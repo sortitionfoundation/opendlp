@@ -330,6 +330,39 @@ class TestCsvSelectionProgressModal:
         assert "Name deleted" in selected
         assert "Download selected" in selected
 
+    def test_progress_modal_shows_the_targets_the_run_used(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """A run that recorded its targets lists them in a Targets section."""
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=run_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            selected_ids=[["1"]],
+            remaining_ids=["2"],
+            targets_used=[
+                {
+                    "name": "Gender",
+                    "sort_order": 0,
+                    "comment": "",
+                    "source_url": "",
+                    "values": [{"value": "Woman", "min": 11, "max": 13}, {"value": "Man", "min": 10, "max": 12}],
+                }
+            ],
+            completed_at=datetime.now(UTC),
+        )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        targets = html[html.index("<span>Targets</span>") : html.index("<span>Selected</span>")]
+        assert "Gender" in targets
+        assert "Woman" in targets
+        assert "Man" in targets
+
     def test_progress_modal_returns_404_when_not_found(self, logged_in_admin, assembly_with_csv_config):
         """Progress modal returns 404 for non-existent task."""
         assembly = assembly_with_csv_config

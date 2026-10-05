@@ -1,6 +1,7 @@
 """ABOUTME: Renders the full selection progress modals and asserts on what they show in each state.
 ABOUTME: Covers both the DB and gsheet progress modal templates: progress, sections, banner and footer."""
 
+import re
 import uuid
 from types import SimpleNamespace
 from typing import Any
@@ -11,6 +12,7 @@ from flask_babel import Babel
 from opendlp import config
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import TargetCategory, TargetValue, target_categories_to_snapshot
 from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.translations import gettext
 
@@ -109,6 +111,7 @@ def _make_run_record(
     task_type: SelectionTaskType,
     status: SelectionRunStatus = SelectionRunStatus.RUNNING,
     selected_ids: list[list[str]] | None = None,
+    targets_used: list[dict[str, Any]] | None = None,
 ) -> SelectionRunRecord:
     return SelectionRunRecord(
         assembly_id=uuid.uuid4(),
@@ -117,6 +120,7 @@ def _make_run_record(
         status=status,
         progress=progress,
         selected_ids=selected_ids,
+        targets_used=targets_used or [],
     )
 
 
@@ -139,6 +143,15 @@ def _section(html: str, title: str) -> str:
     start = html.index(f"<span>{title}</span>")
     start = html.rindex("<details", 0, start)
     return html[start : html.index("</details>", start)]
+
+
+def _row_cells(html: str, first_cell: str) -> list[str]:
+    """The text of each cell in the table row whose first cell reads ``first_cell``."""
+    for row in re.findall(r"<tr.*?</tr>", html, flags=re.DOTALL):
+        cells = [re.sub(r"<[^>]+>", "", cell).strip() for cell in re.findall(r"<td.*?</td>", row, flags=re.DOTALL)]
+        if cells and cells[0] == first_cell:
+            return cells
+    return []
 
 
 class TestDbSelectionModalWiringsProgressIndicator:
@@ -351,6 +364,126 @@ class TestDbSelectionModalReportLink:
         html = self._render(app, run_record, run_id, assembly)
 
         assert "None of the people this run selected are in the respondent list any more." in _section(html, "Selected")
+
+
+def _initial_targets_snapshot() -> list[dict[str, Any]]:
+    assembly_id = uuid.uuid4()
+    return target_categories_to_snapshot([
+        TargetCategory(
+            assembly_id=assembly_id,
+            name="Gender",
+            values=[TargetValue(value="Woman", min=11, max=13), TargetValue(value="Man", min=10, max=12)],
+        ),
+        TargetCategory(
+            assembly_id=assembly_id,
+            name="Age",
+            sort_order=1,
+            values=[TargetValue(value="16-29", min=4, max=6), TargetValue(value="30+", min=17, max=19)],
+        ),
+    ])
+
+
+def _replacement_targets_snapshot() -> list[dict[str, Any]]:
+    """One category in the shape a replacement run stores: the numbers still needed, beside what was held."""
+    return [
+        {
+            "name": "Gender",
+            "sort_order": 0,
+            "comment": "",
+            "source_url": "",
+            "values": [
+                {
+                    "value": "Woman",
+                    "min": 2,
+                    "max": 3,
+                    "min_flex": 0,
+                    "max_flex": 3,
+                    "percentage_target": None,
+                    "comment": "",
+                    "minmax_manual": False,
+                    "overall_min": 11,
+                    "overall_max": 13,
+                    "held": 9,
+                    "calculated_min": 2,
+                    "calculated_max": 4,
+                    "calculated_min_flex": 0,
+                    "calculated_max_flex": 4,
+                },
+            ],
+        }
+    ]
+
+
+class TestDbSelectionModalTargets:
+    def _render(self, run_record: SelectionRunRecord) -> str:
+        app = _make_app()
+        with app.test_request_context("/"):
+            return render_template(
+                "backoffice/components/db_selection_progress_modal.html",
+                assembly=_make_assembly(),
+                csv_status=None,
+                run_record=run_record,
+                run_names={},
+                log_messages=[],
+                run_report=None,
+                translated_report_html="",
+                current_selection=uuid.uuid4(),
+                selected_respondents=[],
+            )
+
+    def test_no_section_without_recorded_targets(self):
+        run_record = _make_run_record(
+            None, SelectionTaskType.SELECT_FROM_DB, status=SelectionRunStatus.COMPLETED, selected_ids=[["p1"]]
+        )
+
+        html = self._render(run_record)
+
+        assert "<span>Targets</span>" not in html
+
+    def test_initial_selection_lists_each_target_with_its_min_and_max(self):
+        run_record = _make_run_record(
+            None,
+            SelectionTaskType.SELECT_FROM_DB,
+            status=SelectionRunStatus.COMPLETED,
+            selected_ids=[["p1"]],
+            targets_used=_initial_targets_snapshot(),
+        )
+
+        targets = _section(self._render(run_record), "Targets")
+
+        assert "open" not in targets[: targets.index(">")]
+        assert targets.count("<table") == 2
+        assert targets.index("Gender") < targets.index("Age")
+        assert targets.count("<th ") == 6
+        for heading in ("Value", "Min", "Max"):
+            assert heading in targets
+        assert _row_cells(targets, "Woman") == ["Woman", "11", "13"]
+        assert _row_cells(targets, "16-29") == ["16-29", "4", "6"]
+        assert "Currently selected" not in targets
+        assert "Still needed" not in targets
+
+    def test_replacement_selection_shows_what_was_held_beside_what_was_still_needed(self):
+        run_record = _make_run_record(
+            None,
+            SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+            status=SelectionRunStatus.COMPLETED,
+            selected_ids=[["p1"]],
+            targets_used=_replacement_targets_snapshot(),
+        )
+
+        targets = _section(self._render(run_record), "Targets")
+
+        for heading in ("Value", "Target", "Currently selected", "Still needed (min)", "Still needed (max)"):
+            assert heading in targets
+        assert targets.count("<th ") == 5
+        assert _row_cells(targets, "Woman") == ["Woman", "11–13", "9", "2", "3"]
+
+    def test_targets_show_while_the_run_is_still_going(self):
+        run_record = _make_run_record(None, SelectionTaskType.SELECT_FROM_DB, targets_used=_initial_targets_snapshot())
+
+        targets = _section(self._render(run_record), "Targets")
+
+        assert _row_cells(targets, "Man") == ["Man", "10", "12"]
 
 
 class TestGsheetSelectionModalWiringsProgressIndicator:

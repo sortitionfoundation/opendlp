@@ -68,6 +68,48 @@ classes="max-w-3xl"
         </div>
     {% endcall %}
 {% endif %}
+    {# The targets the run was given (collapsed). A replacement run records what
+       each value held and its overall target beside the numbers still needed. #}
+{% if run_record.targets_used %}
+    {% call collapsible_section(_("Targets"), id="db-selection-targets") %}
+        {% for category in run_record.targets_used %}
+            {% set category_values = category["values"] %}
+            {% set is_replacement_category = category_values and category_values[0].held is defined %}
+            <h3 class="text-body-sm font-semibold mb-2{% if not loop.first %} mt-4{% endif %}"
+                style="color: var(--color-headings)">{{ category.name }}</h3>
+            {% call table() %}
+                {% if is_replacement_category %}
+                    {{ table_head([
+                    {"label": _("Value")},
+                    {"label": _("Target"), "align": "right"},
+                    {"label": _("Currently selected"), "align": "right"},
+                    {"label": _("Still needed (min)"), "align": "right"},
+                    {"label": _("Still needed (max)"), "align": "right"}
+                    ]) }}
+                {% else %}
+                    {{ table_head([
+                    {"label": _("Value")},
+                    {"label": _("Min"), "align": "right"},
+                    {"label": _("Max"), "align": "right"}
+                    ]) }}
+                {% endif %}
+                {% call table_body() %}
+                    {% for target_value in category_values %}
+                        {% call table_row() %}
+                            {{ table_cell(target_value.value) }}
+                            {% if is_replacement_category %}
+                                {{ table_cell(target_value.overall_min ~ "–" ~ target_value.overall_max, align="right") }}
+                                {{ table_cell(target_value.held, align="right") }}
+                            {% endif %}
+                            {{ table_cell(target_value.min, align="right") }}
+                            {{ table_cell(target_value.max, align="right") }}
+                        {% endcall %}
+                    {% endfor %}
+                {% endcall %}
+            {% endcall %}
+        {% endfor %}
+    {% endcall %}
+{% endif %}
     {# The people this run selected (collapsed) #}
 {% if has_results %}
     {% call collapsible_section(_("Selected"), id="db-selection-selected") %}

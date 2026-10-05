@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 12:50+0000\n"
+"POT-Creation-Date: 2026-10-05 13:04+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -257,7 +257,7 @@ msgstr "Egész szám"
 #: templates/backoffice/assembly_members.html:48
 #: templates/backoffice/assembly_respondents.html:129
 #: templates/backoffice/assembly_view_respondent.html:160
-#: templates/backoffice/components/db_selection_progress_modal.html:80
+#: templates/backoffice/components/db_selection_progress_modal.html:122
 #: templates/main/view_assembly_members.html:11
 #: templates/respondents/view_respondents.html:163
 msgid "Email"
@@ -1092,6 +1092,8 @@ msgstr "Nem kötelező – link arra, hogy honnan származnak a százalékos ar�
 #: src/opendlp/entrypoints/forms.py:697
 #: src/opendlp/service_layer/dashboard_stats.py:344
 #: templates/backoffice/components/db_replacement_modal.html:129
+#: templates/backoffice/components/db_selection_progress_modal.html:83
+#: templates/backoffice/components/db_selection_progress_modal.html:91
 #: templates/backoffice/targets/bulk_edit_form.html:252
 #: templates/backoffice/targets/category_block.html:120
 #: templates/targets/components/category_block.html:69
@@ -1114,6 +1116,7 @@ msgstr "Nem kötelező – a minimum és a maximum ebből adódik"
 
 #: src/opendlp/entrypoints/forms.py:710
 #: src/opendlp/service_layer/selection_report.py:221
+#: templates/backoffice/components/db_selection_progress_modal.html:92
 #: templates/backoffice/targets/bulk_edit_form.html:274
 #: templates/backoffice/targets/category_block.html:142
 #: templates/targets/components/category_block.html:70
@@ -1124,6 +1127,7 @@ msgstr "Min."
 
 #: src/opendlp/entrypoints/forms.py:715
 #: src/opendlp/service_layer/selection_report.py:222
+#: templates/backoffice/components/db_selection_progress_modal.html:93
 #: templates/backoffice/targets/bulk_edit_form.html:276
 #: templates/backoffice/targets/category_block.html:144
 #: templates/targets/components/category_block.html:71
@@ -1778,6 +1782,7 @@ msgstr ""
 #: src/opendlp/service_layer/dashboard_stats.py:343
 #: src/opendlp/service_layer/selection_report.py:206
 #: templates/backoffice/components/db_replacement_modal.html:130
+#: templates/backoffice/components/db_selection_progress_modal.html:84
 msgid "Target"
 msgstr "Kezdés dátuma"
 
@@ -1793,7 +1798,7 @@ msgstr "A regisztráció megkezdése után megjeleníti a jelentkezők adatait."
 #: templates/backoffice/assembly_dashboard.html:114
 #: templates/backoffice/assembly_respondents.html:104
 #: templates/backoffice/assembly_view_respondent.html:226
-#: templates/backoffice/components/db_selection_progress_modal.html:73
+#: templates/backoffice/components/db_selection_progress_modal.html:115
 #: templates/backoffice/components/table.html:207
 #: templates/backoffice/targets/bulk_edit_form.html:268
 #: templates/backoffice/targets/category_block.html:136
@@ -4810,7 +4815,7 @@ msgstr "Szerepkör"
 #: templates/backoffice/assembly_selection.html:94
 #: templates/backoffice/assembly_selection.html:221
 #: templates/backoffice/components/db_selection_progress_modal.html:48
-#: templates/backoffice/components/db_selection_progress_modal.html:77
+#: templates/backoffice/components/db_selection_progress_modal.html:119
 #: templates/backoffice/components/registration_page_list.html:28
 #: templates/backoffice/components/selection_progress_modal.html:49
 #: templates/backoffice/respondents/export_modal.html:49
@@ -4938,7 +4943,7 @@ msgstr "Lejárat"
 #: templates/backoffice/assembly_respondents.html:130
 #: templates/backoffice/assembly_selection.html:106
 #: templates/backoffice/assembly_selection.html:233
-#: templates/backoffice/components/db_selection_progress_modal.html:81
+#: templates/backoffice/components/db_selection_progress_modal.html:123
 #: templates/backoffice/components/registration_page_list.html:32
 #: templates/backoffice/respondent_field_schema/_editor.html:51
 #: templates/backoffice/targets/bulk_edit_form.html:280
@@ -4954,7 +4959,7 @@ msgstr "Műveletek"
 #: templates/backoffice/assembly_respondents.html:140
 #: templates/backoffice/assembly_selection.html:144
 #: templates/backoffice/assembly_selection.html:268
-#: templates/backoffice/components/db_selection_progress_modal.html:91
+#: templates/backoffice/components/db_selection_progress_modal.html:133
 #: templates/main/view_assembly_data.html:110
 msgid "View"
 msgstr "Megtekintés"
@@ -5325,7 +5330,7 @@ msgstr "%(total)s felhasználóból %(start)s–%(end)s látható"
 
 #: templates/admin/users.html:115
 #: templates/backoffice/assembly_respondents.html:127
-#: templates/backoffice/components/db_selection_progress_modal.html:79
+#: templates/backoffice/components/db_selection_progress_modal.html:121
 #: templates/backoffice/components/registration_page_list.html:25
 msgid "Name"
 msgstr "Név"
@@ -5896,6 +5901,7 @@ msgstr "Tölts fel CSV fájlokat a célszámok és az emberek adatainak importá
 #: templates/backoffice/assembly_targets.html:13
 #: templates/backoffice/assembly_targets.html:84
 #: templates/backoffice/components/assembly_tabs.html:45
+#: templates/backoffice/components/db_selection_progress_modal.html:74
 #: templates/main/view_assembly_base.html:36
 #: templates/targets/view_targets.html:2
 msgid "Targets"
@@ -6307,7 +6313,7 @@ msgid "Deleted"
 msgstr "Törölve"
 
 #: templates/backoffice/assembly_respondents.html:128
-#: templates/backoffice/components/db_selection_progress_modal.html:78
+#: templates/backoffice/components/db_selection_progress_modal.html:120
 msgid "ID"
 msgstr "ID"
 
@@ -6981,14 +6987,17 @@ msgid "every value can be filled"
 msgstr ""
 
 #: templates/backoffice/components/db_replacement_modal.html:131
+#: templates/backoffice/components/db_selection_progress_modal.html:85
 msgid "Currently selected"
 msgstr ""
 
 #: templates/backoffice/components/db_replacement_modal.html:132
+#: templates/backoffice/components/db_selection_progress_modal.html:86
 msgid "Still needed (min)"
 msgstr ""
 
 #: templates/backoffice/components/db_replacement_modal.html:133
+#: templates/backoffice/components/db_selection_progress_modal.html:87
 msgid "Still needed (max)"
 msgstr ""
 
@@ -7102,27 +7111,27 @@ msgstr ""
 msgid "Full run report"
 msgstr ""
 
-#: templates/backoffice/components/db_selection_progress_modal.html:98
+#: templates/backoffice/components/db_selection_progress_modal.html:140
 msgid "None of the people this run selected are in the respondent list any more."
 msgstr ""
 
-#: templates/backoffice/components/db_selection_progress_modal.html:104
+#: templates/backoffice/components/db_selection_progress_modal.html:146
 msgid "CSV Downloads"
 msgstr ""
 
-#: templates/backoffice/components/db_selection_progress_modal.html:106
+#: templates/backoffice/components/db_selection_progress_modal.html:148
 msgid "Download selected"
 msgstr ""
 
-#: templates/backoffice/components/db_selection_progress_modal.html:111
+#: templates/backoffice/components/db_selection_progress_modal.html:153
 msgid "Download remaining"
 msgstr ""
 
-#: templates/backoffice/components/db_selection_progress_modal.html:116
+#: templates/backoffice/components/db_selection_progress_modal.html:158
 msgid "Download summary report"
 msgstr ""
 
-#: templates/backoffice/components/db_selection_progress_modal.html:130
+#: templates/backoffice/components/db_selection_progress_modal.html:172
 #: templates/backoffice/components/manage_tabs_progress_modal.html:89
 #: templates/backoffice/components/replacement_modal.html:155
 #: templates/backoffice/components/selection_progress_modal.html:77
@@ -7133,14 +7142,14 @@ msgstr ""
 "Ha a háttérbe helyezed a feladatot, később megtalálod az alábbi "
 "Kiválasztások előzményei szakaszban."
 
-#: templates/backoffice/components/db_selection_progress_modal.html:137
+#: templates/backoffice/components/db_selection_progress_modal.html:179
 #: templates/backoffice/components/manage_tabs_progress_modal.html:96
 #: templates/backoffice/components/replacement_modal.html:162
 #: templates/backoffice/components/selection_progress_modal.html:84
 msgid "Cancel Task"
 msgstr "Feladat megszakítása"
 
-#: templates/backoffice/components/db_selection_progress_modal.html:139
+#: templates/backoffice/components/db_selection_progress_modal.html:181
 #: templates/backoffice/components/manage_tabs_progress_modal.html:98
 #: templates/backoffice/components/replacement_modal.html:164
 #: templates/backoffice/components/selection_progress_modal.html:86
