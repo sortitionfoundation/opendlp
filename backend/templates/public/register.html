@@ -1,6 +1,6 @@
 {#
 ABOUTME: Public create-account page on the OpenDLP design system (ticket 1053)
-ABOUTME: Unified SSO + email registration - Figma node 5570-7007 in the OpenDLP UI file
+ABOUTME: Unified SSO + email registration with a method chooser - Figma node 5570-7007 in the OpenDLP UI file
 #}
 {% extends "public/base.html" %}
 {% from "backoffice/components/button.html" import button %}
@@ -11,6 +11,7 @@ ABOUTME: Unified SSO + email registration - Figma node 5570-7007 in the OpenDLP 
 {% block content %}
     {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
     {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
+    {% set sso_enabled = google_enabled or microsoft_enabled %}
     {% set required_mark %}<span style="color: var(--color-primary-action);">*</span>{% endset %}
     <div class="flex flex-col gap-8">
         <div class="flex flex-col items-center gap-6 text-center">
@@ -37,47 +38,57 @@ ABOUTME: Unified SSO + email registration - Figma node 5570-7007 in the OpenDLP 
                 {{ _("You need an invite code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) }}
             </p>
         {% endif %}
-        <form method="POST" class="flex flex-col gap-6" novalidate>
+        <form method="POST"
+              class="flex flex-col gap-6"
+              novalidate
+              x-data="registrationMethod('{{ selected_method | default('email', true) }}')">
             {{ form.hidden_tag() }}
-            {# A form's implicit-submit default is its first submit button. The
-               Google and Microsoft buttons below are submit buttons too, so
-               without this, Enter in any field would start an OAuth redirect.
-               This hidden email submit makes Enter default to the manual email
-               path; it is out of the tab order and hidden from assistive tech,
-               which use the visible "Create Account" button below. #}
-            <button type="submit" name="action" value="email" class="sr-only" tabindex="-1" aria-hidden="true">{{ _("Create Account with email") }}</button>
-            {# Sign up with an external account. These buttons submit the shared
-               fields (invite code, survey, data agreement); the provider
-               supplies the email and name. #}
-            {% if google_enabled or microsoft_enabled %}
-                <div class="flex flex-col gap-4">
-                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Create an account with") }}</h2>
-                    <div class="grid grid-cols-2 gap-4">
+            {# A form's implicit-submit default is its first submit button. With
+               JS, :value tracks the chosen method so Enter follows the choice;
+               without JS it falls back to email. It is out of the tab order and
+               hidden from assistive tech, which use the visible buttons below. #}
+            <button type="submit"
+                    name="action"
+                    value="email"
+                    :value="method"
+                    class="sr-only"
+                    tabindex="-1"
+                    aria-hidden="true">{{ _("Create Account with email") }}</button>
+            {# Method chooser - only useful with JS, so x-cloak keeps it hidden
+               until Alpine runs; without JS every field and submit button below
+               is shown instead. Choosing a method reveals only the fields that
+               method needs and the matching submit button at the foot. #}
+            {% if sso_enabled %}
+                <div class="flex flex-col gap-4"
+                     x-cloak
+                     role="group"
+                     aria-label="{{ _('Choose how to sign up') }}">
+                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("How would you like to sign up?") }}</h2>
+                    <div class="registration-method-chooser grid grid-cols-3 gap-4">
                         {% if google_enabled %}
                             {{ button("Google",
                             variant="secondary",
-                            type="submit",
                             full_width=true,
                             leading_icon=brand_google(),
-                            aria_label=_("Create an Account with Google"),
-                            attrs='name="action" value="google"')
+                            classes="registration-method-option",
+                            attrs='@click="selectGoogle()" :aria-pressed="method === \'google\'"')
                             }}
                         {% endif %}
                         {% if microsoft_enabled %}
                             {{ button("Microsoft",
                             variant="secondary",
-                            type="submit",
                             full_width=true,
                             leading_icon=brand_microsoft(),
-                            aria_label=_("Create an Account with Microsoft"),
-                            attrs='name="action" value="microsoft"')
+                            classes="registration-method-option",
+                            attrs='@click="selectMicrosoft()" :aria-pressed="method === \'microsoft\'"')
                             }}
                         {% endif %}
-                    </div>
-                    <div class="flex items-center gap-4" aria-hidden="true">
-                        <span class="flex-1" style="border-top: 1px solid var(--color-borders-dividers);"></span>
-                        <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("OR") }}</span>
-                        <span class="flex-1" style="border-top: 1px solid var(--color-borders-dividers);"></span>
+                        {{ button(_("Email address"),
+                        variant="secondary",
+                        full_width=true,
+                        classes="registration-method-option",
+                        attrs='@click="selectEmail()" :aria-pressed="method === \'email\'"')
+                        }}
                     </div>
                 </div>
             {% endif %}
@@ -89,41 +100,10 @@ ABOUTME: Unified SSO + email registration - Figma node 5570-7007 in the OpenDLP 
             required=not feature('open_signup'),
             error=first_error(form.invite_code.errors))
             }}
-            {# Email sign up - email and password apply only to this path. #}
-            {{ input(form.email.name,
-            label=form.email.label.text,
-            type="email",
-            value=form.email.data or "",
-            required=true,
-            error=first_error(form.email.errors),
-            attrs='autocomplete="email"')
-            }}
-            <div class="flex flex-col gap-1.5">
-                {{ input(form.password.name,
-                label=form.password.label.text,
-                type="password",
-                required=true,
-                error=first_error(form.password.errors),
-                attrs='autocomplete="new-password"')
-                }}
-                {% if password_help %}
-                    <div class="text-body-sm [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-0.5"
-                         style="color: var(--color-secondary-text);">{{ password_help|safe }}</div>
-                {% endif %}
-            </div>
-            {{ input(form.password_confirm.name,
-            label=form.password_confirm.label.text,
-            type="password",
-            required=true,
-            error=first_error(form.password_confirm.errors),
-            attrs='autocomplete="new-password"')
-            }}
-            {# Optional extras - names always; the survey questions when enabled. #}
-            <div class="flex flex-col gap-4">
-                <div class="flex flex-col gap-1.5">
-                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Tell us a little about yourself") }}</h2>
-                    <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("These questions are optional, but your answers help us help you.") }}</p>
-                </div>
+            {# Email-only fields - the provider supplies these for Google/Microsoft,
+               so they are revealed only for the email method (shown without JS). #}
+            <div class="flex flex-col gap-6"
+                 {% if sso_enabled %}x-show="method === 'email'"{% endif %}>
                 <div class="grid grid-cols-2 gap-4">
                     {{ input(form.first_name.name,
                     label=form.first_name.label.text,
@@ -138,8 +118,45 @@ ABOUTME: Unified SSO + email registration - Figma node 5570-7007 in the OpenDLP 
                     attrs='autocomplete="family-name"')
                     }}
                 </div>
-                {% if show_questions %}{{ signup_survey_fields(form) }}{% endif %}
+                {{ input(form.email.name,
+                label=form.email.label.text,
+                type="email",
+                value=form.email.data or "",
+                required=true,
+                error=first_error(form.email.errors),
+                attrs='autocomplete="email"')
+                }}
+                <div class="flex flex-col gap-1.5">
+                    {{ input(form.password.name,
+                    label=form.password.label.text,
+                    type="password",
+                    required=true,
+                    error=first_error(form.password.errors),
+                    attrs='autocomplete="new-password"')
+                    }}
+                    {% if password_help %}
+                        <div class="text-body-sm [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-0.5"
+                             style="color: var(--color-secondary-text);">{{ password_help|safe }}</div>
+                    {% endif %}
+                </div>
+                {{ input(form.password_confirm.name,
+                label=form.password_confirm.label.text,
+                type="password",
+                required=true,
+                error=first_error(form.password_confirm.errors),
+                attrs='autocomplete="new-password"')
+                }}
             </div>
+            {# Optional survey - shared across methods. #}
+            {% if show_questions %}
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Tell us a little about yourself") }}</h2>
+                        <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("These questions are optional, but your answers help us help you.") }}</p>
+                    </div>
+                    {{ signup_survey_fields(form) }}
+                </div>
+            {% endif %}
             <fieldset class="flex flex-col gap-3">
                 <legend class="text-heading-lg" style="color: var(--color-headings);">
                     {{ _("Data Agreement") }}{{ required_mark }}
@@ -163,13 +180,39 @@ ABOUTME: Unified SSO + email registration - Figma node 5570-7007 in the OpenDLP 
                      data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"
                      data-action="signup"></div>
             {% endif %}
-            {{ button(_("Create Account"),
-            variant="primary",
-            type="submit",
-            full_width=true,
-            aria_label=_("Create Account with email"),
-            attrs='name="action" value="email"')
-            }}
+            {# Contextual submit - the matching button shows for the chosen method;
+               without JS all of them show so every path still works. #}
+            <div {% if sso_enabled %}x-show="method === 'email'"{% endif %}>
+                {{ button(_("Create Account"),
+                variant="primary",
+                type="submit",
+                full_width=true,
+                aria_label=_("Create Account with email"),
+                attrs='name="action" value="email"')
+                }}
+            </div>
+            {% if google_enabled %}
+                <div x-show="method === 'google'">
+                    {{ button(_("Create an Account with Google"),
+                    variant="secondary",
+                    type="submit",
+                    full_width=true,
+                    leading_icon=brand_google(),
+                    attrs='name="action" value="google"')
+                    }}
+                </div>
+            {% endif %}
+            {% if microsoft_enabled %}
+                <div x-show="method === 'microsoft'">
+                    {{ button(_("Create an Account with Microsoft"),
+                    variant="secondary",
+                    type="submit",
+                    full_width=true,
+                    leading_icon=brand_microsoft(),
+                    attrs='name="action" value="microsoft"')
+                    }}
+                </div>
+            {% endif %}
         </form>
     </div>
 {% endblock %}

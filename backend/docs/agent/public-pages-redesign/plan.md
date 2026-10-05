@@ -289,6 +289,35 @@ phase 3; not used on the redesigned page.
 
 ## Session log
 
+- **2026-10-05 (rebase + chooser port)** — `919-google-login` was rebased onto newer
+  main and gained `68b0ec55`: a **signup-method chooser** (user testing found the
+  combined form confusing) — Google / Microsoft / Email toggle buttons at the top;
+  choosing one reveals only that method's fields and its submit button at the foot;
+  progressive enhancement via the CSP-safe `registrationMethod` Alpine component;
+  the route passes `selected_method` so error re-renders reopen the submitted
+  method. This branch was rebased onto it (`--onto`, six commits replayed) and the
+  chooser **ported into the redesigned page**, superseding step 2's "SSO submits at
+  the top + OR divider" layout (and that part of the Figma frame). Port decisions:
+  - Chooser options are `button(variant="secondary")` with
+    `.registration-method-option` + an `[aria-pressed="true"]` style in
+    `static/backoffice/src/main.css`; the chooser is `x-cloak` (no-JS shows all
+    fields and all submits — same fallback as the base branch's version).
+  - First/Last name moved into the email-only reveal (the provider supplies them
+    for SSO) — they are no longer under "Tell us about yourself", which now renders
+    only when `show_questions`.
+  - `registrationMethod` is registered in the **backoffice** Alpine bundle (the
+    public layout loads that one) and removed from the GOV.UK bundle; the base
+    branch's GOV.UK chooser SCSS (`.js-only`, `.registration-method-*` in
+    `application.scss`) was removed as dead once the old template went.
+  - Footer: upstream main (`d58890cb`) added the User Data Agreement link
+    unconditionally, so the `show_data_agreement` footer arg from step 1 was
+    dropped during the rebase.
+  - Verified: 82 register component/e2e tests + 15 BDD scenarios pass; chooser
+    toggling confirmed in the browser with fake OAuth client IDs (local env has
+    none, so BDD never renders the chooser — browser check is the only live
+    coverage of the toggle; the CSP Alpine vendor build does evaluate the
+    `method === '...'` bindings).
+
 - **2026-10-02 (step 2)** — Register page migrated to
   `templates/public/register.html` on the public layout; route updated; GOV.UK
   register template + survey macro deleted; ordering test updated to SSO-first;
