@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 09:13+0000\n"
+"POT-Creation-Date: 2026-10-05 12:50+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -2260,7 +2260,7 @@ msgstr "A feladat nem szakítható meg: %(error)s"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:557
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:980
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1330
-#: src/opendlp/service_layer/sortition.py:846
+#: src/opendlp/service_layer/sortition.py:853
 msgid "Task not found"
 msgstr "A feladat nem található"
 
@@ -2310,6 +2310,7 @@ msgstr "Hiba történt a beállítások mentése közben"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:494
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:446
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:191
+#: src/opendlp/service_layer/respondent_service.py:358
 #, python-format
 msgid "Reset %(count)s respondents to the pool"
 msgstr "%(count)s fő visszaállítva Jelentkező állapotba"
@@ -3428,7 +3429,7 @@ msgid "Added %(count)s values"
 msgstr "%(count)s érték hozzáadva"
 
 #: src/opendlp/entrypoints/celery/tasks.py:125
-#: src/opendlp/service_layer/sortition.py:986
+#: src/opendlp/service_layer/sortition.py:993
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba az "
@@ -4275,8 +4276,8 @@ msgstr "#"
 msgid "signup"
 msgstr "regisztráció"
 
-#: src/opendlp/service_layer/sortition.py:151
-#: src/opendlp/service_layer/sortition.py:499
+#: src/opendlp/service_layer/sortition.py:157
+#: src/opendlp/service_layer/sortition.py:505
 msgid ""
 "The assembly needs to have a non-zero number to select before a selection"
 " can run"
@@ -4284,37 +4285,37 @@ msgstr ""
 "A kiválasztáshoz a közösségi gyűlésnél a kiválasztandók számának nullától"
 " eltérőnek kell lennie"
 
-#: src/opendlp/service_layer/sortition.py:571
+#: src/opendlp/service_layer/sortition.py:577
 msgid "The number of replacements to select must be at least one"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:574
+#: src/opendlp/service_layer/sortition.py:580
 msgid "A selection is already running for this assembly"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:667
+#: src/opendlp/service_layer/sortition.py:674
 msgid "Selection has not completed — no results to download"
 msgstr "A kiválasztás nem fejeződött be – nincs letölthető eredmény"
 
-#: src/opendlp/service_layer/sortition.py:850
+#: src/opendlp/service_layer/sortition.py:857
 msgid "Cannot cancel task — it has already finished"
 msgstr "A feladat nem szakítható meg – már befejeződött"
 
-#: src/opendlp/service_layer/sortition.py:867
+#: src/opendlp/service_layer/sortition.py:874
 #, python-format
 msgid "Task cancelled by %(user_name)s"
 msgstr "A feladatot %(user_name)s szakította meg"
 
-#: src/opendlp/service_layer/sortition.py:1057
+#: src/opendlp/service_layer/sortition.py:1064
 msgid "Task exceeded timeout"
 msgstr "A feladat túllépte az időkorlátot"
 
-#: src/opendlp/service_layer/sortition.py:1084
+#: src/opendlp/service_layer/sortition.py:1091
 msgid "Task failed to start"
 msgstr "A feladat indítása sikertelen"
 
-#: src/opendlp/service_layer/sortition.py:1096
-#: src/opendlp/service_layer/sortition.py:1107
+#: src/opendlp/service_layer/sortition.py:1103
+#: src/opendlp/service_layer/sortition.py:1114
 msgid "Task stopped unexpectedly"
 msgstr "A feladat váratlanul leállt"
 

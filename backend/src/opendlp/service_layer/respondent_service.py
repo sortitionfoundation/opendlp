@@ -355,7 +355,7 @@ def reset_selection_status(
             status=SelectionRunStatus.COMPLETED,
             task_type=SelectionTaskType.RESET_TO_POOL,
             user_id=user_id,
-            log_messages=[f"Reset {count} respondents to the pool"],
+            log_messages=[_("Reset %(count)s respondents to the pool", count=count)],
             created_at=now,
             completed_at=now,
         )
