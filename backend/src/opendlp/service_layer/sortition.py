@@ -25,7 +25,13 @@ from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import target_categories_to_snapshot
-from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import (
+    DB_SELECTION_TASK_TYPES,
+    ManageOldTabsState,
+    ManageOldTabsStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
+)
 from opendlp.entrypoints.celery import app, tasks
 from opendlp.service_layer.error_translation import translate_sortition_error
 from opendlp.service_layer.exceptions import (
@@ -646,11 +652,12 @@ def get_selected_respondents(uow: AbstractUnitOfWork, record: SelectionRunRecord
 
     Respondents deleted since the run are included; anyone whose row has gone
     entirely is left out. Returns an empty list for a run that has no selected
-    panel yet.
+    panel yet, and for a run that did not select from the database: the people
+    a Google Sheets run selected are rows of the spreadsheet, not respondents.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    if not record.selected_ids:
+    if record.task_type not in DB_SELECTION_TASK_TYPES or not record.selected_ids:
         return []
     return uow.respondents.get_by_external_ids(record.assembly_id, list(record.selected_ids[0]))
 

@@ -282,6 +282,15 @@ class TestGetSelectedRespondents:
         assert sortition.get_selected_respondents(uow, self._record(assembly_id, None)) == []
         assert sortition.get_selected_respondents(uow, self._record(assembly_id, [])) == []
 
+    def test_google_sheets_run_gives_nothing(self, uow):
+        """A Google Sheets run's IDs name spreadsheet rows, even when a respondent happens to share one."""
+        assembly_id = uuid.uuid4()
+        uow.respondents.add(Respondent(assembly_id=assembly_id, external_id="1"))
+        record = self._record(assembly_id, [["1"]])
+        record.task_type = SelectionTaskType.SELECT_GSHEET
+
+        assert sortition.get_selected_respondents(uow, record) == []
+
 
 class TestGetManageOldTabsStatus:
     def get_run_result(self, task_is_list: bool, success: bool | None) -> sortition.RunResult:
