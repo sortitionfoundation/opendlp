@@ -2,7 +2,8 @@
 ABOUTME: Design-system rendering of the optional signup survey fields (SignupSurveyFormMixin)
 ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTIONS without naming any question
 #}
-{% from "backoffice/components/input.html" import input, textarea, select, radio_group, first_error %}
+{% from "backoffice/components/input.html" import input, textarea, radio_group, first_error %}
+{% from "backoffice/components/select_dropdown.html" import select_dropdown %}
 {% macro survey_field(field) %}
     {% if field.type == "RadioField" %}
         {% set options = [] %}
@@ -21,7 +22,7 @@ ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTION
         {% for value, label in field.choices %}
             {% set _ = options.append({"value": value, "label": label}) %}
         {% endfor %}
-        {{ select(field.name,
+        {{ select_dropdown(field.name,
         label=field.label.text,
         options=options,
         value=field.data or "",
