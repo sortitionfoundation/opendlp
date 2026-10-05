@@ -97,10 +97,10 @@ def user_visits_selection_page(admin_logged_in_page: Page, test_assembly):
 
 @when("the user clicks the Replacements button")
 def user_clicks_replacements(admin_logged_in_page: Page):
-    """Click the 'Go to Replacement Selection' button to open modal."""
+    """Click the "Select replacements" button to open modal."""
     page = admin_logged_in_page
     # Button macro renders <a> with role="button" for accessibility
-    btn = page.get_by_role("button", name="Go to Replacement Selection")
+    btn = page.get_by_role("button", name="Select replacements")
     expect(btn).to_be_visible()
     btn.click()
     page.wait_for_load_state()

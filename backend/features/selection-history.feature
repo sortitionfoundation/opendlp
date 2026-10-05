@@ -13,13 +13,20 @@ Feature: Selection History
 
   Scenario: View selection history with records
     Given an assembly with several selection runs
-    When the user visits the selection page
+    When the user visits the selection page showing all runs
     Then the history table displays all runs with correct details
     And the View links are present
 
-  Scenario: Navigate through paginated selection history
+  Scenario: Older runs are hidden until asked for
     Given an assembly with more than 15 selection runs
     When the user visits the selection page
+    Then only the current selection is shown with a link to the older runs
+    When the user clicks the Show all runs link
+    Then the first page is displayed with 15 runs
+
+  Scenario: Navigate through paginated selection history
+    Given an assembly with more than 15 selection runs
+    When the user visits the selection page showing all runs
     Then the first page is displayed with 15 runs
     And the Next pagination link is visible
     And the Previous pagination is disabled
@@ -37,5 +44,5 @@ Feature: Selection History
 
   Scenario: Verify status tags display correctly
     Given an assembly with runs in different statuses
-    When the user visits the selection page
+    When the user visits the selection page showing all runs
     Then each status is displayed in the history table

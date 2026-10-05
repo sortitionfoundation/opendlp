@@ -1,7 +1,7 @@
 {# ABOUTME: Replacement selection modal using design system macros #}
 {# ABOUTME: Pure HTMX approach - server controls all state, no Alpine.js dependency #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
+{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, collapsible_section %}
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set features_pending = replacement_features_pending|default(false) %}
 {# features_pending: postgres has the load task as COMPLETED but Celery's result
@@ -45,7 +45,7 @@ htmx_poll_url=htmx_poll_url
     </form>
 {% elif show_progress %}
         {# PROGRESS STATE - Task is running #}
-    {{ labeled_value(_("Task:") , replacement_run_record.task_type_verbose) }}
+    {{ labeled_value(_("Task:") , run_names.get(replacement_run_record.task_id, replacement_run_record.task_type_verbose)) }}
     {{ status_badge(replacement_run_record.status.value, _("Status:") ) }}
     {{ spinner(_("Processing…") ) }}
     {{ message_log(replacement_log_messages) }}
@@ -96,7 +96,7 @@ htmx_poll_url=htmx_poll_url
     </form>
 {% elif show_result %}
         {# RESULT STATE - Task finished (selection completed, failed, or cancelled) #}
-    {{ labeled_value(_("Task:") , replacement_run_record.task_type_verbose) }}
+    {{ labeled_value(_("Task:") , run_names.get(replacement_run_record.task_id, replacement_run_record.task_type_verbose)) }}
     {{ status_badge(replacement_run_record.status.value, _("Status:") ) }}
         {# Error message #}
     {% if replacement_run_record.is_failed and replacement_run_record.error_message %}
@@ -132,10 +132,8 @@ htmx_poll_url=htmx_poll_url
     {{ message_log(replacement_log_messages, id="replacement-modal-messages", empty_text=_("No messages recorded.") ) }}
         {# Full run report (collapsed) #}
     {% if replacement_translated_report_html %}
-        <details class="mb-4">
-            <summary class="text-label-lg cursor-pointer"
-                     style="color: var(--color-headings)">{{ _("Full Run Report") }}</summary>
-            <div class="rounded-lg p-4 mt-2"
+        {% call collapsible_section(_("Full run report")) %}
+            <div class="rounded-lg p-4"
                  style="background-color: var(--color-subtle-background-panels);
                         border: 1px solid var(--color-borders-dividers)">
                 <div class="text-body-sm" style="color: var(--color-body-text);">{{ replacement_translated_report_html | safe }}</div>
@@ -146,7 +144,7 @@ htmx_poll_url=htmx_poll_url
                     {{ _("Completed At") }}: {{ replacement_run_record.completed_at|datetimeformat('medium') if replacement_run_record.completed_at }}
                 </p>
             </div>
-        </details>
+        {% endcall %}
     {% endif %}
 {% endif %}
     {# Footer with action buttons #}

@@ -76,6 +76,50 @@ class TestGetByExternalId:
         assert respondent_backend.repo.get_by_external_id(uuid.uuid4(), "NOPE") is None
 
 
+class TestGetByExternalIds:
+    def test_returns_matches_ordered_by_external_id(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        for external_id in ("R003", "R001", "R002"):
+            _make_respondent(respondent_backend, assembly.id, external_id=external_id)
+
+        found = respondent_backend.repo.get_by_external_ids(assembly.id, ["R003", "R001"])
+
+        assert [r.external_id for r in found] == ["R001", "R003"]
+
+    def test_scoped_to_assembly(self, respondent_backend: ContractBackend):
+        a1 = respondent_backend.make_assembly()
+        a2 = respondent_backend.make_assembly()
+        mine = _make_respondent(respondent_backend, a1.id, external_id="R001")
+        _make_respondent(respondent_backend, a2.id, external_id="R001")
+
+        found = respondent_backend.repo.get_by_external_ids(a1.id, ["R001"])
+
+        assert [r.id for r in found] == [mine.id]
+
+    def test_includes_deleted_respondents(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+        _make_respondent(respondent_backend, assembly.id, external_id="R002", status=RespondentStatus.DELETED)
+
+        found = respondent_backend.repo.get_by_external_ids(assembly.id, ["R001", "R002"])
+
+        assert [r.external_id for r in found] == ["R001", "R002"]
+
+    def test_ids_with_no_respondent_are_absent(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+
+        found = respondent_backend.repo.get_by_external_ids(assembly.id, ["R001", "NOPE"])
+
+        assert [r.external_id for r in found] == ["R001"]
+
+    def test_no_ids_gives_nothing(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+
+        assert respondent_backend.repo.get_by_external_ids(assembly.id, []) == []
+
+
 class TestGetByAssemblyId:
     def test_returns_respondents_for_assembly(self, respondent_backend: ContractBackend):
         a1 = respondent_backend.make_assembly()

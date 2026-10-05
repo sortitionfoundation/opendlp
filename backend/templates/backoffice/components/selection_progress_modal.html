@@ -1,41 +1,36 @@
 {# ABOUTME: Selection task progress modal using design system macros #}
 {# ABOUTME: Pure HTMX approach - server controls all state, no Alpine.js dependency #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, progress_indicator %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, progress_indicator, collapsible_section %}
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set can_close = run_record.has_finished %}
 {% set htmx_poll_url = url_for('gsheets.selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
 {% call progress_modal(
 id="selection-progress-modal",
-title=_("Task Progress"),
+title=_("Task progress"),
 can_close=can_close,
 close_url=close_url,
-htmx_poll_url=htmx_poll_url
+htmx_poll_url=htmx_poll_url,
+classes="max-w-3xl"
 ) %}
-    {# Task type #}
-{{ labeled_value(_("Task:") , run_record.task_type_verbose) }}
-    {# Status badge #}
-{{ status_badge(run_record.status.value, _("Status:") ) }}
-    {# Live progress indicator for pending/running #}
-{% if run_record.is_pending or run_record.is_running %}{{ progress_indicator(run_record.progress_info) }}{% endif %}
+    {# Success banner: the result line plus the task's closing log message #}
+{% if run_record.is_completed %}
+    {% set completion_message = log_messages[-1] if log_messages else "" %}
+    {% call alert(variant="success", use_caller=true) %}
+        {{ (_("Task completed successfully.") ~ " " ~ completion_message)|trim }}
+        {% if gsheet %}
+            <a href="{{ gsheet.url }}"
+               target="_blank"
+               class="text-label-md hover:underline ml-2"
+               style="color: var(--color-primary-action)">{{ _("View spreadsheet") }}</a>
+        {% endif %}
+    {% endcall %}
+{% endif %}
     {# Error message #}
 {% if run_record.is_failed and run_record.error_message %}
         {# error_message is HTML rendered by server code that escapes user content #}
     {{ labeled_value(_("Error:") , run_record.error_message | safe, "color: var(--color-error-text);") }}
-{% endif %}
-    {# Success message #}
-{% if run_record.is_completed %}
-    <div class="mb-4">
-        <span class="text-label-lg"
-              style="color: var(--color-success-text)">{{ _("Result:") }}</span>
-        <span class="text-body-md" style="color: var(--color-success-text);">{{ _("Task completed successfully.") }}</span>
-        {% if gsheet %}
-            <a href="{{ gsheet.url }}"
-               target="_blank"
-               class="text-label-lg hover:underline ml-2"
-               style="color: var(--color-primary-action)">{{ _("View spreadsheet") }}</a>
-        {% endif %}
-    </div>
 {% endif %}
     {# Cancelled message #}
 {% if run_record.is_cancelled %}
@@ -48,14 +43,20 @@ htmx_poll_url=htmx_poll_url
         {% endif %}
     </div>
 {% endif %}
-    {# Log messages #}
-{{ message_log(log_messages) }}
+    {# Task type #}
+{{ labeled_value(_("Task:") , run_names.get(run_record.task_id, run_record.task_type_verbose), label_classes="text-body-sm") }}
+    {# Status badge #}
+{{ status_badge(run_record.status.value, _("Status"), label_classes="text-body-sm") }}
+    {# Live progress indicator for pending/running #}
+{% if run_record.is_pending or run_record.is_running %}{{ progress_indicator(run_record.progress_info) }}{% endif %}
+    {# Log messages: open while the task runs, collapsed once it has finished #}
+{% call collapsible_section(_("Messages"), open=not run_record.has_finished) %}
+    {{ message_log(log_messages, show_label=false) }}
+{% endcall %}
     {# Full run report (collapsed, shown when finished) #}
 {% if run_record.has_finished and translated_report_html %}
-    <details class="mb-4">
-        <summary class="text-label-lg cursor-pointer"
-                 style="color: var(--color-headings)">{{ _("Full Run Report") }}</summary>
-        <div class="rounded-lg p-4 mt-2"
+    {% call collapsible_section(_("Full run report")) %}
+        <div class="rounded-lg p-4"
              style="background-color: var(--color-subtle-background-panels);
                     border: 1px solid var(--color-borders-dividers)">
             <div class="text-body-sm" style="color: var(--color-body-text);">{{ translated_report_html | safe }}</div>
@@ -66,7 +67,7 @@ htmx_poll_url=htmx_poll_url
                 {{ _("Completed At") }}: {{ run_record.completed_at|datetimeformat('medium') if run_record.completed_at }}
             </p>
         </div>
-    </details>
+    {% endcall %}
 {% endif %}
     {# Footer with action buttons #}
 {{ modal_footer_start() }}

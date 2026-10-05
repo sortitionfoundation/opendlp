@@ -425,10 +425,18 @@ Design notes:
 > warning** (an `alert(variant="warning")` block above the targets, not just
 > hint text): it names the number of places to fill, the range the
 > replacement targets allow, and says the targets need editing so the two
-> agree. The input is then pre-filled with the nearest end of the range so the
-> form still submits, but the organiser has been told plainly that the
-> assembly will end up short (or over) unless they change the targets. The
-> mockup in §3 gains this block; the component tests in §6 cover it.
+> agree. The input stays at `calculated_number` regardless, and the open-time
+> check reports the library's own clash ("needs at least N, more than the M to
+> select"), which blocks the run until the organiser edits the targets or the
+> number. The mockup in §3 gains this block; the component tests in §6 cover it.
+>
+> *Revised 2026-10-02.* The first version pre-filled the input with the nearest
+> end of the range so the form still submitted. That silently changed the
+> assembly size: a value holding more than its maximum contributes zero to the
+> calculated minimums rather than a negative, so the sum of minimums can exceed
+> the places to fill, and the dialog then offered to select more people than
+> there were seats. The number shown is now always the places to fill, on both
+> sides of the range.
 
 ---
 
@@ -601,7 +609,7 @@ point it applies.
 | D5 | Dialog opens via `?replacement_modal=open` on the selection page; only the POST is a new route |
 | D6 | No live recomputation in JS; validation feedback comes from the POST re-render |
 | D7 | Wording follows `docs/language.md`: "Go to Replacement Selection" on the card, "Run Replacement Selection" in the dialog |
-| D8 | Default number is `calculated_number`; if it falls outside the allowed range, show a prominent warning and pre-fill the nearest bound |
+| D8 | Default number is always `calculated_number`; if it falls outside the allowed range, show a prominent warning and let the open-time check block the run (revised 2026-10-02: no longer pulled to the nearest bound) |
 | D9 | Pool shortfall, cross-category conflict and out-of-range number all block the POST |
 
 ---

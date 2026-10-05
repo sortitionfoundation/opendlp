@@ -2,7 +2,7 @@
 ABOUTME: Dialog / modal macros for the backoffice design system
 ABOUTME: Atomic composition — see dialog-* utility classes in main.css. Includes alert_dialog, modal, progress_modal.
 #}
-{% from "backoffice/components/icons.html" import icon_close, icon_spinner %}
+{% from "backoffice/components/icons.html" import icon_close, icon_spinner, icon_chevron_right %}
 {# ============================================================================
    ATOMS — thin Jinja wrappers around the .dialog-* CSS utility classes.
    All static styling lives in main.css; these macros only compose slots.
@@ -308,13 +308,14 @@ Usage:
         {% if text %}<span class="text-body-md" style="color: var(--color-secondary-text);">{{ text }}</span>{% endif %}
     </div>
 {% endmacro %}
-{% macro status_badge(status, label="") %}
+{% macro status_badge(status, label="", label_classes="text-label-lg") %}
     {#
 Status badge for task progress.
 
 Args:
     status: "pending" | "running" | "completed" | "failed" | "cancelled"
     label: Optional label prefix (default: uses status as label)
+    label_classes: Classes for the label (default: text-label-lg)
 
 Usage:
     {{ status_badge("running") }}
@@ -345,14 +346,39 @@ Usage:
     {% set style = badge_styles.get(status, badge_styles["pending"]) %}
     <div class="mb-4">
         {% if label %}
-            <span class="text-label-lg" style="color: var(--color-headings)">{{ label }}</span>
+            <span class="{{ label_classes }}" style="color: var(--color-headings)">{{ label }}</span>
         {% endif %}
         <span class="text-body-md px-2 py-1 rounded"
               style="background-color: {{ style.bg }};
                      color: {{ style.text }}">{{ status | capitalize }}</span>
     </div>
 {% endmacro %}
-{% macro message_log(messages, id="modal-messages", empty_text="") %}
+{% macro collapsible_section(title, open=false, id="") %}
+    {#
+Collapsed section of a progress modal: a chevron and title on one row, with
+the caller's content revealed when the row is opened. The chevron turns to
+point down while open.
+
+Args:
+    title: The row's text
+    open: Whether the section starts open (default: closed)
+    id: Optional id for the details element
+
+Usage:
+    {% call collapsible_section(_("Messages")) %}
+        {{ message_log(log_messages, show_label=false) }}
+    {% endcall %}
+    #}
+    <details class="group mb-2"{% if id %} id="{{ id }}"{% endif %}{% if open %} open{% endif %}>
+        <summary class="flex items-center gap-2 py-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden text-body-sm"
+                 style="color: var(--color-body-text);">
+            {{ icon_chevron_right("w-4 h-4 shrink-0 transition-transform group-open:rotate-90") }}
+            <span>{{ title }}</span>
+        </summary>
+        <div class="pl-6 pb-2">{{ caller() }}</div>
+    </details>
+{% endmacro %}
+{% macro message_log(messages, id="modal-messages", empty_text="", show_label=true) %}
     {#
 Scrollable message log container.
 
@@ -360,6 +386,7 @@ Args:
     messages: List of message strings to display
     id: Element id (used for auto-scroll targeting)
     empty_text: Text to show when no messages (default: "Waiting for task to start…")
+    show_label: Whether to show the "Messages:" label above the log (default: true)
 
 Usage:
     {{ message_log(log_messages) }}
@@ -367,7 +394,7 @@ Usage:
     #}
     {% set default_empty = _("Waiting for task to start…") %}
     <div class="mb-4">
-        <span class="text-label-lg" style="color: var(--color-headings)">{{ _("Messages:") }}</span>
+        {% if show_label %}<span class="text-label-lg" style="color: var(--color-headings)">{{ _("Messages:") }}</span>{% endif %}
         <div id="{{ id }}"
              class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto"
              style="background-color: var(--color-subtle-background-panels);
@@ -439,7 +466,7 @@ For stateless usage with primitive values, use progress_bar() instead.
         {{ progress_bar(label=progress_info.label, current=progress_info.current, total=progress_info.total) }}
     {% endif %}
 {% endmacro %}
-{% macro labeled_value(label, value, value_style="") %}
+{% macro labeled_value(label, value, value_style="", label_classes="text-label-lg") %}
     {#
 Label-value pair for displaying task info.
 
@@ -447,13 +474,14 @@ Args:
     label: The label text
     value: The value to display
     value_style: Optional inline style for the value span
+    label_classes: Classes for the label (default: text-label-lg)
 
 Usage:
     {{ labeled_value(_("Task:"), run_record.task_type_verbose) }}
     {{ labeled_value(_("Error:"), error_msg, "color: var(--color-error-text);") }}
     #}
     <div class="mb-4">
-        <span class="text-label-lg" style="color: var(--color-headings)">{{ label }}</span>
+        <span class="{{ label_classes }}" style="color: var(--color-headings)">{{ label }}</span>
         <span class="text-body-md"
               style="{{ value_style or 'color: var(--color-body-text) ;
                      ' }}">{{ value }}</span>
