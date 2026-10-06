@@ -1,0 +1,33 @@
+{#
+ABOUTME: Base layout for public pages that have migrated to the OpenDLP design system
+ABOUTME: Logo+help header, centred narrow content column, floating flash alerts, footer - no GOV.UK assets
+#}
+{# Public pages leave GOV.UK Frontend one page at a time by switching to this
+   layout - see docs/agent/public-pages-redesign/plan.md. Despite its name,
+   backoffice/base.html is the design-system shell (token CSS, compiled
+   Tailwind, CSP Alpine, shared JS); extending it keeps that asset list in one
+   place. Giving it a neutral name is teardown-phase work on the same plan.
+
+   Templates under templates/public/ are scanned by Tailwind (tailwind.config.js),
+   so pages extending this layout must live in this folder for their utility
+   classes to survive the build. Extra per-page scripts (e.g. Turnstile) go in
+   the inherited "head" block. #}
+{% extends "backoffice/base.html" %}
+{% from "backoffice/components/navigation.html" import navigation %}
+{% from "backoffice/components/floating_alerts.html" import floating_alerts %}
+{% from "backoffice/components/footer.html" import footer with context %}
+{% block title %}{{ _("Open Democratic Lottery Platform") }}{% endblock %}
+{% block body %}
+    <div class="min-h-screen flex flex-col">
+        <a href="#main-content"
+           class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md"
+           style="background-color: var(--color-tables-cards);
+                  color: var(--color-body-text)">{{ _("Skip to main content") }}</a>
+        {{ navigation(logo_href=url_for('main.index'), help_href=help_site_home) }}
+        <main id="main-content" class="flex-1 w-full max-w-xl mx-auto px-6 py-8">
+            {% block content %}{% endblock %}
+        </main>
+        {{ floating_alerts() }}
+        {{ footer() }}
+    </div>
+{% endblock %}

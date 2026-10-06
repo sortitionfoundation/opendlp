@@ -498,7 +498,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
         if not _signup_turnstile_passed():
             flash(_("We could not verify that you are human. Please try again."), "error")
             return render_template(
-                "auth/register.html",
+                "public/register.html",
                 form=form,
                 password_help=password_validators_help_text_html(),
                 show_questions=show_questions,
@@ -511,7 +511,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
             return response
 
     return render_template(
-        "auth/register.html",
+        "public/register.html",
         form=form,
         password_help=password_validators_help_text_html(),
         show_questions=show_questions,

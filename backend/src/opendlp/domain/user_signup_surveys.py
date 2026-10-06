@@ -46,16 +46,12 @@ class SignupSurveyQuestion:
 # leftover_answer_keys), so old data survives question changes.
 SIGNUP_SURVEY_QUESTIONS: list[SignupSurveyQuestion] = [
     SignupSurveyQuestion(
-        key="location",
-        label=_l("Where are you in the world?"),
-    ),
-    SignupSurveyQuestion(
         key="organisation_name",
         label=_l("Name of organisation"),
     ),
     SignupSurveyQuestion(
         key="organisation_size",
-        label=_l("Size of organisation"),
+        label=_l("Size of the organisation"),
         field_type=SurveyFieldType.SELECT,
         choices={
             "just_me": _l("Just me"),
@@ -64,6 +60,10 @@ SIGNUP_SURVEY_QUESTIONS: list[SignupSurveyQuestion] = [
             "51_250": _l("51 to 250 people"),
             "over_250": _l("More than 250 people"),
         },
+    ),
+    SignupSurveyQuestion(
+        key="location",
+        label=_l("Which country are you in?"),
     ),
     SignupSurveyQuestion(
         key="deliberative_experience",
@@ -78,8 +78,8 @@ SIGNUP_SURVEY_QUESTIONS: list[SignupSurveyQuestion] = [
     ),
     SignupSurveyQuestion(
         key="process_plan",
-        label=_l("Are you wanting to run a deliberative process soon?"),
-        field_type=SurveyFieldType.RADIO,
+        label=_l("Where are you in your plans for running a deliberative process?"),
+        field_type=SurveyFieldType.SELECT,
         choices={
             "within_3_months": _l("Yes, within the next 3 months"),
             "within_year": _l("Yes, within the next year"),

@@ -247,15 +247,13 @@ class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any
 
     first_name = StringField(
         _l("First Name"),
-        validators=[Length(max=100)],
-        description=_l("Optional — your first name"),
+        validators=[DataRequired(), Length(max=100)],
         render_kw={"autocomplete": "given-name"},
     )
 
     last_name = StringField(
         _l("Last Name"),
-        validators=[Length(max=100)],
-        description=_l("Optional — your last name"),
+        validators=[DataRequired(), Length(max=100)],
         render_kw={"autocomplete": "family-name"},
     )
 
@@ -286,14 +284,14 @@ class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any
         _validate_invite_code_field(invite_code)
 
     def relax_for_oauth(self) -> None:
-        """Drop email/password validation when a Google or Microsoft button is pressed.
+        """Drop email/password/name validation when a Google or Microsoft button is pressed.
 
         The same form serves all three signup buttons. An OAuth provider supplies
         the email, name and identity on the way back, so its fields are neither
         needed nor shown for that path — only the shared invite code, survey and
         data agreement are collected here and carried across the redirect.
         """
-        for field in (self.email, self.password, self.password_confirm):
+        for field in (self.email, self.password, self.password_confirm, self.first_name, self.last_name):
             field.validators = [Optional()]
 
 
