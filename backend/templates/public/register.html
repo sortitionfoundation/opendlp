@@ -12,7 +12,6 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
     {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
     {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
     {% set sso_enabled = google_enabled or microsoft_enabled %}
-    {% set required_mark %}<span style="color: var(--color-primary-action);">*</span>{% endset %}
     <div class="flex flex-col gap-8">
         <div class="flex flex-col items-center gap-6 text-center">
             <img src="{{ url_for('static', filename='img/join-arch.svg') }}"
@@ -20,8 +19,8 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                  width="322"
                  height="161">
             <div class="flex flex-col gap-1">
-                <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ _("Create an account to OpenDLP") }}</h1>
-                <p class="text-heading-lg" style="color: var(--color-headings);">{{ _("Open Democratic Lottery") }}</p>
+                <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ _("Create an account") }}</h1>
+                <p class="text-heading-lg" style="color: var(--color-headings);">{{ _("Open Democratic Lottery Platform") }}</p>
             </div>
             <p class="text-body-md" style="color: var(--color-body-text);">
                 {{ _("Already have an account?") }}
@@ -92,14 +91,20 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                     </div>
                 </div>
             {% endif %}
-            {# Shared field - used whichever way the account is created. #}
-            {{ input(form.invite_code.name,
-            label=form.invite_code.label.text,
-            value=form.invite_code.data or "",
-            hint=_("Optional — if you were given an invite code, enter it here.") if feature('open_signup') else (form.invite_code.description or ""),
-            required=not feature('open_signup'),
-            error=first_error(form.invite_code.errors))
-            }}
+            {# Shared field - used whichever way the account is created. With open
+               signup the field stays hidden unless a code is actually in play
+               (arrived via /auth/register/<code>, was submitted, or errored) -
+               the invite-URL flow proper is a follow-up, see
+               docs/agent/invite-url-signup/plan.md. #}
+            {% if not feature('open_signup') or form.invite_code.data or form.invite_code.errors %}
+                {{ input(form.invite_code.name,
+                label=form.invite_code.label.text,
+                value=form.invite_code.data or "",
+                hint=_("Optional — if you were given an invite code, enter it here.") if feature('open_signup') else (form.invite_code.description or ""),
+                required=not feature('open_signup'),
+                error=first_error(form.invite_code.errors))
+                }}
+            {% endif %}
             {# Email-only fields - the provider supplies these for Google/Microsoft,
                so they are revealed only for the email method (shown without JS). #}
             <div class="flex flex-col gap-6"
@@ -161,7 +166,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
             {% endif %}
             <fieldset class="flex flex-col gap-3">
                 <legend class="text-heading-lg" style="color: var(--color-headings);">
-                    {{ _("Data Agreement") }}{{ required_mark }}
+                    {{ _("Data Agreement") }}
                 </legend>
                 <p class="text-body-sm" style="color: var(--color-secondary-text);">
                     {{ _("Please read and accept our data agreement to proceed.") }}
@@ -174,6 +179,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 {{ checkbox(form.accept_data_agreement.name,
                 label=form.accept_data_agreement.label.text,
                 checked=form.accept_data_agreement.data,
+                required=true,
                 error=first_error(form.accept_data_agreement.errors))
                 }}
             </fieldset>

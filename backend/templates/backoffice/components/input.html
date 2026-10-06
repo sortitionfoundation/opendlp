@@ -319,7 +319,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro checkbox(name, label="", checked=false, hint="", error="", disabled=false, readonly=false, id="", attrs="", value="") %}
+{% macro checkbox(name, label="", checked=false, hint="", error="", required=false, disabled=false, readonly=false, id="", attrs="", value="") %}
     {#
     Checkbox component based on Figma OpenDLP UI specification.
 
@@ -327,6 +327,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         name: Checkbox name attribute (required)
         label: Label text displayed next to the checkbox
         checked: Boolean for checked state
+        required: Boolean to mark the field as required (asterisk on the label)
         hint: Help text displayed below the label
         error: Error message (displays in error state)
         disabled: Boolean to disable the checkbox
@@ -379,7 +380,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 </span>
                 {# Label text #}
                 {% if label %}
-                    <span class="checkbox-label">{{ label }}</span>
+                    <span class="checkbox-label">{{ label }}
+                        {%- if required %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
+                    </span>
                 {% endif %}
             </label>
             {% if hint %}

@@ -289,6 +289,16 @@ phase 3; not used on the redesigned page.
 
 ## Session log
 
+- **2026-10-06 (Hamish's review feedback)** — Applied from sc-1053 comments:
+  title → "Create an account" (Hamish's preference; "to OpenDLP" grammar), the
+  subtitle spells out "Open Democratic Lottery Platform" (existing msgid), and
+  the required star moved from the Data Agreement legend to the checkbox label
+  (the `checkbox()` macro gained a `required` arg). The optional invite-code
+  field is now **hidden under open signup** unless a code is in play (arrived
+  via `/auth/register/<code>`, submitted, or errored) — the full invite-URL
+  flow (disabled prefilled field, maybe email too, admin copy-URL feature) is
+  a follow-up branch, elaborated in `docs/agent/invite-url-signup/plan.md`.
+
 - **2026-10-05 (names required)** — Gergő reversed the earlier "keep optional"
   decision: First/Last name are now **required** (per the Figma's asterisks).
   `DataRequired()` added to both fields, `relax_for_oauth()` extended to relax
