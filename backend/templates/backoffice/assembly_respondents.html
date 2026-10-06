@@ -11,6 +11,7 @@ ABOUTME: Displays respondent data configuration for assemblies
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom, table_cell_link, table_cell_status %}
 {% from "backoffice/components/pagination.html" import pagination %}
 {% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
 
 {% block title %}{{ _("Respondents") }} - {{ assembly.title }}{% endblock %}
 
@@ -88,29 +89,35 @@ ABOUTME: Displays respondent data configuration for assemblies
                     </div>
                 </div>
                 <div id="export-modal-container" data-fragment-dialog-host></div>
-                {# Filter controls - show when there are respondents or when filter is active #}
-                {% if total_count > 0 or status_filter %}
-                    <div class="flex items-center justify-end gap-4 mb-4">
-                        <div class="flex items-center gap-2">
-                            <label for="status-filter" class="text-body-md" style="color: var(--color-secondary-text);">{{ _("Status:") }}</label>
-                            <select id="status-filter"
-                                    class="px-3 py-2 rounded-lg text-body-md"
-                                    style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
-                                    data-navigate-base-url="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}"
-                                    data-navigate-param="status"
-                                    data-navigate-preserve-scroll>
-                                <option value="" {% if not status_filter %}selected{% endif %}>{{ _("All statuses") }}</option>
-                                <option value="POOL" {% if status_filter == "POOL" %}selected{% endif %}>{{ _("Pool") }}</option>
-                                <option value="SELECTED" {% if status_filter == "SELECTED" %}selected{% endif %}>{{ _("Selected") }}</option>
-                                <option value="CONFIRMED" {% if status_filter == "CONFIRMED" %}selected{% endif %}>{{ _("Confirmed") }}</option>
-                                <option value="WITHDRAWN" {% if status_filter == "WITHDRAWN" %}selected{% endif %}>{{ _("Withdrawn") }}</option>
-                                <option value="DELETED" {% if status_filter == "DELETED" %}selected{% endif %}>{{ _("Deleted") }}</option>
-                            </select>
-                        </div>
+                {# Filter controls - show when there are respondents or when filter is active.
+                   Each status is a link carrying its count, so the counts and the
+                   filter are one control. "All" leaves out deleted respondents. #}
+                {% if has_respondents or status_filter %}
+                    <div class="flex items-start justify-between gap-4 mb-4">
+                        <nav aria-label="{{ _('Filter by status') }}" x-data="{}" x-scroll-preserve-links>
+                            <ul class="flex flex-wrap items-center gap-2" role="list">
+                                {% for link in status_links %}
+                                    <li class="inline-flex items-center gap-1">
+                                        <a href="{{ link.url }}"
+                                           data-status-filter="{{ link.status }}"
+                                           {% if link.current %}aria-current="page"{% endif %}
+                                           class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-label-md border transition-colors"
+                                           style="border-color: var(--color-brand-400);
+                                                  {% if link.current %}background-color: var(--color-brand-400); color: var(--color-neutral-0);{% else %}background-color: transparent; color: var(--color-brand-400);{% endif %}">
+                                            {{ link.label }}
+                                            <span class="font-bold">{{ link.count }}</span>
+                                        </a>
+                                        {% if not link.status %}
+                                            {{ info_icon(_("Every respondent except deleted ones, whose details have been removed. Test submissions are included.")) }}
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </nav>
                         {% if total_count > 0 %}
                             <button type="button"
                                     data-focus-id="respondents-export"
-                                    class="px-4 py-2 rounded-lg text-body-md"
+                                    class="shrink-0 px-4 py-2 rounded-lg text-body-md"
                                     style="background-color: var(--color-primary-action); color: white;"
                                     hx-get="{{ url_for('respondents.export_modal', assembly_id=assembly.id) }}{% if status_filter %}?status={{ status_filter }}{% endif %}"
                                     hx-target="#export-modal-container"

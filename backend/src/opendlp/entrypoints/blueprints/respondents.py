@@ -17,7 +17,11 @@ from opendlp.config import get_max_csv_upload_bytes, get_max_csv_upload_mb
 from opendlp.domain.respondent_field_schema import CHOICE_TYPES, GROUP_DISPLAY_ORDER, GROUP_LABELS, FieldType
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import ALLOWED_SELECTION_STATUS_TRANSITIONS, RespondentStatus
+from opendlp.domain.value_objects import (
+    ALLOWED_SELECTION_STATUS_TRANSITIONS,
+    RespondentStatus,
+    respondent_status_labels,
+)
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.edit_respondent_form import (
     ATTR_FIELD_PREFIX,
@@ -599,6 +603,43 @@ def stop_auto_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
     return redirect(respondents_url)
 
 
+# Most assemblies never have a test submission or a deleted respondent, so these
+# filters appear only once there is something to show - or while one is chosen.
+_STATUS_FILTERS_HIDDEN_AT_ZERO = {RespondentStatus.TEST_SUBMISSION, RespondentStatus.DELETED}
+
+
+def _status_filter_links(
+    assembly_id: uuid.UUID, status_counts: dict[RespondentStatus, int], status_filter: str
+) -> list[dict[str, Any]]:
+    """The respondents list's status filters, each with its count.
+
+    "All" comes first and counts what the unfiltered list shows: everyone but the
+    DELETED. The statuses follow in ``respondent_status_labels`` order.
+    """
+    links: list[dict[str, Any]] = [
+        {
+            "status": "",
+            "label": _("All"),
+            "count": sum(count for status, count in status_counts.items() if status != RespondentStatus.DELETED),
+            "url": url_for("respondents.view_assembly_respondents", assembly_id=assembly_id),
+            "current": not status_filter,
+        }
+    ]
+    for status, label in respondent_status_labels.items():
+        count = status_counts.get(status, 0)
+        current = status_filter == status.value
+        if status in _STATUS_FILTERS_HIDDEN_AT_ZERO and not count and not current:
+            continue
+        links.append({
+            "status": status.value,
+            "label": label,
+            "count": count,
+            "url": url_for("respondents.view_assembly_respondents", assembly_id=assembly_id, status=status.value),
+            "current": current,
+        })
+    return links
+
+
 @respondents_bp.route("/assembly/<uuid:assembly_id>/respondents")
 @login_required
 def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -630,6 +671,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     per_page=per_page,
                     status=status_filter,
                 )
+            status_counts = uow.respondents.count_by_status(assembly_id)
             viewer = uow.users.get(current_user.id)
             assembly_obj = uow.assemblies.get(assembly_id)
             can_edit = bool(viewer and assembly_obj and can_edit_respondent(viewer, assembly_obj))
@@ -682,6 +724,8 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             total_pages=total_pages,
             total_count=total_count,
             status_filter=status_filter_str,
+            status_links=_status_filter_links(assembly_id, status_counts, status_filter_str),
+            has_respondents=bool(sum(status_counts.values())),
             can_edit=can_edit,
             respondent_gsheet=respondent_gsheet,
         ), 200

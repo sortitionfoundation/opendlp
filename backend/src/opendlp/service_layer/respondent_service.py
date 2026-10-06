@@ -410,6 +410,9 @@ def get_respondents_for_assembly_paginated(
 ) -> tuple[list[Respondent], int]:
     """Get paginated respondents for an assembly. Returns (respondents, total_count).
 
+    With no ``status``, DELETED respondents are left out: their details are gone,
+    so they are reached only by filtering to DELETED explicitly.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     user = uow.users.get(user_id)
@@ -432,7 +435,6 @@ def get_respondents_for_assembly_paginated(
         per_page=per_page,
         status=status,
         eligible_only=False,
-        include_deleted=True,
     )
     return [r.create_detached_copy() for r in respondents], total_count
 
