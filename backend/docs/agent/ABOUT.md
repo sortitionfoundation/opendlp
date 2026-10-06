@@ -14,6 +14,7 @@ docs/agent/
 ├── frontend_testing.md         # Permanent: testing guidelines
 ├── govuk_components.md         # Permanent: GOV.UK component reference
 ├── migration_notes.md          # Permanent: migration guidelines
+├── future_work/                # Problems found but deliberately left for later
 └── history/                    # Completed/merged feature specs
 ```
 
@@ -22,6 +23,11 @@ docs/agent/
 ### Top Level (Always Relevant)
 - **Permanent guidelines** - Coding standards, testing approaches, design system docs
 - **Active feature folders** - Current development work with specs and prompts
+
+### future_work/ Folder
+- **Deferred problems** - Issues found while working on something else, written
+  up so they can become an issue or a branch later. Each file is named for what
+  it covers, not for the branch that found it
 
 ### history/ Folder
 - **Completed specs** - Feature specifications that have been implemented and merged
