@@ -800,3 +800,60 @@ body.register-page {
     padding-left: govuk-spacing(3);
     border-left: 5px solid $govuk-error-colour;
 }
+
+// Progressive enhancement: elements that only make sense once JavaScript runs.
+// base.html adds `js-enabled` to the body, so hide `.js-only` until it does.
+// Written as `body:not(.js-enabled)` so the element keeps its own `display`
+// (flex, grid, ...) when JS is present, instead of being reset to block.
+body:not(.js-enabled) .js-only {
+    display: none;
+}
+
+// Registration method chooser: a small segmented control that lets the user pick
+// email / Google / Microsoft signup, revealing only the fields that method needs.
+.registration-method-chooser {
+    display: flex;
+    flex-wrap: wrap;
+    gap: govuk-spacing(2);
+    margin-top: govuk-spacing(2);
+}
+
+.registration-method-option {
+    display: inline-flex;
+    align-items: center;
+    gap: govuk-spacing(1);
+    padding: govuk-spacing(2) govuk-spacing(3);
+    font-family: $govuk-font-family;
+    font-size: 1rem;
+    line-height: 1.25;
+    color: $govuk-text-colour;
+    background-color: govuk-colour("white");
+    border: 2px solid $govuk-border-colour;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+        background-color: govuk-colour("light-grey");
+    }
+
+    &:focus {
+        outline: 3px solid rgba(0, 0, 0, 0);
+        box-shadow: 0 0 0 3px $govuk-focus-colour;
+    }
+
+    // The chosen method is marked with aria-pressed, which also drives the look.
+    &[aria-pressed="true"] {
+        border-color: $govuk-link-colour;
+        box-shadow: inset 0 0 0 1px $govuk-link-colour;
+        font-weight: bold;
+    }
+
+    &__icon {
+        display: inline-flex;
+
+        svg {
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+    }
+}
