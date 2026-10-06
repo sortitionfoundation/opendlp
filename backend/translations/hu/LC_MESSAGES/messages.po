@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-06 16:35+0100\n"
+"POT-Creation-Date: 2026-10-06 16:42+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -536,7 +536,7 @@ msgstr ""
 
 #: src/opendlp/domain/value_objects.py:204
 #: src/opendlp/entrypoints/blueprints/respondents.py:464
-#: templates/backoffice/components/table.html:201
+#: templates/backoffice/components/table.html:203
 #: templates/respondents/view_respondents.html:131
 msgid "Pool"
 msgstr "Jelentkezők"
@@ -550,7 +550,7 @@ msgstr "Jelentkezők"
 #: templates/backoffice/assembly_dashboard.html:114
 #: templates/backoffice/assembly_view_respondent.html:226
 #: templates/backoffice/components/db_selection_progress_modal.html:115
-#: templates/backoffice/components/table.html:207
+#: templates/backoffice/components/table.html:209
 #: templates/backoffice/targets/bulk_edit_form.html:268
 #: templates/backoffice/targets/category_block.html:136
 #: templates/respondents/view_respondents.html:132
@@ -563,26 +563,27 @@ msgstr "Kiválasztva"
 #: src/opendlp/service_layer/dashboard_stats.py:359
 #: templates/backoffice/assembly_dashboard.html:115
 #: templates/backoffice/assembly_dashboard.html:116
-#: templates/backoffice/components/table.html:204
+#: templates/backoffice/components/table.html:206
 #: templates/respondents/view_respondents.html:133
 msgid "Confirmed"
 msgstr "Megerősítve"
 
 #: src/opendlp/domain/value_objects.py:207
 #: src/opendlp/entrypoints/blueprints/respondents.py:467
-#: templates/backoffice/components/table.html:210
+#: templates/backoffice/components/table.html:212
 #: templates/respondents/view_respondents.html:134
 msgid "Withdrawn"
 msgstr "Visszalépett"
 
 #: src/opendlp/domain/value_objects.py:208
 #: src/opendlp/entrypoints/blueprints/respondents.py:468
+#: templates/backoffice/components/table.html:215
 msgid "Test submission"
 msgstr "Tesztbeküldés"
 
 #: src/opendlp/domain/value_objects.py:209
 #: templates/backoffice/assembly_view_respondent.html:227
-#: templates/backoffice/components/table.html:213
+#: templates/backoffice/components/table.html:218
 msgid "Deleted"
 msgstr "Törölve"
 
@@ -639,7 +640,7 @@ msgstr "A válaszértékeknek különbözniük kell: \"%(value)s\" többször sz
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
 #: templates/backoffice/components/input.html:356
-#: templates/backoffice/components/table.html:247
+#: templates/backoffice/components/table.html:252
 msgid "Yes"
 msgstr "Igen"
 
@@ -651,7 +652,7 @@ msgstr "Igen"
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
 #: templates/backoffice/components/input.html:356
-#: templates/backoffice/components/table.html:249
+#: templates/backoffice/components/table.html:254
 msgid "No"
 msgstr "Nem"
 

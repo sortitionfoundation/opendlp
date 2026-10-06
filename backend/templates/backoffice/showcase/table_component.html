@@ -164,6 +164,11 @@ ABOUTME: Displays table variants with hover effect, actions, and responsive layo
             {{ table_cell("alice@example.com") }}
           {% endcall %}
           {% call table_row() %}
+            {{ table_cell_status("test_submission") }}
+            {{ table_cell("R006", bold=true) }}
+            {{ table_cell("tester@example.com") }}
+          {% endcall %}
+          {% call table_row() %}
             {{ table_cell_status("deleted") }}
             {{ table_cell("R005", bold=true) }}
             {{ table_cell("deleted@example.com") }}

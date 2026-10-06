@@ -491,6 +491,18 @@ class TestRespondentsStatusFilter:
         assert _status_links(body)["DELETED"] == "Deleted 0"
         assert _current_status_filter(body) == ["DELETED"]
 
+    def test_test_submission_rows_show_a_translatable_status_label(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.TEST_SUBMISSION])
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents?status=TEST_SUBMISSION"
+        ).get_data(as_text=True)
+
+        assert "Test_submission" not in body
+        assert '<span style="color: var(--color-body-text);">Test submission</span>' in body
+
     def test_unfiltered_list_leaves_out_deleted_respondents(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
     ) -> None:
