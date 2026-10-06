@@ -30,13 +30,13 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     {% set tab_items = [
     {
     "key": "details",
-    "label": _("Details") ,
+    "label": _("Project Details") ,
     "href": url_for('backoffice.view_assembly', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "details"
     },
     {
     "key": "data",
-    "label": _("Data"),
+    "label": _("Data Source"),
     "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "data"
     },
@@ -49,7 +49,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     },
     {
     "key": "registration",
-    "label": _("Registration"),
+    "label": _("Registration Fields"),
     "href": url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "registration"
     },
@@ -62,7 +62,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     },
     {
     "key": "selection",
-    "label": _("Selection"),
+    "label": _("Select and Replace"),
     "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "selection",
     "disabled": not selection_enabled

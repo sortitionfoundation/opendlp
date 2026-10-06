@@ -100,7 +100,7 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
 
     # Then check that the Selection link goes to the gsheet_select page
     # We use `exact=True` because otherwise we might select the "Data & Selection" link in the nav above
-    link = admin_logged_in_page.get_by_role("link", name="Selection", exact=True)
+    link = admin_logged_in_page.get_by_role("link", name="Select and Replace", exact=True)
     expect(link).to_be_visible()
     link.click()
     expect(admin_logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", str(assembly_to_select.id)))
@@ -123,7 +123,7 @@ def _(admin_logged_in_page: Page, assembly_to_select: Assembly):
     admin_logged_in_page.goto(view_url)
 
     # Then check that the Selection link goes to the gsheet_select page
-    link = admin_logged_in_page.get_by_role("link", name="Selection", exact=True)
+    link = admin_logged_in_page.get_by_role("link", name="Select and Replace", exact=True)
     expect(link).to_be_visible()
     link.click()
     expect(admin_logged_in_page).to_have_url(Urls.for_assembly("gsheet_select", str(assembly_to_select.id)))

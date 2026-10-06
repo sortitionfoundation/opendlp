@@ -35,7 +35,7 @@ Feature: Backoffice Dashboard
     And there is an assembly called "Selection Test Assembly"
     And the assembly "Selection Test Assembly" has a gsheet configuration
     When I visit the assembly details page for "Selection Test Assembly"
-    And I click the "Selection" tab
+    And I click the "Select and Replace" tab
     Then I should see the assembly selection page
     And I should see "Selection Test Assembly" as the page heading
 
@@ -76,7 +76,7 @@ Feature: Backoffice Dashboard
     And there is an assembly called "Selection Tab Navigation Assembly"
     And the assembly "Selection Tab Navigation Assembly" has a gsheet configuration
     When I visit the assembly data page for "Selection Tab Navigation Assembly"
-    And I click the "Selection" tab
+    And I click the "Select and Replace" tab
     Then I should see the assembly selection page
 
   Scenario: Non-admin user without assembly role cannot access selection page
