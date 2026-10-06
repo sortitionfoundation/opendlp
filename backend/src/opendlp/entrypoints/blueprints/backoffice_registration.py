@@ -42,7 +42,7 @@ from opendlp.entrypoints.blueprints.registration import (
 from opendlp.entrypoints.registration_hub import editor_url, registration_hub_context, registration_page_rows
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
-from opendlp.service_layer.email_send_service import send_test_auto_reply
+from opendlp.service_layer.email_send_service import deliver_test_auto_reply, prepare_test_auto_reply
 from opendlp.service_layer.email_template_service import (
     assign_auto_reply_template,
     auto_reply_readiness_problems,
@@ -62,6 +62,7 @@ from opendlp.service_layer.exceptions import (
     RegistrationImageNotFoundError,
     RegistrationPageNotFoundError,
 )
+from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.qr_codes import generate_qr_code_base64, generate_qr_code_png
 from opendlp.service_layer.registration_document_service import (
     add_registration_document,
@@ -280,6 +281,11 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # Auto-reply email data — the template (if assigned) plus readiness problems.
             email_template, email_readiness_problems = _load_auto_reply_context(uow, registration_page, assembly_id)
 
+            # The test-send card is a manage-only action; the page itself renders for
+            # anyone who can view, so gate the card on the manage capability.
+            viewer = uow.users.get(current_user.id)
+            can_manage = bool(viewer and nav.assembly and can_manage_assembly(viewer, nav.assembly))
+
             # The editor renders as a modal over the pages list, so the list rows are
             # needed here too — they form the (inert) backdrop behind the dialog.
             all_pages = list_registration_pages(uow, current_user.id, assembly_id)
@@ -327,6 +333,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             active_section=active_section,
             email_template=email_template,
             email_readiness_problems=email_readiness_problems,
+            can_manage=can_manage,
             registration_url_prefix=registration_url_prefix(),
             short_url_prefix=short_url_prefix(),
             page_rows=page_rows,
@@ -765,13 +772,18 @@ def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str)
         uow = bootstrap.get_flask_uow()
         with uow:
             page = _page_by_slug(uow, assembly_id, url_slug)
-            result = send_test_auto_reply(
+            if page.status == RegistrationPageStatus.CLOSED:
+                flash(_("This registration page is closed, so test emails can't be sent"), "warning")
+                return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
+            # Render inside the uow, then release the DB connection before the SMTP
+            # round trip — the test send writes no record, so it need not hold it.
+            prepared = prepare_test_auto_reply(
                 uow,
-                bootstrap.get_email_adapter(),
                 user_id=current_user.id,
                 page_id=page.id,
                 to_email=to_email,
             )
+        result = deliver_test_auto_reply(bootstrap.get_email_adapter(), prepared)
         if result.sent:
             flash(_("Test email sent to %(email)s", email=to_email), "success")
             if result.missing_variables:

@@ -38,15 +38,32 @@ class AssemblyContext:
         )
 
 
+# Normalised field-name aliases for the respondent's name. The single source of
+# truth for both deriving names off a real respondent (_derive_names) and
+# synthesising a sample respondent (_sample_field_value) - keep the two in step
+# by adding any new alias here rather than in either consumer.
+_FIRST_NAME_KEYS = ("firstname",)
+_LAST_NAME_KEYS = ("lastname", "surname")
+_FULL_NAME_KEYS = ("fullname", "name")
+
+
+def _first_non_empty(normalised: Mapping[str, str], keys: tuple[str, ...]) -> str:
+    for key in keys:
+        value = normalised.get(key)
+        if value:
+            return value
+    return ""
+
+
 def _derive_names(attributes: Mapping[str, Any]) -> tuple[str, str, str]:
     normalised: dict[str, str] = {}
     for key, value in attributes.items():
         name = normalise_field_name(key)
         if name and name not in normalised:
             normalised[name] = str(value).strip() if value is not None else ""
-    first = normalised.get("firstname", "")
-    last = normalised.get("lastname") or normalised.get("surname") or ""
-    full = normalised.get("fullname") or normalised.get("name") or ""
+    first = _first_non_empty(normalised, _FIRST_NAME_KEYS)
+    last = _first_non_empty(normalised, _LAST_NAME_KEYS)
+    full = _first_non_empty(normalised, _FULL_NAME_KEYS)
     if not full:
         full = " ".join(part for part in (first, last) if part)
     return first, last, full
@@ -87,6 +104,15 @@ def build_context(assembly: AssemblyContext, respondent: RespondentContext) -> d
 
 _SAMPLE_FIRST_NAME = "Alex"
 _SAMPLE_LAST_NAME = "Example"
+_SAMPLE_EMAIL = "sample@example.com"
+
+
+def _static_sample_respondent(to_email: str) -> RespondentContext:
+    """The canonical made-up respondent, used when there is no field schema to shape one."""
+    return RespondentContext(
+        email=to_email,
+        attributes={"first_name": _SAMPLE_FIRST_NAME, "last_name": _SAMPLE_LAST_NAME},
+    )
 
 
 def _sample_field_value(fd: RespondentFieldDefinition, to_email: str) -> Any:
@@ -103,11 +129,11 @@ def _sample_field_value(fd: RespondentFieldDefinition, to_email: str) -> Any:
     if field_type == FieldType.EMAIL:
         return to_email
     name = normalise_field_name(fd.field_key)
-    if name == "firstname":
+    if name in _FIRST_NAME_KEYS:
         return _SAMPLE_FIRST_NAME
-    if name in ("lastname", "surname"):
+    if name in _LAST_NAME_KEYS:
         return _SAMPLE_LAST_NAME
-    if name in ("fullname", "name"):
+    if name in _FULL_NAME_KEYS:
         return f"{_SAMPLE_FIRST_NAME} {_SAMPLE_LAST_NAME}"
     return f"[{fd.label}]"
 
@@ -132,6 +158,8 @@ def sample_respondent_context(
             attributes[fd.field_key] = f"[{fd.label}]"
         elif fd.on_registration_page != FieldOnRegistrationPage.NO:
             attributes[fd.field_key] = _sample_field_value(fd, to_email)
+    if not attributes:
+        return _static_sample_respondent(to_email)
     return RespondentContext(email=to_email, attributes=attributes)
 
 
@@ -143,5 +171,5 @@ def sample_context() -> dict[str, Any]:
             first_assembly_date="2026-01-01",
             number_to_select=100,
         ),
-        RespondentContext(email="sample@example.com", attributes={"first_name": "Sam", "last_name": "Sample"}),
+        sample_respondent_context([], _SAMPLE_EMAIL),
     )

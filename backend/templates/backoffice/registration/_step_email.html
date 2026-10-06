@@ -187,7 +187,10 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                            The respondent data is made up from the assembly's field schema; the
                            assembly details are real. Defaults to the signed-in user's address but
                            any address works, e.g. to check a colleague's email client. #}
-        {% if not edit_mode %}
+        {# Manage-only action, hidden for CLOSED pages to match the Edit button: the page
+           itself renders for anyone who can view, so view-only members never see it. #}
+        {% if not edit_mode and registration_status != "CLOSED" and can_manage %}
+            {% set has_readiness_error = email_readiness_problems | selectattr("severity", "equalto", "error") | list | length > 0 %}
             <section class="rounded-lg p-6"
                      style="background-color: var(--color-tables-cards);
                             border: 1px solid var(--color-borders-dividers)">
@@ -195,6 +198,13 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                 <p class="text-body-md mb-4" style="color: var(--color-body-text);">
                     {{ _("Check how the auto-reply looks in a real inbox. The email is filled in with sample respondent data and this assembly's real details, then sent to the address below.") }}
                 </p>
+                {% if has_readiness_error %}
+                                        {# The page collects no email, so registrants can't receive the auto-reply —
+                                           a test send to a typed-in address still works, so say so plainly. #}
+                    <p class="text-body-sm mb-4" style="color: var(--color-warning-600);">
+                        {{ _("This only tests the email to the address below. Registrants still won't receive the auto-reply until the problem above is fixed.") }}
+                    </p>
+                {% endif %}
                 <form method="post"
                       action="{{ email_test_url }}"
                       x-data

@@ -128,6 +128,12 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     assert "Thanks" in template.subject
     assert "assembly.title" in template.body_html
 
+    # The manager sees the test-send card on the (non-closed) email section.
+    page_text = logged_in_admin.get(
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}?section=email",
+    ).get_data(as_text=True)
+    assert "Send a test email" in page_text
+
     # Step 2b: send a test of the saved auto-reply. The console email adapter is
     # active in tests, so the send itself succeeds and the success flash shows.
     response = logged_in_admin.post(
@@ -193,7 +199,7 @@ def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_sessi
     def boom(*args, **kwargs):
         raise RuntimeError("boom")
 
-    monkeypatch.setattr(route_module, "send_test_auto_reply", boom)
+    monkeypatch.setattr(route_module, "prepare_test_auto_reply", boom)
     text = logged_in_admin.post(send_test_url, data=data, follow_redirects=True).get_data(as_text=True)
     assert "An error occurred while sending the test email" in text
 
@@ -201,7 +207,7 @@ def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_sessi
     def gone(*args, **kwargs):
         raise AssemblyNotFoundError("gone")
 
-    monkeypatch.setattr(route_module, "send_test_auto_reply", gone)
+    monkeypatch.setattr(route_module, "prepare_test_auto_reply", gone)
     text = logged_in_admin.post(send_test_url, data=data, follow_redirects=True).get_data(as_text=True)
     assert "Assembly not found" in text
     monkeypatch.undo()
@@ -245,3 +251,35 @@ def test_send_test_email_requires_manage_permission(logged_in_user, regular_user
         follow_redirects=True,
     ).get_data(as_text=True)
     assert "permission to modify this assembly" in text
+
+    # The view-only member can still open the page, but the manage-only test-send
+    # card is not rendered for them.
+    page_text = logged_in_user.get(
+        f"/backoffice/assembly/{assembly_id}/registration/perm-check-test-send?section=email",
+    ).get_data(as_text=True)
+    assert "Send a test email" not in page_text
+
+
+def test_closed_page_hides_and_refuses_test_send(logged_in_admin, admin_user, postgres_session_factory):
+    """A CLOSED page goes read-only everywhere: no test-send card, and a posted send is refused."""
+    assembly_id = _seed_assembly_with_required_email(postgres_session_factory, admin_user.id)
+    logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/create")
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        page = page_for_assembly(uow, assembly_id)
+        page.status = RegistrationPageStatus.CLOSED
+        slug = page.url_slug
+        uow.commit()
+
+    # The card is gone from the (read-only) CLOSED page.
+    page_text = logged_in_admin.get(
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}?section=email",
+    ).get_data(as_text=True)
+    assert "Send a test email" not in page_text
+
+    # A posted send is refused even though the admin can manage the assembly.
+    text = logged_in_admin.post(
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/send-test",
+        data={"test_email_to": "manager@example.com"},
+        follow_redirects=True,
+    ).get_data(as_text=True)
+    assert "This registration page is closed" in text
