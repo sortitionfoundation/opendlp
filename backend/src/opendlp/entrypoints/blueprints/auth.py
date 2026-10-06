@@ -444,12 +444,8 @@ def _register_with_email(form: RegistrationForm, *, show_questions: bool) -> Res
 
             return _complete_registration(user, token)
 
-    except RateLimitExceeded as e:
-        flash(str(e), "error")
-    except UserAlreadyExists as e:
-        flash(str(e), "error")
-    except InvalidInvite as e:
-        flash(str(e), "error")
+    except (RateLimitExceeded, UserAlreadyExists, InvalidInvite) as error:
+        flash(error.user_msg(), "error")
     except PasswordTooWeak as e:
         flash(_("Password is too weak: %(error)s", error=str(e)), "error")
     except Exception as e:
