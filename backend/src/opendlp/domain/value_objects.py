@@ -129,6 +129,8 @@ class SelectionTaskType(Enum):
     SELECT_FROM_DB = "select_from_db"
     TEST_SELECT_FROM_DB = "test_select_from_db"
     SELECT_REPLACEMENT_FROM_DB = "select_replacement_from_db"
+    # Not a background task: records an organiser resetting every respondent to the pool.
+    RESET_TO_POOL = "reset_to_pool"
 
 
 # Labels for the run history table and the "Task:" line of the progress modals.
@@ -144,6 +146,7 @@ selection_task_type_labels = {
     SelectionTaskType.SELECT_FROM_DB: _l("Select from database"),
     SelectionTaskType.TEST_SELECT_FROM_DB: _l("Test select from database"),
     SelectionTaskType.SELECT_REPLACEMENT_FROM_DB: _l("Select replacements from database"),
+    SelectionTaskType.RESET_TO_POOL: _l("Reset all to pool"),
 }
 
 # The task types that run the selection algorithm over the database.

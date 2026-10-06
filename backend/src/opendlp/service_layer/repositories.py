@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from datetime import datetime
 
-    from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+    from opendlp.domain.assembly import Assembly, AssemblyGSheet, RunSummary, SelectionRunRecord
     from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
     from opendlp.domain.email_confirmation import EmailConfirmationToken
     from opendlp.domain.email_send_record import RespondentEmailSendRecord
@@ -323,12 +323,19 @@ class SelectionRunRecordRepository(AbstractRepository):
 
     @abc.abstractmethod
     def get_by_assembly_id_paginated(
-        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50
+        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50, since: datetime | None = None
     ) -> tuple[list[tuple[SelectionRunRecord, User | None]], int]:
         """Get paginated SelectionRunRecords for an assembly with user information.
 
+        With ``since``, only records created at or after that moment are counted and returned.
+
         Returns: (list of (SelectionRunRecord, User or None), total_count)
         """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_history_summaries(self, assembly_id: uuid.UUID) -> list[RunSummary]:
+        """Get a summary of every SelectionRunRecord for an assembly, oldest first."""
         raise NotImplementedError
 
 
@@ -504,6 +511,15 @@ class RespondentRepository(AbstractRepository):
     @abc.abstractmethod
     def get_by_external_id(self, assembly_id: uuid.UUID, external_id: str) -> Respondent | None:
         """Get a respondent by assembly and external ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_by_external_ids(self, assembly_id: uuid.UUID, external_ids: list[str]) -> list[Respondent]:
+        """Get an assembly's respondents with any of the given external IDs, in one query.
+
+        DELETED respondents are included. The result is ordered by external ID;
+        IDs with no respondent are simply absent.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod

@@ -156,11 +156,6 @@ class ReplacementPlan:
         return self.min_select <= self.calculated_number <= self.max_select
 
     @property
-    def default_number(self) -> int:
-        """The places to fill, pulled to the nearest end of the allowed range if outside it."""
-        return min(max(self.calculated_number, self.min_select), self.max_select)
-
-    @property
     def nothing_to_fill(self) -> bool:
         return self.calculated_number == 0
 
@@ -564,14 +559,14 @@ def run_feasibility_check(validation: ReplacementValidation) -> None:
 def check_replacement_plan(
     uow: AbstractUnitOfWork, assembly_id: uuid.UUID, plan: ReplacementPlan
 ) -> ReplacementValidation:
-    """Validate the dialog as it opens: the calculated targets and the default number.
+    """Validate the dialog as it opens: the calculated targets and the places to fill.
 
     The result is ready for run_feasibility_check(), which the caller runs
     after its `with uow:` block has closed.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    form = {"number_to_select": str(plan.default_number)}
+    form = {"number_to_select": str(plan.calculated_number)}
     for category in plan.categories:
         for row in category.rows:
             form[row.min_field] = str(row.calculated.min)

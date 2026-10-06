@@ -412,3 +412,71 @@ class TestGetAllUnfinished:
         _make_record(selection_run_backend, assembly.id, status=SelectionRunStatus.COMPLETED)
 
         assert selection_run_backend.repo.get_all_unfinished() == []
+
+
+class TestGetByAssemblyIdPaginatedSince:
+    def test_since_keeps_records_from_that_moment_on(self, selection_run_backend: ContractBackend):
+        """Records created before ``since`` are neither returned nor counted."""
+        assembly = selection_run_backend.make_assembly()
+        base = datetime(2026, 1, 1, tzinfo=UTC)
+        _make_record(selection_run_backend, assembly.id, created_at=base - timedelta(hours=1))
+        at_since = _make_record(selection_run_backend, assembly.id, created_at=base)
+        later = _make_record(selection_run_backend, assembly.id, created_at=base + timedelta(hours=1))
+
+        rows, total = selection_run_backend.repo.get_by_assembly_id_paginated(assembly.id, since=base)
+
+        assert total == 2
+        assert [record.task_id for record, _user in rows] == [later.task_id, at_since.task_id]
+
+    def test_without_since_returns_everything(self, selection_run_backend: ContractBackend):
+        assembly = selection_run_backend.make_assembly()
+        base = datetime(2026, 1, 1, tzinfo=UTC)
+        _make_record(selection_run_backend, assembly.id, created_at=base - timedelta(hours=1))
+        _make_record(selection_run_backend, assembly.id, created_at=base)
+
+        _rows, total = selection_run_backend.repo.get_by_assembly_id_paginated(assembly.id)
+
+        assert total == 2
+
+
+class TestGetHistorySummaries:
+    def test_returns_every_run_oldest_first(self, selection_run_backend: ContractBackend):
+        """Each summary carries the fields the history naming needs, in creation order."""
+        assembly = selection_run_backend.make_assembly()
+        base = datetime(2026, 1, 1, tzinfo=UTC)
+        newer = _make_record(
+            selection_run_backend,
+            assembly.id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+            created_at=base + timedelta(hours=1),
+        )
+        older = _make_record(
+            selection_run_backend,
+            assembly.id,
+            status=SelectionRunStatus.FAILED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            created_at=base,
+        )
+
+        summaries = selection_run_backend.repo.get_history_summaries(assembly.id)
+
+        assert [s.task_id for s in summaries] == [older.task_id, newer.task_id]
+        assert summaries[0].task_type == SelectionTaskType.SELECT_FROM_DB
+        assert summaries[0].status == SelectionRunStatus.FAILED
+        assert summaries[0].created_at == base
+        assert summaries[1].task_type == SelectionTaskType.SELECT_REPLACEMENT_FROM_DB
+        assert summaries[1].status == SelectionRunStatus.COMPLETED
+
+    def test_scopes_to_assembly(self, selection_run_backend: ContractBackend):
+        a1 = selection_run_backend.make_assembly()
+        a2 = selection_run_backend.make_assembly()
+        mine = _make_record(selection_run_backend, a1.id)
+        _make_record(selection_run_backend, a2.id)
+
+        summaries = selection_run_backend.repo.get_history_summaries(a1.id)
+
+        assert [s.task_id for s in summaries] == [mine.task_id]
+
+    def test_returns_empty_when_none(self, selection_run_backend: ContractBackend):
+        assert selection_run_backend.repo.get_history_summaries(uuid.uuid4()) == []

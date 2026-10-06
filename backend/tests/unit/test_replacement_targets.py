@@ -84,7 +84,7 @@ def _rows(plan: ReplacementPlan) -> dict[tuple[str, str], object]:
 
 
 def _form_from_plan(plan: ReplacementPlan, number: int | None = None) -> dict[str, str]:
-    form = {"number_to_select": str(plan.default_number if number is None else number)}
+    form = {"number_to_select": str(plan.calculated_number if number is None else number)}
     for category in plan.categories:
         for row in category.rows:
             form[row.min_field] = str(row.calculated.min)
@@ -124,12 +124,11 @@ class TestBuildReplacementPlan:
         assert rows[("Gender", "Female")].available == 3
         assert rows[("Age", "31+")].available == 2
 
-    def test_range_and_default_number(self, uow):
+    def test_range(self, uow):
         admin, assembly, _, _ = _seed(uow)
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         assert (plan.min_select, plan.max_select) == (3, 3)
         assert plan.number_in_range
-        assert plan.default_number == 3
         assert not plan.targets_conflict
 
     def test_shortfall_and_tight_rows(self, uow):
@@ -198,13 +197,23 @@ class TestBuildReplacementPlan:
         assert plan.nothing_to_fill
         assert plan.calculated_number == 0
 
-    def test_number_outside_range_is_flagged(self, uow):
+    def test_number_above_range_is_flagged(self, uow):
         """Eight to select but the gender targets only allow three more."""
         admin, assembly, _, _ = _seed(uow, number_to_select=8)
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         assert plan.calculated_number == 5
+        assert (plan.min_select, plan.max_select) == (3, 3)
         assert not plan.number_in_range
-        assert plan.default_number == plan.max_select
+
+    def test_number_below_range_is_flagged(self, uow):
+        """Male holds two against a maximum of one, so Female still needs two but only one place is to be filled."""
+        admin, assembly, gender, _ = _seed(uow, number_to_select=4)
+        gender.values[0].min = 1
+        gender.values[0].max = 1
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        assert plan.calculated_number == 1
+        assert (plan.min_select, plan.max_select) == (2, 2)
+        assert not plan.number_in_range
 
     def test_replacement_info(self, uow):
         admin, assembly, _, _ = _seed(uow)
@@ -475,14 +484,28 @@ class TestFeasibilityCheck:
         assert result.feasibility.suggestions == []
         assert result.feasibility.message == ""
 
-    def test_check_uses_the_calculated_targets_and_default_number(self, uow):
+    def test_check_uses_the_calculated_targets_and_places_to_fill(self, uow):
         """The dialog check runs on the unedited form: the snapshot carries the calculated numbers."""
         admin, assembly, _, _ = _seed(uow)
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         result = check_replacement_plan(uow, assembly.id, plan)
         run_feasibility_check(result)
-        assert result.number_to_select == plan.default_number
+        assert result.number_to_select == plan.calculated_number
         assert not result.edited
+
+    def test_check_blocks_when_the_places_to_fill_are_below_the_minimum(self, uow):
+        """The number is never pulled up to the minimum: the check reports the clash and the solver does not run."""
+        admin, assembly, gender, _ = _seed(uow, number_to_select=4)
+        gender.values[0].min = 1
+        gender.values[0].max = 1
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        result = check_replacement_plan(uow, assembly.id, plan)
+        run_feasibility_check(result)
+        assert result.number_to_select == 1
+        assert not result.ok
+        assert any("more than the 1 to select" in message for message in result.errors)
+        assert result.feasibility is not None
+        assert not result.feasibility.checked
 
     def test_infeasible_targets_come_back_with_suggestions(self, uow):
         """Targets each fillable alone but impossible together yield the algorithm's relaxation per cell."""

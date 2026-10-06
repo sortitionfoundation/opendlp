@@ -95,7 +95,7 @@ def user_visits_selection_page(admin_logged_in_page: Page, test_assembly):
 
 @when("the user opens the replacement selection dialog")
 def user_opens_dialog(admin_logged_in_page: Page):
-    admin_logged_in_page.get_by_role("button", name="Go to Replacement Selection").click()
+    admin_logged_in_page.get_by_role("button", name="Select replacements").click()
     admin_logged_in_page.wait_for_load_state()
     expect(admin_logged_in_page.locator("#db-replacement-modal")).to_be_visible()
 
@@ -161,7 +161,7 @@ def run_button_visible(admin_logged_in_page: Page):
 def progress_dialog_displayed(admin_logged_in_page: Page):
     modal = admin_logged_in_page.locator("#db-selection-progress-modal-panel")
     expect(modal).to_be_visible()
-    expect(modal.get_by_text("Select replacements from database")).to_be_visible()
+    expect(modal.get_by_text("Replacement selection", exact=False).first).to_be_visible()
 
 
 @then("the replacement selection completes")

@@ -22,9 +22,16 @@ from sqlalchemy.orm.attributes import flag_modified
 from opendlp import config
 from opendlp.adapters.sortition_data_adapter import DB_ID_COLUMN, OpenDLPDataAdapter
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import target_categories_to_snapshot
-from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import (
+    DB_SELECTION_TASK_TYPES,
+    ManageOldTabsState,
+    ManageOldTabsStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
+)
 from opendlp.entrypoints.celery import app, tasks
 from opendlp.service_layer.error_translation import translate_sortition_error
 from opendlp.service_layer.exceptions import (
@@ -638,6 +645,21 @@ def _person_list_to_table_with_deleted(
         if ext_id in deleted_ext_ids:
             table.append([ext_id, *[DELETED_CSV_PLACEHOLDER] * (column_count - 1)])
     return table
+
+
+def get_selected_respondents(uow: AbstractUnitOfWork, record: SelectionRunRecord) -> list[Respondent]:
+    """The respondents a finished run selected, ordered by external ID.
+
+    Respondents deleted since the run are included; anyone whose row has gone
+    entirely is left out. Returns an empty list for a run that has no selected
+    panel yet, and for a run that did not select from the database: the people
+    a Google Sheets run selected are rows of the spreadsheet, not respondents.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    if record.task_type not in DB_SELECTION_TASK_TYPES or not record.selected_ids:
+        return []
+    return uow.respondents.get_by_external_ids(record.assembly_id, list(record.selected_ids[0]))
 
 
 def generate_selection_csvs(

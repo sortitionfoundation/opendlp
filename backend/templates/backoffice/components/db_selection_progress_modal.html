@@ -1,69 +1,35 @@
 {# ABOUTME: DB selection task progress modal using design system macros #}
-{# ABOUTME: Pure HTMX approach - server controls all state, includes download buttons for completed selections #}
+{# ABOUTME: Pure HTMX approach - server controls all state, includes the selected respondents and CSV downloads for completed selections #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, progress_indicator %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom, table_cell_status %}
+{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, progress_indicator, collapsible_section %}
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set can_close = run_record.has_finished %}
 {% set htmx_poll_url = url_for('db_selection_backoffice.db_selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
 {% set is_test_selection = run_record.task_type.value == 'test_select_from_db' %}
 {% set is_real_selection = run_record.task_type.value in ('select_from_db', 'select_replacement_from_db') %}
+{% set has_results = run_record.is_completed and run_record.selected_ids %}
 {% call progress_modal(
 id="db-selection-progress-modal",
-title=_("Task Progress"),
+title=_("Task progress"),
 can_close=can_close,
 close_url=close_url,
-htmx_poll_url=htmx_poll_url
+htmx_poll_url=htmx_poll_url,
+classes="max-w-3xl"
 ) %}
-    {# Task type #}
-{{ labeled_value(_("Task:") , run_record.task_type_verbose) }}
-    {# Status badge #}
-{{ status_badge(run_record.status.value, _("Status:") ) }}
-    {# Live progress indicator for pending/running #}
-{% if run_record.is_pending or run_record.is_running %}{{ progress_indicator(run_record.progress_info) }}{% endif %}
+    {# Success banner: the result line plus the task's closing log message #}
+{% if run_record.is_completed %}
+    {% set completion_message = log_messages[-1] if log_messages else "" %}
+    {{ alert((_("Task completed successfully.") ~ " " ~ completion_message)|trim, variant="success") }}
+    {% if has_results and is_test_selection %}
+        {{ alert(_("This was a test selection. The full fair algorithm was not used, so only use the results for checking feasibility."), variant="info") }}
+    {% endif %}
+{% endif %}
     {# Error message #}
 {% if run_record.is_failed and run_record.error_message %}
         {# error_message is HTML rendered by server code that escapes user content #}
     {{ labeled_value(_("Error:") , run_record.error_message | safe, "color: var(--color-error-text);") }}
-{% endif %}
-    {# Success message #}
-{% if run_record.is_completed %}
-    <div class="mb-4">
-        <span class="text-label-lg"
-              style="color: var(--color-success-text)">{{ _("Result:") }}</span>
-        <span class="text-body-md" style="color: var(--color-success-text);">{{ _("Task completed successfully.") }}</span>
-    </div>
-        {# Download buttons for real (non-test) selections #}
-    {% if run_record.selected_ids %}
-        {% if is_test_selection %}
-            <div class="mb-4 p-4 rounded-lg"
-                 style="background-color: var(--color-info-background);
-                        border: 1px solid var(--color-borders-dividers)">
-                <p class="text-body-sm" style="color: var(--color-info-text);">
-                    {{ _("This was a test selection. The full fair algorithm was not used, so only use the results for checking feasibility.") }}
-                </p>
-            </div>
-        {% endif %}
-        <div class="mb-4 p-4 rounded-lg"
-             style="background-color: var(--color-subtle-background-panels);
-                    border: 1px solid var(--color-borders-dividers)">
-            <p class="text-label-lg mb-3"
-               style="color: var(--color-headings)">{{ _("Download Results") }}</p>
-            <div class="flex gap-3 flex-wrap">
-                {{ button(_("Download Selected") ,
-                href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=current_selection),
-                variant="primary"
-                ) }}
-                {{ button(_("Download Remaining") ,
-                href=url_for('db_selection_backoffice.download_db_remaining', assembly_id=assembly.id, run_id=current_selection),
-                variant="outline"
-                ) }}
-                {{ button(_("Download Summary Report") ,
-                href=url_for('db_selection_backoffice.download_db_selection_report', assembly_id=assembly.id, run_id=current_selection),
-                variant="outline"
-                ) }}
-            </div>
-        </div>
-    {% endif %}
 {% endif %}
     {# Cancelled message #}
 {% if run_record.is_cancelled %}
@@ -76,14 +42,20 @@ htmx_poll_url=htmx_poll_url
         {% endif %}
     </div>
 {% endif %}
-    {# Log messages #}
-{{ message_log(log_messages) }}
+    {# Task type #}
+{{ labeled_value(_("Task:") , run_names.get(run_record.task_id, run_record.task_type_verbose), label_classes="text-body-sm") }}
+    {# Status badge #}
+{{ status_badge(run_record.status.value, _("Status"), label_classes="text-body-sm") }}
+    {# Live progress indicator for pending/running #}
+{% if run_record.is_pending or run_record.is_running %}{{ progress_indicator(run_record.progress_info) }}{% endif %}
+    {# Log messages: open while the task runs, collapsed once it has finished #}
+{% call collapsible_section(_("Messages"), open=not run_record.has_finished) %}
+    {{ message_log(log_messages, show_label=false) }}
+{% endcall %}
     {# Full run report (collapsed, shown when finished) #}
 {% if run_record.has_finished and translated_report_html %}
-    <details class="mb-4">
-        <summary class="text-label-lg cursor-pointer"
-                 style="color: var(--color-headings)">{{ _("Full Run Report") }}</summary>
-        <div class="rounded-lg p-4 mt-2"
+    {% call collapsible_section(_("Full run report")) %}
+        <div class="rounded-lg p-4"
              style="background-color: var(--color-subtle-background-panels);
                     border: 1px solid var(--color-borders-dividers)">
             <div class="text-body-sm" style="color: var(--color-body-text);">{{ translated_report_html | safe }}</div>
@@ -94,11 +66,107 @@ htmx_poll_url=htmx_poll_url
                 {{ _("Completed At") }}: {{ run_record.completed_at|datetimeformat('medium') if run_record.completed_at }}
             </p>
         </div>
-    </details>
+    {% endcall %}
 {% endif %}
-    {# Footer with action buttons #}
-{{ modal_footer_start() }}
+    {# The targets the run was given (collapsed). A replacement run records what
+       each value held and its overall target beside the numbers still needed. #}
+{% if run_record.targets_used %}
+    {% call collapsible_section(_("Targets"), id="db-selection-targets") %}
+        {% for category in run_record.targets_used %}
+            {% set category_values = category["values"] %}
+            {% set is_replacement_category = category_values and category_values[0].held is defined %}
+            <h3 class="text-body-sm font-semibold mb-2{% if not loop.first %} mt-4{% endif %}"
+                style="color: var(--color-headings)">{{ category.name }}</h3>
+            {% call table() %}
+                {% if is_replacement_category %}
+                    {{ table_head([
+                    {"label": _("Value")},
+                    {"label": _("Target"), "align": "right"},
+                    {"label": _("Currently selected"), "align": "right"},
+                    {"label": _("Still needed (min)"), "align": "right"},
+                    {"label": _("Still needed (max)"), "align": "right"}
+                    ]) }}
+                {% else %}
+                    {{ table_head([
+                    {"label": _("Value")},
+                    {"label": _("Min"), "align": "right"},
+                    {"label": _("Max"), "align": "right"}
+                    ]) }}
+                {% endif %}
+                {% call table_body() %}
+                    {% for target_value in category_values %}
+                        {% call table_row() %}
+                            {{ table_cell(target_value.value) }}
+                            {% if is_replacement_category %}
+                                {{ table_cell(target_value.overall_min ~ "–" ~ target_value.overall_max, align="right") }}
+                                {{ table_cell(target_value.held, align="right") }}
+                            {% endif %}
+                            {{ table_cell(target_value.min, align="right") }}
+                            {{ table_cell(target_value.max, align="right") }}
+                        {% endcall %}
+                    {% endfor %}
+                {% endcall %}
+            {% endcall %}
+        {% endfor %}
+    {% endcall %}
+{% endif %}
+    {# The people this run selected (collapsed) #}
+{% if has_results %}
+    {% call collapsible_section(_("Selected"), id="db-selection-selected") %}
+        {% if selected_respondents %}
+            {% call table() %}
+                {{ table_head([
+                {"label": _("Status")},
+                {"label": _("ID")},
+                {"label": _("Name")},
+                {"label": _("Email")},
+                {"label": _("Actions"), "align": "right"}
+                ]) }}
+                {% call table_body() %}
+                    {% for respondent in selected_respondents %}
+                        {% call table_row() %}
+                            {{ table_cell_status(respondent.selection_status) }}
+                            {{ table_cell(respondent.external_id, bold=true) }}
+                            {{ table_cell(respondent.display_name(assembly.name_fields)) }}
+                            {{ table_cell(respondent.email or "—") }}
+                            {% call table_cell_custom(align="right") %}
+                                <a href="{{ url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}">{{ _("View") }}</a>
+                            {% endcall %}
+                        {% endcall %}
+                    {% endfor %}
+                {% endcall %}
+            {% endcall %}
+        {% else %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("None of the people this run selected are in the respondent list any more.") }}</p>
+        {% endif %}
+    {% endcall %}
+{% endif %}
+    {# CSV downloads (collapsed) #}
+{% if has_results %}
+    {% call collapsible_section(_("CSV Downloads"), id="db-selection-downloads") %}
+        <div class="flex flex-wrap gap-2">
+            {{ button(_("Download selected") ,
+            href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=current_selection),
+            variant="primary",
+            classes="whitespace-nowrap"
+            ) }}
+            {{ button(_("Download remaining") ,
+            href=url_for('db_selection_backoffice.download_db_remaining', assembly_id=assembly.id, run_id=current_selection),
+            variant="tertiary",
+            classes="whitespace-nowrap"
+            ) }}
+            {{ button(_("Download summary report") ,
+            href=url_for('db_selection_backoffice.download_db_selection_report', assembly_id=assembly.id, run_id=current_selection),
+            variant="tertiary",
+            classes="whitespace-nowrap"
+            ) }}
+        </div>
+    {% endcall %}
+{% endif %}
+    {# Footer with action buttons while the task runs. A finished task has no footer:
+       the header X, the backdrop and Escape all close the modal. #}
 {% if run_record.is_pending or run_record.is_running %}
+    {{ modal_footer_start() }}
     <div class="w-full flex flex-col gap-2">
         <p class="text-body-md mb-2" style="color: var(--color-body-text)">
             {{ _("If you put the task in the background, you can find it later in the Selection History section below.") }}
@@ -113,7 +181,6 @@ htmx_poll_url=htmx_poll_url
             {{ button(_("Put Task in Background") , href=close_url, variant="secondary") }}
         </div>
     </div>
+    {{ modal_footer_end() }}
 {% endif %}
-{% if run_record.has_finished %}{{ button(_("Close") , href=close_url, variant="primary") }}{% endif %}
-{{ modal_footer_end() }}
 {% endcall %}
