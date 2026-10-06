@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-06 16:42+0100\n"
+"POT-Creation-Date: 2026-10-06 16:47+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -582,6 +582,7 @@ msgid "Test submission"
 msgstr "Tesztbeküldés"
 
 #: src/opendlp/domain/value_objects.py:209
+#: src/opendlp/entrypoints/blueprints/respondents.py:469
 #: templates/backoffice/assembly_view_respondent.html:227
 #: templates/backoffice/components/table.html:218
 msgid "Deleted"
@@ -1703,9 +1704,9 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:317
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:651
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:680
-#: src/opendlp/entrypoints/blueprints/respondents.py:743
-#: src/opendlp/entrypoints/blueprints/respondents.py:874
-#: src/opendlp/entrypoints/blueprints/respondents.py:1032
+#: src/opendlp/entrypoints/blueprints/respondents.py:744
+#: src/opendlp/entrypoints/blueprints/respondents.py:875
+#: src/opendlp/entrypoints/blueprints/respondents.py:1033
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/target_sources.py:643
 #: src/opendlp/entrypoints/blueprints/target_sources.py:666
@@ -1781,14 +1782,14 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondents.py:257
 #: src/opendlp/entrypoints/blueprints/respondents.py:392
 #: src/opendlp/entrypoints/blueprints/respondents.py:444
-#: src/opendlp/entrypoints/blueprints/respondents.py:484
-#: src/opendlp/entrypoints/blueprints/respondents.py:540
-#: src/opendlp/entrypoints/blueprints/respondents.py:599
-#: src/opendlp/entrypoints/blueprints/respondents.py:734
-#: src/opendlp/entrypoints/blueprints/respondents.py:800
-#: src/opendlp/entrypoints/blueprints/respondents.py:865
-#: src/opendlp/entrypoints/blueprints/respondents.py:1029
-#: src/opendlp/entrypoints/blueprints/respondents.py:1076
+#: src/opendlp/entrypoints/blueprints/respondents.py:485
+#: src/opendlp/entrypoints/blueprints/respondents.py:541
+#: src/opendlp/entrypoints/blueprints/respondents.py:600
+#: src/opendlp/entrypoints/blueprints/respondents.py:735
+#: src/opendlp/entrypoints/blueprints/respondents.py:801
+#: src/opendlp/entrypoints/blueprints/respondents.py:866
+#: src/opendlp/entrypoints/blueprints/respondents.py:1030
+#: src/opendlp/entrypoints/blueprints/respondents.py:1077
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -2966,7 +2967,7 @@ msgid "Respondents deleted: %(count)d"
 msgstr "Jelentkezők törölve: %(count)d"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:386
-#: src/opendlp/entrypoints/blueprints/respondents.py:787
+#: src/opendlp/entrypoints/blueprints/respondents.py:788
 msgid "You don't have permission to delete respondents"
 msgstr "Nincs jogosultságod jelentkezők törléséhez"
 
@@ -2975,14 +2976,14 @@ msgid "An error occurred while deleting respondents"
 msgstr "Hiba történt a jelentkezők törlése közben"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:415
-#: src/opendlp/entrypoints/blueprints/respondents.py:513
+#: src/opendlp/entrypoints/blueprints/respondents.py:514
 #, python-format
 msgid "Invalid export filter: %(error)s"
 msgstr "Érvénytelen exportszűrő: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:440
-#: src/opendlp/entrypoints/blueprints/respondents.py:481
-#: src/opendlp/entrypoints/blueprints/respondents.py:537
+#: src/opendlp/entrypoints/blueprints/respondents.py:482
+#: src/opendlp/entrypoints/blueprints/respondents.py:538
 msgid "You don't have permission to export respondents"
 msgstr "Nincs jogosultságod jelentkezők exportálásához"
 
@@ -2995,81 +2996,81 @@ msgstr "Összes jelentkező"
 msgid "Selected or confirmed"
 msgstr "Kiválasztva vagy megerősítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:574
+#: src/opendlp/entrypoints/blueprints/respondents.py:575
 msgid ""
 "Respondents exported to Google Sheets. The tab will now update "
 "automatically."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:576
+#: src/opendlp/entrypoints/blueprints/respondents.py:577
 msgid "Respondents exported to Google Sheets"
 msgstr "A jelentkezők exportálva a Google Táblázatba"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:596
+#: src/opendlp/entrypoints/blueprints/respondents.py:597
 msgid "You don't have permission to change the export settings"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:602
+#: src/opendlp/entrypoints/blueprints/respondents.py:603
 msgid "Automatic export stopped"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:622
+#: src/opendlp/entrypoints/blueprints/respondents.py:623
 msgid "All"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:752
+#: src/opendlp/entrypoints/blueprints/respondents.py:753
 msgid "An error occurred while loading assembly respondents"
 msgstr "Hiba történt a közösségi gyűlés jelentkezőinek betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:765
+#: src/opendlp/entrypoints/blueprints/respondents.py:766
 msgid "A comment is required when deleting a respondent"
 msgstr "Jelentkező törlésekor meg kell adni egy megjegyzést"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:777
+#: src/opendlp/entrypoints/blueprints/respondents.py:778
 msgid "Respondent personal data deleted"
 msgstr "A jelentkező személyes adatai törölve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:796
-#: src/opendlp/entrypoints/blueprints/respondents.py:861
-#: src/opendlp/entrypoints/blueprints/respondents.py:1026
-#: src/opendlp/entrypoints/blueprints/respondents.py:1073
+#: src/opendlp/entrypoints/blueprints/respondents.py:797
+#: src/opendlp/entrypoints/blueprints/respondents.py:862
+#: src/opendlp/entrypoints/blueprints/respondents.py:1027
+#: src/opendlp/entrypoints/blueprints/respondents.py:1074
 msgid "Respondent not found"
 msgstr "A jelentkező nem található"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:809
+#: src/opendlp/entrypoints/blueprints/respondents.py:810
 msgid "An error occurred while deleting the respondent"
 msgstr "Hiba történt a jelentkező törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:883
+#: src/opendlp/entrypoints/blueprints/respondents.py:884
 msgid "An error occurred while loading the respondent"
 msgstr "Hiba történt a jelentkező betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:959
-#: src/opendlp/entrypoints/blueprints/respondents.py:979
+#: src/opendlp/entrypoints/blueprints/respondents.py:960
+#: src/opendlp/entrypoints/blueprints/respondents.py:980
 msgid "You don't have permission to edit respondents"
 msgstr "Nincs jogosultságod jelentkezők szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:961
+#: src/opendlp/entrypoints/blueprints/respondents.py:962
 msgid "Respondent updated"
 msgstr "A jelentkező frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:989
+#: src/opendlp/entrypoints/blueprints/respondents.py:990
 msgid "Cannot edit a deleted respondent"
 msgstr "Törölt jelentkező nem szerkeszthető"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1048
+#: src/opendlp/entrypoints/blueprints/respondents.py:1049
 msgid "A comment is required when changing selection status"
 msgstr "A kiválasztási állapot módosításakor meg kell adni egy megjegyzést"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1053
+#: src/opendlp/entrypoints/blueprints/respondents.py:1054
 msgid "Invalid target status"
 msgstr "Érvénytelen célállapot"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1067
+#: src/opendlp/entrypoints/blueprints/respondents.py:1068
 msgid "Status updated"
 msgstr "Az állapot frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1071
+#: src/opendlp/entrypoints/blueprints/respondents.py:1072
 msgid "You don't have permission to change this respondent's status"
 msgstr "Nincs jogosultságod ennek a jelentkezőnek az állapotát módosítani"
 
@@ -4109,7 +4110,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/opendlp/service_layer/respondent_export_service.py:54
+#: src/opendlp/service_layer/respondent_export_service.py:56
 #, python-format
 msgid "Invalid respondent status filter: %(value)s"
 msgstr "Érvénytelen jelentkezői állapotszűrő: %(value)s"

@@ -466,6 +466,7 @@ def _export_status_options() -> list[dict[str, str]]:
         {"value": "CONFIRMED", "label": _("Confirmed")},
         {"value": "WITHDRAWN", "label": _("Withdrawn")},
         {"value": "TEST_SUBMISSION", "label": _("Test submission")},
+        {"value": "DELETED", "label": _("Deleted")},
     ]
 
 

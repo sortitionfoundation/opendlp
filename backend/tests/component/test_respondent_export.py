@@ -80,7 +80,7 @@ class TestRespondentExportCsv:
         ids = {row["external_id"] for row in _parse(response)}
         assert ids == {"R-selected", "R-confirmed"}
 
-    def test_deleted_never_exported(
+    def test_all_leaves_out_deleted(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
     ) -> None:
         _add_respondent(fake_store, existing_assembly.id, "R-deleted", RespondentStatus.DELETED)
@@ -88,6 +88,16 @@ class TestRespondentExportCsv:
         response = _export(logged_in_admin, existing_assembly.id)
 
         assert _parse(response) == []
+
+    def test_deleted_filter_exports_deleted(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _add_respondent(fake_store, existing_assembly.id, "R-pool", RespondentStatus.POOL)
+        _add_respondent(fake_store, existing_assembly.id, "R-deleted", RespondentStatus.DELETED)
+
+        response = _export(logged_in_admin, existing_assembly.id, status="DELETED")
+
+        assert [row["external_id"] for row in _parse(response)] == ["R-deleted"]
 
     def test_invalid_status_redirects_with_flash(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
@@ -139,6 +149,18 @@ class TestExportModal:
 
         body = response.get_data(as_text=True)
         assert '<option value="SELECTED" selected>' in body
+
+    def test_modal_offers_and_preselects_deleted(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.DELETED)
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal?status=DELETED"
+        )
+
+        body = response.get_data(as_text=True)
+        assert '<option value="DELETED" selected>' in body
 
     def test_modal_prefills_saved_gsheet_config(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
@@ -199,6 +221,36 @@ class TestRespondentsPageGSheetLink:
 
 
 class TestRunExport:
+    def test_run_gsheet_with_deleted_filter_writes_deleted_ids(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        captured: list = []
+
+        def factory(url: str) -> FakeGSheetExportTarget:
+            target = FakeGSheetExportTarget()
+            captured.append(target)
+            return target
+
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = factory
+        _add_respondent(fake_store, existing_assembly.id, "R-pool", RespondentStatus.POOL)
+        _add_respondent(fake_store, existing_assembly.id, "R-deleted", RespondentStatus.DELETED)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={
+                "destination": "gsheet",
+                "status": "DELETED",
+                "spreadsheet_url": _SHEET_URL,
+                "worksheet_name": "Deleted",
+            },
+        )
+
+        assert response.status_code == 302
+        _title, table = captured[0].writes[0]
+        written = repr(table)
+        assert "R-deleted" in written
+        assert "R-pool" not in written
+
     def test_run_csv_returns_download(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
     ) -> None:
