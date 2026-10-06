@@ -482,6 +482,18 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def count_by_registration_page_and_status(
+        self, assembly_id: uuid.UUID
+    ) -> dict[uuid.UUID | None, dict[RespondentStatus, int]]:
+        """Count an assembly's respondents by registration page, then by status, in one query.
+
+        Respondents who came from anywhere other than a registration page sit under
+        the ``None`` key. Every status is included, DELETED among them, and only
+        statuses actually present appear.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,

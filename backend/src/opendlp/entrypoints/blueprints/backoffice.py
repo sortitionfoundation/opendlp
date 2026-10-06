@@ -363,7 +363,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
             number_to_select=summary.number_to_select,
-            number_of_registrations=summary.total_respondents,
+            number_of_respondents=summary.total_respondents,
             dashboard_view=view,
             dashboard_sections=dashboard_sections,
             dashboard_tables=dashboard_tables,

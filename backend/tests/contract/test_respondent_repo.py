@@ -921,11 +921,17 @@ class TestGetByAssemblyIdStatuses:
         assert [r.external_id for r in result] == ["R-sel", "R-conf"]
 
 
-def _attributed_respondent(backend: ContractBackend, assembly_id: uuid.UUID, page_id: uuid.UUID | None) -> Respondent:
+def _attributed_respondent(
+    backend: ContractBackend,
+    assembly_id: uuid.UUID,
+    page_id: uuid.UUID | None,
+    status: RespondentStatus = RespondentStatus.POOL,
+) -> Respondent:
     respondent = Respondent(
         assembly_id=assembly_id,
         external_id=f"EXT-{uuid.uuid4().hex[:8]}",
         registration_page_id=page_id,
+        selection_status=status,
     )
     backend.repo.add(respondent)
     backend.commit()
@@ -962,3 +968,25 @@ class TestRegistrationPageAttribution:
 
         counts = respondent_backend.repo.count_by_registration_page(assembly.id)
         assert counts == {first.id: 2, second.id: 1}
+
+    def test_counts_are_grouped_by_page_and_status(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        page = respondent_backend.make_registration_page(assembly_id=assembly.id)
+        _attributed_respondent(respondent_backend, assembly.id, page.id)
+        _attributed_respondent(respondent_backend, assembly.id, page.id)
+        _attributed_respondent(respondent_backend, assembly.id, page.id, RespondentStatus.TEST_SUBMISSION)
+        _attributed_respondent(respondent_backend, assembly.id, None)
+        _attributed_respondent(respondent_backend, assembly.id, None, RespondentStatus.WITHDRAWN)
+
+        counts = respondent_backend.repo.count_by_registration_page_and_status(assembly.id)
+        assert counts == {
+            page.id: {RespondentStatus.POOL: 2, RespondentStatus.TEST_SUBMISSION: 1},
+            None: {RespondentStatus.POOL: 1, RespondentStatus.WITHDRAWN: 1},
+        }
+
+    def test_counts_by_page_and_status_ignore_other_assemblies(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        other = respondent_backend.make_assembly()
+        _attributed_respondent(respondent_backend, other.id, None)
+
+        assert respondent_backend.repo.count_by_registration_page_and_status(assembly.id) == {}

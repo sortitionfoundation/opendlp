@@ -1223,6 +1223,23 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
         )
         return dict(rows)
 
+    def count_by_registration_page_and_status(
+        self, assembly_id: uuid.UUID
+    ) -> dict[uuid.UUID | None, dict[RespondentStatus, int]]:
+        rows = self.session.execute(
+            select(
+                orm.respondents.c.registration_page_id,
+                orm.respondents.c.selection_status,
+                func.count().label("cnt"),
+            )
+            .where(orm.respondents.c.assembly_id == assembly_id)
+            .group_by(orm.respondents.c.registration_page_id, orm.respondents.c.selection_status)
+        ).all()
+        counts: dict[uuid.UUID | None, dict[RespondentStatus, int]] = {}
+        for row in rows:
+            counts.setdefault(row.registration_page_id, {})[row.selection_status] = row.cnt
+        return counts
+
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,

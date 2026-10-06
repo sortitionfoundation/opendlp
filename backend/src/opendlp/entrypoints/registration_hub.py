@@ -9,7 +9,7 @@ from flask_login import current_user
 
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
-from opendlp.domain.value_objects import headline_registration_count
+from opendlp.domain.value_objects import RespondentStatus, headline_registration_count
 from opendlp.entrypoints.blueprints.registration import registration_url, short_url
 from opendlp.service_layer.qr_codes import generate_qr_code_base64
 from opendlp.service_layer.registration_page_service import deletable_registration_page_ids, list_registration_pages
@@ -27,7 +27,7 @@ def _page_row(
     page: RegistrationPage,
     assembly_id: uuid.UUID,
     deletable_ids: set[uuid.UUID],
-    registration_counts: dict[uuid.UUID, int],
+    status_counts: dict[RespondentStatus, int],
 ) -> dict[str, Any]:
     """One row of the registration pages list.
 
@@ -35,6 +35,9 @@ def _page_row(
     and cannot be opened here until one is set, so it renders without links. The
     QR code encodes the short URL, matching the editor's sharing panel, so it
     only exists once a short slug does.
+
+    ``status_counts`` is this page's respondents by status. The registration
+    count is the headline figure; test submissions are counted separately.
     """
     page_short_url = short_url(page.short_url_slug) if page.short_url_slug else ""
     return {
@@ -65,7 +68,8 @@ def _page_row(
         if page_short_url and page.url_slug
         else "",
         "published_at": page.last_published_at(),
-        "registration_count": registration_counts.get(page.id, 0),
+        "registration_count": headline_registration_count(status_counts),
+        "test_submission_count": status_counts.get(RespondentStatus.TEST_SUBMISSION, 0),
     }
 
 
@@ -73,10 +77,13 @@ def registration_page_rows(
     pages: list[RegistrationPage],
     assembly_id: uuid.UUID,
     deletable_ids: set[uuid.UUID],
-    registration_counts: dict[uuid.UUID, int],
+    counts_by_page: dict[uuid.UUID | None, dict[RespondentStatus, int]],
 ) -> list[dict[str, Any]]:
-    """Rows for the registration pages list — also rendered behind the editor's modal."""
-    return [_page_row(page, assembly_id, deletable_ids, registration_counts) for page in pages]
+    """Rows for the registration pages list — also rendered behind the editor's modal.
+
+    ``counts_by_page`` is ``count_by_registration_page_and_status``.
+    """
+    return [_page_row(page, assembly_id, deletable_ids, counts_by_page.get(page.id, {})) for page in pages]
 
 
 def _setup_summary(
@@ -109,21 +116,27 @@ def registration_hub_context(
     """
     pages = list_registration_pages(uow, current_user.id, assembly_id)
     deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
-    registration_counts = uow.respondents.count_by_registration_page(assembly_id)
+    counts_by_page = uow.respondents.count_by_registration_page_and_status(assembly_id)
+    page_rows = registration_page_rows(pages, assembly_id, deletable_ids, counts_by_page)
     return {
-        "page_rows": registration_page_rows(pages, assembly_id, deletable_ids, registration_counts),
-        "total_registration_count": _total_registration_count(uow, assembly_id),
+        "page_rows": page_rows,
+        "registration_totals": _registration_totals(page_rows, counts_by_page),
         "setup_summary": _setup_summary(uow, assembly_id, data_source, gsheet),
     }
 
 
-def _total_registration_count(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:
-    """How many people have registered for this assembly — the tab's headline number.
+def _registration_totals(
+    page_rows: list[dict[str, Any]], counts_by_page: dict[uuid.UUID | None, dict[RespondentStatus, int]]
+) -> dict[str, int]:
+    """The tab's headline numbers: how many respondents came from where.
 
-    Counts the same statuses as the dashboard's "Number of registrations", so the
-    two tabs agree: everyone who became a respondent, withdrawals included, but
-    not test submissions (never real) or deleted respondents (details gone). This
-    is deliberately wider than the per-page counts, which tally rows against each
-    page regardless of status.
+    The registration and test submission counts are the sums of the pages list,
+    so the tiles always add up to the table. ``non_registration_count`` is every
+    headline-status respondent who did not come through a registration page, so
+    it plus ``registration_count`` equals the dashboard's "Number of respondents".
     """
-    return headline_registration_count(uow.respondents.count_by_status(assembly_id))
+    return {
+        "registration_count": sum(row["registration_count"] for row in page_rows),
+        "test_submission_count": sum(row["test_submission_count"] for row in page_rows),
+        "non_registration_count": headline_registration_count(counts_by_page.get(None, {})),
+    }

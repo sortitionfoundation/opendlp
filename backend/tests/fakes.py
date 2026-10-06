@@ -826,6 +826,17 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             counts[item.registration_page_id] = counts.get(item.registration_page_id, 0) + 1
         return counts
 
+    def count_by_registration_page_and_status(
+        self, assembly_id: uuid.UUID
+    ) -> dict[uuid.UUID | None, dict[RespondentStatus, int]]:
+        counts: dict[uuid.UUID | None, dict[RespondentStatus, int]] = {}
+        for item in self._items:
+            if item.assembly_id != assembly_id:
+                continue
+            page_counts = counts.setdefault(item.registration_page_id, {})
+            page_counts[item.selection_status] = page_counts.get(item.selection_status, 0) + 1
+        return counts
+
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,

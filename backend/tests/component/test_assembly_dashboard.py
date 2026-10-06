@@ -24,7 +24,7 @@ def _members_url(assembly) -> str:
 
 
 def _indicator_values(html: str) -> list[str]:
-    """The bold numbers in the "Number to select / Number of registrations" row."""
+    """The bold numbers in the "Number to select / Number of respondents" row."""
     return re.findall(r'font-weight: 700;">(\d+)</span>', html)
 
 
@@ -98,7 +98,7 @@ class TestTheDashboardPage:
         html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
 
         assert "Number to select:" in html
-        assert "Number of registrations:" in html
+        assert "Number of respondents:" in html
         # one section per target category
         assert ">Gender<" in html
 
