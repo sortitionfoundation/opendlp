@@ -580,8 +580,12 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
-        """Reset all respondents for an assembly back to POOL status. Returns count updated."""
+    def reset_all_to_pool(self, assembly_id: uuid.UUID, author_id: uuid.UUID, selection_run_id: uuid.UUID) -> int:
+        """Reset all non-deleted respondents for an assembly back to POOL status.
+
+        Each respondent not already in the pool gets a RESET comment carrying
+        `selection_run_id`. Returns the number whose status changed.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
