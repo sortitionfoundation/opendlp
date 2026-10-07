@@ -322,7 +322,7 @@ class TestCsvSelectionProgressModal:
         assert response.status_code == 200
         html = response.data.decode()
         assert "Task completed successfully. Successfully selected 2 people. 8 remain in pool." in html
-        selected = html[html.index("<span>Selected</span>") :]
+        selected = html[html.index("<span>Selected this round</span>") :]
         assert f"/respondents/{ids['3']}" in selected
         assert f"/respondents/{ids['1']}" in selected
         assert f"/respondents/{ids['2']}" not in selected
@@ -358,7 +358,9 @@ class TestCsvSelectionProgressModal:
 
         assert response.status_code == 200
         html = response.data.decode()
-        targets = html[html.index("<span>Targets</span>") : html.index("<span>Selected</span>")]
+        targets = html[
+            html.index("<span>Targets used this round</span>") : html.index("<span>Selected this round</span>")
+        ]
         assert "Gender" in targets
         assert "Woman" in targets
         assert "Man" in targets
@@ -586,7 +588,7 @@ class TestCsvSelectionPageIntegration:
 
         assert response.status_code == 200
         html = response.data.decode()
-        selected = html[html.index("<span>Selected</span>") :]
+        selected = html[html.index("<span>Selected this round</span>") :]
         assert f"/respondents/{ids['1']}" in selected
         assert f"/respondents/{ids['3']}" in selected
         assert f"/respondents/{ids['2']}" not in selected
