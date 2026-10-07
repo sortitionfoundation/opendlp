@@ -425,20 +425,19 @@ def _seed_statuses(fake_store: FakeStore, assembly_id: uuid.UUID, statuses: list
         uow.commit()
 
 
-def _status_links(body: str) -> dict[str, str]:
-    """Each status filter link's label and count, keyed by its status ("" for All)."""
-    links = re.findall(
-        r'data-status-filter="([A-Z_]*)".*?>\s*(.*?)\s*<span class="font-bold">(\d+)</span>', body, re.DOTALL
-    )
-    return {status: f"{label} {count}" for status, label, count in links}
+def _status_options(body: str) -> dict[str, str]:
+    """Each status filter option's text, keyed by its value ("" for All statuses)."""
+    select = re.search(r'<select id="status-filter".*?</select>', body, re.DOTALL)
+    assert select is not None
+    return dict(re.findall(r'<option value="([A-Z_]*)"[^>]*>(.*?)</option>', select.group(0)))
 
 
-def _current_status_filter(body: str) -> list[str]:
-    return re.findall(r'data-status-filter="([A-Z_]*)"\s+aria-current="page"', body)
+def _selected_status_filter(body: str) -> list[str]:
+    return re.findall(r'<option value="([A-Z_]*)" selected>', body)
 
 
 class TestRespondentsStatusFilter:
-    """The status filter links above the respondents list, each with its count."""
+    """The status filter above the respondents list, each option with its count."""
 
     def test_each_status_shows_its_count_and_all_leaves_out_deleted(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
@@ -458,17 +457,17 @@ class TestRespondentsStatusFilter:
 
         body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
 
-        assert _status_links(body) == {
-            "": "All 5",
-            "POOL": "Pool 2",
-            "SELECTED": "Selected 1",
-            "CONFIRMED": "Confirmed 0",
-            "WITHDRAWN": "Withdrawn 1",
-            "TEST_SUBMISSION": "Test submission 1",
-            "DELETED": "Deleted 1",
+        assert _status_options(body) == {
+            "": "All statuses (5)",
+            "POOL": "Pool (2)",
+            "SELECTED": "Selected (1)",
+            "CONFIRMED": "Confirmed (0)",
+            "WITHDRAWN": "Withdrawn (1)",
+            "TEST_SUBMISSION": "Test submission (1)",
+            "DELETED": "Deleted (1)",
         }
-        assert _current_status_filter(body) == [""]
-        assert 'id="status-filter"' not in body
+        assert _selected_status_filter(body) == [""]
+        assert "All statuses: every respondent except deleted ones" in body
 
     def test_test_submission_and_deleted_filters_are_hidden_at_zero(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
@@ -477,9 +476,9 @@ class TestRespondentsStatusFilter:
 
         body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
 
-        assert set(_status_links(body)) == {"", "POOL", "SELECTED", "CONFIRMED", "WITHDRAWN"}
+        assert set(_status_options(body)) == {"", "POOL", "SELECTED", "CONFIRMED", "WITHDRAWN"}
 
-    def test_a_chosen_filter_is_current_and_shown_even_at_zero(
+    def test_a_chosen_filter_is_selected_and_shown_even_at_zero(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
     ) -> None:
         _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL])
@@ -488,8 +487,8 @@ class TestRespondentsStatusFilter:
             as_text=True
         )
 
-        assert _status_links(body)["DELETED"] == "Deleted 0"
-        assert _current_status_filter(body) == ["DELETED"]
+        assert _status_options(body)["DELETED"] == "Deleted (0)"
+        assert _selected_status_filter(body) == ["DELETED"]
 
     def test_test_submission_rows_show_a_translatable_status_label(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore

@@ -609,36 +609,27 @@ def stop_auto_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
 _STATUS_FILTERS_HIDDEN_AT_ZERO = {RespondentStatus.TEST_SUBMISSION, RespondentStatus.DELETED}
 
 
-def _status_filter_links(
-    assembly_id: uuid.UUID, status_counts: dict[RespondentStatus, int], status_filter: str
-) -> list[dict[str, Any]]:
-    """The respondents list's status filters, each with its count.
+def _status_filter_options(status_counts: dict[RespondentStatus, int], status_filter: str) -> list[dict[str, Any]]:
+    """The options of the respondents list's status filter, each with its count.
 
-    "All" comes first and counts what the unfiltered list shows: everyone but the
-    DELETED. The statuses follow in ``respondent_status_labels`` order.
+    "All statuses" comes first and counts what the unfiltered list shows: everyone
+    but the DELETED. The statuses follow in ``respondent_status_labels`` order.
     """
-    links: list[dict[str, Any]] = [
+    options: list[dict[str, Any]] = [
         {
-            "status": "",
-            "label": _("All"),
+            "value": "",
+            "label": _("All statuses"),
             "count": sum(count for status, count in status_counts.items() if status != RespondentStatus.DELETED),
-            "url": url_for("respondents.view_assembly_respondents", assembly_id=assembly_id),
-            "current": not status_filter,
+            "selected": not status_filter,
         }
     ]
     for status, label in respondent_status_labels.items():
         count = status_counts.get(status, 0)
-        current = status_filter == status.value
-        if status in _STATUS_FILTERS_HIDDEN_AT_ZERO and not count and not current:
+        selected = status_filter == status.value
+        if status in _STATUS_FILTERS_HIDDEN_AT_ZERO and not count and not selected:
             continue
-        links.append({
-            "status": status.value,
-            "label": label,
-            "count": count,
-            "url": url_for("respondents.view_assembly_respondents", assembly_id=assembly_id, status=status.value),
-            "current": current,
-        })
-    return links
+        options.append({"value": status.value, "label": label, "count": count, "selected": selected})
+    return options
 
 
 @respondents_bp.route("/assembly/<uuid:assembly_id>/respondents")
@@ -725,7 +716,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             total_pages=total_pages,
             total_count=total_count,
             status_filter=status_filter_str,
-            status_links=_status_filter_links(assembly_id, status_counts, status_filter_str),
+            status_options=_status_filter_options(status_counts, status_filter_str),
             has_respondents=bool(sum(status_counts.values())),
             can_edit=can_edit,
             respondent_gsheet=respondent_gsheet,

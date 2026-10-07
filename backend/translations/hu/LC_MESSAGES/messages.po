@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-06 16:47+0100\n"
+"POT-Creation-Date: 2026-10-07 11:34+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -255,7 +255,7 @@ msgstr "Egész szám"
 #: templates/admin/invite_view.html:48 templates/admin/invites.html:67
 #: templates/admin/user_view.html:23 templates/admin/users.html:116
 #: templates/backoffice/assembly_members.html:48
-#: templates/backoffice/assembly_respondents.html:136
+#: templates/backoffice/assembly_respondents.html:129
 #: templates/backoffice/assembly_view_respondent.html:160
 #: templates/backoffice/components/db_selection_progress_modal.html:122
 #: templates/main/view_assembly_members.html:11
@@ -1704,9 +1704,9 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:317
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:651
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:680
-#: src/opendlp/entrypoints/blueprints/respondents.py:744
-#: src/opendlp/entrypoints/blueprints/respondents.py:875
-#: src/opendlp/entrypoints/blueprints/respondents.py:1033
+#: src/opendlp/entrypoints/blueprints/respondents.py:735
+#: src/opendlp/entrypoints/blueprints/respondents.py:866
+#: src/opendlp/entrypoints/blueprints/respondents.py:1024
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/target_sources.py:643
 #: src/opendlp/entrypoints/blueprints/target_sources.py:666
@@ -1785,11 +1785,11 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondents.py:485
 #: src/opendlp/entrypoints/blueprints/respondents.py:541
 #: src/opendlp/entrypoints/blueprints/respondents.py:600
-#: src/opendlp/entrypoints/blueprints/respondents.py:735
-#: src/opendlp/entrypoints/blueprints/respondents.py:801
-#: src/opendlp/entrypoints/blueprints/respondents.py:866
-#: src/opendlp/entrypoints/blueprints/respondents.py:1030
-#: src/opendlp/entrypoints/blueprints/respondents.py:1077
+#: src/opendlp/entrypoints/blueprints/respondents.py:726
+#: src/opendlp/entrypoints/blueprints/respondents.py:792
+#: src/opendlp/entrypoints/blueprints/respondents.py:857
+#: src/opendlp/entrypoints/blueprints/respondents.py:1021
+#: src/opendlp/entrypoints/blueprints/respondents.py:1068
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -2967,7 +2967,7 @@ msgid "Respondents deleted: %(count)d"
 msgstr "Jelentkezők törölve: %(count)d"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:386
-#: src/opendlp/entrypoints/blueprints/respondents.py:788
+#: src/opendlp/entrypoints/blueprints/respondents.py:779
 msgid "You don't have permission to delete respondents"
 msgstr "Nincs jogosultságod jelentkezők törléséhez"
 
@@ -3014,63 +3014,65 @@ msgstr ""
 msgid "Automatic export stopped"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:623
-msgid "All"
-msgstr ""
+#: src/opendlp/entrypoints/blueprints/respondents.py:621
+#: templates/admin/users.html:90
+#: templates/respondents/view_respondents.html:130
+msgid "All statuses"
+msgstr "Minden állapot"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:753
+#: src/opendlp/entrypoints/blueprints/respondents.py:744
 msgid "An error occurred while loading assembly respondents"
 msgstr "Hiba történt a közösségi gyűlés jelentkezőinek betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:766
+#: src/opendlp/entrypoints/blueprints/respondents.py:757
 msgid "A comment is required when deleting a respondent"
 msgstr "Jelentkező törlésekor meg kell adni egy megjegyzést"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:778
+#: src/opendlp/entrypoints/blueprints/respondents.py:769
 msgid "Respondent personal data deleted"
 msgstr "A jelentkező személyes adatai törölve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:797
-#: src/opendlp/entrypoints/blueprints/respondents.py:862
-#: src/opendlp/entrypoints/blueprints/respondents.py:1027
-#: src/opendlp/entrypoints/blueprints/respondents.py:1074
+#: src/opendlp/entrypoints/blueprints/respondents.py:788
+#: src/opendlp/entrypoints/blueprints/respondents.py:853
+#: src/opendlp/entrypoints/blueprints/respondents.py:1018
+#: src/opendlp/entrypoints/blueprints/respondents.py:1065
 msgid "Respondent not found"
 msgstr "A jelentkező nem található"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:810
+#: src/opendlp/entrypoints/blueprints/respondents.py:801
 msgid "An error occurred while deleting the respondent"
 msgstr "Hiba történt a jelentkező törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:884
+#: src/opendlp/entrypoints/blueprints/respondents.py:875
 msgid "An error occurred while loading the respondent"
 msgstr "Hiba történt a jelentkező betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:960
-#: src/opendlp/entrypoints/blueprints/respondents.py:980
+#: src/opendlp/entrypoints/blueprints/respondents.py:951
+#: src/opendlp/entrypoints/blueprints/respondents.py:971
 msgid "You don't have permission to edit respondents"
 msgstr "Nincs jogosultságod jelentkezők szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:962
+#: src/opendlp/entrypoints/blueprints/respondents.py:953
 msgid "Respondent updated"
 msgstr "A jelentkező frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:990
+#: src/opendlp/entrypoints/blueprints/respondents.py:981
 msgid "Cannot edit a deleted respondent"
 msgstr "Törölt jelentkező nem szerkeszthető"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1049
+#: src/opendlp/entrypoints/blueprints/respondents.py:1040
 msgid "A comment is required when changing selection status"
 msgstr "A kiválasztási állapot módosításakor meg kell adni egy megjegyzést"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1054
+#: src/opendlp/entrypoints/blueprints/respondents.py:1045
 msgid "Invalid target status"
 msgstr "Érvénytelen célállapot"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1068
+#: src/opendlp/entrypoints/blueprints/respondents.py:1059
 msgid "Status updated"
 msgstr "Az állapot frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1072
+#: src/opendlp/entrypoints/blueprints/respondents.py:1063
 msgid "You don't have permission to change this respondent's status"
 msgstr "Nincs jogosultságod ennek a jelentkezőnek az állapotát módosítani"
 
@@ -4821,7 +4823,7 @@ msgstr "Szerepkör"
 
 #: templates/admin/invite_view.html:59 templates/admin/invites.html:69
 #: templates/admin/users.html:118 templates/backoffice/assembly_details.html:53
-#: templates/backoffice/assembly_respondents.html:133
+#: templates/backoffice/assembly_respondents.html:126
 #: templates/backoffice/assembly_selection.html:94
 #: templates/backoffice/assembly_selection.html:221
 #: templates/backoffice/components/db_selection_progress_modal.html:48
@@ -4950,7 +4952,7 @@ msgstr "Lejárat"
 
 #: templates/admin/invites.html:72 templates/admin/users.html:121
 #: templates/backoffice/assembly_members.html:51
-#: templates/backoffice/assembly_respondents.html:137
+#: templates/backoffice/assembly_respondents.html:130
 #: templates/backoffice/assembly_selection.html:106
 #: templates/backoffice/assembly_selection.html:233
 #: templates/backoffice/components/db_selection_progress_modal.html:123
@@ -4966,7 +4968,7 @@ msgstr "Műveletek"
 #: templates/admin/invites.html:98 templates/admin/users.html:157
 #: templates/backoffice/assembly_dashboard.html:57
 #: templates/backoffice/assembly_dashboard.html:58
-#: templates/backoffice/assembly_respondents.html:147
+#: templates/backoffice/assembly_respondents.html:140
 #: templates/backoffice/assembly_selection.html:144
 #: templates/backoffice/assembly_selection.html:268
 #: templates/backoffice/components/db_selection_progress_modal.html:133
@@ -5081,7 +5083,7 @@ msgid "Edit User"
 msgstr "Felhasználó szerkesztése"
 
 #: templates/admin/user_edit.html:20 templates/admin/users.html:160
-#: templates/backoffice/assembly_respondents.html:150
+#: templates/backoffice/assembly_respondents.html:143
 #: templates/backoffice/assembly_view_respondent.html:20
 #: templates/backoffice/assembly_view_respondent.html:224
 #: templates/backoffice/assembly_view_respondent.html:310
@@ -5313,15 +5315,9 @@ msgid "All roles"
 msgstr "Minden szerepkör"
 
 #: templates/admin/users.html:88
-#: templates/backoffice/assembly_respondents.html:97
 #: templates/respondents/view_respondents.html:126
 msgid "Filter by status"
 msgstr "Szűrés állapot szerint"
-
-#: templates/admin/users.html:90
-#: templates/respondents/view_respondents.html:130
-msgid "All statuses"
-msgstr "Minden állapot"
 
 #: templates/admin/users.html:98
 msgid "Apply Filters"
@@ -5337,7 +5333,7 @@ msgid "Showing %(start)s to %(end)s of %(total)s users"
 msgstr "%(total)s felhasználóból %(start)s–%(end)s látható"
 
 #: templates/admin/users.html:115
-#: templates/backoffice/assembly_respondents.html:134
+#: templates/backoffice/assembly_respondents.html:127
 #: templates/backoffice/components/db_selection_progress_modal.html:121
 #: templates/backoffice/components/registration_page_list.html:26
 msgid "Name"
@@ -5632,7 +5628,7 @@ msgid "Table"
 msgstr "Táblázat"
 
 #: templates/backoffice/assembly_dashboard.html:72
-#: templates/backoffice/assembly_respondents.html:125
+#: templates/backoffice/assembly_respondents.html:118
 #: templates/backoffice/dashboard_export_modal.html:14
 #: templates/backoffice/dashboard_export_modal.html:63
 #: templates/backoffice/respondents/export_modal.html:76
@@ -6302,34 +6298,41 @@ msgstr "Táblázat megtekintése"
 msgid "Stop automatic export"
 msgstr ""
 
-#: templates/backoffice/assembly_respondents.html:111
+#: templates/backoffice/assembly_respondents.html:97
+#: templates/backoffice/components/manage_tabs_progress_modal.html:18
+#: templates/backoffice/components/replacement_modal.html:49
+#: templates/backoffice/components/replacement_modal.html:100
+msgid "Status:"
+msgstr "Állapot:"
+
+#: templates/backoffice/assembly_respondents.html:108
 msgid ""
-"Every respondent except deleted ones, whose details have been removed. "
-"Test submissions are included."
+"All statuses: every respondent except deleted ones, whose details have "
+"been removed. Test submissions are included."
 msgstr ""
 
-#: templates/backoffice/assembly_respondents.html:135
+#: templates/backoffice/assembly_respondents.html:128
 #: templates/backoffice/components/db_selection_progress_modal.html:120
 msgid "ID"
 msgstr "ID"
 
-#: templates/backoffice/assembly_respondents.html:168
+#: templates/backoffice/assembly_respondents.html:161
 msgid "respondents"
 msgstr "jelentkező"
 
-#: templates/backoffice/assembly_respondents.html:172
+#: templates/backoffice/assembly_respondents.html:165
 msgid "No respondents match the selected status filter."
 msgstr "Nincs a kiválasztott állapotszűrőnek megfelelő jelentkező."
 
-#: templates/backoffice/assembly_respondents.html:174
+#: templates/backoffice/assembly_respondents.html:167
 msgid "No respondents uploaded yet."
 msgstr "Még nincs feltöltött jelentkező."
 
-#: templates/backoffice/assembly_respondents.html:182
+#: templates/backoffice/assembly_respondents.html:175
 msgid "Please configure a data source in the Data tab first."
 msgstr "Előbb állíts be egy adatforrást az Adatok lapon."
 
-#: templates/backoffice/assembly_respondents.html:184
+#: templates/backoffice/assembly_respondents.html:177
 #: templates/backoffice/assembly_selection.html:188
 msgid "Configure Data Source"
 msgstr "Adatforrás beállítása"
@@ -7222,12 +7225,6 @@ msgstr "Szerkesztés folytatása"
 #: templates/backoffice/components/manage_tabs_progress_modal.html:10
 msgid "Manage Tabs Progress"
 msgstr "Munkalapkezelés előrehaladása"
-
-#: templates/backoffice/components/manage_tabs_progress_modal.html:18
-#: templates/backoffice/components/replacement_modal.html:49
-#: templates/backoffice/components/replacement_modal.html:100
-msgid "Status:"
-msgstr "Állapot:"
 
 #: templates/backoffice/components/manage_tabs_progress_modal.html:44
 msgid "Found old tabs:"

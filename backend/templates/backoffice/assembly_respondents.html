@@ -90,34 +90,27 @@ ABOUTME: Displays respondent data configuration for assemblies
                 </div>
                 <div id="export-modal-container" data-fragment-dialog-host></div>
                 {# Filter controls - show when there are respondents or when filter is active.
-                   Each status is a link carrying its count, so the counts and the
-                   filter are one control. "All" leaves out deleted respondents. #}
+                   Each option carries its count. "All statuses" leaves out deleted respondents. #}
                 {% if has_respondents or status_filter %}
-                    <div class="flex items-start justify-between gap-4 mb-4">
-                        <nav aria-label="{{ _('Filter by status') }}" x-data="{}" x-scroll-preserve-links>
-                            <ul class="flex flex-wrap items-center gap-2" role="list">
-                                {% for link in status_links %}
-                                    <li class="inline-flex items-center gap-1">
-                                        <a href="{{ link.url }}"
-                                           data-status-filter="{{ link.status }}"
-                                           {% if link.current %}aria-current="page"{% endif %}
-                                           class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-label-md border transition-colors"
-                                           style="border-color: var(--color-brand-400);
-                                                  {% if link.current %}background-color: var(--color-brand-400); color: var(--color-neutral-0);{% else %}background-color: transparent; color: var(--color-brand-400);{% endif %}">
-                                            {{ link.label }}
-                                            <span class="font-bold">{{ link.count }}</span>
-                                        </a>
-                                        {% if not link.status %}
-                                            {{ info_icon(_("Every respondent except deleted ones, whose details have been removed. Test submissions are included.")) }}
-                                        {% endif %}
-                                    </li>
+                    <div class="flex items-center justify-end gap-4 mb-4">
+                        <div class="flex items-center gap-2">
+                            <label for="status-filter" class="text-body-md" style="color: var(--color-secondary-text);">{{ _("Status:") }}</label>
+                            <select id="status-filter"
+                                    class="px-3 py-2 rounded-lg text-body-md"
+                                    style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                    data-navigate-base-url="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}"
+                                    data-navigate-param="status"
+                                    data-navigate-preserve-scroll>
+                                {% for option in status_options %}
+                                    <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }} ({{ option.count }})</option>
                                 {% endfor %}
-                            </ul>
-                        </nav>
+                            </select>
+                            {{ info_icon(_("All statuses: every respondent except deleted ones, whose details have been removed. Test submissions are included.")) }}
+                        </div>
                         {% if total_count > 0 %}
                             <button type="button"
                                     data-focus-id="respondents-export"
-                                    class="shrink-0 px-4 py-2 rounded-lg text-body-md"
+                                    class="px-4 py-2 rounded-lg text-body-md"
                                     style="background-color: var(--color-primary-action); color: white;"
                                     hx-get="{{ url_for('respondents.export_modal', assembly_id=assembly.id) }}{% if status_filter %}?status={{ status_filter }}{% endif %}"
                                     hx-target="#export-modal-container"
