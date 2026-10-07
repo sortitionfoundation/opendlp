@@ -166,6 +166,10 @@ INVITE_EXPIRY_HOURS=168
 # (default: 204800 = 200 KB, clamped to [1 KB, 10 MB])
 REGISTRATION_FORM_HTML_MAX_BYTES=204800
 
+# Maximum size in bytes for a registration page's intro HTML
+# (default: 204800 = 200 KB, clamped to [1 KB, 10 MB])
+REGISTRATION_INTRO_HTML_MAX_BYTES=204800
+
 # Maximum size in bytes for a registration page's thank-you HTML
 # (default: 51200 = 50 KB, clamped to [1 KB, 10 MB])
 REGISTRATION_THANK_YOU_HTML_MAX_BYTES=51200

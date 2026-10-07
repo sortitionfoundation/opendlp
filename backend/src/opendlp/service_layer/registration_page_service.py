@@ -8,7 +8,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from enum import Enum
 
-from opendlp.config import get_registration_form_html_max_bytes, get_registration_thank_you_html_max_bytes
+from opendlp.config import (
+    get_registration_form_html_max_bytes,
+    get_registration_intro_html_max_bytes,
+    get_registration_thank_you_html_max_bytes,
+)
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.registration_page import (
     DEFAULT_THANK_YOU_HTML,
@@ -21,6 +25,8 @@ from opendlp.domain.registration_page import (
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
 from opendlp.domain.registration_page import generate_starter_form_html_govuk as _build_starter_html_govuk
+from opendlp.domain.registration_page import generate_starter_intro_html as _build_starter_intro
+from opendlp.domain.registration_page import generate_starter_intro_html_govuk as _build_starter_intro_govuk
 from opendlp.domain.users import User
 from opendlp.translations import gettext as _
 
@@ -357,10 +363,12 @@ def duplicate_registration_page(
     page.record_create(user.id)
     page.activity[-1] = replace(page.activity[-1], text=f"Registration page copied from '{source.name}'")
     uow.registration_pages.add(page)
+    source_html = _load_html_source(uow, source)
     uow.registration_page_html_sources.add(
         RegistrationPageHtml(
             registration_page_id=page.id,
-            form_html=_load_html_source(uow, source).form_html,
+            form_html=source_html.form_html,
+            intro_html=source_html.intro_html,
         )
     )
     return page.create_detached_copy()
@@ -644,6 +652,23 @@ def update_registration_page_html(
     return source.create_detached_copy()
 
 
+def update_registration_page_intro_html(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, intro_html: str
+) -> RegistrationPageHtml:
+    """Update the page's intro HTML. Raises ValueError if it exceeds the size limit.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+
+    _check_size(intro_html, get_registration_intro_html_max_bytes(), _("intro HTML"))
+    source = _load_html_source(uow, page)
+    if source.intro_html != intro_html:
+        source.update_intro_html(intro_html)
+        page.record_edit(user.id, "Updated intro HTML")
+    return source.create_detached_copy()
+
+
 def publish_registration_page(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, text: str = ""
 ) -> RegistrationPage:
@@ -923,14 +948,21 @@ def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, asse
 
 @dataclass(frozen=True)
 class StarterFormHtmlVariants:
+    """The starter intro and form HTML, each in an unstyled and a GOV.UK-styled flavour."""
+
     plain: str
     govuk: str
+    intro_plain: str
+    intro_govuk: str
 
 
 def generate_starter_form_html_variants(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> StarterFormHtmlVariants:
-    """Generate both the unstyled and GOV.UK-styled starter HTML forms from the assembly's respondent field schema.
+    """Generate the unstyled and GOV.UK-styled starter intro and form HTML.
+
+    The form comes from the assembly's respondent field schema; the intro
+    carries the assembly title and question placeholders.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -938,4 +970,9 @@ def generate_starter_form_html_variants(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
     fields = list(uow.respondent_field_definitions.list_by_assembly(assembly_id))
-    return StarterFormHtmlVariants(plain=_build_starter_html(fields), govuk=_build_starter_html_govuk(fields))
+    return StarterFormHtmlVariants(
+        plain=_build_starter_html(fields),
+        govuk=_build_starter_html_govuk(fields),
+        intro_plain=_build_starter_intro(),
+        intro_govuk=_build_starter_intro_govuk(),
+    )

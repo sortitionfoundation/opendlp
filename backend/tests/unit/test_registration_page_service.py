@@ -98,6 +98,7 @@ class TestCreateRegistrationPage:
         source = uow.registration_page_html_sources.get_by_page_id(page.id)
         assert source is not None
         assert source.form_html == ""
+        assert source.intro_html == ""
 
     def test_create_appends_create_activity(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
@@ -795,6 +796,59 @@ class TestGenerateStarterFormHtml:
         assert uow.committed is False
 
 
+class TestUpdateRegistrationPageIntroHtml:
+    def test_happy_path(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+        assert source.intro_html == "<h1>Hi</h1>"
+        assert source.form_html == ""
+
+    def test_rejects_oversized_html(self, uow, temp_env_vars):
+        """The intro has its own limit, and the error names the intro."""
+        temp_env_vars(REGISTRATION_INTRO_HTML_MAX_BYTES="1024")
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        with pytest.raises(ValueError, match="intro HTML must be at most 1024 bytes"):
+            service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "x" * 1100)
+
+    def test_appends_edit_when_changed(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+        page = page_for_assembly(uow, assembly.id)
+        edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
+        assert len(edits) == 1
+        assert "intro HTML" in edits[0].text
+
+    def test_no_op_no_activity(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+
+        service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+        page = page_for_assembly(uow, assembly.id)
+        edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
+        assert len(edits) == 1
+
+    def test_requires_manage_permission(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        viewer = _viewer(uow, assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            service.update_registration_page_intro_html(uow, viewer.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+
+    def test_raises_for_an_unknown_page(self, uow):
+        admin = _admin(uow)
+
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.update_registration_page_intro_html(uow, admin.id, uuid.uuid4(), "<h1>Hi</h1>")
+
+
 class TestGenerateStarterFormHtmlVariants:
     def test_happy_path_includes_field_names_in_both_variants(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
@@ -813,6 +867,19 @@ class TestGenerateStarterFormHtmlVariants:
 
         assert 'class="govuk-input"' in variants.govuk
         assert 'class="govuk-input"' not in variants.plain
+
+    def test_intro_variants_carry_the_assembly_copy_and_the_forms_do_not(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+
+        variants = service.generate_starter_form_html_variants(uow, admin.id, assembly.id)
+
+        assert "{{ assembly_title }}" in variants.intro_plain
+        assert "{{ assembly_title }}" in variants.intro_govuk
+        assert 'class="govuk-heading-xl"' in variants.intro_govuk
+        assert 'class="govuk-heading-xl"' not in variants.intro_plain
+        assert "{{ assembly_title }}" not in variants.plain
+        assert "{{ assembly_title }}" not in variants.govuk
 
     def test_requires_manage_permission(self, uow):
         _admin(uow)

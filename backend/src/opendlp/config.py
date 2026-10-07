@@ -280,6 +280,15 @@ def get_registration_form_html_max_bytes() -> int:
     return _registration_html_max_bytes("REGISTRATION_FORM_HTML_MAX_BYTES", 204800)
 
 
+def get_registration_intro_html_max_bytes() -> int:
+    """Maximum allowed size for a registration page's intro HTML, in bytes.
+
+    Default 200 KB. Bounded to [1 KB, 10 MB]. Environment variable:
+    ``REGISTRATION_INTRO_HTML_MAX_BYTES``.
+    """
+    return _registration_html_max_bytes("REGISTRATION_INTRO_HTML_MAX_BYTES", 204800)
+
+
 def get_registration_thank_you_html_max_bytes() -> int:
     """Maximum allowed size for a registration page's thank-you HTML, in bytes.
 
@@ -356,6 +365,7 @@ _UPLOAD_SIZE_CONTRIBUTORS: list[Callable[[], int]] = [
     get_max_image_upload_bytes,
     get_max_pdf_upload_bytes,
     get_registration_form_html_max_bytes,
+    get_registration_intro_html_max_bytes,
     get_registration_thank_you_html_max_bytes,
 ]
 

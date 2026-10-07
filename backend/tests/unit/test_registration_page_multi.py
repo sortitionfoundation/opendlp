@@ -225,6 +225,7 @@ class TestDuplicateRegistrationPage:
         admin, assembly = _admin(uow), _assembly(uow)
         source = service.create_registration_page(uow, admin.id, assembly.id, name="English")
         service.update_registration_page_html(uow, admin.id, source.id, READY_HTML)
+        service.update_registration_page_intro_html(uow, admin.id, source.id, "<h1>Welcome</h1>")
         service.update_thank_you_html(uow, admin.id, source.id, "<p>thanks</p>")
 
         copy = service.duplicate_registration_page(uow, admin.id, source.id, name="Español", language="es")
@@ -232,6 +233,7 @@ class TestDuplicateRegistrationPage:
         result = service.get_registration_page_with_source(uow, admin.id, copy.id)
         assert result is not None
         assert result[1].form_html == READY_HTML
+        assert result[1].intro_html == "<h1>Welcome</h1>"
         assert result[0].thank_you_html == "<p>thanks</p>"
 
     def test_copy_starts_in_test_with_its_own_slugs(self, uow):

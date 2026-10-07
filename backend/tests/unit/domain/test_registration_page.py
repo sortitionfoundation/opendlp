@@ -5,7 +5,7 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
-from jinja2 import UndefinedError
+from jinja2 import TemplateSyntaxError, UndefinedError
 from jinja2.exceptions import SecurityError
 
 from opendlp.domain import registration_page as registration_page_module
@@ -23,6 +23,8 @@ from opendlp.domain.registration_page import (
     RenderContext,
     generate_starter_form_html,
     generate_starter_form_html_govuk,
+    generate_starter_intro_html,
+    generate_starter_intro_html_govuk,
 )
 from opendlp.domain.respondent_field_schema import (
     GROUP_LABELS,
@@ -190,6 +192,7 @@ class TestRegistrationPageHtml:
     def test_html_init_defaults(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4())
         assert html.form_html == ""
+        assert html.intro_html == ""
         assert isinstance(html.id, uuid.UUID)
         assert html.created_at is not None
         assert html.updated_at is not None
@@ -207,6 +210,20 @@ class TestRegistrationPageHtml:
         assert html.form_html == "<form></form>"
         assert html.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
         assert html.updated_at >= original
+
+    def test_update_intro_html_sets_value_and_bumps_updated_at(self):
+        """The intro is edited on its own; the form HTML is left alone."""
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=READY_HTML)
+        html.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        html.update_intro_html("<h1>Welcome</h1>")
+        assert html.intro_html == "<h1>Welcome</h1>"
+        assert html.form_html == READY_HTML
+        assert html.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+
+    def test_update_html_leaves_intro_alone(self):
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), intro_html="<h1>Welcome</h1>")
+        html.update_html(READY_HTML)
+        assert html.intro_html == "<h1>Welcome</h1>"
 
     def test_render_substitutes_both_tokens(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=READY_HTML)
@@ -241,6 +258,48 @@ class TestRegistrationPageHtml:
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html="<p>hello</p>")
         rendered = html.render(RenderContext(csrf_form_element="x", form_action="/u"))
         assert rendered == "<p>hello</p>"
+
+    def test_render_puts_intro_before_form(self):
+        """The intro and the form render separately and are joined by a newline."""
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(), intro_html="<h1>Welcome</h1>", form_html=READY_HTML
+        )
+        rendered = html.render(RenderContext(csrf_form_element="<csrf>", form_action="/r/submit"))
+        assert rendered == "<h1>Welcome</h1>\n<form><csrf> posts to /r/submit</form>"
+
+    def test_render_gives_intro_the_assembly_copy_and_helpers(self):
+        """Everything the form can reference, the intro can reference too."""
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="<h1>{{ assembly_title }}</h1><p>{{ assembly_question }}</p>{{ form_errors() }}",
+            form_html="<form></form>",
+        )
+        rendered = html.render(
+            RenderContext(
+                csrf_form_element="x",
+                form_action="/u",
+                assembly_title="Town Hall",
+                assembly_question="How?",
+                form_level_errors=["oops"],
+            )
+        )
+        assert rendered.startswith('<h1>Town Hall</h1><p>How?</p><ul class="form-errors"><li>oops</li></ul>')
+
+    def test_render_with_empty_intro_matches_the_form_alone(self):
+        """A page created before intros existed renders byte-for-byte as it did."""
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=READY_HTML)
+        rendered = html.render(RenderContext(csrf_form_element="<csrf>", form_action="/r/submit"))
+        assert rendered == "<form><csrf> posts to /r/submit</form>"
+
+    def test_render_blocks_are_not_shared_between_intro_and_form(self):
+        """A block opened in the intro cannot be closed in the form - each is its own template."""
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="{% if assembly_title %}",
+            form_html="{% endif %}<form></form>",
+        )
+        with pytest.raises(TemplateSyntaxError):
+            html.render(RenderContext(csrf_form_element="x", form_action="/u"))
 
     def test_readiness_problems_empty_when_html_ready(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=READY_HTML)
@@ -291,13 +350,42 @@ class TestRegistrationPageHtml:
         assert "csrf_form_element" not in problems[0]
         assert "form_action" not in problems[0]
 
+    def test_readiness_problems_empty_intro_is_fine(self):
+        """The intro is optional, so a page with only a form is publishable."""
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), intro_html="", form_html=READY_HTML)
+        assert html.readiness_problems() == []
+
+    def test_readiness_problems_reports_intro_template_syntax_error(self):
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="<h1>{% if assembly_title</h1>",
+            form_html=READY_HTML,
+        )
+        problems = html.readiness_problems()
+        assert len(problems) == 1
+        assert problems[0].startswith("The intro HTML has a template syntax error on line 1")
+
+    def test_readiness_problems_tokens_in_intro_do_not_count(self):
+        """The form must carry the tokens itself; an intro with them is not a working form."""
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="{{ csrf_form_element }} {{ form_action }}",
+            form_html="<form></form>",
+        )
+        problems = html.readiness_problems()
+        assert len(problems) == 2
+        assert all("form HTML is missing" in p for p in problems)
+
     def test_html_create_detached_copy(self):
-        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=READY_HTML)
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(), form_html=READY_HTML, intro_html="<h1>Welcome</h1>"
+        )
         copy = html.create_detached_copy()
         assert copy is not html
         assert copy.id == html.id
         assert copy.registration_page_id == html.registration_page_id
         assert copy.form_html == html.form_html
+        assert copy.intro_html == html.intro_html
 
 
 class TestHtmlSourceProtocol:
@@ -1455,6 +1543,40 @@ class TestGenerateStarterFormHtml:
         assert '<p class="hint" id="date_of_birth-hint">For example, 27 3 1985</p>' in html
 
 
+class TestGenerateStarterIntroHtml:
+    def test_plain_intro_carries_title_and_question(self):
+        html = generate_starter_intro_html()
+
+        assert html == "<h1>{{ assembly_title }}</h1>\n<p>{{ assembly_question }}</p>\n"
+
+    def test_plain_form_no_longer_carries_them(self):
+        html = generate_starter_form_html([])
+
+        assert "{{ assembly_title }}" not in html
+        assert "{{ assembly_question }}" not in html
+
+    def test_govuk_intro_carries_title_and_question_in_its_own_grid(self):
+        """Rendered as a separate template, the intro needs its own grid wrapper."""
+        html = generate_starter_intro_html_govuk()
+
+        assert html.startswith('<div class="govuk-grid-row">\n<div class="govuk-grid-column-two-thirds"')
+        assert '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>' in html
+        assert '<p class="govuk-body">{{ assembly_question }}</p>' in html
+        assert html.rstrip().endswith("</div>\n</div>")
+
+    def test_intros_render_with_the_assembly_copy(self):
+        for intro in (generate_starter_intro_html(), generate_starter_intro_html_govuk()):
+            html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), intro_html=intro, form_html=READY_HTML)
+            rendered = html.render(
+                RenderContext(
+                    csrf_form_element="x", form_action="/u", assembly_title="Town Hall", assembly_question="How?"
+                )
+            )
+            assert "Town Hall" in rendered
+            assert "How?" in rendered
+            assert html.readiness_problems() == []
+
+
 class TestGenerateStarterFormHtmlGovuk:
     def test_empty_schema_minimal_form(self):
         html = generate_starter_form_html_govuk([])
@@ -1470,8 +1592,12 @@ class TestGenerateStarterFormHtmlGovuk:
 
         assert '<div class="govuk-grid-row">' in html
         assert 'class="govuk-grid-column-two-thirds"' in html
-        assert '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>' in html
-        assert '<p class="govuk-body">{{ assembly_question }}</p>' in html
+
+    def test_assembly_copy_lives_in_the_intro_not_the_form(self):
+        html = generate_starter_form_html_govuk([])
+
+        assert "{{ assembly_title }}" not in html
+        assert "{{ assembly_question }}" not in html
 
     def test_no_inline_style_block(self):
         # The CSS needed for this markup lives in the main SCSS build, not
