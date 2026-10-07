@@ -334,7 +334,7 @@ def reset_selection_status(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> int:
-    """Reset all respondents for an assembly back to POOL status. Returns count updated.
+    """Reset all respondents for an assembly back to POOL status. Returns the number whose status changed.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -352,13 +352,15 @@ def reset_selection_status(
             required_role="assembly-manager or admin",
         )
 
-    count = uow.respondents.reset_all_to_pool(assembly_id)
+    # The comments on each reset respondent carry the id of the reset's history row.
+    task_id = uuid.uuid4()
+    count = uow.respondents.reset_all_to_pool(assembly_id, user_id, task_id)
     # The reset is synchronous, so its history row is complete the moment it is written.
     now = datetime.now(UTC)
     uow.selection_run_records.add(
         SelectionRunRecord(
             assembly_id=assembly_id,
-            task_id=uuid.uuid4(),
+            task_id=task_id,
             status=SelectionRunStatus.COMPLETED,
             task_type=SelectionTaskType.RESET_TO_POOL,
             user_id=user_id,

@@ -945,11 +945,14 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             r.attributes = {(new_key if k == old_key else k): v for k, v in r.attributes.items() if k != new_key}
         return len(changed)
 
-    def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
+    def reset_all_to_pool(self, assembly_id: uuid.UUID, author_id: uuid.UUID, selection_run_id: uuid.UUID) -> int:
         count = 0
         for r in self._items:
-            if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED:
-                r.reset_to_pool()
+            if r.assembly_id == assembly_id and r.selection_status not in (
+                RespondentStatus.POOL,
+                RespondentStatus.DELETED,
+            ):
+                r.reset_to_pool(author_id, selection_run_id)
                 count += 1
         return count
 

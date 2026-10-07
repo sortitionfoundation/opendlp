@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import and_, delete, distinct, func, insert, or_, select, text, update
+from sqlalchemy import and_, delete, distinct, func, insert, or_, select, text
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, RunSummary, SelectionRunRecord
@@ -1436,34 +1436,21 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             self._RENAME_ATTRIBUTE, assembly_id=assembly_id, old_key=old_key, new_key=new_key
         )
 
-    def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
-        count: int = (
+    def reset_all_to_pool(self, assembly_id: uuid.UUID, author_id: uuid.UUID, selection_run_id: uuid.UUID) -> int:
+        rows = (
             self.session
             .query(Respondent)
             .filter(
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
-                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
+                    orm.respondents.c.selection_status.notin_([RespondentStatus.POOL, RespondentStatus.DELETED]),
                 )
             )
-            .count()
+            .all()
         )
-        if count:
-            self.session.execute(
-                update(orm.respondents)
-                .where(
-                    and_(
-                        orm.respondents.c.assembly_id == assembly_id,
-                        orm.respondents.c.selection_status != RespondentStatus.DELETED,
-                    )
-                )
-                .values(
-                    selection_status=RespondentStatus.POOL,
-                    selection_run_id=None,
-                    updated_at=datetime.now(UTC),
-                )
-            )
-        return count
+        for respondent in rows:
+            respondent.reset_to_pool(author_id, selection_run_id)
+        return len(rows)
 
     def count_non_pool(self, assembly_id: uuid.UUID) -> int:
         return (

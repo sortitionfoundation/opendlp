@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-07 11:34+0100\n"
+"POT-Creation-Date: 2026-10-07 16:49+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -285,7 +285,7 @@ msgstr "Választható érték nem lehet üres"
 msgid "The label cannot be empty"
 msgstr "A címke nem lehet üres"
 
-#: src/opendlp/domain/respondents.py:357
+#: src/opendlp/domain/respondents.py:371
 msgid "Name deleted"
 msgstr "Név törölve"
 
@@ -583,7 +583,7 @@ msgstr "Tesztbeküldés"
 
 #: src/opendlp/domain/value_objects.py:209
 #: src/opendlp/entrypoints/blueprints/respondents.py:469
-#: templates/backoffice/assembly_view_respondent.html:227
+#: templates/backoffice/assembly_view_respondent.html:228
 #: templates/backoffice/components/table.html:218
 msgid "Deleted"
 msgstr "Törölve"
@@ -1135,6 +1135,7 @@ msgstr "Nem kötelező – miért ezeket a célszámokat választottátok"
 
 #: src/opendlp/entrypoints/forms.py:678
 #: templates/backoffice/assembly_data.html:39
+#: templates/backoffice/components/assembly_tabs.html:39
 msgid "Data Source"
 msgstr "Adatforrás"
 
@@ -2341,7 +2342,7 @@ msgstr "Hiba történt a beállítások mentése közben"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:494
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:446
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:191
-#: src/opendlp/service_layer/respondent_service.py:365
+#: src/opendlp/service_layer/respondent_service.py:367
 #, python-format
 msgid "Reset %(count)s respondents to the pool"
 msgstr "%(count)s fő visszaállítva Jelentkező állapotba"
@@ -4755,7 +4756,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/assembly_data.html:538
 #: templates/backoffice/assembly_edit_respondent.html:160
 #: templates/backoffice/assembly_form.html:96
-#: templates/backoffice/assembly_view_respondent.html:302
+#: templates/backoffice/assembly_view_respondent.html:303
 #: templates/backoffice/components/db_replacement_modal.html:220
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:88
@@ -4940,7 +4941,7 @@ msgstr "Kód"
 #: templates/admin/invites.html:70 templates/admin/users.html:120
 #: templates/backoffice/assembly_details.html:81
 #: templates/backoffice/assembly_view_respondent.html:223
-#: templates/backoffice/assembly_view_respondent.html:266
+#: templates/backoffice/assembly_view_respondent.html:267
 #: templates/main/dashboard.html:46
 #: templates/main/view_assembly_details.html:33
 msgid "Created"
@@ -5010,7 +5011,7 @@ msgid "Timestamp"
 msgstr "Időbélyeg"
 
 #: templates/admin/user_2fa_audit_log.html:32
-#: templates/backoffice/assembly_view_respondent.html:240
+#: templates/backoffice/assembly_view_respondent.html:241
 msgid "Action"
 msgstr "Művelet"
 
@@ -5020,7 +5021,6 @@ msgstr "Végrehajtotta"
 
 #: templates/admin/user_2fa_audit_log.html:34
 #: templates/backoffice/assembly_details.html:49
-#: templates/backoffice/components/assembly_tabs.html:33
 #: templates/main/view_assembly_base.html:30
 msgid "Details"
 msgstr "Részletek"
@@ -5086,7 +5086,7 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/assembly_respondents.html:143
 #: templates/backoffice/assembly_view_respondent.html:20
 #: templates/backoffice/assembly_view_respondent.html:224
-#: templates/backoffice/assembly_view_respondent.html:310
+#: templates/backoffice/assembly_view_respondent.html:311
 #: templates/backoffice/components/registration_page_list.html:144
 #: templates/backoffice/components/selection_steps.html:58
 #: templates/backoffice/registration/_step_email.html:95
@@ -5652,7 +5652,6 @@ msgid "Target (min/max)"
 msgstr "Célszám (min./max.)"
 
 #: templates/backoffice/assembly_data.html:12
-#: templates/backoffice/components/assembly_tabs.html:39
 msgid "Data"
 msgstr "Adatok"
 
@@ -6183,7 +6182,6 @@ msgid "Type to search by email or name…"
 msgstr "Gépelj a kereséshez e-mail cím vagy név alapján…"
 
 #: templates/backoffice/assembly_registration.html:13
-#: templates/backoffice/components/assembly_tabs.html:52
 msgid "Registration"
 msgstr "Regisztráció"
 
@@ -6340,7 +6338,6 @@ msgstr "Adatforrás beállítása"
 #: templates/backoffice/assembly_selection.html:13
 #: templates/backoffice/assembly_selection.html:96
 #: templates/backoffice/assembly_selection.html:223
-#: templates/backoffice/components/assembly_tabs.html:65
 #: templates/db_selection/select.html:7 templates/gsheets/select.html:2
 #: templates/gsheets/select.html:8 templates/gsheets/select.html:11
 #: templates/main/view_assembly_data.html:13
@@ -6410,7 +6407,7 @@ msgstr "Befejezve"
 
 #: templates/backoffice/assembly_selection.html:104
 #: templates/backoffice/assembly_selection.html:231
-#: templates/backoffice/assembly_view_respondent.html:241
+#: templates/backoffice/assembly_view_respondent.html:242
 #: templates/backoffice/targets/bulk_edit_form.html:227
 #: templates/backoffice/targets/bulk_edit_form.html:278
 #: templates/backoffice/targets/category_block.html:146
@@ -6605,45 +6602,49 @@ msgstr "Tevékenység"
 msgid "Status change"
 msgstr "Állapotváltozás"
 
-#: templates/backoffice/assembly_view_respondent.html:230
+#: templates/backoffice/assembly_view_respondent.html:227
+msgid "Reset to pool"
+msgstr ""
+
+#: templates/backoffice/assembly_view_respondent.html:231
 msgid "CSV import"
 msgstr "CSV importálás"
 
-#: templates/backoffice/assembly_view_respondent.html:231
+#: templates/backoffice/assembly_view_respondent.html:232
 msgid "manual entry"
 msgstr "kézi bevitel"
 
-#: templates/backoffice/assembly_view_respondent.html:232
+#: templates/backoffice/assembly_view_respondent.html:233
 msgid "registration page"
 msgstr "regisztrációs oldal"
 
-#: templates/backoffice/assembly_view_respondent.html:233
+#: templates/backoffice/assembly_view_respondent.html:234
 msgid "NationBuilder sync"
 msgstr "NationBuilder szinkronizálás"
 
-#: templates/backoffice/assembly_view_respondent.html:238
+#: templates/backoffice/assembly_view_respondent.html:239
 msgid "When"
 msgstr "Mikor"
 
-#: templates/backoffice/assembly_view_respondent.html:239
+#: templates/backoffice/assembly_view_respondent.html:240
 msgid "Author"
 msgstr "Szerző"
 
-#: templates/backoffice/assembly_view_respondent.html:267
+#: templates/backoffice/assembly_view_respondent.html:268
 #, python-format
 msgid "Created via %(source)s"
 msgstr "Létrehozva a következővel: %(source)s"
 
-#: templates/backoffice/assembly_view_respondent.html:273
+#: templates/backoffice/assembly_view_respondent.html:274
 msgid "No activity recorded."
 msgstr "Nincs rögzített tevékenység."
 
-#: templates/backoffice/assembly_view_respondent.html:281
-#: templates/backoffice/assembly_view_respondent.html:286
+#: templates/backoffice/assembly_view_respondent.html:282
+#: templates/backoffice/assembly_view_respondent.html:287
 msgid "Delete personal data"
 msgstr "Személyes adatok törlése"
 
-#: templates/backoffice/assembly_view_respondent.html:283
+#: templates/backoffice/assembly_view_respondent.html:284
 msgid ""
 "Under GDPR, a person may request that their personal data be deleted. "
 "This action blanks the respondent's contact details, attribute values, "
@@ -6655,20 +6656,20 @@ msgstr ""
 "jelöléseit, de megőrzi a külső azonosítóját, hogy a korábbi kiválasztások"
 " továbbra is hivatkozhassanak rá. A művelet nem vonható vissza."
 
-#: templates/backoffice/assembly_view_respondent.html:293
+#: templates/backoffice/assembly_view_respondent.html:294
 #: templates/backoffice/components/respondent_status_form.html:79
 msgid "Reason (required)"
 msgstr "Indoklás (kötelező)"
 
-#: templates/backoffice/assembly_view_respondent.html:299
+#: templates/backoffice/assembly_view_respondent.html:300
 msgid "e.g. GDPR deletion request from the respondent"
 msgstr "például: a jelentkező GDPR szerinti törlési kérése"
 
-#: templates/backoffice/assembly_view_respondent.html:301
+#: templates/backoffice/assembly_view_respondent.html:302
 msgid "Confirm delete"
 msgstr "Törlés megerősítése"
 
-#: templates/backoffice/assembly_view_respondent.html:312
+#: templates/backoffice/assembly_view_respondent.html:313
 msgid "Back to Respondents"
 msgstr "Vissza a jelentkezőkhöz"
 
@@ -6845,6 +6846,18 @@ msgstr "Fiók menü"
 #: templates/backoffice/components/alert.html:86
 msgid "Dismiss"
 msgstr "Bezárás"
+
+#: templates/backoffice/components/assembly_tabs.html:33
+msgid "Project Details"
+msgstr ""
+
+#: templates/backoffice/components/assembly_tabs.html:52
+msgid "Registration Fields"
+msgstr ""
+
+#: templates/backoffice/components/assembly_tabs.html:65
+msgid "Select and Replace"
+msgstr ""
 
 #: templates/backoffice/components/assembly_tabs.html:87
 #: templates/main/view_assembly_base.html:26
@@ -7279,7 +7292,7 @@ msgid "QR code"
 msgstr "QR-kód"
 
 #: templates/backoffice/components/registration_page_list.html:32
-#: templates/backoffice/registration/_hub.html:27
+#: templates/backoffice/registration/_hub.html:30
 msgid "Registrations"
 msgstr ""
 
@@ -7595,81 +7608,81 @@ msgstr "Fájlméret"
 msgid "Original filename"
 msgstr "Eredeti fájlnév"
 
-#: templates/backoffice/registration/_hub.html:28
+#: templates/backoffice/registration/_hub.html:31
 msgid ""
 "People who registered through the registration pages below, including "
 "those who have since withdrawn. Test submissions and uploaded respondents"
 " are not counted."
 msgstr ""
 
-#: templates/backoffice/registration/_hub.html:30
+#: templates/backoffice/registration/_hub.html:33
 msgid "Test submissions"
 msgstr ""
 
-#: templates/backoffice/registration/_hub.html:31
+#: templates/backoffice/registration/_hub.html:34
 msgid ""
 "Sent while a registration page was in test. They are not in the pool "
 "unless you move them into it."
 msgstr ""
 
-#: templates/backoffice/registration/_hub.html:37
+#: templates/backoffice/registration/_hub.html:40
 msgid "Uploaded"
 msgstr ""
 
-#: templates/backoffice/registration/_hub.html:38
+#: templates/backoffice/registration/_hub.html:41
 msgid ""
 "Respondents added by upload rather than through a registration page, "
 "including those who have since withdrawn."
 msgstr ""
 
-#: templates/backoffice/registration/_hub.html:45
+#: templates/backoffice/registration/_hub.html:48
 #: templates/backoffice/target_sources/view.html:38
 msgid "Fields are defined by your Google Sheets spreadsheet — manage them there."
 msgstr "A mezőket a Google Táblázatod határozza meg – ott kezelheted őket."
 
-#: templates/backoffice/registration/_hub.html:50
+#: templates/backoffice/registration/_hub.html:53
 msgid "General settings"
 msgstr "Általános beállítások"
 
-#: templates/backoffice/registration/_hub.html:58
+#: templates/backoffice/registration/_hub.html:61
 #: templates/backoffice/target_sources/view.html:10
 #: templates/backoffice/target_sources/view.html:34
 msgid "Link targets to questions"
 msgstr "Kiválasztási szempontok és kérdések összekapcsolása"
 
-#: templates/backoffice/registration/_hub.html:59
+#: templates/backoffice/registration/_hub.html:62
 msgid ""
 "Choose the registration question that answers each target: asked "
 "directly, or computed from something like a date of birth or postcode."
 msgstr ""
 
-#: templates/backoffice/registration/_hub.html:62
+#: templates/backoffice/registration/_hub.html:65
 msgid "No targets yet — add them on the Targets tab first."
 msgstr ""
 "Még nincsenek kiválasztási szempontok – előbb add meg őket a Célszámok "
 "fülön."
 
-#: templates/backoffice/registration/_hub.html:64
+#: templates/backoffice/registration/_hub.html:67
 #, python-format
 msgid "%(covered)s of %(total)s targets have a question"
 msgstr "%(total)s kiválasztási szempontból %(covered)s rendelkezik kérdéssel"
 
-#: templates/backoffice/registration/_hub.html:66
+#: templates/backoffice/registration/_hub.html:69
 #, python-format
 msgid "%(count)s out of step with the target values"
 msgstr "%(count)s nincs összhangban a célértékekkel"
 
-#: templates/backoffice/registration/_hub.html:79
+#: templates/backoffice/registration/_hub.html:82
 #: templates/backoffice/respondent_field_schema/view.html:11
 #: templates/backoffice/respondent_field_schema/view.html:35
 msgid "Registration questions"
 msgstr "Regisztrációs kérdések"
 
-#: templates/backoffice/registration/_hub.html:80
+#: templates/backoffice/registration/_hub.html:83
 msgid "Configure the questions for the registration page."
 msgstr "A regisztrációs oldal kérdéseinek beállítása."
 
-#: templates/backoffice/registration/_hub.html:82
+#: templates/backoffice/registration/_hub.html:85
 #, python-format
 msgid "%(num)s question on the registration page"
 msgid_plural "%(num)s questions on the registration page"

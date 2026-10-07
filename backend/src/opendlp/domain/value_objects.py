@@ -271,6 +271,7 @@ class RespondentAction(Enum):
     EDIT records a change to the respondent's attributes or eligibility flags.
     STATUS_CHANGE records a manual selection-status transition.
     SELECT records inclusion in a selection run.
+    RESET records a reset of all respondents back to the pool.
     DELETE records a GDPR personal-data deletion.
     """
 
@@ -279,6 +280,7 @@ class RespondentAction(Enum):
     EDIT = "EDIT"
     STATUS_CHANGE = "STATUS_CHANGE"
     SELECT = "SELECT"
+    RESET = "RESET"
     DELETE = "DELETE"
 
 

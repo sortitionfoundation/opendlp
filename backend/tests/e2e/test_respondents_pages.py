@@ -359,6 +359,40 @@ class TestResetSelectionStatus:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("Reset 2 respondents to the pool" in msg for msg in flash_messages)
 
+    def test_reset_shows_in_respondent_activity(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """After a reset, the respondent's activity shows a reset row linking to the reset run."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R001",
+                attributes={},
+                selection_status=RespondentStatus.SELECTED,
+            )
+            respondent_id = respondent.id
+
+        csrf = get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/respondents")
+        logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/respondents/reset-status",
+            data={"csrf_token": csrf},
+            follow_redirects=False,
+        )
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            reset_task_id = next(iter(uow.selection_run_records.get_by_assembly_id(existing_assembly.id))).task_id
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent_id}",
+        )
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Reset to pool" in html
+        assert "Status: SELECTED → POOL. Reset all to pool" in html
+        assert f"current_selection={reset_task_id}" in html
+
     def test_reset_status_with_no_respondents(self, logged_in_admin, existing_assembly):
         """Test resetting when there are no respondents shows zero count."""
         csrf = get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/respondents")

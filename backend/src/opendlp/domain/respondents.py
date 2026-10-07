@@ -29,7 +29,8 @@ class RespondentComment:
     action: RespondentAction = RespondentAction.NONE
     # Set on SELECT comments so the activity view can link back to the run
     # that included this respondent, even after later status transitions
-    # clear `Respondent.selection_run_id`.
+    # clear `Respondent.selection_run_id`. Set on RESET comments to the run
+    # record of the reset.
     selection_run_id: uuid.UUID | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -329,11 +330,24 @@ class Respondent:
         self.attributes = dict.fromkeys(self.attributes, "")
         self.add_comment(comment, author_id, action=RespondentAction.DELETE)
 
-    def reset_to_pool(self) -> None:
-        """Reset respondent back to pool status, clearing any selection run association"""
+    def reset_to_pool(self, author_id: uuid.UUID, selection_run_id: uuid.UUID) -> None:
+        """Reset respondent back to pool status, clearing any selection run association.
+
+        Records a RESET comment carrying the id of the reset's run record. A
+        respondent already in the pool is left untouched, with no comment.
+        """
+        if self.selection_status == RespondentStatus.POOL:
+            return
+        old = self.selection_status
         self.selection_status = RespondentStatus.POOL
         self.selection_run_id = None
         self.updated_at = datetime.now(UTC)
+        self.add_comment(
+            f"Status: {old.value} → {RespondentStatus.POOL.value}. Reset all to pool",
+            author_id,
+            action=RespondentAction.RESET,
+            selection_run_id=selection_run_id,
+        )
 
     def is_available_for_selection(self) -> bool:
         """Check if respondent is available for selection"""

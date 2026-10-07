@@ -224,6 +224,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
             "EDIT": _("Edit"),
             "STATUS_CHANGE": _("Status change"),
             "SELECT": _("Selected"),
+            "RESET": _("Reset to pool"),
             "DELETE": _("Deleted"),
             } %}
             {% set source_type_labels = {
@@ -247,7 +248,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
                             {% call table_row() %}
                                 {{ table_cell(comment.created_at|datetimeformat('long') ) }}
                                 {{ table_cell(author.email if author else comment.author_id|string) }}
-                                {% if comment.action.value == "SELECT" and comment.selection_run_id %}
+                                {% if comment.action.value in ("SELECT", "RESET") and comment.selection_run_id %}
                                     {% set run_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=comment.selection_run_id) %}
                                     {% call table_cell_custom() %}
                                         <a href="{{ run_url }}" class="underline">{{ action_label }}</a>
