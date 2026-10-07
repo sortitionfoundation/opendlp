@@ -17,7 +17,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import opendlp.logging
 from opendlp import bootstrap, config
 from opendlp.domain.respondent_field_schema import DERIVATION_TYPE_LABELS, ON_REGISTRATION_PAGE_LABELS
-from opendlp.domain.value_objects import assembly_status_labels, global_role_labels
+from opendlp.domain.value_objects import assembly_status_labels, global_role_labels, respondent_status_labels
 from opendlp.entrypoints.context_processors import (
     inject_capabilities,
     inject_feature_flags,
@@ -125,6 +125,7 @@ def register_context_processors(app: Flask) -> None:
     # Same reason: the role tag macro is imported, and needs the labels.
     app.jinja_env.globals["global_role_labels"] = global_role_labels
     app.jinja_env.globals["assembly_status_labels"] = assembly_status_labels
+    app.jinja_env.globals["respondent_status_labels"] = respondent_status_labels
     app.jinja_env.globals["derivation_type_labels"] = DERIVATION_TYPE_LABELS
     app.jinja_env.globals["on_registration_page_labels"] = ON_REGISTRATION_PAGE_LABELS
     # A global, not a context processor: it reads the request, and the email

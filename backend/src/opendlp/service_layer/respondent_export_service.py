@@ -42,7 +42,9 @@ def resolve_status_filter(raw: str) -> list[RespondentStatus] | None:
     """Map a UI filter token to the statuses to export.
 
     Returns ``None`` for "all" (every status except DELETED, applied at fetch
-    time). Rejects DELETED and unrecognised values with InvalidSelection.
+    time). DELETED can still be chosen on its own: those rows carry only the
+    external ID, so an organiser can find and erase the person from copies held
+    outside OpenDLP. Rejects unrecognised values with InvalidSelection.
     """
     value = (raw or "").strip()
     if not value or value == STATUS_FILTER_ALL:
@@ -50,7 +52,7 @@ def resolve_status_filter(raw: str) -> list[RespondentStatus] | None:
     if value == STATUS_FILTER_SELECTED_OR_CONFIRMED:
         return [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED]
     status = RespondentStatus.from_str(value)
-    if status is None or status == RespondentStatus.DELETED:
+    if status is None:
         raise InvalidSelection(_("Invalid respondent status filter: %(value)s", value=value))
     return [status]
 

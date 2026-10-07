@@ -1,7 +1,7 @@
 # Future work arising from `793-two-step-fields`
 
-Things the review of this branch turned up that are worth doing, but not on this
-branch. Each section is written to be pasted into an issue.
+Things the review of the `793-two-step-fields` branch turned up that are worth
+doing, but not on that branch. Each section is written to be pasted into an issue.
 
 ## App-level handlers for `InsufficientPermissions` and `NotFoundError`
 

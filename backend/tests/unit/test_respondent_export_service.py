@@ -56,9 +56,9 @@ class TestResolveStatusFilter:
     def test_single_status(self):
         assert resolve_status_filter("POOL") == [RespondentStatus.POOL]
 
-    def test_deleted_is_rejected(self):
-        with pytest.raises(InvalidSelection):
-            resolve_status_filter("DELETED")
+    def test_deleted_can_be_chosen_explicitly(self):
+        """So an organiser can list who to erase from copies held outside OpenDLP."""
+        assert resolve_status_filter("DELETED") == [RespondentStatus.DELETED]
 
     def test_invalid_value_is_rejected(self):
         with pytest.raises(InvalidSelection):
@@ -298,6 +298,21 @@ class TestExportRespondents:
 
         ids = {row["external_id"] for row in _parse_export(target)}
         assert ids == {"R-pool", "R-selected"}
+
+    def test_deleted_filter_exports_deleted_ids_with_blank_details(self, uow):
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R-pool", RespondentStatus.POOL)
+        gone = Respondent(assembly_id=assembly.id, external_id="R-deleted", attributes={"name": "Gone Person"})
+        gone.delete_personal_data(author_id=user.id, comment="Asked to be forgotten")
+        uow.respondents.add(gone)
+
+        target = CsvExportTarget()
+        export_respondents(uow, user.id, assembly.id, status_filter=[RespondentStatus.DELETED], target=target)
+
+        rows = _parse_export(target)
+        assert [row["external_id"] for row in rows] == ["R-deleted"]
+        assert rows[0]["selection_status"] == "DELETED"
+        assert rows[0]["name"] == ""
 
     def test_single_status_filter(self, uow):
         user, assembly = _seed(uow)

@@ -196,6 +196,19 @@ class RespondentStatus(Enum):
             return None
 
 
+# Short labels, for a tag, a badge or a filter. Kept next to the status
+# definitions so a renamed status cannot leave a stale label behind somewhere.
+# Listed in the order a respondent moves through them, which is the order the
+# respondents list offers them as filters.
+respondent_status_labels = {
+    RespondentStatus.POOL: _l("Pool"),
+    RespondentStatus.SELECTED: _l("Selected"),
+    RespondentStatus.CONFIRMED: _l("Confirmed"),
+    RespondentStatus.WITHDRAWN: _l("Withdrawn"),
+    RespondentStatus.TEST_SUBMISSION: _l("Test submission"),
+    RespondentStatus.DELETED: _l("Deleted"),
+}
+
 # The statuses that make someone one of the assembly's respondents: in the pool,
 # picked from it, or picked and confirmed. A withdrawn person is no longer part
 # of the pool a target is measured against, a test submission was never in it,

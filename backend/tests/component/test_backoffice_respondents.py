@@ -418,6 +418,113 @@ class TestBackofficeViewRespondentsPage:
         assert b"jane.doe" in response.data
 
 
+def _seed_statuses(fake_store: FakeStore, assembly_id: uuid.UUID, statuses: list[RespondentStatus]) -> None:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        for i, status in enumerate(statuses):
+            uow.respondents.add(Respondent(assembly_id=assembly_id, external_id=f"R-{i:03d}", selection_status=status))
+        uow.commit()
+
+
+def _status_options(body: str) -> dict[str, str]:
+    """Each status filter option's text, keyed by its value ("" for All statuses)."""
+    select = re.search(r'<select id="status-filter".*?</select>', body, re.DOTALL)
+    assert select is not None
+    return dict(re.findall(r'<option value="([A-Z_]*)"[^>]*>(.*?)</option>', select.group(0)))
+
+
+def _selected_status_filter(body: str) -> list[str]:
+    return re.findall(r'<option value="([A-Z_]*)" selected>', body)
+
+
+class TestRespondentsStatusFilter:
+    """The status filter above the respondents list, each option with its count."""
+
+    def test_each_status_shows_its_count_and_all_leaves_out_deleted(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_statuses(
+            fake_store,
+            existing_assembly.id,
+            [
+                RespondentStatus.POOL,
+                RespondentStatus.POOL,
+                RespondentStatus.SELECTED,
+                RespondentStatus.WITHDRAWN,
+                RespondentStatus.TEST_SUBMISSION,
+                RespondentStatus.DELETED,
+            ],
+        )
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+
+        assert _status_options(body) == {
+            "": "All statuses (5)",
+            "POOL": "Pool (2)",
+            "SELECTED": "Selected (1)",
+            "CONFIRMED": "Confirmed (0)",
+            "WITHDRAWN": "Withdrawn (1)",
+            "TEST_SUBMISSION": "Test submission (1)",
+            "DELETED": "Deleted (1)",
+        }
+        assert _selected_status_filter(body) == [""]
+        assert "All statuses: every respondent except deleted ones" in body
+
+    def test_test_submission_and_deleted_filters_are_hidden_at_zero(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+
+        assert set(_status_options(body)) == {"", "POOL", "SELECTED", "CONFIRMED", "WITHDRAWN"}
+
+    def test_a_chosen_filter_is_selected_and_shown_even_at_zero(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents?status=DELETED").get_data(
+            as_text=True
+        )
+
+        assert _status_options(body)["DELETED"] == "Deleted (0)"
+        assert _selected_status_filter(body) == ["DELETED"]
+
+    def test_test_submission_rows_show_a_translatable_status_label(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.TEST_SUBMISSION])
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents?status=TEST_SUBMISSION"
+        ).get_data(as_text=True)
+
+        assert "Test_submission" not in body
+        assert '<span style="color: var(--color-body-text);">Test submission</span>' in body
+
+    def test_unfiltered_list_leaves_out_deleted_respondents(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL, RespondentStatus.DELETED])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+
+        assert "R-000" in body
+        assert "R-001" not in body
+
+    def test_deleted_filter_lists_deleted_respondents(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL, RespondentStatus.DELETED])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents?status=DELETED").get_data(
+            as_text=True
+        )
+
+        assert "R-001" in body
+        assert "R-000" not in body
+
+
 class TestBackofficeViewSingleRespondent:
     """The single-respondent page name-derivation, grouping, and not-found branches."""
 

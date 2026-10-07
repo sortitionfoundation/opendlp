@@ -164,6 +164,11 @@ deleting a respondent rewrites the sheet without them within about a minute, whe
 export leaves the old copy until someone remembers to export again. The Redis keys the
 automatic export uses hold an assembly UUID and nothing else.
 
+For copies we cannot reach - an old CSV download, a sheet exported by hand, the organiser's own
+records - the organiser has to do the erasing. To help, export offers a "Deleted" filter: its
+rows carry each deleted respondent's external ID with every detail blank, a list of whom to
+erase elsewhere. "All" never includes deleted respondents.
+
 When adding a table that holds personal data, add a corresponding `DELETE` to
 `_delete_all_test_data()` in `tests/conftest.py` and to `delete_all_except_standard_users()` in
 `tests/bdd/conftest.py`, respecting foreign-key ordering.

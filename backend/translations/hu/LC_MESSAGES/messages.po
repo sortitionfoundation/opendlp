@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-06 16:13+0100\n"
+"POT-Creation-Date: 2026-10-07 11:34+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -69,8 +69,8 @@ msgstr "Feldolgozás…"
 #: src/opendlp/service_layer/dashboard_stats.py:354
 #: templates/backoffice/assembly_dashboard.html:111
 #: templates/backoffice/assembly_dashboard.html:112
-#: templates/backoffice/assembly_respondents.html:15
-#: templates/backoffice/assembly_respondents.html:70
+#: templates/backoffice/assembly_respondents.html:16
+#: templates/backoffice/assembly_respondents.html:71
 #: templates/backoffice/components/assembly_tabs.html:58
 #: templates/backoffice/respondents/export_modal.html:64
 #: templates/backoffice/targets/bulk_edit_form.html:259
@@ -534,6 +534,60 @@ msgstr ""
 msgid "Reset all to pool"
 msgstr ""
 
+#: src/opendlp/domain/value_objects.py:204
+#: src/opendlp/entrypoints/blueprints/respondents.py:464
+#: templates/backoffice/components/table.html:203
+#: templates/respondents/view_respondents.html:131
+msgid "Pool"
+msgstr "Jelentkezők"
+
+#: src/opendlp/domain/value_objects.py:205
+#: src/opendlp/entrypoints/blueprints/backoffice.py:269
+#: src/opendlp/entrypoints/blueprints/respondents.py:465
+#: src/opendlp/service_layer/dashboard_stats.py:357
+#: src/opendlp/service_layer/selection_report.py:212
+#: templates/backoffice/assembly_dashboard.html:113
+#: templates/backoffice/assembly_dashboard.html:114
+#: templates/backoffice/assembly_view_respondent.html:226
+#: templates/backoffice/components/db_selection_progress_modal.html:115
+#: templates/backoffice/components/table.html:209
+#: templates/backoffice/targets/bulk_edit_form.html:268
+#: templates/backoffice/targets/category_block.html:136
+#: templates/respondents/view_respondents.html:132
+msgid "Selected"
+msgstr "Kiválasztva"
+
+#: src/opendlp/domain/value_objects.py:206
+#: src/opendlp/entrypoints/blueprints/backoffice.py:274
+#: src/opendlp/entrypoints/blueprints/respondents.py:466
+#: src/opendlp/service_layer/dashboard_stats.py:359
+#: templates/backoffice/assembly_dashboard.html:115
+#: templates/backoffice/assembly_dashboard.html:116
+#: templates/backoffice/components/table.html:206
+#: templates/respondents/view_respondents.html:133
+msgid "Confirmed"
+msgstr "Megerősítve"
+
+#: src/opendlp/domain/value_objects.py:207
+#: src/opendlp/entrypoints/blueprints/respondents.py:467
+#: templates/backoffice/components/table.html:212
+#: templates/respondents/view_respondents.html:134
+msgid "Withdrawn"
+msgstr "Visszalépett"
+
+#: src/opendlp/domain/value_objects.py:208
+#: src/opendlp/entrypoints/blueprints/respondents.py:468
+#: templates/backoffice/components/table.html:215
+msgid "Test submission"
+msgstr "Tesztbeküldés"
+
+#: src/opendlp/domain/value_objects.py:209
+#: src/opendlp/entrypoints/blueprints/respondents.py:469
+#: templates/backoffice/assembly_view_respondent.html:227
+#: templates/backoffice/components/table.html:218
+msgid "Deleted"
+msgstr "Törölve"
+
 #: src/opendlp/entrypoints/decorators.py:64
 #: src/opendlp/entrypoints/decorators.py:104
 #: src/opendlp/entrypoints/decorators.py:142
@@ -587,7 +641,7 @@ msgstr "A válaszértékeknek különbözniük kell: \"%(value)s\" többször sz
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
 #: templates/backoffice/components/input.html:356
-#: templates/backoffice/components/table.html:247
+#: templates/backoffice/components/table.html:252
 msgid "Yes"
 msgstr "Igen"
 
@@ -599,7 +653,7 @@ msgstr "Igen"
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
 #: templates/backoffice/components/input.html:356
-#: templates/backoffice/components/table.html:249
+#: templates/backoffice/components/table.html:254
 msgid "No"
 msgstr "Nem"
 
@@ -1650,9 +1704,9 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:317
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:651
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:680
-#: src/opendlp/entrypoints/blueprints/respondents.py:699
-#: src/opendlp/entrypoints/blueprints/respondents.py:830
-#: src/opendlp/entrypoints/blueprints/respondents.py:988
+#: src/opendlp/entrypoints/blueprints/respondents.py:735
+#: src/opendlp/entrypoints/blueprints/respondents.py:866
+#: src/opendlp/entrypoints/blueprints/respondents.py:1024
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/target_sources.py:643
 #: src/opendlp/entrypoints/blueprints/target_sources.py:666
@@ -1725,17 +1779,17 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1165
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1214
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1238
-#: src/opendlp/entrypoints/blueprints/respondents.py:253
-#: src/opendlp/entrypoints/blueprints/respondents.py:388
-#: src/opendlp/entrypoints/blueprints/respondents.py:440
-#: src/opendlp/entrypoints/blueprints/respondents.py:480
-#: src/opendlp/entrypoints/blueprints/respondents.py:536
-#: src/opendlp/entrypoints/blueprints/respondents.py:595
-#: src/opendlp/entrypoints/blueprints/respondents.py:690
-#: src/opendlp/entrypoints/blueprints/respondents.py:756
-#: src/opendlp/entrypoints/blueprints/respondents.py:821
-#: src/opendlp/entrypoints/blueprints/respondents.py:985
-#: src/opendlp/entrypoints/blueprints/respondents.py:1032
+#: src/opendlp/entrypoints/blueprints/respondents.py:257
+#: src/opendlp/entrypoints/blueprints/respondents.py:392
+#: src/opendlp/entrypoints/blueprints/respondents.py:444
+#: src/opendlp/entrypoints/blueprints/respondents.py:485
+#: src/opendlp/entrypoints/blueprints/respondents.py:541
+#: src/opendlp/entrypoints/blueprints/respondents.py:600
+#: src/opendlp/entrypoints/blueprints/respondents.py:726
+#: src/opendlp/entrypoints/blueprints/respondents.py:792
+#: src/opendlp/entrypoints/blueprints/respondents.py:857
+#: src/opendlp/entrypoints/blueprints/respondents.py:1021
+#: src/opendlp/entrypoints/blueprints/respondents.py:1068
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -1789,36 +1843,9 @@ msgstr "Kezdés dátuma"
 msgid "Shows respondent data once registration starts."
 msgstr "A regisztráció megkezdése után megjeleníti a jelentkezők adatait."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:269
-#: src/opendlp/entrypoints/blueprints/respondents.py:461
-#: src/opendlp/service_layer/dashboard_stats.py:357
-#: src/opendlp/service_layer/selection_report.py:212
-#: templates/backoffice/assembly_dashboard.html:113
-#: templates/backoffice/assembly_dashboard.html:114
-#: templates/backoffice/assembly_respondents.html:104
-#: templates/backoffice/assembly_view_respondent.html:226
-#: templates/backoffice/components/db_selection_progress_modal.html:115
-#: templates/backoffice/components/table.html:207
-#: templates/backoffice/targets/bulk_edit_form.html:268
-#: templates/backoffice/targets/category_block.html:136
-#: templates/respondents/view_respondents.html:132
-msgid "Selected"
-msgstr "Kiválasztva"
-
 #: src/opendlp/entrypoints/blueprints/backoffice.py:271
 msgid "Shows selected data once selection has happened."
 msgstr "A kiválasztás megtörténte után megjeleníti a kiválasztottak adatait."
-
-#: src/opendlp/entrypoints/blueprints/backoffice.py:274
-#: src/opendlp/entrypoints/blueprints/respondents.py:462
-#: src/opendlp/service_layer/dashboard_stats.py:359
-#: templates/backoffice/assembly_dashboard.html:115
-#: templates/backoffice/assembly_dashboard.html:116
-#: templates/backoffice/assembly_respondents.html:105
-#: templates/backoffice/components/table.html:204
-#: templates/respondents/view_respondents.html:133
-msgid "Confirmed"
-msgstr "Megerősítve"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:276
 msgid "Shows confirmed data once at least one selected respondent is confirmed."
@@ -2879,29 +2906,29 @@ msgstr "Nincs jogosultságod a mezők átrendezéséhez"
 msgid "Question removed"
 msgstr "Kérdés eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:132
+#: src/opendlp/entrypoints/blueprints/respondents.py:136
 #, python-format
 msgid "Respondents uploaded with warnings: %(count)d imported, %(errors)d errors"
 msgstr ""
 "A jelentkezők feltöltése figyelmeztetésekkel zárult: %(count)d "
 "importálva, %(errors)d hiba"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:145
+#: src/opendlp/entrypoints/blueprints/respondents.py:149
 #, python-format
 msgid "… and %(count)d more (see the server logs for the full list)"
 msgstr "… és még %(count)d (a teljes listát a szervernaplókban találod)"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:152
+#: src/opendlp/entrypoints/blueprints/respondents.py:156
 #, python-format
 msgid "Respondents uploaded successfully: %(count)d imported"
 msgstr "A jelentkezők feltöltése sikerült: %(count)d importálva"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:164
-#: src/opendlp/entrypoints/blueprints/respondents.py:171
+#: src/opendlp/entrypoints/blueprints/respondents.py:168
+#: src/opendlp/entrypoints/blueprints/respondents.py:175
 msgid "No file selected"
 msgstr "Nincs kiválasztott fájl"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:187
+#: src/opendlp/entrypoints/blueprints/respondents.py:191
 #, python-format
 msgid ""
 "CSV is too large: limit is %(limit)d MB. Update MAX_CSV_UPLOAD_MB if a "
@@ -2910,154 +2937,142 @@ msgstr ""
 "A CSV túl nagy: a korlát %(limit)d MB. Ha nagyobb fájlra van szükség, "
 "módosítsd a MAX_CSV_UPLOAD_MB értékét."
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:236
-#: src/opendlp/entrypoints/blueprints/respondents.py:288
-#: src/opendlp/entrypoints/blueprints/respondents.py:350
+#: src/opendlp/entrypoints/blueprints/respondents.py:240
+#: src/opendlp/entrypoints/blueprints/respondents.py:292
+#: src/opendlp/entrypoints/blueprints/respondents.py:354
 #, python-format
 msgid "Invalid CSV format: %(error)s"
 msgstr "Érvénytelen CSV formátum: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:247
+#: src/opendlp/entrypoints/blueprints/respondents.py:251
 msgid "You don't have permission to upload respondents"
 msgstr "Nincs jogosultságod jelentkezők feltöltéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:262
+#: src/opendlp/entrypoints/blueprints/respondents.py:266
 msgid "An error occurred while uploading respondents"
 msgstr "Hiba történt a jelentkezők feltöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:274
-#: src/opendlp/entrypoints/blueprints/respondents.py:328
+#: src/opendlp/entrypoints/blueprints/respondents.py:278
+#: src/opendlp/entrypoints/blueprints/respondents.py:332
 msgid "Upload session expired. Please upload the CSV again."
 msgstr "A feltöltési munkamenet lejárt. Töltsd fel újra a CSV-t."
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:333
+#: src/opendlp/entrypoints/blueprints/respondents.py:337
 msgid "Upload cancelled"
 msgstr "A feltöltés megszakítva"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:370
+#: src/opendlp/entrypoints/blueprints/respondents.py:374
 #, python-format
 msgid "Respondents deleted: %(count)d"
 msgstr "Jelentkezők törölve: %(count)d"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:382
-#: src/opendlp/entrypoints/blueprints/respondents.py:743
+#: src/opendlp/entrypoints/blueprints/respondents.py:386
+#: src/opendlp/entrypoints/blueprints/respondents.py:779
 msgid "You don't have permission to delete respondents"
 msgstr "Nincs jogosultságod jelentkezők törléséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:397
+#: src/opendlp/entrypoints/blueprints/respondents.py:401
 msgid "An error occurred while deleting respondents"
 msgstr "Hiba történt a jelentkezők törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:411
-#: src/opendlp/entrypoints/blueprints/respondents.py:509
+#: src/opendlp/entrypoints/blueprints/respondents.py:415
+#: src/opendlp/entrypoints/blueprints/respondents.py:514
 #, python-format
 msgid "Invalid export filter: %(error)s"
 msgstr "Érvénytelen exportszűrő: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:436
-#: src/opendlp/entrypoints/blueprints/respondents.py:477
-#: src/opendlp/entrypoints/blueprints/respondents.py:533
+#: src/opendlp/entrypoints/blueprints/respondents.py:440
+#: src/opendlp/entrypoints/blueprints/respondents.py:482
+#: src/opendlp/entrypoints/blueprints/respondents.py:538
 msgid "You don't have permission to export respondents"
 msgstr "Nincs jogosultságod jelentkezők exportálásához"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:458
+#: src/opendlp/entrypoints/blueprints/respondents.py:462
 #: src/opendlp/service_layer/selection_report.py:210
 msgid "All respondents"
 msgstr "Összes jelentkező"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:459
+#: src/opendlp/entrypoints/blueprints/respondents.py:463
 msgid "Selected or confirmed"
 msgstr "Kiválasztva vagy megerősítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:460
-#: templates/backoffice/assembly_respondents.html:103
-#: templates/backoffice/components/table.html:201
-#: templates/respondents/view_respondents.html:131
-msgid "Pool"
-msgstr "Jelentkezők"
-
-#: src/opendlp/entrypoints/blueprints/respondents.py:463
-#: templates/backoffice/assembly_respondents.html:106
-#: templates/backoffice/components/table.html:210
-#: templates/respondents/view_respondents.html:134
-msgid "Withdrawn"
-msgstr "Visszalépett"
-
-#: src/opendlp/entrypoints/blueprints/respondents.py:464
-msgid "Test submission"
-msgstr "Tesztbeküldés"
-
-#: src/opendlp/entrypoints/blueprints/respondents.py:570
+#: src/opendlp/entrypoints/blueprints/respondents.py:575
 msgid ""
 "Respondents exported to Google Sheets. The tab will now update "
 "automatically."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:572
+#: src/opendlp/entrypoints/blueprints/respondents.py:577
 msgid "Respondents exported to Google Sheets"
 msgstr "A jelentkezők exportálva a Google Táblázatba"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:592
+#: src/opendlp/entrypoints/blueprints/respondents.py:597
 msgid "You don't have permission to change the export settings"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:598
+#: src/opendlp/entrypoints/blueprints/respondents.py:603
 msgid "Automatic export stopped"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:708
+#: src/opendlp/entrypoints/blueprints/respondents.py:621
+#: templates/admin/users.html:90
+#: templates/respondents/view_respondents.html:130
+msgid "All statuses"
+msgstr "Minden állapot"
+
+#: src/opendlp/entrypoints/blueprints/respondents.py:744
 msgid "An error occurred while loading assembly respondents"
 msgstr "Hiba történt a közösségi gyűlés jelentkezőinek betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:721
+#: src/opendlp/entrypoints/blueprints/respondents.py:757
 msgid "A comment is required when deleting a respondent"
 msgstr "Jelentkező törlésekor meg kell adni egy megjegyzést"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:733
+#: src/opendlp/entrypoints/blueprints/respondents.py:769
 msgid "Respondent personal data deleted"
 msgstr "A jelentkező személyes adatai törölve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:752
-#: src/opendlp/entrypoints/blueprints/respondents.py:817
-#: src/opendlp/entrypoints/blueprints/respondents.py:982
-#: src/opendlp/entrypoints/blueprints/respondents.py:1029
+#: src/opendlp/entrypoints/blueprints/respondents.py:788
+#: src/opendlp/entrypoints/blueprints/respondents.py:853
+#: src/opendlp/entrypoints/blueprints/respondents.py:1018
+#: src/opendlp/entrypoints/blueprints/respondents.py:1065
 msgid "Respondent not found"
 msgstr "A jelentkező nem található"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:765
+#: src/opendlp/entrypoints/blueprints/respondents.py:801
 msgid "An error occurred while deleting the respondent"
 msgstr "Hiba történt a jelentkező törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:839
+#: src/opendlp/entrypoints/blueprints/respondents.py:875
 msgid "An error occurred while loading the respondent"
 msgstr "Hiba történt a jelentkező betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:915
-#: src/opendlp/entrypoints/blueprints/respondents.py:935
+#: src/opendlp/entrypoints/blueprints/respondents.py:951
+#: src/opendlp/entrypoints/blueprints/respondents.py:971
 msgid "You don't have permission to edit respondents"
 msgstr "Nincs jogosultságod jelentkezők szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:917
+#: src/opendlp/entrypoints/blueprints/respondents.py:953
 msgid "Respondent updated"
 msgstr "A jelentkező frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:945
+#: src/opendlp/entrypoints/blueprints/respondents.py:981
 msgid "Cannot edit a deleted respondent"
 msgstr "Törölt jelentkező nem szerkeszthető"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1004
+#: src/opendlp/entrypoints/blueprints/respondents.py:1040
 msgid "A comment is required when changing selection status"
 msgstr "A kiválasztási állapot módosításakor meg kell adni egy megjegyzést"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1009
+#: src/opendlp/entrypoints/blueprints/respondents.py:1045
 msgid "Invalid target status"
 msgstr "Érvénytelen célállapot"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1023
+#: src/opendlp/entrypoints/blueprints/respondents.py:1059
 msgid "Status updated"
 msgstr "Az állapot frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1027
+#: src/opendlp/entrypoints/blueprints/respondents.py:1063
 msgid "You don't have permission to change this respondent's status"
 msgstr "Nincs jogosultságod ennek a jelentkezőnek az állapotát módosítani"
 
@@ -4097,7 +4112,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/opendlp/service_layer/respondent_export_service.py:54
+#: src/opendlp/service_layer/respondent_export_service.py:56
 #, python-format
 msgid "Invalid respondent status filter: %(value)s"
 msgstr "Érvénytelen jelentkezői állapotszűrő: %(value)s"
@@ -4713,7 +4728,7 @@ msgstr "Meghívók kezelése"
 #: templates/backoffice/assembly_members.html:20
 #: templates/backoffice/assembly_registration.html:18
 #: templates/backoffice/assembly_registration_list.html:13
-#: templates/backoffice/assembly_respondents.html:22
+#: templates/backoffice/assembly_respondents.html:23
 #: templates/backoffice/assembly_selection.html:19
 #: templates/backoffice/assembly_targets.html:20
 #: templates/backoffice/respondent_field_schema/view.html:17
@@ -5303,12 +5318,6 @@ msgstr "Minden szerepkör"
 #: templates/respondents/view_respondents.html:126
 msgid "Filter by status"
 msgstr "Szűrés állapot szerint"
-
-#: templates/admin/users.html:90
-#: templates/backoffice/assembly_respondents.html:102
-#: templates/respondents/view_respondents.html:130
-msgid "All statuses"
-msgstr "Minden állapot"
 
 #: templates/admin/users.html:98
 msgid "Apply Filters"
@@ -6237,21 +6246,21 @@ msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek 
 msgid "Published"
 msgstr "Közzétéve"
 
-#: templates/backoffice/assembly_respondents.html:41
+#: templates/backoffice/assembly_respondents.html:42
 msgid "Respondents are configured in Google Sheets"
 msgstr "A jelentkezőket a Google Táblázatban állítod be"
 
-#: templates/backoffice/assembly_respondents.html:43
+#: templates/backoffice/assembly_respondents.html:44
 msgid "Respondent data is stored in your Google Sheets spreadsheet."
 msgstr "A jelentkezői adatokat a Google Táblázatod tárolja."
 
-#: templates/backoffice/assembly_respondents.html:48
+#: templates/backoffice/assembly_respondents.html:49
 #: templates/backoffice/respondent_field_schema/view.html:44
 msgid "Initial Selection Respondents Tab:"
 msgstr "Kezdeti kiválasztás jelentkezők munkalapja:"
 
-#: templates/backoffice/assembly_respondents.html:50
-#: templates/backoffice/assembly_respondents.html:56
+#: templates/backoffice/assembly_respondents.html:51
+#: templates/backoffice/assembly_respondents.html:57
 #: templates/backoffice/assembly_targets.html:48
 #: templates/backoffice/assembly_targets.html:54
 #: templates/backoffice/respondent_field_schema/view.html:47
@@ -6259,48 +6268,48 @@ msgstr "Kezdeti kiválasztás jelentkezők munkalapja:"
 msgid "Not configured"
 msgstr "Nincs beállítva"
 
-#: templates/backoffice/assembly_respondents.html:54
+#: templates/backoffice/assembly_respondents.html:55
 #: templates/backoffice/respondent_field_schema/view.html:51
 msgid "Replacement Respondents Tab:"
 msgstr "Pótláshoz tartozó jelentkezők munkalapja:"
 
-#: templates/backoffice/assembly_respondents.html:62
+#: templates/backoffice/assembly_respondents.html:63
 #: templates/backoffice/assembly_targets.html:60
 #: templates/backoffice/respondent_field_schema/view.html:59
 msgid "View Data Configuration"
 msgstr "Adatbeállítások megtekintése"
 
-#: templates/backoffice/assembly_respondents.html:74
+#: templates/backoffice/assembly_respondents.html:75
 msgid "Automatically exported to Google Sheets"
 msgstr ""
 
-#: templates/backoffice/assembly_respondents.html:76
+#: templates/backoffice/assembly_respondents.html:77
 msgid "Exported to Google Sheets"
 msgstr "Exportálva a Google Táblázatba"
 
-#: templates/backoffice/assembly_respondents.html:79
+#: templates/backoffice/assembly_respondents.html:80
 #: templates/backoffice/components/manage_tabs_progress_modal.html:79
 #: templates/backoffice/components/replacement_modal.html:116
 #: templates/backoffice/components/selection_progress_modal.html:26
 msgid "View spreadsheet"
 msgstr "Táblázat megtekintése"
 
-#: templates/backoffice/assembly_respondents.html:84
+#: templates/backoffice/assembly_respondents.html:85
 msgid "Stop automatic export"
 msgstr ""
 
-#: templates/backoffice/assembly_respondents.html:95
+#: templates/backoffice/assembly_respondents.html:97
 #: templates/backoffice/components/manage_tabs_progress_modal.html:18
 #: templates/backoffice/components/replacement_modal.html:49
 #: templates/backoffice/components/replacement_modal.html:100
 msgid "Status:"
 msgstr "Állapot:"
 
-#: templates/backoffice/assembly_respondents.html:107
-#: templates/backoffice/assembly_view_respondent.html:227
-#: templates/backoffice/components/table.html:213
-msgid "Deleted"
-msgstr "Törölve"
+#: templates/backoffice/assembly_respondents.html:108
+msgid ""
+"All statuses: every respondent except deleted ones, whose details have "
+"been removed. Test submissions are included."
+msgstr ""
 
 #: templates/backoffice/assembly_respondents.html:128
 #: templates/backoffice/components/db_selection_progress_modal.html:120

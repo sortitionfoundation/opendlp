@@ -177,8 +177,9 @@ Usage:
 Table cell with colored status text and optional indicator dot.
 
 Args:
-  status: Status value - one of "pool", "selected", "confirmed", "withdrawn"
-          (case-insensitive, also accepts RespondentStatus enum values)
+  status: Status value - one of "pool", "selected", "confirmed", "withdrawn",
+          "test_submission", "deleted" (case-insensitive, also accepts
+          RespondentStatus enum values)
   align: Text alignment ("left", "center", "right")
   show_dot: If true, shows colored dot before the text
   nowrap: If true, prevents text wrapping
@@ -189,6 +190,7 @@ Status colors (traffic light pattern):
   - selected: amber (pending confirmation - needs attention)
   - confirmed: green (confirmed participant)
   - withdrawn: red (no longer participating)
+  - test_submission: blue (from a registration page in test, not in the pool)
   - deleted: light gray (GDPR deletion)
 
 Usage:
@@ -208,6 +210,9 @@ Usage:
   {% elif status_lower == "withdrawn" %}
     {% set dot_color = "var(--color-error-400)" %}
     {% set label = _("Withdrawn") %}
+  {% elif status_lower == "test_submission" %}
+    {% set dot_color = "var(--color-info-400)" %}
+    {% set label = _("Test submission") %}
   {% elif status_lower == "deleted" %}
     {% set dot_color = "var(--color-borders-dividers)" %}
     {% set label = _("Deleted") %}
