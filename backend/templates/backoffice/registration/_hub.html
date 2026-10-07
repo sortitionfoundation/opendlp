@@ -5,36 +5,39 @@ ABOUTME: The Registration tab's landing page, and the dimmed backdrop behind eac
 {% from "backoffice/components/icons.html" import icon_arrow_forward %}
 {% from "backoffice/components/registration_page_list.html" import registration_page_list %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
-{% macro registration_total_tile(key, label, count, note) %}
-    <div data-total="{{ key }}"
-         class="inline-flex items-baseline gap-3 rounded-lg px-5 py-4"
-         style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
-        <span class="inline-flex items-center gap-1 text-label-md" style="color: var(--color-secondary-text);">
-            {{ label }}
-            {{ info_icon(note) }}
-        </span>
-        <span class="text-heading-lg" style="color: var(--color-headings);">{{ count }}</span>
-    </div>
+{% macro registration_total(key, label, count, note, divider=true) %}
+    {% if divider %}
+        <span data-total-divider
+              aria-hidden="true"
+              style="display: inline-block; width: 1px; height: 16px; margin: 0 16px; background-color: var(--color-borders-dividers);"></span>
+    {% endif %}
+    <span data-total="{{ key }}" class="inline-flex items-center gap-1" style="color: var(--color-body-text);">
+        {{ label }}
+        {{ info_icon(note) }}
+        <span data-total-count style="color: var(--color-headings); font-weight: 700;">{{ count }}</span>
+    </span>
 {% endmacro %}
 {# The headline numbers for this tab: how many people have registered so far,
    and where else respondents came from. Shown only once a page exists — before
-   that the empty state below carries the message. The first two tiles are the
+   that the empty state below carries the message. The first two numbers are the
    sums of the pages list's column; Registrations plus Uploaded is the
-   dashboard's "Number of respondents". A tile with nothing to count is hidden,
-   except Registrations, which is the point of the tab. #}
+   dashboard's "Number of respondents". They are laid out like the dashboard's
+   numbers, separated by a vertical line. A number with nothing to count is
+   hidden, except Registrations, which is the point of the tab and so always
+   comes first, without a line before it. #}
 {% if page_rows %}
-    <div class="mb-8 flex flex-wrap gap-4">
-        {{ registration_total_tile("registrations", _("Registrations"), registration_totals["registration_count"],
-        _("People who registered through the registration pages below, including those who have since withdrawn. Test submissions and uploaded respondents are not counted.")) }}
+    <div class="mb-8 flex flex-wrap items-center gap-y-1 text-body-lg">
+        {{ registration_total("registrations", _("Registrations"), registration_totals["registration_count"],
+        _("People who registered through the registration pages below, including those who have since withdrawn. Test submissions and uploaded respondents are not counted."), divider=false) }}
         {% if registration_totals["test_submission_count"] %}
-            {{ registration_total_tile("test-submissions", _("Test submissions"), registration_totals["test_submission_count"],
+            {{ registration_total("test-submissions", _("Test submissions"), registration_totals["test_submission_count"],
             _("Sent while a registration page was in test. They are not in the pool unless you move them into it.")) }}
         {% endif %}
         {# Uploading is the only way today for a respondent to arrive without a
            registration page. If another way is added, this label and its note
            need rewording; the count itself is already "not from a page". #}
         {% if registration_totals["non_registration_count"] %}
-            {{ registration_total_tile("uploaded", _("Uploaded"), registration_totals["non_registration_count"],
+            {{ registration_total("uploaded", _("Uploaded"), registration_totals["non_registration_count"],
             _("Respondents added by upload rather than through a registration page, including those who have since withdrawn.")) }}
         {% endif %}
     </div>

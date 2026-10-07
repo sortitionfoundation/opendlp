@@ -71,10 +71,10 @@ def _count_cell(body: str, page_name: str) -> str:
     return cell.split(">", 1)[1].strip()
 
 
-def _total_tile(body: str, key: str) -> str:
-    """The number on one of the headline tiles above the pages list."""
-    tile = body.split(f'data-total="{key}"', 1)[1].split("</div>", 1)[0]
-    return re.findall(r'text-heading-lg"[^>]*>(\d+)</span>', tile)[0]
+def _total(body: str, key: str) -> str:
+    """The number on one of the headline totals above the pages list."""
+    total = body.split(f'data-total="{key}"', 1)[1]
+    return re.findall(r"data-total-count[^>]*>(\d+)</span>", total)[0]
 
 
 class TestViewEditModeFlag:
@@ -596,9 +596,11 @@ class TestRegistrationListView:
 
         body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
 
-        assert _total_tile(body, "registrations") == "4"
-        assert _total_tile(body, "test-submissions") == "1"
-        assert _total_tile(body, "uploaded") == "3"
+        assert _total(body, "registrations") == "4"
+        assert _total(body, "test-submissions") == "1"
+        assert _total(body, "uploaded") == "3"
+        # A line between each pair of numbers, none before the first.
+        assert body.count("data-total-divider") == 2
 
     def test_hides_empty_test_and_upload_totals(self, logged_in_admin, fake_store, assembly_id):
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
@@ -606,9 +608,10 @@ class TestRegistrationListView:
 
         body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
 
-        assert _total_tile(body, "registrations") == "1"
+        assert _total(body, "registrations") == "1"
         assert 'data-total="test-submissions"' not in body
         assert 'data-total="uploaded"' not in body
+        assert "data-total-divider" not in body
 
     def test_empty_assembly_offers_page_creation(self, logged_in_admin, fake_store, assembly_id):
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
