@@ -2,7 +2,17 @@
 
 Branch: `767-registration-intro`. The design questions below have been
 decided (first review round); each records the choice and the reasoning that
-survives. Nothing here is implemented yet.
+survives.
+
+**Status: implemented.** Every step and every test tier below is done and
+passing (`just check`, `just test-nobdd`, the registration e2e tests and the
+editor BDD scenarios). Two refinements made during implementation:
+
+- D1: an **empty** intro contributes nothing, not even the joining newline, so
+  a page from before intros existed renders byte-for-byte as it did. The
+  newline is added only when the intro has content.
+- D5: the HTML update moved into `_apply_posted_html()` to keep the save
+  route under the complexity limit; behaviour is as described.
 
 ## Goal
 
@@ -163,7 +173,7 @@ Stepper label "Intro"; "Intro HTML" wherever the form step says "Form HTML";
 
 Ordered so each step leaves `just check` and `just test-nobdd` green.
 
-### 1. Domain (`src/opendlp/domain/registration_page.py`)
+### ✅ 1. Domain (`src/opendlp/domain/registration_page.py`)
 
 - `RegistrationPageHtml.__init__` gains `intro_html: str = ""` (after
   `form_html`); `create_detached_copy()` copies it.
@@ -185,7 +195,7 @@ Ordered so each step leaves `just check` and `just test-nobdd` green.
 - Update the `RenderContext` docstring ("substituted into the form HTML" →
   intro and form HTML) and the `HtmlSource` protocol docstring.
 
-### 2. Persistence
+### ✅ 2. Persistence
 
 - `orm.py`: `Column("intro_html", Text, nullable=False, default="", server_default="")`
   between `form_html` and `created_at`.
@@ -196,13 +206,13 @@ Ordered so each step leaves `just check` and `just test-nobdd` green.
   `delete_all_except_standard_users()`.
 - `tests/fakes.py` needs nothing — the fake repository stores the object.
 
-### 3. Config
+### ✅ 3. Config
 
 - `get_registration_intro_html_max_bytes()` next to the form one, same
   `_registration_html_max_bytes` helper, same default (D4). Export it where
   the form one is exported. Document in `docs/configuration.md`.
 
-### 4. Service (`registration_page_service.py`)
+### ✅ 4. Service (`registration_page_service.py`)
 
 - `update_registration_page_intro_html(uow, user_id, page_id, intro_html)`
   mirroring `update_registration_page_html`: size check with label
@@ -213,7 +223,7 @@ Ordered so each step leaves `just check` and `just test-nobdd` green.
   `generate_starter_form_html()` service function (used by `dev.py`) is left
   returning the form only.
 
-### 5. Routes (`backoffice_registration.py`)
+### ✅ 5. Routes (`backoffice_registration.py`)
 
 - `view_registration_page`: allow `section in ("intro", "form", "email", "preview")`,
   default `intro` (D6); pass `intro_content=html.intro_html` to the template;
@@ -226,7 +236,7 @@ Ordered so each step leaves `just check` and `just test-nobdd` green.
 - `get_registration_skeleton`: return the two extra keys (D8).
 - `dev.py` per D11.
 
-### 6. Templates
+### ✅ 6. Templates
 
 - New `templates/backoffice/registration/_step_intro.html`, built from the
   form step's structure: card whose heading is the page name (an input in
@@ -249,7 +259,7 @@ Ordered so each step leaves `just check` and `just test-nobdd` green.
 - `_page_data.html`: add any new translated message the slice needs.
 - Load the `ui-components` skill before writing any of this.
 
-### 7. JavaScript
+### ✅ 7. JavaScript
 
 - `registration-skeleton.js`: store `skeletonIntroPlain` / `skeletonIntroStyled`
   alongside the form pair; a `skeletonPart` ("intro" | "form") chosen by
@@ -259,15 +269,16 @@ Ordered so each step leaves `just check` and `just test-nobdd` green.
   `tests/component/test_backoffice_registration_page_script.py`.
 - Rebuild the bundle with the `just` target in `docs/frontend_build.md`.
 
-### 8. Translations and docs
+### ✅ 8. Translations and docs
 
 - New strings → run the `translate-catalogues` skill before committing.
 - `docs/language.md`: glossary row for the intro (D10).
 - `docs/configuration.md`: the new env var (D4).
 
-## Tests
+## Tests ✅
 
 Every layer that changes gets coverage; nothing is marked not applicable.
+All of the below exist and pass.
 
 **Unit — domain** (`tests/unit/domain/test_registration_page.py`)
 - `intro_html` defaults to `""`, round-trips through `create_detached_copy()`.
@@ -320,7 +331,9 @@ becomes intro → form → email → preview → publish.
 `tests/bdd/test_backoffice.py`): one scenario that opens the intro step in
 edit mode, types into the code editor, saves, and sees the content persisted;
 one that opens the intro skeleton. Existing scenarios that visit
-`?section=form&edit=1` keep working unchanged.
+`?section=form&edit=1` keep working unchanged. The two scenarios that open a
+page from the list now land on the intro (D6), and the locked-stepper check
+counts four steps.
 
 ## Risks and things to watch
 

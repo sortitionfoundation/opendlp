@@ -1,0 +1,169 @@
+{#
+ABOUTME: Step 1 of the registration editor - the page name, its URLs and the intro HTML editor
+ABOUTME: Included by assembly_registration.html when ?section=intro
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_code %}
+{% from "backoffice/components/input.html" import textarea %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/prefixed_url_input.html" import prefixed_url_input %}
+{% from "backoffice/registration/_assets.html" import asset_list %}
+<div id="reg-steps-panel-intro"
+     role="tabpanel"
+     aria-labelledby="reg-steps-tab-intro"
+     tabindex="0">
+    {# Same two-column layout as the form step: editor on the left, Assets panel on the right,
+       both inside one form so the CTAs align to the far right edge of the whole layout. #}
+    {% set edit_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="intro", edit="1") %}
+    {% set view_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="intro") %}
+    {% set next_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="form") %}
+    {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
+    <form method="post"
+          action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id, url_slug=registration_page.url_slug) }}"
+          x-data
+          x-preserve-scroll-on-submit
+          {% if edit_mode %}@input="markEditDirty()" @change="markEditDirty()" @submit="allowLeave()"{% endif %}>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="flex flex-col lg:flex-row gap-6">
+            <div class="flex-1 min-w-0">
+                <section class="rounded-lg p-6"
+                         style="background-color: var(--color-tables-cards);
+                                border: 1px solid var(--color-borders-dividers)">
+                    <div class="flex items-center justify-between mb-4">
+                        {# The heading is the page's name; in edit mode it becomes an input so the
+                           variant can be renamed right where it is labelled. #}
+                        {% if edit_mode %}
+                            <div class="flex-1 min-w-0 mr-4">
+                                <label for="page_name" class="sr-only">{{ _("Registration page name") }}</label>
+                                <input type="text"
+                                       name="page_name"
+                                       id="page_name"
+                                       value="{{ registration_page.name }}"
+                                       required
+                                       class="text-heading-lg w-full px-3 py-1.5 rounded-lg"
+                                       style="color: var(--color-headings); background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);" />
+                            </div>
+                        {% else %}
+                            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ registration_page.name }}</h2>
+                        {% endif %}
+                        {# Header right: the editorial controls live next to the content they act on.
+                           x-scroll-preserve-links keeps the scroll position across the Edit/Cancel reloads. #}
+                        <div class="flex items-center gap-2" x-scroll-preserve-links>
+                            {% set code_icon %}
+                                {{ icon_code() }}
+                            {% endset %}
+                            {{ button(_("Show Intro Skeleton"),
+                            variant="tertiary",
+                            leading_icon=code_icon,
+                            attrs='@click="fetchIntroSkeleton()" :disabled="skeletonLoading"') }}
+                            {% if edit_mode %}
+                                {{ button(_("Cancel"), variant="secondary", href=view_url, attrs='@click="guardLeave($event)"') }}
+                                {{ button(save_label, type="submit", variant="primary", attrs='name="action" value="save"') }}
+                            {% elif registration_status != "CLOSED" %}
+                                {{ button(_("Edit"), variant="secondary", href=edit_url) }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {# Page URLs are page-scoped settings, edited here rather than on Edit Assembly.
+                       Frozen once the page has been published so shared links keep working. #}
+                    {% if edit_mode %}
+                        {% set slugs_locked = registration_page.slugs_frozen %}
+                        <div class="mb-6 space-y-4">
+                            {% if slugs_locked %}
+                                {{ alert(
+                                message=_("These URLs are locked while the registration page is published or closed, so links shared in invites, QR codes, and elsewhere keep working. Switch the form back to test mode to edit them."),
+                                variant="info"
+                                ) }}
+                            {% endif %}
+                            {{ prefixed_url_input(
+                            name="url_slug",
+                            label=_("Registration URL"),
+                            hint=_("The URL path for this registration page"),
+                            prefix=registration_url_prefix,
+                            placeholder="my-assembly-2026",
+                            value=registration_page.url_slug,
+                            disabled=slugs_locked
+                            ) }}
+                            {{ prefixed_url_input(
+                            name="short_url_slug",
+                            label=_("Short URL (optional)"),
+                            hint=_("A shorter URL for QR codes and paper invitations"),
+                            prefix=short_url_prefix,
+                            placeholder="ma26",
+                            value=registration_page.short_url_slug,
+                            disabled=slugs_locked
+                            ) }}
+                        </div>
+                    {% endif %}
+                    <div class="space-y-4">
+                        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("Paste the HTML shown above the form below: a heading, an introduction, anything visitors should read before they register. You can use {{ assembly_title }} and {{ assembly_question }} to drop in the assembly's title and question.") }}
+                        </p>
+                        {# HTML Textarea with monospace font. `readonly` is the default;
+                           ?edit=1 unlocks it via the Edit CTA above. #}
+                        {% set textarea_attrs %}
+                            {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                        {% endset %}
+                        {{ textarea(name="intro_content",
+                        label="",
+                        value=intro_content,
+                        placeholder="<h1>{{ assembly_title }}</h1>\n<p>{{ assembly_question }}</p>",
+                        rows=15,
+                        code_editor=true,
+                        attrs=textarea_attrs|trim) }}
+                    </div>
+                </section>
+            </div>
+            {# Assets panel - rendered only in edit mode, as on the form step. Images are as
+               likely to belong in an intro as in a form. #}
+            {% if edit_mode %}
+                <aside class="lg:flex-shrink-0 w-full lg:w-[400px] rounded-lg"
+                       style="background-color: var(--color-tables-cards);
+                              border: 1px solid var(--color-borders-dividers)">
+                    <div class="p-6 sticky top-4 w-full">
+                        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
+                        {{ asset_list(collection="images",
+                        item="image",
+                        heading=_("Images"),
+                        hint=_("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb),
+                        empty_text=_("No images uploaded yet."),
+                        upload_click="openImageUploadModal()",
+                        title_expr="image.alt || image.file_name",
+                        details_click="openImageDetailsModal(image)",
+                        copy_click="copyImageSnippet(image)",
+                        delete_click="deleteImage(image)",
+                        deleting_expr="imageBeingDeletedId === image.id") }}
+                        {{ asset_list(collection="documents",
+                        item="doc",
+                        heading=_("Documents"),
+                        hint=_("PDF files only. Maximum file size: %(max)s MB per document.", max=max_pdf_upload_mb),
+                        empty_text=_("No documents uploaded yet."),
+                        upload_click="openDocumentUploadModal()",
+                        title_expr="doc.label || doc.file_name",
+                        details_click="openDocumentDetailsModal(doc)",
+                        copy_click="copyDocumentSnippet(doc)",
+                        delete_click="deleteDocument(doc)",
+                        deleting_expr="documentBeingDeletedId === doc.id",
+                        header_classes="mt-6 mb-4 pt-4",
+                        header_style="border-top: 1px solid var(--color-borders-dividers)") }}
+                    </div>
+                </aside>
+            {% endif %}
+        </div>
+    </form>
+    {# Sticky wizard footer - navigation only. Step 1 has nowhere to go back to. #}
+    <div class="wizard-footer" x-scroll-preserve-links>
+        <div class="wizard-footer-box">
+            {% if edit_mode %}
+                <span id="editing-nav-hint"
+                      class="mr-auto text-body-sm"
+                      style="color: var(--color-secondary-text)">
+                    {{ _("Editing in progress — save or cancel to continue") }}
+                </span>
+                {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
+            {% else %}
+                {{ button(_("Next →"), variant="primary", href=next_url) }}
+            {% endif %}
+        </div>
+    </div>
+</div>

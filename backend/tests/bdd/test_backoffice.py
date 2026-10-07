@@ -493,6 +493,46 @@ def visit_registration_form_editor(page: Page, title: str, test_database):
     page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=form&edit=1")
 
 
+@when(parsers.parse('I visit the registration intro editor for "{title}"'))
+def visit_registration_intro_editor(page: Page, title: str, test_database):
+    """Open the registration intro step in edit mode."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=intro&edit=1")
+
+
+@when(parsers.parse('I type "{text}" into the intro content code editor'))
+def type_into_intro_content_editor(page: Page, text: str):
+    """Focus the intro step's mounted CodeMirror editor and type into it."""
+    content = page.locator("textarea[name='intro_content'] + .cm-editor .cm-content")
+    expect(content).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    content.click()
+    page.keyboard.type(text)
+
+
+@then(parsers.parse('the saved registration intro should contain "{text}"'))
+def saved_registration_intro_contains(page: Page, text: str):
+    """After saving we land on the read-only intro view, whose editor shows the persisted HTML."""
+    editor = page.locator("textarea[name='intro_content'] + .cm-editor")
+    expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I open the intro skeleton preview")
+def open_intro_skeleton_preview(page: Page):
+    """Click the 'Show Intro Skeleton' button to fetch the skeleton and open its modal."""
+    page.get_by_role("button", name="Show Intro Skeleton").click()
+
+
+@then("the intro skeleton should be shown in a read-only code editor")
+def intro_skeleton_shown_in_read_only_editor(page: Page):
+    """The skeleton modal holds the intro skeleton: the assembly title placeholder, no form."""
+    editor = page.locator('[aria-labelledby="skeleton-modal-title"] .cm-editor')
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(editor.locator(".cm-content")).to_have_attribute("contenteditable", "false")
+    expect(editor).to_contain_text("assembly_title")
+    expect(editor).not_to_contain_text("<form")
+
+
 @then("the HTML content field should be a mounted code editor")
 def html_content_is_code_editor(page: Page):
     """The CodeMirror editor mounts as the textarea's sibling and becomes visible."""
@@ -690,7 +730,7 @@ def wizard_next_button_disabled(page: Page):
 def stepper_navigation_disabled(page: Page):
     """While editing, the stepper renders aria-disabled spans instead of links."""
     expect(page.locator("a.stepper-link")).to_have_count(0)
-    expect(page.locator('span.stepper-link[aria-disabled="true"]')).to_have_count(3)
+    expect(page.locator('span.stepper-link[aria-disabled="true"]')).to_have_count(4)
 
 
 @when("I click the Cancel button in the editor header")
@@ -726,6 +766,14 @@ def on_read_only_form_view(page: Page):
     """Leaving edit mode lands on the view URL (no edit=1) with a non-editable editor."""
     page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
     content = page.locator("textarea[name='html_content'] + .cm-editor .cm-content")
+    expect(content).to_have_attribute("contenteditable", "false", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("I should be on the read-only registration intro view")
+def on_read_only_intro_view(page: Page):
+    """Opening a page from the list lands on its first step, the intro, with a non-editable editor."""
+    page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
+    content = page.locator("textarea[name='intro_content'] + .cm-editor .cm-content")
     expect(content).to_have_attribute("contenteditable", "false", timeout=PLAYWRIGHT_TIMEOUT)
 
 

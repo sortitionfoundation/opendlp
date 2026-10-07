@@ -1,5 +1,5 @@
-// ABOUTME: Form skeleton preview slice of the registration page controller
-// ABOUTME: Fetches the generated markup and holds the plain / GOV.UK styled toggle
+// ABOUTME: Skeleton preview slice of the registration page controller
+// ABOUTME: Fetches the generated intro and form markup and holds the plain / GOV.UK styled toggle
 
 /**
  * Build the skeleton-preview slice of the registration page controller.
@@ -16,14 +16,26 @@ export function registrationSkeleton(options) {
   return {
     skeletonLoading: false,
     skeletonModalOpen: false,
+    // The pair on show: the intro skeleton or the form skeleton, depending on
+    // which step's button opened the modal.
     skeletonHtmlPlain: "",
     skeletonHtmlStyled: "",
     skeletonView: "plain",
 
+    // Two entry points rather than one taking the part as an argument: the
+    // CSP Alpine build cannot pass a string literal from an @click handler.
+    fetchIntroSkeleton: function () {
+      return this._fetchSkeleton("intro_html", "intro_html_govuk");
+    },
+
+    fetchFormSkeleton: function () {
+      return this._fetchSkeleton("html", "html_govuk");
+    },
+
     // Uses fetch directly rather than the lib/json-request helpers: this route
     // reports its problems in the body rather than the status, so the parsed
     // body is the whole answer and an unparsable one has to be an error.
-    fetchSkeleton: function () {
+    _fetchSkeleton: function (plainKey, styledKey) {
       var self = this;
       self.skeletonLoading = true;
 
@@ -40,8 +52,8 @@ export function registrationSkeleton(options) {
             self.showToast(data.error, "error");
             return;
           }
-          self.skeletonHtmlPlain = data.html;
-          self.skeletonHtmlStyled = data.html_govuk;
+          self.skeletonHtmlPlain = data[plainKey];
+          self.skeletonHtmlStyled = data[styledKey];
           self.skeletonView = "plain";
           self.skeletonModalOpen = true;
         })

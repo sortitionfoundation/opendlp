@@ -449,9 +449,10 @@ ABOUTME: Documents the registration page lifecycle, the Jinja form helpers, and 
     {% endcall %}
 
     {# update_registration_page_html #}
-    {% call doc_card(name="update_registration_page_html()", code_ref="registration_page_service.py:193", permission="🔒 can_manage_assembly()", description=_("Update the registration page's form HTML content. Validates size limit and records an edit activity entry.")) %}
+    {% call doc_card(name="update_registration_page_html()", code_ref="registration_page_service.py:193", permission="🔒 can_manage_assembly()", description=_("Update the registration page's intro and form HTML content. Each validates its own size limit and records an edit activity entry; update_registration_page_intro_html() handles the intro.")) %}
         {{ param_table([
         ("assembly_id", "UUID", true, "Target assembly ID"),
+        ("intro_html", "str", true, "HTML content shown above the registration form"),
         ("form_html", "str", true, "HTML content for the registration form"),
         ]) }}
         {{ returns_block("RegistrationPageHtml  →  The updated HTML source object") }}
@@ -462,6 +463,9 @@ ABOUTME: Documents the registration page lifecycle, the Jinja form helpers, and 
         {% call try_it(key="update_registration_html", execute_click="executeUpdateRegistrationHtml()") %}
             {{ assembly_select("updateHtmlAssemblyId", assemblies) }}
             {{ page_id_input("updateHtmlPageId") }}
+            {{ textarea_field(label="Intro HTML",
+            model="updateIntroContent",
+            placeholder='<h1>{{ assembly_title }}</h1>\n<p>{{ assembly_question }}</p>') }}
             {{ textarea_field(label="Form HTML",
             model="updateHtmlContent",
             placeholder='<form action="{{ form_action }}" method="POST">\n  {{ csrf_form_element }}\n  <input type="text" name="name" required />\n  <button type="submit">Register</button>\n</form>') }}

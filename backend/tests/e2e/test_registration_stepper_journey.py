@@ -70,11 +70,11 @@ READY_FORM_HTML = (
 )
 
 
-def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_user, postgres_session_factory):
+def test_admin_walks_intro_form_email_preview_and_publishes(logged_in_admin, admin_user, postgres_session_factory):
     """A single happy-path smoke: admin creates a registration page (which auto-seeds a
-    default email template), saves the form HTML on step 1, updates the email template on
-    step 2, then hits Publish from step 3. The page ends up PUBLISHED with the manager's
-    edits persisted."""
+    default email template), saves the intro on step 1, the form HTML on step 2, updates
+    the email template on step 3, then hits Publish from step 4. The page ends up
+    PUBLISHED with the manager's edits persisted."""
     assembly_id = _seed_assembly_with_required_email(postgres_session_factory, admin_user.id)
 
     # Step 0: create the registration page. Route seeds a default email template
@@ -90,7 +90,20 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
         assert page.auto_reply_email_template_id == seeded[0].id, "seeded template is assigned (always-on)"
         slug = page.url_slug
 
-    # Step 1: save the form HTML with save_and_next. Redirects to the email section.
+    # Creation lands on the editor's first step, the intro.
+    response = logged_in_admin.get(response.location)
+    assert response.status_code == 200
+    assert 'id="reg-steps-panel-intro"' in response.get_data(as_text=True)
+
+    # Step 1: save the intro with save_and_next. Redirects to the form section.
+    response = logged_in_admin.post(
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
+        data={"action": "save_and_next", "intro_content": "<h1>{{ assembly_title }}</h1>"},
+    )
+    assert response.status_code == 302
+    assert "section=form" in response.location
+
+    # Step 2: save the form HTML with save_and_next. Redirects to the email section.
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
         data={"action": "save_and_next", "html_content": READY_FORM_HTML},
@@ -102,8 +115,9 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
         page = page_for_assembly(uow, assembly_id)
         html = uow.registration_page_html_sources.get_by_page_id(page.id).create_detached_copy()
     assert "Email" in html.form_html
+    assert "assembly_title" in html.intro_html
 
-    # Step 2: save updated auto-reply copy with save_and_next (it is already
+    # Step 3: save updated auto-reply copy with save_and_next (it is already
     # assigned and always-on — there is no enable step).
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/save",
@@ -123,7 +137,7 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     assert "Thanks" in template.subject
     assert "assembly.title" in template.body_html
 
-    # Step 3: publish. Same save endpoint, no html_content payload (guard skips update).
+    # Step 4: publish. Same save endpoint, no html_content payload (guard skips update).
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
         data={"action": "publish"},

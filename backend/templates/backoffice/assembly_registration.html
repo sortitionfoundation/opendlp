@@ -79,14 +79,15 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         </a>
                     </div>
                     <div class="dialog-body">
-            {# Sub-navigation within the Registration tab: registration page → auto-reply email → preview & publish.
-           URL contract: ?section=form|email|preview. Panels are peers (any step reachable at any time),
+            {# Sub-navigation within the Registration tab: intro → form → auto-reply email → preview & publish.
+           URL contract: ?section=intro|form|email|preview. Panels are peers (any step reachable at any time),
            so the stepper is rendered in tabs mode. While editing, the whole stepper is disabled —
            navigation is locked to the card's Save/Cancel, matching the disabled footer buttons. #}
                         {% set section_base = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug) %}
                         {{ stepper(id="reg-steps",
                         items=[
-                        {"key": "form", "label": _("Registration page"), "href": section_base ~ "?section=form", "active": active_section == "form"},
+                        {"key": "intro", "label": _("Intro"), "href": section_base ~ "?section=intro", "active": active_section == "intro"},
+                        {"key": "form", "label": _("Form"), "href": section_base ~ "?section=form", "active": active_section == "form"},
                         {"key": "email", "label": _("Auto-reply email"), "href": section_base ~ "?section=email", "active": active_section == "email"},
                         {"key": "preview", "label": _("Preview and publish"), "href": section_base ~ "?section=preview", "active": active_section == "preview"}
                         ],
@@ -94,8 +95,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         mode="tabs",
                         preserve_scroll=true,
                         disabled=edit_mode) }}
-            {# Whole-artifact status. Sits below the stepper so it applies to all three steps —
-               the form HTML, the auto-reply email, and the preview all share this state. #}
+            {# Whole-artifact status. Sits below the stepper so it applies to all four steps —
+               the intro, the form HTML, the auto-reply email, and the preview all share this state. #}
                         {% if registration_status == "TEST" %}
                             <div class="rounded-lg p-4 mb-6"
                                  role="alert"
@@ -126,6 +127,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                     {{ _("Published") }}
                                 </span>
                             </div>
+                        {% endif %}
+                        {% if active_section == "intro" %}
+                            {% include "backoffice/registration/_step_intro.html" %}
                         {% endif %}
                         {% if active_section == "form" %}
                             {% include "backoffice/registration/_step_form.html" %}

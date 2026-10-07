@@ -34,7 +34,8 @@ BOUND_NAMES = [
     "cancelConfirmClose()",
     "closeLeaveModal()",
     "discardAndLeave()",
-    "fetchSkeleton()",
+    "fetchIntroSkeleton()",
+    "fetchFormSkeleton()",
     "closeSkeletonModal()",
     "showPlainSkeleton()",
     "showStyledSkeleton()",
@@ -125,12 +126,13 @@ def page_html(logged_in_admin, registration_page, existing_assembly) -> str:
 def every_view_html(logged_in_admin, fake_store, registration_page, existing_assembly) -> str:
     """Every section of the page, in every state, joined together.
 
-    One component drives three sections, edit mode and the published state, but
+    One component drives four sections, edit mode and the published state, but
     each renders only its own markup - so a binding lives on exactly one of them,
     and checking the default view alone would miss most of them.
     """
     base = f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
-    views = [f"{base}?section={section}" for section in ("form", "email", "preview")]
+    views = [f"{base}?section={section}" for section in ("intro", "form", "email", "preview")]
+    views.append(f"{base}?section=intro&edit=1")
     views.append(f"{base}?section=form&edit=1")
 
     def render(url: str) -> str:

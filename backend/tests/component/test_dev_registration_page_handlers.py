@@ -14,10 +14,12 @@ from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
 from opendlp.entrypoints.blueprints.dev import (
     _dev_error,
     _handle_close_registration_page,
+    _handle_get_registration_page,
     _handle_publish_registration_page,
     _handle_reopen_registration_page,
     _handle_submit_registration,
     _handle_unpublish_registration_page,
+    _handle_update_registration_page_html,
 )
 from opendlp.service_layer.exceptions import ImageQuotaExceeded, InsufficientPermissions
 from tests.fakes import FakeStore, FakeUnitOfWork
@@ -104,6 +106,32 @@ class TestDevError:
 
     def test_points_at_the_console_even_when_the_message_is_generic(self):
         assert self.CONSOLE_HINT in _dev_error(RuntimeError("boom"))
+
+
+class TestUpdateRegistrationPageHtml:
+    def test_updates_the_intro_and_the_form_independently(self, fake_store, as_admin, shared_uow):
+        """Each HTML is touched only when its key is sent, so one can change without the other."""
+        page = _seed_page(fake_store)
+
+        result = _handle_update_registration_page_html(
+            shared_uow, {"assembly_id": str(page.assembly_id), "intro_html": "<h1>Hi</h1>"}
+        )
+
+        assert result["status"] == "success"
+        assert result["html_source"]["intro_html_preview"] == "<h1>Hi</h1>"
+        assert result["html_source"]["form_html_preview"] == _READY_HTML
+
+    def test_get_reports_both_previews(self, fake_store, as_admin, shared_uow):
+        page = _seed_page(fake_store)
+        _handle_update_registration_page_html(
+            shared_uow, {"assembly_id": str(page.assembly_id), "intro_html": "<h1>Hi</h1>"}
+        )
+
+        result = _handle_get_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
+
+        assert result["status"] == "success"
+        assert result["html_source"]["intro_html_preview"] == "<h1>Hi</h1>"
+        assert result["html_source"]["form_html_preview"] == _READY_HTML
 
 
 class TestPublishRegistrationPage:
