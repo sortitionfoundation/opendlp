@@ -786,16 +786,16 @@ def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str)
         result = deliver_test_auto_reply(bootstrap.get_email_adapter(), prepared)
         if result.sent:
             flash(_("Test email sent to %(email)s", email=to_email), "success")
-            if result.missing_variables:
-                flash(
-                    _(
-                        "Some template variables had no value and rendered blank: %(names)s",
-                        names=", ".join(result.missing_variables),
-                    ),
-                    "warning",
-                )
         else:
             flash(_("The test email could not be sent — check the email configuration and try again"), "error")
+        if result.missing_variables:
+            flash(
+                _(
+                    "Some template variables had no value and rendered blank: %(names)s",
+                    names=", ".join(result.missing_variables),
+                ),
+                "warning",
+            )
         return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
     except EmailTemplateNotFoundError:
         flash(_("There is no auto-reply email to test yet — set one up first"), "warning")

@@ -8,7 +8,6 @@ from opendlp.domain.email_context import (
     AssemblyContext,
     RespondentContext,
     build_context,
-    sample_context,
     sample_respondent_context,
 )
 from opendlp.domain.respondent_field_schema import (
@@ -134,7 +133,7 @@ def test_sample_values_by_field_type() -> None:
     assert ctx.attributes["access_needs"] == "[Access needs]"
 
 
-def test_sample_skips_fixed_and_off_page_fields_but_placeholders_derived() -> None:
+def test_sample_skips_off_page_fields_but_fixed_kept_and_placeholders_derived() -> None:
     fields = [
         _field("email", FieldType.EMAIL, is_fixed=True),
         _field("internal_note", on_registration_page=FieldOnRegistrationPage.NO),
@@ -147,7 +146,7 @@ def test_sample_skips_fixed_and_off_page_fields_but_placeholders_derived() -> No
         ),
     ]
     ctx = sample_respondent_context(fields, "me@example.com")
-    assert "email" not in ctx.attributes
+    assert "email" in ctx.attributes
     assert "internal_note" not in ctx.attributes
     assert ctx.attributes["age_bracket"] == "[Age bracket]"
 
@@ -156,10 +155,3 @@ def test_sample_respondent_falls_back_to_canonical_person_without_a_schema() -> 
     ctx = sample_respondent_context([], "me@example.com")
     assert ctx.email == "me@example.com"
     assert ctx.full_name == "Alex Example"
-
-
-def test_sample_context_uses_the_same_canonical_respondent() -> None:
-    # The validation/preview sample and the test-send sample must be one person,
-    # so a variable that renders here also renders in a test email.
-    respondent = sample_context()["respondent"]
-    assert respondent.full_name == "Alex Example"

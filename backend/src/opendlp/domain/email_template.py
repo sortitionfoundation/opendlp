@@ -6,7 +6,6 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
-from opendlp.domain.email_context import sample_context
 from opendlp.domain.email_template_render import (
     RenderedEmail,
     render_template_string,
@@ -51,9 +50,6 @@ class EmailTemplate:
             problems.append("The email template body is empty")
         problems.extend(template_syntax_problems(self.subject, self.body_html))
         return problems
-
-    def sample_context(self) -> dict[str, Any]:
-        return sample_context()
 
     def update(self, name: str | None = None, subject: str | None = None, body_html: str | None = None) -> None:
         if name is not None:

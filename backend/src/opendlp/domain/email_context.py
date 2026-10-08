@@ -139,7 +139,7 @@ def _sample_field_value(fd: RespondentFieldDefinition, to_email: str) -> Any:
 
 
 def sample_respondent_context(
-    field_definitions: Sequence[RespondentFieldDefinition], to_email: str
+    field_definitions: Sequence[RespondentFieldDefinition], to_email: str = _SAMPLE_EMAIL
 ) -> RespondentContext:
     """A made-up respondent for test sends, shaped by the assembly's field schema.
 
@@ -152,8 +152,6 @@ def sample_respondent_context(
     """
     attributes: dict[str, Any] = {}
     for fd in field_definitions:
-        if fd.is_fixed:
-            continue
         if fd.is_derived:
             attributes[fd.field_key] = f"[{fd.label}]"
         elif fd.on_registration_page != FieldOnRegistrationPage.NO:
@@ -161,15 +159,3 @@ def sample_respondent_context(
     if not attributes:
         return _static_sample_respondent(to_email)
     return RespondentContext(email=to_email, attributes=attributes)
-
-
-def sample_context() -> dict[str, Any]:
-    return build_context(
-        AssemblyContext(
-            title="Sample Assembly",
-            question="Should the city pedestrianise the centre?",
-            first_assembly_date="2026-01-01",
-            number_to_select=100,
-        ),
-        sample_respondent_context([], _SAMPLE_EMAIL),
-    )
