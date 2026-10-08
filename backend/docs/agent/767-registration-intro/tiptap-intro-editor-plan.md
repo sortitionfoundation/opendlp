@@ -675,7 +675,11 @@ Done. As built:
 6. **Translations and docs:** run `translate-catalogues`; add "content
    style" to `docs/language.md` if it needs a glossary term.
 
-### 9. Documentation
+### ✅ 9. Documentation
+
+Done: `docs/registration-intro-editor.md`, linked from `AGENTS.md`, and a
+row for the formatting toolbar in `docs/agent/component_accessibility.md`'s
+component table, recording the `aria-disabled` departure.
 
 
 - `docs/registration-intro-editor.md` (E5): what the visual editor keeps,
