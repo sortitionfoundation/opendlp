@@ -53,6 +53,8 @@ repos:
     rev: "3.0.11"
     hooks:
       - id: djhtml
+        # Real authored HTML kept exactly as found, for round-trip tests.
+        exclude: ^backend/tests/fixtures/registration_intros/
       - id: djcss
       # djhtml already indents inline <script> blocks inside templates, so this
       # only covers a standalone .js file under templates/ - there are none
