@@ -1444,12 +1444,54 @@ body {
     }
 
     .rich-editor__tool {
-        padding: 0.25rem 0.625rem;
-        font-size: 0.875rem;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.375rem;
         border: 1px solid var(--color-borders-dividers);
         border-radius: 0.375rem;
         color: var(--color-button-tertiary-text);
         background-color: var(--color-page-background);
+    }
+
+    /* The label is the button's accessible name, hidden like sr-only until
+       hover or keyboard focus shows it as a tooltip below the button. It is a
+       child of the button, so moving the pointer onto it keeps it showing, and
+       Escape hides it (WCAG 1.4.13). */
+    .rich-editor__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .rich-editor__tool:hover .rich-editor__label,
+    .rich-editor__tool:focus-visible .rich-editor__label {
+        top: calc(100% + 0.375rem);
+        left: 50%;
+        z-index: 10;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip-path: none;
+        transform: translateX(-50%);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        color: var(--color-page-background);
+        background-color: var(--color-navigation-bars);
+    }
+
+    .rich-editor__toolbar--tooltips-dismissed .rich-editor__tool .rich-editor__label {
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        padding: 0;
     }
 
     .rich-editor__tool:hover {
@@ -1465,14 +1507,6 @@ body {
     .rich-editor__tool[aria-disabled="true"] {
         color: var(--color-placeholder-text);
         cursor: not-allowed;
-    }
-
-    .rich-editor__tool--bold {
-        font-weight: 700;
-    }
-
-    .rich-editor__tool--italic {
-        font-style: italic;
     }
 
     .rich-editor__separator {

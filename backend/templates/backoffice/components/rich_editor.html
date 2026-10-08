@@ -2,6 +2,7 @@
 ABOUTME: Server-rendered controls for the visual HTML editor: the Visual/HTML switch, hint and notice
 ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaScript the plain textarea shows
 #}
+{% from "backoffice/components/icons.html" import icon_bold, icon_italic, icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_list, icon_list_ordered, icon_link, icon_image, icon_undo_2, icon_redo_2 %}
 {% macro rich_editor_controls(for_id, label, images=false, editable=true, content_style="") %}
     {#
     Controls for a textarea enhanced with the visual editor. Rendered by the textarea macro
@@ -48,35 +49,51 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         <div data-rich-editor-code></div>
     </div>
 {% endmacro %}
+{% macro rich_editor_tool(command, label, icon, pressable=false, extra_attrs="") %}
+    {#
+    One toolbar button: an icon, and its label in a span that is visually hidden until the
+    button is hovered or focused, when it shows as a tooltip. The label is the button's
+    accessible name, so it is real, translated text in the page - not an aria-label.
+    #}
+    <button type="button"
+            class="rich-editor__tool"
+            data-command="{{ command }}"
+            {% if pressable %}aria-pressed="false"{% endif %}
+            {{ extra_attrs | safe }}>
+        {{ icon }}
+        <span class="rich-editor__label">{{ label }}</span>
+    </button>
+{% endmacro %}
 {% macro rich_editor_toolbar(for_id, images=false) %}
     {#
     The formatting toolbar, following the WAI-ARIA toolbar pattern: one Tab stop, arrow keys
     (and Home/End) move between buttons, toggles carry aria-pressed. Unavailable commands use
     aria-disabled rather than disabled so they stay reachable with the arrow keys.
-    src/js/backoffice/rich-editor-toolbar.js wires each data-command.
+    src/js/backoffice/rich-editor-toolbar.js wires each data-command, and Escape hides a
+    showing tooltip (WCAG 1.4.13).
     #}
     <div class="rich-editor__toolbar"
          role="toolbar"
          aria-label="{{ _('Formatting') }}"
          aria-controls="{{ for_id }}-visual"
          data-rich-editor-toolbar>
-        <button type="button" class="rich-editor__tool" data-command="paragraph" aria-pressed="false">{{ _("Text") }}</button>
-        <button type="button" class="rich-editor__tool" data-command="heading1" aria-pressed="false">{{ _("Heading 1") }}</button>
-        <button type="button" class="rich-editor__tool" data-command="heading2" aria-pressed="false">{{ _("Heading 2") }}</button>
-        <button type="button" class="rich-editor__tool" data-command="heading3" aria-pressed="false">{{ _("Heading 3") }}</button>
+        {{ rich_editor_tool("paragraph", _("Text"), icon_pilcrow(), pressable=true) }}
+        {{ rich_editor_tool("heading1", _("Heading 1"), icon_heading_1(), pressable=true) }}
+        {{ rich_editor_tool("heading2", _("Heading 2"), icon_heading_2(), pressable=true) }}
+        {{ rich_editor_tool("heading3", _("Heading 3"), icon_heading_3(), pressable=true) }}
         <span class="rich-editor__separator" aria-hidden="true"></span>
-        <button type="button" class="rich-editor__tool rich-editor__tool--bold" data-command="bold" aria-pressed="false">{{ _("Bold") }}</button>
-        <button type="button" class="rich-editor__tool rich-editor__tool--italic" data-command="italic" aria-pressed="false">{{ _("Italic") }}</button>
+        {{ rich_editor_tool("bold", _("Bold"), icon_bold(), pressable=true) }}
+        {{ rich_editor_tool("italic", _("Italic"), icon_italic(), pressable=true) }}
         <span class="rich-editor__separator" aria-hidden="true"></span>
-        <button type="button" class="rich-editor__tool" data-command="bulletList" aria-pressed="false">{{ _("Bulleted list") }}</button>
-        <button type="button" class="rich-editor__tool" data-command="orderedList" aria-pressed="false">{{ _("Numbered list") }}</button>
+        {{ rich_editor_tool("bulletList", _("Bulleted list"), icon_list(), pressable=true) }}
+        {{ rich_editor_tool("orderedList", _("Numbered list"), icon_list_ordered(), pressable=true) }}
         <span class="rich-editor__separator" aria-hidden="true"></span>
-        <button type="button" class="rich-editor__tool" data-command="link" aria-haspopup="dialog">{{ _("Link") }}</button>
+        {{ rich_editor_tool("link", _("Link"), icon_link(), extra_attrs='aria-haspopup="dialog"') }}
         {% if images %}
-            <button type="button" class="rich-editor__tool" data-command="image" aria-haspopup="dialog">{{ _("Image") }}</button>
+            {{ rich_editor_tool("image", _("Image"), icon_image(), extra_attrs='aria-haspopup="dialog"') }}
         {% endif %}
         <span class="rich-editor__separator" aria-hidden="true"></span>
-        <button type="button" class="rich-editor__tool" data-command="undo" aria-disabled="true">{{ _("Undo") }}</button>
-        <button type="button" class="rich-editor__tool" data-command="redo" aria-disabled="true">{{ _("Redo") }}</button>
+        {{ rich_editor_tool("undo", _("Undo"), icon_undo_2(), extra_attrs='aria-disabled="true"') }}
+        {{ rich_editor_tool("redo", _("Redo"), icon_redo_2(), extra_attrs='aria-disabled="true"') }}
     </div>
 {% endmacro %}

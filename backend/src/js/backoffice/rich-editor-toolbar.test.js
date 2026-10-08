@@ -3,7 +3,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
 import { createSchemaExtensions } from "./rich-editor-schema.js";
-import { wireToolbar } from "./rich-editor-toolbar.js";
+import {
+  TOOLTIPS_DISMISSED_CLASS,
+  wireToolbar,
+} from "./rich-editor-toolbar.js";
 
 const COMMAND_NAMES = [
   "paragraph",
@@ -172,5 +175,55 @@ describe("wireToolbar keyboard", () => {
     expect(document.activeElement).toBe(button("redo"));
     key(button("redo"), "Home");
     expect(document.activeElement).toBe(button("paragraph"));
+  });
+});
+
+describe("wireToolbar tooltips", () => {
+  function escape(target) {
+    const event = new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    });
+    target.dispatchEvent(event);
+    return event;
+  }
+
+  it("hides the tooltip on the first Escape without letting it close anything else", () => {
+    wireToolbar(toolbar, editor);
+    const outside = vi.fn();
+    document.addEventListener("keydown", outside);
+    button("bold").focus();
+
+    const event = escape(button("bold"));
+
+    document.removeEventListener("keydown", outside);
+    expect(toolbar.classList.contains(TOOLTIPS_DISMISSED_CLASS)).toBe(true);
+    expect(event.defaultPrevented).toBe(true);
+    expect(outside).not.toHaveBeenCalled();
+  });
+
+  it("lets a second Escape through to the dialog", () => {
+    wireToolbar(toolbar, editor);
+    const outside = vi.fn();
+    document.addEventListener("keydown", outside);
+    escape(button("bold"));
+
+    escape(button("bold"));
+
+    document.removeEventListener("keydown", outside);
+    expect(outside).toHaveBeenCalledOnce();
+  });
+
+  it("shows tooltips again when focus or the pointer moves to another button", () => {
+    wireToolbar(toolbar, editor);
+    button("paragraph").focus();
+    escape(button("paragraph"));
+    key(button("paragraph"), "ArrowRight");
+    expect(toolbar.classList.contains(TOOLTIPS_DISMISSED_CLASS)).toBe(false);
+
+    escape(button("heading1"));
+    button("bold").dispatchEvent(new MouseEvent("mouseenter"));
+    expect(toolbar.classList.contains(TOOLTIPS_DISMISSED_CLASS)).toBe(false);
   });
 });

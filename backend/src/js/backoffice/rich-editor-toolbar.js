@@ -1,5 +1,8 @@
 // ABOUTME: Wires the server-rendered visual editor toolbar to a Tiptap editor.
-// ABOUTME: Runs each button's command, keeps aria-pressed in step, and moves focus with the arrow keys.
+// ABOUTME: Runs each button's command, keeps aria-pressed in step, moves focus with the arrows, dismisses tooltips.
+
+export const TOOLTIPS_DISMISSED_CLASS =
+  "rich-editor__toolbar--tooltips-dismissed";
 
 /**
  * What each `data-command` button does. `active` marks a toggle, whose
@@ -90,9 +93,14 @@ export function wireToolbar(toolbar, editor, actions = {}) {
     }
   }
 
+  function showTooltips() {
+    toolbar.classList.remove(TOOLTIPS_DISMISSED_CLASS);
+  }
+
   function moveFocus(from, to) {
     from.setAttribute("tabindex", "-1");
     to.setAttribute("tabindex", "0");
+    showTooltips();
     to.focus();
   }
 
@@ -101,7 +109,18 @@ export function wireToolbar(toolbar, editor, actions = {}) {
     // Keep the editor's selection: a click must not move focus off the text first.
     button.addEventListener("mousedown", (event) => event.preventDefault());
     button.addEventListener("click", () => run(button));
+    button.addEventListener("mouseenter", showTooltips);
     button.addEventListener("keydown", (event) => {
+      // The first Escape only hides the tooltip; the next one is the dialog's.
+      if (
+        event.key === "Escape" &&
+        !toolbar.classList.contains(TOOLTIPS_DISMISSED_CLASS)
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        toolbar.classList.add(TOOLTIPS_DISMISSED_CLASS);
+        return;
+      }
       const last = buttons.length - 1;
       const targets = {
         ArrowRight: buttons[index === last ? 0 : index + 1],
