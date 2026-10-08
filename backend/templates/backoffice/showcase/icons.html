@@ -4,6 +4,7 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
 {% from "backoffice/components/icons.html" import icon_about, icon_arrow_back, icon_arrow_forward, icon_check, icon_check_12, icon_check_20, icon_chevron_down, icon_chevron_right, icon_chevron_up, icon_close, icon_code, icon_copy, icon_data_agreement, icon_download, icon_edit, icon_hand, icon_info, icon_logout, icon_more_vert, icon_pie_chart, icon_plus, icon_question_circle, icon_spinner, icon_sparkles, icon_switch, icon_trash, icon_undo, icon_user, icon_warning, icon_warning_20 %}
+{% from "backoffice/components/icons.html" import icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_list, icon_list_ordered, icon_text_quote, icon_link, icon_image, icon_separator_horizontal, icon_table, icon_undo_2, icon_redo_2 %}
 
 {#
     A glyph and everything a reader needs to use it: how it looks small, how
@@ -152,6 +153,59 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
         {{ glyph("icon_pie_chart", "Lucide", "24",
         icon_pie_chart(classes="w-4 h-4"), icon_pie_chart(classes="w-6 h-6"),
         ["backoffice/assembly_dashboard.html"]) }}
+
+        {{ showcase_subtitle("Text editing") }}
+        {{ glyph("icon_pilcrow", "Lucide", "24",
+        icon_pilcrow(classes="w-4 h-4"), icon_pilcrow(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_heading_1", "Lucide", "24",
+        icon_heading_1(classes="w-4 h-4"), icon_heading_1(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_heading_2", "Lucide", "24",
+        icon_heading_2(classes="w-4 h-4"), icon_heading_2(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_heading_3", "Lucide", "24",
+        icon_heading_3(classes="w-4 h-4"), icon_heading_3(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_bold", "Lucide", "24",
+        icon_bold(classes="w-4 h-4"), icon_bold(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_italic", "Lucide", "24",
+        icon_italic(classes="w-4 h-4"), icon_italic(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_underline", "Lucide", "24",
+        icon_underline(classes="w-4 h-4"), icon_underline(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_strikethrough", "Lucide", "24",
+        icon_strikethrough(classes="w-4 h-4"), icon_strikethrough(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_list", "Lucide", "24",
+        icon_list(classes="w-4 h-4"), icon_list(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_list_ordered", "Lucide", "24",
+        icon_list_ordered(classes="w-4 h-4"), icon_list_ordered(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_text_quote", "Lucide", "24",
+        icon_text_quote(classes="w-4 h-4"), icon_text_quote(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_link", "Lucide", "24",
+        icon_link(classes="w-4 h-4"), icon_link(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_image", "Lucide", "24",
+        icon_image(classes="w-4 h-4"), icon_image(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_separator_horizontal", "Lucide", "24",
+        icon_separator_horizontal(classes="w-4 h-4"), icon_separator_horizontal(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_table", "Lucide", "24",
+        icon_table(classes="w-4 h-4"), icon_table(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_undo_2", "Lucide", "24",
+        icon_undo_2(classes="w-4 h-4"), icon_undo_2(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_redo_2", "Lucide", "24",
+        icon_redo_2(classes="w-4 h-4"), icon_redo_2(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
 
         {{ showcase_subtitle("Drawn for their slot") }}
         <p class="text-body-md" style="color: var(--color-body-text)">
