@@ -471,9 +471,17 @@ preserving content.
 Done. As built:
 
 - The toolbar macro is `rich_editor_toolbar` in the same component file, and
-  its wiring is `src/js/backoffice/rich-editor-toolbar.js`. Buttons have
-  visible text labels ("Bold", "Heading 2", …), so no `aria-label` is
-  needed and browser translation tools can see them. Undo and redo use
+  its wiring is `src/js/backoffice/rich-editor-toolbar.js`.
+- **Icons (changed after review):** the buttons first had visible text labels.
+  Chewie asked for standard icons, so each button is now a Lucide glyph from
+  the OpenDLP Figma "Icons" sheet (node 1809:25). The glyphs are `pilcrow`,
+  `heading-1/2/3`, `bold`, `italic`, `list`, `list-ordered`, `link`, `image`,
+  and `undo-2`/`redo-2`, added to `icons.html` as `icon_*` macros. The label
+  stays in the page as a span, visually hidden until hover or keyboard focus
+  shows it as a tooltip. So the accessible name is still real translated
+  text, not an `aria-label`. The tooltip meets WCAG 1.4.13: it's a child of
+  the button, so hovering it keeps it open, and the first Escape hides it
+  without closing the editor dialog. Undo and redo use
   `aria-disabled` without `disabled`, following the WAI-ARIA toolbar pattern:
   a `disabled` button drops out of the arrow-key order. This departs from
   the component checklist's "both attributes" rule, and the macro's comment
