@@ -377,7 +377,34 @@ syncs to the textarea, readonly is respected, double mount is a no-op,
 `setValue` updates the textarea). The existing BDD intro scenarios must still
 pass unchanged; that is the check for this step.
 
-### 2. Dependencies and the schema
+### ✅ 2. Dependencies and the schema
+
+Done. As built:
+
+- The helpers live in two modules rather than in `rich-editor.js`:
+  `rich-editor-schema.js` (`createSchemaExtensions`, `findVariableRanges`,
+  the `VariableHighlight` extension) and `rich-editor-html.js`
+  (`normaliseHtml`, `roundTrip`, `roundTripsCleanly`).
+- StarterKit's `trailingNode` is off too. Otherwise the live editor appends an
+  empty `<p></p>` whenever the intro ends with something other than a
+  paragraph, such as the GOV.UK skeleton's `<div>`.
+- `normaliseHtml` needed two rules beyond E5's list, both found by the real
+  intros:
+  - **Styles are compared in parsed form.** The round trip rewrites
+    `color: #0c7e8f` as `rgb(12, 126, 143)` and `margin: 0 auto` as
+    `margin: 0px auto`.
+  - **Inline content is compared as runs of text, each with a set of
+    formatting.** So `<strong><a>…</a></strong>` and `<a><strong>…</strong></a>`
+    are equal, since ProseMirror orders marks its own way. An empty `<a>` (an
+    anchor) still counts as content.
+- **A `{{ variable }}` in an attribute survives** (`href="{{ url }}"`,
+  `src="{{ logo }}"`), contrary to E5's expectation. The limitation that
+  remains is that the visual editor has no way to *edit* such a variable, and
+  doesn't highlight it. The help text and docs say that instead.
+- Outcomes on the real intros are as planned. Text, link addresses and image
+  sources survive the round trip for all three, including the table one,
+  which is still refused because its `<table>` is lost.
+
 
 `npm install` the E1 packages (approved). In `rich-editor.js`, build
 the extension list (E5) and the pure helpers `createSchemaExtensions()`,
