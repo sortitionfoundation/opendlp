@@ -33,6 +33,9 @@ scenarios("../../features/backoffice-csv-upload.feature")
 scenarios("../../features/backoffice-registration-editor.feature")
 scenarios("../../features/organiser-assemblies.feature")
 
+# The visual editor's controls wrap both its views, so steps scope to them.
+INTRO_EDITOR = "[data-rich-editor-for='intro_content']"
+
 
 # Store assembly data between steps
 class AssemblyNameIdCache:
@@ -503,8 +506,9 @@ def visit_registration_intro_editor(page: Page, title: str, test_database):
 
 @when(parsers.parse('I type "{text}" into the intro content code editor'))
 def type_into_intro_content_editor(page: Page, text: str):
-    """Focus the intro step's mounted CodeMirror editor and type into it."""
-    content = page.locator("textarea[name='intro_content'] + .cm-editor .cm-content")
+    """Switch the intro editor to its HTML view, the CodeMirror editor, and type into it."""
+    page.locator(INTRO_EDITOR).get_by_role("button", name="HTML", exact=True).click()
+    content = page.locator(f"{INTRO_EDITOR} .cm-editor .cm-content")
     expect(content).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     content.click()
     page.keyboard.type(text)
@@ -512,8 +516,8 @@ def type_into_intro_content_editor(page: Page, text: str):
 
 @then(parsers.parse('the saved registration intro should contain "{text}"'))
 def saved_registration_intro_contains(page: Page, text: str):
-    """After saving we land on the read-only intro view, whose editor shows the persisted HTML."""
-    editor = page.locator("textarea[name='intro_content'] + .cm-editor")
+    """After saving we land on the read-only intro view, whose editor shows the persisted content."""
+    editor = page.locator(INTRO_EDITOR)
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
@@ -773,7 +777,7 @@ def on_read_only_form_view(page: Page):
 def on_read_only_intro_view(page: Page):
     """Opening a page from the list lands on its first step, the intro, with a non-editable editor."""
     page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
-    content = page.locator("textarea[name='intro_content'] + .cm-editor .cm-content")
+    content = page.locator(f"{INTRO_EDITOR} [contenteditable]:visible")
     expect(content).to_have_attribute("contenteditable", "false", timeout=PLAYWRIGHT_TIMEOUT)
 
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-07 19:25+0000\n"
+"POT-Creation-Date: 2026-10-08 16:41+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -640,7 +640,7 @@ msgstr "A válaszértékeknek különbözniük kell: \"%(value)s\" többször sz
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
-#: templates/backoffice/components/input.html:356
+#: templates/backoffice/components/input.html:367
 #: templates/backoffice/components/table.html:252
 msgid "Yes"
 msgstr "Igen"
@@ -652,7 +652,7 @@ msgstr "Igen"
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
-#: templates/backoffice/components/input.html:356
+#: templates/backoffice/components/input.html:367
 #: templates/backoffice/components/table.html:254
 msgid "No"
 msgstr "Nem"
@@ -6211,6 +6211,7 @@ msgid "Close and return to the registration pages"
 msgstr "Bezárás és visszatérés a regisztrációs oldalakhoz"
 
 #: templates/backoffice/assembly_registration.html:89
+#: templates/backoffice/registration/_step_intro.html:114
 msgid "Intro"
 msgstr ""
 
@@ -7225,11 +7226,11 @@ msgstr "Munkalap neve"
 msgid "Share the spreadsheet with %(email)s so it can be written to."
 msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
-#: templates/backoffice/components/input.html:584
+#: templates/backoffice/components/input.html:595
 msgid "On"
 msgstr "Be"
 
-#: templates/backoffice/components/input.html:584
+#: templates/backoffice/components/input.html:595
 msgid "Off"
 msgstr "Ki"
 
@@ -7490,6 +7491,39 @@ msgstr "például: telefonon megerősítette a résztvevő"
 #: templates/backoffice/components/respondent_status_form.html:87
 msgid "Confirm"
 msgstr "Megerősítés"
+
+#: templates/backoffice/components/rich_editor.html:19
+msgid ""
+"This HTML uses things the visual editor cannot show, so it opens as HTML."
+" Common causes are tables, comments, headings smaller than level 3, and "
+"text outside a paragraph."
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:20
+msgid ""
+"This HTML uses things the visual editor cannot show, so it stays in HTML."
+" Common causes are tables, comments, headings smaller than level 3, and "
+"text outside a paragraph."
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:23
+msgid "Editor view"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:27
+msgid "Visual"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:31
+msgid "HTML"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:36
+msgid ""
+"The visual editor highlights variables like {{ assembly_title }} in text."
+" To add or change a variable anywhere else, such as in a link address, "
+"edit the HTML."
+msgstr ""
 
 #: templates/backoffice/components/search_dropdown.html:107
 msgid "Search results"
@@ -7834,7 +7868,7 @@ msgstr "Dokumentum feltöltése"
 
 #: templates/backoffice/registration/_modals.html:176
 #: templates/backoffice/registration/_step_form.html:125
-#: templates/backoffice/registration/_step_intro.html:139
+#: templates/backoffice/registration/_step_intro.html:143
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr "Csak PDF fájlok. Maximális fájlméret: %(max)s MB dokumentumonként."
@@ -8034,8 +8068,8 @@ msgstr "← Vissza"
 #: templates/backoffice/registration/_step_email.html:201
 #: templates/backoffice/registration/_step_form.html:155
 #: templates/backoffice/registration/_step_form.html:158
-#: templates/backoffice/registration/_step_intro.html:163
-#: templates/backoffice/registration/_step_intro.html:165
+#: templates/backoffice/registration/_step_intro.html:167
+#: templates/backoffice/registration/_step_intro.html:169
 msgid "Next →"
 msgstr "Tovább →"
 
@@ -8118,7 +8152,7 @@ msgstr "%(label)s változó másolása"
 
 #: templates/backoffice/registration/_step_email.html:195
 #: templates/backoffice/registration/_step_form.html:152
-#: templates/backoffice/registration/_step_intro.html:161
+#: templates/backoffice/registration/_step_intro.html:165
 msgid "Editing in progress — save or cancel to continue"
 msgstr "Szerkesztés folyamatban – a folytatáshoz ments vagy vess el"
 
@@ -8152,17 +8186,17 @@ msgstr ""
 "csrf_form_element }} a CSRF-védelemhez."
 
 #: templates/backoffice/registration/_step_form.html:110
-#: templates/backoffice/registration/_step_intro.html:124
+#: templates/backoffice/registration/_step_intro.html:128
 msgid "Assets"
 msgstr "Eszközök"
 
 #: templates/backoffice/registration/_step_form.html:113
-#: templates/backoffice/registration/_step_intro.html:127
+#: templates/backoffice/registration/_step_intro.html:131
 msgid "Images"
 msgstr "Képek"
 
 #: templates/backoffice/registration/_step_form.html:114
-#: templates/backoffice/registration/_step_intro.html:128
+#: templates/backoffice/registration/_step_intro.html:132
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
@@ -8170,17 +8204,17 @@ msgstr ""
 "képenként."
 
 #: templates/backoffice/registration/_step_form.html:115
-#: templates/backoffice/registration/_step_intro.html:129
+#: templates/backoffice/registration/_step_intro.html:133
 msgid "No images uploaded yet."
 msgstr "Még nincs feltöltött kép."
 
 #: templates/backoffice/registration/_step_form.html:124
-#: templates/backoffice/registration/_step_intro.html:138
+#: templates/backoffice/registration/_step_intro.html:142
 msgid "Documents"
 msgstr "Dokumentumok"
 
 #: templates/backoffice/registration/_step_form.html:126
-#: templates/backoffice/registration/_step_intro.html:140
+#: templates/backoffice/registration/_step_intro.html:144
 msgid "No documents uploaded yet."
 msgstr "Még nincs feltöltött dokumentum."
 

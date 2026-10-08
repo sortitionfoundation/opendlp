@@ -1,0 +1,46 @@
+{#
+ABOUTME: Server-rendered controls for the visual HTML editor: the Visual/HTML switch, hint and notice
+ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaScript the plain textarea shows
+#}
+{% macro rich_editor_controls(for_id, label, images=false, editable=true) %}
+    {#
+    Controls for a textarea enhanced with the visual editor. Rendered by the textarea macro
+    when rich_editor=true; every string is here so it is translated with the rest of the page.
+
+    Args:
+        for_id: id of the textarea the editor is mounted over
+        label: accessible name for the editing area
+        images: whether images can be inserted (drop, paste, the Image button)
+        editable: false renders no toolbar - the view outside edit mode
+    #}
+    <div class="rich-editor"
+         data-rich-editor-for="{{ for_id }}"
+         data-rich-editor-label="{{ label }}"
+         data-message-opens-as-html="{{ _('This HTML uses things the visual editor cannot show, so it opens as HTML. Common causes are tables, comments, headings smaller than level 3, and text outside a paragraph.') }}"
+         data-message-switch-refused="{{ _('This HTML uses things the visual editor cannot show, so it stays in HTML. Common causes are tables, comments, headings smaller than level 3, and text outside a paragraph.') }}"
+         hidden>
+        <div class="rich-editor__bar">
+            <div class="rich-editor__modes" role="group" aria-label="{{ _('Editor view') }}">
+                <button type="button"
+                        class="rich-editor__mode"
+                        data-rich-editor-mode="visual"
+                        aria-pressed="true">{{ _("Visual") }}</button>
+                <button type="button"
+                        class="rich-editor__mode"
+                        data-rich-editor-mode="html"
+                        aria-pressed="false">{{ _("HTML") }}</button>
+            </div>
+        </div>
+        {% if editable %}
+            <p class="rich-editor__hint text-body-sm">
+                {{ _("The visual editor highlights variables like {{ assembly_title }} in text. To add or change a variable anywhere else, such as in a link address, edit the HTML.") }}
+            </p>
+        {% endif %}
+        <p class="rich-editor__notice text-body-sm"
+           data-rich-editor-notice
+           role="status"
+           hidden></p>
+        <div class="rich-editor__surface" data-rich-editor-surface></div>
+        <div data-rich-editor-code></div>
+    </div>
+{% endmacro %}

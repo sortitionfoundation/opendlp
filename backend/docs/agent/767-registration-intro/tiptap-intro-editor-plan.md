@@ -431,7 +431,31 @@ the vitest tests first:
 
 Measure the bundle size before and after, and record it in the PR.
 
-### 3. Mount the editor and the mode switch
+### ✅ 3. Mount the editor and the mode switch
+
+Done. As built:
+
+- The controls (switch, hint, notice, editing area) are a macro,
+  `rich_editor_controls` in `templates/backoffice/components/rich_editor.html`.
+  The `textarea` macro renders it when `rich_editor=true`, with
+  `rich_editor_label`, `rich_editor_images` and `rich_editor_editable`. The
+  controls are `hidden` until the JS mounts them, so with JS off the page
+  shows the plain textarea, as before.
+- The "opens as HTML" and refused-switch messages appear in an inset notice
+  with `role="status"` inside the editor, not the page toast. That keeps the
+  explanation next to the editor it's about, and is still announced.
+- Tailwind only scans `templates/backoffice/`, so it purged the rules for the
+  classes Tiptap sets from JS (`rich-editor__content`,
+  `rich-editor__variable`). `tailwind.config.js` now also scans
+  `src/js/backoffice/rich-editor*.js` and safelists
+  `ProseMirror-selectednode`.
+- The existing intro BDD steps were updated here, not in step 7, to keep
+  them green. "Type into the intro code editor" switches to the HTML view
+  first.
+- Bundle size (`html-editor.js`, minified): 566,626 → 965,043 bytes;
+  gzipped 192,906 → 318,609 (about +125 KB). It's loaded only on the
+  registration editor page.
+
 
 `mountRichEditor()`: Tiptap editor, textarea sync and `input` dispatch (E3),
 the switch with the guard (E4), read-only mount (E11), variable decorations
