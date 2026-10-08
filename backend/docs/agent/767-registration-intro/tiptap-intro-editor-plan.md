@@ -6,9 +6,10 @@ Branch: `767-rich-text-editor`. Follows decision D1 in
 it doesn't work out. The auto-reply email is a later piece of work. Step 8
 applies GOV.UK classes at render time (decision D4 there).
 
-**Status: in progress.** Completed steps are marked ✅. Two review rounds are folded in, and the
-answers are recorded at the end. The only open question is Q6 (layout or
-data tables), which affects step 10 only.
+**Status: steps 1–9 implemented** (marked ✅). Step 10 (fuller toolbar and
+tables) waits until Chewie has tried the editor and decided to go forward.
+Two review rounds are folded in, and the answers are recorded at the end. The
+only open question is Q6 (layout or data tables), which affects step 10 only.
 
 ## Goal
 
