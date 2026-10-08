@@ -6,7 +6,7 @@ Branch: `767-rich-text-editor`. Follows decision D1 in
 it doesn't work out. The auto-reply email is a later piece of work. Step 8
 applies GOV.UK classes at render time (decision D4 there).
 
-**Status: plan, not started.** Two review rounds are folded in, and the
+**Status: in progress.** Completed steps are marked ✅. Two review rounds are folded in, and the
 answers are recorded at the end. The only open question is Q6 (layout or
 data tables), which affects step 10 only.
 
@@ -369,7 +369,7 @@ give a class of your own keep only your class.").
 Ordered so each step leaves `just check` and `just test-nobdd` green.
 Commit this plan separately from the code.
 
-### 1. Split `html-editor.js` (no behaviour change)
+### ✅ 1. Split `html-editor.js` (no behaviour change)
 
 Move the CodeMirror code into `code-editor.js` with the `mountCodeEditor` API
 (E2), and keep the entry's auto-mounting. Add `code-editor.test.js` (mount
