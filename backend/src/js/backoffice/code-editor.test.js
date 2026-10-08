@@ -31,6 +31,14 @@ describe("mountCodeEditor", () => {
     expect(onChange).toHaveBeenCalledWith("<h1>New</h1>");
   });
 
+  it("inserts text at the cursor", () => {
+    const { textarea } = makeForm();
+    const editor = mountCodeEditor(textarea);
+    editor.view.dispatch({ selection: { anchor: 3 } });
+    editor.insertAtCursor("X");
+    expect(textarea.value).toBe("<p>XHi</p>");
+  });
+
   it("appends to a given container instead of after the textarea", () => {
     const { textarea, form } = makeForm();
     const container = document.createElement("div");

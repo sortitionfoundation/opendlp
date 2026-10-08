@@ -68,6 +68,7 @@ class TestImageToDict:
         assert result["file_name"] == f"{'b' * 64}.png"
         assert result["display_name"] == "A nice logo"
         assert result["public_url"] == f"/register-assets/images/{image.id}.png"
+        assert result["aria_label_insert"] == "Insert A nice logo into the editor"
         # Domain helper html-escapes both src and alt
         assert result["img_snippet"].startswith('<img src="')
         assert 'alt="A nice logo"' in result["img_snippet"]

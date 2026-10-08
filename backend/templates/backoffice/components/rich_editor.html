@@ -35,7 +35,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
             <p class="rich-editor__hint text-body-sm">
                 {{ _("The visual editor highlights variables like {{ assembly_title }} in text. To add or change a variable anywhere else, such as in a link address, edit the HTML.") }}
             </p>
-            {{ rich_editor_toolbar(for_id) }}
+            {{ rich_editor_toolbar(for_id, images=images) }}
         {% endif %}
         <p class="rich-editor__notice text-body-sm"
            data-rich-editor-notice
@@ -45,7 +45,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         <div data-rich-editor-code></div>
     </div>
 {% endmacro %}
-{% macro rich_editor_toolbar(for_id) %}
+{% macro rich_editor_toolbar(for_id, images=false) %}
     {#
     The formatting toolbar, following the WAI-ARIA toolbar pattern: one Tab stop, arrow keys
     (and Home/End) move between buttons, toggles carry aria-pressed. Unavailable commands use
@@ -69,6 +69,9 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         <button type="button" class="rich-editor__tool" data-command="orderedList" aria-pressed="false">{{ _("Numbered list") }}</button>
         <span class="rich-editor__separator" aria-hidden="true"></span>
         <button type="button" class="rich-editor__tool" data-command="link" aria-haspopup="dialog">{{ _("Link") }}</button>
+        {% if images %}
+            <button type="button" class="rich-editor__tool" data-command="image" aria-haspopup="dialog">{{ _("Image") }}</button>
+        {% endif %}
         <span class="rich-editor__separator" aria-hidden="true"></span>
         <button type="button" class="rich-editor__tool" data-command="undo" aria-disabled="true">{{ _("Undo") }}</button>
         <button type="button" class="rich-editor__tool" data-command="redo" aria-disabled="true">{{ _("Redo") }}</button>

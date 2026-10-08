@@ -1,5 +1,5 @@
 // ABOUTME: CodeMirror 6 HTML editor mounted over a textarea, keeping the textarea in sync.
-// ABOUTME: Exports mountCodeEditor() returning a small handle to get/set/focus/destroy the editor.
+// ABOUTME: Exports mountCodeEditor() returning a small handle to get, set, insert into, focus and destroy it.
 import { basicSetup } from "codemirror";
 import { EditorView, keymap } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
@@ -158,6 +158,9 @@ export function mountCodeEditor(
     },
     focus() {
       view.focus();
+    },
+    insertAtCursor(text) {
+      view.dispatch(view.state.replaceSelection(text));
     },
     destroy() {
       if (form) {

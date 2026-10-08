@@ -1,5 +1,5 @@
 // ABOUTME: Image assets slice of the registration page controller
-// ABOUTME: Upload, alt-text edit, delete and snippet copy, mutating the list in place
+// ABOUTME: Upload, alt-text edit, delete, snippet copy and insertion into the visual editor
 
 import {
   deleteResource,
@@ -7,6 +7,20 @@ import {
   postFormData,
 } from "../lib/json-request.js";
 import { urlWithId } from "../lib/url-utils.js";
+import { INSERT_IMAGE_EVENT } from "../lib/rich-editor-events.js";
+
+function dispatchInsertImage(editorId, image, pos) {
+  document.dispatchEvent(
+    new CustomEvent(INSERT_IMAGE_EVENT, {
+      detail: {
+        editorId: editorId,
+        src: image.public_url,
+        alt: image.alt || "",
+        pos: pos,
+      },
+    }),
+  );
+}
 
 /**
  * Build the image-assets slice of the registration page controller.
@@ -44,6 +58,10 @@ export function registrationImages(options) {
     editingImageAlt: "",
     imageEditing: false,
     imageEditError: "",
+    // Set while the upload modal was opened by the visual editor, which gets
+    // the uploaded image inserted where the author dropped or pasted it.
+    imageInsertEditorId: "",
+    imageInsertPos: null,
 
     imageItemUrl: function (id) {
       return urlWithId(options.imageItemUrlTemplate, id);
@@ -54,12 +72,35 @@ export function registrationImages(options) {
       this.imageFileName = "";
       this.imageAlt = "";
       this.imageUploadError = "";
+      this.imageInsertEditorId = "";
+      this.imageInsertPos = null;
       this.imageUploadModalOpen = true;
+    },
+
+    // The visual editor's Image button, or a file dropped or pasted into it.
+    requestImageForEditor: function (event) {
+      var detail = event.detail || {};
+      this.openImageUploadModal();
+      this.imageInsertEditorId = detail.editorId || "";
+      this.imageInsertPos =
+        detail.pos === undefined || detail.pos === null ? null : detail.pos;
+      if (detail.file) {
+        this.imageFile = detail.file;
+        this.imageFileName = detail.file.name || "";
+      }
+    },
+
+    // The Assets panel's Insert button.
+    insertImage: function (image) {
+      if (!image || !image.public_url) return;
+      dispatchInsertImage("", image, null);
     },
 
     closeImageUploadModalIfAllowed: function () {
       if (this.imageUploading) return;
       this.imageUploadModalOpen = false;
+      this.imageInsertEditorId = "";
+      this.imageInsertPos = null;
     },
 
     onImageFileSelected: function (event) {
@@ -102,6 +143,15 @@ export function registrationImages(options) {
             self.images.push(result.data.image);
           }
           self.imageUploadModalOpen = false;
+          if (self.imageInsertEditorId) {
+            dispatchInsertImage(
+              self.imageInsertEditorId,
+              result.data.image,
+              self.imageInsertPos,
+            );
+            self.imageInsertEditorId = "";
+            self.imageInsertPos = null;
+          }
           self.showToast(messages.imageUploaded, "success");
         })
         .catch(function () {

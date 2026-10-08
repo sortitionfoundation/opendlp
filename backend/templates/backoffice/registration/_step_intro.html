@@ -136,7 +136,8 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         details_click="openImageDetailsModal(image)",
                         copy_click="copyImageSnippet(image)",
                         delete_click="deleteImage(image)",
-                        deleting_expr="imageBeingDeletedId === image.id") }}
+                        deleting_expr="imageBeingDeletedId === image.id",
+                        insert_click="insertImage(image)") }}
                         {{ asset_list(collection="documents",
                         item="doc",
                         heading=_("Documents"),

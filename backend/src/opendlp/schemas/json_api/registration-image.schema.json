@@ -63,6 +63,10 @@
           "type": "string",
           "minLength": 1
         },
+        "aria_label_insert": {
+          "type": "string",
+          "minLength": 1
+        },
         "aria_label_copy_snippet": {
           "type": "string",
           "minLength": 1
@@ -84,6 +88,7 @@
         "height",
         "byte_size",
         "aria_label_details",
+        "aria_label_insert",
         "aria_label_copy_snippet",
         "aria_label_delete"
       ],

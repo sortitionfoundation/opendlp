@@ -3,6 +3,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HTML, VISUAL, mountRichEditor } from "./rich-editor.js";
 import {
+  IMAGE_REQUEST_EVENT,
+  INSERT_IMAGE_EVENT,
   LINK_REQUEST_EVENT,
   LINK_RESULT_EVENT,
 } from "../lib/rich-editor-events.js";
@@ -22,6 +24,7 @@ function setUp(value, textareaAttrs = "") {
         <div role="toolbar" data-rich-editor-toolbar>
           <button type="button" data-command="bold">Bold</button>
           <button type="button" data-command="link">Link</button>
+          <button type="button" data-command="image">Image</button>
         </div>
         <p data-rich-editor-notice role="status" hidden></p>
         <div data-rich-editor-surface></div>
@@ -277,5 +280,130 @@ describe("mountRichEditor toolbar and links", () => {
     rich.editor.commands.setTextSelection({ from: 6, to: 10 });
     answer({ editorId: "intro", action: "set", href: "javascript:alert(1)" });
     expect(page.textarea.value).not.toContain("javascript:");
+  });
+});
+
+describe("mountRichEditor images", () => {
+  function imagesPage(value, textareaAttrs = "") {
+    return setUp(value, `data-rich-editor-images="true" ${textareaAttrs}`);
+  }
+
+  function captureImageRequests() {
+    const requests = [];
+    const listener = (event) => requests.push(event.detail);
+    document.addEventListener(IMAGE_REQUEST_EVENT, listener);
+    return {
+      requests,
+      stop: () => document.removeEventListener(IMAGE_REQUEST_EVENT, listener),
+    };
+  }
+
+  function insert(detail) {
+    document.dispatchEvent(new CustomEvent(INSERT_IMAGE_EVENT, { detail }));
+  }
+
+  function paste(rich, files, html = "") {
+    const event = {
+      clipboardData: {
+        files,
+        getData: (type) => (type === "text/html" ? html : ""),
+      },
+      preventDefault: () => {},
+      stopPropagation: () => {},
+    };
+    let handled = false;
+    rich.editor.view.someProp("handlePaste", (handler) => {
+      handled = handler(rich.editor.view, event) || handled;
+      return handled;
+    });
+    return handled;
+  }
+
+  it("asks for an image to upload when the Image button is pressed", () => {
+    const capture = captureImageRequests();
+    const page = imagesPage("<p>a</p>");
+    mount(page.textarea);
+    page.toolbar.querySelector('[data-command="image"]').click();
+    capture.stop();
+    expect(capture.requests).toEqual([
+      { editorId: "intro", file: null, pos: null },
+    ]);
+  });
+
+  it("asks to upload a pasted image file", () => {
+    const capture = captureImageRequests();
+    const page = imagesPage("<p>a</p>");
+    const rich = mount(page.textarea);
+    const file = new File(["x"], "logo.png", { type: "image/png" });
+    expect(paste(rich, [file])).toBe(true);
+    capture.stop();
+    expect(capture.requests).toHaveLength(1);
+    expect(capture.requests[0].file).toBe(file);
+  });
+
+  it("ignores pasted files that are not images it can upload", () => {
+    const capture = captureImageRequests();
+    const page = imagesPage("<p>a</p>");
+    const rich = mount(page.textarea);
+    paste(rich, [new File(["x"], "notes.pdf", { type: "application/pdf" })]);
+    paste(rich, [new File(["x"], "anim.gif", { type: "image/gif" })]);
+    capture.stop();
+    expect(capture.requests).toEqual([]);
+  });
+
+  it("does not also paste the web page's own copy of a pasted image", () => {
+    const page = imagesPage("<p>a</p>");
+    const rich = mount(page.textarea);
+    const file = new File(["x"], "logo.png", { type: "image/png" });
+    expect(
+      paste(rich, [file], '<img src="https://elsewhere.example/logo.png">'),
+    ).toBe(true);
+    expect(rich.editor.getHTML()).toBe("<p>a</p>");
+  });
+
+  it("inserts an uploaded image where it was asked for", () => {
+    const page = imagesPage("<p>ab</p>");
+    mount(page.textarea);
+    insert({
+      editorId: "intro",
+      src: "/register-assets/images/1.png",
+      alt: "Logo",
+      pos: 2,
+    });
+    expect(page.textarea.value).toBe(
+      '<p>a<img src="/register-assets/images/1.png" alt="Logo">b</p>',
+    );
+  });
+
+  it("inserts an image from the Assets panel at the cursor", () => {
+    const page = imagesPage("<p>ab</p>");
+    const rich = mount(page.textarea);
+    rich.editor.commands.setTextSelection(3);
+    insert({ editorId: "", src: "/i.png", alt: "Logo", pos: null });
+    expect(page.textarea.value).toBe('<p>ab<img src="/i.png" alt="Logo"></p>');
+  });
+
+  it("inserts an <img> snippet at the cursor in HTML mode", () => {
+    const page = imagesPage("<p>ab</p>");
+    mount(page.textarea);
+    page.htmlButton.click();
+    insert({ editorId: "", src: "/i.png", alt: 'A "quoted" logo', pos: null });
+    expect(page.textarea.value).toContain(
+      '<img src="/i.png" alt="A &quot;quoted&quot; logo">',
+    );
+  });
+
+  it("ignores inserts meant for another editor", () => {
+    const page = imagesPage("<p>ab</p>");
+    mount(page.textarea);
+    insert({ editorId: "other", src: "/i.png", alt: "Logo", pos: 1 });
+    expect(page.textarea.value).toBe("<p>ab</p>");
+  });
+
+  it("ignores inserts when images are not allowed", () => {
+    const page = setUp("<p>ab</p>");
+    mount(page.textarea);
+    insert({ editorId: "intro", src: "/i.png", alt: "Logo", pos: 1 });
+    expect(page.textarea.value).toBe("<p>ab</p>");
   });
 });

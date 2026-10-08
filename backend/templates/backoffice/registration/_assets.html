@@ -114,7 +114,7 @@ Args:
 {# ============================================================================
    THE THREE ASSET SURFACES
 ============================================================================ #}
-{% macro asset_list(collection, item, heading, hint, empty_text, upload_click, title_expr, details_click, copy_click, delete_click, deleting_expr, header_classes="mb-4", header_style="") %}
+{% macro asset_list(collection, item, heading, hint, empty_text, upload_click, title_expr, details_click, copy_click, delete_click, deleting_expr, header_classes="mb-4", header_style="", insert_click="") %}
     {#
 One asset kind in the Assets panel: heading + upload CTA, the format hint, an
 empty state, and a row per asset with details / copy-snippet / delete.
@@ -131,6 +131,8 @@ Args:
   deleting_expr: Alpine expression that is true while that row's delete is in flight
   header_classes, header_style: Spacing and rule for the heading row, so a second
     section on the panel can be separated from the first by a divider
+  insert_click: Alpine expression for an Insert button that puts the asset into the
+    page's visual editor; no button when empty
 
 Every button is type="button": the panel sits inside the editor's form, and a
 bare button in a form submits it.
@@ -159,6 +161,11 @@ bare button in a form submits it.
                    style="color: var(--color-body-text)"
                    x-text="{{ item }}.display_name"></a>
                 <div class="flex items-center gap-1 flex-shrink-0">
+                    {% if insert_click %}
+                        {% call icon_button(click=insert_click, aria_label_expr=item ~ ".aria_label_insert") %}
+                            {{ icon_plus() }}
+                        {% endcall %}
+                    {% endif %}
                     {% call icon_button(click=details_click, aria_label_expr=item ~ ".aria_label_details") %}
                         {{ icon_info() }}
                     {% endcall %}

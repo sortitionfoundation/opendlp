@@ -1,6 +1,7 @@
 // ABOUTME: Mounts the visual (Tiptap) HTML editor over a textarea, with a Visual/HTML switch.
 // ABOUTME: The textarea stays the source of truth; the HTML view is the CodeMirror editor.
 import { Editor, Extension } from "@tiptap/core";
+import FileHandler from "@tiptap/extension-file-handler";
 import { isReadOnly, mountCodeEditor } from "./code-editor.js";
 import { roundTripsCleanly } from "./rich-editor-html.js";
 import {
@@ -9,12 +10,23 @@ import {
 } from "./rich-editor-schema.js";
 import { wireToolbar } from "./rich-editor-toolbar.js";
 import {
+  IMAGE_REQUEST_EVENT,
+  INSERT_IMAGE_EVENT,
   LINK_REQUEST_EVENT,
   LINK_RESULT_EVENT,
 } from "../lib/rich-editor-events.js";
 
 export const VISUAL = "visual";
 export const HTML = "html";
+// The formats the image upload route accepts.
+export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+function imageSnippet(src, alt) {
+  const image = document.createElement("img");
+  image.setAttribute("src", src);
+  image.setAttribute("alt", alt);
+  return image.outerHTML;
+}
 
 function controlsFor(textarea) {
   return textarea.id
@@ -41,9 +53,8 @@ export function mountRichEditor(textarea) {
   const notice = controls.querySelector("[data-rich-editor-notice]");
   const modeButtons = controls.querySelectorAll("[data-rich-editor-mode]");
   const toolbar = controls.querySelector("[data-rich-editor-toolbar]");
-  const extensions = createSchemaExtensions({
-    images: textarea.dataset.richEditorImages === "true",
-  });
+  const imagesAllowed = textarea.dataset.richEditorImages === "true";
+  const extensions = createSchemaExtensions({ images: imagesAllowed });
 
   let mode = null;
   let codeEditor = null;
@@ -68,9 +79,23 @@ export function mountRichEditor(textarea) {
     },
   });
 
+  const editorOnlyExtensions = [VariableHighlight, LinkShortcut];
+  if (imagesAllowed) {
+    editorOnlyExtensions.push(
+      FileHandler.configure({
+        allowedMimeTypes: IMAGE_TYPES,
+        // An image copied from a web page also carries an <img> pointing at
+        // that site; only the uploaded copy should land in the intro.
+        consumePasteEvent: true,
+        onDrop: (_editor, files, pos) => requestImage(files[0], pos),
+        onPaste: (_editor, files) => requestImage(files[0], null),
+      }),
+    );
+  }
+
   const editor = new Editor({
     element: surface,
-    extensions: [...extensions, VariableHighlight, LinkShortcut],
+    extensions: [...extensions, ...editorOnlyExtensions],
     editable: !readOnly,
     injectCSS: false,
     editorProps: {
@@ -128,10 +153,45 @@ export function mountRichEditor(textarea) {
     }
   }
 
+  function requestImage(file, pos) {
+    document.dispatchEvent(
+      new CustomEvent(IMAGE_REQUEST_EVENT, {
+        detail: { editorId: textarea.id, file: file || null, pos },
+      }),
+    );
+  }
+
+  // An insert without an editorId comes from the Assets panel, which serves
+  // the page's one visual editor.
+  function insertImage(event) {
+    const { editorId, src, alt, pos } = event.detail;
+    if (editorId && editorId !== textarea.id) {
+      return;
+    }
+    if (mode === HTML) {
+      codeEditor.insertAtCursor(imageSnippet(src, alt));
+      codeEditor.focus();
+      return;
+    }
+    const image = { type: "image", attrs: { src, alt } };
+    const chain = editor.chain().focus();
+    if (pos === null || pos === undefined) {
+      chain.insertContent(image).run();
+    } else {
+      chain.insertContentAt(pos, image).run();
+    }
+  }
+
   document.addEventListener(LINK_RESULT_EVENT, applyLinkResult);
+  if (imagesAllowed && !readOnly) {
+    document.addEventListener(INSERT_IMAGE_EVENT, insertImage);
+  }
 
   const toolbarControl = toolbar
-    ? wireToolbar(toolbar, editor, { link: requestLink })
+    ? wireToolbar(toolbar, editor, {
+        link: requestLink,
+        image: () => requestImage(null, null),
+      })
     : null;
 
   function visualHtml() {
@@ -221,6 +281,7 @@ export function mountRichEditor(textarea) {
     getHTML: () => textarea.value,
     destroy() {
       document.removeEventListener(LINK_RESULT_EVENT, applyLinkResult);
+      document.removeEventListener(INSERT_IMAGE_EVENT, insertImage);
       if (codeEditor) {
         codeEditor.destroy();
       }

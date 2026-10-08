@@ -539,7 +539,31 @@ Done. As built:
 - e2e: both routes serve; the old route's behaviour is unchanged; changing a
   page's slug leaves the new URL working.
 
-### 6. Images
+### ✅ 6. Images
+
+Done. As built:
+
+- The events are `rich-editor-image-request` (`{editorId, file, pos}`) and
+  `rich-editor-insert-image` (`{editorId, src, alt, pos}`), defined in
+  `src/js/lib/rich-editor-events.js`. The page root listens with
+  `@rich-editor-image-request.document="requestImageForEditor($event)"`.
+- FileHandler accepts only PNG, JPEG and WebP, the formats the upload route
+  takes. It uses `consumePasteEvent: true`, because an image copied from a
+  web page also carries an `<img>` pointing at that site, and only the
+  uploaded copy should land in the intro.
+- The toolbar gains an **Image** button, rendered only when the textarea
+  allows images. It opens the upload modal with no file.
+- **The Assets panel's Insert button is always shown on the intro step,**
+  not only in Visual mode. In HTML mode it inserts an `<img>` snippet at
+  the CodeMirror cursor (`insertAtCursor` on the code editor handle). That
+  beats a button that comes and goes. An insert without an `editorId` goes
+  to the page's one visual editor. Its per-image accessible name is a new
+  `aria_label_insert` key, server-built like its neighbours. The JSON
+  Schema and both fixtures were updated, and the fixture diff is that key.
+- Drop is tested in BDD (step 7) and by hand on the dev server, because
+  FileHandler's drop handler needs `posAtCoords`, which jsdom lacks. Paste
+  is tested in vitest.
+
 
 FileHandler and the event bridge (E8), and the "Insert" button in the Assets
 list. Vitest tests: the editor dispatches `image-file` on drop/paste and

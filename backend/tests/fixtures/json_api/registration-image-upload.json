@@ -4,6 +4,7 @@
     "aria_label_copy_snippet": "Copy <img> snippet for Assembly logo",
     "aria_label_delete": "Delete Assembly logo",
     "aria_label_details": "Details for Assembly logo",
+    "aria_label_insert": "Insert Assembly logo into the editor",
     "byte_size": 83,
     "display_name": "Assembly logo",
     "file_name": "0000000000000000000000000000000000000000000000000000000000000000.png",
