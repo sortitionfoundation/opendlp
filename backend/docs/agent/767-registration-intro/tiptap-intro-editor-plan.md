@@ -6,10 +6,9 @@ Branch: `767-rich-text-editor`. Follows decision D1 in
 it doesn't work out. The auto-reply email is a later piece of work. Step 8
 applies GOV.UK classes at render time (decision D4 there).
 
-**Status: steps 1–9 implemented** (marked ✅). Step 10 (fuller toolbar and
-tables) waits until Chewie has tried the editor and decided to go forward.
-Two review rounds are folded in, and the answers are recorded at the end. The
-only open question is Q6 (layout or data tables), which affects step 10 only.
+**Status: steps 1–10 implemented** (marked ✅). Two review rounds are folded
+in, and the answers are recorded at the end. The only open question is Q6
+(layout or data tables); step 10 stores tables that commit to neither answer.
 
 ## Goal
 
@@ -173,7 +172,8 @@ label and tooltip is a normal `_()` string in our catalogues. JS finds it by
 name, roving tabindex with arrow keys, `aria-pressed` on mark and heading
 toggles, kept in sync on every selection change. The commands are paragraph,
 H1, H2, H3, bold, italic, bullet list, numbered list, link, image and
-undo/redo. The toolbar is hidden outside edit mode.
+undo/redo (step 10 adds underline, strikethrough, quote, horizontal line
+and a table menu). The toolbar is hidden outside edit mode.
 
 The editable area gets `role="textbox"`, `aria-multiline="true"`, and
 `aria-labelledby` pointing at the step heading, because the textarea's
@@ -700,9 +700,41 @@ component table, recording the `aria-disabled` departure.
 - `docs/agent/component_accessibility.md`: add the rich editor toolbar as a
   worked example if the pattern is new to that doc.
 
-### 10. After the slice is accepted: fuller toolbar and tables
+### ✅ 10. After the slice is accepted: fuller toolbar and tables
 
-Only once Chewie has tried the slice and decided to go forward. Its own PR.
+Done, on the same branch as the slice rather than its own PR, since Chewie
+tried the slice and asked to carry on. As built:
+
+- **Icons** for the new buttons are the Lucide glyphs from the same Figma
+  sheet: `underline`, `strikethrough`, `text-quote` (Quote),
+  `separator-horizontal` (Horizontal line) and `table`.
+- **The table controls are a menu button** (the WAI-ARIA menu button
+  pattern) labelled Table, with Insert table, Add row below, Add column to
+  the right, Delete row, Delete column and Delete table. Items that don't
+  apply where the cursor is are `aria-disabled`. The menu draws over the
+  sticky wizard footer, which otherwise hid its lower items and their focus.
+- **Insert table makes a 2 × 2 table**, rather than asking for rows and
+  columns. A size dialog would have been a third modal for a choice the add
+  and delete items already cover. For two images side by side: insert, then
+  delete a row.
+- **Tab moves between cells but never adds a row.** Tiptap's Tab adds a row
+  from the last cell, so a keyboard user could never Tab out of a table at
+  the end of the intro. Now Tab from the last cell (and Shift+Tab from the
+  first) leaves the editor as usual; rows are added from the menu.
+- **Alt+F10 moves from the text to the toolbar** without moving the cursor,
+  the shortcut CKEditor and TinyMCE use. Inside a table Shift+Tab moves
+  between cells, so without it there was no keyboard way to run a toolbar
+  command on any cell but the first. The hint above the toolbar mentions it.
+- `normaliseHtml` treats a cell's or blockquote's text with or without a
+  wrapping `<p>` as the same (as for list items), and `<del>`/`<strike>` as
+  `<s>`. A `<th>` in the body survives; a `<thead>`, `<caption>` or a cell's
+  `width` attribute doesn't, so they open in HTML mode.
+- The "opens as HTML" message now names "tables with set column widths"
+  rather than tables. The layout fixture still opens in HTML mode, as
+  planned, and only because of its `<colgroup>`.
+- Bundle size: 965,043 → 1,019,689 bytes minified.
+
+The plan as written before the work:
 
 - **Underline, strike, blockquote, horizontal rule:** stop disabling them in
   StarterKit, add toolbar buttons, add `class` to the global attributes for
