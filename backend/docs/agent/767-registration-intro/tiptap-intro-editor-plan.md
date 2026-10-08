@@ -571,7 +571,33 @@ ignores other file types; the images slice opens the modal with the file and
 dispatches `insert-image` after upload. Use `loadApiFixture` for the upload
 response — never hand-typed JSON.
 
-### 7. BDD and e2e for the editor
+### ✅ 7. BDD and e2e for the editor
+
+Done. As built:
+
+- The scenarios are in a new
+  `features/backoffice-registration-visual-editor.feature`, registered in
+  `tests/bdd/test_backoffice.py` next to the other editor steps. A separate
+  module would have had to import those steps, and with them their
+  `scenarios()` calls, collecting every scenario twice.
+- **The BDD server now runs with `FF_REGISTRATION_PAGE=true`**
+  (`tests/bdd/conftest.py`). The test scrub sets every flag to `false`, and
+  the public image route is behind this flag, so before this an image in the
+  editor or preview loaded as broken. That had never mattered, because no
+  scenario loaded a public asset before. It's set for the BDD server process
+  only, not in the suite-wide `TEST_FEATURE_FLAGS`. The full BDD suite
+  passed with it (206 passed, 5 skipped).
+- The "image on a **draft** page" scenario became "a dropped image is
+  uploaded, inserted and **loads**", in the editor and in the preview. A page
+  made through the UI is always TEST with a URL, so it serves publicly. The
+  signed-in-only path (step 5) is reached only by pages with no URL or only
+  closed pages, so its coverage stays in the component and e2e tests.
+- The refused switch uses a `<table>` entered with `insert_text`, so that
+  CodeMirror doesn't auto-close the tags as they're typed.
+- e2e: `tests/e2e/test_registration_intro_visual_editor.py` covers the
+  editor markup in edit and view modes, and toolbar-style HTML saved
+  verbatim and rendered on the public page.
+
 
 - Update `tests/bdd/test_backoffice.py:506-531`. Its steps type into the
   intro's `.cm-editor`, and the intro now opens in Visual mode. Typing via

@@ -1,10 +1,13 @@
 """ABOUTME: BDD tests for backoffice UI (Pines UI + Tailwind CSS)
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
+import base64
 import re
 import uuid
+from io import BytesIO
 
 import pytest
+from PIL import Image
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -18,6 +21,7 @@ from opendlp.service_layer.registration_page_service import (
     page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
+    update_registration_page_intro_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
@@ -31,6 +35,7 @@ scenarios("../../features/backoffice-assembly-members.feature")
 scenarios("../../features/backoffice-assembly-gsheet.feature")
 scenarios("../../features/backoffice-csv-upload.feature")
 scenarios("../../features/backoffice-registration-editor.feature")
+scenarios("../../features/backoffice-registration-visual-editor.feature")
 scenarios("../../features/organiser-assemblies.feature")
 
 # The visual editor's controls wrap both its views, so steps scope to them.
@@ -1842,3 +1847,214 @@ def see_email_in_search_results(page: Page, email: str):
     retries until the listbox has the text or the timeout expires.
     """
     expect(page.locator("#user_id_listbox")).to_contain_text(email)
+
+
+# Visual intro editor (features/backoffice-registration-visual-editor.feature)
+
+VISUAL_INTRO = f"{INTRO_EDITOR} .ProseMirror"
+
+
+def _png_base64() -> str:
+    buffer = BytesIO()
+    Image.new("RGB", (40, 30), (12, 34, 56)).save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("ascii")
+
+
+def _intro_value(page: Page) -> str:
+    return page.evaluate("document.querySelector(\"textarea[name='intro_content']\").value")
+
+
+@given(parsers.parse('there is an assembly called "{title}" with the intro "{intro}"'))
+def create_assembly_with_intro(title: str, intro: str, admin_user, test_database):
+    """A registration page whose intro is already saved."""
+    create_test_assembly_with_registration_page(title, admin_user, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        registration_page = page_for_assembly(uow, assembly_id)
+        assert registration_page is not None
+        update_registration_page_intro_html(uow, admin_user.id, registration_page.id, intro)
+
+
+@when(parsers.parse('I visit the read-only registration intro for "{title}"'))
+def visit_read_only_registration_intro(page: Page, title: str, test_database):
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=intro")
+
+
+@when(parsers.parse('I type "{text}" into the visual intro editor'))
+def type_into_visual_intro(page: Page, text: str):
+    editor = page.locator(VISUAL_INTRO)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.click()
+    page.keyboard.type(text)
+
+
+@when("I select everything in the visual intro editor")
+def select_all_in_visual_intro(page: Page):
+    page.locator(VISUAL_INTRO).focus()
+    page.keyboard.press("ControlOrMeta+a")
+
+
+@when(parsers.parse('I press the "{name}" toolbar button'))
+def press_toolbar_button(page: Page, name: str):
+    page.get_by_role("toolbar", name="Formatting").get_by_role("button", name=name, exact=True).click()
+
+
+@when("I move focus back into the formatting toolbar")
+def shift_tab_into_toolbar(page: Page):
+    page.keyboard.press("Shift+Tab")
+    focused_in_toolbar = page.evaluate("document.activeElement.closest('[role=toolbar]') !== null")
+    assert focused_in_toolbar, "Shift+Tab from the editor should land in the formatting toolbar"
+
+
+@when(parsers.parse("I press the right arrow key {count:d} times"))
+def press_right_arrow(page: Page, count: int):
+    for _ in range(count):
+        page.keyboard.press("ArrowRight")
+
+
+@when("I press Enter")
+def press_enter(page: Page):
+    page.keyboard.press("Enter")
+
+
+@when("I switch the intro editor to its HTML view")
+def switch_intro_to_html(page: Page):
+    page.locator(INTRO_EDITOR).get_by_role("button", name="HTML", exact=True).click()
+
+
+@when("I switch the intro editor to its Visual view")
+def switch_intro_to_visual(page: Page):
+    page.locator(INTRO_EDITOR).get_by_role("button", name="Visual", exact=True).click()
+
+
+@when(parsers.parse('I enter "{html}" in the intro HTML view'))
+def enter_in_intro_html_view(page: Page, html: str):
+    """Replace the HTML view's content. insert_text avoids CodeMirror auto-closing the tags as they are typed."""
+    content = page.locator(f"{INTRO_EDITOR} .cm-content")
+    expect(content).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    content.click()
+    page.keyboard.press("ControlOrMeta+a")
+    page.keyboard.insert_text(html)
+
+
+@then(parsers.parse('the intro HTML view should contain "{html}"'))
+def intro_html_view_contains(page: Page, html: str):
+    switch_intro_to_html(page)
+    expect(page.locator(f"{INTRO_EDITOR} .cm-content")).to_contain_text(html, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the intro editor should still be in its HTML view")
+def intro_still_in_html_view(page: Page):
+    html_button = page.locator(INTRO_EDITOR).get_by_role("button", name="HTML", exact=True)
+    expect(html_button).to_have_attribute("aria-pressed", "true")
+    expect(page.locator(VISUAL_INTRO)).to_be_hidden()
+
+
+@then("the intro editor should explain that the HTML stays in the HTML view")
+def intro_explains_refusal(page: Page):
+    notice = page.locator(f"{INTRO_EDITOR} [data-rich-editor-notice]")
+    expect(notice).to_be_visible()
+    expect(notice).to_have_attribute("role", "status")
+    expect(notice).to_contain_text("so it stays in HTML")
+
+
+@then(parsers.parse('the intro should hold "{html}"'))
+def intro_holds(page: Page, html: str):
+    assert _intro_value(page) == html
+
+
+@then(parsers.parse('"{text}" should be highlighted as a variable'))
+def variable_highlighted(page: Page, text: str):
+    expect(page.locator(f"{VISUAL_INTRO} .rich-editor__variable")).to_have_text(text)
+
+
+@when(parsers.parse('I drop an image file called "{name}" into the visual intro editor'))
+def drop_image_into_visual_intro(page: Page, name: str):
+    editor = page.locator(VISUAL_INTRO)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.evaluate(
+        """(target, {name, data}) => {
+            const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+            const transfer = new DataTransfer();
+            transfer.items.add(new File([bytes], name, { type: "image/png" }));
+            const box = target.getBoundingClientRect();
+            target.dispatchEvent(new DragEvent("drop", {
+                dataTransfer: transfer, bubbles: true, cancelable: true,
+                clientX: box.left + 10, clientY: box.top + 10,
+            }));
+        }""",
+        {"name": name, "data": _png_base64()},
+    )
+
+
+@then(parsers.parse('the image upload dialog should show "{name}"'))
+def upload_dialog_shows(page: Page, name: str):
+    dialog = page.get_by_role("dialog", name="Upload image")
+    expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(dialog).to_contain_text(name)
+
+
+@when(parsers.parse('I give the dropped image the alt text "{alt}" and upload it'))
+def upload_dropped_image(page: Page, alt: str):
+    dialog = page.get_by_role("dialog", name="Upload image")
+    page.locator("#image-upload-alt").fill(alt)
+    dialog.get_by_role("button", name="Upload").click()
+    expect(dialog).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+def _image_loaded(image) -> bool:
+    return image.evaluate("(img) => img.complete && img.naturalWidth > 0")
+
+
+@then(parsers.parse('the visual intro editor should show the image "{alt}"'))
+def visual_intro_shows_image(page: Page, alt: str):
+    image = page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]')
+    expect(image).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(image).to_have_attribute("src", re.compile(r"^/register-assets/images/"))
+    page.wait_for_function(
+        "(alt) => { const i = document.querySelector(`.ProseMirror img[alt='${alt}']`); return i && i.complete; }",
+        arg=alt,
+    )
+    assert _image_loaded(image), "the inserted image should load, not show as broken"
+
+
+@then(parsers.parse('the assets panel should list the image "{name}"'))
+def assets_panel_lists_image(page: Page, name: str):
+    expect(page.locator("aside").get_by_text(name, exact=True)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+def _preview_frame(page: Page):
+    page.get_by_role("tab", name=re.compile("Preview")).click()
+    return page.frame_locator('iframe[title="Registration page preview"]')
+
+
+@then(parsers.parse('the registration preview should show a level 2 heading "{text}"'))
+def preview_shows_h2(page: Page, text: str):
+    expect(_preview_frame(page).get_by_role("heading", level=2, name=text)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the registration preview should show the image "{alt}"'))
+def preview_shows_image(page: Page, alt: str):
+    image = _preview_frame(page).get_by_role("img", name=alt)
+    expect(image).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    image.evaluate("(img) => img.decode()")
+    assert _image_loaded(image), "the image should load in the preview, not show as broken"
+
+
+@then(parsers.parse('the visual intro editor should show a level 1 heading "{text}"'))
+def visual_intro_shows_h1(page: Page, text: str):
+    expect(page.locator(VISUAL_INTRO).get_by_role("heading", level=1, name=text)).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@then("the visual intro editor should not be editable")
+def visual_intro_not_editable(page: Page):
+    expect(page.locator(VISUAL_INTRO)).to_have_attribute("contenteditable", "false")
+
+
+@then("there should be no formatting toolbar")
+def no_formatting_toolbar(page: Page):
+    expect(page.get_by_role("toolbar", name="Formatting")).to_have_count(0)
