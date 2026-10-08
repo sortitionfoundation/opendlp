@@ -300,6 +300,14 @@ phase 3; not used on the redesigned page.
 
 ## Session log
 
+- **2026-10-08 (approved review fixes)** — The three fixes Hamish approved on
+  PR #331: process_plan choices reworded to answer the new question ("Planning
+  one within the next 3 months/year"; keys unchanged); hint/error
+  aria-describedby + aria-invalid wiring added to the `input()`, `textarea()`
+  and `checkbox()` macros (design-system-wide fix — `select()`/`radio_group()`
+  still unwired, noted for the macro-cleanup follow-up); chooser labels
+  "Google"/"Microsoft" wrapped in `_()` again.
+
 - **2026-10-08 (scope boundary)** — Per Hamish's PR #331 review and Gergő's
   clarification: *registration* forms (assembly respondents, `templates/register/*`)
   stay GOV.UK **long term** — usability for the widest audience; only the

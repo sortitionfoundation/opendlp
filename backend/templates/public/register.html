@@ -65,7 +65,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                     <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("How would you like to sign up?") }}</h2>
                     <div class="registration-method-chooser grid grid-cols-3 gap-4">
                         {% if google_enabled %}
-                            {{ button("Google",
+                            {{ button(_("Google"),
                             variant="secondary",
                             full_width=true,
                             leading_icon=brand_google(),
@@ -74,7 +74,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                             }}
                         {% endif %}
                         {% if microsoft_enabled %}
-                            {{ button("Microsoft",
+                            {{ button(_("Microsoft"),
                             variant="secondary",
                             full_width=true,
                             leading_icon=brand_microsoft(),

@@ -81,8 +81,8 @@ SIGNUP_SURVEY_QUESTIONS: list[SignupSurveyQuestion] = [
         label=_l("Where are you in your plans for running a deliberative process?"),
         field_type=SurveyFieldType.SELECT,
         choices={
-            "within_3_months": _l("Yes, within the next 3 months"),
-            "within_year": _l("Yes, within the next year"),
+            "within_3_months": _l("Planning one within the next 3 months"),
+            "within_year": _l("Planning one within the next year"),
             "no_plans": _l("No concrete plans yet"),
             "exploring": _l("Just exploring"),
         },
