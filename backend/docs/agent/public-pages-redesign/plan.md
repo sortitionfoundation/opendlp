@@ -3,9 +3,16 @@
 The public-facing pages still run on GOV.UK Frontend while the backoffice has moved
 to the OpenDLP design system (design tokens + Tailwind + Pines UI, showcased at
 `/backoffice/showcase`). This document is the concept and migration plan for retiring
-GOV.UK from the **public** pages. The signup page (ticket **1053**, branch
-`1053-signup-redesign`) is the first chunk; later chunks migrate the remaining public
-pages until the GOV.UK assets can be deleted.
+GOV.UK from the **public account journey** — signup, login, password flows, landing.
+The signup page (ticket **1053**, branch `1053-signup-redesign`) is the first chunk.
+
+**Terminology + scope boundary (clarified with Hamish, 2026-10-08):** the
+*signup/account-creation* form (organisers creating an OpenDLP account) is not the
+same as the *registration* forms (assembly respondents registering for an assembly,
+`templates/register/*`). The **respondent registration forms stay on the GOV.UK
+design system long term** — it is the most usable for the widest range of people,
+and respondents are the widest-range audience this product has. They are out of
+scope for this migration, permanently, not deferred.
 
 - **Figma (public design):** https://www.figma.com/design/WaG38I99ccF8RMy1655fA2/OpenDLP---UI?node-id=5570-7007&m=dev
   (signup frame; further public frames live in the same file)
@@ -15,8 +22,9 @@ pages until the GOV.UK assets can be deleted.
 
 ## The concept (agreed 2026-10-02)
 
-GOV.UK Frontend is retired from the public pages **incrementally, page by page**.
-During the transition users will see two design systems across one public journey —
+GOV.UK Frontend is retired from the public **account** pages **incrementally, page
+by page** (the respondent registration forms are exempt — see the scope boundary
+above). During the transition users will see two design systems across one journey —
 an accepted trade-off; we prefer shipping page-sized chunks over a big-bang restyle.
 
 The mechanism is **one design system per layout**:
@@ -29,9 +37,11 @@ The mechanism is **one design system per layout**:
 - A page migrates by switching which base it extends and swapping its `govuk-*`
   markup for design-system component macros. **Never mix the two stylesheets on one
   page** — they fight each other.
-- When the last public page has migrated, the GOV.UK bases, `css/application.css`
-  (GOV.UK build), `js/vendor/govuk-frontend.js` and the `govuk_*` component macros
-  are deleted.
+- GOV.UK is **not** fully deleted at the end: the respondent registration forms
+  keep it for good (see scope boundary above), so `base_public.html`,
+  `css/application.css` and `js/vendor/govuk-frontend.js` live on for that journey.
+  What eventually goes is GOV.UK on the *account* pages: `base.html` (once nothing
+  extends it) and whichever `govuk_*` macros only those pages used.
 
 ### One design system, not two (evaluation, 2026-10-02)
 
@@ -70,13 +80,15 @@ Templates still extending a GOV.UK base, grouped by journey:
 - `main/index.html` (public landing)
 - `errors/400|403|404|413|500.html` (seen by both audiences)
 
-**Respondent journey (`base_public.html`, chrome-less)** — public, but a distinct
-audience (invited assembly respondents, often on mobile):
+**Respondent registration journey (`base_public.html`, chrome-less)** — **stays
+GOV.UK long term, out of scope** (see the scope boundary at the top; decided with
+Hamish on PR #331):
 
 - `register/form.html`, `register/closed.html`, `register/thank_you.html`,
   `register/thank_you_default.html`
-- Multi-reg-page work exists on branch `830-multiple-reg-pages-frontend-stable`;
-  coordinate before restyling these.
+- These keep `base_public.html` and the GOV.UK assets indefinitely. Multi-reg-page
+  work continues on them in GOV.UK style (branch
+  `830-multiple-reg-pages-frontend-stable`).
 
 **Legacy authenticated pages (`base.html`)** — *not* this plan's scope: they are
 superseded by the backoffice redesign and leave GOV.UK by being replaced, not
@@ -93,14 +105,13 @@ restyled (`main/dashboard.html` + old dashboard behind `FF_OLD_DEFAULT_DASHBOARD
    last user goes.
 4. **Public landing** (`main/index.html`).
 5. **Error pages** — trivial, but wait until the layout is proven; they render in
-   failure modes, keep them dependency-light.
-6. **Respondent journey** (`register/*`) — own design pass (distinct audience,
-   mobile-first); align with the 830 multiple-reg-pages work. May warrant its own
-   Figma review before migrating.
-7. **Teardown** — delete `base_public.html`, GOV.UK blocks in `base.html` (or the
-   file itself once nothing extends it), `css/application.css` GOV.UK build,
-   `js/vendor/govuk-frontend.js`, `govuk_*` macros, and the GOV.UK agent docs
-   (`govuk_components.md`, parts of `frontend_design_system.md`).
+   failure modes, keep them dependency-light. (Also shown to respondents — if that
+   argues for GOV.UK, settle it before this phase.)
+6. **Partial teardown** — once the account journey has migrated: delete
+   `base.html` (when nothing extends it) and the `govuk_*` macros only the account
+   pages used. `base_public.html`, `css/application.css`,
+   `js/vendor/govuk-frontend.js` and the GOV.UK agent docs **stay** — the
+   respondent registration forms keep using them for good.
 
 Each phase is a normal ticket/PR; this document gets a session-log entry and an
 updated inventory as pages move over.
@@ -288,6 +299,13 @@ phase 3; not used on the redesigned page.
 - `process_plan` field type: radio (current form) vs select (Figma).
 
 ## Session log
+
+- **2026-10-08 (scope boundary)** — Per Hamish's PR #331 review and Gergő's
+  clarification: *registration* forms (assembly respondents, `templates/register/*`)
+  stay GOV.UK **long term** — usability for the widest audience; only the
+  *signup/account* journey migrates to the design system. Plan reworded throughout:
+  respondent journey moved from "phase 6" to permanently out of scope, and the
+  teardown phase became partial (GOV.UK assets live on for respondent pages).
 
 - **2026-10-06 (Hamish's review feedback)** — Applied from sc-1053 comments:
   title → "Create an account" (Hamish's preference; "to OpenDLP" grammar), the
