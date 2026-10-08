@@ -4,13 +4,35 @@ ABOUTME: Provides functions and decorators for role-based access control through
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, get_role_level
 
 from .exceptions import AssemblyNotFoundError, InsufficientPermissions, UserNotFoundError
+
+if TYPE_CHECKING:
+    from .unit_of_work import AbstractUnitOfWork
+
+# The role wording used in InsufficientPermissions for manage-level actions. It
+# feeds user-facing error messages, so it lives once here for every service that
+# guards on can_manage_assembly.
+MANAGE_ROLE = "assembly-manager or admin"
+
+
+def load_user_and_assembly(uow: "AbstractUnitOfWork", user_id: Any, assembly_id: Any) -> tuple[User, Assembly]:
+    """Fetch a user and assembly by id, raising the not-found errors services expect.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    return user, assembly
 
 
 def can_manage_assembly(user: User, assembly: Assembly) -> bool:

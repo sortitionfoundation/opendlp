@@ -14,20 +14,17 @@ from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
 from opendlp.translations import gettext as _
 
 from .exceptions import (
-    AssemblyNotFoundError,
     EmailTemplateInvalid,
     EmailTemplateNotFoundError,
     InsufficientPermissions,
     RegistrationPageNotFoundError,
-    UserNotFoundError,
 )
-from .permissions import can_manage_assembly, can_view_assembly
+from .permissions import MANAGE_ROLE, can_manage_assembly, can_view_assembly, load_user_and_assembly
 from .registration_page_service import page_for_assembly
 from .unit_of_work import AbstractUnitOfWork
 
 logger = structlog.get_logger(__name__)
 
-_MANAGE_ROLE = "assembly-manager or admin"
 _VIEW_ROLE = "assembly role or admin"
 _EMAIL_FIELD_KEY = "email"
 
@@ -83,16 +80,6 @@ def auto_reply_readiness_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUI
     return _auto_reply_readiness_problems(uow, assembly_id)
 
 
-def _load_user_and_assembly(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID):  # type: ignore[no-untyped-def]
-    user = uow.users.get(user_id)
-    if not user:
-        raise UserNotFoundError(f"User {user_id} not found")
-    assembly = uow.assemblies.get(assembly_id)
-    if not assembly:
-        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-    return user, assembly
-
-
 def _validate(template: EmailTemplate) -> None:
     problems = template.validation_problems()
     max_bytes = get_email_template_body_max_bytes()
@@ -122,9 +109,9 @@ def create_email_template(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    user, assembly = load_user_and_assembly(uow, user_id, assembly_id)
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(action="create email template", required_role=_MANAGE_ROLE)
+        raise InsufficientPermissions(action="create email template", required_role=MANAGE_ROLE)
     template = EmailTemplate(assembly_id=assembly_id, name=name, subject=subject, body_html=body_html)
     _validate(template)
     uow.email_templates.add(template)
@@ -145,9 +132,9 @@ def update_email_template(
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     template = _load_template(uow, template_id)
-    user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
+    user, assembly = load_user_and_assembly(uow, user_id, template.assembly_id)
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(action="update email template", required_role=_MANAGE_ROLE)
+        raise InsufficientPermissions(action="update email template", required_role=MANAGE_ROLE)
     template.update(name=name, subject=subject, body_html=body_html)
     _validate(template)
     return template.create_detached_copy()
@@ -159,7 +146,7 @@ def get_email_template(uow: AbstractUnitOfWork, user_id: uuid.UUID, template_id:
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     template = _load_template(uow, template_id)
-    user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
+    user, assembly = load_user_and_assembly(uow, user_id, template.assembly_id)
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(action="view email template", required_role=_VIEW_ROLE)
     return template.create_detached_copy()
@@ -170,7 +157,7 @@ def list_email_templates(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_i
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    user, assembly = load_user_and_assembly(uow, user_id, assembly_id)
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(action="view email templates", required_role=_VIEW_ROLE)
     return [t.create_detached_copy() for t in uow.email_templates.list_by_assembly(assembly_id)]
@@ -182,9 +169,9 @@ def delete_email_template(uow: AbstractUnitOfWork, user_id: uuid.UUID, template_
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     template = _load_template(uow, template_id)
-    user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
+    user, assembly = load_user_and_assembly(uow, user_id, template.assembly_id)
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(action="delete email template", required_role=_MANAGE_ROLE)
+        raise InsufficientPermissions(action="delete email template", required_role=MANAGE_ROLE)
     uow.email_templates.delete(template)
 
 
@@ -203,9 +190,9 @@ def assign_auto_reply_template(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    user, assembly = load_user_and_assembly(uow, user_id, assembly_id)
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(action="assign auto-reply template", required_role=_MANAGE_ROLE)
+        raise InsufficientPermissions(action="assign auto-reply template", required_role=MANAGE_ROLE)
     if page_id is not None:
         page = uow.registration_pages.get(page_id)
         if page is None or page.assembly_id != assembly_id:
