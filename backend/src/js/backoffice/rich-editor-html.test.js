@@ -93,6 +93,21 @@ describe("normaliseHtml", () => {
     );
   });
 
+  it("treats a table cell's or blockquote's text with or without a wrapping <p> as the same", () => {
+    expect(normaliseHtml("<table><tr><td>a</td></tr></table>")).toBe(
+      normaliseHtml("<table><tr><td><p>a</p></td></tr></table>"),
+    );
+    expect(normaliseHtml("<blockquote>a</blockquote>")).toBe(
+      normaliseHtml("<blockquote><p>a</p></blockquote>"),
+    );
+  });
+
+  it("treats <del> and <strike> as <s>", () => {
+    expect(normaliseHtml("<p><del>a</del><strike>b</strike></p>")).toBe(
+      "<p><s>ab</s></p>",
+    );
+  });
+
   it("ignores the nesting order of formatting", () => {
     expect(normaliseHtml('<p><strong><a href="/x">a</a></strong></p>')).toBe(
       normaliseHtml('<p><a href="/x"><strong>a</strong></a></p>'),
@@ -115,21 +130,54 @@ describe("roundTripsCleanly", () => {
   it("refuses elements the visual editor cannot hold", () => {
     expect(
       roundTripsCleanly(
-        "<table><tbody><tr><td>a</td></tr></tbody></table>",
-        extensions,
-      ),
-    ).toBe(false);
-    expect(
-      roundTripsCleanly(
         '<p><span style="color: red;">a</span></p>',
         extensions,
       ),
     ).toBe(false);
     expect(roundTripsCleanly("<h4>a</h4>", extensions)).toBe(false);
-    expect(roundTripsCleanly("<blockquote>a</blockquote>", extensions)).toBe(
-      false,
-    );
     expect(roundTripsCleanly("<!-- note --><p>a</p>", extensions)).toBe(false);
+  });
+
+  it("accepts underline, strikethrough, blockquotes and horizontal rules", () => {
+    expect(
+      roundTripsCleanly(
+        "<p><u>a</u><s>b</s><del>c</del><strike>d</strike></p>",
+        extensions,
+      ),
+    ).toBe(true);
+    expect(
+      roundTripsCleanly("<blockquote>quoted</blockquote>", extensions),
+    ).toBe(true);
+    expect(
+      roundTripsCleanly('<p>a</p><hr class="x"><p>b</p>', extensions),
+    ).toBe(true);
+  });
+
+  it("accepts a plain table, keeping its attributes and spans", () => {
+    const html =
+      '<table border="0" role="presentation" style="width: 100%">' +
+      '<tr><td colspan="2" style="text-align: center"><img src="/a.png" alt="a"></td></tr>' +
+      "<tr><th>b</th><td><p>c</p></td></tr></table>";
+    expect(roundTripsCleanly(html, extensions)).toBe(true);
+  });
+
+  it("writes a table without the colgroup and sizing Tiptap adds by default", () => {
+    expect(
+      roundTrip("<table><tr><td>a</td><td>b</td></tr></table>", extensions),
+    ).toBe(
+      "<table><tbody><tr><td><p>a</p></td><td><p>b</p></td></tr></tbody></table>",
+    );
+  });
+
+  it("refuses table parts the editor drops", () => {
+    for (const html of [
+      "<table><thead><tr><th>h</th></tr></thead><tbody><tr><td>a</td></tr></tbody></table>",
+      "<table><caption>c</caption><tr><td>a</td></tr></table>",
+      '<table><colgroup><col style="width: 50%"></colgroup><tr><td>a</td></tr></table>',
+      '<table><tr><td width="50%">a</td></tr></table>',
+    ]) {
+      expect(roundTripsCleanly(html, extensions)).toBe(false);
+    }
   });
 
   it("refuses an inline data: image, which the editor drops", () => {
@@ -177,11 +225,16 @@ describe("the real intros", () => {
     },
   );
 
-  it("layout_table_intro falls back to HTML because the editor drops its table", () => {
+  it("layout_table_intro falls back to HTML because the editor drops its colgroup", () => {
     const html = fixture("layout_table_intro");
     expect(roundTripsCleanly(html, extensions)).toBe(false);
-    expect(html).toContain("<table");
-    expect(roundTrip(html, extensions)).not.toContain("<table");
+    expect(html).toContain("<colgroup");
+    const visual = roundTrip(html, extensions);
+    expect(visual).toContain("<table");
+    expect(visual).not.toContain("<colgroup");
+    expect(
+      normaliseHtml(html.replace(/<colgroup>[\s\S]*?<\/colgroup>/, "")),
+    ).toBe(normaliseHtml(visual));
   });
 
   it.each(["inline_styles_intro", "centred_image_intro", "layout_table_intro"])(

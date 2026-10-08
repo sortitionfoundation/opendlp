@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-08 17:15+0100\n"
+"POT-Creation-Date: 2026-10-08 19:00+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -227,7 +227,7 @@ msgstr "Kötelező"
 
 #: src/opendlp/domain/respondent_field_schema.py:152
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:204
-#: templates/backoffice/components/rich_editor.html:63
+#: templates/backoffice/components/rich_editor.html:81
 msgid "Text"
 msgstr "Szöveg"
 
@@ -5644,6 +5644,8 @@ msgid "Chart"
 msgstr "Diagram"
 
 #: templates/backoffice/assembly_dashboard.html:59
+#: templates/backoffice/components/rich_editor.html:101
+#: templates/backoffice/components/rich_editor.html:110
 msgid "Table"
 msgstr "Táblázat"
 
@@ -7507,87 +7509,131 @@ msgstr "például: telefonon megerősítette a résztvevő"
 msgid "Confirm"
 msgstr "Megerősítés"
 
-#: templates/backoffice/components/rich_editor.html:22
-msgid ""
-"This HTML uses things the visual editor cannot show, so it opens as HTML."
-" Common causes are tables, comments, headings smaller than level 3, and "
-"text outside a paragraph."
-msgstr ""
-
 #: templates/backoffice/components/rich_editor.html:23
 msgid ""
-"This HTML uses things the visual editor cannot show, so it stays in HTML."
-" Common causes are tables, comments, headings smaller than level 3, and "
-"text outside a paragraph."
+"This HTML uses things the visual editor cannot show, so it opens as HTML."
+" Common causes are comments, headings smaller than level 3, text outside "
+"a paragraph, and tables with set column widths."
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:26
+#: templates/backoffice/components/rich_editor.html:24
+msgid ""
+"This HTML uses things the visual editor cannot show, so it stays in HTML."
+" Common causes are comments, headings smaller than level 3, text outside "
+"a paragraph, and tables with set column widths."
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:27
 msgid "Editor view"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:30
+#: templates/backoffice/components/rich_editor.html:31
 msgid "Visual"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:34
+#: templates/backoffice/components/rich_editor.html:35
 msgid "HTML"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:39
+#: templates/backoffice/components/rich_editor.html:40
 msgid ""
 "The visual editor highlights variables like {{ assembly_title }} in text."
 " To add or change a variable anywhere else, such as in a link address, "
 "edit the HTML."
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:60
+#: templates/backoffice/components/rich_editor.html:41
+msgid "Press Alt+F10 to move from the text to the toolbar."
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:78
 msgid "Formatting"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:64
+#: templates/backoffice/components/rich_editor.html:82
 msgid "Heading 1"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:65
+#: templates/backoffice/components/rich_editor.html:83
 msgid "Heading 2"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:66
+#: templates/backoffice/components/rich_editor.html:84
 msgid "Heading 3"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:68
+#: templates/backoffice/components/rich_editor.html:86
 msgid "Bold"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:69
+#: templates/backoffice/components/rich_editor.html:87
 msgid "Italic"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:71
+#: templates/backoffice/components/rich_editor.html:88
+msgid "Underline"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:89
+msgid "Strikethrough"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:91
 msgid "Bulleted list"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:72
+#: templates/backoffice/components/rich_editor.html:92
 msgid "Numbered list"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:74
+#: templates/backoffice/components/rich_editor.html:93
+msgid "Quote"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:95
 #: templates/backoffice/registration/_modals.html:265
 msgid "Link"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:76
+#: templates/backoffice/components/rich_editor.html:97
 msgid "Image"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:79
+#: templates/backoffice/components/rich_editor.html:99
+msgid "Horizontal line"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:113
+msgid "Insert table"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:116
+msgid "Add row below"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:119
+msgid "Add column to the right"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:122
+msgid "Delete row"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:125
+msgid "Delete column"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:128
+msgid "Delete table"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:133
 #: templates/backoffice/targets/bulk_edit_form.html:155
 #: templates/backoffice/targets/bulk_edit_form.html:201
 msgid "Undo"
 msgstr "Visszavonás"
 
-#: templates/backoffice/components/rich_editor.html:80
+#: templates/backoffice/components/rich_editor.html:134
 msgid "Redo"
 msgstr ""
 

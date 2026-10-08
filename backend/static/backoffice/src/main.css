@@ -1494,8 +1494,54 @@ body {
         padding: 0;
     }
 
+    /* An open menu sits where the tooltip would. */
+    .rich-editor__tool[aria-expanded="true"] .rich-editor__label {
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        padding: 0;
+    }
+
     .rich-editor__tool:hover {
         background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    .rich-editor__menu-anchor {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .rich-editor__menu {
+        position: absolute;
+        top: calc(100% + 0.25rem);
+        left: 0;
+        z-index: 35; /* over the sticky wizard footer (z-30), so no item is hidden behind it */
+        min-width: 14rem;
+        padding: 0.25rem 0;
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0.375rem;
+        background-color: var(--color-page-background);
+        box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+    }
+
+    .rich-editor__menu-item {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        text-align: left;
+        font-size: 0.875rem;
+        color: var(--color-body-text);
+    }
+
+    .rich-editor__menu-item:hover,
+    .rich-editor__menu-item:focus {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    .rich-editor__menu-item[aria-disabled="true"] {
+        color: var(--color-placeholder-text);
+        cursor: not-allowed;
     }
 
     .rich-editor__tool[aria-pressed="true"] {
@@ -1581,6 +1627,37 @@ body {
     .rich-editor__content a {
         color: var(--color-links);
         text-decoration: underline;
+    }
+
+    .rich-editor__content blockquote {
+        padding: 0.25rem 0 0.25rem 1rem;
+        border-left: 4px solid var(--color-borders-dividers);
+    }
+
+    .rich-editor__content hr {
+        border-top: 2px solid var(--color-borders-dividers);
+    }
+
+    /* Dashed cell edges show where the cells are, since a layout table has no borders of its own. */
+    .rich-editor__content table {
+        border-collapse: collapse;
+    }
+
+    .rich-editor__content td,
+    .rich-editor__content th {
+        min-width: 3rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px dashed var(--color-borders-dividers);
+        vertical-align: top;
+    }
+
+    .rich-editor__content th {
+        font-weight: 700;
+        text-align: left;
+    }
+
+    .rich-editor__content .selectedCell {
+        background-color: var(--color-info-100);
     }
 
     .rich-editor__content img {

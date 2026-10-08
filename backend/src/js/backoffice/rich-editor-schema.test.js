@@ -1,7 +1,7 @@
 // ABOUTME: Tests for the visual editor's schema and its template-variable finder.
 // ABOUTME: Builds ProseMirror documents from HTML with the same extensions the editor uses.
 import { describe, expect, it } from "vitest";
-import { generateJSON, getSchema } from "@tiptap/core";
+import { Editor, generateJSON, getSchema } from "@tiptap/core";
 import {
   createSchemaExtensions,
   findVariableRanges,
@@ -47,12 +47,35 @@ describe("createSchemaExtensions", () => {
   });
 
   it("leaves out the marks and nodes that have no toolbar button", () => {
-    for (const name of ["underline", "strike", "code"]) {
-      expect(schema.marks[name]).toBeUndefined();
+    expect(schema.marks.code).toBeUndefined();
+    expect(schema.nodes.codeBlock).toBeUndefined();
+  });
+
+  it("holds the formatting and blocks the toolbar can make", () => {
+    for (const name of ["underline", "strike"]) {
+      expect(schema.marks[name]).toBeDefined();
     }
-    for (const name of ["codeBlock", "blockquote", "horizontalRule", "table"]) {
-      expect(schema.nodes[name]).toBeUndefined();
+    for (const name of [
+      "blockquote",
+      "horizontalRule",
+      "table",
+      "tableRow",
+      "tableHeader",
+      "tableCell",
+    ]) {
+      expect(schema.nodes[name]).toBeDefined();
     }
+  });
+
+  it("keeps a table's border and role, and class and style on its cells", () => {
+    const table = docFrom(
+      '<table border="0" role="presentation"><tr><td class="c" style="color: red;">a</td></tr></table>',
+    ).firstChild;
+    expect(table.attrs).toMatchObject({ border: "0", role: "presentation" });
+    expect(table.firstChild.firstChild.attrs).toMatchObject({
+      class: "c",
+      style: "color: red;",
+    });
   });
 
   it("can leave images out", () => {
@@ -71,5 +94,51 @@ describe("createSchemaExtensions", () => {
       style: "color: red;",
       dir: "ltr",
     });
+  });
+});
+
+describe("Tab in a table", () => {
+  function editorWithCursorIn(cell) {
+    const editor = new Editor({
+      element: document.createElement("div"),
+      extensions,
+      content: "<table><tr><td>a</td><td>b</td></tr></table>",
+      injectCSS: false,
+    });
+    let position = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (position === null && node.isText && node.text === cell) {
+        position = pos;
+      }
+    });
+    editor.commands.setTextSelection(position);
+    return editor;
+  }
+
+  // True when the editor handles the key itself, so the browser does not move focus.
+  function pressTab(editor) {
+    const event = new KeyboardEvent("keydown", {
+      key: "Tab",
+      cancelable: true,
+    });
+    return Boolean(
+      editor.view.someProp("handleKeyDown", (handle) =>
+        handle(editor.view, event),
+      ),
+    );
+  }
+
+  it("moves to the next cell", () => {
+    const editor = editorWithCursorIn("a");
+    expect(pressTab(editor)).toBe(true);
+    expect(editor.state.selection.$from.parent.textContent).toBe("b");
+    editor.destroy();
+  });
+
+  it("leaves the table from the last cell instead of adding a row, so focus can leave the editor", () => {
+    const editor = editorWithCursorIn("b");
+    expect(pressTab(editor)).toBe(false);
+    expect(editor.getHTML()).not.toContain("</tr><tr>");
+    editor.destroy();
   });
 });

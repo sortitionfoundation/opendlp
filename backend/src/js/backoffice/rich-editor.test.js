@@ -96,7 +96,7 @@ describe("mountRichEditor", () => {
   });
 
   it("opens in HTML mode, saying why, when the editor would lose something", () => {
-    const page = setUp("<table><tr><td>a</td></tr></table>");
+    const page = setUp("<!-- note --><p>a</p>");
     const rich = mount(page.textarea);
     expect(rich.mode).toBe(HTML);
     expect(page.surface.hidden).toBe(true);

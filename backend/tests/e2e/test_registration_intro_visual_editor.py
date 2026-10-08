@@ -174,3 +174,18 @@ def test_a_page_from_before_content_styles_renders_unchanged(
 
     assert _stored_style(postgres_session_factory, page_id) == "plain"
     assert "<h1>Title</h1><p>Body</p>" in client.get(f"/register/{slug}").get_data(as_text=True)
+
+
+def test_public_page_styles_quotes_and_lines_but_leaves_tables_alone(logged_in_admin, client, registration_page):
+    """Quotes and horizontal lines get GOV.UK classes; tables get none until layout or data is decided (Q6)."""
+    assembly_id, _page_id, slug = registration_page
+    table = '<table><tbody><tr><td><p><img src="/a.png" alt="A"></p></td><td><p>B</p></td></tr></tbody></table>'
+    intro = f"<blockquote><p>Quoted</p></blockquote><hr><p><u>Under</u> <s>struck</s></p>{table}"
+
+    _save_intro(logged_in_admin, assembly_id, slug, intro, content_style="govuk")
+
+    public = client.get(f"/register/{slug}").get_data(as_text=True)
+    assert '<blockquote class="govuk-inset-text"><p class="govuk-body">Quoted</p></blockquote>' in public
+    assert '<hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">' in public
+    assert '<p class="govuk-body"><u>Under</u> <s>struck</s></p>' in public
+    assert '<table><tbody><tr><td><p class="govuk-body"><img src="/a.png" alt="A"></p></td>' in public

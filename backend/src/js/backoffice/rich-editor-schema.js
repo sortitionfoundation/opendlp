@@ -3,6 +3,12 @@
 import { Extension, Node } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import {
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@tiptap/extension-table";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
@@ -18,6 +24,12 @@ const PRESERVED_ATTRIBUTE_TYPES = [
   "link",
   "image",
   "div",
+  "blockquote",
+  "horizontalRule",
+  "table",
+  "tableRow",
+  "tableCell",
+  "tableHeader",
 ];
 
 function preservedAttribute(name) {
@@ -43,6 +55,13 @@ const PreservedAttributes = Extension.create({
           dir: preservedAttribute("dir"),
         },
       },
+      {
+        types: ["table"],
+        attributes: {
+          border: preservedAttribute("border"),
+          role: preservedAttribute("role"),
+        },
+      },
     ];
   },
 });
@@ -58,6 +77,22 @@ const Div = Node.create({
   },
   renderHTML({ HTMLAttributes }) {
     return ["div", HTMLAttributes, 0];
+  },
+});
+
+// Writes a plain <table>: Tiptap's own output adds a <colgroup> and a min-width
+// style to every table, which would fill the stored HTML with sizing noise.
+const PlainTable = Table.extend({
+  renderHTML({ HTMLAttributes }) {
+    return ["table", HTMLAttributes, ["tbody", 0]];
+  },
+  addKeyboardShortcuts() {
+    return {
+      ...this.parent?.(),
+      // Tab moves between cells and leaves the table from its last cell, rather
+      // than adding a row, so a keyboard user can always Tab out of the editor.
+      Tab: () => this.editor.commands.goToNextCell(),
+    };
   },
 });
 
@@ -115,12 +150,8 @@ export const VariableHighlight = Extension.create({
 export function createSchemaExtensions({ images = true } = {}) {
   const extensions = [
     StarterKit.configure({
-      underline: false,
-      strike: false,
       code: false,
       codeBlock: false,
-      blockquote: false,
-      horizontalRule: false,
       trailingNode: false,
       heading: { levels: [1, 2, 3] },
       link: {
@@ -130,6 +161,10 @@ export function createSchemaExtensions({ images = true } = {}) {
     }),
     PreservedAttributes,
     Div,
+    PlainTable.configure({ resizable: false }),
+    TableRow,
+    TableHeader,
+    TableCell,
   ];
   if (images) {
     extensions.push(Image.configure({ inline: true, allowBase64: false }));

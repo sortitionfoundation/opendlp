@@ -21,6 +21,23 @@ class TestMapping:
     def test_unmapped_elements_are_untouched(self, html: str):
         assert apply_default_govuk_classes(html) == html
 
+    def test_tables_are_untouched_until_layout_or_data_is_decided(self):
+        """Q6 in the plan: a class now would commit every table to one answer."""
+        html = "<table><tbody><tr><th>h</th><td>x</td></tr></tbody></table>"
+        assert apply_default_govuk_classes(html) == html
+
+    @pytest.mark.parametrize(
+        ("hr", "expected"),
+        [
+            ("<hr>", '<hr class="{0}">'),
+            ("<hr/>", '<hr class="{0}"/>'),
+            ("<hr />", '<hr class="{0}" />'),
+        ],
+    )
+    def test_a_horizontal_rule_gets_a_visible_section_break(self, hr: str, expected: str):
+        section_break = "govuk-section-break govuk-section-break--m govuk-section-break--visible"
+        assert apply_default_govuk_classes(hr) == expected.format(section_break)
+
     def test_keeps_other_attributes(self):
         assert apply_default_govuk_classes('<a href="/x" title="t">l</a>') == (
             '<a class="govuk-link" href="/x" title="t">l</a>'

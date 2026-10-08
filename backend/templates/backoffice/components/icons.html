@@ -279,6 +279,31 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
         <path d="M4 12H12M4 18V6M12 18V6M17.5 10.5002C19.2 9.50019 21 10.5002 21 12.0002C21 12.5306 20.7893 13.0393 20.4142 13.4144C20.0391 13.7895 19.5304 14.0002 19 14.0002C19.5304 14.0002 20.0391 14.2107 20.4142 14.5858C20.7893 14.9609 21 15.4696 21 16C21 17.8 19 19 17 17.5"/>
     </svg>
 {% endmacro %}
+{% macro icon_underline(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 4V10C6 11.5913 6.63214 13.1174 7.75736 14.2426C8.88258 15.3679 10.4087 16 12 16C13.5913 16 15.1174 15.3679 16.2426 14.2426C17.3679 13.1174 18 11.5913 18 10V4M4 20H20"/>
+    </svg>
+{% endmacro %}
+{% macro icon_strikethrough(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M16.0001 4H9.00011C8.52003 3.99975 8.04691 4.11471 7.62048 4.33524C7.19405 4.55576 6.82677 4.8754 6.5495 5.26731C6.27223 5.65921 6.09305 6.11194 6.02704 6.58745C5.96102 7.06297 6.01008 7.54738 6.17011 8M14 12C15.0609 12 16.0783 12.4214 16.8284 13.1716C17.5786 13.9217 18 14.9391 18 16C18 17.0609 17.5786 18.0783 16.8284 18.8284C16.0783 19.5786 15.0609 20 14 20H6M4 12H20"/>
+    </svg>
+{% endmacro %}
+{% macro icon_text_quote(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M17 5H3M21 12H8M21 19H8M3 12V19"/>
+    </svg>
+{% endmacro %}
+{% macro icon_separator_horizontal(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M16 16L12 20L8 16M3 12H21M8 8L12 4L16 8"/>
+    </svg>
+{% endmacro %}
+{% macro icon_table(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3V21M3 9H21M3 15H21M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3Z"/>
+    </svg>
+{% endmacro %}
 {% macro icon_list(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M3 5H3.01M3 12H3.01M3 19H3.01M8 5H21M8 12H21M8 19H21"/>

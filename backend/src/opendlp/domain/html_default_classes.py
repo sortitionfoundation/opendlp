@@ -13,6 +13,8 @@ DEFAULT_GOVUK_CLASSES = {
     "ul": "govuk-list govuk-list--bullet",
     "ol": "govuk-list govuk-list--number",
     "a": "govuk-link",
+    "blockquote": "govuk-inset-text",
+    "hr": "govuk-section-break govuk-section-break--m govuk-section-break--visible",
 }
 
 _TAG_NAME = re.compile(r"<[^\s/>]+")

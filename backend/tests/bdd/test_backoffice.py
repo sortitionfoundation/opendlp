@@ -1854,9 +1854,9 @@ def see_email_in_search_results(page: Page, email: str):
 VISUAL_INTRO = f"{INTRO_EDITOR} .ProseMirror"
 
 
-def _png_base64() -> str:
+def _png_base64(colour: tuple[int, int, int] = (12, 34, 56)) -> str:
     buffer = BytesIO()
-    Image.new("RGB", (40, 30), (12, 34, 56)).save(buffer, format="PNG")
+    Image.new("RGB", (40, 30), colour).save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
@@ -1917,6 +1917,96 @@ def press_right_arrow(page: Page, count: int):
 @when("I press Enter")
 def press_enter(page: Page):
     page.keyboard.press("Enter")
+
+
+@when(parsers.parse('I press "{keys}"'))
+def press_keys(page: Page, keys: str):
+    page.keyboard.press(keys)
+
+
+def _wait_for_focus_in_visual_intro(page: Page) -> None:
+    """Tiptap hands focus back to the editor on the next animation frame, after a menu or dialog closes."""
+    page.wait_for_function(
+        "(selector) => document.activeElement && document.activeElement.closest(selector) !== null",
+        arg=VISUAL_INTRO,
+        timeout=PLAYWRIGHT_TIMEOUT,
+    )
+
+
+@when("I jump to the formatting toolbar with Alt+F10")
+def alt_f10_to_toolbar(page: Page):
+    _wait_for_focus_in_visual_intro(page)
+    page.keyboard.press("Alt+F10")
+    focused_in_toolbar = page.evaluate("document.activeElement.closest('[role=toolbar]') !== null")
+    assert focused_in_toolbar, "Alt+F10 from the editor should land in the formatting toolbar"
+
+
+@when("I press Tab in the visual intro editor")
+def tab_in_visual_intro(page: Page):
+    _wait_for_focus_in_visual_intro(page)
+    page.keyboard.press("Tab")
+
+
+def _focused_label(page: Page) -> str:
+    return page.evaluate("document.activeElement.textContent.trim()")
+
+
+@when(parsers.parse('I move to the "{label}" toolbar button with the arrow keys'))
+def arrow_to_toolbar_button(page: Page, label: str):
+    toolbar = page.get_by_role("toolbar", name="Formatting")
+    count = toolbar.locator("button[data-command]:not([role=menuitem])").count()
+    for _ in range(count):
+        if _focused_label(page) == label:
+            return
+        page.keyboard.press("ArrowRight")
+    raise AssertionError(f'the arrow keys never reached the "{label}" toolbar button')
+
+
+@when(parsers.parse('I choose "{label}" from the open menu with the arrow keys'))
+def choose_from_open_menu(page: Page, label: str):
+    menu = page.locator(f"{INTRO_EDITOR} [role=menu]")
+    expect(menu).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    for _ in range(menu.get_by_role("menuitem").count()):
+        if _focused_label(page) == label:
+            page.keyboard.press("Enter")
+            expect(menu).to_be_hidden()
+            return
+        page.keyboard.press("ArrowDown")
+    raise AssertionError(f'the arrow keys never reached the "{label}" menu item')
+
+
+@when(parsers.parse('I upload the image "{name}" with the alt text "{alt}" in the upload dialog'))
+def upload_image_in_dialog(page: Page, name: str, alt: str):
+    dialog = page.get_by_role("dialog", name="Upload image")
+    expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    page.locator("#image-upload-file").set_input_files(
+        # A colour of its own, so the server does not take it for an earlier upload of the same bytes.
+        files=[
+            {
+                "name": name,
+                "mimeType": "image/png",
+                "buffer": base64.b64decode(_png_base64((sum(map(ord, alt)) % 256, 0, 0))),
+            }
+        ]
+    )
+    page.locator("#image-upload-alt").fill(alt)
+    dialog.get_by_role("button", name="Upload").press("Enter")
+    expect(dialog).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]')).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the intro should hold one table row with the images "{first}" and "{second}"'))
+def intro_holds_image_row(page: Page, first: str, second: str):
+    cells = page.evaluate(
+        """(html) => {
+            const t = document.createElement("template");
+            t.innerHTML = html;
+            return Array.from(t.content.querySelectorAll("table tr"), (row) =>
+                Array.from(row.children, (cell) => Array.from(cell.querySelectorAll("img"), (img) => img.alt)));
+        }""",
+        _intro_value(page),
+    )
+    assert cells == [[[first], [second]]], f"expected one row of two images, the intro holds {cells}"
 
 
 @when("I switch the intro editor to its HTML view")

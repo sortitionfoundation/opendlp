@@ -38,7 +38,9 @@ const BLOCK_TAGS = [
   "ul",
 ];
 const VOID_TAGS = new Set(["br", "col", "hr", "img", "wbr"]);
-const SAME_AS = { b: "strong", i: "em" };
+const SAME_AS = { b: "strong", i: "em", del: "s", strike: "s" };
+// The editor wraps the text of these in a <p>, since their content is blocks.
+const WRAPS_TEXT_IN_PARAGRAPH = new Set(["li", "td", "th", "blockquote"]);
 const DROPPED_WHEN_EMPTY = new Set(["strong", "em", "span"]);
 const BLOCK_EDGE_SPACE = new RegExp(
   ` ?(</?(?:${BLOCK_TAGS.join("|")})(?: [^>]*)?>) ?`,
@@ -97,7 +99,7 @@ function blockContent(element, tag) {
   const children = Array.from(element.childNodes);
   const first = firstMeaningfulChild(element);
   if (
-    tag === "li" &&
+    WRAPS_TEXT_IN_PARAGRAPH.has(tag) &&
     first &&
     first.nodeType === Node.ELEMENT_NODE &&
     first.tagName === "P" &&
@@ -215,8 +217,9 @@ function serialiseFlow(nodes) {
 /**
  * A canonical form of `html` in which differences that render the same are
  * erased: attribute order, style spelling, whitespace between blocks, `<b>`
- * for `<strong>`, attribute-less `<span>`s, empty `<strong>`/`<em>`, and a list
- * item's text being wrapped in a `<p>`.
+ * for `<strong>`, `<del>` for `<s>`, attribute-less `<span>`s, empty
+ * `<strong>`/`<em>`, and the text of a list item, table cell or blockquote
+ * being wrapped in a `<p>`.
  */
 export function normaliseHtml(html) {
   const template = document.createElement("template");

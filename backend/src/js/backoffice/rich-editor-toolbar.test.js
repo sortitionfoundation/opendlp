@@ -17,9 +17,19 @@ const COMMAND_NAMES = [
   "italic",
   "bulletList",
   "orderedList",
+  "underline",
+  "strike",
+  "blockquote",
+  "horizontalRule",
   "link",
-  "undo",
-  "redo",
+];
+const TABLE_ITEMS = [
+  "insertTable",
+  "addRowAfter",
+  "addColumnAfter",
+  "deleteRow",
+  "deleteColumn",
+  "deleteTable",
 ];
 
 let editor;
@@ -43,6 +53,12 @@ beforeEach(() => {
   document.body.innerHTML = `
     <div role="toolbar" data-rich-editor-toolbar>
       ${COMMAND_NAMES.map((name) => `<button type="button" data-command="${name}">${name}</button>`).join("")}
+      <button type="button" data-command="table" aria-haspopup="menu" aria-expanded="false" aria-controls="table-menu">table</button>
+      <div id="table-menu" role="menu" hidden>
+        ${TABLE_ITEMS.map((name) => `<button type="button" role="menuitem" data-command="${name}">${name}</button>`).join("")}
+      </div>
+      <button type="button" data-command="undo">undo</button>
+      <button type="button" data-command="redo">redo</button>
     </div>
     <div id="surface"></div>`;
   toolbar = document.querySelector("[data-rich-editor-toolbar]");
@@ -68,11 +84,21 @@ describe("wireToolbar commands", () => {
     ["italic", "<p><em>Hello world</em></p>"],
     ["bulletList", "<ul><li><p>Hello world</p></li></ul>"],
     ["orderedList", "<ol><li><p>Hello world</p></li></ol>"],
+    ["underline", "<p><u>Hello world</u></p>"],
+    ["strike", "<p><s>Hello world</s></p>"],
+    ["blockquote", "<blockquote><p>Hello world</p></blockquote>"],
   ])("%s formats the selection", (name, expected) => {
     wireToolbar(toolbar, editor);
     selectAll();
     button(name).click();
     expect(editor.getHTML()).toBe(expected);
+  });
+
+  it("inserts a horizontal rule", () => {
+    wireToolbar(toolbar, editor);
+    editor.commands.setTextSelection(12);
+    button("horizontalRule").click();
+    expect(editor.getHTML()).toContain("<p>Hello world</p><hr>");
   });
 
   it("turns a heading back into a paragraph", () => {
@@ -146,6 +172,107 @@ describe("wireToolbar state", () => {
   });
 });
 
+describe("wireToolbar table menu", () => {
+  const menu = () => document.getElementById("table-menu");
+  const item = (name) => menu().querySelector(`[data-command="${name}"]`);
+
+  function cellsPerRow() {
+    return Array.from(
+      editor.view.dom.querySelectorAll("tr"),
+      (row) => row.children.length,
+    );
+  }
+
+  it("opens on click, focusing the first item", () => {
+    wireToolbar(toolbar, editor);
+    button("table").click();
+    expect(menu().hidden).toBe(false);
+    expect(button("table").getAttribute("aria-expanded")).toBe("true");
+    expect(document.activeElement).toBe(item("insertTable"));
+  });
+
+  it("opens with the up arrow on its last item", () => {
+    wireToolbar(toolbar, editor);
+    button("table").focus();
+    key(button("table"), "ArrowUp");
+    expect(document.activeElement).toBe(item("deleteTable"));
+  });
+
+  it("moves between items with the arrow keys, wrapping at the ends", () => {
+    wireToolbar(toolbar, editor);
+    button("table").click();
+    key(item("insertTable"), "ArrowUp");
+    expect(document.activeElement).toBe(item("deleteTable"));
+    key(item("deleteTable"), "ArrowDown");
+    expect(document.activeElement).toBe(item("insertTable"));
+    key(item("insertTable"), "End");
+    expect(document.activeElement).toBe(item("deleteTable"));
+  });
+
+  it("closes on Escape, returning focus to the menu button, and keeps the Escape from a dialog", () => {
+    wireToolbar(toolbar, editor);
+    const outside = vi.fn();
+    document.addEventListener("keydown", outside);
+    button("table").click();
+
+    key(item("insertTable"), "Escape");
+
+    document.removeEventListener("keydown", outside);
+    expect(menu().hidden).toBe(true);
+    expect(button("table").getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(button("table"));
+    expect(outside).not.toHaveBeenCalled();
+  });
+
+  it("is not part of the toolbar's arrow-key order", () => {
+    wireToolbar(toolbar, editor);
+    button("table").focus();
+    key(button("table"), "ArrowRight");
+    expect(document.activeElement).toBe(button("undo"));
+  });
+
+  it("inserts a plain two-by-two table and closes", () => {
+    wireToolbar(toolbar, editor);
+    editor.commands.setTextSelection(12);
+    button("table").click();
+    item("insertTable").click();
+    expect(menu().hidden).toBe(true);
+    expect(editor.getHTML()).toContain(
+      "<table><tbody><tr><td><p></p></td><td><p></p></td></tr><tr><td><p></p></td><td><p></p></td></tr></tbody></table>",
+    );
+  });
+
+  it("offers only insert outside a table, and only the edits inside one", () => {
+    wireToolbar(toolbar, editor);
+    button("table").click();
+    expect(item("insertTable").getAttribute("aria-disabled")).toBe("false");
+    for (const name of TABLE_ITEMS.slice(1)) {
+      expect(item(name).getAttribute("aria-disabled")).toBe("true");
+    }
+    item("insertTable").click();
+    button("table").click();
+    expect(item("insertTable").getAttribute("aria-disabled")).toBe("true");
+    for (const name of TABLE_ITEMS.slice(1)) {
+      expect(item(name).getAttribute("aria-disabled")).toBe("false");
+    }
+  });
+
+  it("adds and deletes rows and columns, and deletes the table", () => {
+    editor.commands.setContent("<table><tr><td>a</td><td>b</td></tr></table>");
+    editor.commands.setTextSelection(3);
+    wireToolbar(toolbar, editor);
+    item("addRowAfter").click();
+    expect(cellsPerRow()).toEqual([2, 2]);
+    item("addColumnAfter").click();
+    expect(cellsPerRow()).toEqual([3, 3]);
+    item("deleteColumn").click();
+    item("deleteRow").click();
+    expect(cellsPerRow()).toEqual([2]);
+    item("deleteTable").click();
+    expect(editor.getHTML()).not.toContain("<table");
+  });
+});
+
 describe("wireToolbar keyboard", () => {
   it("gives the toolbar a single Tab stop", () => {
     wireToolbar(toolbar, editor);
@@ -166,6 +293,21 @@ describe("wireToolbar keyboard", () => {
     expect(document.activeElement).toBe(button("redo"));
     key(button("redo"), "ArrowRight");
     expect(document.activeElement).toBe(button("paragraph"));
+  });
+
+  it("reaches the toolbar's current button from the text with Alt+F10, keeping the cursor", () => {
+    editor.commands.setContent("<table><tr><td>a</td><td>b</td></tr></table>");
+    editor.commands.setTextSelection(9);
+    wireToolbar(toolbar, editor);
+    button("paragraph").focus();
+    key(button("paragraph"), "End");
+
+    editor.view.dom.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "F10", altKey: true, bubbles: true }),
+    );
+
+    expect(document.activeElement).toBe(button("redo"));
+    expect(editor.state.selection.$from.parent.textContent).toBe("b");
   });
 
   it("jumps to the first and last buttons with Home and End", () => {

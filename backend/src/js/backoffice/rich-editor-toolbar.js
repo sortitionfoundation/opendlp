@@ -1,5 +1,5 @@
 // ABOUTME: Wires the server-rendered visual editor toolbar to a Tiptap editor.
-// ABOUTME: Runs each button's command, keeps aria-pressed in step, moves focus with the arrows, dismisses tooltips.
+// ABOUTME: Runs each button's command, keeps aria-pressed in step, moves focus with the arrows, opens the table menu.
 
 export const TOOLTIPS_DISMISSED_CLASS =
   "rich-editor__toolbar--tooltips-dismissed";
@@ -34,6 +34,14 @@ export const COMMANDS = {
     run: (chain) => chain.toggleItalic(),
     active: (editor) => editor.isActive("italic"),
   },
+  underline: {
+    run: (chain) => chain.toggleUnderline(),
+    active: (editor) => editor.isActive("underline"),
+  },
+  strike: {
+    run: (chain) => chain.toggleStrike(),
+    active: (editor) => editor.isActive("strike"),
+  },
   bulletList: {
     run: (chain) => chain.toggleBulletList(),
     active: (editor) => editor.isActive("bulletList"),
@@ -41,6 +49,40 @@ export const COMMANDS = {
   orderedList: {
     run: (chain) => chain.toggleOrderedList(),
     active: (editor) => editor.isActive("orderedList"),
+  },
+  blockquote: {
+    run: (chain) => chain.toggleBlockquote(),
+    active: (editor) => editor.isActive("blockquote"),
+  },
+  horizontalRule: {
+    run: (chain) => chain.setHorizontalRule(),
+  },
+  // A plain table: no header row and no role, until the team decides whether
+  // tables are for layout or data (Q6 in the plan).
+  insertTable: {
+    run: (chain) =>
+      chain.insertTable({ rows: 2, cols: 2, withHeaderRow: false }),
+    enabled: (editor) => !editor.isActive("table"),
+  },
+  addRowAfter: {
+    run: (chain) => chain.addRowAfter(),
+    enabled: (editor) => editor.can().addRowAfter(),
+  },
+  addColumnAfter: {
+    run: (chain) => chain.addColumnAfter(),
+    enabled: (editor) => editor.can().addColumnAfter(),
+  },
+  deleteRow: {
+    run: (chain) => chain.deleteRow(),
+    enabled: (editor) => editor.can().deleteRow(),
+  },
+  deleteColumn: {
+    run: (chain) => chain.deleteColumn(),
+    enabled: (editor) => editor.can().deleteColumn(),
+  },
+  deleteTable: {
+    run: (chain) => chain.deleteTable(),
+    enabled: (editor) => editor.can().deleteTable(),
   },
   undo: {
     run: (chain) => chain.undo(),
@@ -60,10 +102,16 @@ export const COMMANDS = {
  * which re-reads the editor state into the buttons.
  */
 export function wireToolbar(toolbar, editor, actions = {}) {
-  const buttons = Array.from(toolbar.querySelectorAll("button[data-command]"));
+  const commandButtons = Array.from(
+    toolbar.querySelectorAll("button[data-command]"),
+  );
+  // The toolbar's own buttons; menu items are reached through their menu button.
+  const buttons = commandButtons.filter(
+    (button) => !button.closest('[role="menu"]'),
+  );
 
   function refresh() {
-    for (const button of buttons) {
+    for (const button of commandButtons) {
       const command = COMMANDS[button.dataset.command];
       if (!command) {
         continue;
@@ -108,7 +156,11 @@ export function wireToolbar(toolbar, editor, actions = {}) {
     button.setAttribute("tabindex", index === 0 ? "0" : "-1");
     // Keep the editor's selection: a click must not move focus off the text first.
     button.addEventListener("mousedown", (event) => event.preventDefault());
-    button.addEventListener("click", () => run(button));
+    if (button.getAttribute("aria-haspopup") === "menu") {
+      wireMenu(button, run);
+    } else {
+      button.addEventListener("click", () => run(button));
+    }
     button.addEventListener("mouseenter", showTooltips);
     button.addEventListener("keydown", (event) => {
       // The first Escape only hides the tooltip; the next one is the dialog's.
@@ -133,6 +185,86 @@ export function wireToolbar(toolbar, editor, actions = {}) {
         moveFocus(button, targets[event.key]);
       }
     });
+  });
+
+  function wireMenu(menuButton, runItem) {
+    const menu = document.getElementById(
+      menuButton.getAttribute("aria-controls"),
+    );
+    const items = Array.from(menu.querySelectorAll('[role="menuitem"]'));
+
+    function open(index) {
+      refresh();
+      menu.hidden = false;
+      menuButton.setAttribute("aria-expanded", "true");
+      items.at(index).focus();
+    }
+
+    function close() {
+      menu.hidden = true;
+      menuButton.setAttribute("aria-expanded", "false");
+    }
+
+    menuButton.addEventListener("click", () => {
+      if (menu.hidden) {
+        open(0);
+      } else {
+        close();
+      }
+    });
+    menuButton.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        open(event.key === "ArrowDown" ? 0 : -1);
+      }
+    });
+    menu.addEventListener("focusout", (event) => {
+      if (!menu.contains(event.relatedTarget)) {
+        close();
+      }
+    });
+
+    items.forEach((item, index) => {
+      item.setAttribute("tabindex", "-1");
+      item.addEventListener("mousedown", (event) => event.preventDefault());
+      item.addEventListener("click", () => {
+        if (item.getAttribute("aria-disabled") === "true") {
+          return;
+        }
+        close();
+        runItem(item);
+      });
+      item.addEventListener("keydown", (event) => {
+        const last = items.length - 1;
+        const targets = {
+          ArrowDown: items[index === last ? 0 : index + 1],
+          ArrowUp: items[index === 0 ? last : index - 1],
+          Home: items[0],
+          End: items[last],
+        };
+        if (targets[event.key]) {
+          event.preventDefault();
+          targets[event.key].focus();
+        } else if (event.key === "Escape") {
+          // Close only the menu, not a dialog the editor sits in.
+          event.preventDefault();
+          event.stopPropagation();
+          close();
+          menuButton.focus();
+        } else if (event.key === "Tab") {
+          close();
+        }
+      });
+    });
+  }
+
+  // Alt+F10 reaches the toolbar from the text without moving the cursor, which
+  // Shift+Tab cannot do from inside a table, where it moves between cells.
+  editor.view.dom.addEventListener("keydown", (event) => {
+    if (event.altKey && event.key === "F10") {
+      event.preventDefault();
+      buttons.find((button) => button.getAttribute("tabindex") === "0").focus();
+    }
   });
 
   editor.on("transaction", refresh);

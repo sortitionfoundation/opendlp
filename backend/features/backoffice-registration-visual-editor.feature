@@ -27,7 +27,7 @@ Feature: Backoffice registration visual intro editor
     Given there is an assembly called "Visual Refuse Assembly" with a registration page
     When I visit the registration intro editor for "Visual Refuse Assembly"
     And I switch the intro editor to its HTML view
-    And I enter "<table><tr><td>Logo</td></tr></table>" in the intro HTML view
+    And I enter "<h4>Small heading</h4>" in the intro HTML view
     And I switch the intro editor to its Visual view
     Then the intro editor should still be in its HTML view
     And the intro editor should explain that the HTML stays in the HTML view
@@ -41,6 +41,34 @@ Feature: Backoffice registration visual intro editor
     And I press the right arrow key 4 times
     And I press Enter
     Then the intro should hold "<p><strong>Plain words</strong></p>"
+
+  Scenario: Building a table of two images side by side with the keyboard
+    Given there is an assembly called "Visual Table Assembly" with a registration page
+    When I visit the registration intro editor for "Visual Table Assembly"
+    And I type "Our partners" into the visual intro editor
+    And I press "Enter"
+    And I move focus back into the formatting toolbar
+    And I move to the "Table" toolbar button with the arrow keys
+    And I press "Enter"
+    And I choose "Insert table" from the open menu with the arrow keys
+    And I jump to the formatting toolbar with Alt+F10
+    And I move to the "Image" toolbar button with the arrow keys
+    And I press "Enter"
+    And I upload the image "partner-a.png" with the alt text "Partner A" in the upload dialog
+    And I press Tab in the visual intro editor
+    And I jump to the formatting toolbar with Alt+F10
+    And I move to the "Image" toolbar button with the arrow keys
+    And I press "Enter"
+    And I upload the image "partner-b.png" with the alt text "Partner B" in the upload dialog
+    And I press Tab in the visual intro editor
+    And I jump to the formatting toolbar with Alt+F10
+    And I move to the "Table" toolbar button with the arrow keys
+    And I press "Enter"
+    And I choose "Delete row" from the open menu with the arrow keys
+    Then the intro should hold one table row with the images "Partner A" and "Partner B"
+    When I save the registration form
+    Then the registration preview should show the image "Partner A"
+    And the registration preview should show the image "Partner B"
 
   Scenario: Template variables are highlighted in the visual editor
     Given there is an assembly called "Visual Variable Assembly" with a registration page

@@ -17,6 +17,8 @@ module.exports = {
     "btn--icon",
     // Added by ProseMirror to the selected image in the visual editor.
     "ProseMirror-selectednode",
+    // Added by Tiptap's table extension to cells selected across in the visual editor.
+    "selectedCell",
   ],
   theme: {
     extend: {},
