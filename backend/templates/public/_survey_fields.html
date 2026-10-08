@@ -2,7 +2,7 @@
 ABOUTME: Design-system rendering of the optional signup survey fields (SignupSurveyFormMixin)
 ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTIONS without naming any question
 #}
-{% from "backoffice/components/input.html" import input, textarea, radio_group, first_error %}
+{% from "backoffice/components/input.html" import input, textarea, radio_group %}
 {% from "backoffice/components/select_dropdown.html" import select_dropdown %}
 {% macro survey_field(field) %}
     {% if field.type == "RadioField" %}
@@ -15,7 +15,7 @@ ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTION
         options=options,
         value=field.data or "",
         hint=field.description or "",
-        error=first_error(field.errors))
+        error=field.errors | join("\n"))
         }}
     {% elif field.type == "SelectField" %}
         {% set options = [] %}
@@ -27,7 +27,7 @@ ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTION
         options=options,
         value=field.data or "",
         hint=field.description or "",
-        error=first_error(field.errors))
+        error=field.errors | join("\n"))
         }}
     {% elif field.type == "TextAreaField" %}
         {# A Length validator's max drives the maxlength attribute and the
@@ -44,12 +44,12 @@ ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTION
             label=field.label.text,
             value=field.data or "",
             hint=field.description or "",
-            error=first_error(field.errors),
+            error=field.errors | join("\n"),
             attrs=('maxlength="' ~ ns.max_len ~ '"') if ns.max_len else "")
             }}
             {% if ns.max_len %}
                 <p class="text-caption" style="color: var(--color-secondary-text);">
-                    <span x-text="count">0</span>/{{ ns.max_len }} {{ _("characters") }}
+                    <span x-text="count">{{ (field.data or "") | length }}</span>/{{ ns.max_len }} {{ _("characters") }}
                 </p>
             {% endif %}
         </div>
@@ -58,7 +58,7 @@ ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTION
         label=field.label.text,
         value=field.data or "",
         hint=field.description or "",
-        error=first_error(field.errors))
+        error=field.errors | join("\n"))
         }}
     {% endif %}
 {% endmacro %}
@@ -67,7 +67,7 @@ ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTION
        side by side (per the Figma) when both questions are in the spec. #}
     {% for field in form.survey_fields() %}
         {% if field.name == "survey_organisation_name" and form.survey_organisation_size is defined %}
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {{ survey_field(field) }}
                 {{ survey_field(form.survey_organisation_size) }}
             </div>
