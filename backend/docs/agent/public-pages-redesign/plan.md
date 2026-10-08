@@ -78,7 +78,9 @@ Templates still extending a GOV.UK base, grouped by journey:
 - `auth/forgot_password.html`, `auth/reset_password.html`
 - `auth/confirm_email.html`, `auth/resend_confirmation.html`
 - `main/index.html` (public landing)
-- `errors/400|403|404|413|500.html` (seen by both audiences)
+
+(The error pages `errors/400|403|404|413|500.html` are seen by both audiences and
+**stay GOV.UK** with the respondent journey — decided 2026-10-08.)
 
 **Respondent registration journey (`base_public.html`, chrome-less)** — **stays
 GOV.UK long term, out of scope** (see the scope boundary at the top; decided with
@@ -104,9 +106,8 @@ restyled (`main/dashboard.html` + old dashboard behind `FF_OLD_DEFAULT_DASHBOARD
    mostly `input()` + primary button; retire `govuk_password_input.html` when the
    last user goes.
 4. **Public landing** (`main/index.html`).
-5. **Error pages** — trivial, but wait until the layout is proven; they render in
-   failure modes, keep them dependency-light. (Also shown to respondents — if that
-   argues for GOV.UK, settle it before this phase.)
+5. ~~Error pages~~ — **stay GOV.UK** (decided 2026-10-08): respondents see them,
+   so the same widest-audience argument applies as for the registration forms.
 6. **Partial teardown** — once the account journey has migrated: delete
    `base.html` (when nothing extends it) and the `govuk_*` macros only the account
    pages used. `base_public.html`, `css/application.css`,
@@ -299,6 +300,17 @@ phase 3; not used on the redesigned page.
 - `process_plan` field type: radio (current form) vs select (Figma).
 
 ## Session log
+
+- **2026-10-08 (judgment calls + fixes)** — Gergő decided: error pages **stay
+  GOV.UK** (respondents see them); the Figma's beta-notice checkbox is **dropped
+  from the design** (the data agreement covers consent — Figma frame to be
+  updated); the comment limit **stays 2000** (the frame's 0/200 to be corrected);
+  the ~70 KB unused JS payload on the public page is **accepted for now** — the
+  proper fix belongs to the future neutral shared base layout. Implemented on the
+  branch: all validation errors per field now render (errors | join, replacing
+  first_error at the signup call sites), the char counter server-renders the real
+  initial count, and the chooser/name/org grids stack on small screens with the
+  chooser column count following the enabled provider count.
 
 - **2026-10-08 (approved review fixes)** — The three fixes Hamish approved on
   PR #331: process_plan choices reworded to answer the new question ("Planning

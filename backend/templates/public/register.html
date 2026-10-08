@@ -4,7 +4,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
 #}
 {% extends "public/base.html" %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/input.html" import input, checkbox, first_error %}
+{% from "backoffice/components/input.html" import input, checkbox %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
 {% from "public/_survey_fields.html" import signup_survey_fields %}
 {% block title %}{{ _("Create an Account") }}{% endblock %}
@@ -63,7 +63,8 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                      role="group"
                      aria-label="{{ _('Choose how to sign up') }}">
                     <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("How would you like to sign up?") }}</h2>
-                    <div class="registration-method-chooser grid grid-cols-3 gap-4">
+                    {% set chooser_cols = "sm:grid-cols-3" if (google_enabled and microsoft_enabled) else "sm:grid-cols-2" %}
+                    <div class="registration-method-chooser grid grid-cols-1 {{ chooser_cols }} gap-4">
                         {% if google_enabled %}
                             {{ button(_("Google"),
                             variant="secondary",
@@ -102,7 +103,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 value=form.invite_code.data or "",
                 hint=_("Optional — if you were given an invite code, enter it here.") if feature('open_signup') else (form.invite_code.description or ""),
                 required=not feature('open_signup'),
-                error=first_error(form.invite_code.errors))
+                error=form.invite_code.errors | join("\n"))
                 }}
             {% endif %}
             {# Email-only fields - the provider supplies these for Google/Microsoft,
@@ -114,7 +115,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 type="email",
                 value=form.email.data or "",
                 required=true,
-                error=first_error(form.email.errors),
+                error=form.email.errors | join("\n"),
                 attrs='autocomplete="email"')
                 }}
                 <div class="flex flex-col gap-1.5">
@@ -122,7 +123,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                     label=form.password.label.text,
                     type="password",
                     required=true,
-                    error=first_error(form.password.errors),
+                    error=form.password.errors | join("\n"),
                     attrs='autocomplete="new-password"')
                     }}
                     {% if password_help %}
@@ -134,22 +135,22 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 label=form.password_confirm.label.text,
                 type="password",
                 required=true,
-                error=first_error(form.password_confirm.errors),
+                error=form.password_confirm.errors | join("\n"),
                 attrs='autocomplete="new-password"')
                 }}
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {{ input(form.first_name.name,
                     label=form.first_name.label.text,
                     value=form.first_name.data or "",
                     required=true,
-                    error=first_error(form.first_name.errors),
+                    error=form.first_name.errors | join("\n"),
                     attrs='autocomplete="given-name"')
                     }}
                     {{ input(form.last_name.name,
                     label=form.last_name.label.text,
                     value=form.last_name.data or "",
                     required=true,
-                    error=first_error(form.last_name.errors),
+                    error=form.last_name.errors | join("\n"),
                     attrs='autocomplete="family-name"')
                     }}
                 </div>
@@ -180,7 +181,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 label=form.accept_data_agreement.label.text,
                 checked=form.accept_data_agreement.data,
                 required=true,
-                error=first_error(form.accept_data_agreement.errors))
+                error=form.accept_data_agreement.errors | join("\n"))
                 }}
             </fieldset>
             {% if config.TURNSTILE_SITE_KEY %}
