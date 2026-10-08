@@ -4,6 +4,7 @@ ABOUTME: The intro step renders the editor's controls, and the HTML it produces 
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from sqlalchemy import text
 
 from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.assembly_service import create_assembly
@@ -94,6 +95,82 @@ def test_visual_editor_html_is_saved_verbatim_and_rendered_publicly(
         assert html is not None
         assert html.intro_html == VISUAL_EDITOR_HTML
 
+    # A new page uses the GOV.UK content style, so the rendered intro gains default classes.
     public = client.get(f"/register/{slug}").get_data(as_text=True)
-    assert "<h2><strong>Welcome to Visual Editor Assembly</strong></h2>" in public
-    assert '<a href="https://example.org/info">the information pack</a>' in public
+    assert '<h2 class="govuk-heading-l"><strong>Welcome to Visual Editor Assembly</strong></h2>' in public
+    assert '<a class="govuk-link" href="https://example.org/info">the information pack</a>' in public
+
+
+def _save_intro(client, assembly_id, slug, intro: str, content_style: str = "") -> None:
+    data = {"action": "save", "intro_content": intro}
+    if content_style:
+        data["content_style"] = content_style
+    response = client.post(f"/backoffice/assembly/{assembly_id}/registration/{slug}/save", data=data)
+    assert response.status_code == 302
+
+
+def _stored_style(postgres_session_factory, page_id) -> str:
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        html = uow.registration_page_html_sources.get_by_page_id(page_id)
+        assert html is not None
+        return html.content_style.value
+
+
+def test_intro_step_offers_the_content_style_with_govuk_chosen_for_a_new_page(logged_in_admin, registration_page):
+    assembly_id, _page_id, slug = registration_page
+
+    body = _intro_step(logged_in_admin, assembly_id, slug, edit=True)
+
+    assert 'name="content_style"' in body
+    assert 'value="govuk"' in body and 'value="plain"' in body
+    assert 'data-content-style="govuk"' in body
+    assert "GOV.UK (recommended, accessible)" in body
+
+
+def test_saving_the_intro_saves_the_chosen_style(logged_in_admin, registration_page, postgres_session_factory):
+    assembly_id, page_id, slug = registration_page
+
+    _save_intro(logged_in_admin, assembly_id, slug, "<h1>Hi</h1>", content_style="plain")
+
+    assert _stored_style(postgres_session_factory, page_id) == "plain"
+
+
+def test_a_post_without_a_style_leaves_it_alone(logged_in_admin, registration_page, postgres_session_factory):
+    assembly_id, page_id, slug = registration_page
+    _save_intro(logged_in_admin, assembly_id, slug, "<h1>Hi</h1>", content_style="plain")
+
+    _save_intro(logged_in_admin, assembly_id, slug, "<h1>Hello</h1>")
+
+    assert _stored_style(postgres_session_factory, page_id) == "plain"
+
+
+def test_public_page_has_govuk_classes_only_under_the_govuk_style(
+    logged_in_admin, client, registration_page, postgres_session_factory
+):
+    assembly_id, _page_id, slug = registration_page
+    intro = '<h1>Title</h1><p class="lead">Mine</p><p>Body</p>'
+
+    _save_intro(logged_in_admin, assembly_id, slug, intro, content_style="govuk")
+    govuk = client.get(f"/register/{slug}").get_data(as_text=True)
+    assert '<h1 class="govuk-heading-xl">Title</h1><p class="lead">Mine</p><p class="govuk-body">Body</p>' in govuk
+
+    _save_intro(logged_in_admin, assembly_id, slug, intro, content_style="plain")
+    plain = client.get(f"/register/{slug}").get_data(as_text=True)
+    assert intro in plain
+
+
+def test_a_page_from_before_content_styles_renders_unchanged(
+    logged_in_admin, client, registration_page, postgres_session_factory
+):
+    """Rows that existed before the column get its server default, plain, so a live page does not change."""
+    assembly_id, page_id, slug = registration_page
+    _save_intro(logged_in_admin, assembly_id, slug, "<h1>Title</h1><p>Body</p>")
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        uow.session.execute(
+            text("UPDATE registration_page_html_sources SET content_style = DEFAULT WHERE registration_page_id = :id"),
+            {"id": page_id},
+        )
+        uow.commit()
+
+    assert _stored_style(postgres_session_factory, page_id) == "plain"
+    assert "<h1>Title</h1><p>Body</p>" in client.get(f"/register/{slug}").get_data(as_text=True)

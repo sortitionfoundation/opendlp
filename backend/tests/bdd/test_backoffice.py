@@ -2058,3 +2058,34 @@ def visual_intro_not_editable(page: Page):
 @then("there should be no formatting toolbar")
 def no_formatting_toolbar(page: Page):
     expect(page.get_by_role("toolbar", name="Formatting")).to_have_count(0)
+
+
+# 19px is GOV.UK's body text size from tablet width up; the backoffice body text is smaller.
+GOVUK_BODY_FONT_SIZE = "19px"
+
+
+def _visual_paragraph_font_size(page: Page) -> str:
+    paragraph = page.locator(f"{VISUAL_INTRO} p").first
+    expect(paragraph).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    return paragraph.evaluate("(p) => getComputedStyle(p).fontSize")
+
+
+@then("the paragraph in the visual intro editor should use the GOV.UK body font size")
+def visual_paragraph_is_govuk(page: Page):
+    assert _visual_paragraph_font_size(page) == GOVUK_BODY_FONT_SIZE
+
+
+@then("the paragraph in the visual intro editor should not use the GOV.UK body font size")
+def visual_paragraph_is_not_govuk(page: Page):
+    assert _visual_paragraph_font_size(page) != GOVUK_BODY_FONT_SIZE
+
+
+@when(parsers.parse('I choose the "{label}" intro style'))
+def choose_intro_style(page: Page, label: str):
+    page.get_by_role("radio", name=label).check()
+
+
+@then(parsers.parse('the registration preview should show the paragraph "{text}" with the class "{css_class}"'))
+def preview_paragraph_has_class(page: Page, text: str, css_class: str):
+    paragraph = _preview_frame(page).locator("p", has_text=text)
+    expect(paragraph).to_have_class(re.compile(rf"\b{css_class}\b"), timeout=PLAYWRIGHT_TIMEOUT)

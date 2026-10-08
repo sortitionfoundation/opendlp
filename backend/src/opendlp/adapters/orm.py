@@ -45,6 +45,7 @@ from opendlp.domain.targets import TargetValue
 from opendlp.domain.value_objects import (
     AssemblyRole,
     AssemblyStatus,
+    ContentStyle,
     GlobalRole,
     GSheetExportKind,
     RespondentSourceType,
@@ -758,6 +759,15 @@ registration_page_html_sources = Table(
     ),
     Column("form_html", Text, nullable=False, default=""),
     Column("intro_html", Text, nullable=False, default="", server_default=""),
+    # Rows from before the column existed are "plain", so no live page changes;
+    # new rows get the domain default, GOV.UK.
+    Column(
+        "content_style",
+        EnumAsString(ContentStyle, 16),
+        nullable=False,
+        default=ContentStyle.GOVUK,
+        server_default=ContentStyle.PLAIN.value,
+    ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )

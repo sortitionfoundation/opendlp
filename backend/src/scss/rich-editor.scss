@@ -1,0 +1,68 @@
+// ABOUTME: GOV.UK typography for the visual editor's editing area, when the intro uses the GOV.UK style
+// ABOUTME: Scoped to .rich-editor--govuk so the backoffice around it is untouched
+
+$govuk-assets-path: "/static/";
+// GDS Transport is only licensed for gov.uk domains; the preview falls back to the stack's next font.
+$govuk-include-default-font-face: false;
+
+@import "govuk-frontend/dist/govuk/base";
+
+// Mirrors DEFAULT_GOVUK_CLASSES in src/opendlp/domain/html_default_classes.py, which
+// adds these classes when the page is rendered - so the editor shows the same look.
+@mixin rich-editor-heading($size, $margin) {
+    @include govuk-text-colour;
+    @include govuk-font($size: $size, $weight: bold);
+    display: block;
+    margin-top: 0;
+    @include govuk-responsive-margin($margin, "bottom");
+}
+
+.rich-editor--govuk .rich-editor__content {
+    // The real GOV.UK classes, for elements that carry one already (the GOV.UK skeleton does).
+    @import "govuk-frontend/dist/govuk/core/typography";
+    @import "govuk-frontend/dist/govuk/core/lists";
+    @import "govuk-frontend/dist/govuk/core/links";
+
+    @include govuk-font($size: 19);
+
+    h1:not([class]) {
+        @include rich-editor-heading(48, 8);
+    }
+
+    h2:not([class]) {
+        @include rich-editor-heading(36, 6);
+    }
+
+    h3:not([class]) {
+        @include rich-editor-heading(24, 4);
+    }
+
+    p:not([class]) {
+        @include govuk-text-colour;
+        @include govuk-font($size: 19);
+        margin-top: 0;
+        @include govuk-responsive-margin(4, "bottom");
+    }
+
+    ul:not([class]),
+    ol:not([class]) {
+        @include govuk-text-colour;
+        @include govuk-font($size: 19);
+        margin-top: 0;
+        @include govuk-responsive-margin(4, "bottom");
+        padding-left: govuk-spacing(4);
+    }
+
+    ul:not([class]) {
+        list-style-type: disc;
+    }
+
+    ol:not([class]) {
+        list-style-type: decimal;
+    }
+
+    a:not([class]) {
+        @include govuk-link-common;
+        @include govuk-link-style-default;
+    }
+}

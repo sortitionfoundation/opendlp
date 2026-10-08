@@ -226,6 +226,8 @@ put the code's word on the page.
 | `feature` (sortition-algorithms)              | target                                         |
 | `agent` (sortition-algorithms)                | respondent                                     |
 | `committee` (sortition-algorithms)            | panel                                          |
+| `ContentStyle`, `content_style`               | intro style                                    |
+| `rich_editor`, Tiptap                         | visual editor                                  |
 | an `Enum` member's `.value`                   | its label from the labels dict beside the enum |
 
 The sortition-algorithms library writes its own run reports in optimisation

@@ -12,6 +12,7 @@ from jinja2 import StrictUndefined, TemplateSyntaxError, meta
 from jinja2.sandbox import SandboxedEnvironment
 from markupsafe import Markup
 
+from opendlp.domain.html_default_classes import apply_default_govuk_classes
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     GROUP_DISPLAY_ORDER,
@@ -22,6 +23,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.validators import InvalidSlug, SlugError, UrlSlugValidator
+from opendlp.domain.value_objects import ContentStyle
 from opendlp.translations import gettext as _
 
 _SANDBOX_ENV = SandboxedEnvironment(autoescape=True, undefined=StrictUndefined)
@@ -356,12 +358,14 @@ class RegistrationPageHtml:
         html_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
+        content_style: ContentStyle = ContentStyle.GOVUK,
     ):
         now = datetime.now(UTC)
         self.id = html_id or uuid.uuid4()
         self.registration_page_id = registration_page_id
         self.form_html = form_html
         self.intro_html = intro_html
+        self.content_style = content_style
         self.created_at = created_at or now
         self.updated_at = updated_at or now
 
@@ -373,15 +377,24 @@ class RegistrationPageHtml:
         self.intro_html = intro_html
         self.updated_at = datetime.now(UTC)
 
+    def update_content_style(self, content_style: ContentStyle) -> None:
+        self.content_style = content_style
+        self.updated_at = datetime.now(UTC)
+
     def render(self, ctx: RenderContext) -> str:
         """The intro followed by the form, each rendered as its own template.
 
         Rendering the two separately keeps a syntax error's line number
         pointing into the box the author typed it in, and stops a block
         opened in the intro from being closed in the form.
+
+        Under the GOV.UK content style the rendered intro gets default GOV.UK
+        classes; the form never does, since it carries its own.
         """
         kwargs = _render_kwargs(ctx)
         intro = _SANDBOX_ENV.from_string(self.intro_html).render(**kwargs)
+        if self.content_style == ContentStyle.GOVUK:
+            intro = apply_default_govuk_classes(intro)
         form = _SANDBOX_ENV.from_string(self.form_html).render(**kwargs)
         # An empty intro contributes nothing, so a page written before intros
         # existed renders byte-for-byte as it always did.
@@ -414,6 +427,7 @@ class RegistrationPageHtml:
             html_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,
+            content_style=self.content_style,
         )
 
     def __eq__(self, other: object) -> bool:

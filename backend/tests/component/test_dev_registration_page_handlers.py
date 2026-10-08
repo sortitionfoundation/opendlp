@@ -121,6 +121,28 @@ class TestUpdateRegistrationPageHtml:
         assert result["html_source"]["intro_html_preview"] == "<h1>Hi</h1>"
         assert result["html_source"]["form_html_preview"] == _READY_HTML
 
+    def test_sets_and_reports_the_content_style_with_the_intro(self, fake_store, as_admin, shared_uow):
+        page = _seed_page(fake_store)
+
+        result = _handle_update_registration_page_html(
+            shared_uow,
+            {"assembly_id": str(page.assembly_id), "intro_html": "<h1>Hi</h1>", "content_style": "plain"},
+        )
+
+        assert result["status"] == "success"
+        assert result["html_source"]["content_style"] == "plain"
+
+    def test_rejects_an_unknown_content_style(self, fake_store, as_admin, shared_uow):
+        page = _seed_page(fake_store)
+
+        result = _handle_update_registration_page_html(
+            shared_uow,
+            {"assembly_id": str(page.assembly_id), "intro_html": "<h1>Hi</h1>", "content_style": "fancy"},
+        )
+
+        assert result["status"] == "error"
+        assert result["error_type"] == "ValueError"
+
     def test_get_reports_both_previews(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store)
         _handle_update_registration_page_html(

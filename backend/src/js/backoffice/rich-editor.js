@@ -20,6 +20,7 @@ export const VISUAL = "visual";
 export const HTML = "html";
 // The formats the image upload route accepts.
 export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+export const GOVUK_STYLE_CLASS = "rich-editor--govuk";
 
 function imageSnippet(src, alt) {
   const image = document.createElement("img");
@@ -259,6 +260,22 @@ export function mountRichEditor(textarea) {
         toVisual(controls.dataset.messageSwitchRefused);
       } else {
         toHtml();
+      }
+    });
+  });
+
+  // The editing area previews the content style the page will be rendered with.
+  function showContentStyle(style) {
+    controls.classList.toggle(GOVUK_STYLE_CLASS, style === "govuk");
+  }
+  showContentStyle(controls.dataset.contentStyle);
+  const styleRadios = document.querySelectorAll(
+    `input[data-rich-editor-style-for="${textarea.id}"]`,
+  );
+  styleRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (radio.checked) {
+        showContentStyle(radio.value);
       }
     });
   });

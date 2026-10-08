@@ -32,6 +32,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageStatus,
 )
 from opendlp.domain.uploads import human_size
+from opendlp.domain.value_objects import ContentStyle
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     registration_url_prefix,
@@ -257,6 +258,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             html = cast("RegistrationPageHtml", html_source)
             html_content = html.form_html
             intro_content = html.intro_html
+            content_style = html.content_style
             thank_you_html = registration_page.thank_you_html
             registration_status = registration_page.status.value  # "TEST", "PUBLISHED", or "CLOSED"
 
@@ -315,6 +317,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             registration_status=registration_status,
             html_content=html_content,
             intro_content=intro_content,
+            content_style=content_style,
             thank_you_html=thank_you_html,
             has_registration_page=True,
             images=images,
@@ -416,6 +419,14 @@ def _post_action_section(action: str, origin: str) -> str:
     return origin
 
 
+def _posted_content_style() -> ContentStyle | None:
+    """The intro step's content style radio, or None to leave the style as it is."""
+    try:
+        return ContentStyle(request.form.get("content_style", ""))
+    except ValueError:
+        return None
+
+
 def _apply_posted_html(uow: AbstractUnitOfWork, page: RegistrationPage) -> None:
     """Persist whichever HTML the post carries: the intro step's or the form step's.
 
@@ -425,7 +436,9 @@ def _apply_posted_html(uow: AbstractUnitOfWork, page: RegistrationPage) -> None:
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if "intro_content" in request.form:
-        update_registration_page_intro_html(uow, current_user.id, page.id, request.form["intro_content"])
+        update_registration_page_intro_html(
+            uow, current_user.id, page.id, request.form["intro_content"], content_style=_posted_content_style()
+        )
     if "html_content" in request.form:
         update_registration_page_html(uow, current_user.id, page.id, request.form["html_content"])
 

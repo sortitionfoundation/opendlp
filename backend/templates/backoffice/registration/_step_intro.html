@@ -4,7 +4,7 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/icons.html" import icon_code %}
-{% from "backoffice/components/input.html" import textarea %}
+{% from "backoffice/components/input.html" import textarea, radio_group %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/prefixed_url_input.html" import prefixed_url_input %}
 {% from "backoffice/registration/_assets.html" import asset_list %}
@@ -99,6 +99,18 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         <p class="text-body-sm" style="color: var(--color-secondary-text);">
                             {{ _("Paste the HTML shown above the form below: a heading, an introduction, anything visitors should read before they register. You can use {{ assembly_title }} and {{ assembly_question }} to drop in the assembly's title and question.") }}
                         </p>
+                        {# The option value is the enum's token, never shown; the label is translated. #}
+                        {% set content_style_options = [] %}
+                        {% for style, style_label in content_style_labels.items() %}
+                            {% set _ = content_style_options.append({"value": style.value, "label": style_label}) %}
+                        {% endfor %}
+                        {{ radio_group(name="content_style",
+                        label=_("Intro style"),
+                        options=content_style_options,
+                        value=content_style.value,
+                        hint=_("GOV.UK style gives headings, paragraphs, lists and links the accessible GOV.UK look when the page is shown. Elements you give a class of your own keep only your class."),
+                        readonly=not edit_mode,
+                        attrs='data-rich-editor-style-for="intro_content"') }}
                         {# HTML Textarea with monospace font. `readonly` is the default;
                            ?edit=1 unlocks it via the Edit CTA above. #}
                         {% set textarea_attrs %}
@@ -114,6 +126,7 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         rich_editor_label=_("Intro"),
                         rich_editor_images=true,
                         rich_editor_editable=edit_mode,
+                        rich_editor_style=content_style.value,
                         attrs=textarea_attrs|trim) }}
                     </div>
                 </section>

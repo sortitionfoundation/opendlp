@@ -1,7 +1,12 @@
 // ABOUTME: Tests for mounting the visual editor over a textarea and switching Visual/HTML.
 // ABOUTME: The controls markup mirrors templates/backoffice/components/rich_editor.html.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HTML, VISUAL, mountRichEditor } from "./rich-editor.js";
+import {
+  GOVUK_STYLE_CLASS,
+  HTML,
+  VISUAL,
+  mountRichEditor,
+} from "./rich-editor.js";
 import {
   IMAGE_REQUEST_EVENT,
   INSERT_IMAGE_EVENT,
@@ -405,5 +410,45 @@ describe("mountRichEditor images", () => {
     mount(page.textarea);
     insert({ editorId: "intro", src: "/i.png", alt: "Logo", pos: 1 });
     expect(page.textarea.value).toBe("<p>ab</p>");
+  });
+});
+
+describe("mountRichEditor content style preview", () => {
+  function stylePage(style) {
+    const page = setUp("<p>a</p>");
+    page.controls.dataset.contentStyle = style;
+    page.form.insertAdjacentHTML(
+      "beforeend",
+      `<input type="radio" name="content_style" value="govuk" data-rich-editor-style-for="intro" ${style === "govuk" ? "checked" : ""}>
+       <input type="radio" name="content_style" value="plain" data-rich-editor-style-for="intro" ${style === "plain" ? "checked" : ""}>`,
+    );
+    return page;
+  }
+
+  function choose(value) {
+    const radio = document.querySelector(`input[value="${value}"]`);
+    radio.checked = true;
+    radio.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  it("previews the GOV.UK style when the page uses it", () => {
+    const page = stylePage("govuk");
+    mount(page.textarea);
+    expect(page.controls.classList.contains(GOVUK_STYLE_CLASS)).toBe(true);
+  });
+
+  it("previews nothing extra for the plain style", () => {
+    const page = stylePage("plain");
+    mount(page.textarea);
+    expect(page.controls.classList.contains(GOVUK_STYLE_CLASS)).toBe(false);
+  });
+
+  it("follows the style radios as they change", () => {
+    const page = stylePage("govuk");
+    mount(page.textarea);
+    choose("plain");
+    expect(page.controls.classList.contains(GOVUK_STYLE_CLASS)).toBe(false);
+    choose("govuk");
+    expect(page.controls.classList.contains(GOVUK_STYLE_CLASS)).toBe(true);
   });
 });

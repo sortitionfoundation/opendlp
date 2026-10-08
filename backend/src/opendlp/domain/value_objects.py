@@ -76,6 +76,23 @@ assembly_status_labels = {
 }
 
 
+class ContentStyle(Enum):
+    """How a registration page's intro is styled when it is rendered.
+
+    GOVUK adds a default GOV.UK class to every heading, paragraph, list and
+    link the author left without a class; PLAIN renders the HTML as written.
+    """
+
+    PLAIN = "plain"
+    GOVUK = "govuk"
+
+
+content_style_labels = {
+    ContentStyle.GOVUK: _l("GOV.UK (recommended, accessible)"),
+    ContentStyle.PLAIN: _l("Plain — bring your own styles"),
+}
+
+
 class SelectionRunStatus(Enum):
     PENDING = "pending"
     RUNNING = "running"

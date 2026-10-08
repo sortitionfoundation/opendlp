@@ -153,6 +153,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
 {% block head %}
     {% if has_registration_page %}
+        {# GOV.UK typography for the visual intro editor's preview of the GOV.UK style. #}
+        <link rel="stylesheet"
+              href="{{ url_for('static', filename='css/rich-editor.css', v=static_hashes('css/rich-editor.css')) }}" />
         {# Not deferred, while Alpine is: that is what lets a script tag register the
            component before alpine:init fires. #}
         <script nonce="{{ csp_nonce }}"

@@ -617,7 +617,42 @@ Done. As built:
 - e2e: posting `intro_content` with toolbar-style HTML saves verbatim (the
   server is unchanged, but this pins it).
 
-### 8. Render-time GOV.UK classes (E12)
+### ✅ 8. Render-time GOV.UK classes (E12)
+
+Done. As built:
+
+- `apply_default_govuk_classes` doesn't rebuild the HTML. It records the
+  offset of each start tag that wants a class (`HTMLParser.getpos()`) and
+  splices a replacement into the original string. Every other byte,
+  including end tags, comments and entity spellings, is the input's own. An
+  empty `class=""` (or a bare `class`) is replaced, and an attribute named
+  `class` inside another attribute's value is not mistaken for one.
+- The column is stored as `EnumAsString(ContentStyle, 16)`. The migration
+  (`090f8de7f095`) writes it as `sa.String(16)` with `server_default
+  "plain"`, following an earlier migration's note that autogenerate cannot
+  name the custom type. Upgrade, downgrade and `alembic check` are clean.
+- The save route reads `content_style` only alongside `intro_content`. A
+  missing or unknown value leaves the style unchanged. The activity entries
+  are "Changed the intro style to GOV.UK/plain", in English like "Updated
+  intro HTML". `dev.py` reports `content_style` and accepts it with
+  `intro_html`, and the service docs page lists the parameter.
+- The radios use the `radio_group` macro, read-only outside edit mode, and
+  are labelled "Intro style". The label strings follow `docs/language.md`
+  (em dash: "Plain — bring your own styles"), and "intro style" and "visual
+  editor" were added to its code-name table.
+- The editor preview: `src/scss/rich-editor.scss` compiles to
+  `static/css/rich-editor.css` (gitignored, like `application.css`), loaded
+  in the registration page's `head`. It imports govuk-frontend's typography,
+  lists and links **nested inside `.rich-editor--govuk
+  .rich-editor__content`**, so every generated rule is scoped. The default
+  classes are mirrored with `:not([class])` rules. GOV.UK's font face is off:
+  GDS Transport is only licensed for gov.uk, so the preview uses the stack's
+  fallback. `mountRichEditor` sets the class from `data-content-style`, and
+  follows the radios live.
+- One existing test changed meaning: the preview test looked for a literal
+  `<h1>`, and a new page's intro now renders `<h1 class="govuk-heading-xl">`.
+  The e2e test from step 7 now expects the classes too.
+
 
 1. **Domain:** `ContentStyle` and its labels; `apply_default_govuk_classes`
    with unit tests (every mapped element; existing class untouched, including
@@ -641,6 +676,7 @@ Done. As built:
    style" to `docs/language.md` if it needs a glossary term.
 
 ### 9. Documentation
+
 
 - `docs/registration-intro-editor.md` (E5): what the visual editor keeps,
   what forces HTML mode and why (variables outside text, unsupported

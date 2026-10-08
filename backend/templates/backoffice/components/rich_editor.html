@@ -2,7 +2,7 @@
 ABOUTME: Server-rendered controls for the visual HTML editor: the Visual/HTML switch, hint and notice
 ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaScript the plain textarea shows
 #}
-{% macro rich_editor_controls(for_id, label, images=false, editable=true) %}
+{% macro rich_editor_controls(for_id, label, images=false, editable=true, content_style="") %}
     {#
     Controls for a textarea enhanced with the visual editor. Rendered by the textarea macro
     when rich_editor=true; every string is here so it is translated with the rest of the page.
@@ -12,10 +12,13 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         label: accessible name for the editing area
         images: whether images can be inserted (drop, paste, the Image button)
         editable: false renders no toolbar - the view outside edit mode
+        content_style: "govuk" previews the GOV.UK look in the editing area; radios with
+            data-rich-editor-style-for="{for_id}" switch it live
     #}
     <div class="rich-editor"
          data-rich-editor-for="{{ for_id }}"
          data-rich-editor-label="{{ label }}"
+         data-content-style="{{ content_style }}"
          data-message-opens-as-html="{{ _('This HTML uses things the visual editor cannot show, so it opens as HTML. Common causes are tables, comments, headings smaller than level 3, and text outside a paragraph.') }}"
          data-message-switch-refused="{{ _('This HTML uses things the visual editor cannot show, so it stays in HTML. Common causes are tables, comments, headings smaller than level 3, and text outside a paragraph.') }}"
          hidden>

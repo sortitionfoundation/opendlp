@@ -13,7 +13,7 @@ from opendlp.domain.registration_page import (
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, ContentStyle, GlobalRole
 from opendlp.service_layer import registration_page_service as service
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
@@ -225,7 +225,9 @@ class TestDuplicateRegistrationPage:
         admin, assembly = _admin(uow), _assembly(uow)
         source = service.create_registration_page(uow, admin.id, assembly.id, name="English")
         service.update_registration_page_html(uow, admin.id, source.id, READY_HTML)
-        service.update_registration_page_intro_html(uow, admin.id, source.id, "<h1>Welcome</h1>")
+        service.update_registration_page_intro_html(
+            uow, admin.id, source.id, "<h1>Welcome</h1>", content_style=ContentStyle.PLAIN
+        )
         service.update_thank_you_html(uow, admin.id, source.id, "<p>thanks</p>")
 
         copy = service.duplicate_registration_page(uow, admin.id, source.id, name="Español", language="es")
@@ -234,6 +236,7 @@ class TestDuplicateRegistrationPage:
         assert result is not None
         assert result[1].form_html == READY_HTML
         assert result[1].intro_html == "<h1>Welcome</h1>"
+        assert result[1].content_style == ContentStyle.PLAIN
         assert result[0].thank_you_html == "<p>thanks</p>"
 
     def test_copy_starts_in_test_with_its_own_slugs(self, uow):

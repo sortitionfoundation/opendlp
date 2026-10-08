@@ -476,8 +476,8 @@ class TestFormPreviewRoute:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug/form-preview")
 
         body = response.get_data(as_text=True)
-        assert "<h1>" in body
-        assert body.index("<h1>") < body.index('name="first_name"')
+        assert '<h1 class="govuk-heading-xl">' in body
+        assert body.index('<h1 class="govuk-heading-xl">') < body.index('name="first_name"')
 
     def test_preview_is_framable_by_same_origin_only(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)

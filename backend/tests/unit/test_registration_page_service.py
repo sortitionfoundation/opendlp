@@ -20,7 +20,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, ContentStyle, GlobalRole
 from opendlp.service_layer import registration_page_service as service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -847,6 +847,55 @@ class TestUpdateRegistrationPageIntroHtml:
 
         with pytest.raises(RegistrationPageNotFoundError):
             service.update_registration_page_intro_html(uow, admin.id, uuid.uuid4(), "<h1>Hi</h1>")
+
+
+class TestUpdateRegistrationPageContentStyle:
+    def test_new_pages_start_with_the_govuk_style(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "")
+        assert source.content_style == ContentStyle.GOVUK
+
+    def test_sets_the_style_with_the_intro(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.update_registration_page_intro_html(
+            uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>", content_style=ContentStyle.PLAIN
+        )
+        assert source.content_style == ContentStyle.PLAIN
+        assert source.intro_html == "<h1>Hi</h1>"
+
+    def test_leaves_the_style_alone_when_none_is_given(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_registration_page_intro_html(uow, admin.id, page_id, "", content_style=ContentStyle.PLAIN)
+
+        source = service.update_registration_page_intro_html(uow, admin.id, page_id, "<h1>Hi</h1>")
+        assert source.content_style == ContentStyle.PLAIN
+
+    def test_records_a_style_change_in_the_activity(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        service.update_registration_page_intro_html(
+            uow, admin.id, _page_id(uow, assembly), "", content_style=ContentStyle.PLAIN
+        )
+        page = page_for_assembly(uow, assembly.id)
+        edits = [a.text for a in page.activity if a.action is RegistrationPageAction.EDIT]
+        assert edits == ["Changed the intro style to plain"]
+
+    def test_unchanged_style_records_nothing(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        service.update_registration_page_intro_html(
+            uow, admin.id, _page_id(uow, assembly), "", content_style=ContentStyle.GOVUK
+        )
+        page = page_for_assembly(uow, assembly.id)
+        assert [a for a in page.activity if a.action is RegistrationPageAction.EDIT] == []
 
 
 class TestGenerateStarterFormHtmlVariants:

@@ -47,7 +47,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.validators import SlugError
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import ContentStyle, RespondentStatus
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_with_permissions,
@@ -796,6 +796,7 @@ def _serialise_html_source(html: "RegistrationPageHtml") -> dict[str, Any]:
         "id": str(html.id),
         "intro_html_preview": _html_preview(html.intro_html),
         "form_html_preview": _html_preview(html.form_html),
+        "content_style": html.content_style.value,
     }
 
 
@@ -803,13 +804,19 @@ def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> d
     """Handle update_registration_page_html and update_registration_page_intro_html service calls.
 
     Either HTML is updated only when its key is present, so the two can be
-    changed independently from the docs page.
+    changed independently from the docs page. ``content_style`` ("govuk" or
+    "plain") goes with the intro.
     """
     try:
         page_id = _resolve_page_id(uow, params)
         if "intro_html" in params:
+            content_style = ContentStyle(params["content_style"]) if params.get("content_style") else None
             html_source = update_registration_page_intro_html(
-                uow=uow, user_id=current_user.id, page_id=page_id, intro_html=params["intro_html"]
+                uow=uow,
+                user_id=current_user.id,
+                page_id=page_id,
+                intro_html=params["intro_html"],
+                content_style=content_style,
             )
         if "form_html" in params:
             html_source = update_registration_page_html(

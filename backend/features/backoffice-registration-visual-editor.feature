@@ -65,3 +65,13 @@ Feature: Backoffice registration visual intro editor
     Then the visual intro editor should show a level 1 heading "Read only title"
     And the visual intro editor should not be editable
     And there should be no formatting toolbar
+
+  Scenario: The intro style radio changes the look in the editor and on the page
+    Given there is an assembly called "Visual Style Assembly" with the intro "<p>Styled words</p>"
+    When I visit the registration intro editor for "Visual Style Assembly"
+    Then the paragraph in the visual intro editor should use the GOV.UK body font size
+    When I choose the "Plain — bring your own styles" intro style
+    Then the paragraph in the visual intro editor should not use the GOV.UK body font size
+    When I choose the "GOV.UK (recommended, accessible)" intro style
+    And I save the registration form
+    Then the registration preview should show the paragraph "Styled words" with the class "govuk-body"
