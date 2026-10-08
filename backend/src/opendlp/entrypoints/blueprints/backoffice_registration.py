@@ -114,17 +114,14 @@ def _list_url(assembly_id: uuid.UUID) -> str:
     return url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id)
 
 
-def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
+def _image_to_dict(image: RegistrationImage) -> dict[str, Any]:
     """Serialise an image for the Assets panel.
 
-    ``public_url`` is the public ``/register/<slug>/assets/<sha>.png`` route. If the
-    page has no slug yet (newly created), we return a placeholder so the front-end
-    can still render the row.
+    ``public_url`` is the slug-free ``/register-assets/images/<id>.png`` route, so
+    it exists before the page has a URL and survives a change of URL.
     """
     file_name = f"{image.sha256}.{IMAGE_FILE_EXTENSION}"
-    public_url = (
-        url_for("registration.serve_registration_image", url_slug=url_slug, image_name=file_name) if url_slug else ""
-    )
+    public_url = url_for("registration.serve_registration_image_by_id", image_id=image.id)
     if image.alt and image.alt.strip():
         display_name = image.alt.strip()
     elif image.original_filename:
@@ -138,7 +135,7 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
         "file_name": file_name,
         "display_name": display_name,
         "public_url": public_url,
-        "img_snippet": generate_image_html(public_url, alt=image.alt) if public_url else "",
+        "img_snippet": generate_image_html(public_url, alt=image.alt),
         "width": image.width,
         "height": image.height,
         "byte_size": image.byte_size,
@@ -273,7 +270,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # Load registration images and PDF documents for the Assets panel.
             # Assets are assembly-scoped and shared by every page of the assembly.
             stored_images = list_registration_images(uow, current_user.id, assembly_id)
-            images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
+            images = [_image_to_dict(image) for image in stored_images]
             stored_documents = list_registration_documents(uow, current_user.id, assembly_id)
             documents = [_document_to_dict(document, registration_page.url_slug) for document in stored_documents]
 
@@ -1069,7 +1066,7 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.exception("Image upload error for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify({"error": _("An error occurred while uploading the image")}), 500
 
-    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 201
+    return jsonify({"image": _image_to_dict(image)}), 201
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["PATCH"])
@@ -1097,7 +1094,7 @@ def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
         logger.error("Update image alt error", assembly_id=str(assembly_id), image_id=str(image_id), error=str(e))
         return jsonify({"error": _("An error occurred while updating the image")}), 500
 
-    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 200
+    return jsonify({"image": _image_to_dict(image)}), 200
 
 
 @backoffice_registration_bp.route(

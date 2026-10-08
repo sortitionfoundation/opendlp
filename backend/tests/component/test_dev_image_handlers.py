@@ -222,7 +222,7 @@ class TestHandleSetRegistrationImageAlt:
 
 class TestHandleListImageSnippets:
     def test_pairs_image_with_html_snippet(self, fake_store, page, as_admin):
-        _seed_image(fake_store, page, color=(0, 0, 255))
+        image = _seed_image(fake_store, page, color=(0, 0, 255))
 
         with _uow(fake_store) as uow:
             result = _handle_list_image_snippets(
@@ -232,7 +232,7 @@ class TestHandleListImageSnippets:
 
         assert result["status"] == "success"
         assert result["total_count"] == 1
-        assert page.url_slug in result["snippets"][0]["html"]
+        assert f'src="/register-assets/images/{image.id}.png"' in result["snippets"][0]["html"]
 
 
 class TestHandleGetRegistrationImageForServing:

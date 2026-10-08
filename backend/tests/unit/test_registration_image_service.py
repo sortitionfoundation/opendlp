@@ -322,3 +322,86 @@ class TestGetRegistrationImageForServing:
 
         served = service.get_registration_image_for_serving(uow, "live", image.sha256)
         assert served is not None
+
+
+class TestGetRegistrationImageForServingById:
+    @pytest.mark.parametrize("status", [RegistrationPageStatus.TEST, RegistrationPageStatus.PUBLISHED])
+    def test_public_when_a_page_loads_publicly(self, uow, status):
+        assembly = _assembly(uow)
+        image = _stored_image(uow, _page(uow, assembly, status=status))
+
+        served = service.get_registration_image_for_serving_by_id(uow, image.id, None)
+
+        assert served is not None
+        assert served.public is True
+        assert served.image.id == image.id
+
+    def test_public_when_any_page_of_the_assembly_loads(self, uow):
+        assembly = _assembly(uow)
+        closed = _page(uow, assembly, url_slug="old", status=RegistrationPageStatus.CLOSED)
+        _page(uow, assembly, url_slug="new", status=RegistrationPageStatus.TEST)
+        image = _stored_image(uow, closed)
+
+        served = service.get_registration_image_for_serving_by_id(uow, image.id, None)
+
+        assert served is not None and served.public is True
+
+    def test_not_served_anonymously_when_no_page_loads(self, uow):
+        assembly = _assembly(uow)
+        image = _stored_image(uow, _page(uow, assembly, url_slug="", status=RegistrationPageStatus.TEST))
+
+        assert service.get_registration_image_for_serving_by_id(uow, image.id, None) is None
+
+    def test_not_served_anonymously_when_the_page_is_closed(self, uow):
+        assembly = _assembly(uow)
+        image = _stored_image(uow, _page(uow, assembly, status=RegistrationPageStatus.CLOSED))
+
+        assert service.get_registration_image_for_serving_by_id(uow, image.id, None) is None
+
+    def test_served_privately_to_a_viewer_when_no_page_loads(self, uow):
+        assembly = _assembly(uow)
+        viewer = _viewer(uow, assembly)
+        image = _stored_image(uow, _page(uow, assembly, url_slug=""))
+
+        served = service.get_registration_image_for_serving_by_id(uow, image.id, viewer.id)
+
+        assert served is not None
+        assert served.public is False
+
+    def test_served_privately_to_an_admin_when_no_page_loads(self, uow):
+        assembly = _assembly(uow)
+        admin = _admin(uow)
+        image = _stored_image(uow, _page(uow, assembly, url_slug=""))
+
+        served = service.get_registration_image_for_serving_by_id(uow, image.id, admin.id)
+
+        assert served is not None and served.public is False
+
+    def test_not_served_to_a_user_without_a_role_on_the_assembly(self, uow):
+        assembly = _assembly(uow)
+        other_assembly = _assembly(uow)
+        stranger = _viewer(uow, other_assembly)
+        image = _stored_image(uow, _page(uow, assembly, url_slug=""))
+
+        assert service.get_registration_image_for_serving_by_id(uow, image.id, stranger.id) is None
+
+    def test_not_served_for_an_unknown_user(self, uow):
+        assembly = _assembly(uow)
+        image = _stored_image(uow, _page(uow, assembly, url_slug=""))
+
+        assert service.get_registration_image_for_serving_by_id(uow, image.id, uuid.uuid4()) is None
+
+    def test_none_for_an_unknown_image(self, uow):
+        admin = _admin(uow)
+
+        assert service.get_registration_image_for_serving_by_id(uow, uuid.uuid4(), admin.id) is None
+
+    def test_unaffected_by_the_page_slug(self, uow):
+        assembly = _assembly(uow)
+        page = _page(uow, assembly, url_slug="before")
+        image = _stored_image(uow, page)
+        page.url_slug = "after"
+
+        served = service.get_registration_image_for_serving_by_id(uow, image.id, None)
+
+        assert served is not None and served.public is True

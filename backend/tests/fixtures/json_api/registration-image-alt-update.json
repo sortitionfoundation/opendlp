@@ -9,9 +9,9 @@
     "file_name": "0000000000000000000000000000000000000000000000000000000000000000.png",
     "height": 20,
     "id": "00000000-0000-4000-8000-000000000000",
-    "img_snippet": "<img src=\"/register/example-assembly/assets/0000000000000000000000000000000000000000000000000000000000000000.png\" alt=\"Assembly logo, renamed\">",
+    "img_snippet": "<img src=\"/register-assets/images/00000000-0000-4000-8000-000000000000.png\" alt=\"Assembly logo, renamed\">",
     "original_filename": "logo.png",
-    "public_url": "/register/example-assembly/assets/0000000000000000000000000000000000000000000000000000000000000000.png",
+    "public_url": "/register-assets/images/00000000-0000-4000-8000-000000000000.png",
     "width": 20
   }
 }

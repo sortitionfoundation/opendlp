@@ -499,7 +499,32 @@ and Tailwind styles (E10). Vitest tests for each command toggling the right
 node or mark, `aria-pressed` tracking the selection, and roving tabindex.
 Load the `translate-catalogues` skill after adding the strings.
 
-### 5. Stable image URLs (E13)
+### ✅ 5. Stable image URLs (E13)
+
+Done. As built:
+
+- `get_registration_image_for_serving_by_id(uow, image_id, user_id)` returns a
+  `ServedRegistrationImage(image, public)`, or None for a 404. There is no
+  "draft" status: pages are TEST, PUBLISHED or CLOSED, and a TEST page with a
+  URL already serves publicly. So the signed-in-only path covers images whose
+  assembly has no page with a URL yet, or only closed pages.
+- Route `GET /register-assets/images/<uuid:image_id>.png`
+  (`registration.serve_registration_image_by_id`).
+- **Caching:** the global after-request hooks force `no-store` on everything
+  except `PUBLIC_IMMUTABLE_ASSET_ENDPOINTS`, and this one endpoint can serve
+  either way. So the view sets `g.public_immutable_asset` when it serves
+  publicly, and `flask_app._is_public_immutable_asset()` checks both. A
+  signed-in-only response keeps `no-store`, which is stricter than the
+  `private` the plan suggested.
+- `_image_to_dict` lost its `url_slug` parameter. `public_url` and
+  `img_snippet` are never empty now. `dev.py`'s snippet handler uses the same
+  URL. The schema descriptions were updated and the two fixtures re-recorded;
+  the only diff is the URL.
+- The image details dialog's "No preview" fallback, for a blank
+  `public_url`, can no longer show. It's left in place because it's harmless.
+- Full non-BDD suite: 6,497 passed. Its 4 warnings come from unrelated tests
+  (ORM identity, a Celery task, sortition status, registration page delete).
+
 
 - Service: `get_registration_image_for_serving_by_id(uow, image_id, user)`
   with the public-or-can-view rule. Service tests with the fake UoW cover:
