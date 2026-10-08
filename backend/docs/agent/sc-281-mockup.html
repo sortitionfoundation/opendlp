@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>sc-281 · Implement recommended target changes</title>
+    <style>
+      :root {
+        --bg: #eef1f4; --surface: #ffffff; --surface-2: #f6f8fa;
+        --ink: #171c26; --ink-soft: #434a58; --muted: #6b7482; --line: #d9dee6;
+        --accent: #0f6e66; --accent-ink: #0a4f49; --accent-soft: #d7ebe8;
+        --sug: #8a5200; --sug-bg: #fdf1d3; --sug-line: #e8c683; --sug-badge: #bf7414;
+        --err: #ae2420; --err-bg: #fbe4e2; --err-line: #efb1ac;
+        --ok: #1b7244; --ok-bg: #daf1e3; --ok-line: #a6dbba;
+        --info: #0f628f; --info-bg: #dcecfa; --info-line: #b4d6f1;
+        --shadow: 0 1px 2px rgba(20,28,40,.06), 0 8px 24px -12px rgba(20,28,40,.18);
+        --radius: 12px;
+        --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e131a; --surface: #161d27; --surface-2: #1c2530;
+          --ink: #e7ecf2; --ink-soft: #b2bccb; --muted: #7d8899; --line: #2a3542;
+          --accent: #3cb6a9; --accent-ink: #8fe0d6; --accent-soft: #113430;
+          --sug: #e7b765; --sug-bg: #352b15; --sug-line: #5c491f; --sug-badge: #d79433;
+          --err: #f0a09a; --err-bg: #371d1c; --err-line: #5a2b28;
+          --ok: #70d79c; --ok-bg: #152f1e; --ok-line: #27472e;
+          --info: #7cc0ea; --info-bg: #142739; --info-line: #294a61;
+          --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.6);
+        }
+      }
+      :root[data-theme="light"] {
+        --bg: #eef1f4; --surface: #ffffff; --surface-2: #f6f8fa;
+        --ink: #171c26; --ink-soft: #434a58; --muted: #6b7482; --line: #d9dee6;
+        --accent: #0f6e66; --accent-ink: #0a4f49; --accent-soft: #d7ebe8;
+        --sug: #8a5200; --sug-bg: #fdf1d3; --sug-line: #e8c683; --sug-badge: #bf7414;
+        --err: #ae2420; --err-bg: #fbe4e2; --err-line: #efb1ac;
+        --ok: #1b7244; --ok-bg: #daf1e3; --ok-line: #a6dbba;
+        --info: #0f628f; --info-bg: #dcecfa; --info-line: #b4d6f1;
+        --shadow: 0 1px 2px rgba(20,28,40,.06), 0 8px 24px -12px rgba(20,28,40,.18);
+      }
+      :root[data-theme="dark"] {
+        --bg: #0e131a; --surface: #161d27; --surface-2: #1c2530;
+        --ink: #e7ecf2; --ink-soft: #b2bccb; --muted: #7d8899; --line: #2a3542;
+        --accent: #3cb6a9; --accent-ink: #8fe0d6; --accent-soft: #113430;
+        --sug: #e7b765; --sug-bg: #352b15; --sug-line: #5c491f; --sug-badge: #d79433;
+        --err: #f0a09a; --err-bg: #371d1c; --err-line: #5a2b28;
+        --ok: #70d79c; --ok-bg: #152f1e; --ok-line: #27472e;
+        --info: #7cc0ea; --info-bg: #142739; --info-line: #294a61;
+        --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.6);
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      body {
+        margin: 0; background: var(--bg); color: var(--ink);
+        font-family: var(--sans); line-height: 1.55;
+        -webkit-font-smoothing: antialiased; font-size: 16px;
+      }
+      .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- Top bar ---- */
+      .topbar {
+        position: sticky; top: 0; z-index: 40;
+        background: color-mix(in srgb, var(--bg) 86%, transparent);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--line);
+      }
+      .topbar .wrap { display: flex; align-items: center; gap: 18px; height: 56px; }
+      .brand { font-weight: 680; letter-spacing: -.01em; font-size: 15px; display: flex; align-items: center; gap: 9px; }
+      .brand .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+      .navlinks { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+      .navlinks a {
+        color: var(--ink-soft); text-decoration: none; font-size: 13px; font-weight: 560;
+        padding: 6px 10px; border-radius: 8px;
+      }
+      .navlinks a:hover { background: var(--surface-2); color: var(--ink); }
+      .themebtn {
+        border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+        width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 15px;
+        display: grid; place-items: center;
+      }
+      .themebtn:hover { color: var(--ink); border-color: var(--accent); }
+
+  /* ---- Hero ---- */
+      header.hero { padding: 56px 0 30px; }
+      .eyebrow {
+        font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+        color: var(--accent-ink); font-weight: 600; margin: 0 0 14px;
+        display: inline-flex; gap: 10px; align-items: center;
+      }
+      .eyebrow .pill {
+        background: var(--accent-soft); color: var(--accent-ink);
+        padding: 3px 9px; border-radius: 999px; letter-spacing: .04em;
+      }
+      h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.05; letter-spacing: -.025em; margin: 0 0 18px; text-wrap: balance; font-weight: 720; }
+      .lede { font-size: clamp(17px, 2.3vw, 20px); color: var(--ink-soft); max-width: 65ch; margin: 0; }
+      .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 560;
+        background: var(--surface); border: 1px solid var(--line); color: var(--ink-soft);
+        padding: 7px 12px; border-radius: 999px;
+      }
+      .chip b { color: var(--ink); font-weight: 640; }
+      .chip .k { color: var(--muted); font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ---- Sections ---- */
+      section { padding: 30px 0; }
+      .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
+      .sec-num { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 600; }
+      h2 { font-size: clamp(22px, 3vw, 28px); letter-spacing: -.02em; margin: 0; font-weight: 680; text-wrap: balance; }
+      .sec-sub { color: var(--ink-soft); max-width: 68ch; margin: 10px 0 0; }
+
+      .card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+      .card.pad { padding: 22px 24px; }
+
+      .cols { display: grid; gap: 16px; }
+      @media (min-width: 760px) { .cols.two { grid-template-columns: 1fr 1fr; } }
+
+      .callout { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; color: var(--ink-soft); }
+      .callout b { color: var(--ink); }
+
+      code, .mono { font-family: var(--mono); font-size: .88em; }
+      p code, li code { background: var(--surface-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; color: var(--accent-ink); }
+
+  /* ---- Prototype shell ---- */
+      .proto-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 14px; }
+      .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+      .seg button {
+        border: 0; background: transparent; color: var(--ink-soft); font: inherit; font-size: 13px; font-weight: 600;
+        padding: 7px 14px; border-radius: 7px; cursor: pointer;
+      }
+      .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+      .hint { font-size: 13px; color: var(--muted); }
+      .hint b { color: var(--ink-soft); }
+      .linkbtn { margin-left: auto; border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+        font: inherit; font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 9px; cursor: pointer; }
+      .linkbtn:hover { border-color: var(--accent); color: var(--ink); }
+
+  /* app frame mimicking the backoffice targets page */
+      .app {
+        background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+      }
+      .app-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface); }
+      .app-bar .tl { display: flex; gap: 6px; }
+      .app-bar .tl i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); display: inline-block; }
+      .app-bar .url { font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line);
+        padding: 4px 10px; border-radius: 7px; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .app-body { padding: 20px; }
+
+      .page-title { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+      .page-title h3 { margin: 0; font-size: 19px; letter-spacing: -.01em; }
+      .page-title .sub { color: var(--muted); font-size: 13px; }
+
+  /* flash banners */
+      .flash { display: flex; gap: 10px; align-items: flex-start; padding: 11px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 14px; border: 1px solid; }
+      .flash.err { background: var(--err-bg); border-color: var(--err-line); color: var(--err); }
+      .flash.ok { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
+      .flash .ic { font-weight: 700; }
+      .flash[hidden] { display: none; }
+
+  /* category card */
+      .cat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+      .cat-head { padding: 13px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+      .cat-head h4 { margin: 0; font-size: 16px; }
+      .cat-head .count { margin-left: auto; font-size: 12px; font-family: var(--mono); color: var(--muted); }
+      table.tg { width: 100%; border-collapse: collapse; font-size: 14px; }
+      table.tg th { text-align: left; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 650; padding: 10px 14px; border-bottom: 2px solid var(--line); }
+      table.tg th.n, table.tg td.n { text-align: right; font-variant-numeric: tabular-nums; }
+      table.tg td { padding: 11px 14px; border-bottom: 1px solid var(--line); color: var(--ink); }
+      table.tg tr:last-child td { border-bottom: 0; }
+      .cell-mm { display: inline-flex; align-items: center; gap: 7px; justify-content: flex-end; min-width: 58px; padding: 3px 10px; border-radius: 7px; font-variant-numeric: tabular-nums; }
+      .cell-mm.calc { background: var(--info-bg); }
+      .cell-mm.manual { background: var(--sug-bg); color: var(--sug); }
+      .cell-mm .tag { font-size: 10px; font-family: var(--mono); opacity: .8; }
+      .cell-mm.changed { animation: popv .5s ease; }
+      @keyframes popv { 0%{ transform: scale(.8); } 55%{ transform: scale(1.12);} 100%{ transform: scale(1);} }
+      @media (prefers-reduced-motion: reduce){ .cell-mm.changed{ animation: none; } }
+
+  /* suggestion row under a value */
+      tr.sug-row td { padding-top: 0; border-bottom: 1px solid var(--line); }
+      .sug {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        background: var(--sug-bg); border: 1px solid var(--sug-line); border-radius: 9px;
+        padding: 8px 10px 8px 12px; color: var(--sug); font-size: 13.5px;
+      }
+      .sug .badge { background: var(--sug-badge); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 7px; border-radius: 6px; }
+      .sug .txt { color: var(--ink-soft); }
+      .sug .txt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+      .sug form { margin: 0 0 0 auto; }
+      tr.sug-row.removing td .sug { animation: fade .34s ease forwards; }
+      @keyframes fade { to { opacity: 0; transform: translateX(8px); } }
+      @media (prefers-reduced-motion: reduce){ tr.sug-row.removing td .sug{ animation: none; opacity:0; } }
+
+  /* proposed-only tag */
+      .newtag { font-size: 10px; font-family: var(--mono); color: var(--accent-ink); background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); padding: 1px 6px; border-radius: 5px; text-transform: uppercase; letter-spacing: .05em; }
+
+  /* buttons (design-system-ish) */
+      .btn { font: inherit; font-size: 13px; font-weight: 620; border-radius: 8px; padding: 7px 13px; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
+      .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .btn.tertiary { background: transparent; border-color: var(--sug-line); color: var(--sug); }
+      .btn.tertiary:hover { background: color-mix(in srgb, var(--sug-badge) 14%, transparent); }
+      .btn.primary { background: var(--accent); color: #fff; }
+      .btn.primary:hover { background: var(--accent-ink); }
+      .btn.secondary { background: var(--surface); border-color: var(--line); color: var(--ink); }
+      .btn.secondary:hover { border-color: var(--accent); }
+      .btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+      .pagebar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; padding: 14px; background: var(--surface); border: 1px dashed var(--accent-soft); border-radius: 11px; align-items: center; }
+      .pagebar .label { font-size: 13px; color: var(--ink-soft); margin-right: auto; }
+      .pagebar .label b { color: var(--ink); }
+      .pagebar[hidden] { display: none; }
+
+  /* run simulation */
+      .runsim { display: flex; align-items: center; gap: 12px; padding: 13px 15px; border-radius: 10px; background: var(--info-bg); border: 1px solid var(--info-line); color: var(--info); font-size: 14px; margin-top: 4px; }
+      .runsim[hidden] { display: none; }
+      .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--info) 35%, transparent); border-top-color: var(--info); animation: spin .8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce){ .spinner{ animation: none; } }
+
+  /* ---- flow stepper ---- */
+      .flow { display: grid; gap: 12px; }
+      @media (min-width: 820px){ .flow { grid-template-columns: repeat(5, 1fr); align-items: stretch; } }
+      .step { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 14px 15px; box-shadow: var(--shadow); }
+      .step .s-n { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 700; }
+      .step h4 { margin: 6px 0 5px; font-size: 14.5px; }
+      .step p { margin: 0; font-size: 12.5px; color: var(--ink-soft); }
+      @media (min-width: 820px){
+        .step:not(:last-child)::after {
+          content: "→"; position: absolute; right: -11px; top: 50%; transform: translateY(-50%);
+          color: var(--muted); font-size: 16px; z-index: 2;
+        }
+      }
+      .step.branch { border-color: var(--accent-soft); background: linear-gradient(0deg, var(--accent-soft), transparent 60%), var(--surface); }
+
+  /* ---- data flow svg ---- */
+      .dfwrap { overflow-x: auto; }
+      svg.df { width: 100%; min-width: 720px; height: auto; display: block; }
+      svg.df .node { fill: var(--surface); stroke: var(--line); }
+      svg.df .node.accent { stroke: var(--accent); }
+      svg.df .node.reuse { fill: var(--surface-2); stroke-dasharray: 4 3; }
+      svg.df text { fill: var(--ink); font-family: var(--sans); }
+      svg.df text.lbl { font-family: var(--mono); fill: var(--muted); }
+      svg.df text.sub { fill: var(--ink-soft); }
+      svg.df .edge { stroke: var(--muted); fill: none; marker-end: url(#arrow); }
+      svg.df .edge.ok { stroke: var(--ok); }
+      svg.df .edge.run { stroke: var(--info); }
+
+      .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; font-size: 12.5px; color: var(--ink-soft); }
+      .legend span { display: inline-flex; align-items: center; gap: 7px; }
+      .legend .sw { width: 22px; height: 0; border-top: 2px solid; }
+
+  /* ---- lists / files ---- */
+      ul.clean { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; }
+      ul.clean li { display: flex; gap: 11px; align-items: flex-start; font-size: 14.5px; color: var(--ink-soft); }
+      ul.clean li::before { content: ""; width: 7px; height: 7px; border-radius: 2px; background: var(--accent); margin-top: 8px; flex: none; }
+      ul.clean li b { color: var(--ink); }
+
+      .files { display: grid; gap: 10px; }
+      .file { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; }
+      .file .path { font-family: var(--mono); font-size: 12.5px; color: var(--accent-ink); word-break: break-all; }
+      .file .what { font-size: 13px; color: var(--ink-soft); }
+      .tagm { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; padding: 2px 7px; border-radius: 5px; align-self: center; }
+      .tagm.new { background: var(--accent-soft); color: var(--accent-ink); }
+      .tagm.edit { background: var(--sug-bg); color: var(--sug); }
+      .tagm.reuse { background: var(--info-bg); color: var(--info); }
+
+      footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); margin-top: 20px; }
+      footer b { color: var(--ink-soft); }
+
+      .decisions { display: grid; gap: 12px; }
+      @media (min-width: 760px){ .decisions { grid-template-columns: repeat(3,1fr); } }
+      .dec { padding: 16px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+      .dec .h { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: 7px; }
+      .dec p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
+      .dec p b { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+
+    <div class="topbar">
+      <div class="wrap">
+        <div class="brand"><span class="dot"></span> OpenDLP · Selection</div>
+        <nav class="navlinks">
+          <a href="#problem">Problem</a>
+          <a href="#prototype">Prototype</a>
+          <a href="#flow">User flow</a>
+          <a href="#data">Data flow</a>
+          <a href="#scope">Scope</a>
+          <a href="#files">Files</a>
+        </nav>
+        <button class="themebtn" id="themeToggle" title="Toggle light / dark" aria-label="Toggle colour theme">◑</button>
+      </div>
+    </div>
+
+    <div class="wrap">
+
+      <header class="hero">
+        <p class="eyebrow"><span class="pill">sc-281</span> Stratified selection improvements · Epic 426</p>
+        <h1>Implement recommended target changes with one click</h1>
+        <p class="lede">When an initial selection can't meet its targets, the algorithm already tells the organiser exactly which minimum or maximum to relax. Today they have to copy those numbers in by hand. This change adds <b>Accept</b> buttons that apply a recommendation — and optionally re-run the selection — in a single action.</p>
+        <div class="meta">
+          <span class="chip"><span class="k">type</span> <b>Feature</b></span>
+          <span class="chip"><span class="k">priority</span> <b>High</b></span>
+          <span class="chip"><span class="k">pattern from</span> <b>sc-447 replacements</b></span>
+          <span class="chip"><span class="k">surface</span> <b>Targets “Check” page</b></span>
+        </div>
+      </header>
+
+  <!-- PROBLEM -->
+      <section id="problem">
+        <div class="sec-head"><span class="sec-num">01</span><h2>The problem</h2></div>
+        <p class="sec-sub">On the targets page, hitting <b>Check</b> runs a feasibility check. When the quotas can't all be met, the page already shows structured suggestions — “Suggested minimum: 12 (currently 15)”. But they're read-only prose: to act on one, the organiser must open edit mode, find the value, and retype the number. The replacement flow (sc-447) solved the identical problem with one-click accept buttons; this brings that to the initial selection.</p>
+        <div class="cols two" style="margin-top:16px">
+          <div class="card pad">
+            <p class="callout"><b>What exists today.</b> <code>check_targets_detailed()</code> produces a <code>TargetAnnotation(level="suggestion", suggested_value=N)</code> for every min/max the solver would relax, keyed to its category &amp; value. The template renders them — with no way to apply them.</p>
+          </div>
+          <div class="card pad">
+            <p class="callout"><b>What we add.</b> An <b>Accept</b> button on each suggestion, plus page-level <b>Accept all</b> and <b>Accept all &amp; re-run selection</b>. Each posts to a new route that applies the authoritative suggested value via the existing target-save service, then re-checks or runs.</p>
+          </div>
+        </div>
+      </section>
+
+  <!-- PROTOTYPE -->
+      <section id="prototype">
+        <div class="sec-head"><span class="sec-num">02</span><h2>Interactive prototype</h2></div>
+        <p class="sec-sub">A working reproduction of the targets Check page with infeasible quotas. Toggle between today's read-only view and the proposed one, then click the buttons — values update, suggestions clear, and “Accept all &amp; re-run” hands off to a selection run.</p>
+
+        <div class="proto-controls">
+          <div class="seg" role="group" aria-label="View">
+            <button id="viewBefore" aria-pressed="false">Before (today)</button>
+            <button id="viewAfter" aria-pressed="true">After (proposed)</button>
+          </div>
+          <span class="hint" id="protoHint"><b>2</b> suggestions outstanding — click Accept to apply.</span>
+          <button class="linkbtn" id="resetProto">↻ Reset</button>
+        </div>
+
+        <div class="app">
+          <div class="app-bar">
+            <span class="tl"><i></i><i></i><i></i></span>
+            <span class="url">/backoffice/assembly/ebcb87…/targets/check</span>
+          </div>
+          <div class="app-body">
+            <div class="page-title">
+              <div>
+                <h3>Demographic targets</h3>
+                <span class="sub">Climate Assembly · 50 to select</span>
+              </div>
+              <span class="sub" id="afterOnlyNote"><span class="newtag">proposed</span> inline actions</span>
+            </div>
+
+            <div class="flash err" id="flashErr">
+              <span class="ic">!</span>
+              <span>The targets cannot all be met from the pool at once. The algorithm suggests the changes below.</span>
+            </div>
+            <div class="flash ok" id="flashOk" hidden>
+              <span class="ic">✓</span>
+              <span>Every suggestion applied. Targets are now feasible — re-check or run the selection.</span>
+            </div>
+
+            <div id="catMount"></div>
+
+        <!-- page-level actions (proposed only) -->
+            <div class="pagebar" id="pageBar">
+              <span class="label"><span class="newtag">proposed</span> &nbsp;<b id="allCount">2</b> recommendations across all targets</span>
+              <button class="btn secondary" id="btnAcceptAll">Accept all suggestions</button>
+              <button class="btn primary" id="btnAcceptRun">Accept all &amp; re-run selection</button>
+            </div>
+            <div class="runsim" id="runSim" hidden>
+              <span class="spinner" aria-hidden="true"></span>
+              <span id="runText">Targets saved. Starting selection run…</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+  <!-- USER FLOW -->
+      <section id="flow">
+        <div class="sec-head"><span class="sec-num">03</span><h2>User flow</h2></div>
+        <p class="sec-sub">The happy path from an infeasible check to a feasible, running selection — all without leaving the targets page.</p>
+        <div class="flow">
+          <div class="step"><div class="s-n">STEP 1</div><h4>Check targets</h4><p>Organiser runs the feasibility check; quotas are infeasible.</p></div>
+          <div class="step"><div class="s-n">STEP 2</div><h4>See suggestions</h4><p>Each unmeetable min/max shows a suggested value, inline with its row.</p></div>
+          <div class="step branch"><div class="s-n">STEP 3</div><h4>Accept</h4><p>One suggestion, or <b>Accept all</b>. Server applies &amp; saves the real targets.</p></div>
+          <div class="step"><div class="s-n">STEP 4a</div><h4>Re-check</h4><p>Page reloads with a fresh check — the accepted suggestion is gone.</p></div>
+          <div class="step branch"><div class="s-n">STEP 4b</div><h4>…&amp; re-run</h4><p>Or go straight to a live selection run from the same click.</p></div>
+        </div>
+      </section>
+
+  <!-- DATA FLOW -->
+      <section id="data">
+        <div class="sec-head"><span class="sec-num">04</span><h2>Data flow</h2></div>
+        <p class="sec-sub">Server-side and authoritative: the new route re-derives the suggestions itself rather than trusting posted numbers, applies each through the existing target-value service, then redirects to either a re-check or a selection run. No new domain logic, no client-side state.</p>
+
+        <div class="card pad dfwrap">
+          <svg class="df" viewBox="0 0 980 360" role="img" aria-label="Data flow diagram">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"></path>
+              </marker>
+            </defs>
+
+        <!-- Row 1: browser -> route -->
+            <g>
+              <rect class="node" x="20" y="24" width="210" height="72" rx="10"></rect>
+              <text x="36" y="50" font-size="14" font-weight="650">Accept button (template)</text>
+              <text class="lbl" x="36" y="70" font-size="11">category_block.html</text>
+              <text class="sub" x="36" y="86" font-size="11.5">POST scope·category·value·field·then</text>
+            </g>
+
+            <path class="edge" d="M230 60 L300 60"></path>
+
+            <g>
+              <rect class="node accent" x="300" y="18" width="250" height="86" rx="10"></rect>
+              <text x="318" y="44" font-size="14" font-weight="700">accept_suggestions()</text>
+              <text class="lbl" x="318" y="63" font-size="11">targets.py · NEW route</text>
+              <text class="sub" x="318" y="82" font-size="11.5">/targets/accept-suggestions [POST]</text>
+              <text class="sub" x="318" y="98" font-size="11.5">@login_required · manage perms · CSRF</text>
+            </g>
+
+            <path class="edge" d="M425 104 L425 140"></path>
+
+        <!-- Row 2: re-derive + apply, both reuse -->
+            <g>
+              <rect class="node reuse" x="300" y="140" width="250" height="78" rx="10"></rect>
+              <text x="318" y="166" font-size="13.5" font-weight="650">check_targets_detailed()</text>
+              <text class="lbl" x="318" y="185" font-size="11">target_checking.py · reused</text>
+              <text class="sub" x="318" y="203" font-size="11.5">re-derive authoritative suggestions</text>
+            </g>
+
+            <path class="edge" d="M550 179 L620 179"></path>
+
+            <g>
+              <rect class="node reuse" x="620" y="140" width="250" height="78" rx="10"></rect>
+              <text x="638" y="166" font-size="13.5" font-weight="650">update_target_value()</text>
+              <text class="lbl" x="638" y="185" font-size="11">target_service.py · reused</text>
+              <text class="sub" x="638" y="203" font-size="11.5">apply suggested min/max · 1 or all</text>
+            </g>
+
+            <path class="edge" d="M745 218 L745 250"></path>
+
+        <!-- Row 3: branch -->
+            <g>
+              <rect class="node" x="620" y="250" width="250" height="78" rx="10"></rect>
+              <text x="638" y="276" font-size="13.5" font-weight="650">persisted targets</text>
+              <text class="lbl" x="638" y="295" font-size="11">one unit of work</text>
+              <text class="sub" x="638" y="313" font-size="11.5">minmax_manual = true</text>
+            </g>
+
+        <!-- branch to recheck -->
+            <path class="edge ok" d="M620 289 C440 289 425 250 425 232"></path>
+            <g>
+              <rect class="node" x="300" y="250" width="250" height="78" rx="10"></rect>
+              <text x="318" y="276" font-size="13.5" font-weight="650">redirect → check_targets</text>
+              <text class="lbl" x="318" y="295" font-size="11">then = recheck  (default)</text>
+              <text class="sub" x="318" y="313" font-size="11.5">fresh feasibility, suggestions cleared</text>
+            </g>
+            <path class="edge ok" d="M425 250 L425 232"></path>
+
+        <!-- branch to run -->
+            <path class="edge run" d="M870 289 L920 289 L920 60 L550 60"></path>
+            <text class="lbl" x="884" y="180" font-size="11" transform="rotate(90 884 180)">then = run → start_db_select_task</text>
+          </svg>
+
+          <div class="legend">
+            <span><span class="sw" style="border-color:var(--muted)"></span> request / apply</span>
+            <span><span class="sw" style="border-color:var(--ok)"></span> re-check branch</span>
+            <span><span class="sw" style="border-color:var(--info)"></span> re-run branch</span>
+            <span><span class="sw" style="border-color:var(--line);border-top-style:dashed"></span> reused, unchanged</span>
+          </div>
+        </div>
+      </section>
+
+  <!-- SCOPE -->
+      <section id="scope">
+        <div class="sec-head"><span class="sec-num">05</span><h2>Scope &amp; decisions</h2></div>
+        <div class="decisions">
+          <div class="dec"><div class="h">Surface</div><p><b>Targets Check page.</b> It already holds the structured suggestions; a failed run only stores plain-text error, so this is the only place with the data.</p></div>
+          <div class="dec"><div class="h">Granularity</div><p><b>Per-suggestion Accept + Accept all</b>, mirroring the replacement feature exactly.</p></div>
+          <div class="dec"><div class="h">Action</div><p>Accept applies + saves + <b>re-checks</b>. A separate <b>Accept all &amp; re-run</b> applies, saves, and starts the selection.</p></div>
+        </div>
+
+        <div class="cols two" style="margin-top:16px">
+          <div class="card pad">
+            <h4 style="margin:0 0 10px;font-size:15px">In scope</h4>
+            <ul class="clean">
+              <li>One-click accept of a recommended min or max, server-side.</li>
+              <li>Accept-all and accept-all-and-run page actions.</li>
+              <li>Re-check after accepting so feasibility is confirmed.</li>
+            </ul>
+          </div>
+          <div class="card pad">
+            <h4 style="margin:0 0 10px;font-size:15px">Out of scope</h4>
+            <ul class="clean">
+              <li>Side-by-side “review in context” edit page.</li>
+              <li>Anything replacement-specific (original targets, saved-number handling).</li>
+              <li>Changing how suggestions are computed — reused as-is.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+  <!-- FILES -->
+      <section id="files">
+        <div class="sec-head"><span class="sec-num">06</span><h2>Files touched</h2></div>
+        <p class="sec-sub">One new route and two template edits. The heavy lifting — feasibility and persistence — is entirely reused.</p>
+        <div class="files">
+          <div class="file"><span class="tagm new">new</span><div><div class="path">blueprints/targets.py → accept_suggestions()</div><div class="what">POST route: re-derive suggestions, apply via service, redirect to re-check or run.</div></div></div>
+          <div class="file"><span class="tagm edit">edit</span><div><div class="path">templates/backoffice/targets/category_block.html</div><div class="what">Accept button beside each value-level &amp; category-level suggestion.</div></div></div>
+          <div class="file"><span class="tagm edit">edit</span><div><div class="path">templates/backoffice/assembly_targets.html</div><div class="what">Page-level “Accept all” and “Accept all &amp; re-run selection”.</div></div></div>
+          <div class="file"><span class="tagm reuse">reuse</span><div><div class="path">target_service.update_target_value()</div><div class="what">Applies a manual min/max, breaking the percentage link — existing validation.</div></div></div>
+          <div class="file"><span class="tagm reuse">reuse</span><div><div class="path">target_checking.check_targets_detailed()</div><div class="what">Authoritative suggestion source, re-run inside the new route.</div></div></div>
+          <div class="file"><span class="tagm reuse">reuse</span><div><div class="path">db_selection_backoffice.start_db_select_task()</div><div class="what">The existing Run path for the “&amp; re-run selection” variant.</div></div></div>
+        </div>
+      </section>
+
+      <footer>
+        <p><b>sc-281</b> · Add an implement-recommended-target-changes button (initial selection). Interactive mockup — buttons simulate behaviour for review; numbers and assembly are illustrative. Companion plan: <b>sc-281-recommended-target-button-plan.md</b>.</p>
+      </footer>
+
+    </div>
+
+    <script>
+      (function () {
+  // ---------- theme ----------
+        var root = document.documentElement;
+        var tbtn = document.getElementById('themeToggle');
+        tbtn.addEventListener('click', function () {
+          var cur = root.getAttribute('data-theme');
+          if (!cur) {
+            cur = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+        });
+
+  // ---------- prototype data ----------
+        function seed() {
+          return [
+            { name: 'Gender', values: [
+              { v: 'Female', pct: 51, min: 24, max: 28, manual: false },
+              { v: 'Male', pct: 49, min: 24, max: 28, manual: false },
+            ], sugg: [] },
+            { name: 'Age', values: [
+              { v: '16–29', pct: 22, min: 15, max: 13, manual: false, sug: { field: 'min', current: 15, suggested: 11 } },
+              { v: '30–49', pct: 34, min: 17, max: 19, manual: false },
+              { v: '50–64', pct: 24, min: 12, max: 14, manual: false },
+              { v: '65+',   pct: 20, min: 8,  max: 9,  manual: false, sug: { field: 'max', current: 9, suggested: 13 } },
+            ]},
+          ];
+        }
+
+        var model, mode = 'after';
+        var mount = document.getElementById('catMount');
+        var flashErr = document.getElementById('flashErr');
+        var flashOk = document.getElementById('flashOk');
+        var pageBar = document.getElementById('pageBar');
+        var runSim = document.getElementById('runSim');
+        var runText = document.getElementById('runText');
+        var hint = document.getElementById('protoHint');
+        var afterNote = document.getElementById('afterOnlyNote');
+
+        function suggestions() {
+          var out = [];
+          model.forEach(function (c) {
+            c.values.forEach(function (val) { if (val.sug) out.push({ cat: c, val: val }); });
+          });
+          return out;
+        }
+
+        function cell(val, which) {
+          var n = which === 'min' ? val.min : val.max;
+          var cls = val.manual ? 'manual' : 'calc';
+          var tag = val.manual ? 'manual' : 'calc';
+          var changed = val._changed === which ? ' changed' : '';
+          return '<span class="cell-mm ' + cls + changed + '">' + n + ' <span class="tag">' + tag + '</span></span>';
+        }
+
+        function render() {
+          var html = '';
+          model.forEach(function (c) {
+            html += '<div class="cat">';
+            html += '<div class="cat-head"><h4>' + c.name + '</h4><span class="count">' +
+            c.values.length + ' values</span></div>';
+            html += '<table class="tg"><thead><tr>' +
+            '<th>Value</th><th class="n">Pop&nbsp;%</th><th class="n">Min</th><th class="n">Max</th>' +
+            '</tr></thead><tbody>';
+            c.values.forEach(function (val, i) {
+              html += '<tr>' +
+              '<td>' + val.v + '</td>' +
+              '<td class="n">' + val.pct + '%</td>' +
+              '<td class="n">' + cell(val, 'min') + '</td>' +
+              '<td class="n">' + cell(val, 'max') + '</td>' +
+              '</tr>';
+              if (val.sug) {
+                var s = val.sug;
+                var word = s.field === 'min' ? 'minimum' : 'maximum';
+                var btn = mode === 'after'
+                  ? '<form onsubmit="return false"><button class="btn tertiary" data-accept="' +
+                c.name + '|' + val.v + '">Accept</button></form>'
+                  : '';
+                html += '<tr class="sug-row" data-row="' + c.name + '|' + val.v + '"><td colspan="4">' +
+                '<div class="sug">' +
+                '<span class="badge">Suggestion</span>' +
+                '<span class="txt">' + val.v + ' — set ' + word + ' <b>' + s.current + ' → ' + s.suggested + '</b></span>' +
+                btn +
+                '</div></td></tr>';
+              }
+            });
+            html += '</tbody></table></div>';
+          });
+          mount.innerHTML = html;
+
+    // clear one-shot change flags after paint
+          model.forEach(function (c) { c.values.forEach(function (v) { delete v._changed; }); });
+
+          var remaining = suggestions().length;
+          var feasible = remaining === 0;
+
+          flashErr.hidden = feasible;
+          flashOk.hidden = !feasible;
+
+    // page-level + note only in "after"
+          pageBar.hidden = (mode !== 'after') || feasible;
+          afterNote.style.visibility = mode === 'after' ? 'visible' : 'hidden';
+          document.getElementById('allCount').textContent = remaining;
+
+          if (mode === 'after') {
+            hint.innerHTML = feasible
+              ? '<b>All suggestions applied.</b> Targets are feasible.'
+              : '<b>' + remaining + '</b> suggestion' + (remaining === 1 ? '' : 's') + ' outstanding — click Accept to apply.';
+          } else {
+            hint.innerHTML = 'Read-only today — suggestions show, but there is nothing to click.';
+          }
+        }
+
+        function applyOne(key, animateRow) {
+          var parts = key.split('|'), catName = parts[0], valName = parts[1];
+          var done = false;
+          model.forEach(function (c) {
+            if (c.name !== catName) return;
+            c.values.forEach(function (val) {
+              if (val.v !== valName || !val.sug) return;
+              if (val.sug.field === 'min') val.min = val.sug.suggested;
+              else val.max = val.sug.suggested;
+              val.manual = true;
+              val._changed = val.sug.field;
+              delete val.sug;
+              done = true;
+            });
+          });
+          return done;
+        }
+
+        mount.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-accept]');
+          if (!b) return;
+          var key = b.getAttribute('data-accept');
+          var row = mount.querySelector('.sug-row[data-row="' + CSS.escape(key) + '"]');
+          var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (row && !reduce) {
+            row.classList.add('removing');
+            setTimeout(function () { applyOne(key); render(); }, 300);
+          } else {
+            applyOne(key); render();
+          }
+        });
+
+        document.getElementById('btnAcceptAll').addEventListener('click', function () {
+          suggestions().forEach(function (s) { applyOne(s.cat.name + '|' + s.val.v); });
+          render();
+        });
+
+        document.getElementById('btnAcceptRun').addEventListener('click', function () {
+          suggestions().forEach(function (s) { applyOne(s.cat.name + '|' + s.val.v); });
+          render();
+          runSim.hidden = false;
+          runText.textContent = 'Targets saved. Starting selection run…';
+          var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          setTimeout(function () {
+            runText.textContent = reduce ? 'Selection complete — 50 people selected.' : 'Running the fair selection algorithm…';
+          }, reduce ? 0 : 1100);
+          if (!reduce) {
+            setTimeout(function () {
+              var sp = runSim.querySelector('.spinner');
+              if (sp) sp.style.display = 'none';
+              runText.textContent = '✓ Selection complete — 50 people selected.';
+            }, 2600);
+          }
+        });
+
+        document.getElementById('resetProto').addEventListener('click', function () {
+          model = seed();
+          runSim.hidden = true;
+          var sp = runSim.querySelector('.spinner');
+          if (sp) sp.style.display = '';
+          render();
+        });
+
+        function setMode(m) {
+          mode = m;
+          document.getElementById('viewBefore').setAttribute('aria-pressed', m === 'before');
+          document.getElementById('viewAfter').setAttribute('aria-pressed', m === 'after');
+          runSim.hidden = true;
+          render();
+        }
+        document.getElementById('viewBefore').addEventListener('click', function () { model = seed(); setMode('before'); });
+        document.getElementById('viewAfter').addEventListener('click', function () { model = seed(); setMode('after'); });
+
+  // init
+        model = seed();
+        render();
+      })();
+    </script>
+  </body>
+</html>
