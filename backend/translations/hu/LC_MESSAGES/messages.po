@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-08 16:41+0100\n"
+"POT-Creation-Date: 2026-10-08 16:47+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -227,6 +227,7 @@ msgstr "Kötelező"
 
 #: src/opendlp/domain/respondent_field_schema.py:152
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:204
+#: templates/backoffice/components/rich_editor.html:60
 msgid "Text"
 msgstr "Szöveg"
 
@@ -2143,7 +2144,7 @@ msgstr "A feltöltött fájl beolvasása sikertelen"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1045
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1082
-#: templates/backoffice/registration/_page_data.html:29
+#: templates/backoffice/registration/_page_data.html:30
 msgid "Alt text is required for accessibility"
 msgstr "Az alternatív szöveg megadása kötelező az akadálymentesség miatt"
 
@@ -2181,7 +2182,7 @@ msgid "An error occurred while uploading the document"
 msgstr "Hiba történt a dokumentum feltöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1185
-#: templates/backoffice/registration/_page_data.html:39
+#: templates/backoffice/registration/_page_data.html:40
 msgid "Label is required"
 msgstr "A címke megadása kötelező"
 
@@ -4766,6 +4767,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/dashboard_export_modal.html:62
 #: templates/backoffice/registration/_assets.html:243
 #: templates/backoffice/registration/_assets.html:299
+#: templates/backoffice/registration/_modals.html:302
 #: templates/backoffice/registration/_step_email.html:92
 #: templates/backoffice/registration/_step_form.html:58
 #: templates/backoffice/registration/_step_intro.html:60
@@ -6206,37 +6208,37 @@ msgstr ""
 msgid "Go to Details tab"
 msgstr "Ugrás a Részletek lapra"
 
-#: templates/backoffice/assembly_registration.html:77
+#: templates/backoffice/assembly_registration.html:78
 msgid "Close and return to the registration pages"
 msgstr "Bezárás és visszatérés a regisztrációs oldalakhoz"
 
-#: templates/backoffice/assembly_registration.html:89
+#: templates/backoffice/assembly_registration.html:90
 #: templates/backoffice/registration/_step_intro.html:114
 msgid "Intro"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:90
+#: templates/backoffice/assembly_registration.html:91
 msgid "Form"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:91
+#: templates/backoffice/assembly_registration.html:92
 #: templates/backoffice/registration/_step_email.html:37
 msgid "Auto-reply email"
 msgstr "Automatikus válasz e-mail"
 
-#: templates/backoffice/assembly_registration.html:92
+#: templates/backoffice/assembly_registration.html:93
 msgid "Preview and publish"
 msgstr "Előnézet és közzététel"
 
-#: templates/backoffice/assembly_registration.html:94
+#: templates/backoffice/assembly_registration.html:95
 msgid "Registration setup steps"
 msgstr "A regisztráció beállításának lépései"
 
-#: templates/backoffice/assembly_registration.html:106
+#: templates/backoffice/assembly_registration.html:107
 msgid "Test mode"
 msgstr "Teszt üzemmód"
 
-#: templates/backoffice/assembly_registration.html:107
+#: templates/backoffice/assembly_registration.html:108
 msgid ""
 "Submissions are recorded as test entries and don't enter the selection "
 "pool. Publish the registration when you're ready to go live."
@@ -6245,15 +6247,15 @@ msgstr ""
 "jelentkezők közé. Tedd közzé a regisztrációt, amikor készen állsz az éles"
 " indulásra."
 
-#: templates/backoffice/assembly_registration.html:116
+#: templates/backoffice/assembly_registration.html:117
 msgid "Registration closed"
 msgstr "A regisztráció lezárva"
 
-#: templates/backoffice/assembly_registration.html:117
+#: templates/backoffice/assembly_registration.html:118
 msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek át."
 
-#: templates/backoffice/assembly_registration.html:127
+#: templates/backoffice/assembly_registration.html:128
 #: templates/backoffice/components/registration_page_list.html:99
 msgid "Published"
 msgstr "Közzétéve"
@@ -7525,6 +7527,53 @@ msgid ""
 "edit the HTML."
 msgstr ""
 
+#: templates/backoffice/components/rich_editor.html:57
+msgid "Formatting"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:61
+msgid "Heading 1"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:62
+msgid "Heading 2"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:63
+msgid "Heading 3"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:65
+msgid "Bold"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:66
+msgid "Italic"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:68
+msgid "Bulleted list"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:69
+msgid "Numbered list"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:71
+#: templates/backoffice/registration/_modals.html:265
+msgid "Link"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:73
+#: templates/backoffice/targets/bulk_edit_form.html:155
+#: templates/backoffice/targets/bulk_edit_form.html:201
+msgid "Undo"
+msgstr "Visszavonás"
+
+#: templates/backoffice/components/rich_editor.html:74
+msgid "Redo"
+msgstr ""
+
 #: templates/backoffice/components/search_dropdown.html:107
 msgid "Search results"
 msgstr "Keresési találatok"
@@ -7628,7 +7677,7 @@ msgid "has errors"
 msgstr "hibás"
 
 #: templates/backoffice/components/url_display.html:24
-#: templates/backoffice/registration/_page_data.html:24
+#: templates/backoffice/registration/_page_data.html:25
 msgid "Copied to clipboard"
 msgstr "Vágólapra másolva"
 
@@ -7936,95 +7985,121 @@ msgstr ""
 msgid "Keep it open"
 msgstr "Maradjon nyitva"
 
+#: templates/backoffice/registration/_modals.html:275
+msgid "Linked text:"
+msgstr ""
+
+#: templates/backoffice/registration/_modals.html:280
+msgid "Link address"
+msgstr ""
+
+#: templates/backoffice/registration/_modals.html:292
+msgid ""
+"A web address such as https://example.org, or mailto: followed by an "
+"email address."
+msgstr ""
+
+#: templates/backoffice/registration/_modals.html:300
+msgid "Remove link"
+msgstr ""
+
+#: templates/backoffice/registration/_modals.html:303
+msgid "Apply"
+msgstr ""
+
 #: templates/backoffice/registration/_page_data.html:23
 msgid "An error occurred while fetching the form skeleton"
 msgstr "Hiba történt az űrlapváz lekérése közben"
 
-#: templates/backoffice/registration/_page_data.html:25
+#: templates/backoffice/registration/_page_data.html:24
+msgid "Enter a link address"
+msgstr ""
+
+#: templates/backoffice/registration/_page_data.html:26
 msgid "Failed to copy to clipboard"
 msgstr "A vágólapra másolás sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:26
+#: templates/backoffice/registration/_page_data.html:27
 msgid "Snippet copied to clipboard"
 msgstr "A kódrészlet a vágólapra másolva"
 
-#: templates/backoffice/registration/_page_data.html:27
+#: templates/backoffice/registration/_page_data.html:28
 msgid "No public URL available yet"
 msgstr "Még nincs elérhető nyilvános URL"
 
-#: templates/backoffice/registration/_page_data.html:28
+#: templates/backoffice/registration/_page_data.html:29
 msgid "Upload failed"
 msgstr "A feltöltés sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:30
+#: templates/backoffice/registration/_page_data.html:31
 msgid "Image uploaded"
 msgstr "A kép feltöltve"
 
-#: templates/backoffice/registration/_page_data.html:31
+#: templates/backoffice/registration/_page_data.html:32
 msgid "Network error while uploading the image"
 msgstr "Hálózati hiba a kép feltöltése közben"
 
-#: templates/backoffice/registration/_page_data.html:32
+#: templates/backoffice/registration/_page_data.html:33
 msgid "Delete this image?"
 msgstr "Törlöd ezt a képet?"
 
-#: templates/backoffice/registration/_page_data.html:33
+#: templates/backoffice/registration/_page_data.html:34
 msgid "Failed to delete image"
 msgstr "A kép törlése sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:34
+#: templates/backoffice/registration/_page_data.html:35
 msgid "Image deleted"
 msgstr "A kép törölve"
 
-#: templates/backoffice/registration/_page_data.html:35
+#: templates/backoffice/registration/_page_data.html:36
 msgid "Network error while deleting the image"
 msgstr "Hálózati hiba a kép törlése közben"
 
-#: templates/backoffice/registration/_page_data.html:36
+#: templates/backoffice/registration/_page_data.html:37
 msgid "Failed to update image"
 msgstr "A kép frissítése sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:37
+#: templates/backoffice/registration/_page_data.html:38
 msgid "Image updated"
 msgstr "A kép frissítve"
 
-#: templates/backoffice/registration/_page_data.html:38
+#: templates/backoffice/registration/_page_data.html:39
 msgid "Network error while updating the image"
 msgstr "Hálózati hiba a kép frissítése közben"
 
-#: templates/backoffice/registration/_page_data.html:40
+#: templates/backoffice/registration/_page_data.html:41
 msgid "Document uploaded"
 msgstr "A dokumentum feltöltve"
 
-#: templates/backoffice/registration/_page_data.html:41
+#: templates/backoffice/registration/_page_data.html:42
 msgid "Network error while uploading the document"
 msgstr "Hálózati hiba a dokumentum feltöltése közben"
 
-#: templates/backoffice/registration/_page_data.html:42
+#: templates/backoffice/registration/_page_data.html:43
 msgid "Delete this document?"
 msgstr "Törlöd ezt a dokumentumot?"
 
-#: templates/backoffice/registration/_page_data.html:43
+#: templates/backoffice/registration/_page_data.html:44
 msgid "Failed to delete document"
 msgstr "A dokumentum törlése sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:44
+#: templates/backoffice/registration/_page_data.html:45
 msgid "Document deleted"
 msgstr "A dokumentum törölve"
 
-#: templates/backoffice/registration/_page_data.html:45
+#: templates/backoffice/registration/_page_data.html:46
 msgid "Network error while deleting the document"
 msgstr "Hálózati hiba a dokumentum törlése közben"
 
-#: templates/backoffice/registration/_page_data.html:46
+#: templates/backoffice/registration/_page_data.html:47
 msgid "Failed to update document"
 msgstr "A dokumentum frissítése sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:47
+#: templates/backoffice/registration/_page_data.html:48
 msgid "Document updated"
 msgstr "A dokumentum frissítve"
 
-#: templates/backoffice/registration/_page_data.html:48
+#: templates/backoffice/registration/_page_data.html:49
 msgid "Network error while updating the document"
 msgstr "Hálózati hiba a dokumentum frissítése közben"
 
@@ -9159,11 +9234,6 @@ msgstr "A minimum és a maximum újraszámolása a százalékból"
 #: templates/backoffice/targets/bulk_edit_form.html:152
 msgid "Delete value"
 msgstr "Érték törlése"
-
-#: templates/backoffice/targets/bulk_edit_form.html:155
-#: templates/backoffice/targets/bulk_edit_form.html:201
-msgid "Undo"
-msgstr "Visszavonás"
 
 #: templates/backoffice/targets/bulk_edit_form.html:198
 #, python-format

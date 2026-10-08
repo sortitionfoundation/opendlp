@@ -35,6 +35,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
             <p class="rich-editor__hint text-body-sm">
                 {{ _("The visual editor highlights variables like {{ assembly_title }} in text. To add or change a variable anywhere else, such as in a link address, edit the HTML.") }}
             </p>
+            {{ rich_editor_toolbar(for_id) }}
         {% endif %}
         <p class="rich-editor__notice text-body-sm"
            data-rich-editor-notice
@@ -42,5 +43,34 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
            hidden></p>
         <div class="rich-editor__surface" data-rich-editor-surface></div>
         <div data-rich-editor-code></div>
+    </div>
+{% endmacro %}
+{% macro rich_editor_toolbar(for_id) %}
+    {#
+    The formatting toolbar, following the WAI-ARIA toolbar pattern: one Tab stop, arrow keys
+    (and Home/End) move between buttons, toggles carry aria-pressed. Unavailable commands use
+    aria-disabled rather than disabled so they stay reachable with the arrow keys.
+    src/js/backoffice/rich-editor-toolbar.js wires each data-command.
+    #}
+    <div class="rich-editor__toolbar"
+         role="toolbar"
+         aria-label="{{ _('Formatting') }}"
+         aria-controls="{{ for_id }}-visual"
+         data-rich-editor-toolbar>
+        <button type="button" class="rich-editor__tool" data-command="paragraph" aria-pressed="false">{{ _("Text") }}</button>
+        <button type="button" class="rich-editor__tool" data-command="heading1" aria-pressed="false">{{ _("Heading 1") }}</button>
+        <button type="button" class="rich-editor__tool" data-command="heading2" aria-pressed="false">{{ _("Heading 2") }}</button>
+        <button type="button" class="rich-editor__tool" data-command="heading3" aria-pressed="false">{{ _("Heading 3") }}</button>
+        <span class="rich-editor__separator" aria-hidden="true"></span>
+        <button type="button" class="rich-editor__tool rich-editor__tool--bold" data-command="bold" aria-pressed="false">{{ _("Bold") }}</button>
+        <button type="button" class="rich-editor__tool rich-editor__tool--italic" data-command="italic" aria-pressed="false">{{ _("Italic") }}</button>
+        <span class="rich-editor__separator" aria-hidden="true"></span>
+        <button type="button" class="rich-editor__tool" data-command="bulletList" aria-pressed="false">{{ _("Bulleted list") }}</button>
+        <button type="button" class="rich-editor__tool" data-command="orderedList" aria-pressed="false">{{ _("Numbered list") }}</button>
+        <span class="rich-editor__separator" aria-hidden="true"></span>
+        <button type="button" class="rich-editor__tool" data-command="link" aria-haspopup="dialog">{{ _("Link") }}</button>
+        <span class="rich-editor__separator" aria-hidden="true"></span>
+        <button type="button" class="rich-editor__tool" data-command="undo" aria-disabled="true">{{ _("Undo") }}</button>
+        <button type="button" class="rich-editor__tool" data-command="redo" aria-disabled="true">{{ _("Redo") }}</button>
     </div>
 {% endmacro %}

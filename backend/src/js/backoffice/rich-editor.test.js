@@ -2,6 +2,10 @@
 // ABOUTME: The controls markup mirrors templates/backoffice/components/rich_editor.html.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HTML, VISUAL, mountRichEditor } from "./rich-editor.js";
+import {
+  LINK_REQUEST_EVENT,
+  LINK_RESULT_EVENT,
+} from "../lib/rich-editor-events.js";
 
 const OPENS_AS_HTML = "Opens as HTML message";
 const SWITCH_REFUSED = "Switch refused message";
@@ -15,6 +19,10 @@ function setUp(value, textareaAttrs = "") {
            data-message-switch-refused="${SWITCH_REFUSED}" hidden>
         <button type="button" data-rich-editor-mode="visual" aria-pressed="true">Visual</button>
         <button type="button" data-rich-editor-mode="html" aria-pressed="false">HTML</button>
+        <div role="toolbar" data-rich-editor-toolbar>
+          <button type="button" data-command="bold">Bold</button>
+          <button type="button" data-command="link">Link</button>
+        </div>
         <p data-rich-editor-notice role="status" hidden></p>
         <div data-rich-editor-surface></div>
         <div data-rich-editor-code></div>
@@ -32,6 +40,7 @@ function setUp(value, textareaAttrs = "") {
     code: document.querySelector("[data-rich-editor-code]"),
     visualButton: document.querySelector('[data-rich-editor-mode="visual"]'),
     htmlButton: document.querySelector('[data-rich-editor-mode="html"]'),
+    toolbar: document.querySelector("[data-rich-editor-toolbar]"),
   };
 }
 
@@ -168,5 +177,105 @@ describe("mountRichEditor", () => {
     expect(rich.editor.getHTML()).toBe(
       "<p>Welcome to {{ assembly_title }}</p>",
     );
+  });
+});
+
+describe("mountRichEditor toolbar and links", () => {
+  function captureLinkRequests() {
+    const requests = [];
+    const listener = (event) => requests.push(event.detail);
+    document.addEventListener(LINK_REQUEST_EVENT, listener);
+    return {
+      requests,
+      stop: () => document.removeEventListener(LINK_REQUEST_EVENT, listener),
+    };
+  }
+
+  function answer(detail) {
+    document.dispatchEvent(new CustomEvent(LINK_RESULT_EVENT, { detail }));
+  }
+
+  it("shows the toolbar in Visual mode only", () => {
+    const page = setUp("<p>a</p>");
+    mount(page.textarea);
+    expect(page.toolbar.hidden).toBe(false);
+    page.htmlButton.click();
+    expect(page.toolbar.hidden).toBe(true);
+    page.visualButton.click();
+    expect(page.toolbar.hidden).toBe(false);
+  });
+
+  it("points the toolbar's aria-controls target at the editing area", () => {
+    const page = setUp("<p>a</p>");
+    mount(page.textarea);
+    expect(page.surface.querySelector("#intro-visual")).not.toBeNull();
+  });
+
+  it("asks for a link with the whole link under the cursor", () => {
+    const capture = captureLinkRequests();
+    const page = setUp('<p>Go <a href="https://example.org">there</a> now</p>');
+    const rich = mount(page.textarea);
+    rich.editor.commands.setTextSelection(6);
+    page.toolbar.querySelector('[data-command="link"]').click();
+    capture.stop();
+    expect(capture.requests).toEqual([
+      { editorId: "intro", href: "https://example.org", text: "there" },
+    ]);
+  });
+
+  it("opens the link dialog on Ctrl/Cmd-K", () => {
+    const capture = captureLinkRequests();
+    const page = setUp("<p>a</p>");
+    const rich = mount(page.textarea);
+    rich.editor.view.someProp("handleKeyDown", (handler) =>
+      handler(
+        rich.editor.view,
+        new KeyboardEvent("keydown", { key: "k", ctrlKey: true }),
+      ),
+    );
+    capture.stop();
+    expect(capture.requests).toHaveLength(1);
+  });
+
+  it("links the selected text when the dialog answers set", () => {
+    const page = setUp("<p>Read this</p>");
+    const rich = mount(page.textarea);
+    rich.editor.commands.setTextSelection({ from: 6, to: 10 });
+    answer({ editorId: "intro", action: "set", href: "/info" });
+    expect(page.textarea.value).toBe('<p>Read <a href="/info">this</a></p>');
+  });
+
+  it("inserts the address as linked text when nothing is selected", () => {
+    const page = setUp("<p>See here</p>");
+    const rich = mount(page.textarea);
+    rich.editor.commands.setTextSelection(5);
+    answer({ editorId: "intro", action: "set", href: "https://example.org" });
+    expect(page.textarea.value).toBe(
+      '<p>See <a href="https://example.org">https://example.org</a>here</p>',
+    );
+  });
+
+  it("removes the whole link when the dialog answers remove", () => {
+    const page = setUp('<p>Go <a href="/x">there</a></p>');
+    const rich = mount(page.textarea);
+    rich.editor.commands.setTextSelection(6);
+    answer({ editorId: "intro", action: "remove", href: "" });
+    expect(page.textarea.value).toBe("<p>Go there</p>");
+  });
+
+  it("ignores answers meant for another editor", () => {
+    const page = setUp("<p>Read this</p>");
+    const rich = mount(page.textarea);
+    rich.editor.commands.setTextSelection({ from: 6, to: 10 });
+    answer({ editorId: "other", action: "set", href: "/info" });
+    expect(page.textarea.value).toBe("<p>Read this</p>");
+  });
+
+  it("refuses a javascript: address", () => {
+    const page = setUp("<p>Read this</p>");
+    const rich = mount(page.textarea);
+    rich.editor.commands.setTextSelection({ from: 6, to: 10 });
+    answer({ editorId: "intro", action: "set", href: "javascript:alert(1)" });
+    expect(page.textarea.value).not.toContain("javascript:");
   });
 });

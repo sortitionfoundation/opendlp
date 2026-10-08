@@ -465,7 +465,34 @@ Write the vitest tests first for: the sync, `input` event dispatch, the
 initial mode choice, the refused switch, and Visual → HTML → Visual
 preserving content.
 
-### 4. Toolbar and link dialog
+### ✅ 4. Toolbar and link dialog
+
+Done. As built:
+
+- The toolbar macro is `rich_editor_toolbar` in the same component file, and
+  its wiring is `src/js/backoffice/rich-editor-toolbar.js`. Buttons have
+  visible text labels ("Bold", "Heading 2", …), so no `aria-label` is
+  needed and browser translation tools can see them. Undo and redo use
+  `aria-disabled` without `disabled`, following the WAI-ARIA toolbar pattern:
+  a `disabled` button drops out of the arrow-key order. This departs from
+  the component checklist's "both attributes" rule, and the macro's comment
+  explains why.
+- The link dialog is a `controlled_modal` in `registration/_modals.html`,
+  driven by a new controller slice, `richEditorLinkDialog`
+  (`src/js/components/rich-editor-link-dialog.js`).
+  - The page root listens with
+    `@rich-editor-link-request.document="openLinkDialog($event)"`.
+  - The event names live in `src/js/lib/rich-editor-events.js`, so the editor
+    and the slice share them without importing each other. They use hyphens
+    rather than colons.
+  - Focus moves to the address field with `$nextTick`, after the dialog
+    renders. Focus goes back to the editor on Apply, Remove or Cancel.
+  - Applying with nothing selected inserts the address as linked text.
+    Tiptap's own check rejects `javascript:` addresses.
+- Checked on the dev server: the toolbar wraps to two rows at the editor's
+  width in the takeover dialog, which is fine. Focus behaves as described,
+  and there were no console errors.
+
 
 The `rich_editor_toolbar` macro and the JS wiring (E6), the link modal (E7)
 and Tailwind styles (E10). Vitest tests for each command toggling the right

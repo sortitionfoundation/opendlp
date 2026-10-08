@@ -57,7 +57,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
     {% if has_registration_page %}
         {% set list_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) %}
         <div x-data="registrationPageController()"
-             @keydown.escape.window="closePageGuarded()">
+             @keydown.escape.window="closePageGuarded()"
+             @rich-editor-link-request.document="openLinkDialog($event)">
             {# Dimmed backdrop over the inert pages list. Deliberately not click-to-close:
                a stray click during a long editing session must not risk losing work.
                Closing goes through the X or Esc, both routed through the dirty guard. #}
