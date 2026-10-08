@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-06 12:00+0200\n"
+"POT-Creation-Date: 2026-10-08 12:32+0200\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -345,12 +345,12 @@ msgid "Where are you in your plans for running a deliberative process?"
 msgstr ""
 
 #: src/opendlp/domain/user_signup_surveys.py:84
-msgid "Yes, within the next 3 months"
-msgstr "Igen, a következő 3 hónapban"
+msgid "Planning one within the next 3 months"
+msgstr ""
 
 #: src/opendlp/domain/user_signup_surveys.py:85
-msgid "Yes, within the next year"
-msgstr "Igen, a következő egy évben"
+msgid "Planning one within the next year"
+msgstr ""
 
 #: src/opendlp/domain/user_signup_surveys.py:86
 msgid "No concrete plans yet"
@@ -581,7 +581,7 @@ msgstr "A válaszértékeknek különbözniük kell: \"%(value)s\" többször sz
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
-#: templates/backoffice/components/input.html:357
+#: templates/backoffice/components/input.html:360
 #: templates/backoffice/components/table.html:247
 msgid "Yes"
 msgstr "Igen"
@@ -593,7 +593,7 @@ msgstr "Igen"
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
-#: templates/backoffice/components/input.html:357
+#: templates/backoffice/components/input.html:360
 #: templates/backoffice/components/table.html:249
 msgid "No"
 msgstr "Nem"
@@ -7178,11 +7178,11 @@ msgstr "Munkalap neve"
 msgid "Share the spreadsheet with %(email)s so it can be written to."
 msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
-#: templates/backoffice/components/input.html:587
+#: templates/backoffice/components/input.html:593
 msgid "On"
 msgstr "Be"
 
-#: templates/backoffice/components/input.html:587
+#: templates/backoffice/components/input.html:593
 msgid "Off"
 msgstr "Ki"
 
@@ -10375,6 +10375,14 @@ msgstr ""
 
 #: templates/public/register.html:65
 msgid "How would you like to sign up?"
+msgstr ""
+
+#: templates/public/register.html:68
+msgid "Google"
+msgstr ""
+
+#: templates/public/register.html:77
+msgid "Microsoft"
 msgstr ""
 
 #: templates/public/register.html:103
