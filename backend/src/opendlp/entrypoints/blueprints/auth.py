@@ -389,10 +389,82 @@ def _signup_turnstile_passed() -> bool:
     )
 
 
+def _start_oauth_registration(form: RegistrationForm, provider: str, *, show_questions: bool) -> ResponseReturnValue:
+    """Stash the shared registration fields and hand off to an OAuth provider.
+
+    The provider supplies the email and name in the callback; here we only carry
+    the invite code, data agreement and any survey answers across the redirect so
+    google_callback / microsoft_callback can finish creating the account.
+    """
+    session["oauth_invite_code"] = form.invite_code.data or ""
+    session["oauth_accept_agreement"] = form.accept_data_agreement.data or False
+    if show_questions:
+        session["oauth_survey_answers"] = form.survey_answers()
+    else:
+        session.pop("oauth_survey_answers", None)
+    login_endpoint = "auth.login_google" if provider == "google" else "auth.login_microsoft"
+    return redirect(url_for(login_endpoint))
+
+
+def _register_with_email(form: RegistrationForm, *, show_questions: bool) -> ResponseReturnValue | None:
+    """Create an email/password account from a validated form.
+
+    Returns a redirect on success, or None to fall through and re-render the form
+    with a flashed error.
+    """
+    try:
+        # An IP that keeps creating accounts is a bot, not a person; with
+        # open signup there is no invite gate left to stop it.
+        check_signup_rate_limit(
+            ip_address=request.remote_addr or "",
+            max_per_ip=current_app.config.get("SIGNUP_RATE_LIMIT_PER_IP", 10),
+            window_minutes=current_app.config.get("SIGNUP_RATE_LIMIT_WINDOW_MINUTES", 60),
+        )
+
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            # After form validation, required fields are guaranteed to be non-None
+            assert form.email.data is not None
+            assert form.password.data is not None
+            user, token = create_user(
+                uow=uow,
+                email=form.email.data,
+                password=form.password.data,
+                first_name=form.first_name.data or "",
+                last_name=form.last_name.data or "",
+                accept_data_agreement=form.accept_data_agreement.data or False,
+                **_registration_role_args(form.invite_code.data),
+            )
+            if show_questions:
+                save_signup_survey(uow, user.id, form.survey_answers())
+            record_signup(
+                ip_address=request.remote_addr or "",
+                window_minutes=current_app.config.get("SIGNUP_RATE_LIMIT_WINDOW_MINUTES", 60),
+            )
+
+            return _complete_registration(user, token)
+
+    except (RateLimitExceeded, UserAlreadyExists, InvalidInvite) as error:
+        flash(error.user_msg(), "error")
+    except PasswordTooWeak as e:
+        flash(_("Password is too weak: %(error)s", error=str(e)), "error")
+    except Exception as e:
+        logger.exception("Registration error", error=str(e))
+        flash(_("An error occurred during registration. Please try again."), "error")
+    return None
+
+
 @auth_bp.route("/register", methods=["GET", "POST"])
 @auth_bp.route("/register/<invite_code>", methods=["GET", "POST"])
 def register(invite_code: str = "") -> ResponseReturnValue:
-    """User registration, with an invite code or (when open signup is on) without one."""
+    """User registration by email or via a Google/Microsoft account.
+
+    One form serves all three buttons. The Google and Microsoft buttons submit it
+    with action=google/microsoft and hand off to the provider (which supplies the
+    email and name); the email button (action=email) collects an email and
+    password here. The shared invite code, survey and data agreement apply to
+    every path.
+    """
     if current_user.is_authenticated:
         return redirect(url_for(default_dashboard_endpoint()))
 
@@ -407,7 +479,18 @@ def register(invite_code: str = "") -> ResponseReturnValue:
     # posts back to the same URL, so the flag survives the round trip.
     show_questions = has_feature("open_signup") and request.args.get("skipq") != "1"
 
+    # Which button was pressed. Google/Microsoft need no email or password here.
+    action = request.form.get("action", "email")
+    oauth_provider = action if action in ("google", "microsoft") else ""
+    if oauth_provider:
+        form.relax_for_oauth()
+    # The chooser reopens on the method that was submitted, so a re-render after a
+    # validation error does not bounce the user back to the email fields.
+    selected_method = action if action in ("email", "google", "microsoft") else "email"
+
     if form.validate_on_submit():
+        # Every signup path - Google, Microsoft or email - creates an account, so
+        # the Turnstile bot check gates them all before we act on the submission.
         if not _signup_turnstile_passed():
             flash(_("We could not verify that you are human. Please try again."), "error")
             return render_template(
@@ -415,52 +498,20 @@ def register(invite_code: str = "") -> ResponseReturnValue:
                 form=form,
                 password_help=password_validators_help_text_html(),
                 show_questions=show_questions,
+                selected_method=selected_method,
             )
-        try:
-            # An IP that keeps creating accounts is a bot, not a person; with
-            # open signup there is no invite gate left to stop it.
-            check_signup_rate_limit(
-                ip_address=request.remote_addr or "",
-                max_per_ip=current_app.config.get("SIGNUP_RATE_LIMIT_PER_IP", 10),
-                window_minutes=current_app.config.get("SIGNUP_RATE_LIMIT_WINDOW_MINUTES", 60),
-            )
-
-            uow = bootstrap.get_flask_uow()
-            with uow:
-                # After form validation, required fields are guaranteed to be non-None
-                assert form.email.data is not None
-                assert form.password.data is not None
-                user, token = create_user(
-                    uow=uow,
-                    email=form.email.data,
-                    password=form.password.data,
-                    first_name=form.first_name.data or "",
-                    last_name=form.last_name.data or "",
-                    accept_data_agreement=form.accept_data_agreement.data or False,
-                    **_registration_role_args(form.invite_code.data),
-                )
-                if show_questions:
-                    save_signup_survey(uow, user.id, form.survey_answers())
-                record_signup(
-                    ip_address=request.remote_addr or "",
-                    window_minutes=current_app.config.get("SIGNUP_RATE_LIMIT_WINDOW_MINUTES", 60),
-                )
-
-                return _complete_registration(user, token)
-
-        except (RateLimitExceeded, UserAlreadyExists, InvalidInvite) as e:
-            flash(str(e), "error")
-        except PasswordTooWeak as e:
-            flash(_("Password is too weak: %(error)s", error=str(e)), "error")
-        except Exception as e:
-            logger.exception("Registration error", error=str(e))
-            flash(_("An error occurred during registration. Please try again."), "error")
+        if oauth_provider:
+            return _start_oauth_registration(form, oauth_provider, show_questions=show_questions)
+        response = _register_with_email(form, show_questions=show_questions)
+        if response is not None:
+            return response
 
     return render_template(
         "auth/register.html",
         form=form,
         password_help=password_validators_help_text_html(),
         show_questions=show_questions,
+        selected_method=selected_method,
     )
 
 
@@ -681,11 +732,22 @@ def google_callback() -> ResponseReturnValue:
                 last_name=last_name,
                 invite_code=session.get("oauth_invite_code"),
                 accept_data_agreement=session.get("oauth_accept_agreement", False),
+                open_signup=has_feature("open_signup"),
             )
+            # Survey answers were gathered on the registration form and carried
+            # across the OAuth redirect; save them for a freshly created account.
+            survey_answers = session.get("oauth_survey_answers")
+            if created and survey_answers:
+                # The new user is added but not yet flushed, and the survey's
+                # user_id is a plain-UUID foreign key with no relationship() to
+                # order the inserts - so the user row must be flushed first.
+                uow.flush()
+                save_signup_survey(uow, user.id, survey_answers)
 
         # Clear OAuth session data
         session.pop("oauth_invite_code", None)
         session.pop("oauth_accept_agreement", None)
+        session.pop("oauth_survey_answers", None)
 
         # Log user in
         if not sign_in(user):
@@ -701,41 +763,13 @@ def google_callback() -> ResponseReturnValue:
         return redirect(get_safe_next_page(next_page, default=url_for(default_dashboard_endpoint())))
 
     except InvalidInvite as e:
-        # User needs invite code - redirect to OAuth registration
+        # User needs an invite code - send them back to the registration page
         flash(str(e), "error")
-        return redirect(url_for("auth.register_google"))
+        return redirect(url_for("auth.register"))
     except Exception as e:
         logger.exception("Google OAuth callback error", error=str(e))
         flash(_("An error occurred during Google sign in. Please try again."), "error")
         return redirect(url_for("auth.login"))
-
-
-@auth_bp.route("/register/google", methods=["GET", "POST"])
-@auth_bp.route("/register/google/<invite_code>", methods=["GET", "POST"])
-def register_google(invite_code: str = "") -> ResponseReturnValue:
-    """Register with Google OAuth (requires invite code)."""
-    if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
-
-    # Import here to avoid circular import
-    from opendlp.entrypoints.forms import OAuthRegistrationForm  # noqa: PLC0415
-
-    form = OAuthRegistrationForm()
-
-    # Pre-populate invite code from URL path parameter
-    if invite_code and not form.invite_code.data:
-        form.invite_code.data = invite_code
-
-    if form.validate_on_submit():
-        # Store invite code and agreement in session
-        assert form.invite_code.data is not None
-        session["oauth_invite_code"] = form.invite_code.data
-        session["oauth_accept_agreement"] = form.accept_data_agreement.data or False
-
-        # Redirect to Google OAuth
-        return redirect(url_for("auth.login_google"))
-
-    return render_template("auth/register_google.html", form=form)
 
 
 @auth_bp.route("/login/microsoft")
@@ -791,11 +825,22 @@ def microsoft_callback() -> ResponseReturnValue:
                 last_name=last_name,
                 invite_code=session.get("oauth_invite_code"),
                 accept_data_agreement=session.get("oauth_accept_agreement", False),
+                open_signup=has_feature("open_signup"),
             )
+            # Survey answers were gathered on the registration form and carried
+            # across the OAuth redirect; save them for a freshly created account.
+            survey_answers = session.get("oauth_survey_answers")
+            if created and survey_answers:
+                # The new user is added but not yet flushed, and the survey's
+                # user_id is a plain-UUID foreign key with no relationship() to
+                # order the inserts - so the user row must be flushed first.
+                uow.flush()
+                save_signup_survey(uow, user.id, survey_answers)
 
         # Clear OAuth session data
         session.pop("oauth_invite_code", None)
         session.pop("oauth_accept_agreement", None)
+        session.pop("oauth_survey_answers", None)
 
         # Log user in
         if not sign_in(user):
@@ -811,38 +856,10 @@ def microsoft_callback() -> ResponseReturnValue:
         return redirect(get_safe_next_page(next_page, default=url_for(default_dashboard_endpoint())))
 
     except InvalidInvite as e:
-        # User needs invite code - redirect to OAuth registration
+        # User needs an invite code - send them back to the registration page
         flash(str(e), "error")
-        return redirect(url_for("auth.register_microsoft"))
+        return redirect(url_for("auth.register"))
     except Exception as e:
         logger.exception("Microsoft OAuth callback error", error=str(e))
         flash(_("An error occurred during Microsoft sign in. Please try again."), "error")
         return redirect(url_for("auth.login"))
-
-
-@auth_bp.route("/register/microsoft", methods=["GET", "POST"])
-@auth_bp.route("/register/microsoft/<invite_code>", methods=["GET", "POST"])
-def register_microsoft(invite_code: str = "") -> ResponseReturnValue:
-    """Register with Microsoft OAuth (requires invite code)."""
-    if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
-
-    # Import here to avoid circular import
-    from opendlp.entrypoints.forms import OAuthRegistrationForm  # noqa: PLC0415
-
-    form = OAuthRegistrationForm()
-
-    # Pre-populate invite code from URL path parameter
-    if invite_code and not form.invite_code.data:
-        form.invite_code.data = invite_code
-
-    if form.validate_on_submit():
-        # Store invite code and agreement in session
-        assert form.invite_code.data is not None
-        session["oauth_invite_code"] = form.invite_code.data
-        session["oauth_accept_agreement"] = form.accept_data_agreement.data or False
-
-        # Redirect to Microsoft OAuth
-        return redirect(url_for("auth.login_microsoft"))
-
-    return render_template("auth/register_microsoft.html", form=form)

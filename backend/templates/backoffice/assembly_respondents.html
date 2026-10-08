@@ -11,6 +11,7 @@ ABOUTME: Displays respondent data configuration for assemblies
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom, table_cell_link, table_cell_status %}
 {% from "backoffice/components/pagination.html" import pagination %}
 {% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
 
 {% block title %}{{ _("Respondents") }} - {{ assembly.title }}{% endblock %}
 
@@ -70,16 +71,27 @@ ABOUTME: Displays respondent data configuration for assemblies
                         <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Respondents") }}</h2>
                         {% if respondent_gsheet and respondent_gsheet.worksheet_url %}
                             <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("Exported to Google Sheets") }}
+                                {% if respondent_gsheet.auto_export %}
+                                    {{ _("Automatically exported to Google Sheets") }}
+                                {% else %}
+                                    {{ _("Exported to Google Sheets") }}
+                                {% endif %}
                                 <a href="{{ respondent_gsheet.worksheet_url }}" target="_blank" rel="noopener"
                                    class="underline" style="color: var(--color-primary-action);">{{ respondent_gsheet.spreadsheet_title or _("View spreadsheet") }}</a>
                             </p>
+                            {% if respondent_gsheet.auto_export %}
+                                <form method="post" action="{{ url_for('respondents.stop_auto_export', assembly_id=assembly.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    {{ button(_("Stop automatic export"), type="submit", variant="secondary") }}
+                                </form>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
                 <div id="export-modal-container" data-fragment-dialog-host></div>
-                {# Filter controls - show when there are respondents or when filter is active #}
-                {% if total_count > 0 or status_filter %}
+                {# Filter controls - show when there are respondents or when filter is active.
+                   Each option carries its count. "All statuses" leaves out deleted respondents. #}
+                {% if has_respondents or status_filter %}
                     <div class="flex items-center justify-end gap-4 mb-4">
                         <div class="flex items-center gap-2">
                             <label for="status-filter" class="text-body-md" style="color: var(--color-secondary-text);">{{ _("Status:") }}</label>
@@ -89,13 +101,11 @@ ABOUTME: Displays respondent data configuration for assemblies
                                     data-navigate-base-url="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}"
                                     data-navigate-param="status"
                                     data-navigate-preserve-scroll>
-                                <option value="" {% if not status_filter %}selected{% endif %}>{{ _("All statuses") }}</option>
-                                <option value="POOL" {% if status_filter == "POOL" %}selected{% endif %}>{{ _("Pool") }}</option>
-                                <option value="SELECTED" {% if status_filter == "SELECTED" %}selected{% endif %}>{{ _("Selected") }}</option>
-                                <option value="CONFIRMED" {% if status_filter == "CONFIRMED" %}selected{% endif %}>{{ _("Confirmed") }}</option>
-                                <option value="WITHDRAWN" {% if status_filter == "WITHDRAWN" %}selected{% endif %}>{{ _("Withdrawn") }}</option>
-                                <option value="DELETED" {% if status_filter == "DELETED" %}selected{% endif %}>{{ _("Deleted") }}</option>
+                                {% for option in status_options %}
+                                    <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }} ({{ option.count }})</option>
+                                {% endfor %}
                             </select>
+                            {{ info_icon(_("All statuses: every respondent except deleted ones, whose details have been removed. Test submissions are included.")) }}
                         </div>
                         {% if total_count > 0 %}
                             <button type="button"

@@ -1,7 +1,9 @@
-"""ABOUTME: Unit tests for headline_registration_count, the "how many people registered" figure.
-ABOUTME: The dashboard and the registration tab both show it, so its rule lives in one place."""
+"""ABOUTME: Unit tests for the respondent status helpers: the headline registration count and the labels.
+ABOUTME: The dashboard, registration tab and respondents list all show these, so their rules live in one place."""
 
-from opendlp.domain.value_objects import RespondentStatus, headline_registration_count
+import pytest
+
+from opendlp.domain.value_objects import RespondentStatus, headline_registration_count, respondent_status_labels
 
 
 class TestHeadlineRegistrationCount:
@@ -29,3 +31,12 @@ class TestHeadlineRegistrationCount:
 
     def test_is_zero_with_no_respondents(self):
         assert headline_registration_count({}) == 0
+
+
+@pytest.mark.parametrize("status", list(RespondentStatus))
+class TestEveryRespondentStatusIsLabelled:
+    """A status added later must not fall back to its raw enum value, which is
+    untranslatable, and must appear as a filter on the respondents list."""
+
+    def test_has_a_short_label(self, status):
+        assert respondent_status_labels[status]

@@ -424,7 +424,7 @@ def visit_registration_tab(page: Page, title: str, test_database):
 @then("I should see the registration page list")
 def see_registration_page_list(page: Page):
     """The list shows the table headers and the create CTA."""
-    expect(page.get_by_role("columnheader", name="Date of publish")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.get_by_role("columnheader", name="Date published")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     expect(page.get_by_role("button", name="Create registration page")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 

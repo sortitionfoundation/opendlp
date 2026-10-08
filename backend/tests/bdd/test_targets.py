@@ -157,7 +157,7 @@ def move_category_down(admin_logged_in_page: Page, name: str) -> None:
 
 @when("I try to leave for the assembly details")
 def click_details_tab(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("tab", name="Details").click()
+    admin_logged_in_page.get_by_role("tab", name="Project Details").click()
 
 
 @when("I choose to keep editing")

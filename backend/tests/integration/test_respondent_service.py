@@ -7,7 +7,14 @@ import pytest
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole, RespondentStatus
+from opendlp.domain.value_objects import (
+    AssemblyRole,
+    GlobalRole,
+    RespondentAction,
+    RespondentStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
+)
 from opendlp.service_layer import assembly_service, respondent_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -293,7 +300,8 @@ class TestResetSelectionStatus:
 
         count = respondent_service.reset_selection_status(uow, admin_user.id, test_assembly.id)
 
-        assert count == 3
+        # NB003 was already in the pool, so it is not counted.
+        assert count == 2
 
         # Verify all are now POOL
         all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
@@ -315,6 +323,58 @@ class TestResetSelectionStatus:
         """Test resetting with no respondents returns zero."""
         count = respondent_service.reset_selection_status(uow, admin_user.id, test_assembly.id)
         assert count == 0
+
+    def test_reset_writes_a_completed_history_record(self, uow, admin_user: User, test_assembly: Assembly):
+        """A reset leaves a finished run record naming who did it and how many it moved."""
+        respondent_service.create_respondent(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            external_id="NB001",
+            attributes={},
+            selection_status=RespondentStatus.SELECTED,
+        )
+
+        respondent_service.reset_selection_status(uow, admin_user.id, test_assembly.id)
+
+        records = list(uow.selection_run_records.get_by_assembly_id(test_assembly.id))
+        assert len(records) == 1
+        record = records[0]
+        assert record.task_type == SelectionTaskType.RESET_TO_POOL
+        assert record.status == SelectionRunStatus.COMPLETED
+        assert record.user_id == admin_user.id
+        assert record.completed_at is not None
+        assert record.log_messages == ["Reset 1 respondents to the pool"]
+
+    def test_reset_comment_links_to_history_record(self, uow, admin_user: User, test_assembly: Assembly):
+        """Each reset respondent gets a RESET comment pointing at the reset's history record."""
+        respondent_service.create_respondent(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            external_id="NB001",
+            attributes={},
+            selection_status=RespondentStatus.SELECTED,
+        )
+        respondent_service.create_respondent(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            external_id="NB002",
+            attributes={},
+            selection_status=RespondentStatus.POOL,
+        )
+
+        respondent_service.reset_selection_status(uow, admin_user.id, test_assembly.id)
+
+        record = next(iter(uow.selection_run_records.get_by_assembly_id(test_assembly.id)))
+        reset_resp = uow.respondents.get_by_external_id(test_assembly.id, "NB001")
+        reset_comments = [c for c in reset_resp.comments if c.action == RespondentAction.RESET]
+        assert len(reset_comments) == 1
+        assert reset_comments[0].author_id == admin_user.id
+        assert reset_comments[0].selection_run_id == record.task_id
+        pool_resp = uow.respondents.get_by_external_id(test_assembly.id, "NB002")
+        assert not any(c.action == RespondentAction.RESET for c in pool_resp.comments)
 
 
 class TestCountNonPoolRespondents:

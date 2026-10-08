@@ -127,6 +127,30 @@ def _add_run_record(fake_store, **kwargs):
         return record
 
 
+def _step(html: str, step_id: str) -> str:
+    """The markup of one step on the selection page, from its row to the next step or the end of the list."""
+    start = html.index(f'id="{step_id}"')
+    end = html.find('class="selection-step"', start + 1)
+    return html[start : end if end != -1 else html.index("</ol>", start)]
+
+
+def _held_count(html: str) -> int:
+    """The 'Selected or confirmed' number in the status panel."""
+    panel = html[html.index("Selected or confirmed:") :]
+    return int(
+        panel[panel.index('<span class="text-heading-sm">') + len('<span class="text-heading-sm">') :].split("<")[0]
+    )
+
+
+def _set_statuses(fake_store, assembly_id, statuses: list[RespondentStatus]) -> None:
+    """Give the first respondents the statuses listed, in order."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        respondents = sorted(uow.respondents.get_by_assembly_id(assembly_id), key=lambda r: r.external_id)
+        for respondent, status in zip(respondents, statuses, strict=False):
+            respondent.selection_status = status
+        uow.commit()
+
+
 class TestCsvSelectionCheckData:
     """Tests for the CSV check data endpoint."""
 
@@ -269,6 +293,77 @@ class TestCsvSelectionProgressModal:
 
         assert response.status_code == 200
         assert b"hx-get" not in response.data
+
+    def test_progress_modal_lists_the_selected_respondents(
+        self, logged_in_admin, admin_user, assembly_with_csv_config, fake_store
+    ):
+        """A completed run shows the people it selected, deleted ones included, each with a view link."""
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=run_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            selected_ids=[["3", "1"]],
+            remaining_ids=["2"],
+            log_messages=["Successfully selected 2 people. 8 remain in pool."],
+            completed_at=datetime.now(UTC),
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            by_ext = {r.external_id: r for r in uow.respondents.get_by_assembly_id(assembly.id)}
+            respondent_service.delete_respondent(uow, admin_user.id, assembly.id, by_ext["3"].id, "test")
+            uow.commit()
+            ids = {ext: by_ext[ext].id for ext in ("1", "2", "3")}
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Task completed successfully. Successfully selected 2 people. 8 remain in pool." in html
+        selected = html[html.index("<span>Selected this round</span>") :]
+        assert f"/respondents/{ids['3']}" in selected
+        assert f"/respondents/{ids['1']}" in selected
+        assert f"/respondents/{ids['2']}" not in selected
+        assert selected.index(f"/respondents/{ids['1']}") < selected.index(f"/respondents/{ids['3']}")
+        assert "Name deleted" in selected
+        assert "Download selected" in selected
+
+    def test_progress_modal_shows_the_targets_the_run_used(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """A run that recorded its targets lists them in a Targets section."""
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=run_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            selected_ids=[["1"]],
+            remaining_ids=["2"],
+            targets_used=[
+                {
+                    "name": "Gender",
+                    "sort_order": 0,
+                    "comment": "",
+                    "source_url": "",
+                    "values": [{"value": "Woman", "min": 11, "max": 13}, {"value": "Man", "min": 10, "max": 12}],
+                }
+            ],
+            completed_at=datetime.now(UTC),
+        )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        targets = html[
+            html.index("<span>Targets used this round</span>") : html.index("<span>Selected this round</span>")
+        ]
+        assert "Gender" in targets
+        assert "Woman" in targets
+        assert "Man" in targets
 
     def test_progress_modal_returns_404_when_not_found(self, logged_in_admin, assembly_with_csv_config):
         """Progress modal returns 404 for non-existent task."""
@@ -419,10 +514,12 @@ class TestCsvSelectionPageIntegration:
 
         assert response.status_code == 200
         assert b"Initial Selection" in response.data
-        assert b"Check Data" in response.data
         assert b"Run Test Selection" in response.data
         assert b"Run Selection" in response.data
         assert b"Check Spreadsheet" not in response.data
+        # The database check runs implicitly; there is no button for it
+        assert b"Check Data" not in response.data
+        assert f"/backoffice/assembly/{assembly.id}/selection/db/check".encode() not in response.data
 
     def test_selection_page_shows_view_running_button_when_db_task_running(
         self, logged_in_admin, assembly_with_csv_config, fake_store
@@ -467,6 +564,139 @@ class TestCsvSelectionPageIntegration:
         assert response.status_code == 200
         assert b"db-selection-progress-modal" in response.data
 
+    def test_selection_page_lists_the_selected_respondents_for_a_completed_run(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        """Opening a completed run from the page, not the poll, still lists who it selected."""
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=run_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            selected_ids=[["3", "1"]],
+            remaining_ids=["2"],
+            log_messages=["Successfully selected 2 people. 8 remain in pool."],
+            completed_at=datetime.now(UTC),
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            ids = {r.external_id: r.id for r in uow.respondents.get_by_assembly_id(assembly.id)}
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        selected = html[html.index("<span>Selected this round</span>") :]
+        assert f"/respondents/{ids['1']}" in selected
+        assert f"/respondents/{ids['3']}" in selected
+        assert f"/respondents/{ids['2']}" not in selected
+        assert "None of the people this run selected" not in selected
+
+
+class TestSelectionHistoryNaming:
+    """The history table names runs by their place in the story and hides older eras by default."""
+
+    def _seed_two_eras(self, fake_store, assembly_id):
+        """An initial selection with one replacement round, a reset, then a fresh initial selection and round."""
+        base = datetime.now(UTC) - timedelta(hours=10)
+        plan = [
+            (SelectionTaskType.SELECT_FROM_DB, SelectionRunStatus.COMPLETED),
+            (SelectionTaskType.SELECT_REPLACEMENT_FROM_DB, SelectionRunStatus.COMPLETED),
+            (SelectionTaskType.SELECT_REPLACEMENT_FROM_DB, SelectionRunStatus.FAILED),
+            (SelectionTaskType.RESET_TO_POOL, SelectionRunStatus.COMPLETED),
+            (SelectionTaskType.SELECT_FROM_DB, SelectionRunStatus.COMPLETED),
+            (SelectionTaskType.SELECT_REPLACEMENT_FROM_DB, SelectionRunStatus.COMPLETED),
+        ]
+        records = []
+        for hours, (task_type, status) in enumerate(plan):
+            records.append(
+                _add_run_record(
+                    fake_store,
+                    assembly_id=assembly_id,
+                    task_id=uuid.uuid4(),
+                    status=status,
+                    task_type=task_type,
+                    selected_ids=[["1"]] if status == SelectionRunStatus.COMPLETED else None,
+                    created_at=base + timedelta(hours=hours),
+                    completed_at=base + timedelta(hours=hours, minutes=5),
+                )
+            )
+        return records
+
+    def test_default_view_shows_only_the_current_era(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """Runs before the latest completed initial selection are hidden behind a link that counts them."""
+        assembly = assembly_with_csv_config
+        records = self._seed_two_eras(fake_store, assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        history = html[html.index('id="selection-history"') :]
+        assert "<th" in history and "Selection</th>" in history
+        assert "Task Type" not in history
+        assert "Initial selection" in history
+        assert "Replacement selection (round 1)" in history
+        assert "(previous)" not in history
+        assert "Reset all to pool" not in history
+        assert "4 older runs are hidden" in history
+        assert "Show all runs" in history
+        assert f"current_selection={records[5].task_id}" in history
+        assert f"current_selection={records[0].task_id}" not in history
+
+    def test_show_all_names_older_eras_as_previous(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """Asking for the whole history lists every run, suffixed by era, and the reset row has no View link."""
+        assembly = assembly_with_csv_config
+        records = self._seed_two_eras(fake_store, assembly.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?history=all")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        history = html[html.index('id="selection-history"') :]
+        assert "Initial selection (previous)" in history
+        assert "Replacement selection (round 1, previous)" in history
+        assert "Replacement selection (failed)" in history
+        assert "Reset all to pool" in history
+        assert "Showing every run." in history
+        assert "Show only the current selection" in history
+        assert f"current_selection={records[3].task_id}" not in history
+        assert f"current_selection={records[0].task_id}" in history
+
+    def test_no_toggle_when_nothing_is_hidden(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        assembly = assembly_with_csv_config
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            completed_at=datetime.now(UTC),
+        )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"Show all runs" not in response.data
+        assert b"Show only the current selection" not in response.data
+
+    def test_modal_task_line_uses_the_history_name(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """The modal opened from a history row agrees with the row, on the page and in the polled fragment."""
+        assembly = assembly_with_csv_config
+        records = self._seed_two_eras(fake_store, assembly.id)
+        run_id = records[1].task_id
+
+        page = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
+        fragment = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+
+        assert page.status_code == 200
+        assert fragment.status_code == 200
+        assert b"Replacement selection (round 1, previous)" in page.data
+        assert b"Replacement selection (round 1, previous)" in fragment.data
+        assert b"Select replacements from database" not in fragment.data
+
 
 class TestCsvSelectionReset:
     """Tests for the CSV selection reset endpoint, asserting FakeStore state."""
@@ -492,6 +722,24 @@ class TestCsvSelectionReset:
             respondents = uow.respondents.get_by_assembly_id(assembly.id)
             assert len(respondents) == 10
             assert all(r.selection_status == RespondentStatus.POOL for r in respondents)
+
+    def test_reset_csv_selection_appears_in_the_history(
+        self, logged_in_admin, assembly_with_csv_config, fake_store, admin_user
+    ):
+        """Resetting writes a completed history row that the selection page lists."""
+        assembly = assembly_with_csv_config
+
+        logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/db/reset", follow_redirects=True)
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
+        assert len(records) == 1
+        assert records[0].task_type == SelectionTaskType.RESET_TO_POOL
+        assert records[0].user_id == admin_user.id
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        assert response.status_code == 200
+        assert b"Reset all to pool" in response.data
 
     @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.reset_selection_status")
     def test_reset_csv_selection_handles_not_found(self, mock_reset, logged_in_admin, assembly_with_csv_config):
@@ -534,7 +782,7 @@ class TestCsvSelectionSelectedCount:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
 
         assert response.status_code == 200
-        assert b"5 respondents are currently selected" in response.data
+        assert _held_count(response.data.decode()) == 5
         assert b"Reset Selected People" in response.data
         assert b"Run Selection" not in response.data
 
@@ -555,7 +803,7 @@ class TestCsvSelectionSelectedCount:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
 
         assert response.status_code == 200
-        assert b"4 respondents are currently selected" in response.data
+        assert _held_count(response.data.decode()) == 4
         assert b"Reset Selected People" in response.data
 
     def test_selection_page_shows_normal_ui_when_no_selection(self, logged_in_admin, assembly_with_csv_config):
@@ -568,6 +816,130 @@ class TestCsvSelectionSelectedCount:
         assert b"Reset Selected People" not in response.data
         assert b"Run Selection" in response.data
         assert b"Run Test Selection" in response.data
+
+
+class TestSelectionSteps:
+    """The two numbered steps show only the actions that apply to the held count."""
+
+    def test_nobody_held_offers_a_run_and_no_replacements(self, logged_in_admin, assembly_with_csv_config):
+        assembly = assembly_with_csv_config
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Run Selection" in initial
+        assert "Run Test Selection" in initial
+        assert "Reset Selected People" not in initial
+        assert _held_count(html) == 0
+        replacement = _step(html, "replacement-selection-step")
+        assert "Select replacements" in replacement
+        assert 'disabled aria-disabled="true"' in replacement
+        assert "Run the initial selection first." in replacement
+        assert 'aria-describedby="replacement-step-hint"' in replacement
+
+    def test_partly_filled_offers_reset_and_replacements(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 6 + [RespondentStatus.CONFIRMED] * 2)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Reset Selected People" in initial
+        assert "Run Selection" not in initial
+        assert _held_count(html) == 8
+        assert "var(--color-warning-background)" in initial
+        replacement = _step(html, "replacement-selection-step")
+        assert f'href="/backoffice/assembly/{assembly.id}/selection?replacement_modal=open"' in replacement
+        assert "aria-disabled" not in replacement
+        assert "replacement-step-hint" not in replacement
+
+    def test_every_place_filled_offers_reset_only(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 10)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Reset Selected People" in initial
+        assert "Run Selection" not in initial
+        assert _held_count(html) == 10
+        assert "var(--color-success-background)" in initial
+        replacement = _step(html, "replacement-selection-step")
+        assert 'disabled aria-disabled="true"' in replacement
+        assert "Every place is filled." in replacement
+
+    def test_more_held_than_places_offers_reset_only(self, logged_in_admin, assembly_with_csv_config, fake_store):
+        """Lowering the number to select below the held count leaves nothing for a replacement to fill."""
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 6 + [RespondentStatus.CONFIRMED] * 4)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.assemblies.get(assembly.id).number_to_select = 8
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Reset Selected People" in initial
+        assert "Run Selection" not in initial
+        assert _held_count(html) == 10
+        assert "var(--color-success-background)" in initial
+        replacement = _step(html, "replacement-selection-step")
+        assert 'disabled aria-disabled="true"' in replacement
+        assert "Every place is filled." in replacement
+
+    def test_withdrawn_people_do_not_block_a_fresh_selection(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        """Someone who withdrew holds no place, so the run buttons come back and there is nothing to reset."""
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.WITHDRAWN, RespondentStatus.TEST_SUBMISSION])
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "Run Selection" in initial
+        assert "Reset Selected People" not in initial
+        assert _held_count(html) == 0
+
+    def test_running_selection_hides_reset_and_replacements(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        assembly = assembly_with_csv_config
+        _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 4)
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.RUNNING,
+            task_type=SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+        )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert "View Running Selection" in initial
+        assert "Reset Selected People" not in initial
+        assert "Run Selection" not in initial
+        replacement = _step(html, "replacement-selection-step")
+        assert 'disabled aria-disabled="true"' in replacement
+        assert "Wait for the running selection to finish" in replacement
+
+    def test_settings_not_confirmed_disables_every_action(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        html = response.data.decode()
+        initial = _step(html, "initial-selection-step")
+        assert initial.count('disabled aria-disabled="true"') == 2
+        replacement = _step(html, "replacement-selection-step")
+        assert 'disabled aria-disabled="true"' in replacement
 
 
 class TestSaveCsvSettings:

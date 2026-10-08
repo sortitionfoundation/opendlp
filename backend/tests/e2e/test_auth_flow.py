@@ -2,6 +2,7 @@
 ABOUTME: Smoke tests for register/login/logout/confirm-email plus real Redis rate-limiting and CSRF"""
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from flask.testing import FlaskClient
@@ -11,6 +12,7 @@ from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.feature_flags import reload_flags
+from opendlp.service_layer.exceptions import InvalidInvite, PasswordTooWeak, UserAlreadyExists
 from opendlp.service_layer.signup_survey_service import get_signup_survey
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
@@ -255,6 +257,46 @@ class TestOpenSignup:
             survey = get_signup_survey(uow, user.id, admin.id)
             assert survey is not None
             assert survey.answers == {"location": "Budapest"}
+
+
+class TestRegistrationServiceErrors:
+    """The email path flashes an error and re-renders when the service layer rejects a signup.
+
+    Form validation already screens invalid invites, duplicate emails and short passwords, so
+    these service-layer errors only surface on a race (or a domain-only password rule); they are
+    exercised here by making create_user raise, to confirm each is caught rather than 500-ing.
+    """
+
+    def _post_valid_form(self, client: FlaskClient) -> object:
+        return client.post(
+            "/auth/register",
+            data={
+                "invite_code": "",
+                "first_name": "Edge",
+                "last_name": "Case",
+                "email": "edgecase@example.com",
+                "password": "securepassword123",  # pragma: allowlist secret
+                "password_confirm": "securepassword123",  # pragma: allowlist secret
+                "accept_data_agreement": "y",
+                "csrf_token": get_csrf_token(client, "/auth/register"),
+            },
+            follow_redirects=True,
+        )
+
+    @pytest.mark.parametrize(
+        ("error", "needle"),
+        [
+            (UserAlreadyExists(email="edgecase@example.com"), b"already exists"),
+            (InvalidInvite(reason="already used"), b"Invalid invite code"),
+            (PasswordTooWeak("This password is too common."), b"too weak"),
+            (RuntimeError("unexpected"), b"An error occurred during registration"),
+        ],
+    )
+    def test_service_error_is_flashed_not_raised(self, client: FlaskClient, open_signup, error, needle):
+        with patch("opendlp.entrypoints.blueprints.auth.create_user", side_effect=error):
+            response = self._post_valid_form(client)
+        assert response.status_code == 200
+        assert needle in response.data
 
 
 class TestAuthenticationEdgeCases:

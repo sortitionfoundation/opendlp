@@ -67,7 +67,7 @@ own value strings**. That means changing what the rule stores (§3).
 - `info_icon` shows its text only as a `title` tooltip plus `sr-only` text. It
   isn't focusable, so keyboard-only and touch users can't read it. That's being
   worked around here (§5), and the component fix is logged in
-  `docs/agent/793-two-step-fields/future-work.md`.
+  `docs/agent/future_work/error_handlers_and_info_icon.md`.
 - A year-of-birth answer (`FieldType.INTEGER`) gets **no** range check at all on
   submission. `validate_integer` accepts 1880, or 3025. Fixed in §6.
 
@@ -335,7 +335,7 @@ it.
 
   That way keyboard and touch users can read it whenever they can act on it.
   The proper `info_icon` fix (a focusable toggletip) is written up in
-  `docs/agent/793-two-step-fields/future-work.md`.
+  `docs/agent/future_work/error_handlers_and_info_icon.md`.
 - The "as-of year must be within a year of today" check **stays**. It catches
   the silent typo that would put everyone in `UNKNOWN`.
 
@@ -462,7 +462,7 @@ Notes from implementation:
 | Q6 | Keep Edit toggle across HTMX re-renders? | No, the server re-decides |
 | Q7 | Rewrite `age-bracket-preview.js`? | Yes, rewrite |
 | Q8 | Keep "as-of within a year of today" check? | Keep |
-| Q9 | `info_icon` accessibility | (b) hint when editing, icon in text mode. Component fix in `793-two-step-fields/future-work.md` |
+| Q9 | `info_icon` accessibility | (b) hint when editing, icon in text mode. Component fix in `future_work/error_handlers_and_info_icon.md` |
 | Q10 | DATE limits | Keep rolling 120 years, improve the message |
 | Q11 | Range-check year-of-birth integers feeding an age rule? | Yes |
 | Q12 | Delete `eligibility_sentence()`? | Yes |

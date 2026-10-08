@@ -11,7 +11,7 @@
 {% set validation = replacement_validation|default(none) %}
 {% set value_errors = validation.value_errors if validation else {} %}
 {% set feasibility = validation.feasibility if validation and validation.feasibility and validation.feasibility.checked else none %}
-{% set number_value = form.get('number_to_select', plan.default_number) %}
+{% set number_value = form.get('number_to_select', plan.calculated_number) %}
 {# Modal state comes from the registered modal() Alpine component: closing
    navigates back to the selection view, which clears the ?replacement_modal=open
    that opens this dialog. #}
@@ -24,7 +24,7 @@
             </p>
             {{ alert(_("Every place is filled. Replacements are only needed once someone selected or confirmed has withdrawn."), variant="info") }}
         {% else %}
-            {% set number_editing = (number_value|string != plan.default_number|string) or not plan.number_in_range %}
+            {% set number_editing = (number_value|string != plan.calculated_number|string) or not plan.number_in_range %}
             <div x-data="replacementSuggestions"
                  @input="refresh()"
                  data-number-editing="{{ 'true' if number_editing else 'false' }}">

@@ -184,7 +184,7 @@ class TestRespondent:
         run_id = uuid.uuid4()
         resp.mark_as_selected(run_id)
 
-        resp.reset_to_pool()
+        resp.reset_to_pool(uuid.uuid4(), uuid.uuid4())
 
         assert resp.selection_status == RespondentStatus.POOL
         assert resp.selection_run_id is None
@@ -194,7 +194,7 @@ class TestRespondent:
         resp.mark_as_selected(uuid.uuid4())
         resp.mark_as_confirmed()
 
-        resp.reset_to_pool()
+        resp.reset_to_pool(uuid.uuid4(), uuid.uuid4())
 
         assert resp.selection_status == RespondentStatus.POOL
         assert resp.selection_run_id is None
@@ -204,18 +204,35 @@ class TestRespondent:
         resp.mark_as_selected(uuid.uuid4())
         resp.mark_as_withdrawn()
 
-        resp.reset_to_pool()
+        resp.reset_to_pool(uuid.uuid4(), uuid.uuid4())
 
         assert resp.selection_status == RespondentStatus.POOL
         assert resp.selection_run_id is None
+
+    def test_reset_to_pool_records_reset_comment(self):
+        resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
+        resp.mark_as_selected(uuid.uuid4())
+        resp.mark_as_confirmed()
+        author_id = uuid.uuid4()
+        reset_run_id = uuid.uuid4()
+
+        resp.reset_to_pool(author_id, reset_run_id)
+
+        assert len(resp.comments) == 1
+        comment = resp.comments[0]
+        assert comment.action is RespondentAction.RESET
+        assert comment.author_id == author_id
+        assert comment.selection_run_id == reset_run_id
+        assert comment.text == "Status: CONFIRMED → POOL. Reset all to pool"
 
     def test_reset_to_pool_from_pool_is_noop(self):
         resp = Respondent(assembly_id=uuid.uuid4(), external_id="NB001")
 
-        resp.reset_to_pool()
+        resp.reset_to_pool(uuid.uuid4(), uuid.uuid4())
 
         assert resp.selection_status == RespondentStatus.POOL
         assert resp.selection_run_id is None
+        assert resp.comments == []
 
     def test_create_detached_copy(self):
         assembly_id = uuid.uuid4()

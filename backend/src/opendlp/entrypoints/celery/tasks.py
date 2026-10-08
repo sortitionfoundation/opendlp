@@ -1,13 +1,17 @@
 import logging
 import traceback
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
 import gspread
+import structlog
 from celery import Task
 from celery.signals import setup_logging
 from markupsafe import escape
+from redis import Redis
+from redis.exceptions import LockError
 from sortition_algorithms import (
     RunReport,
     adapters,
@@ -25,10 +29,13 @@ from sqlalchemy.orm.attributes import flag_modified
 
 import opendlp.logging
 from opendlp import config
+from opendlp.adapters.gsheet_export import GSheetExportTarget
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.adapters.sortition_progress import DatabaseProgressReporter
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, ExportTargetError
 from opendlp.bootstrap import bootstrap
+from opendlp.config import RedisCfg
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
@@ -39,6 +46,7 @@ from opendlp.translations import gettext as _
 from opendlp.translations import ngettext
 
 logger = logging.getLogger()
+struct_logger = structlog.get_logger(__name__)
 
 
 @setup_logging.connect
@@ -748,6 +756,9 @@ def _internal_write_db_results(
     selected_panels: list[frozenset[str]],
     session_factory: sessionmaker | None = None,
 ) -> RunReport:
+    # Imported here because respondent_auto_export dispatches this module's tasks.
+    from opendlp.service_layer.respondent_auto_export import request_auto_export  # noqa: PLC0415
+
     report = RunReport()
     _append_run_log(
         task_id,
@@ -767,6 +778,7 @@ def _internal_write_db_results(
                 raise SelectionRunRecordNotFoundError(f"Selection run {task_id} not found or has no user_id")
             uow.respondents.bulk_mark_as_selected(assembly_id, selected_ext_ids, task_id, run_record.user_id)
             uow.commit()
+            request_auto_export(uow, assembly_id)
 
         _update_selection_record(
             task_id=task_id,
@@ -941,6 +953,78 @@ def run_select(
     report.add_report(write_report)
 
     return success, selected_panels, report
+
+
+def _background_gsheet_export_target_factory(spreadsheet_url: str) -> AbstractGSheetExportTarget:
+    """A real Google Sheets target with the retrying client and longer timeout a background export can afford."""
+    return GSheetExportTarget(spreadsheet_url=spreadsheet_url, background=True)
+
+
+# Retries cover the Google API's occasional errors and rate limits; a permanent
+# failure (sheet unshared or deleted) costs a handful of cheap attempts and ends
+# in the logs. Backoff is exponential (1s, 2s, 4s before jitter).
+AUTO_EXPORT_MAX_RETRIES = 3
+
+
+@app.task(
+    bind=True,
+    autoretry_for=(ExportTargetError,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+    max_retries=AUTO_EXPORT_MAX_RETRIES,
+)
+def auto_export_respondents(
+    self: Task,
+    assembly_id: uuid.UUID,
+    session_factory: sessionmaker | None = None,
+    target_factory: Callable[[str], AbstractGSheetExportTarget] = _background_gsheet_export_target_factory,
+    redis_client: Redis | None = None,
+) -> bool:
+    """Rewrite an assembly's respondent export sheet after its respondents changed.
+
+    Queued by ``respondent_auto_export.request_auto_export`` with a countdown.
+    Holds a per-assembly lock while writing so two runs cannot interleave; if
+    the lock is taken, asks for another run and returns. Clears the pending
+    key before reading, so a change that lands mid-export schedules a follow-up
+    rather than being lost. Returns whether a write happened.
+    """
+    # Imported here because respondent_auto_export dispatches this task.
+    from opendlp.service_layer import respondent_auto_export  # noqa: PLC0415
+
+    r = redis_client or RedisCfg.from_env().create_client()
+    lock = r.lock(respondent_auto_export.lock_key(assembly_id), timeout=respondent_auto_export.LOCK_TIMEOUT_SECONDS)
+    if not lock.acquire(blocking=False):
+        r.delete(respondent_auto_export.pending_key(assembly_id))
+        with bootstrap(session_factory=session_factory) as uow:
+            respondent_auto_export.request_auto_export(uow, assembly_id, redis_client=r)
+        return False
+    try:
+        r.delete(respondent_auto_export.pending_key(assembly_id))
+        with bootstrap(session_factory=session_factory) as uow:
+            return respondent_auto_export.run_auto_export(uow, assembly_id, target_factory)
+    except ExportTargetError as exc:
+        attempt = self.request.retries + 1
+        if attempt > AUTO_EXPORT_MAX_RETRIES:
+            struct_logger.error(
+                "Automatic export failed and will not be retried",
+                assembly_id=str(assembly_id),
+                attempt=attempt,
+                error=str(exc),
+            )
+            return False
+        struct_logger.warning(
+            "Automatic export failed; will retry", assembly_id=str(assembly_id), attempt=attempt, error=str(exc)
+        )
+        raise
+    finally:
+        try:
+            lock.release()
+        except LockError:
+            # The lock expired before the write finished, so another run may
+            # have interleaved with this one. Not worth failing the task over,
+            # but worth a trace: it means LOCK_TIMEOUT_SECONDS is too short.
+            struct_logger.warning("Automatic export lock expired before release", assembly_id=str(assembly_id))
 
 
 @app.task

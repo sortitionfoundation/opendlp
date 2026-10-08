@@ -8,7 +8,7 @@ from io import StringIO
 
 import pytest
 
-from opendlp.adapters.tabular_export import CsvExportTarget
+from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondent_field_schema import DerivationType, RespondentFieldDefinition, RespondentFieldGroup
@@ -25,10 +25,12 @@ from opendlp.service_layer.respondent_export_service import (
     STATUS_FILTER_ALL,
     STATUS_FILTER_SELECTED_OR_CONFIRMED,
     build_respondent_table,
+    disable_auto_export,
     export_respondents,
     export_respondents_to_gsheet,
     get_respondent_gsheet_config,
     resolve_status_filter,
+    respondent_view_url,
 )
 from tests.fakes import FakeGSheetExportTarget, FakeUnitOfWork
 
@@ -54,9 +56,9 @@ class TestResolveStatusFilter:
     def test_single_status(self):
         assert resolve_status_filter("POOL") == [RespondentStatus.POOL]
 
-    def test_deleted_is_rejected(self):
-        with pytest.raises(InvalidSelection):
-            resolve_status_filter("DELETED")
+    def test_deleted_can_be_chosen_explicitly(self):
+        """So an organiser can list who to erase from copies held outside OpenDLP."""
+        assert resolve_status_filter("DELETED") == [RespondentStatus.DELETED]
 
     def test_invalid_value_is_rejected(self):
         with pytest.raises(InvalidSelection):
@@ -136,14 +138,14 @@ class TestBuildRespondentTable:
 
         table = build_respondent_table([respondent], [], id_column_header="external_id")
 
-        assert table.headers[-5:] == [
+        assert table.headers[-6:-1] == [
             "selection_status",
             "source_type",
             "selection_run_id",
             "created_at",
             "updated_at",
         ]
-        assert table.rows[0][-5:] == [
+        assert table.rows[0][-6:-1] == [
             "SELECTED",
             "CSV_IMPORT",
             str(run_id),
@@ -206,6 +208,39 @@ class TestBuildRespondentTable:
 
         assert [row[0] for row in table.rows] == ["R1", "R2", "R3"]
 
+    def test_view_url_is_the_last_column(self):
+        respondent = Respondent(assembly_id=uuid.uuid4(), external_id="R1")
+
+        table = build_respondent_table(
+            [respondent], [], id_column_header="external_id", application_url="https://opendlp.example.org"
+        )
+
+        assert table.headers[-1] == "view_url"
+        assert table.rows[0][-1] == (
+            f"https://opendlp.example.org/backoffice/assembly/{respondent.assembly_id}/respondents/{respondent.id}"
+        )
+
+    def test_view_url_is_blank_without_an_application_url(self):
+        respondent = Respondent(assembly_id=uuid.uuid4(), external_id="R1")
+
+        table = build_respondent_table([respondent], [], id_column_header="external_id")
+
+        assert table.headers[-1] == "view_url"
+        assert table.rows[0][-1] == ""
+
+
+class TestRespondentViewUrl:
+    def test_builds_absolute_url(self):
+        assembly_id = uuid.uuid4()
+        respondent_id = uuid.uuid4()
+
+        url = respondent_view_url("https://opendlp.example.org", assembly_id, respondent_id)
+
+        assert url == f"https://opendlp.example.org/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+
+    def test_empty_application_url_gives_empty_string(self):
+        assert respondent_view_url("", uuid.uuid4(), uuid.uuid4()) == ""
+
 
 def _seed(uow: FakeUnitOfWork, *, global_role: GlobalRole = GlobalRole.ADMIN) -> tuple[User, Assembly]:
     user = User(email="admin@example.com", global_role=global_role, password_hash="hash")
@@ -263,6 +298,21 @@ class TestExportRespondents:
 
         ids = {row["external_id"] for row in _parse_export(target)}
         assert ids == {"R-pool", "R-selected"}
+
+    def test_deleted_filter_exports_deleted_ids_with_blank_details(self, uow):
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R-pool", RespondentStatus.POOL)
+        gone = Respondent(assembly_id=assembly.id, external_id="R-deleted", attributes={"name": "Gone Person"})
+        gone.delete_personal_data(author_id=user.id, comment="Asked to be forgotten")
+        uow.respondents.add(gone)
+
+        target = CsvExportTarget()
+        export_respondents(uow, user.id, assembly.id, status_filter=[RespondentStatus.DELETED], target=target)
+
+        rows = _parse_export(target)
+        assert [row["external_id"] for row in rows] == ["R-deleted"]
+        assert rows[0]["selection_status"] == "DELETED"
+        assert rows[0]["name"] == ""
 
     def test_single_status_filter(self, uow):
         user, assembly = _seed(uow)
@@ -407,3 +457,99 @@ class TestExportRespondentsToGSheet:
     def test_get_config_returns_none_when_unset(self, uow):
         user, assembly = _seed(uow)
         assert get_respondent_gsheet_config(uow, user.id, assembly.id) is None
+
+    def test_auto_export_is_off_by_default(self, uow):
+        """A plain export saves the config with auto-export off."""
+        user, assembly = _seed(uow)
+        _export(uow, user, assembly)
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.auto_export is False
+        assert saved.auto_export_status_filter == ""
+
+    def test_enables_auto_export_with_the_status_filter_token(self, uow):
+        """Ticking the box saves the flag and the filter token the background export will use."""
+        user, assembly = _seed(uow)
+        _export(uow, user, assembly, auto_export=True, auto_export_status_filter="selected_or_confirmed")
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.auto_export is True
+        assert saved.auto_export_status_filter == "selected_or_confirmed"
+
+    def test_unticked_export_switches_auto_export_off(self, uow):
+        """The checkbox is the truth on every Google Sheets export."""
+        user, assembly = _seed(uow)
+        _export(uow, user, assembly, auto_export=True, auto_export_status_filter="POOL")
+        _export(uow, user, assembly)
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.auto_export is False
+        assert saved.auto_export_status_filter == ""
+
+    def test_failed_write_does_not_enable_auto_export(self, uow):
+        """The initial export must succeed: a target that raises leaves auto-export off."""
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R1", RespondentStatus.POOL)
+
+        with pytest.raises(ExportTargetError):
+            export_respondents_to_gsheet(
+                uow,
+                user.id,
+                assembly.id,
+                status_filter=None,
+                spreadsheet_url=_SHEET_URL,
+                worksheet_name="Tab",
+                target=FakeGSheetExportTarget(error=ExportTargetError("not shared")),
+                auto_export=True,
+            )
+
+        assert get_respondent_gsheet_config(uow, user.id, assembly.id) is None
+
+
+def _export(
+    uow: FakeUnitOfWork,
+    user: User,
+    assembly: Assembly,
+    *,
+    auto_export: bool = False,
+    auto_export_status_filter: str = "",
+) -> None:
+    export_respondents_to_gsheet(
+        uow,
+        user.id,
+        assembly.id,
+        status_filter=None,
+        spreadsheet_url=_SHEET_URL,
+        worksheet_name="Tab",
+        target=FakeGSheetExportTarget(),
+        auto_export=auto_export,
+        auto_export_status_filter=auto_export_status_filter,
+    )
+
+
+class TestDisableAutoExport:
+    def test_clears_the_flag_and_nothing_else(self, uow):
+        """Stopping auto-export keeps the URL, tab and last-export link for the next manual export."""
+        user, assembly = _seed(uow)
+        _export(uow, user, assembly, auto_export=True, auto_export_status_filter="POOL")
+
+        disable_auto_export(uow, user.id, assembly.id)
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.auto_export is False
+        assert saved.url == _SHEET_URL
+        assert saved.worksheet_name == "Tab"
+
+    def test_no_config_is_a_no_op(self, uow):
+        user, assembly = _seed(uow)
+        disable_auto_export(uow, user.id, assembly.id)
+        assert get_respondent_gsheet_config(uow, user.id, assembly.id) is None
+
+    def test_requires_manage_permission(self, uow):
+        user, assembly = _seed(uow, global_role=GlobalRole.USER)
+        with pytest.raises(InsufficientPermissions):
+            disable_auto_export(uow, user.id, assembly.id)

@@ -375,6 +375,35 @@ class TestGetRespondentsForAssemblyPaginated:
         assert total_count == 1
         assert results[0].selection_status == RespondentStatus.SELECTED
 
+    def test_leaves_out_deleted_respondents_without_a_status_filter(self, uow):
+        user, assembly, _ = _seed(uow)  # seed adds one POOL respondent
+        uow.respondents.add(
+            Respondent(assembly_id=assembly.id, external_id="R-GONE", selection_status=RespondentStatus.DELETED)
+        )
+        uow.respondents.add(
+            Respondent(assembly_id=assembly.id, external_id="R-TEST", selection_status=RespondentStatus.TEST_SUBMISSION)
+        )
+
+        results, total_count = respondent_service.get_respondents_for_assembly_paginated(
+            uow, user.id, assembly.id, page=1, per_page=10
+        )
+
+        assert total_count == 2
+        assert {r.external_id for r in results} == {"R001", "R-TEST"}
+
+    def test_returns_deleted_respondents_when_filtered_to_deleted(self, uow):
+        user, assembly, _ = _seed(uow)
+        uow.respondents.add(
+            Respondent(assembly_id=assembly.id, external_id="R-GONE", selection_status=RespondentStatus.DELETED)
+        )
+
+        results, total_count = respondent_service.get_respondents_for_assembly_paginated(
+            uow, user.id, assembly.id, page=1, per_page=10, status=RespondentStatus.DELETED
+        )
+
+        assert total_count == 1
+        assert results[0].external_id == "R-GONE"
+
 
 class TestCreateRespondentEmitsCreateComment:
     def test_manual_create_records_create_comment(self, uow):

@@ -30,11 +30,19 @@ The export is the richer inverse of CSV import:
    attributes and derived fields);
 3. any leftover attribute keys not in the schema, sorted;
 4. internal columns: `selection_status`, `source_type`, `selection_run_id`,
-   `created_at`, `updated_at`.
+   `created_at`, `updated_at`;
+5. `view_url`, the absolute URL of the respondent's page in OpenDLP.
+
+`view_url` is built from the `APPLICATION_URL` setting, not with `url_for`,
+because the automatic export runs in a Celery worker with no Flask app or
+request to take the host from. It is blank when `APPLICATION_URL` is unset. The
+path is written out by hand in `respondent_view_url`, so it must follow the
+`respondents.view_respondent` route; the e2e test in
+`tests/e2e/test_respondent_export.py` follows the exported link to catch drift.
 
 ## Re-importing an exported file
 
-CSV import recognises and skips the internal columns above, so an exported file
+CSV import recognises and skips the internal columns and `view_url` above, so an exported file
 re-imports cleanly (skipped columns are reported in the import status). A fresh
 import always lands respondents in `POOL`. `stay_on_db` is honoured when
 creating a new record but must never be silently overwritten on an existing one.

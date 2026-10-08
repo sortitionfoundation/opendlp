@@ -47,6 +47,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
+from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
 from opendlp.service_layer.respondent_field_schema_service import delete_derived_field
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
@@ -437,6 +438,7 @@ def configure_target_source(
     if isinstance(spec, ExactCopySpec):
         field = _configure_exact_copy(uow, assembly_id, category, spec)
         _relink(uow, category, field)
+        request_auto_export(uow, assembly_id)
         return [field.create_detached_copy()], None
 
     derived, report = _configure_derivation(uow, user_id, assembly_id, category, spec.rule, spec.source)

@@ -12,6 +12,9 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
+from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.users import User
 from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_assembly_management
@@ -38,7 +41,8 @@ from opendlp.service_layer.replacement_targets import (
     run_feasibility_check,
 )
 from opendlp.service_layer.report_translation import translate_run_report_to_html
-from opendlp.service_layer.respondent_service import count_held_respondents, count_non_pool_respondents
+from opendlp.service_layer.respondent_service import count_held_respondents
+from opendlp.service_layer.selection_history import name_history
 from opendlp.service_layer.sortition import (
     InvalidSelection,
     LoadRunResult,
@@ -47,6 +51,7 @@ from opendlp.service_layer.sortition import (
     check_and_update_task_health,
     get_active_initial_selection_run_id,
     get_manage_old_tabs_status,
+    get_selected_respondents,
     get_selection_run_status,
     start_gsheet_load_task,
     start_gsheet_manage_tabs_task,
@@ -87,13 +92,15 @@ def _get_manage_tabs_context(
 
 def _get_selection_modal_context(
     uow: AbstractUnitOfWork, assembly_id: uuid.UUID, selection_param: str | None
-) -> tuple[uuid.UUID | None, object | None, list, str]:
+) -> tuple[uuid.UUID | None, object | None, list, str, list[Respondent]]:
     """Get context for displaying the initial selection progress modal.
 
-    Returns (current_selection, run_record, log_messages, translated_report_html).
+    Returns (current_selection, run_record, log_messages, translated_report_html,
+    selected_respondents). The respondents are only loaded for a completed run;
+    the modal lists them.
     """
     if not selection_param:
-        return None, None, [], ""
+        return None, None, [], "", []
 
     try:
         current_selection = uuid.UUID(selection_param)
@@ -101,16 +108,20 @@ def _get_selection_modal_context(
         result = get_selection_run_status(uow, current_selection)
 
         if result.run_record and result.run_record.assembly_id == assembly_id:
+            selected_respondents = (
+                get_selected_respondents(uow, result.run_record) if result.run_record.is_completed else []
+            )
             return (
                 current_selection,
                 result.run_record,
                 result.log_messages,
                 translate_run_report_to_html(result.run_report) if result.run_report else "",
+                selected_respondents,
             )
     except (ValueError, TypeError):
         logger.debug("Invalid selection_param for _get_selection_modal_context: %r", selection_param)
 
-    return None, None, [], ""
+    return None, None, [], "", []
 
 
 def _load_features_pending(run_record: object, result: object) -> bool:
@@ -174,6 +185,32 @@ def _get_replacement_modal_context(
     return None, None, [], "", initial_min_select, initial_max_select, False
 
 
+def _get_history_context(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    page: int,
+    per_page: int,
+    show_all: bool,
+) -> tuple[list[tuple[SelectionRunRecord, User | None]], int, dict[uuid.UUID, str], int]:
+    """One page of the selection history, with a name for every run of the assembly.
+
+    Unless ``show_all`` is set, the page covers only the current era: the run
+    that started it and everything after. Returns (page of (record, user),
+    count of runs in view, run names by task id, count of older runs hidden).
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    summaries = uow.selection_run_records.get_history_summaries(assembly_id)
+    naming = name_history(summaries)
+    era_start = naming.current_era_start
+    older_count = 0 if era_start is None else sum(1 for s in summaries if s.created_at < era_start)
+    since = None if show_all else era_start
+    run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
+        assembly_id, page, per_page, since=since
+    )
+    return run_history, total_count, naming.names, older_count
+
+
 # --- Selection views ---
 
 
@@ -223,6 +260,7 @@ def render_selection_page(
     run_record = None
     log_messages: list = []
     translated_report_html = ""
+    selected_respondents: list[Respondent] = []
 
     # Manage tabs variables (extracted to helper for complexity)
     current_manage_tabs_param = request.args.get("current_manage_tabs")
@@ -232,8 +270,8 @@ def render_selection_page(
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
         # Get selection modal context
-        current_selection, run_record, log_messages, translated_report_html = _get_selection_modal_context(
-            uow, assembly_id, request.args.get("current_selection")
+        current_selection, run_record, log_messages, translated_report_html, selected_respondents = (
+            _get_selection_modal_context(uow, assembly_id, request.args.get("current_selection"))
         )
 
         # Get replacement modal context
@@ -273,8 +311,11 @@ def render_selection_page(
             logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
 
     # Fetch paginated selection history
+    history_show_all = request.args.get("history") == "all"
     with uow:
-        run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(assembly_id, page, per_page)
+        run_history, total_count, run_names, history_older_count = _get_history_context(
+            uow, assembly_id, page, per_page, history_show_all
+        )
         total_pages = (total_count + per_page - 1) // per_page
 
     replacement_modal_open = (
@@ -291,7 +332,6 @@ def render_selection_page(
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
     # Determine data source and tab enabled states
-    non_pool_count = 0
     csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
     replacement_plan = None
@@ -306,13 +346,12 @@ def render_selection_page(
         respondents_enabled = csv_status.has_respondents
         selection_enabled = csv_status.selection_enabled
         csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
-        # Count the respondents outside the pool, and those of them holding a place
+        # Count the respondents holding a place: selected or confirmed
         try:
             with uow:
-                non_pool_count = count_non_pool_respondents(uow, assembly_id)
                 csv_held_count = count_held_respondents(uow, assembly_id)
         except ServiceLayerError as count_error:
-            logger.error("Error counting non-pool respondents", error=str(count_error))
+            logger.error("Error counting held respondents", error=str(count_error))
         if replacement_modal_open:
             with uow:
                 replacement_plan, replacement_validation = _get_db_replacement_dialog_context(
@@ -328,10 +367,12 @@ def render_selection_page(
         respondents_enabled = False
         selection_enabled = False
 
+    # Replacements fill places that are held by nobody: some people must hold a
+    # place, and fewer than the assembly needs.
     replacement_enabled = (
         data_source == "csv"
         and csv_settings_confirmed
-        and non_pool_count > 0
+        and 0 < csv_held_count < assembly.number_to_select
         and active_initial_selection_run_id is None
     )
 
@@ -340,6 +381,9 @@ def render_selection_page(
         assembly=assembly,
         gsheet=gsheet,
         run_history=run_history,
+        run_names=run_names,
+        history_show_all=history_show_all,
+        history_older_count=history_older_count,
         page=page,
         per_page=per_page,
         total_count=total_count,
@@ -348,6 +392,7 @@ def render_selection_page(
         run_record=run_record,
         log_messages=log_messages,
         translated_report_html=translated_report_html,
+        selected_respondents=selected_respondents,
         current_manage_tabs=current_manage_tabs,
         manage_tabs_run_record=manage_tabs_run_record,
         manage_tabs_tab_names=manage_tabs_tab_names,
@@ -369,7 +414,6 @@ def render_selection_page(
         targets_enabled=targets_enabled,
         respondents_enabled=respondents_enabled,
         selection_enabled=selection_enabled,
-        non_pool_count=non_pool_count,
         csv_held_count=csv_held_count,
         csv_settings_confirmed=csv_settings_confirmed,
         active_initial_selection_run_id=active_initial_selection_run_id,
@@ -418,6 +462,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
 
             # Get run status
             result = get_selection_run_status(uow, run_id)
+            run_names = name_history(uow.selection_run_records.get_history_summaries(assembly_id)).names
 
         if result.run_record is None:
             return "", 404
@@ -435,6 +480,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
             "backoffice/components/selection_progress_modal.html",
             assembly=assembly,
             gsheet=gsheet,
+            run_names=run_names,
             run_record=result.run_record,
             log_messages=result.log_messages,
             run_report=result.run_report,
@@ -465,6 +511,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
 
             # Get run status
             result = get_selection_run_status(uow, run_id)
+            run_names = name_history(uow.selection_run_records.get_history_summaries(assembly_id)).names
 
         if result.run_record is None:
             return "", 404
@@ -490,6 +537,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             "backoffice/components/replacement_modal.html",
             assembly=assembly,
             gsheet=gsheet,
+            run_names=run_names,
             replacement_run_record=result.run_record,
             replacement_log_messages=result.log_messages,
             replacement_translated_report_html=(

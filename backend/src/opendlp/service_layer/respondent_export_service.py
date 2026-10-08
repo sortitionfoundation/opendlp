@@ -3,6 +3,7 @@ ABOUTME: Builds tabular data, resolves status filters, orchestrates the export""
 
 import uuid
 
+from opendlp import config
 from opendlp.adapters.tabular_export import (
     AbstractGSheetExportTarget,
     AbstractTabularExportTarget,
@@ -33,12 +34,17 @@ _TOP_LEVEL_FIELD_KEYS = frozenset({"email", "eligible", "can_attend", "consent",
 # Internal-only columns appended after the schema and attribute columns.
 _INTERNAL_COLUMNS = ("selection_status", "source_type", "selection_run_id", "created_at", "updated_at")
 
+# The final column: a link to the respondent's page in OpenDLP.
+VIEW_URL_COLUMN = "view_url"
+
 
 def resolve_status_filter(raw: str) -> list[RespondentStatus] | None:
     """Map a UI filter token to the statuses to export.
 
     Returns ``None`` for "all" (every status except DELETED, applied at fetch
-    time). Rejects DELETED and unrecognised values with InvalidSelection.
+    time). DELETED can still be chosen on its own: those rows carry only the
+    external ID, so an organiser can find and erase the person from copies held
+    outside OpenDLP. Rejects unrecognised values with InvalidSelection.
     """
     value = (raw or "").strip()
     if not value or value == STATUS_FILTER_ALL:
@@ -46,7 +52,7 @@ def resolve_status_filter(raw: str) -> list[RespondentStatus] | None:
     if value == STATUS_FILTER_SELECTED_OR_CONFIRMED:
         return [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED]
     status = RespondentStatus.from_str(value)
-    if status is None or status == RespondentStatus.DELETED:
+    if status is None:
         raise InvalidSelection(_("Invalid respondent status filter: %(value)s", value=value))
     return [status]
 
@@ -79,13 +85,28 @@ def _serialise_internal(respondent: Respondent, column: str) -> str:
     return respondent.updated_at.isoformat()
 
 
+def respondent_view_url(application_url: str, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
+    """The absolute URL of a respondent's page, or "" when APPLICATION_URL is not set.
+
+    Built by hand rather than with ``url_for`` because the automatic export runs
+    in a Celery worker, with no Flask app to build it. Must match the route of
+    ``respondents.view_respondent``; a test holds the two together.
+    """
+    if not application_url:
+        return ""
+    return f"{application_url}/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+
+
 def build_respondent_table(
     respondents: list[Respondent],
     schema: list[RespondentFieldDefinition],
     id_column_header: str,
+    application_url: str = "",
 ) -> TabularData:
     """Turn respondents into a table: id column, schema fields, leftover
-    attributes (sorted), then internal columns.
+    attributes (sorted), internal columns, then the respondent's view URL.
+
+    The view URL column is always present, but blank when ``application_url`` is empty.
 
     Pure: takes already-fetched domain objects and the resolved id-column
     header, so it can be unit-tested without a UnitOfWork.
@@ -98,7 +119,7 @@ def build_respondent_table(
         leftover_keys.update(k for k in respondent.attributes if k not in schema_key_set)
     leftover = sorted(leftover_keys)
 
-    headers = [id_column_header, *schema_keys, *leftover, *_INTERNAL_COLUMNS]
+    headers = [id_column_header, *schema_keys, *leftover, *_INTERNAL_COLUMNS, VIEW_URL_COLUMN]
 
     rows: list[list[str]] = []
     for respondent in respondents:
@@ -106,6 +127,7 @@ def build_respondent_table(
         row.extend(_serialise_field(respondent, key) for key in schema_keys)
         row.extend(_serialise_field(respondent, key) for key in leftover)
         row.extend(_serialise_internal(respondent, column) for column in _INTERNAL_COLUMNS)
+        row.append(respondent_view_url(application_url, respondent.assembly_id, respondent.id))
         rows.append(row)
 
     return TabularData(headers=headers, rows=rows)
@@ -161,8 +183,33 @@ def _write_export(
     respondents = _fetch_respondents(uow, assembly_id, status_filter)
     schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
     id_column_header = resolve_id_column_header(assembly)
-    table = build_respondent_table(respondents, schema, id_column_header)
+    table = build_respondent_table(respondents, schema, id_column_header, application_url=config.get_application_url())
     target.write_sheet(sheet_title, table)
+
+
+def write_respondent_export(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    *,
+    status_filter: list[RespondentStatus] | None,
+    target: AbstractTabularExportTarget,
+    sheet_title: str = "",
+) -> None:
+    """Export an assembly's respondents to the given target, with no permission check.
+
+    ``status_filter`` of ``None`` exports every non-DELETED respondent; a list
+    of statuses exports just those (fetched in a single query). Routes must go
+    through ``export_respondents``, which gates on manage permission; this is
+    for callers with no acting user, such as the automatic export task.
+
+    An empty ``sheet_title`` means the default for this export kind, resolved
+    here rather than as a default argument so it lands in the caller's language.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    sheet_title = sheet_title or default_worksheet_name(EXPORT_KIND)
+    assembly = _load_assembly(uow, assembly_id)
+    _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
 
 
 @require_assembly_permission(can_manage_assembly)
@@ -181,13 +228,8 @@ def export_respondents(
     of statuses exports just those (fetched in a single query). Requires manage
     permission on the assembly. The caller is expected to manage the ``uow``
     context (``with uow: ...``).
-
-    An empty ``sheet_title`` means the default for this export kind, resolved
-    here rather than as a default argument so it lands in the caller's language.
     """
-    sheet_title = sheet_title or default_worksheet_name(EXPORT_KIND)
-    assembly = _load_assembly(uow, assembly_id)
-    _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
+    write_respondent_export(uow, assembly_id, status_filter=status_filter, target=target, sheet_title=sheet_title)
 
 
 @require_assembly_permission(can_manage_assembly)
@@ -214,6 +256,8 @@ def export_respondents_to_gsheet(
     spreadsheet_url: str,
     worksheet_name: str,
     target: AbstractGSheetExportTarget,
+    auto_export: bool = False,
+    auto_export_status_filter: str = "",
 ) -> None:
     """Export respondents to a Google Sheet and save/update the sheet config.
 
@@ -221,8 +265,13 @@ def export_respondents_to_gsheet(
     result URL afterwards. The spreadsheet URL and worksheet name are persisted
     to AssemblyExportGSheet so later exports can pre-fill the form, along
     with the spreadsheet's title and the direct worksheet link read off the
-    target after the write, so the respondents page can link to the export. The
-    caller is expected to manage the ``uow`` context (``with uow: ...``).
+    target after the write, so the respondents page can link to the export.
+
+    ``auto_export`` is saved as given on every Google Sheets export, so the
+    checkbox on the form is the truth each time. Because the write comes first,
+    a failed export cannot switch auto-export on. ``auto_export_status_filter``
+    is the UI token the background export should resolve with
+    ``resolve_status_filter``; it should describe ``status_filter``.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -245,4 +294,28 @@ def export_respondents_to_gsheet(
         spreadsheet_url=spreadsheet_url,
         worksheet_name=worksheet_name,
         target=target,
+        auto_export=auto_export,
+        auto_export_status_filter=auto_export_status_filter if auto_export else "",
     )
+
+
+@require_assembly_permission(can_manage_assembly)
+def disable_auto_export(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> None:
+    """Switch off the automatic respondent export, touching nothing else.
+
+    The saved URL, tab and last-export link stay so the next manual export
+    pre-fills as before. No Google call is made: this must work when the sheet
+    is the thing that is broken. Does nothing when there is no config, or
+    auto-export is already off. Commits.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
+    if config is None or not config.auto_export:
+        return
+    config.update_values(auto_export=False)
+    uow.commit()

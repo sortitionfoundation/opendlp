@@ -21,6 +21,8 @@ def save_export_gsheet_config(
     spreadsheet_url: str,
     worksheet_name: str,
     target: "AbstractGSheetExportTarget",
+    auto_export: bool | None = None,
+    auto_export_status_filter: str = "",
 ) -> None:
     """Record where this kind of export writes, so the next one can pre-fill the form.
 
@@ -28,6 +30,10 @@ def save_export_gsheet_config(
     assembly has at most one per kind. ``spreadsheet_title`` and ``worksheet_url``
     are read off ``target``, so this must be called *after* the write, once the
     target has been where it is describing.
+
+    ``auto_export`` of ``None`` leaves the auto-export settings as they are, for
+    export kinds that have no auto-export. Otherwise the flag and the status
+    filter token it should use are both written.
 
     Commits, because saving the config is the last thing every export does. The
     caller is expected to manage the ``uow`` context (``with uow: ...``).
@@ -50,4 +56,6 @@ def save_export_gsheet_config(
             spreadsheet_title=target.result_title,
             worksheet_url=target.result_url,
         )
+    if auto_export is not None:
+        config.update_values(auto_export=auto_export, auto_export_status_filter=auto_export_status_filter)
     uow.commit()

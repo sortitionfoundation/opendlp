@@ -6,10 +6,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import and_, delete, distinct, func, insert, or_, select, text, update
+from sqlalchemy import and_, delete, distinct, func, insert, or_, select, text
 
 from opendlp.adapters import orm
-from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, RunSummary, SelectionRunRecord
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
@@ -825,7 +825,7 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
         )
 
     def get_by_assembly_id_paginated(
-        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50
+        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50, since: datetime | None = None
     ) -> tuple[list[tuple[SelectionRunRecord, User | None]], int]:
         """Get paginated SelectionRunRecords for an assembly with user information."""
         # Base query with LEFT JOIN to get user info
@@ -836,12 +836,24 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
             .filter(orm.selection_run_records.c.assembly_id == assembly_id)
             .order_by(orm.selection_run_records.c.created_at.desc())
         )
+        if since is not None:
+            query = query.filter(orm.selection_run_records.c.created_at >= since)
 
         total_count = query.count()
         offset = (page - 1) * per_page
         results = query.offset(offset).limit(per_page).all()
 
         return [(record, user) for record, user in results], total_count
+
+    def get_history_summaries(self, assembly_id: uuid.UUID) -> list[RunSummary]:
+        """Get a summary of every SelectionRunRecord for an assembly, oldest first."""
+        columns = orm.selection_run_records.c
+        rows = self.session.execute(
+            select(columns.task_id, columns.task_type, columns.status, columns.created_at)
+            .where(columns.assembly_id == assembly_id)
+            .order_by(columns.created_at.asc())
+        ).all()
+        return [RunSummary(*row) for row in rows]
 
 
 class SqlAlchemyPasswordResetTokenRepository(SqlAlchemyRepository, PasswordResetTokenRepository):
@@ -1211,6 +1223,23 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
         )
         return dict(rows)
 
+    def count_by_registration_page_and_status(
+        self, assembly_id: uuid.UUID
+    ) -> dict[uuid.UUID | None, dict[RespondentStatus, int]]:
+        rows = self.session.execute(
+            select(
+                orm.respondents.c.registration_page_id,
+                orm.respondents.c.selection_status,
+                func.count().label("cnt"),
+            )
+            .where(orm.respondents.c.assembly_id == assembly_id)
+            .group_by(orm.respondents.c.registration_page_id, orm.respondents.c.selection_status)
+        ).all()
+        counts: dict[uuid.UUID | None, dict[RespondentStatus, int]] = {}
+        for row in rows:
+            counts.setdefault(row.registration_page_id, {})[row.selection_status] = row.cnt
+        return counts
+
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,
@@ -1273,6 +1302,22 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 )
             )
             .first()
+        )
+
+    def get_by_external_ids(self, assembly_id: uuid.UUID, external_ids: list[str]) -> list[Respondent]:
+        if not external_ids:
+            return []
+        return (
+            self.session
+            .query(Respondent)
+            .filter(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.external_id.in_(external_ids),
+                )
+            )
+            .order_by(orm.respondents.c.external_id)
+            .all()
         )
 
     def count_available_for_selection(self, assembly_id: uuid.UUID) -> int:
@@ -1391,34 +1436,21 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             self._RENAME_ATTRIBUTE, assembly_id=assembly_id, old_key=old_key, new_key=new_key
         )
 
-    def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
-        count: int = (
+    def reset_all_to_pool(self, assembly_id: uuid.UUID, author_id: uuid.UUID, selection_run_id: uuid.UUID) -> int:
+        rows = (
             self.session
             .query(Respondent)
             .filter(
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
-                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
+                    orm.respondents.c.selection_status.notin_([RespondentStatus.POOL, RespondentStatus.DELETED]),
                 )
             )
-            .count()
+            .all()
         )
-        if count:
-            self.session.execute(
-                update(orm.respondents)
-                .where(
-                    and_(
-                        orm.respondents.c.assembly_id == assembly_id,
-                        orm.respondents.c.selection_status != RespondentStatus.DELETED,
-                    )
-                )
-                .values(
-                    selection_status=RespondentStatus.POOL,
-                    selection_run_id=None,
-                    updated_at=datetime.now(UTC),
-                )
-            )
-        return count
+        for respondent in rows:
+            respondent.reset_to_pool(author_id, selection_run_id)
+        return len(rows)
 
     def count_non_pool(self, assembly_id: uuid.UUID) -> int:
         return (

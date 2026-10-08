@@ -7,7 +7,7 @@ Feature: Backoffice Assembly Google Sheets Configuration
     Given I am logged in as an admin user
     And there is an assembly called "Data Test Assembly"
     When I visit the assembly details page for "Data Test Assembly"
-    And I click the "Data" tab
+    And I click the "Data Source" tab
     Then I should see the assembly data page
     And I should see "Data Source"
 

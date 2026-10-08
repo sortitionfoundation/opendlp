@@ -1025,6 +1025,24 @@ class TestOAuthUserOperations:
                 uow=uow, provider="google", oauth_id="google123", email="newuser@example.com", invite_code=None
             )
 
+    def test_find_or_create_oauth_user_open_signup_needs_no_invite(self, uow, patch_password_hashing):
+        """With open signup on, an OAuth user is created without an invite as an organiser."""
+
+        user, created = user_service.find_or_create_oauth_user(
+            uow=uow,
+            provider="google",
+            oauth_id="google123",
+            email="newuser@example.com",
+            first_name="New",
+            last_name="User",
+            invite_code=None,
+            accept_data_agreement=True,
+            open_signup=True,
+        )
+
+        assert created is True
+        assert user.global_role == GlobalRole.ORGANISER
+
     def test_find_or_create_oauth_user_creates_new_user_with_invite(self, uow, patch_password_hashing):
         """Test OAuth user creation with valid invite."""
         invite = UserInvite(

@@ -129,6 +129,8 @@ class SelectionTaskType(Enum):
     SELECT_FROM_DB = "select_from_db"
     TEST_SELECT_FROM_DB = "test_select_from_db"
     SELECT_REPLACEMENT_FROM_DB = "select_replacement_from_db"
+    # Not a background task: records an organiser resetting every respondent to the pool.
+    RESET_TO_POOL = "reset_to_pool"
 
 
 # Labels for the run history table and the "Task:" line of the progress modals.
@@ -144,6 +146,7 @@ selection_task_type_labels = {
     SelectionTaskType.SELECT_FROM_DB: _l("Select from database"),
     SelectionTaskType.TEST_SELECT_FROM_DB: _l("Test select from database"),
     SelectionTaskType.SELECT_REPLACEMENT_FROM_DB: _l("Select replacements from database"),
+    SelectionTaskType.RESET_TO_POOL: _l("Reset all to pool"),
 }
 
 # The task types that run the selection algorithm over the database.
@@ -192,6 +195,19 @@ class RespondentStatus(Enum):
         except ValueError:
             return None
 
+
+# Short labels, for a tag, a badge or a filter. Kept next to the status
+# definitions so a renamed status cannot leave a stale label behind somewhere.
+# Listed in the order a respondent moves through them, which is the order the
+# respondents list offers them as filters.
+respondent_status_labels = {
+    RespondentStatus.POOL: _l("Pool"),
+    RespondentStatus.SELECTED: _l("Selected"),
+    RespondentStatus.CONFIRMED: _l("Confirmed"),
+    RespondentStatus.WITHDRAWN: _l("Withdrawn"),
+    RespondentStatus.TEST_SUBMISSION: _l("Test submission"),
+    RespondentStatus.DELETED: _l("Deleted"),
+}
 
 # The statuses that make someone one of the assembly's respondents: in the pool,
 # picked from it, or picked and confirmed. A withdrawn person is no longer part
@@ -255,6 +271,7 @@ class RespondentAction(Enum):
     EDIT records a change to the respondent's attributes or eligibility flags.
     STATUS_CHANGE records a manual selection-status transition.
     SELECT records inclusion in a selection run.
+    RESET records a reset of all respondents back to the pool.
     DELETE records a GDPR personal-data deletion.
     """
 
@@ -263,6 +280,7 @@ class RespondentAction(Enum):
     EDIT = "EDIT"
     STATUS_CHANGE = "STATUS_CHANGE"
     SELECT = "SELECT"
+    RESET = "RESET"
     DELETE = "DELETE"
 
 

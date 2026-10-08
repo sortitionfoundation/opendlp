@@ -3,9 +3,11 @@ ABOUTME: Provides functions for respondent creation, CSV import, and validation"
 
 import csv
 import uuid
+from datetime import UTC, datetime
 from io import StringIO
 from typing import Any
 
+from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent, normalise_field_name, pop_normalised
 from opendlp.domain.users import User
@@ -15,6 +17,8 @@ from opendlp.domain.value_objects import (
     RespondentAction,
     RespondentSourceType,
     RespondentStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
 )
 from opendlp.service_layer.derivation_service import (
     apply_derivations,
@@ -34,6 +38,7 @@ from opendlp.service_layer.permissions import (
     can_manage_assembly,
     can_view_assembly,
 )
+from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_service import (
     check_id_column_in_headers,
     update_schema_from_headers,
@@ -44,7 +49,14 @@ from opendlp.translations import gettext as _
 # Internal, export-only columns recognised and skipped on import. They mirror
 # the extra columns build_respondent_table appends, so an exported file
 # re-imports without colliding with reserved Respondent field names.
-INTERNAL_IMPORT_SKIP_COLUMNS = ("selection_status", "selection_run_id", "source_type", "created_at", "updated_at")
+INTERNAL_IMPORT_SKIP_COLUMNS = (
+    "selection_status",
+    "selection_run_id",
+    "source_type",
+    "created_at",
+    "updated_at",
+    "view_url",
+)
 
 
 def create_respondent(
@@ -95,6 +107,7 @@ def create_respondent(
     apply_derivations(respondent, field_definitions, load_mapping_lookups(uow, field_definitions))
 
     uow.respondents.add(respondent)
+    request_auto_export(uow, assembly_id)
     return respondent.create_detached_copy()
 
 
@@ -248,6 +261,7 @@ def import_respondents_from_rows(  # noqa: C901
         id_column,
         target_category_names=target_category_names,
     )
+    request_auto_export(uow, assembly_id)
 
     return [r.create_detached_copy() for r in respondents], errors, id_column
 
@@ -320,7 +334,7 @@ def reset_selection_status(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> int:
-    """Reset all respondents for an assembly back to POOL status. Returns count updated.
+    """Reset all respondents for an assembly back to POOL status. Returns the number whose status changed.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -338,7 +352,25 @@ def reset_selection_status(
             required_role="assembly-manager or admin",
         )
 
-    return uow.respondents.reset_all_to_pool(assembly_id)
+    # The comments on each reset respondent carry the id of the reset's history row.
+    task_id = uuid.uuid4()
+    count = uow.respondents.reset_all_to_pool(assembly_id, user_id, task_id)
+    # The reset is synchronous, so its history row is complete the moment it is written.
+    now = datetime.now(UTC)
+    uow.selection_run_records.add(
+        SelectionRunRecord(
+            assembly_id=assembly_id,
+            task_id=task_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.RESET_TO_POOL,
+            user_id=user_id,
+            log_messages=[_("Reset %(count)s respondents to the pool", count=count)],
+            created_at=now,
+            completed_at=now,
+        )
+    )
+    request_auto_export(uow, assembly_id)
+    return count
 
 
 def get_respondents_for_assembly(
@@ -380,6 +412,9 @@ def get_respondents_for_assembly_paginated(
 ) -> tuple[list[Respondent], int]:
     """Get paginated respondents for an assembly. Returns (respondents, total_count).
 
+    With no ``status``, DELETED respondents are left out: their details are gone,
+    so they are reached only by filtering to DELETED explicitly.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     user = uow.users.get(user_id)
@@ -402,7 +437,6 @@ def get_respondents_for_assembly_paginated(
         per_page=per_page,
         status=status,
         eligible_only=False,
-        include_deleted=True,
     )
     return [r.create_detached_copy() for r in respondents], total_count
 
@@ -490,6 +524,7 @@ def delete_respondent(
     assert isinstance(respondent, Respondent)
 
     respondent.delete_personal_data(author_id=user_id, comment=comment)
+    request_auto_export(uow, assembly_id)
 
 
 def update_respondent(
@@ -551,6 +586,7 @@ def update_respondent(
         load_mapping_lookups(uow, field_definitions),
         keep_supplied_on_fallback=False,
     )
+    request_auto_export(uow, assembly_id)
 
 
 def add_respondent_comment(
@@ -713,3 +749,4 @@ def transition_respondent_status(
         author_id=user_id,
         comment=comment,
     )
+    request_auto_export(uow, assembly_id)

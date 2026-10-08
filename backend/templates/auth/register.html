@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
 {% from "components/signup_survey_fields.html" import signup_survey_fields %}
+{% from "components/govuk_password_input.html" import govuk_password_input %}
 {% block title %}{{ _("Create an Account") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-grid-row">
@@ -11,54 +12,59 @@
                     {{ _("You need an invite code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) }}
                 </div>
             {% endif %}
-            {% if config.OAUTH_GOOGLE_CLIENT_ID or config.OAUTH_MICROSOFT_CLIENT_ID %}
-                <div class="govuk-!-margin-top-6">
-                    <h2 class="govuk-heading-m">
-                        {{ _("You can create an OpenDLP account with an external account and an invite code") }}
-                    </h2>
-                    {% if config.OAUTH_GOOGLE_CLIENT_ID %}
-                        <form style="display: inline"
-                              action="{% if form.invite_code.data %}{{ url_for('auth.register_google', invite_code=form.invite_code.data) }}{% else %}{{ url_for("auth.register_google") }}{% endif %}"
-                              method="get">
-                            <div class="govuk-!-margin-top-6">
-                                <button class="gsi-material-button">
-                                    <div class="gsi-material-button-state"></div>
-                                    <div class="gsi-material-button-content-wrapper">
-                                        <div class="gsi-material-button-icon">
-                                            {{ brand_google() }}
-                                        </div>
-                                        <span class="gsi-material-button-contents">{{ _("Create an Account with Google") }}</span>
-                                        <span style="display: none;">{{ _("Create an Account with Google") }}</span>
-                                    </div>
-                                </button>
-                            </div>
-                        </form>
-                    {% endif %}
-                    {% if config.OAUTH_MICROSOFT_CLIENT_ID %}
-                        <form style="display: inline"
-                              action="{% if form.invite_code.data %}{{ url_for('auth.register_microsoft', invite_code=form.invite_code.data) }}{% else %}{{ url_for("auth.register_microsoft") }}{% endif %}"
-                              method="get">
-                            <div class="govuk-!-margin-top-2">
-                                <button class="gsi-material-button">
-                                    <div class="gsi-material-button-state"></div>
-                                    <div class="gsi-material-button-content-wrapper">
-                                        <div class="gsi-material-button-icon">
-                                            {{ brand_microsoft() }}
-                                        </div>
-                                        <span class="gsi-material-button-contents">{{ _("Create an Account with Microsoft") }}</span>
-                                        <span style="display: none;">{{ _("Create an Account with Microsoft") }}</span>
-                                    </div>
-                                </button>
-                            </div>
-                        </form>
-                    {% endif %}
-                    <h2 class="govuk-heading-m govuk-!-margin-top-6">
-                        {{ _("Or you can create an account with an email and password") }}
-                    </h2>
-                </div>
-            {% endif %}
-            <form method="POST" class="govuk-!-margin-top-6" novalidate>
+            {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
+            {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
+            {% set sso_enabled = google_enabled or microsoft_enabled %}
+            <form method="POST"
+                  class="govuk-!-margin-top-6"
+                  novalidate
+                  x-data="registrationMethod('{{ selected_method | default('email', true) }}')">
                 {{ form.hidden_tag() }}
+                {# A form's implicit-submit default is its first submit button. With
+                   JS, :value tracks the chosen method so Enter follows the choice;
+                   without JS it falls back to email. It is out of the tab order and
+                   hidden from assistive tech, which use the visible buttons below. #}
+                <button type="submit"
+                        name="action"
+                        value="email"
+                        :value="method"
+                        class="govuk-visually-hidden"
+                        tabindex="-1"
+                        aria-hidden="true">{{ _("Create Account with email") }}</button>
+                {# Method chooser — only useful with JS, so hidden otherwise (.js-only);
+                   without JS every field and submit button below is shown instead. #}
+                {% if sso_enabled %}
+                    <div class="js-only govuk-form-group" role="group" aria-label="{{ _('Choose how to sign up') }}">
+                        <span class="govuk-label govuk-label--m">{{ _("How would you like to sign up?") }}</span>
+                        <div class="registration-method-chooser">
+                            {% if google_enabled %}
+                                <button type="button"
+                                        class="registration-method-option"
+                                        @click="selectGoogle()"
+                                        :aria-pressed="method === 'google'">
+                                    <span class="registration-method-option__icon">{{ brand_google() }}</span>
+                                    {{ _("Google") }}
+                                </button>
+                            {% endif %}
+                            {% if microsoft_enabled %}
+                                <button type="button"
+                                        class="registration-method-option"
+                                        @click="selectMicrosoft()"
+                                        :aria-pressed="method === 'microsoft'">
+                                    <span class="registration-method-option__icon">{{ brand_microsoft() }}</span>
+                                    {{ _("Microsoft") }}
+                                </button>
+                            {% endif %}
+                            <button type="button"
+                                    class="registration-method-option"
+                                    @click="selectEmail()"
+                                    :aria-pressed="method === 'email'">
+                                {{ _("Email address") }}
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+                {# Shared fields — needed whichever way the account is created. #}
                 <div class="govuk-form-group{% if form.invite_code.errors %} govuk-form-group--error{% endif %}">
                     {{ form.invite_code.label(class="govuk-label govuk-label--m") }}
                     {% if feature('open_signup') %}
@@ -78,52 +84,6 @@
                     {{ form.invite_code(class="govuk-input" + (" govuk-input--error" if form.invite_code.errors else "") ,
                     aria_describedby=("invite-hint" if form.invite_code.description else "") + (" invite-error" if form.invite_code.errors else "")) }}
                 </div>
-                <div class="govuk-form-group{% if form.first_name.errors %} govuk-form-group--error{% endif %}">
-                    {{ form.first_name.label(class="govuk-label govuk-label--m") }}
-                    {% if form.first_name.description %}
-                        <div id="first-name-hint" class="govuk-hint">{{ form.first_name.description }}</div>
-                    {% endif %}
-                    {% if form.first_name.errors %}
-                        {% for error in form.first_name.errors %}
-                            <p id="first-name-error" class="govuk-error-message">
-                                <span class="govuk-visually-hidden">Error:</span> {{ error }}
-                            </p>
-                        {% endfor %}
-                        {{ password_help }}
-                    {% endif %}
-                    {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else "") ,
-                    aria_describedby=("first-name-hint" if form.first_name.description else "") + (" first-name-error" if form.first_name.errors else "")) }}
-                </div>
-                <div class="govuk-form-group{% if form.last_name.errors %} govuk-form-group--error{% endif %}">
-                    {{ form.last_name.label(class="govuk-label govuk-label--m") }}
-                    {% if form.last_name.description %}
-                        <div id="last-name-hint" class="govuk-hint">{{ form.last_name.description }}</div>
-                    {% endif %}
-                    {% if form.last_name.errors %}
-                        {% for error in form.last_name.errors %}
-                            <p id="last-name-error" class="govuk-error-message">
-                                <span class="govuk-visually-hidden">Error:</span> {{ error }}
-                            </p>
-                        {% endfor %}
-                    {% endif %}
-                    {{ form.last_name(class="govuk-input" + (" govuk-input--error" if form.last_name.errors else "") ,
-                    aria_describedby=("last-name-hint" if form.last_name.description else "") + (" last-name-error" if form.last_name.errors else "")) }}
-                </div>
-                <div class="govuk-form-group{% if form.email.errors %} govuk-form-group--error{% endif %}">
-                    {{ form.email.label(class="govuk-label govuk-label--m") }}
-                    {% if form.email.errors %}
-                        {% for error in form.email.errors %}
-                            <p id="email-error" class="govuk-error-message">
-                                <span class="govuk-visually-hidden">Error:</span> {{ error }}
-                            </p>
-                        {% endfor %}
-                    {% endif %}
-                    {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else "") ,
-                    aria_describedby=("email-error" if form.email.errors else "")) }}
-                </div>
-                {% from "components/govuk_password_input.html" import govuk_password_input %}
-                {{ govuk_password_input(form.password, autocomplete="new-password") }}
-                {{ govuk_password_input(form.password_confirm, autocomplete="new-password") }}
                 {% if show_questions %}{{ signup_survey_fields(form) }}{% endif %}
                 <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
                     <fieldset class="govuk-fieldset"
@@ -151,6 +111,55 @@
                         </div>
                     </fieldset>
                 </div>
+                {# Email-only fields — the provider supplies these for Google/Microsoft,
+                   so they are revealed only for the email method (shown without JS). #}
+                <div{% if sso_enabled %} x-show="method === 'email'"{% endif %}>
+                    <div class="govuk-form-group{% if form.first_name.errors %} govuk-form-group--error{% endif %}">
+                        {{ form.first_name.label(class="govuk-label govuk-label--m") }}
+                        {% if form.first_name.description %}
+                            <div id="first-name-hint" class="govuk-hint">{{ form.first_name.description }}</div>
+                        {% endif %}
+                        {% if form.first_name.errors %}
+                            {% for error in form.first_name.errors %}
+                                <p id="first-name-error" class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                                </p>
+                            {% endfor %}
+                        {% endif %}
+                        {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else "") ,
+                        aria_describedby=("first-name-hint" if form.first_name.description else "") + (" first-name-error" if form.first_name.errors else "")) }}
+                    </div>
+                    <div class="govuk-form-group{% if form.last_name.errors %} govuk-form-group--error{% endif %}">
+                        {{ form.last_name.label(class="govuk-label govuk-label--m") }}
+                        {% if form.last_name.description %}
+                            <div id="last-name-hint" class="govuk-hint">{{ form.last_name.description }}</div>
+                        {% endif %}
+                        {% if form.last_name.errors %}
+                            {% for error in form.last_name.errors %}
+                                <p id="last-name-error" class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                                </p>
+                            {% endfor %}
+                        {% endif %}
+                        {{ form.last_name(class="govuk-input" + (" govuk-input--error" if form.last_name.errors else "") ,
+                        aria_describedby=("last-name-hint" if form.last_name.description else "") + (" last-name-error" if form.last_name.errors else "")) }}
+                    </div>
+                    <div class="govuk-form-group{% if form.email.errors %} govuk-form-group--error{% endif %}">
+                        {{ form.email.label(class="govuk-label govuk-label--m") }}
+                        {% if form.email.errors %}
+                            {% for error in form.email.errors %}
+                                <p id="email-error" class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">Error:</span> {{ error }}
+                                </p>
+                            {% endfor %}
+                        {% endif %}
+                        {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else "") ,
+                        aria_describedby=("email-error" if form.email.errors else "")) }}
+                    </div>
+                    {% if password_help %}{{ password_help|safe }}{% endif %}
+                    {{ govuk_password_input(form.password, autocomplete="new-password") }}
+                    {{ govuk_password_input(form.password_confirm, autocomplete="new-password") }}
+                </div>
                 {% if config.TURNSTILE_SITE_KEY %}
                     <div class="govuk-form-group">
                         <div class="cf-turnstile"
@@ -158,7 +167,38 @@
                              data-action="signup"></div>
                     </div>
                 {% endif %}
-                <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create Account") }}</button>
+                {# Contextual submit — the matching button shows for the chosen method;
+                   without JS all of them show so every path still works. #}
+                <button type="submit"
+                        name="action"
+                        value="email"
+                        {% if sso_enabled %}x-show="method === 'email'"{% endif %}
+                        class="govuk-button"
+                        data-module="govuk-button">{{ _("Create Account with email") }}</button>
+                {% if google_enabled %}
+                    <button type="submit" name="action" value="google" class="gsi-material-button"{% if sso_enabled %} x-show="method === 'google'"{% endif %}>
+                        <div class="gsi-material-button-state"></div>
+                        <div class="gsi-material-button-content-wrapper">
+                            <div class="gsi-material-button-icon">
+                                {{ brand_google() }}
+                            </div>
+                            <span class="gsi-material-button-contents">{{ _("Create an Account with Google") }}</span>
+                            <span style="display: none;">{{ _("Create an Account with Google") }}</span>
+                        </div>
+                    </button>
+                {% endif %}
+                {% if microsoft_enabled %}
+                    <button type="submit" name="action" value="microsoft" class="gsi-material-button"{% if sso_enabled %} x-show="method === 'microsoft'"{% endif %}>
+                        <div class="gsi-material-button-state"></div>
+                        <div class="gsi-material-button-content-wrapper">
+                            <div class="gsi-material-button-icon">
+                                {{ brand_microsoft() }}
+                            </div>
+                            <span class="gsi-material-button-contents">{{ _("Create an Account with Microsoft") }}</span>
+                            <span style="display: none;">{{ _("Create an Account with Microsoft") }}</span>
+                        </div>
+                    </button>
+                {% endif %}
             </form>
             <p class="govuk-body govuk-!-margin-top-6">
                 {{ _("Already have an account?") }} <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _("Sign in") }}</a>

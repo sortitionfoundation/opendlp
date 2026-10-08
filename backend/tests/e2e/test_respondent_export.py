@@ -50,6 +50,29 @@ class TestRespondentExportSmoke:
         # Internal columns present in the export.
         assert "selection_status" in rows[0]
 
+    def test_view_url_opens_the_respondent_page(
+        self, monkeypatch, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        monkeypatch.setenv("APPLICATION_URL", "https://opendlp.example.org/")
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=existing_assembly.id,
+                csv_content=_CSV,
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export")
+
+        rows = _parse(response)
+        prefix = "https://opendlp.example.org/"
+        for row in rows:
+            assert row["view_url"].startswith(prefix)
+            # The hand-built URL must be a real route: following it shows this respondent.
+            page = logged_in_admin.get(row["view_url"].removeprefix(prefix[:-1]))
+            assert page.status_code == 200
+            assert row["external_id"] in page.get_data(as_text=True)
+
 
 class TestGSheetExportSmoke:
     def test_export_to_gsheet_saves_config(
@@ -100,3 +123,40 @@ class TestGSheetExportSmoke:
             assert config.worksheet_url == (
                 "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit#gid=3"
             )
+
+    def test_enable_then_stop_auto_export_round_trips_through_postgres(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Ticking the box persists the flag and filter; the stop route clears the flag only."""
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = lambda url: FakeGSheetExportTarget()
+        sheet_url = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={
+                "destination": "gsheet",
+                "status": "selected_or_confirmed",
+                "spreadsheet_url": sheet_url,
+                "worksheet_name": "Respondents",
+                "auto_export": "1",
+            },
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            config = uow.assembly_export_gsheets.get_by_assembly_and_kind(
+                existing_assembly.id, GSheetExportKind.RESPONDENTS
+            )
+            assert config is not None
+            assert config.auto_export is True
+            assert config.auto_export_status_filter == "selected_or_confirmed"
+
+        response = logged_in_admin.post(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/auto/stop")
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            config = uow.assembly_export_gsheets.get_by_assembly_and_kind(
+                existing_assembly.id, GSheetExportKind.RESPONDENTS
+            )
+            assert config is not None
+            assert config.auto_export is False
+            assert config.url == sheet_url

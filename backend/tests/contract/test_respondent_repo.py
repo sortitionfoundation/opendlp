@@ -76,6 +76,50 @@ class TestGetByExternalId:
         assert respondent_backend.repo.get_by_external_id(uuid.uuid4(), "NOPE") is None
 
 
+class TestGetByExternalIds:
+    def test_returns_matches_ordered_by_external_id(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        for external_id in ("R003", "R001", "R002"):
+            _make_respondent(respondent_backend, assembly.id, external_id=external_id)
+
+        found = respondent_backend.repo.get_by_external_ids(assembly.id, ["R003", "R001"])
+
+        assert [r.external_id for r in found] == ["R001", "R003"]
+
+    def test_scoped_to_assembly(self, respondent_backend: ContractBackend):
+        a1 = respondent_backend.make_assembly()
+        a2 = respondent_backend.make_assembly()
+        mine = _make_respondent(respondent_backend, a1.id, external_id="R001")
+        _make_respondent(respondent_backend, a2.id, external_id="R001")
+
+        found = respondent_backend.repo.get_by_external_ids(a1.id, ["R001"])
+
+        assert [r.id for r in found] == [mine.id]
+
+    def test_includes_deleted_respondents(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+        _make_respondent(respondent_backend, assembly.id, external_id="R002", status=RespondentStatus.DELETED)
+
+        found = respondent_backend.repo.get_by_external_ids(assembly.id, ["R001", "R002"])
+
+        assert [r.external_id for r in found] == ["R001", "R002"]
+
+    def test_ids_with_no_respondent_are_absent(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+
+        found = respondent_backend.repo.get_by_external_ids(assembly.id, ["R001", "NOPE"])
+
+        assert [r.external_id for r in found] == ["R001"]
+
+    def test_no_ids_gives_nothing(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+
+        assert respondent_backend.repo.get_by_external_ids(assembly.id, []) == []
+
+
 class TestGetByAssemblyId:
     def test_returns_respondents_for_assembly(self, respondent_backend: ContractBackend):
         a1 = respondent_backend.make_assembly()
@@ -204,7 +248,7 @@ class TestResetAllToPool:
         _make_respondent(respondent_backend, assembly.id, external_id="R001", status=RespondentStatus.SELECTED)
         _make_respondent(respondent_backend, assembly.id, external_id="R002", status=RespondentStatus.CONFIRMED)
 
-        count = respondent_backend.repo.reset_all_to_pool(assembly.id)
+        count = respondent_backend.repo.reset_all_to_pool(assembly.id, uuid.uuid4(), uuid.uuid4())
         respondent_backend.commit()
 
         assert count == 2
@@ -212,7 +256,51 @@ class TestResetAllToPool:
         assert all(r.selection_status == RespondentStatus.POOL for r in results)
 
     def test_returns_zero_when_no_respondents(self, respondent_backend: ContractBackend):
-        assert respondent_backend.repo.reset_all_to_pool(uuid.uuid4()) == 0
+        assert respondent_backend.repo.reset_all_to_pool(uuid.uuid4(), uuid.uuid4(), uuid.uuid4()) == 0
+
+    def test_counts_only_respondents_whose_status_changed(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-SEL", status=RespondentStatus.SELECTED)
+        _make_respondent(respondent_backend, assembly.id, external_id="R-POOL", status=RespondentStatus.POOL)
+
+        count = respondent_backend.repo.reset_all_to_pool(assembly.id, uuid.uuid4(), uuid.uuid4())
+        respondent_backend.commit()
+
+        assert count == 1
+
+    def test_adds_reset_comment_to_each_reset_respondent(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        selected = _make_respondent(
+            respondent_backend, assembly.id, external_id="R-SEL", status=RespondentStatus.SELECTED
+        )
+        withdrawn = _make_respondent(
+            respondent_backend, assembly.id, external_id="R-WD", status=RespondentStatus.WITHDRAWN
+        )
+        author_id = uuid.uuid4()
+        reset_run_id = uuid.uuid4()
+
+        respondent_backend.repo.reset_all_to_pool(assembly.id, author_id, reset_run_id)
+        respondent_backend.commit()
+
+        for respondent_id, old_status in ((selected.id, "SELECTED"), (withdrawn.id, "WITHDRAWN")):
+            reloaded = respondent_backend.fresh_get_respondent(respondent_id)
+            assert reloaded is not None
+            reset_comments = [c for c in reloaded.comments if c.action == RespondentAction.RESET]
+            assert len(reset_comments) == 1
+            assert reset_comments[0].author_id == author_id
+            assert reset_comments[0].selection_run_id == reset_run_id
+            assert reset_comments[0].text == f"Status: {old_status} → POOL. Reset all to pool"
+
+    def test_does_not_comment_on_pool_respondents(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        pooled = _make_respondent(respondent_backend, assembly.id, external_id="R-POOL", status=RespondentStatus.POOL)
+
+        respondent_backend.repo.reset_all_to_pool(assembly.id, uuid.uuid4(), uuid.uuid4())
+        respondent_backend.commit()
+
+        reloaded = respondent_backend.fresh_get_respondent(pooled.id)
+        assert reloaded is not None
+        assert reloaded.comments == []
 
 
 class TestCountNonPool:
@@ -477,13 +565,14 @@ class TestIncludeDeletedFiltering:
         _make_respondent(respondent_backend, assembly.id, external_id="R-SEL", status=RespondentStatus.SELECTED)
         dead = _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
 
-        count = respondent_backend.repo.reset_all_to_pool(assembly.id)
+        count = respondent_backend.repo.reset_all_to_pool(assembly.id, uuid.uuid4(), uuid.uuid4())
         respondent_backend.commit()
 
         assert count == 1
         reloaded_dead = respondent_backend.fresh_get_respondent(dead.id)
         assert reloaded_dead is not None
         assert reloaded_dead.selection_status == RespondentStatus.DELETED
+        assert not any(c.action == RespondentAction.RESET for c in reloaded_dead.comments)
 
     def test_get_attribute_value_counts_excludes_deleted(self, respondent_backend: ContractBackend):
         assembly = respondent_backend.make_assembly()
@@ -877,11 +966,17 @@ class TestGetByAssemblyIdStatuses:
         assert [r.external_id for r in result] == ["R-sel", "R-conf"]
 
 
-def _attributed_respondent(backend: ContractBackend, assembly_id: uuid.UUID, page_id: uuid.UUID | None) -> Respondent:
+def _attributed_respondent(
+    backend: ContractBackend,
+    assembly_id: uuid.UUID,
+    page_id: uuid.UUID | None,
+    status: RespondentStatus = RespondentStatus.POOL,
+) -> Respondent:
     respondent = Respondent(
         assembly_id=assembly_id,
         external_id=f"EXT-{uuid.uuid4().hex[:8]}",
         registration_page_id=page_id,
+        selection_status=status,
     )
     backend.repo.add(respondent)
     backend.commit()
@@ -918,3 +1013,25 @@ class TestRegistrationPageAttribution:
 
         counts = respondent_backend.repo.count_by_registration_page(assembly.id)
         assert counts == {first.id: 2, second.id: 1}
+
+    def test_counts_are_grouped_by_page_and_status(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        page = respondent_backend.make_registration_page(assembly_id=assembly.id)
+        _attributed_respondent(respondent_backend, assembly.id, page.id)
+        _attributed_respondent(respondent_backend, assembly.id, page.id)
+        _attributed_respondent(respondent_backend, assembly.id, page.id, RespondentStatus.TEST_SUBMISSION)
+        _attributed_respondent(respondent_backend, assembly.id, None)
+        _attributed_respondent(respondent_backend, assembly.id, None, RespondentStatus.WITHDRAWN)
+
+        counts = respondent_backend.repo.count_by_registration_page_and_status(assembly.id)
+        assert counts == {
+            page.id: {RespondentStatus.POOL: 2, RespondentStatus.TEST_SUBMISSION: 1},
+            None: {RespondentStatus.POOL: 1, RespondentStatus.WITHDRAWN: 1},
+        }
+
+    def test_counts_by_page_and_status_ignore_other_assemblies(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        other = respondent_backend.make_assembly()
+        _attributed_respondent(respondent_backend, other.id, None)
+
+        assert respondent_backend.repo.count_by_registration_page_and_status(assembly.id) == {}

@@ -112,9 +112,17 @@ FLASK_ENV=development
 # Enable/disable debug mode
 DEBUG=true
 
-# Application URL for generating absolute links
+# Public base URL of this site, for absolute links built without a web request
 APPLICATION_URL=https://opendlp.example.com
 ```
+
+`APPLICATION_URL` is read by `config.get_application_url()`, which works outside
+Flask, so background (Celery) tasks can use it. Include the scheme and any subpath
+(eg `https://example.org/opendlp`); a trailing slash is ignored. It currently
+feeds the `view_url` column of respondent exports (see
+[respondent_export.md](respondent_export.md)), which is blank when this is unset.
+Links built inside a web request use `url_for(..., _external=True)` instead, and
+take the host from the request.
 
 ### OAuth Configuration
 

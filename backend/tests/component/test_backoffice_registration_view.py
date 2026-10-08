@@ -48,6 +48,35 @@ def assembly_id(existing_assembly):
     return existing_assembly.id
 
 
+def _seed_respondents(
+    fake_store, assembly_id: uuid.UUID, page_id: uuid.UUID | None, statuses: list[RespondentStatus]
+) -> None:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        for status in statuses:
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=assembly_id,
+                    external_id=f"r-{uuid.uuid4().hex[:8]}",
+                    selection_status=status,
+                    registration_page_id=page_id,
+                )
+            )
+        uow.commit()
+
+
+def _count_cell(body: str, page_name: str) -> str:
+    """The text of a page's Registrations cell in the pages list."""
+    row = body.split(page_name, 1)[1].split("</tr>", 1)[0]
+    cell = row.split('data-cell="registration-count"', 1)[1].split("</td>", 1)[0]
+    return cell.split(">", 1)[1].strip()
+
+
+def _total(body: str, key: str) -> str:
+    """The number on one of the headline totals above the pages list."""
+    total = body.split(f'data-total="{key}"', 1)[1]
+    return re.findall(r"data-total-count[^>]*>(\d+)</span>", total)[0]
+
+
 class TestViewEditModeFlag:
     def test_default_test_status_is_read_only(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
@@ -520,56 +549,69 @@ class TestRegistrationListView:
                 )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
 
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
+        assert _count_cell(body, "Busy") == "2"
+        assert _count_cell(body, "Quiet") == "0"
 
-        def count_cell(page_name: str) -> str:
-            row = body.split(page_name, 1)[1].split("</tr>", 1)[0]
-            return row.split('data-cell="registration-count"', 1)[1].split("</td>", 1)[0]
-
-        assert count_cell("Busy").endswith(">2")
-        assert count_cell("Quiet").endswith(">0")
-
-    def test_shows_the_total_registration_count_near_the_top(self, logged_in_admin, fake_store, assembly_id):
+    def test_page_count_shows_test_submissions_separately(self, logged_in_admin, fake_store, assembly_id):
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
-        with FakeUnitOfWork(store=fake_store) as uow:
-            for i, status in enumerate([RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN]):
-                uow.respondents.add(
-                    Respondent(
-                        assembly_id=assembly_id,
-                        external_id=f"real-{i}",
-                        selection_status=status,
-                        registration_page_id=page.id,
-                    )
-                )
-            # Test submissions and deleted respondents are not real registrations,
-            # so the headline total leaves them out (matching the dashboard).
-            uow.respondents.add(
-                Respondent(
-                    assembly_id=assembly_id,
-                    external_id="tester",
-                    selection_status=RespondentStatus.TEST_SUBMISSION,
-                    registration_page_id=page.id,
-                )
-            )
-            uow.respondents.add(
-                Respondent(
-                    assembly_id=assembly_id,
-                    external_id="gone",
-                    selection_status=RespondentStatus.DELETED,
-                    registration_page_id=page.id,
-                )
-            )
-            uow.commit()
+        _seed_respondents(
+            fake_store,
+            assembly_id,
+            page.id,
+            [
+                RespondentStatus.POOL,
+                RespondentStatus.WITHDRAWN,
+                RespondentStatus.TEST_SUBMISSION,
+                RespondentStatus.TEST_SUBMISSION,
+                RespondentStatus.TEST_SUBMISSION,
+                RespondentStatus.DELETED,
+            ],
+        )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
 
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        total_block = body.split("Number of registrations:", 1)[1].split("</div>", 1)[0]
-        assert ">3<" in total_block
+        assert _count_cell(body, "Live") == "2 (+3 test)"
+
+    def test_shows_the_registration_totals_near_the_top(self, logged_in_admin, fake_store, assembly_id):
+        first = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="one-slug", name="One")
+        second = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="two-slug", name="Two")
+        _seed_respondents(
+            fake_store,
+            assembly_id,
+            first.id,
+            [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN, RespondentStatus.DELETED],
+        )
+        _seed_respondents(
+            fake_store, assembly_id, second.id, [RespondentStatus.CONFIRMED, RespondentStatus.TEST_SUBMISSION]
+        )
+        # Uploaded respondents have no page; deleted ones are not counted anywhere.
+        _seed_respondents(
+            fake_store,
+            assembly_id,
+            None,
+            [RespondentStatus.POOL, RespondentStatus.POOL, RespondentStatus.WITHDRAWN, RespondentStatus.DELETED],
+        )
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert _total(body, "registrations") == "4"
+        assert _total(body, "test-submissions") == "1"
+        assert _total(body, "uploaded") == "3"
+        # A line between each pair of numbers, none before the first.
+        assert body.count("data-total-divider") == 2
+
+    def test_hides_empty_test_and_upload_totals(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
+        _seed_respondents(fake_store, assembly_id, page.id, [RespondentStatus.POOL])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert _total(body, "registrations") == "1"
+        assert 'data-total="test-submissions"' not in body
+        assert 'data-total="uploaded"' not in body
+        assert "data-total-divider" not in body
 
     def test_empty_assembly_offers_page_creation(self, logged_in_admin, fake_store, assembly_id):
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")

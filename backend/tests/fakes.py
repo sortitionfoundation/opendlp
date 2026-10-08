@@ -8,7 +8,7 @@ from typing import Any
 
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, TabularData
-from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, RunSummary, SelectionRunRecord
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
@@ -603,7 +603,7 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         return [item for item in self._items if item.is_pending or item.is_running]
 
     def get_by_assembly_id_paginated(
-        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50
+        self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50, since: datetime | None = None
     ) -> tuple[list[tuple[SelectionRunRecord, None]], int]:
         """Get paginated SelectionRunRecords for an assembly with user information.
 
@@ -611,7 +611,12 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         """
         # Get all records for the assembly
         all_records = sorted(
-            [item for item in self._items if item.assembly_id == assembly_id],
+            [
+                item
+                for item in self._items
+                if item.assembly_id == assembly_id
+                and (since is None or (item.created_at is not None and item.created_at >= since))
+            ],
             key=lambda r: r.created_at or datetime.min,
             reverse=True,  # Newest first
         )
@@ -625,6 +630,18 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
 
         # Return tuples of (record, None) to match the real repository signature
         return [(record, None) for record in page_records], total_count
+
+    def get_history_summaries(self, assembly_id: uuid.UUID) -> list[RunSummary]:
+        """Get a summary of every SelectionRunRecord for an assembly, oldest first."""
+        records = sorted(
+            [item for item in self._items if item.assembly_id == assembly_id],
+            key=lambda r: r.created_at or datetime.min,
+        )
+        return [
+            RunSummary(task_id=r.task_id, task_type=r.task_type, status=r.status, created_at=r.created_at)
+            for r in records
+            if r.created_at is not None
+        ]
 
 
 class FakeUserBackupCodeRepository(FakeRepository, UserBackupCodeRepository):
@@ -809,6 +826,17 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             counts[item.registration_page_id] = counts.get(item.registration_page_id, 0) + 1
         return counts
 
+    def count_by_registration_page_and_status(
+        self, assembly_id: uuid.UUID
+    ) -> dict[uuid.UUID | None, dict[RespondentStatus, int]]:
+        counts: dict[uuid.UUID | None, dict[RespondentStatus, int]] = {}
+        for item in self._items:
+            if item.assembly_id != assembly_id:
+                continue
+            page_counts = counts.setdefault(item.registration_page_id, {})
+            page_counts[item.selection_status] = page_counts.get(item.selection_status, 0) + 1
+        return counts
+
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,
@@ -847,6 +875,11 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             if r.assembly_id == assembly_id and r.external_id == external_id:
                 return r
         return None
+
+    def get_by_external_ids(self, assembly_id: uuid.UUID, external_ids: list[str]) -> list[Respondent]:
+        wanted = set(external_ids)
+        found = [r for r in self._items if r.assembly_id == assembly_id and r.external_id in wanted]
+        return sorted(found, key=lambda r: r.external_id)
 
     def count_by_assembly_id(self, assembly_id: uuid.UUID, include_deleted: bool = False) -> int:
         return sum(
@@ -912,11 +945,14 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             r.attributes = {(new_key if k == old_key else k): v for k, v in r.attributes.items() if k != new_key}
         return len(changed)
 
-    def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
+    def reset_all_to_pool(self, assembly_id: uuid.UUID, author_id: uuid.UUID, selection_run_id: uuid.UUID) -> int:
         count = 0
         for r in self._items:
-            if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED:
-                r.reset_to_pool()
+            if r.assembly_id == assembly_id and r.selection_status not in (
+                RespondentStatus.POOL,
+                RespondentStatus.DELETED,
+            ):
+                r.reset_to_pool(author_id, selection_run_id)
                 count += 1
         return count
 
@@ -1342,6 +1378,32 @@ class FakeGSheetExportTarget(AbstractGSheetExportTarget):
         if self._error is not None:
             raise self._error
         self.writes.append((title, table))
+
+
+class FakeRedis:
+    """The slice of redis-py the services use, backed by a dict.
+
+    A MagicMock won't do: the CSV upload stash writes on one request and reads
+    on the next, and the auto-export debounce relies on ``SET NX`` answering
+    truthfully. Values are stored as bytes, as a client built without
+    ``decode_responses`` returns them. TTLs are ignored - nothing expires
+    within a test.
+    """
+
+    def __init__(self) -> None:
+        self._values: dict[str, bytes] = {}
+
+    def set(self, key: str, value: str | bytes, nx: bool = False, ex: int | None = None) -> bool | None:
+        if nx and key in self._values:
+            return None
+        self._values[key] = value.encode("utf-8") if isinstance(value, str) else value
+        return True
+
+    def get(self, key: str) -> bytes | None:
+        return self._values.get(key)
+
+    def delete(self, key: str) -> int:
+        return 1 if self._values.pop(key, None) is not None else 0
 
 
 class FakeEmailAdapter(EmailAdapter):

@@ -57,6 +57,11 @@ class AssemblyExportGSheet:
     # respondents page. Blank until the first successful export.
     spreadsheet_title: str = ""
     worksheet_url: str = ""
+    # When set, a background task rewrites the sheet whenever the assembly's
+    # respondents or their schema change, using the status filter token chosen
+    # when auto-export was enabled (see respondent_export_service.resolve_status_filter).
+    auto_export: bool = False
+    auto_export_status_filter: str = ""
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -79,7 +84,7 @@ class AssemblyExportGSheet:
         non_updatable = ("assembly_id", "export_kind", "assembly_export_gsheet_id", "created_at")
         return [f.name for f in fields(cls) if f.name not in non_updatable]
 
-    def update_values(self, url: str = "", **kwargs: str) -> None:
+    def update_values(self, url: str = "", **kwargs: str | bool) -> None:
         """Update the export target's editable fields."""
         if url:
             self.url = self._validate_url(url.strip())

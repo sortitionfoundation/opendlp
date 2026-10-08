@@ -932,6 +932,24 @@
         background-color: var(--color-primary-action);
     }
 
+    /* Selection step row: the same shape as a set-up step, but static. Its
+       actions are the buttons on the right, so the row itself is not a link
+       and has no hover. Lives in a .setup-steps list for the connector. */
+    .selection-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 4px;
+        background-color: var(--color-tables-cards);
+        color: var(--color-headings);
+    }
+
+    .selection-step .stepper-number {
+        background-color: var(--color-primary-action);
+    }
+
     /* Target data sources checklist row: a card whose thick left border says
        whether the target still needs a question (unlinked), has one that
        needs attention (stale values, lookup table not uploaded), or is done.
