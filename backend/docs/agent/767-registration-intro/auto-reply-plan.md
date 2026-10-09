@@ -6,7 +6,7 @@ the intro editor worked, the auto-reply email gets the same editor. Built on
 everything in [tiptap-intro-editor-plan.md](tiptap-intro-editor-plan.md); this
 plan only covers what is different for the email.
 
-**Status: in progress.** Steps 1 to 3 are done (marked ✅).
+**Status: in progress.** Steps 1 to 4 are done (marked ✅).
 
 ## Goal
 
@@ -269,11 +269,14 @@ so the link works in an email", in the GOV.UK "Enter…" style of the existing
 rule when the next request doesn't ask for it, so the intro's link dialog is
 unaffected. Nothing turns the flag on until step 5.
 
-### 4. Hint wording (A5)
+### ✅ 4. Hint wording (A5)
 
 - `rich_editor.html`: `variable_example` argument in the hint;
   `input.html` passes `rich_editor_variable_example` through.
 - `_step_intro.html`: `{{ assembly_title }}`.
+
+As built: the hint's msgid now has `%(example)s` in place of the variable,
+so its Hungarian translation goes with the step 6 regeneration.
 
 ### 5. Turn it on in the email step
 
