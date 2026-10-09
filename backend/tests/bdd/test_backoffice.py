@@ -1890,6 +1890,15 @@ def type_into_visual_intro(page: Page, text: str):
     page.keyboard.type(text)
 
 
+@when(parsers.parse('I type "{text}" at the start of the visual intro editor'))
+def type_at_start_of_visual_intro(page: Page, text: str):
+    editor = page.locator(VISUAL_INTRO)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.focus()
+    page.keyboard.press("ControlOrMeta+Home")
+    page.keyboard.type(text)
+
+
 @when("I select everything in the visual intro editor")
 def select_all_in_visual_intro(page: Page):
     page.locator(VISUAL_INTRO).focus()

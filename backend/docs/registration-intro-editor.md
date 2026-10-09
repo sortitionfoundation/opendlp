@@ -33,6 +33,10 @@ to HTML can always happen.
   `s`/`del`/`strike`, `ul`/`ol`/`li`, `blockquote`, `hr`, `a`, `img`, `br`,
   `table` with `tr`, `td` and `th`, and `div` (so wrappers such as the GOV.UK
   grid row survive, although the toolbar cannot make one).
+- **Styled spans:** a `<span>` with a `style`, such as the
+  `<span style="font-weight: 400;">` that pasting from Google Docs wraps round
+  most of the text. The toolbar cannot make one, and cannot show or remove
+  one either: do that in the HTML view.
 - **Attributes:** `class`, `style` and `dir` on all of those; `href`, `target`
   and `rel` on links; `src`, `alt`, `title`, `width` and `height` on images;
   `border` and `role` on tables; `colspan` and `rowspan` on cells.
@@ -54,7 +58,11 @@ causes:
 - **text outside any paragraph**, including a bare Jinja tag such as
   `{% if … %}` between elements. Only `{{ variables }}` are supported in the
   intro;
-- a `<span>` that carries attributes, such as `style`;
+- a `<span>` with a `class` or `dir` but no `style`, or a styled span
+  inside another styled span (the editor would merge them into one);
+- a styled span whose place the editor would change in a way that shows,
+  such as `<span style="color: red;"><a>…</a></span>`: the editor puts
+  the span inside the link, which turns the link red;
 - an image embedded as a `data:` URL.
 
 ## What an edit in Visual mode changes
@@ -72,7 +80,13 @@ the saved HTML is rewritten in the editor's own consistent form:
 - attribute-less `<span>`s (common in text pasted from Google Docs) and empty
   `<strong></strong>` disappear;
 - formatting may nest differently: `<strong><a>…</a></strong>` can come back as
-  `<a><strong>…</strong></a>`;
+  `<a><strong>…</strong></a>`. A styled span always goes inside a link and
+  outside bold, italic, underline and strikethrough. The check only accepts
+  that where it looks the same: where the span and the tag round or in it
+  set the same thing (a weight, `font-style`, or a link's colour), whichever
+  is inner wins;
+- `<strong><span style="font-weight: 400;">…</span></strong>` loses its
+  `<strong>`, which the span had already cancelled;
 - **a list item's, table cell's or quote's text is wrapped in a paragraph**:
   `<li>text</li>` becomes `<li><p>text</p></li>`, and the same for `<td>`,
   `<th>` and `<blockquote>`. This is the one change that can be seen: the

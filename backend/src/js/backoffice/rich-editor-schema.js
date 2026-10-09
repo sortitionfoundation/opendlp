@@ -3,6 +3,7 @@
 import { Extension, Node } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import { TextStyle } from "@tiptap/extension-text-style";
 import {
   Table,
   TableCell,
@@ -30,6 +31,7 @@ const PRESERVED_ATTRIBUTE_TYPES = [
   "tableRow",
   "tableCell",
   "tableHeader",
+  "textStyle",
 ];
 
 function preservedAttribute(name) {
@@ -198,6 +200,8 @@ export function createSchemaExtensions({
       },
     }),
     PreservedAttributes,
+    // Keeps a styled <span>, such as one pasted from Google Docs; the toolbar never makes one.
+    TextStyle,
     Div,
     PlainTable.configure({ resizable: false }),
     TableRow,

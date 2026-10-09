@@ -42,6 +42,12 @@ const SAME_AS = { b: "strong", i: "em", del: "s", strike: "s" };
 // The editor wraps the text of these in a <p>, since their content is blocks.
 const WRAPS_TEXT_IN_PARAGRAPH = new Set(["li", "td", "th", "blockquote"]);
 const DROPPED_WHEN_EMPTY = new Set(["strong", "em", "span"]);
+// The property each of these sets on its text, where a styled span's style can compete with it.
+const COMPETING_PROPERTY = {
+  strong: "font-weight",
+  em: "font-style",
+  a: "color",
+};
 const BLOCK_EDGE_SPACE = new RegExp(
   ` ?(</?(?:${BLOCK_TAGS.join("|")})(?: [^>]*)?>) ?`,
   "g",
@@ -148,13 +154,55 @@ function collectRuns(node, marks, runs) {
     const inner =
       tag === "span" && !attributes
         ? marks
-        : [...marks, { open: `<${tag}${attributes}>`, close: `</${tag}>` }];
+        : [
+            ...marks,
+            {
+              open: `<${tag}${attributes}>`,
+              close: `</${tag}>`,
+              tag,
+              element: node,
+            },
+          ];
     const before = runs.length;
     node.childNodes.forEach((child) => collectRuns(child, inner, runs));
     if (runs.length === before && !DROPPED_WHEN_EMPTY.has(tag)) {
       runs.push({ atom: `<${tag}${attributes}></${tag}>`, marks });
     }
   }
+}
+
+// Nesting order is ignored, except where it changes how a styled span looks:
+// whichever of the span and a competing element is inner sets that property.
+// So an outer <strong> or <em> is dropped when the span sets its property, and
+// the span loses any property an inner <strong>, <em> or link sets. Text inside
+// more than one styled span is left alone, so it never compares as equal to
+// the single span the editor merges such spans into.
+function settleSpanStyle(marks) {
+  const spans = marks.filter((mark) => mark.tag === "span");
+  if (spans.length !== 1) {
+    return marks;
+  }
+  const span = spans[0];
+  const spanIndex = marks.indexOf(span);
+  const style = span.element.style;
+  const settled = marks.filter((mark, index) => {
+    const property = COMPETING_PROPERTY[mark.tag];
+    return !(
+      index < spanIndex &&
+      mark.tag !== "a" &&
+      property &&
+      style.getPropertyValue(property)
+    );
+  });
+  const probe = span.element.cloneNode(false);
+  marks.slice(spanIndex + 1).forEach((mark) => {
+    const property = COMPETING_PROPERTY[mark.tag];
+    if (property) {
+      probe.style.removeProperty(property);
+    }
+  });
+  const open = `<span${serialiseAttributes(probe)}>`;
+  return settled.map((mark) => (mark === span ? { ...mark, open } : mark));
 }
 
 function marksKey(marks) {
@@ -166,7 +214,8 @@ function marksKey(marks) {
 
 function serialiseRuns(runs) {
   const merged = [];
-  for (const run of runs) {
+  for (const unsettled of runs) {
+    const run = { ...unsettled, marks: settleSpanStyle(unsettled.marks) };
     const previous = merged[merged.length - 1];
     if (
       previous &&
@@ -218,8 +267,10 @@ function serialiseFlow(nodes) {
  * A canonical form of `html` in which differences that render the same are
  * erased: attribute order, style spelling, whitespace between blocks, `<b>`
  * for `<strong>`, `<del>` for `<s>`, attribute-less `<span>`s, empty
- * `<strong>`/`<em>`, and the text of a list item, table cell or blockquote
- * being wrapped in a `<p>`.
+ * `<strong>`/`<em>`, the text of a list item, table cell or blockquote
+ * being wrapped in a `<p>`, and the nesting order of formatting - except
+ * where a styled `<span>` and the formatting round or in it set the same
+ * property (see settleSpanStyle).
  */
 export function normaliseHtml(html) {
   const template = document.createElement("template");
