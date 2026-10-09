@@ -112,6 +112,28 @@ the assembly has a page in test or published status, and before then only to
 signed-in users who can view the assembly, so images show in the editor and
 preview straight away.
 
+### Resizing images
+
+In Visual mode an image can be resized two ways:
+
+- **Drag a corner.** Hovering over or selecting an image shows a handle at
+  each corner. Dragging one keeps the image's shape.
+- **The Image size dialog.** Select the image (click it, or move onto it
+  with the arrow keys) and press the **Image size** toolbar button, or
+  double-click the image. Enter a width in pixels, from 20 to 2000. The
+  height follows the image's shape. **Original size** takes the size away.
+
+Both write ordinary `width` and `height` attributes, such as
+`<img src="..." alt="..." width="120" height="90">`, so the size can also be
+set or removed in the HTML view.
+
+An image is never shown wider than the page. The public page caps images at
+the width of the main column and lets the height follow
+(`.govuk-main-wrapper img` in `src/scss/application.scss`), so a large image
+shrinks to fit a phone screen and keeps its shape. The `width` and `height`
+attributes still tell the browser the image's shape before it loads, so the
+page doesn't jump about while it does.
+
 ## The intro style
 
 The intro step has an **Intro style** choice:
