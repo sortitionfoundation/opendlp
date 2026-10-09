@@ -43,6 +43,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.service_layer.writing_guard import refuse_if_writing_run_unfinished
 from opendlp.translations import gettext as _
 
 logger = structlog.get_logger(__name__)
@@ -161,6 +162,7 @@ def start_gsheet_select_task(
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     sel_settings = _get_selection_settings(assembly)
+    refuse_if_writing_run_unfinished(uow, assembly_id)
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -309,6 +311,7 @@ def start_gsheet_replace_task(
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     sel_settings = _get_selection_settings(assembly)
+    refuse_if_writing_run_unfinished(uow, assembly_id)
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -380,6 +383,9 @@ def start_gsheet_manage_tabs_task(
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
+
+    if not dry_run:
+        refuse_if_writing_run_unfinished(uow, assembly_id)
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -510,6 +516,8 @@ def start_db_select_task(
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
+    refuse_if_writing_run_unfinished(uow, assembly_id)
+
     task_id = uuid.uuid4()
     task_type = SelectionTaskType.TEST_SELECT_FROM_DB if test_selection else SelectionTaskType.SELECT_FROM_DB
     log_msg = (
@@ -576,14 +584,13 @@ def start_db_replace_task(
     if number_to_select < 1:
         raise InvalidSelection(_("The number of replacements to select must be at least one"))
 
-    if get_active_initial_selection_run_id(uow, assembly_id) is not None:
-        raise InvalidSelection(_("A selection is already running for this assembly"))
-
     sel_settings = _get_selection_settings(assembly)
     try:
         settings_obj = sel_settings.to_settings(id_column=DB_ID_COLUMN)
     except SortitionBaseError as e:
         raise InvalidSelection(translate_sortition_error(e)) from e
+
+    refuse_if_writing_run_unfinished(uow, assembly_id)
 
     task_id = uuid.uuid4()
     record = SelectionRunRecord(
@@ -926,10 +933,10 @@ def get_active_initial_selection_run_id(uow: AbstractUnitOfWork, assembly_id: uu
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    latest = uow.selection_run_records.get_latest_for_assembly(assembly_id)
-    if latest is None or latest.has_finished or latest.task_type not in _INITIAL_SELECTION_TASK_TYPES:
+    unfinished = uow.selection_run_records.get_unfinished_for_assembly(assembly_id, _INITIAL_SELECTION_TASK_TYPES)
+    if not unfinished:
         return None
-    return latest.task_id
+    return unfinished[0].task_id
 
 
 def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
