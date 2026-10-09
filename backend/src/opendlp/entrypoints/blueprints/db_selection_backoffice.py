@@ -10,7 +10,7 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_url_generator
-from opendlp.entrypoints.blueprints.gsheets import render_selection_page
+from opendlp.entrypoints.blueprints.gsheets import redirect_to_running_task, render_selection_page
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
@@ -46,6 +46,7 @@ from opendlp.service_layer.sortition import (
     start_db_replace_task,
     start_db_select_task,
 )
+from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
 from opendlp.translations import gettext as _
 
 db_selection_backoffice_bp = Blueprint("db_selection_backoffice", __name__)
@@ -123,6 +124,8 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
         )
 
+    except SelectionAlreadyRunning as e:
+        return redirect_to_running_task(assembly_id, e)
     except InvalidSelection as e:
         flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
@@ -185,6 +188,8 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
         )
 
+    except SelectionAlreadyRunning as e:
+        return redirect_to_running_task(assembly_id, e)
     except InvalidSelection as e:
         flash(_("Could not start replacement selection: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
@@ -494,6 +499,8 @@ def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Reset %(count)s respondents to the pool", count=count), "success")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
+    except SelectionAlreadyRunning as e:
+        return redirect_to_running_task(assembly_id, e)
     except NotFoundError:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
