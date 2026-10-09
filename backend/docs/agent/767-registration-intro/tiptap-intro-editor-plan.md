@@ -969,7 +969,34 @@ The extra whitespace counts towards the 200 KB intro limit
 it's nowhere near the limit, but that's why it's indentation only and never
 blank lines.
 
-### 12. Resizing images (E16)
+### ✅ 12. Resizing images (E16)
+
+Done, in three commits: the CSS, the drag handles, then the dialog. As built,
+where it differs from the plan below:
+
+- **The read-only view needed the fallback.** Tiptap's resizable node view only
+  removes its handles after the editor changes, and a read-only editor never
+  does. So `createSchemaExtensions` takes `resizable`, which `rich-editor.js`
+  turns off when read-only.
+- **Tiptap's node view ignores a size change made outside a drag,** and writes
+  the height into the image's inline style. That height would stop
+  `height: auto` keeping the shape when `max-width` narrows the image.
+  `ResizableImage` wraps the node view to show the new width in place and
+  leave the height to the CSS. Redrawing the node instead hides the image
+  until it reloads.
+- **Changing an image's attributes drops the selection on it,** because a leaf
+  node is replaced. The dialog's result selects the image again in the same
+  chain, so the author can open Image size again straight away. A drag still
+  ends with the image unselected; that is Tiptap's own commit.
+- **The image's natural shape wins once it loads.** `height: auto` uses the
+  loaded image's own aspect ratio, not the one its attributes imply. So the
+  BDD checks compare against `naturalWidth / naturalHeight`.
+- The width field is focused and its value selected on open, so typing
+  replaces it.
+- Not built: a separate e2e test for the CSS, since the Flask client can't
+  see it. The BDD phone-width check covers it.
+
+The plan as written before the work:
 
 **CSS first, since it fixes a live problem on its own** (its own commit):
 
