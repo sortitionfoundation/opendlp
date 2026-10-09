@@ -2192,7 +2192,15 @@ def drag_image_corner(page: Page, alt: str, distance: int):
 def intro_image_narrower(page: Page, alt: str, distance: int):
     image = _visual_intro_image(page, alt)
     natural_ratio = image.evaluate("(img) => img.naturalWidth / img.naturalHeight")
-    saved = page.evaluate(
+    saved = _saved_image_size(page, alt)
+    assert saved["width"] is not None and saved["height"] is not None, saved
+    width, height = int(saved["width"]), int(saved["height"])
+    assert width == pytest.approx(_widths_before_drag[alt] - distance, abs=3)
+    assert width / height == pytest.approx(natural_ratio, rel=0.03)
+
+
+def _saved_image_size(page: Page, alt: str) -> dict:
+    return page.evaluate(
         """(alt) => {
             const html = document.querySelector("textarea[name='intro_content']").value;
             const doc = new DOMParser().parseFromString(html, "text/html");
@@ -2201,10 +2209,60 @@ def intro_image_narrower(page: Page, alt: str, distance: int):
         }""",
         alt,
     )
-    assert saved["width"] is not None and saved["height"] is not None, saved
-    width, height = int(saved["width"]), int(saved["height"])
-    assert width == pytest.approx(_widths_before_drag[alt] - distance, abs=3)
-    assert width / height == pytest.approx(natural_ratio, rel=0.03)
+
+
+@when(parsers.parse('I select the image "{alt}" in the visual intro editor with the arrow keys'))
+def select_image_with_arrow_keys(page: Page, alt: str):
+    """The image ends the line, so End then the left arrow lands on it rather than in the text."""
+    _visual_intro_image(page, alt)
+    page.locator(VISUAL_INTRO).click()
+    page.keyboard.press("End")
+    page.keyboard.press("ArrowLeft")
+    expect(page.locator(f'{VISUAL_INTRO} .ProseMirror-selectednode img[alt="{alt}"]')).to_have_count(1)
+
+
+@when(parsers.parse('I double-click the image "{alt}" in the visual intro editor'))
+def double_click_image(page: Page, alt: str):
+    _visual_intro_image(page, alt).dblclick()
+
+
+@when(parsers.parse('I enter the width "{width}" in the image size dialog and press Enter'))
+def enter_image_width(page: Page, width: str):
+    field = page.get_by_role("dialog", name="Image size").get_by_label("Width in pixels")
+    expect(field).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+    page.keyboard.type(width)
+    page.keyboard.press("Enter")
+    expect(page.get_by_role("dialog", name="Image size")).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I press the "{label}" button in the image size dialog'))
+def press_image_size_dialog_button(page: Page, label: str):
+    dialog = page.get_by_role("dialog", name="Image size")
+    dialog.get_by_role("button", name=label, exact=True).click()
+    expect(dialog).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the image size dialog should show the width "{width}"'))
+def image_size_dialog_shows(page: Page, width: str):
+    field = page.get_by_role("dialog", name="Image size").get_by_label("Width in pixels")
+    expect(field).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(field).to_have_value(width)
+
+
+@then(parsers.parse('the intro image "{alt}" should be {width:d} pixels wide and keep its shape'))
+def intro_image_sized(page: Page, alt: str, width: int):
+    natural_ratio = _visual_intro_image(page, alt).evaluate("(img) => img.naturalWidth / img.naturalHeight")
+    saved = _saved_image_size(page, alt)
+    assert saved["width"] == str(width), saved
+    assert saved["height"] is not None, saved
+    assert width / int(saved["height"]) == pytest.approx(natural_ratio, rel=0.03)
+    shown = page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]').bounding_box()
+    assert shown is not None and shown["width"] == pytest.approx(width, abs=1)
+
+
+@then(parsers.parse('the intro image "{alt}" should have no size'))
+def intro_image_has_no_size(page: Page, alt: str):
+    assert _saved_image_size(page, alt) == {"width": None, "height": None}
 
 
 @then(parsers.parse('the image "{alt}" in the visual intro editor should have no resize handles'))

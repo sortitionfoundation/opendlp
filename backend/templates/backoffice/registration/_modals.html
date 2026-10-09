@@ -304,3 +304,44 @@ panel_classes="max-w-lg") %}
     {{ button(_("Apply"), variant="primary", attrs='type="button" @click="applyLink()"') }}
 </div>
 {% endcall %}
+{# Image size — opened by the visual editor's Image size button or a double-click on an
+   image, through the rich-editor-image-size-request event; the answer goes back as
+   rich-editor-image-size-result. #}
+{% call controlled_modal(id="image-size-modal",
+title=_("Image size"),
+open_expr="imageSizeDialogOpen",
+close_expr="cancelImageSize()",
+panel_classes="max-w-lg") %}
+<div class="dialog-body">
+    <div class="space-y-4">
+        <div>
+            <label for="image-size-modal-width"
+                   class="text-label-md block mb-1"
+                   style="color: var(--color-headings)">{{ _("Width in pixels") }}</label>
+            <input type="number"
+                   id="image-size-modal-width"
+                   x-model="imageSizeWidth"
+                   @keydown.enter.prevent="applyImageSize()"
+                   min="20"
+                   max="2000"
+                   step="1"
+                   inputmode="numeric"
+                   aria-describedby="image-size-modal-width-hint"
+                   class="w-40 px-3 py-2 rounded-md text-body-sm"
+                   style="border: 1px solid var(--color-borders-dividers);
+                          background: var(--color-page-background)" />
+            <p id="image-size-modal-width-hint"
+               class="text-body-sm mt-1"
+               style="color: var(--color-secondary-text);">
+                {{ _("The height changes to keep the image's shape. The image is never shown wider than the page.") }}
+            </p>
+        </div>
+        {{ inline_error("imageSizeError") }}
+    </div>
+</div>
+<div class="dialog-footer">
+    {{ button(_("Original size"), variant="secondary", attrs='type="button" @click="resetImageSize()"') }}
+    {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="cancelImageSize()"') }}
+    {{ button(_("Apply"), variant="primary", attrs='type="button" @click="applyImageSize()"') }}
+</div>
+{% endcall %}

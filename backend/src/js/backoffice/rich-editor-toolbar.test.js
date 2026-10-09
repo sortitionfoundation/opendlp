@@ -22,6 +22,7 @@ const COMMAND_NAMES = [
   "blockquote",
   "horizontalRule",
   "link",
+  "imageSize",
 ];
 const TABLE_ITEMS = [
   "insertTable",
@@ -127,6 +128,15 @@ describe("wireToolbar commands", () => {
 });
 
 describe("wireToolbar state", () => {
+  it("offers Image size only while an image is selected", () => {
+    editor.commands.setContent('<p>Hi <img src="/a.png" alt="A"></p>');
+    wireToolbar(toolbar, editor, { imageSize: () => {} });
+    editor.commands.setTextSelection(2);
+    expect(button("imageSize").getAttribute("aria-disabled")).toBe("true");
+    editor.commands.setNodeSelection(4);
+    expect(button("imageSize").getAttribute("aria-disabled")).toBe("false");
+  });
+
   it("presses the toggles that match the selection", () => {
     editor.commands.setContent("<h2><strong>Title</strong></h2>");
     wireToolbar(toolbar, editor);

@@ -126,3 +126,25 @@ Feature: Backoffice registration visual intro editor
     When I visit the registration intro editor for "Visual Drag Resize Assembly"
     And I drag the bottom-right corner of the image "Logo" 60 pixels to the left
     Then the intro image "Logo" should be 60 pixels narrower and keep its shape
+
+  Scenario: Resizing an image with the keyboard
+    Given there is an assembly called "Visual Keyboard Resize Assembly" with the intro "<p>Our logo <img src='/static/img/logosortition.svg' alt='Logo'></p>"
+    When I visit the registration intro editor for "Visual Keyboard Resize Assembly"
+    And I select the image "Logo" in the visual intro editor with the arrow keys
+    And I jump to the formatting toolbar with Alt+F10
+    And I move to the "Image size" toolbar button with the arrow keys
+    And I press "Enter"
+    And I enter the width "120" in the image size dialog and press Enter
+    Then the intro image "Logo" should be 120 pixels wide and keep its shape
+    When I jump to the formatting toolbar with Alt+F10
+    And I move to the "Image size" toolbar button with the arrow keys
+    And I press "Enter"
+    Then the image size dialog should show the width "120"
+    When I press the "Original size" button in the image size dialog
+    Then the intro image "Logo" should have no size
+
+  Scenario: Double-clicking an image opens the image size dialog
+    Given there is an assembly called "Visual Double Click Assembly" with the intro "<p><img src='/static/img/logosortition.svg' alt='Logo' width='150'></p>"
+    When I visit the registration intro editor for "Visual Double Click Assembly"
+    And I double-click the image "Logo" in the visual intro editor
+    Then the image size dialog should show the width "150"

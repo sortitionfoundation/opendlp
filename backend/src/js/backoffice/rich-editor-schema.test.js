@@ -196,13 +196,14 @@ describe("resizable images", () => {
     editor.destroy();
   });
 
-  it("redraws the image when its size is changed outside a drag", () => {
+  it("shows a size changed outside a drag", () => {
     const editor = editorWith(
       '<p><img src="/a.png" alt="A" width="250" height="100"></p>',
     );
     selectImage(editor);
     editor.commands.updateAttributes("image", { width: 120, height: 48 });
     expect(shownImage(editor).style.width).toBe("120px");
+    expect(shownImage(editor).style.height).toBe("");
 
     selectImage(editor);
     editor.commands.updateAttributes("image", { width: null, height: null });

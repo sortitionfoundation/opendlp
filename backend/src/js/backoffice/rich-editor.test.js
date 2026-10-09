@@ -9,6 +9,8 @@ import {
 } from "./rich-editor.js";
 import {
   IMAGE_REQUEST_EVENT,
+  IMAGE_SIZE_REQUEST_EVENT,
+  IMAGE_SIZE_RESULT_EVENT,
   INSERT_IMAGE_EVENT,
   LINK_REQUEST_EVENT,
   LINK_RESULT_EVENT,
@@ -30,6 +32,7 @@ function setUp(value, textareaAttrs = "") {
           <button type="button" data-command="bold">Bold</button>
           <button type="button" data-command="link">Link</button>
           <button type="button" data-command="image">Image</button>
+          <button type="button" data-command="imageSize">Image size</button>
         </div>
         <p data-rich-editor-notice role="status" hidden></p>
         <div data-rich-editor-surface></div>
@@ -419,6 +422,152 @@ describe("mountRichEditor images", () => {
     mount(page.textarea);
     insert({ editorId: "intro", src: "/i.png", alt: "Logo", pos: 1 });
     expect(page.textarea.value).toBe("<p>ab</p>");
+  });
+});
+
+describe("mountRichEditor image size", () => {
+  const IMAGE = '<p><img src="/a.png" alt="A" width="250" height="100"></p>';
+
+  function imagesPage(value) {
+    return setUp(value, 'data-rich-editor-images="true"');
+  }
+
+  function captureSizeRequests() {
+    const requests = [];
+    const listener = (event) => requests.push(event.detail);
+    document.addEventListener(IMAGE_SIZE_REQUEST_EVENT, listener);
+    return {
+      requests,
+      stop: () =>
+        document.removeEventListener(IMAGE_SIZE_REQUEST_EVENT, listener),
+    };
+  }
+
+  function answer(detail) {
+    document.dispatchEvent(
+      new CustomEvent(IMAGE_SIZE_RESULT_EVENT, { detail }),
+    );
+  }
+
+  function imagePos(rich) {
+    let found = null;
+    rich.editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === "image") {
+        found = pos;
+      }
+    });
+    return found;
+  }
+
+  function selectImage(rich) {
+    rich.editor.commands.setNodeSelection(imagePos(rich));
+  }
+
+  // jsdom never loads images, so give the shown one the natural size a browser would.
+  function giveNaturalSize(rich, width, height) {
+    const shown = rich.editor.view.dom.querySelector("img[src]");
+    Object.defineProperty(shown, "naturalWidth", { value: width });
+    Object.defineProperty(shown, "naturalHeight", { value: height });
+  }
+
+  function imageAttrs(rich) {
+    return rich.editor.state.doc.nodeAt(imagePos(rich)).attrs;
+  }
+
+  it("asks for the selected image's size with its current width", () => {
+    const page = imagesPage(IMAGE);
+    const rich = mount(page.textarea);
+    const capture = captureSizeRequests();
+    selectImage(rich);
+    page.toolbar.querySelector('[data-command="imageSize"]').click();
+    capture.stop();
+    expect(capture.requests).toEqual([{ editorId: "intro", width: 250 }]);
+  });
+
+  it("does not ask when no image is selected", () => {
+    const page = imagesPage(IMAGE);
+    mount(page.textarea);
+    const capture = captureSizeRequests();
+    page.toolbar.querySelector('[data-command="imageSize"]').click();
+    capture.stop();
+    expect(capture.requests).toEqual([]);
+  });
+
+  it("asks when an image is double-clicked", () => {
+    const page = imagesPage(IMAGE);
+    const rich = mount(page.textarea);
+    const capture = captureSizeRequests();
+    const pos = imagePos(rich);
+    const node = rich.editor.state.doc.nodeAt(pos);
+    rich.editor.view.someProp("handleDoubleClickOn", (handle) =>
+      handle(
+        rich.editor.view,
+        pos,
+        node,
+        pos,
+        new MouseEvent("dblclick"),
+        true,
+      ),
+    );
+    capture.stop();
+    expect(capture.requests).toEqual([{ editorId: "intro", width: 250 }]);
+    expect(rich.editor.state.selection.node.type.name).toBe("image");
+  });
+
+  it("sets the width, and a height in proportion to the image's natural size", () => {
+    const page = imagesPage(IMAGE);
+    const rich = mount(page.textarea);
+    giveNaturalSize(rich, 400, 300);
+    selectImage(rich);
+    page.toolbar.querySelector('[data-command="imageSize"]').click();
+    answer({ editorId: "intro", action: "set", width: 120 });
+    expect(imageAttrs(rich)).toMatchObject({ width: 120, height: 90 });
+    expect(rich.editor.state.selection.node.type.name).toBe("image");
+    expect(page.textarea.value).toBe(
+      '<p><img src="/a.png" alt="A" width="120" height="90"></p>',
+    );
+  });
+
+  it("sets the width alone when the image has not loaded", () => {
+    const page = imagesPage(IMAGE);
+    const rich = mount(page.textarea);
+    selectImage(rich);
+    page.toolbar.querySelector('[data-command="imageSize"]').click();
+    answer({ editorId: "intro", action: "set", width: 120 });
+    expect(imageAttrs(rich)).toMatchObject({ width: 120, height: null });
+  });
+
+  it("goes back to the original size on reset", () => {
+    const page = imagesPage(IMAGE);
+    const rich = mount(page.textarea);
+    selectImage(rich);
+    page.toolbar.querySelector('[data-command="imageSize"]').click();
+    answer({ editorId: "intro", action: "reset", width: null });
+    expect(page.textarea.value).toBe('<p><img src="/a.png" alt="A"></p>');
+  });
+
+  it("changes nothing on cancel", () => {
+    const page = imagesPage(IMAGE);
+    const rich = mount(page.textarea);
+    selectImage(rich);
+    page.toolbar.querySelector('[data-command="imageSize"]').click();
+    answer({ editorId: "intro", action: "cancel", width: null });
+    expect(page.textarea.value).toBe(IMAGE);
+  });
+
+  it("ignores an answer meant for another editor, or one it did not ask for", () => {
+    const page = imagesPage(IMAGE);
+    const rich = mount(page.textarea);
+    answer({ editorId: "intro", action: "set", width: 120 });
+    selectImage(rich);
+    page.toolbar.querySelector('[data-command="imageSize"]').click();
+    answer({ editorId: "other", action: "set", width: 120 });
+    expect(page.textarea.value).toBe(IMAGE);
+  });
+
+  it("opens a sized image in Visual mode", () => {
+    const page = imagesPage('<p><img src="/a.png" alt="A" width="250"></p>');
+    expect(mount(page.textarea).mode).toBe(VISUAL);
   });
 });
 

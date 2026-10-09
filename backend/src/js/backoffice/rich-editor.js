@@ -11,6 +11,8 @@ import {
 import { wireToolbar } from "./rich-editor-toolbar.js";
 import {
   IMAGE_REQUEST_EVENT,
+  IMAGE_SIZE_REQUEST_EVENT,
+  IMAGE_SIZE_RESULT_EVENT,
   INSERT_IMAGE_EVENT,
   LINK_REQUEST_EVENT,
   LINK_RESULT_EVENT,
@@ -110,6 +112,14 @@ export function mountRichEditor(textarea) {
         id: `${textarea.id}-visual`,
         class: "rich-editor__content",
       },
+      handleDoubleClickOn: (_view, _pos, node, nodePos) => {
+        if (node.type.name !== "image" || !imagesAllowed || readOnly) {
+          return false;
+        }
+        editor.commands.setNodeSelection(nodePos);
+        requestImageSize();
+        return true;
+      },
     },
     onUpdate: () => {
       if (mode === VISUAL) {
@@ -157,6 +167,68 @@ export function mountRichEditor(textarea) {
     }
   }
 
+  // Where the image the Image size dialog is changing sits, while it is open.
+  let imageSizePos = null;
+
+  function selectedImage() {
+    const { node } = editor.state.selection;
+    return node && node.type.name === "image" ? node : null;
+  }
+
+  function shownImageAt(pos) {
+    const dom = editor.view.nodeDOM(pos);
+    if (!dom) {
+      return null;
+    }
+    return dom.nodeName === "IMG" ? dom : dom.querySelector("img");
+  }
+
+  function requestImageSize() {
+    const image = selectedImage();
+    if (!image) {
+      return;
+    }
+    imageSizePos = editor.state.selection.from;
+    const shown = shownImageAt(imageSizePos);
+    const shownWidth = shown
+      ? Math.round(shown.getBoundingClientRect().width)
+      : 0;
+    document.dispatchEvent(
+      new CustomEvent(IMAGE_SIZE_REQUEST_EVENT, {
+        detail: {
+          editorId: textarea.id,
+          width: image.attrs.width || shownWidth || null,
+        },
+      }),
+    );
+  }
+
+  function applyImageSizeResult(event) {
+    const { editorId, action, width } = event.detail;
+    if (editorId !== textarea.id || imageSizePos === null) {
+      return;
+    }
+    const pos = imageSizePos;
+    imageSizePos = null;
+    let size = null;
+    if (action === "set") {
+      const shown = shownImageAt(pos);
+      const height =
+        shown && shown.naturalWidth > 0
+          ? Math.round((width * shown.naturalHeight) / shown.naturalWidth)
+          : null;
+      size = { width, height };
+    } else if (action === "reset") {
+      size = { width: null, height: null };
+    }
+    const chain = editor.chain().focus().setNodeSelection(pos);
+    if (size) {
+      // Changing an image replaces it, which drops the selection on it.
+      chain.updateAttributes("image", size).setNodeSelection(pos);
+    }
+    chain.run();
+  }
+
   function requestImage(file, pos) {
     document.dispatchEvent(
       new CustomEvent(IMAGE_REQUEST_EVENT, {
@@ -189,12 +261,14 @@ export function mountRichEditor(textarea) {
   document.addEventListener(LINK_RESULT_EVENT, applyLinkResult);
   if (imagesAllowed && !readOnly) {
     document.addEventListener(INSERT_IMAGE_EVENT, insertImage);
+    document.addEventListener(IMAGE_SIZE_RESULT_EVENT, applyImageSizeResult);
   }
 
   const toolbarControl = toolbar
     ? wireToolbar(toolbar, editor, {
         link: requestLink,
         image: () => requestImage(null, null),
+        imageSize: requestImageSize,
       })
     : null;
 
@@ -302,6 +376,10 @@ export function mountRichEditor(textarea) {
     destroy() {
       document.removeEventListener(LINK_RESULT_EVENT, applyLinkResult);
       document.removeEventListener(INSERT_IMAGE_EVENT, insertImage);
+      document.removeEventListener(
+        IMAGE_SIZE_RESULT_EVENT,
+        applyImageSizeResult,
+      );
       if (codeEditor) {
         codeEditor.destroy();
       }

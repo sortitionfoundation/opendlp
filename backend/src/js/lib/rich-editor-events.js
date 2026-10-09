@@ -5,3 +5,5 @@ export const LINK_REQUEST_EVENT = "rich-editor-link-request";
 export const LINK_RESULT_EVENT = "rich-editor-link-result";
 export const IMAGE_REQUEST_EVENT = "rich-editor-image-request";
 export const INSERT_IMAGE_EVENT = "rich-editor-insert-image";
+export const IMAGE_SIZE_REQUEST_EVENT = "rich-editor-image-size-request";
+export const IMAGE_SIZE_RESULT_EVENT = "rich-editor-image-size-result";

@@ -57,6 +57,10 @@ export const COMMANDS = {
   horizontalRule: {
     run: (chain) => chain.setHorizontalRule(),
   },
+  // Opens the Image size dialog, through the `imageSize` action.
+  imageSize: {
+    enabled: (editor) => editor.state.selection.node?.type.name === "image",
+  },
   // A plain table: no header row and no role, until the team decides whether
   // tables are for layout or data (Q6 in the plan).
   insertTable: {
@@ -98,7 +102,7 @@ export const COMMANDS = {
  * Connect `toolbar` to `editor`.
  *
  * `actions` supplies the commands that leave the editor, such as opening the
- * link dialog: `{link: () => ..., image: () => ...}`. Returns `refresh()`,
+ * link dialog: `{link: () => ..., image: () => ..., imageSize: () => ...}`. Returns `refresh()`,
  * which re-reads the editor state into the buttons.
  */
 export function wireToolbar(toolbar, editor, actions = {}) {

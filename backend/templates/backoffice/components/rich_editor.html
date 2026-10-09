@@ -2,7 +2,7 @@
 ABOUTME: Server-rendered controls for the visual HTML editor: the Visual/HTML switch, hint and notice
 ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaScript the plain textarea shows
 #}
-{% from "backoffice/components/icons.html" import icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_text_quote, icon_separator_horizontal, icon_table, icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_list, icon_list_ordered, icon_link, icon_image, icon_undo_2, icon_redo_2 %}
+{% from "backoffice/components/icons.html" import icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_text_quote, icon_separator_horizontal, icon_table, icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_list, icon_list_ordered, icon_link, icon_image, icon_scaling, icon_undo_2, icon_redo_2 %}
 {% macro rich_editor_controls(for_id, label, images=false, editable=true, content_style="") %}
     {#
     Controls for a textarea enhanced with the visual editor. Rendered by the textarea macro
@@ -95,6 +95,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         {{ rich_editor_tool("link", _("Link"), icon_link(), extra_attrs='aria-haspopup="dialog"') }}
         {% if images %}
             {{ rich_editor_tool("image", _("Image"), icon_image(), extra_attrs='aria-haspopup="dialog"') }}
+            {{ rich_editor_tool("imageSize", _("Image size"), icon_scaling(), extra_attrs='aria-haspopup="dialog" aria-disabled="true"') }}
         {% endif %}
         {{ rich_editor_tool("horizontalRule", _("Horizontal line"), icon_separator_horizontal()) }}
         <div class="rich-editor__menu-anchor">

@@ -145,9 +145,9 @@ export const VariableHighlight = Extension.create({
  * The image node, with Tiptap's resize handles.
  *
  * Tiptap's resizable node view ignores a change to `width` or `height` made
- * outside a drag, such as from the Image size dialog, so a size change redraws
- * the node instead. Its inline height would also stop the image keeping its
- * shape when `max-width` narrows it, so the height is left to the CSS.
+ * outside a drag, such as from the Image size dialog, so the shown width is
+ * updated here, without redrawing the image. The height is left to the CSS, because an inline height would stop the
+ * image keeping its shape when `max-width` narrows it.
  */
 const ResizableImage = Image.extend({
   addNodeView() {
@@ -160,11 +160,13 @@ const ResizableImage = Image.extend({
       view.element.style.height = "";
       const update = view.update.bind(view);
       view.update = (node, ...rest) => {
-        const { width, height } = view.node.attrs;
-        if (node.attrs.width !== width || node.attrs.height !== height) {
+        if (!update(node, ...rest)) {
           return false;
         }
-        return update(node, ...rest);
+        const { width } = node.attrs;
+        view.element.style.width = width ? `${width}px` : "";
+        view.element.style.height = "";
+        return true;
       };
       return view;
     };

@@ -59,7 +59,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
         <div x-data="registrationPageController()"
              @keydown.escape.window="closePageGuarded()"
              @rich-editor-link-request.document="openLinkDialog($event)"
-             @rich-editor-image-request.document="requestImageForEditor($event)">
+             @rich-editor-image-request.document="requestImageForEditor($event)"
+             @rich-editor-image-size-request.document="openImageSizeDialog($event)">
             {# Dimmed backdrop over the inert pages list. Deliberately not click-to-close:
                a stray click during a long editing session must not risk losing work.
                Closing goes through the X or Esc, both routed through the dirty guard. #}

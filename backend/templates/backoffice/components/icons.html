@@ -324,6 +324,11 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
         <path d="M21 15.0002L17.914 11.9142C17.5389 11.5392 17.0303 11.3286 16.5 11.3286C15.9697 11.3286 15.4611 11.5392 15.086 11.9142L6 21.0002M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3ZM11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z"/>
     </svg>
 {% endmacro %}
+{% macro icon_scaling(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M14 15H9v-5M16 3h5v5M21 3L9 15"/>
+    </svg>
+{% endmacro %}
 {% macro icon_undo_2(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M9 4L4 9L9 14M4 9H14.5C15.2223 9 15.9375 9.14226 16.6048 9.41866C17.272 9.69506 17.8784 10.1002 18.3891 10.6109C18.8998 11.1216 19.3049 11.728 19.5813 12.3952C19.8577 13.0625 20 13.7777 20 14.5C20 15.2223 19.8577 15.9375 19.5813 16.6048C19.3049 17.272 18.8998 17.8784 18.3891 18.3891C17.8784 18.8998 17.272 19.3049 16.6048 19.5813C15.9375 19.8577 15.2223 20 14.5 20H11"/>
