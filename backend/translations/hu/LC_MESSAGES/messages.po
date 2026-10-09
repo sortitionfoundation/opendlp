@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-08 12:07+0100\n"
+"POT-Creation-Date: 2026-10-09 09:44+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -534,14 +534,14 @@ msgstr ""
 msgid "Reset all to pool"
 msgstr ""
 
-#: src/opendlp/domain/value_objects.py:204
+#: src/opendlp/domain/value_objects.py:218
 #: src/opendlp/entrypoints/blueprints/respondents.py:464
 #: templates/backoffice/components/table.html:203
 #: templates/respondents/view_respondents.html:131
 msgid "Pool"
 msgstr "Jelentkezők"
 
-#: src/opendlp/domain/value_objects.py:205
+#: src/opendlp/domain/value_objects.py:219
 #: src/opendlp/entrypoints/blueprints/backoffice.py:269
 #: src/opendlp/entrypoints/blueprints/respondents.py:465
 #: src/opendlp/service_layer/dashboard_stats.py:357
@@ -556,7 +556,7 @@ msgstr "Jelentkezők"
 msgid "Selected"
 msgstr "Kiválasztva"
 
-#: src/opendlp/domain/value_objects.py:206
+#: src/opendlp/domain/value_objects.py:220
 #: src/opendlp/entrypoints/blueprints/backoffice.py:274
 #: src/opendlp/entrypoints/blueprints/respondents.py:466
 #: src/opendlp/service_layer/dashboard_stats.py:359
@@ -567,20 +567,20 @@ msgstr "Kiválasztva"
 msgid "Confirmed"
 msgstr "Megerősítve"
 
-#: src/opendlp/domain/value_objects.py:207
+#: src/opendlp/domain/value_objects.py:221
 #: src/opendlp/entrypoints/blueprints/respondents.py:467
 #: templates/backoffice/components/table.html:212
 #: templates/respondents/view_respondents.html:134
 msgid "Withdrawn"
 msgstr "Visszalépett"
 
-#: src/opendlp/domain/value_objects.py:208
+#: src/opendlp/domain/value_objects.py:222
 #: src/opendlp/entrypoints/blueprints/respondents.py:468
 #: templates/backoffice/components/table.html:215
 msgid "Test submission"
 msgstr "Tesztbeküldés"
 
-#: src/opendlp/domain/value_objects.py:209
+#: src/opendlp/domain/value_objects.py:223
 #: src/opendlp/entrypoints/blueprints/respondents.py:469
 #: templates/backoffice/assembly_view_respondent.html:228
 #: templates/backoffice/components/table.html:218
@@ -2326,7 +2326,7 @@ msgstr "A feladat nem szakítható meg: %(error)s"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:557
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:980
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1330
-#: src/opendlp/service_layer/sortition.py:853
+#: src/opendlp/service_layer/sortition.py:860
 msgid "Task not found"
 msgstr "A feladat nem található"
 
@@ -2376,7 +2376,7 @@ msgstr "Hiba történt a beállítások mentése közben"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:494
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:446
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:191
-#: src/opendlp/service_layer/respondent_service.py:367
+#: src/opendlp/service_layer/respondent_service.py:370
 #, python-format
 msgid "Reset %(count)s respondents to the pool"
 msgstr "%(count)s fő visszaállítva Jelentkező állapotba"
@@ -3483,7 +3483,7 @@ msgid "Added %(count)s values"
 msgstr "%(count)s érték hozzáadva"
 
 #: src/opendlp/entrypoints/celery/tasks.py:125
-#: src/opendlp/service_layer/sortition.py:993
+#: src/opendlp/service_layer/sortition.py:1000
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba az "
@@ -4240,7 +4240,7 @@ msgstr ""
 msgid "The ID Column field was pre-filled from your last upload."
 msgstr "Az ID oszlop mező az előző feltöltésed alapján előre ki van töltve."
 
-#: src/opendlp/service_layer/respondent_service.py:246
+#: src/opendlp/service_layer/respondent_service.py:247
 #, python-format
 msgid "Row %(row)s: supplied '%(key)s' was replaced by its computed value"
 msgstr ""
@@ -4330,8 +4330,8 @@ msgstr "#"
 msgid "signup"
 msgstr "regisztráció"
 
-#: src/opendlp/service_layer/sortition.py:157
-#: src/opendlp/service_layer/sortition.py:505
+#: src/opendlp/service_layer/sortition.py:158
+#: src/opendlp/service_layer/sortition.py:511
 msgid ""
 "The assembly needs to have a non-zero number to select before a selection"
 " can run"
@@ -4339,37 +4339,33 @@ msgstr ""
 "A kiválasztáshoz a közösségi gyűlésnél a kiválasztandók számának nullától"
 " eltérőnek kell lennie"
 
-#: src/opendlp/service_layer/sortition.py:577
+#: src/opendlp/service_layer/sortition.py:585
 msgid "The number of replacements to select must be at least one"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:580
-msgid "A selection is already running for this assembly"
-msgstr ""
-
-#: src/opendlp/service_layer/sortition.py:674
+#: src/opendlp/service_layer/sortition.py:681
 msgid "Selection has not completed — no results to download"
 msgstr "A kiválasztás nem fejeződött be – nincs letölthető eredmény"
 
-#: src/opendlp/service_layer/sortition.py:857
+#: src/opendlp/service_layer/sortition.py:864
 msgid "Cannot cancel task — it has already finished"
 msgstr "A feladat nem szakítható meg – már befejeződött"
 
-#: src/opendlp/service_layer/sortition.py:874
+#: src/opendlp/service_layer/sortition.py:881
 #, python-format
 msgid "Task cancelled by %(user_name)s"
 msgstr "A feladatot %(user_name)s szakította meg"
 
-#: src/opendlp/service_layer/sortition.py:1064
+#: src/opendlp/service_layer/sortition.py:1071
 msgid "Task exceeded timeout"
 msgstr "A feladat túllépte az időkorlátot"
 
-#: src/opendlp/service_layer/sortition.py:1091
+#: src/opendlp/service_layer/sortition.py:1098
 msgid "Task failed to start"
 msgstr "A feladat indítása sikertelen"
 
-#: src/opendlp/service_layer/sortition.py:1103
-#: src/opendlp/service_layer/sortition.py:1114
+#: src/opendlp/service_layer/sortition.py:1110
+#: src/opendlp/service_layer/sortition.py:1121
 msgid "Task stopped unexpectedly"
 msgstr "A feladat váratlanul leállt"
 
@@ -4602,6 +4598,11 @@ msgid "Cannot disable 2FA for OAuth users (they don't use 2FA)"
 msgstr ""
 "OAuth-felhasználóknál nem kapcsolható ki a kétlépcsős azonosítás (nem "
 "használnak ilyet)"
+
+#: src/opendlp/service_layer/writing_guard.py:27
+#, python-format
+msgid "Another task is already writing to this assembly: %(task)s"
+msgstr ""
 
 #: templates/base.html:5
 msgid "Open Democratic Lottery Platform"
