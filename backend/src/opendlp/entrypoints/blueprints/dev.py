@@ -115,6 +115,7 @@ from opendlp.service_layer.registration_page_service import (
     unpublish_registration_page,
     update_registration_page,
     update_registration_page_html,
+    update_registration_page_intro_html,
 )
 from opendlp.service_layer.registration_submission_service import (
     submit_registration_by_assembly_id,
@@ -728,10 +729,7 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
         return {
             "status": "success",
             "registration_page": _serialise_registration_page(reg_page),
-            "html_source": {
-                "id": str(html.id),
-                "form_html_preview": html.form_html[:200] + "..." if len(html.form_html) > 200 else html.form_html,
-            },
+            "html_source": _serialise_html_source(html),
         }
     except InsufficientPermissions as e:
         return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
@@ -789,25 +787,37 @@ def _handle_generate_starter_html(uow: Any, params: dict[str, Any]) -> dict[str,
         return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
-def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
-    """Handle update_registration_page_html service call."""
-    form_html = params.get("form_html", "")
+def _html_preview(html: str) -> str:
+    return html[:200] + "..." if len(html) > 200 else html
 
+
+def _serialise_html_source(html: "RegistrationPageHtml") -> dict[str, Any]:
+    return {
+        "id": str(html.id),
+        "intro_html_preview": _html_preview(html.intro_html),
+        "form_html_preview": _html_preview(html.form_html),
+    }
+
+
+def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle update_registration_page_html and update_registration_page_intro_html service calls.
+
+    Either HTML is updated only when its key is present, so the two can be
+    changed independently from the docs page.
+    """
     try:
-        html_source = update_registration_page_html(
-            uow=uow,
-            user_id=current_user.id,
-            page_id=_resolve_page_id(uow, params),
-            form_html=form_html,
-        )
+        page_id = _resolve_page_id(uow, params)
+        if "intro_html" in params:
+            html_source = update_registration_page_intro_html(
+                uow=uow, user_id=current_user.id, page_id=page_id, intro_html=params["intro_html"]
+            )
+        if "form_html" in params:
+            html_source = update_registration_page_html(
+                uow=uow, user_id=current_user.id, page_id=page_id, form_html=params["form_html"]
+            )
         return {
             "status": "success",
-            "html_source": {
-                "id": str(html_source.id),
-                "form_html_preview": html_source.form_html[:200] + "..."
-                if len(html_source.form_html) > 200
-                else html_source.form_html,
-            },
+            "html_source": _serialise_html_source(html_source),
         }
     except InsufficientPermissions as e:
         return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}

@@ -17,6 +17,21 @@ Feature: Backoffice registration HTML editor
     And I save the registration form
     Then the saved registration HTML should contain "ROUNDTRIP-MARKER-4931"
 
+  Scenario: Editing the intro in the code editor and saving persists the content
+    Given I am logged in as an admin user
+    And there is an assembly called "Intro Assembly" with a registration page
+    When I visit the registration intro editor for "Intro Assembly"
+    And I type "INTRO-MARKER-7718" into the intro content code editor
+    And I save the registration form
+    Then the saved registration intro should contain "INTRO-MARKER-7718"
+
+  Scenario: The intro skeleton preview carries the assembly title placeholder
+    Given I am logged in as an admin user
+    And there is an assembly called "Intro Skeleton Assembly" with a registration page
+    When I visit the registration intro editor for "Intro Skeleton Assembly"
+    And I open the intro skeleton preview
+    Then the intro skeleton should be shown in a read-only code editor
+
   Scenario: The form skeleton preview is shown in a read-only code editor
     Given I am logged in as an admin user
     And there is an assembly called "Skeleton Assembly" with a registration page
@@ -107,14 +122,14 @@ Feature: Backoffice registration HTML editor
     When I visit the registration tab for "List View Assembly"
     Then I should see the registration page list
     When I open the first registration page from the list
-    Then I should be on the read-only registration form view
+    Then I should be on the read-only registration intro view
 
   Scenario: A registration page's Edit button opens its editor
     Given I am logged in as an admin user
     And there is an assembly called "List Edit Button Assembly" with a registration page
     When I visit the registration tab for "List Edit Button Assembly"
     And I choose to edit the first registration page from the list
-    Then I should be on the read-only registration form view
+    Then I should be on the read-only registration intro view
 
   Scenario: Deleting a registration page from the list asks for confirmation first
     Given I am logged in as an admin user

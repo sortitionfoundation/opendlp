@@ -63,6 +63,7 @@ in, and don't add a third variant.
 | team member           | A user with a role on an assembly                                             | member (for a respondent)          |
 | registration page     | The public page where people put themselves forward for an assembly           | registration form                  |
 | registration question | One thing the registration page asks, such as date of birth                   | registration field                 |
+| intro                 | The part of a registration page shown above the form: heading, introduction   | introduction, header, preamble     |
 | invite                | What an admin sends so that someone can create an account                     |                                    |
 | invite code           | The code in an invite                                                         | invitation code                    |
 | assembly question     | What the assembly is convened to decide                                       |                                    |

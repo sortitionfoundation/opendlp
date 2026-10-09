@@ -5,15 +5,22 @@ ABOUTME: Included by assembly_registration.html inside the registrationPageContr
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import controlled_modal, controlled_alert_dialog %}
 {% from "backoffice/registration/_assets.html" import asset_upload_modal, asset_details_modal, asset_original_filename_row, asset_file_size_row %}
-{# Form skeleton — generated from the assembly's field definitions, for pasting into the editor. #}
+{# Skeleton — the intro step offers the intro skeleton, the form step the form skeleton generated
+   from the assembly's field definitions. One modal serves both: only the active step's button
+   can open it, so the title and copy follow the active step. #}
+{% set skeleton_is_intro = active_section == "intro" %}
 {% call controlled_modal(id="skeleton-modal",
-title=_("Form Skeleton"),
+title=_("Intro Skeleton") if skeleton_is_intro else _("Form Skeleton"),
 open_expr="skeletonModalOpen",
 close_expr="closeSkeletonModal()",
 panel_classes="max-w-4xl") %}
 <div class="dialog-body">
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-        {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form. Then edit to add extra HTML as required.") }}
+        {% if skeleton_is_intro %}
+            {{ _("This skeleton shows the assembly's title and question above the form. Copy it to paste into your intro, then edit to add extra HTML as required.") }}
+        {% else %}
+            {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form. Then edit to add extra HTML as required.") }}
+        {% endif %}
     </p>
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
         {{ _("The Plain HTML version is the minimal version, for you to enhance. The GOV.UK styled version uses the %(link_start)sGOV.UK Design System%(link_end)s — which has high web accessibility.",
@@ -27,7 +34,7 @@ panel_classes="max-w-4xl") %}
            button is "active" here can only be known at runtime. #}
     <div class="flex gap-2 mb-4"
          role="group"
-         aria-label="{{ _('Form skeleton style') }}">
+         aria-label="{{ _('Skeleton style') }}">
         <button type="button"
                 class="btn"
                 :class="skeletonView === 'plain' ? 'btn--primary' : 'btn--tertiary'"
@@ -52,7 +59,7 @@ panel_classes="max-w-4xl") %}
         <div>
             <textarea readonly
                       data-code-editor
-                      aria-label="{{ _('Form skeleton preview') }}"
+                      aria-label="{{ _('Skeleton preview') }}"
                       x-text="skeletonHtmlPlain"
                       class="w-full rounded-lg p-4"
                       rows="18"
@@ -69,7 +76,7 @@ panel_classes="max-w-4xl") %}
         <div>
             <textarea readonly
                       data-code-editor
-                      aria-label="{{ _('Form skeleton preview (GOV.UK styled)') }}"
+                      aria-label="{{ _('Skeleton preview (GOV.UK styled)') }}"
                       x-text="skeletonHtmlStyled"
                       class="w-full rounded-lg p-4"
                       rows="18"

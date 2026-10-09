@@ -25,12 +25,13 @@ def _add_html(
 
 class TestAddAndGet:
     def test_add_and_get_by_id(self, registration_page_html_backend: ContractBackend):
-        html = _add_html(registration_page_html_backend, form_html="<form></form>")
+        html = _add_html(registration_page_html_backend, form_html="<form></form>", intro_html="<h1>Hi</h1>")
 
         retrieved = registration_page_html_backend.repo.get(html.id)
         assert retrieved is not None
         assert retrieved.id == html.id
         assert retrieved.form_html == "<form></form>"
+        assert retrieved.intro_html == "<h1>Hi</h1>"
 
     def test_get_nonexistent_returns_none(self, registration_page_html_backend: ContractBackend):
         assert registration_page_html_backend.repo.get(uuid.uuid4()) is None

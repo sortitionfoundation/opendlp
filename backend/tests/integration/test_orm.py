@@ -1151,6 +1151,7 @@ class TestRegistrationPageORM:
         html = RegistrationPageHtml(
             registration_page_id=page.id,
             form_html="<form>{{ csrf_form_element }} {{ form_action }}</form>",
+            intro_html="<h1>{{ assembly_title }}</h1>",
         )
         postgres_session.add(page)
         postgres_session.add(html)
@@ -1173,6 +1174,7 @@ class TestRegistrationPageORM:
         retrieved_html = postgres_session.query(RegistrationPageHtml).filter_by(registration_page_id=page.id).first()
         assert retrieved_html is not None
         assert retrieved_html.form_html == "<form>{{ csrf_form_element }} {{ form_action }}</form>"
+        assert retrieved_html.intro_html == "<h1>{{ assembly_title }}</h1>"
 
     def test_registration_page_activity_round_trips(self, postgres_session: Session):
         """The activity JSON column round-trips RegistrationPageActivity dataclasses."""

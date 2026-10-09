@@ -1,5 +1,5 @@
-// ABOUTME: Tests for the form skeleton preview slice of the registration page controller
-// ABOUTME: Covers the fetch, the plain/styled toggle and copying the shown markup
+// ABOUTME: Tests for the skeleton preview slice of the registration page controller
+// ABOUTME: Covers the intro and form fetches, the plain/styled toggle and copying the shown markup
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -43,13 +43,18 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("fetchSkeleton", () => {
-  it("requests the skeleton with the CSRF token", async () => {
-    fetchMock.mockResolvedValue(
-      jsonResponse({ html: "<p>", html_govuk: "<p>" }),
-    );
+const SKELETON = {
+  html: "<input>",
+  html_govuk: "<div class='govuk'>",
+  intro_html: "<h1>",
+  intro_html_govuk: "<h1 class='govuk'>",
+};
 
-    await skeleton().fetchSkeleton();
+describe("fetchFormSkeleton", () => {
+  it("requests the skeleton with the CSRF token", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(SKELETON));
+
+    await skeleton().fetchFormSkeleton();
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/assembly/1/registration/skeleton",
@@ -60,13 +65,11 @@ describe("fetchSkeleton", () => {
     );
   });
 
-  it("opens the modal on the plain view with both renderings held", async () => {
-    fetchMock.mockResolvedValue(
-      jsonResponse({ html: "<input>", html_govuk: "<div class='govuk'>" }),
-    );
+  it("opens the modal on the plain view with both form renderings held", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(SKELETON));
     const state = skeleton();
 
-    await state.fetchSkeleton();
+    await state.fetchFormSkeleton();
 
     expect(state.skeletonModalOpen).toBe(true);
     expect(state.skeletonView).toBe("plain");
@@ -75,11 +78,34 @@ describe("fetchSkeleton", () => {
     expect(state.skeletonLoading).toBe(false);
   });
 
+  it("shows the intro pair instead when the intro step asks", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(SKELETON));
+    const state = skeleton();
+
+    await state.fetchIntroSkeleton();
+
+    expect(state.skeletonModalOpen).toBe(true);
+    expect(state.skeletonHtmlPlain).toBe("<h1>");
+    expect(state.skeletonHtmlStyled).toBe("<h1 class='govuk'>");
+  });
+
+  it("swaps the pair when the other step asks later", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(SKELETON));
+    const state = skeleton();
+
+    await state.fetchIntroSkeleton();
+    state.showStyledSkeleton();
+    await state.fetchFormSkeleton();
+
+    expect(state.skeletonHtmlPlain).toBe("<input>");
+    expect(state.skeletonView).toBe("plain");
+  });
+
   it("shows the server's message and stays closed when it reports a problem", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ error: "No form HTML yet" }));
     const state = skeleton();
 
-    await state.fetchSkeleton();
+    await state.fetchFormSkeleton();
 
     expect(state.showToast).toHaveBeenCalledWith("No form HTML yet", "error");
     expect(state.skeletonModalOpen).toBe(false);
@@ -90,7 +116,7 @@ describe("fetchSkeleton", () => {
     fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
     const state = skeleton();
 
-    await state.fetchSkeleton();
+    await state.fetchFormSkeleton();
 
     expect(state.showToast).toHaveBeenCalledWith(
       "An error occurred while fetching the form skeleton",
@@ -108,10 +134,10 @@ describe("fetchSkeleton", () => {
     );
     const state = skeleton();
 
-    const pending = state.fetchSkeleton();
+    const pending = state.fetchIntroSkeleton();
     expect(state.skeletonLoading).toBe(true);
 
-    resolveFetch(jsonResponse({ html: "", html_govuk: "" }));
+    resolveFetch(jsonResponse(SKELETON));
     return pending;
   });
 });

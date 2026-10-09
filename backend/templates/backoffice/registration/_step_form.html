@@ -1,12 +1,11 @@
 {#
-ABOUTME: Step 1 of the registration editor - the form HTML editor and assets panel
+ABOUTME: Step 2 of the registration editor - the form HTML editor and assets panel
 ABOUTME: Included by assembly_registration.html when ?section=form
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/icons.html" import icon_code %}
 {% from "backoffice/components/input.html" import textarea %}
 {% from "backoffice/components/alert.html" import alert %}
-{% from "backoffice/components/prefixed_url_input.html" import prefixed_url_input %}
 {% from "backoffice/registration/_assets.html" import asset_list %}
 <div id="reg-steps-panel-form"
      role="tabpanel"
@@ -20,6 +19,7 @@ ABOUTME: Included by assembly_registration.html when ?section=form
     {% set edit_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="form", edit="1") %}
     {% set view_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="form") %}
     {% set next_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="email") %}
+    {% set back_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="intro") %}
     {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
     {% if fields_changed_after_save | default(false) %}
         {{ alert(_("The registration questions have changed since this form HTML was last saved — check the form still asks for the right things. The Form Skeleton reflects the current questions."), variant="warning") }}
@@ -37,22 +37,9 @@ ABOUTME: Included by assembly_registration.html when ?section=form
                          style="background-color: var(--color-tables-cards);
                                 border: 1px solid var(--color-borders-dividers)">
                     <div class="flex items-center justify-between mb-4">
-                                        {# The heading is the page's name; in edit mode it becomes an input so the
-                                           variant can be renamed right where it is labelled. #}
-                        {% if edit_mode %}
-                            <div class="flex-1 min-w-0 mr-4">
-                                <label for="page_name" class="sr-only">{{ _("Registration page name") }}</label>
-                                <input type="text"
-                                       name="page_name"
-                                       id="page_name"
-                                       value="{{ registration_page.name }}"
-                                       required
-                                       class="text-heading-lg w-full px-3 py-1.5 rounded-lg"
-                                       style="color: var(--color-headings); background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers);" />
-                            </div>
-                        {% else %}
-                            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ registration_page.name }}</h2>
-                        {% endif %}
+                        {# The page is named (and its URLs set) on the intro step; here the heading just says
+                           which page's form this is. #}
+                        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ registration_page.name }}</h2>
                                         {# Header right: the editorial controls live here, next to the content they act on —
                         Edit swaps in place to Cancel/Save so the eye never travels to the footer for
                         editing concerns. The footer below is navigation only.
@@ -66,7 +53,7 @@ ABOUTME: Included by assembly_registration.html when ?section=form
                             {{ button(_("Show Form Skeleton"),
                             variant="tertiary",
                             leading_icon=code_icon,
-                            attrs='@click="fetchSkeleton()" :disabled="skeletonLoading"') }}
+                            attrs='@click="fetchFormSkeleton()" :disabled="skeletonLoading"') }}
                             {% if edit_mode %}
                                 {{ button(_("Cancel"), variant="secondary", href=view_url, attrs='@click="guardLeave($event)"') }}
                                 {{ button(save_label, type="submit", variant="primary", attrs='name="action" value="save"') }}
@@ -75,37 +62,6 @@ ABOUTME: Included by assembly_registration.html when ?section=form
                             {% endif %}
                         </div>
                     </div>
-                                    {# Page URLs are page-scoped settings, edited here rather than on Edit Assembly.
-                                       Frozen once the page has been published so shared links keep working. #}
-                    {% if edit_mode %}
-                        {% set slugs_locked = registration_page.slugs_frozen %}
-                        <div class="mb-6 space-y-4">
-                            {% if slugs_locked %}
-                                {{ alert(
-                                message=_("These URLs are locked while the registration page is published or closed, so links shared in invites, QR codes, and elsewhere keep working. Switch the form back to test mode to edit them."),
-                                variant="info"
-                                ) }}
-                            {% endif %}
-                            {{ prefixed_url_input(
-                            name="url_slug",
-                            label=_("Registration URL"),
-                            hint=_("The URL path for this registration page"),
-                            prefix=registration_url_prefix,
-                            placeholder="my-assembly-2026",
-                            value=registration_page.url_slug,
-                            disabled=slugs_locked
-                            ) }}
-                            {{ prefixed_url_input(
-                            name="short_url_slug",
-                            label=_("Short URL (optional)"),
-                            hint=_("A shorter URL for QR codes and paper invitations"),
-                            prefix=short_url_prefix,
-                            placeholder="ma26",
-                            value=registration_page.short_url_slug,
-                            disabled=slugs_locked
-                            ) }}
-                        </div>
-                    {% endif %}
                     <div class="space-y-4">
                         <p class="text-body-sm" style="color: var(--color-secondary-text);">
                             {{ _("Paste your HTML form code below. The only required placeholders are {{ form_action }} for the form's action attribute and {{ csrf_form_element }} for CSRF protection.") }}
@@ -188,13 +144,17 @@ ABOUTME: Included by assembly_registration.html when ?section=form
     <div class="wizard-footer" x-scroll-preserve-links>
         <div class="wizard-footer-box">
             {% if edit_mode %}
-                <span id="editing-nav-hint"
-                      class="mr-auto text-body-sm"
-                      style="color: var(--color-secondary-text)">
-                    {{ _("Editing in progress — save or cancel to continue") }}
+                <span class="mr-auto flex items-center gap-3">
+                    {{ button(_("← Back"), variant="tertiary", disabled=true, aria_describedby="editing-nav-hint") }}
+                    <span id="editing-nav-hint"
+                          class="text-body-sm"
+                          style="color: var(--color-secondary-text)">
+                        {{ _("Editing in progress — save or cancel to continue") }}
+                    </span>
                 </span>
                 {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
             {% else %}
+                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_url) }}</span>
                 {{ button(_("Next →"), variant="primary", href=next_url) }}
             {% endif %}
         </div>

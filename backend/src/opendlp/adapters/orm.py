@@ -757,6 +757,7 @@ registration_page_html_sources = Table(
         unique=True,
     ),
     Column("form_html", Text, nullable=False, default=""),
+    Column("intro_html", Text, nullable=False, default="", server_default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )

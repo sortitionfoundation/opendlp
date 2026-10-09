@@ -1,5 +1,5 @@
 """ABOUTME: RegistrationPage domain model for assembly registration pages
-ABOUTME: Holds page config plus the HTML source that supplies the registration form"""
+ABOUTME: Holds page config plus the HTML source that supplies the intro and the registration form"""
 
 import html as html_lib
 import uuid
@@ -120,11 +120,11 @@ class RegistrationPageActivity:
 
 @dataclass(frozen=True)
 class RenderContext:
-    """Values substituted into the form HTML at render time.
+    """Values substituted into the intro and form HTML at render time.
 
     ``csrf_form_element`` and ``form_action`` are always populated.
     ``assembly_title`` and ``assembly_question`` are optional copy that
-    authors can drop into their HTML via ``{{ assembly_title }}`` and
+    authors can drop into either HTML via ``{{ assembly_title }}`` and
     ``{{ assembly_question }}``; they default to empty so callers that
     don't have an Assembly handy can omit them. The remaining fields
     carry validation state from a failed POST: ``values`` pre-fills
@@ -144,7 +144,7 @@ class RenderContext:
 
 @runtime_checkable
 class HtmlSource(Protocol):
-    """Common interface for the source types that supply a page's form HTML."""
+    """Common interface for the source types that supply a page's intro and form HTML."""
 
     def render(self, ctx: RenderContext) -> str:
         """Render the HTML from this Source, using the provided context"""
@@ -352,6 +352,7 @@ class RegistrationPageHtml:
         self,
         registration_page_id: uuid.UUID,
         form_html: str = "",
+        intro_html: str = "",
         html_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
@@ -360,6 +361,7 @@ class RegistrationPageHtml:
         self.id = html_id or uuid.uuid4()
         self.registration_page_id = registration_page_id
         self.form_html = form_html
+        self.intro_html = intro_html
         self.created_at = created_at or now
         self.updated_at = updated_at or now
 
@@ -367,26 +369,29 @@ class RegistrationPageHtml:
         self.form_html = form_html
         self.updated_at = datetime.now(UTC)
 
+    def update_intro_html(self, intro_html: str) -> None:
+        self.intro_html = intro_html
+        self.updated_at = datetime.now(UTC)
+
     def render(self, ctx: RenderContext) -> str:
-        template = _SANDBOX_ENV.from_string(self.form_html)
-        # csrf_form_element is the hidden <input> built by Flask-WTF (or its
-        # CSRF middleware), never user-supplied; wrapping it in Markup so
-        # autoescape doesn't escape the angle brackets is safe.
-        return template.render(
-            csrf_form_element=Markup(ctx.csrf_form_element),  # noqa: S704
-            form_action=ctx.form_action,
-            assembly_title=ctx.assembly_title,
-            assembly_question=ctx.assembly_question,
-            value=lambda k: ctx.values.get(k, ""),
-            checked=lambda k, v: "checked" if ctx.values.get(k) == v else "",
-            selected=lambda k, v: "selected" if ctx.values.get(k) == v else "",
-            field_errors=lambda k: _field_errors_html(ctx.errors.get(k, [])),
-            has_error=lambda k: bool(ctx.errors.get(k)),
-            first_error=lambda k: (ctx.errors.get(k) or [""])[0],
-            form_errors=lambda: _form_errors_html(ctx.form_level_errors),
-        )
+        """The intro followed by the form, each rendered as its own template.
+
+        Rendering the two separately keeps a syntax error's line number
+        pointing into the box the author typed it in, and stops a block
+        opened in the intro from being closed in the form.
+        """
+        kwargs = _render_kwargs(ctx)
+        intro = _SANDBOX_ENV.from_string(self.intro_html).render(**kwargs)
+        form = _SANDBOX_ENV.from_string(self.form_html).render(**kwargs)
+        # An empty intro contributes nothing, so a page written before intros
+        # existed renders byte-for-byte as it always did.
+        return intro + "\n" + form if intro else form
 
     def readiness_problems(self) -> list[str]:
+        try:
+            _SANDBOX_ENV.parse(self.intro_html)
+        except TemplateSyntaxError as e:
+            return [f"The intro HTML has a template syntax error on line {e.lineno}: {e.message}"]
         if not self.form_html.strip():
             return ["The form HTML is empty"]
         try:
@@ -405,6 +410,7 @@ class RegistrationPageHtml:
         return RegistrationPageHtml(
             registration_page_id=self.registration_page_id,
             form_html=self.form_html,
+            intro_html=self.intro_html,
             html_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,
@@ -417,6 +423,26 @@ class RegistrationPageHtml:
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+
+def _render_kwargs(ctx: RenderContext) -> dict[str, Any]:
+    """The variables and helpers both the intro and the form HTML can use."""
+    # csrf_form_element is the hidden <input> built by Flask-WTF (or its
+    # CSRF middleware), never user-supplied; wrapping it in Markup so
+    # autoescape doesn't escape the angle brackets is safe.
+    return {
+        "csrf_form_element": Markup(ctx.csrf_form_element),  # noqa: S704
+        "form_action": ctx.form_action,
+        "assembly_title": ctx.assembly_title,
+        "assembly_question": ctx.assembly_question,
+        "value": lambda k: ctx.values.get(k, ""),
+        "checked": lambda k, v: "checked" if ctx.values.get(k) == v else "",
+        "selected": lambda k, v: "selected" if ctx.values.get(k) == v else "",
+        "field_errors": lambda k: _field_errors_html(ctx.errors.get(k, [])),
+        "has_error": lambda k: bool(ctx.errors.get(k)),
+        "first_error": lambda k: (ctx.errors.get(k) or [""])[0],
+        "form_errors": lambda: _form_errors_html(ctx.form_level_errors),
+    }
 
 
 def _field_errors_html(errors: list[str]) -> Markup:
@@ -817,25 +843,47 @@ def _group_fields(
     return grouped
 
 
+def generate_starter_intro_html() -> str:
+    """Generate the unstyled starter intro: the assembly title and question.
+
+    The ``{{ assembly_title }}`` and ``{{ assembly_question }}`` placeholders
+    give authors a sensible heading and intro paragraph by default; both
+    substitute to the empty string when not supplied.
+    """
+    return "<h1>{{ assembly_title }}</h1>\n<p>{{ assembly_question }}</p>\n"
+
+
+def generate_starter_intro_html_govuk() -> str:
+    """Generate the GOV.UK-styled starter intro: the assembly title and question.
+
+    Carries its own grid wrapper because the intro and the form are rendered
+    as separate templates, so each must stand alone in the layout.
+    """
+    parts = [
+        '<div class="govuk-grid-row">',
+        '<div class="govuk-grid-column-two-thirds" style="float: none; margin: 0 auto;">',
+        '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>',
+        '<p class="govuk-body">{{ assembly_question }}</p>',
+        "</div>",
+        "</div>",
+    ]
+    return "\n".join(parts) + "\n"
+
+
 def generate_starter_form_html(fields: list[RespondentFieldDefinition]) -> str:
     """Generate an unstyled starter HTML form from a respondent field schema.
 
     Output uses ``{{ csrf_form_element }}`` and ``{{ form_action }}`` so it is
-    a valid input for ``RegistrationPageHtml.render``. The skeleton also
-    includes optional ``{{ assembly_title }}`` and ``{{ assembly_question }}``
-    placeholders above the form so authors get a sensible heading and
-    intro paragraph by default; both substitute to the empty string when
-    not supplied. Fields are grouped by ``RespondentFieldGroup`` in
-    ``GROUP_DISPLAY_ORDER`` and ordered by ``sort_order`` within each
-    group; empty groups are suppressed. Fields whose ``on_registration_page``
-    is ``NO`` are omitted, and a field is marked ``required`` when it is
-    ``YES_REQUIRED``.
+    a valid input for ``RegistrationPageHtml.render``. The heading and intro
+    paragraph live in ``generate_starter_intro_html``, not here. Fields are
+    grouped by ``RespondentFieldGroup`` in ``GROUP_DISPLAY_ORDER`` and
+    ordered by ``sort_order`` within each group; empty groups are suppressed.
+    Fields whose ``on_registration_page`` is ``NO`` are omitted, and a field
+    is marked ``required`` when it is ``YES_REQUIRED``.
     """
     grouped = _group_fields(fields)
 
     parts: list[str] = [
-        "<h1>{{ assembly_title }}</h1>",
-        "<p>{{ assembly_question }}</p>",
         '<form action="{{ form_action }}" method="post">',
         "{{ csrf_form_element }}",
         "{{ form_errors() }}",
@@ -869,8 +917,6 @@ def generate_starter_form_html_govuk(fields: list[RespondentFieldDefinition]) ->
     parts: list[str] = [
         '<div class="govuk-grid-row">',
         '<div class="govuk-grid-column-two-thirds" style="float: none; margin: 0 auto;">',
-        '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>',
-        '<p class="govuk-body">{{ assembly_question }}</p>',
         '<form action="{{ form_action }}" method="post">',
         "{{ csrf_form_element }}",
         "{{ form_errors() }}",
