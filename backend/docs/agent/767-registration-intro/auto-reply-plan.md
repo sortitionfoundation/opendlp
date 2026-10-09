@@ -6,7 +6,7 @@ the intro editor worked, the auto-reply email gets the same editor. Built on
 everything in [tiptap-intro-editor-plan.md](tiptap-intro-editor-plan.md); this
 plan only covers what is different for the email.
 
-**Status: in progress.** Steps 1, 1b and 2 are done (marked ✅).
+**Status: in progress.** Steps 1 to 3 are done (marked ✅).
 
 ## Goal
 
@@ -252,7 +252,7 @@ so with no Table button it never calls a table command; a vitest drives a
 toolbar and editor with no tables to show it. The e2e test for the intro
 step now also asserts the Table button and menu.
 
-### 3. Absolute links (A4)
+### ✅ 3. Absolute links (A4)
 
 - `input.html`: `rich_editor_absolute_links=false` →
   `data-rich-editor-absolute-links="true"`.
@@ -262,6 +262,12 @@ step now also asserts the Table button and menu.
   `messages.linkUrlNotAbsolute`. Keep the pattern in one exported constant so
   the test and the code share it.
 - `_page_data.html`: the new message.
+
+As built: the message is "Enter a full address, such as https://example.org,
+so the link works in an email", in the GOV.UK "Enter…" style of the existing
+"Enter a link address". The pattern ignores case, and the dialog forgets the
+rule when the next request doesn't ask for it, so the intro's link dialog is
+unaffected. Nothing turns the flag on until step 5.
 
 ### 4. Hint wording (A5)
 
