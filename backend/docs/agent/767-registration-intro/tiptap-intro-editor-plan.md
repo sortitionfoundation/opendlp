@@ -365,6 +365,54 @@ tests. Where it's documented for authors: `docs/registration-intro-editor.md`
 (step 9), and the hint text under the content-style radios ("Elements you
 give a class of your own keep only your class.").
 
+### E15 — Visual mode saves formatted HTML
+
+Tiptap's `getHTML()` puts the whole intro on one line, so after a Visual edit
+the HTML view (and the database) holds one long run of tags. Visual mode now
+saves the editor's HTML **laid out one block per line, indented by nesting**.
+That makes the stored form itself readable, not just the HTML view.
+
+Options considered:
+
+- **Format what Visual mode saves (chosen).** One call site, in
+  `visualHtml()`. The formatter only ever sees Tiptap's output, so it only
+  has to handle our schema's tags, and `codeBlock` is off, so there's no
+  `<pre>` where whitespace matters. HTML mode is unchanged, and what's saved
+  is what the HTML view shows.
+- **Format on the way into CodeMirror and minify on the way out**, so the
+  stored form stays compact. Rejected: once the author edits in HTML mode,
+  nothing can tell our added whitespace from theirs. CodeMirror and the
+  textarea would hold different text, which complicates `insertAtCursor` and
+  the BDD typing steps. And intros that open in HTML mode are hand-written,
+  so reformatting them would rewrite the author's own layout. All this
+  buys is a few hundred bytes.
+- **Format only on the Visual → HTML switch.** Rejected: edits made only
+  in Visual mode would still be stored on one line.
+
+Why it's safe: Tiptap ignores whitespace between blocks when it parses.
+Checked before planning: Tiptap's output with a newline and indent added
+around **every** block tag, including inside a `<p>` before its text,
+passed `roundTripsCleanly` and came back from `roundTrip` byte-for-byte equal
+to the compact HTML. Browsers ignore that whitespace too, and the server
+never looks at it.
+
+The rule that keeps it safe: **inline content is never touched.** A newline
+inside a paragraph is a space, and ProseMirror would keep a space after a
+`<br>`. So a block whose children are inline (text, marks, `<a>`, `<br>`,
+`<img>`) stays on one line exactly as Tiptap wrote it. Long paragraphs stay
+long lines; CodeMirror already has `EditorView.lineWrapping`.
+
+We write our own formatter rather than add `js-beautify`. Its defaults wrap
+long lines, which can add whitespace inside inline content. And with our
+input limited to the schema, about 40 lines of our own code are easier to
+test than a library's options.
+
+No migration (Chewie): intros already saved stay on one line until someone
+next edits them in Visual mode. Intros only ever edited as HTML keep the
+author's own layout. "Opening an intro in Visual mode and saving without
+changing anything leaves the HTML exactly as it was" still holds, because
+nothing is written back until the author edits.
+
 ## Implementation steps
 
 Ordered so each step leaves `just check` and `just test-nobdd` green.
@@ -784,6 +832,89 @@ The plan as written before the work:
 - Vitest round-trip fixtures for each new element, and BDD for building a
   2×1 table of images with the keyboard.
 
+### 11. Formatted HTML from Visual mode (E15)
+
+**`formatHtml(html) → string`** in `rich-editor-html.js`, next to
+`normaliseHtml`, sharing its `BLOCK_TAGS` and `VOID_TAGS`:
+
+- Parse `html` into a `<template>` and walk its top-level nodes. Drop
+  whitespace-only text nodes that sit between blocks.
+- **A block whose children are all blocks** (`ul`, `ol`, `li` with a nested
+  list, `blockquote`, `table`, `tbody`, `tr`, `td`/`th`, `div`) prints its
+  start tag on its own line, then each child one level deeper, then its end
+  tag on its own line.
+- **A block whose children are all inline** (`p`, `h1`–`h6`, a `li` or
+  cell whose only content is inline) prints on one line: start tag, the
+  children's HTML unchanged, end tag.
+- **A void block** (`hr`) prints on its own line.
+- **A block that mixes inline and block children** prints exactly as given,
+  on one line. Our schema never produces one, but the formatter must not
+  guess with HTML it doesn't understand.
+- Start tags keep their attributes **in the order given**, escaped with
+  the existing `escapeAttribute`. Unlike `normaliseHtml`, this output is
+  stored, so it reorders nothing. Inline children are serialised by the DOM
+  (`outerHTML` / text escaped with `escapeText`), the same way Tiptap's
+  `getHTML()` produced them.
+- Two-space indent, lines joined with `\n`, no trailing newline. `""` gives
+  `""`.
+
+Example. Tiptap's
+`<h1>Hi</h1><ul><li><p>One <strong>two</strong></p><ul><li><p>x</p></li></ul></li></ul><hr>`
+becomes:
+
+```html
+<h1>Hi</h1>
+<ul>
+  <li>
+    <p>One <strong>two</strong></p>
+    <ul>
+      <li>
+        <p>x</p>
+      </li>
+    </ul>
+  </li>
+</ul>
+<hr>
+```
+
+**Wiring:** in `rich-editor.js`, `visualHtml()` returns
+`formatHtml(editor.getHTML())` (and still `""` for an empty editor). Nothing
+else changes: HTML mode still edits `textarea.value` as is, and `toVisual()`
+still checks `roundTripsCleanly(textarea.value)`.
+
+**Vitest** (`rich-editor-html.test.js`):
+
+- exact expected output for: one paragraph (unchanged from Tiptap's output);
+  headings and paragraphs; a nested list; a table of images; the GOV.UK
+  `div` wrapper; a blockquote; an `hr`; an inline image; and a paragraph
+  with `<br>`, marks and `{{ variables }}`, which must stay on one line
+  byte-for-byte;
+- a block that mixes inline and block children is printed as given;
+- attributes keep their order and escaping (`style`, `dir`, `class`, a
+  quote in `alt`);
+- **the safety property**, for every round-trip fixture and the three real
+  intros in `tests/fixtures/registration_intros/`:
+  `roundTrip(formatHtml(roundTrip(h))) === roundTrip(h)`, and
+  `roundTripsCleanly(formatHtml(roundTrip(h)))`;
+- `formatHtml` is idempotent on its own output.
+
+**Fix the tests this changes** (agreed with Chewie). In
+`rich-editor.test.js` the single-paragraph assertions are unchanged; the
+ones that write several blocks need the formatted form. In BDD, check the
+steps that compare the textarea exactly (`_intro_value`, "the intro should
+hold") against any multi-block HTML. Steps that parse the value, such as the
+table-of-images check, are unaffected.
+
+**Docs:** in `docs/registration-intro-editor.md`, "What an edit in Visual
+mode changes" replaces "whitespace between elements goes" with "the HTML is
+laid out one block per line, indented by nesting; text inside a paragraph is
+never rewrapped".
+
+The extra whitespace counts towards the 200 KB intro limit
+(`REGISTRATION_INTRO_HTML_MAX_BYTES`). It adds a few bytes per block, so
+it's nowhere near the limit, but that's why it's indentation only and never
+blank lines.
+
 ## Tests summary
 
 | Tier               | What                                                                                                                                                |
@@ -792,7 +923,7 @@ The plan as written before the work:
 | Service            | Saving, recording activity for and duplicating `content_style`; the image-serving rule (public or can-view).                                        |
 | Integration        | ORM round-trip of `content_style`; migration upgrade/downgrade.                                                                                     |
 | e2e (Flask client) | Saving the intro and style; public page output for each style; existing pages unchanged; old and new image routes; slug change keeps images.        |
-| JS unit (vitest)   | `code-editor`, round-trip check (incl. real intros), variable ranges, mode switch, sync/dirty, toolbar commands and a11y state, image event bridge. |
+| JS unit (vitest)   | `code-editor`, round-trip check (incl. real intros), `formatHtml`, variable ranges, mode switch, sync/dirty, toolbar, a11y, image event bridge.     |
 | BDD (Playwright)   | Visual editing, refused switch, keyboard toolbar, highlight, image drop, read-only view, style radio.                                               |
 
 Run `just build-all` before BDD (a stale bundle looks like a regression), and
