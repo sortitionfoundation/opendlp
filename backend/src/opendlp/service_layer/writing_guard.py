@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from opendlp.domain.value_objects import WRITING_TASK_TYPES, SelectionTaskType
-from opendlp.service_layer.exceptions import InvalidSelection
+from opendlp.service_layer.exceptions import CuratedMessage, InvalidSelection
 from opendlp.translations import gettext as _
 
 if TYPE_CHECKING:
@@ -16,11 +16,12 @@ if TYPE_CHECKING:
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
-class SelectionAlreadyRunning(InvalidSelection):
+class SelectionAlreadyRunning(CuratedMessage, InvalidSelection):
     """A writing task was refused because another writing task on the assembly is unfinished.
 
-    Carries the blocking record's task id and type so a route can send the
-    user to that task's progress modal.
+    Its message is translated and names only the blocking task's label, so it
+    is safe to show. It carries the blocking record's task id and type so a
+    route can send the user to that task's progress modal.
     """
 
     def __init__(self, blocking: SelectionRunRecord) -> None:

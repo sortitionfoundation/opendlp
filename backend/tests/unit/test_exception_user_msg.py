@@ -1,9 +1,13 @@
 """ABOUTME: Unit tests for the user_msg() convention on OpenDLP exceptions
 ABOUTME: Pins down that only exceptions opting in via CuratedMessage expose their own message"""
 
+import uuid
+
 import pytest
 
+from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.registration_page import RegistrationPageNotReady
+from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     CannotDisableSelf,
@@ -41,6 +45,14 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.target_service import TargetLinkedError, TargetsNotSaved
+from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
+
+_RUNNING_SELECTION = SelectionRunRecord(
+    assembly_id=uuid.uuid4(),
+    task_id=uuid.uuid4(),
+    task_type=SelectionTaskType.SELECT_FROM_DB,
+    status=SelectionRunStatus.RUNNING,
+)
 
 CURATED = [
     UserAlreadyExists("someone@example.org"),
@@ -60,6 +72,7 @@ CURATED = [
     CannotDisableSelf(),
     CannotRemoveLastAssemblyManager(),
     FieldDefinitionConflictError("A choice field must keep at least one option"),
+    SelectionAlreadyRunning(_RUNNING_SELECTION),
 ]
 
 UNCURATED = [
