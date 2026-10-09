@@ -122,14 +122,25 @@ Feature: Backoffice registration HTML editor
     When I visit the registration tab for "List View Assembly"
     Then I should see the registration page list
     When I open the first registration page from the list
-    Then I should be on the read-only registration intro view
+    Then I should be on the read-only name and URLs view
 
   Scenario: A registration page's Edit button opens its editor
     Given I am logged in as an admin user
     And there is an assembly called "List Edit Button Assembly" with a registration page
     When I visit the registration tab for "List Edit Button Assembly"
     And I choose to edit the first registration page from the list
-    Then I should be on the read-only registration intro view
+    Then I should be on the read-only name and URLs view
+
+  Scenario: Renaming a page and changing its URL on the first step
+    Given I am logged in as an admin user
+    And there is an assembly called "Rename Step Assembly" with a registration page
+    When I visit the name and URLs step for "Rename Step Assembly"
+    And I click Edit on the name and URLs step
+    And I rename the registration page to "Renamed page" with the URL "renamed-step-page"
+    And I save the name and URLs
+    Then I should be on the read-only name and URLs view
+    And the registration editor title should be "Renamed page"
+    And the editor address should use the slug "renamed-step-page"
 
   Scenario: Deleting a registration page from the list asks for confirmation first
     Given I am logged in as an admin user

@@ -511,6 +511,49 @@ def visit_registration_intro_editor(page: Page, title: str, test_database):
     page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=intro&edit=1")
 
 
+@when(parsers.parse('I visit the name and URLs step for "{title}"'))
+def visit_name_and_urls_step(page: Page, title: str, test_database):
+    """Open the editor's first step, the page name and URLs, read-only."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=page")
+
+
+@when("I click Edit on the name and URLs step")
+def click_edit_on_name_and_urls_step(page: Page):
+    page.locator("#reg-steps-panel-page").get_by_role("button", name="Edit", exact=True).click()
+    page.wait_for_url(lambda url: "edit=1" in url, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I rename the registration page to "{name}" with the URL "{slug}"'))
+def rename_registration_page(page: Page, name: str, slug: str):
+    page.get_by_label("Registration page name").fill(name)
+    page.locator("input[name='url_slug']").fill(slug)
+
+
+@when("I save the name and URLs")
+def save_name_and_urls(page: Page):
+    page.locator("#reg-steps-panel-page").get_by_role("button", name="Save", exact=True).click()
+
+
+@then("I should be on the read-only name and URLs view")
+def on_read_only_name_and_urls_view(page: Page):
+    """Opening a page lands on its first step, the name and URLs, shown read-only."""
+    page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator("#reg-steps-panel-page")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator("input[name='page_name']")).to_have_count(0)
+
+
+@then(parsers.parse('the registration editor title should be "{name}"'))
+def registration_editor_title_is(page: Page, name: str):
+    expect(page.locator("#registration-editor-title")).to_have_text(name, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the editor address should use the slug "{slug}"'))
+def editor_address_uses_slug(page: Page, slug: str):
+    expect(page).to_have_url(re.compile(rf".*/registration/{re.escape(slug)}\?section=page.*"))
+
+
 @when(parsers.parse('I type "{text}" into the intro content code editor'))
 def type_into_intro_content_editor(page: Page, text: str):
     """Switch the intro editor to its HTML view, the CodeMirror editor, and type into it."""
@@ -741,7 +784,7 @@ def wizard_next_button_disabled(page: Page):
 def stepper_navigation_disabled(page: Page):
     """While editing, the stepper renders aria-disabled spans instead of links."""
     expect(page.locator("a.stepper-link")).to_have_count(0)
-    expect(page.locator('span.stepper-link[aria-disabled="true"]')).to_have_count(4)
+    expect(page.locator('span.stepper-link[aria-disabled="true"]')).to_have_count(5)
 
 
 @when("I click the Cancel button in the editor header")
@@ -777,14 +820,6 @@ def on_read_only_form_view(page: Page):
     """Leaving edit mode lands on the view URL (no edit=1) with a non-editable editor."""
     page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
     content = page.locator("textarea[name='html_content'] + .cm-editor .cm-content")
-    expect(content).to_have_attribute("contenteditable", "false", timeout=PLAYWRIGHT_TIMEOUT)
-
-
-@then("I should be on the read-only registration intro view")
-def on_read_only_intro_view(page: Page):
-    """Opening a page from the list lands on its first step, the intro, with a non-editable editor."""
-    page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
-    content = page.locator(f"{INTRO_EDITOR} [contenteditable]:visible")
     expect(content).to_have_attribute("contenteditable", "false", timeout=PLAYWRIGHT_TIMEOUT)
 
 
