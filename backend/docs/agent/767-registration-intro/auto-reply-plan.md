@@ -6,7 +6,7 @@ the intro editor worked, the auto-reply email gets the same editor. Built on
 everything in [tiptap-intro-editor-plan.md](tiptap-intro-editor-plan.md); this
 plan only covers what is different for the email.
 
-**Status: in progress.** Steps 1 and 1b are done (marked ✅).
+**Status: in progress.** Steps 1, 1b and 2 are done (marked ✅).
 
 ## Goal
 
@@ -230,7 +230,7 @@ As built:
 - Confirmed in a vitest: text typed at the end of a styled span takes its
   style.
 
-### 2. Tables become a switch (A1, A3)
+### ✅ 2. Tables become a switch (A1, A3)
 
 - `rich-editor-schema.js`: `createSchemaExtensions({images = true,
   resizable = true, tables = true})` adds the four table extensions only when
@@ -246,6 +246,11 @@ As built:
 - `input.html`: `rich_editor_tables=false` argument, documented in the
   docstring; renders `data-rich-editor-tables="true"`.
 - `_step_intro.html`: pass `rich_editor_tables=true`.
+
+As built: the toolbar needed no change. It only wires the buttons it finds,
+so with no Table button it never calls a table command; a vitest drives a
+toolbar and editor with no tables to show it. The e2e test for the intro
+step now also asserts the Table button and menu.
 
 ### 3. Absolute links (A4)
 
