@@ -10,7 +10,7 @@ from opendlp.domain.value_objects import AssemblyStatus, GSheetExportKind, Respo
 
 if TYPE_CHECKING:
     import uuid
-    from collections.abc import Iterable
+    from collections.abc import Collection, Iterable
     from datetime import datetime
 
     from opendlp.domain.assembly import Assembly, AssemblyGSheet, RunSummary, SelectionRunRecord
@@ -319,6 +319,16 @@ class SelectionRunRecordRepository(AbstractRepository):
     @abc.abstractmethod
     def get_all_unfinished(self) -> list[SelectionRunRecord]:
         """Get all SelectionRunRecords that are PENDING or RUNNING."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_unfinished_for_assembly(
+        self, assembly_id: uuid.UUID, task_types: Collection[SelectionTaskType] | None = None
+    ) -> list[SelectionRunRecord]:
+        """Get the PENDING or RUNNING records for an assembly, oldest first.
+
+        With ``task_types``, only records of those task types are returned.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod

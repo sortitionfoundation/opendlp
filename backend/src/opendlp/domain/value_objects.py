@@ -156,6 +156,20 @@ DB_SELECTION_TASK_TYPES: frozenset[SelectionTaskType] = frozenset({
     SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
 })
 
+# The task types that write to an assembly - its respondent rows or its
+# spreadsheet - and so must never run at the same time as each other on one
+# assembly. A task type that only reads is left out. A task type added later
+# must be classified here.
+WRITING_TASK_TYPES: frozenset[SelectionTaskType] = frozenset({
+    SelectionTaskType.SELECT_GSHEET,
+    SelectionTaskType.TEST_SELECT_GSHEET,
+    SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
+    SelectionTaskType.DELETE_OLD_TABS,
+    SelectionTaskType.SELECT_FROM_DB,
+    SelectionTaskType.TEST_SELECT_FROM_DB,
+    SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+})
+
 
 class GSheetExportKind(Enum):
     """What an assembly's saved Google Sheet export target is for.

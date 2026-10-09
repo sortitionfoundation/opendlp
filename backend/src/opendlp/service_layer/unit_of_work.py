@@ -6,6 +6,8 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Any, Self
 
+from sqlalchemy import text
+
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyExportGSheetRepository,
     SqlAlchemyAssemblyGSheetRepository,
@@ -33,6 +35,7 @@ from opendlp.adapters.sql_repository import (
 )
 
 if TYPE_CHECKING:
+    import uuid
     from types import TracebackType
 
     from sqlalchemy.orm import Session, sessionmaker
@@ -143,6 +146,17 @@ class AbstractUnitOfWork(abc.ABC):
         The next attribute access on any previously-loaded instance will
         re-fetch from the database. Use this when polling for changes made
         by another process (e.g. a Celery worker updating a run record).
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def lock_assembly_for_write(self, assembly_id: uuid.UUID) -> None:
+        """Hold an exclusive lock on the assembly until this unit of work commits or rolls back.
+
+        Serialises the "is another task writing to this assembly?" check with
+        the insert that follows it, so two concurrent requests cannot both
+        pass the check. It blocks until any other holder of the same lock
+        commits.
         """
         raise NotImplementedError
 
@@ -272,3 +286,11 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         processes (notably Celery workers updating SelectionRunRecord rows).
         """
         self.session.expire_all()
+
+    def lock_assembly_for_write(self, assembly_id: uuid.UUID) -> None:
+        """Take a Postgres transaction-scoped advisory lock keyed on the assembly id.
+
+        Released automatically at commit or rollback, so no cleanup is needed
+        and nothing is left behind if the process dies.
+        """
+        self.session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": str(assembly_id)})

@@ -70,7 +70,7 @@ from opendlp.service_layer.repositories import (
 
 if TYPE_CHECKING:
     import uuid
-    from collections.abc import Iterable
+    from collections.abc import Collection, Iterable
 
     from sqlalchemy.orm import Session
     from sqlalchemy.sql.elements import TextClause
@@ -823,6 +823,25 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
             .order_by(orm.selection_run_records.c.created_at.desc())
             .all()
         )
+
+    def get_unfinished_for_assembly(
+        self, assembly_id: uuid.UUID, task_types: Collection[SelectionTaskType] | None = None
+    ) -> list[SelectionRunRecord]:
+        """Get the PENDING or RUNNING records for an assembly, oldest first."""
+        query = (
+            self.session
+            .query(SelectionRunRecord)
+            .filter(orm.selection_run_records.c.assembly_id == assembly_id)
+            .filter(
+                orm.selection_run_records.c.status.in_([
+                    SelectionRunStatus.PENDING.value,
+                    SelectionRunStatus.RUNNING.value,
+                ])
+            )
+        )
+        if task_types is not None:
+            query = query.filter(orm.selection_run_records.c.task_type.in_([t.value for t in task_types]))
+        return query.order_by(orm.selection_run_records.c.created_at.asc()).all()
 
     def get_by_assembly_id_paginated(
         self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50, since: datetime | None = None
