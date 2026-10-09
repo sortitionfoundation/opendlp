@@ -251,8 +251,22 @@ describe("mountRichEditor toolbar and links", () => {
     page.toolbar.querySelector('[data-command="link"]').click();
     capture.stop();
     expect(capture.requests).toEqual([
-      { editorId: "intro", href: "https://example.org", text: "there" },
+      {
+        editorId: "intro",
+        href: "https://example.org",
+        text: "there",
+        absoluteOnly: false,
+      },
     ]);
+  });
+
+  it("asks for an absolute address when the textarea says links must be absolute", () => {
+    const capture = captureLinkRequests();
+    const page = setUp("<p>a</p>", 'data-rich-editor-absolute-links="true"');
+    mount(page.textarea);
+    page.toolbar.querySelector('[data-command="link"]').click();
+    capture.stop();
+    expect(capture.requests[0].absoluteOnly).toBe(true);
   });
 
   it("opens the link dialog on Ctrl/Cmd-K", () => {

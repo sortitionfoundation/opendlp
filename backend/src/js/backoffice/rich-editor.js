@@ -138,6 +138,7 @@ export function mountRichEditor(textarea) {
           editorId: textarea.id,
           href: editor.getAttributes("link").href || "",
           text: editor.state.doc.textBetween(from, to, " "),
+          absoluteOnly: textarea.dataset.richEditorAbsoluteLinks === "true",
         },
       }),
     );

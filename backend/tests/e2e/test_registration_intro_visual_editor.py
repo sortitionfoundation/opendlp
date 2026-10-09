@@ -71,6 +71,17 @@ def test_intro_step_renders_the_visual_editor_with_toolbar_and_images(logged_in_
     assert "insertImage(image)" in body
 
 
+def test_editor_page_carries_the_link_dialog_messages(logged_in_admin, registration_page):
+    """The link dialog's messages, including the one for a relative address in an email, come from the server."""
+    assembly_id, _page_id, slug = registration_page
+
+    body = _intro_step(logged_in_admin, assembly_id, slug, edit=True)
+
+    assert '"linkUrlRequired"' in body
+    assert '"linkUrlNotAbsolute"' in body
+    assert 'data-rich-editor-absolute-links="true"' not in body
+
+
 def test_read_only_intro_step_has_no_toolbar(logged_in_admin, registration_page):
     """Outside edit mode the editor is shown read-only, so there is nothing to format with."""
     assembly_id, _page_id, slug = registration_page
