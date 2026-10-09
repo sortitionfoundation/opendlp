@@ -110,7 +110,8 @@ raises - a failure to schedule is logged and the change that asked for it
 goes ahead.
 
 **What it does:** takes a per-assembly Redis lock (re-queues itself if another
-run holds it), deletes the pending key, re-reads the saved config (so a run
+run holds it; this is its own lock, separate from the one-writing-task rule
+below, because it writes a different spreadsheet), deletes the pending key, re-reads the saved config (so a run
 queued before the organiser pressed "Stop automatic export" does nothing),
 and writes every respondent matching the saved status filter to the saved
 tab. There is no `SelectionRunRecord` and no acting user.
@@ -145,6 +146,55 @@ Automatically detects and marks failed tasks as FAILED.
 
 **Purpose:** Catches tasks that crashed without updating their status
 
+## One writing task per assembly
+
+Two background tasks that write to the same assembly must never run at the
+same time. "Write" means changing respondent rows in the database or writing
+to the assembly's selection spreadsheet. Tasks on different assemblies run
+freely, and tasks that only read never block and are never blocked.
+
+| Task | Run record task type | Writes | Guarded |
+|---|---|---|---|
+| `load_gsheet` | `LOAD_GSHEET`, `LOAD_REPLACEMENT_GSHEET` | nothing | no |
+| `run_select` | `SELECT_GSHEET`, `TEST_SELECT_GSHEET`, `SELECT_REPLACEMENT_GSHEET` | spreadsheet output tabs | yes |
+| `run_select_from_db` | `SELECT_FROM_DB`, `TEST_SELECT_FROM_DB`, `SELECT_REPLACEMENT_FROM_DB` | respondent rows | yes |
+| `manage_old_tabs(dry_run=True)` | `LIST_OLD_TABS` | nothing | no |
+| `manage_old_tabs(dry_run=False)` | `DELETE_OLD_TABS` | spreadsheet (deletes tabs) | yes |
+| `auto_export_respondents` | none | the respondent export spreadsheet | no (its own Redis lock) |
+
+"Reset to pool" is not a task but is a bulk write to respondent rows, so it is
+guarded too. The guarded set is `WRITING_TASK_TYPES` in
+`domain/value_objects.py`; a task type added later must be classified there.
+
+**The run record is the lock.** Whether a writing run is unfinished on an
+assembly is already in the `selection_run_records` table, and every failure
+path keeps it current: the task marks its record, the failure callback marks
+FAILED, cancel marks CANCELLED, and the cleanup job marks FAILED after a
+crash, a timeout, or an hour stuck in PENDING. A Redis lock was rejected
+because no TTL suits a task that may run for hours, and a cancel with
+terminate or a SIGKILL never releases it.
+
+The check lives in `service_layer/writing_guard.py` and runs in three places:
+
+1. **Submit time.** Each writing `start_*` function in
+   `service_layer/sortition.py`, and `reset_selection_status`, call
+   `refuse_if_writing_run_unfinished` before inserting their record. It takes
+   a Postgres transaction-scoped advisory lock keyed on the assembly id
+   (`UnitOfWork.lock_assembly_for_write`), then queries unfinished writing
+   runs. Two concurrent submits serialise on the lock, so the second sees the
+   first's PENDING record. The lock is released at commit or rollback.
+2. **Worker start.** `run_select`, `run_select_from_db` and
+   `manage_old_tabs(dry_run=False)` call `_claim_assembly_for_writing` before
+   reading any data. Under the same lock it looks for unfinished writing runs
+   other than itself; if any, it marks its own record FAILED with a message
+   naming the task that holds the assembly and returns. Otherwise it moves its
+   record to RUNNING. It does not re-queue: a second run is almost never what
+   the user wanted.
+3. **The page.** A refused start raises `SelectionAlreadyRunning`, an
+   `InvalidSelection` that carries the blocking run's id and type. The
+   selection routes catch it and redirect into that run's progress modal with
+   an explanatory flash, which is where the cancel button is.
+
 ## Task Status Tracking
 
 Task status is stored in `SelectionRunRecord` domain objects with the following states:
@@ -177,6 +227,13 @@ When a task exceeds the timeout, it is automatically marked as FAILED.
 
 **Default:** 24 hours if not specified
 
+A record still PENDING after `PENDING_TASK_TIMEOUT_MINUTES` (60, a constant in
+`config.py`, not an environment variable) is also marked FAILED. A writing
+task moves its record to RUNNING as its first act, so PENDING that long means
+the worker never picked the task up, usually a Celery message lost between
+submit and worker. Left alone, that record would block every other writing
+task on its assembly until the 24-hour timeout.
+
 ## Task Failure Detection
 
 OpenDLP implements multiple layers of failure detection to handle different failure scenarios:
@@ -206,6 +263,7 @@ A scheduled task runs every 5 minutes to scan for orphaned tasks and mark them a
 - Hard crashes (SIGKILL, OOM)
 - Worker crashes
 - Tasks that died without updating status
+- Tasks still PENDING after an hour (see Task Timeout Configuration)
 
 **Implementation:** See `../docs/task_monitoring.md` for detailed architecture and implementation plan.
 

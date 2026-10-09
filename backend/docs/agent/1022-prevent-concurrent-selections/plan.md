@@ -1,9 +1,8 @@
 # Prevent concurrent writing tasks on one assembly — plan
 
-**Status:** Reviewed once (2026-10-09). Every question from the first draft
-has an answer; they are recorded in §8 so the reasoning is not lost. Decisions
-are marked **D1**…**D12**. Ready to implement unless there are further
-comments.
+**Status:** Implemented (2026-10-09). Every step in §7 is committed on the
+branch; the checklist there says which commit. Decisions are marked
+**D1**…**D12**, and §8 records the answers from review.
 **Date:** 2026-10-08, revised 2026-10-09
 **Branch:** `1022-prevent-concurrent-selections` (off `main`)
 **Story:** 1022 — only one task that writes to an assembly may run at a time
@@ -448,18 +447,28 @@ with the existing cancel tests.
 
 ## 7. Order of commits
 
-1. `WRITING_TASK_TYPES`, repository method and fake, unit-of-work lock
-   method, integration tests for the query.
-2. `writing_guard.py` (exception, guard, modal-parameter helper) and its unit
-   tests; the five `start_*` functions and the reset call it;
-   `get_active_initial_selection_run_id` on the new query; translation
-   catalogues.
-3. Worker claim and its integration tests.
-4. PENDING timeout in `check_and_update_task_health`, config constant, unit
-   and integration tests.
-5. Route handling and redirect of §3.4 (six routes), component tests.
-6. BDD scenario.
-7. Docs, CLAUDE.md line, update to the 447 plan.
+- [x] 1. `WRITING_TASK_TYPES`, repository method and fake, unit-of-work lock
+  method, integration tests for the query. (696142a0)
+- [x] 2. `writing_guard.py` (exception, guard, modal-parameter helper) and its
+  unit tests; the five `start_*` functions and the reset call it;
+  `get_active_initial_selection_run_id` on the new query; translation
+  catalogues. (70e45632)
+- [x] 3. Worker claim and its integration tests. (62afc282)
+- [x] 4. PENDING timeout in `check_and_update_task_health`, config constant,
+  unit and integration tests. (fee772ef)
+- [x] 5. Route handling and redirect of §3.4 (six routes), component tests.
+  (02e36079)
+- [x] 6. BDD scenario. (7627cd99)
+- [x] 7. Docs, CLAUDE.md line, update to the 447 plan.
+
+Two things learned while implementing, neither in the plan:
+
+- The worker claim must run *before* `_set_up_celery_logging` installs the
+  run-log handler, because that handler sets the record to RUNNING on every
+  log line and would undo a refusal.
+- `check_and_update_task_health` went over the complexity limit, so both
+  timeouts now live in helpers (`_fail_if_timed_out`,
+  `_fail_if_stuck_pending`) that read the same way.
 
 ## 8. Review decisions
 

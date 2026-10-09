@@ -154,6 +154,9 @@ See `docs/google_service_account.md` for Google Sheets integration setup, and
 ```bash
 # Background task timeout in hours (default: 24)
 TASK_TIMEOUT_HOURS=24
+# A run record still PENDING after 60 minutes is marked FAILED. This is the
+# constant PENDING_TASK_TIMEOUT_MINUTES in config.py, not an environment
+# variable; see docs/background_tasks.md.
 
 # Invite expiration in hours (default: 168 = 7 days)
 INVITE_EXPIRY_HOURS=168
