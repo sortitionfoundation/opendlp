@@ -2,7 +2,7 @@
 ABOUTME: In-memory repositories that implement the same interfaces as real ones"""
 
 import uuid
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from datetime import datetime
 from typing import Any
 
@@ -601,6 +601,20 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
     def get_all_unfinished(self) -> list[SelectionRunRecord]:
         """Get all SelectionRunRecords that are PENDING or RUNNING."""
         return [item for item in self._items if item.is_pending or item.is_running]
+
+    def get_unfinished_for_assembly(
+        self, assembly_id: uuid.UUID, task_types: Collection[SelectionTaskType] | None = None
+    ) -> list[SelectionRunRecord]:
+        """Get the PENDING or RUNNING records for an assembly, oldest first."""
+        matching = [
+            r
+            for r in self._items
+            if r.assembly_id == assembly_id
+            and (r.is_pending or r.is_running)
+            and (task_types is None or r.task_type in task_types)
+        ]
+        matching.sort(key=lambda r: r.created_at or datetime.min)
+        return matching
 
     def get_by_assembly_id_paginated(
         self, assembly_id: uuid.UUID, page: int = 1, per_page: int = 50, since: datetime | None = None
@@ -1213,6 +1227,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self._bind_repositories(open_context=False)
         self.committed = False
         self.expire_all_calls = 0
+        self.locked_assembly_ids: list[uuid.UUID] = []
         self._snapshot: dict[str, list[Any]] | None = None
 
     @property
@@ -1276,6 +1291,10 @@ class FakeUnitOfWork(AbstractUnitOfWork):
     def expire_all(self) -> None:
         """No-op for in-memory repositories — record the call for assertions."""
         self.expire_all_calls += 1
+
+    def lock_assembly_for_write(self, assembly_id: uuid.UUID) -> None:
+        """Nothing to lock in memory — record the call so tests can assert a guard took the lock."""
+        self.locked_assembly_ids.append(assembly_id)
 
 
 class FakeTemplateRenderer:
