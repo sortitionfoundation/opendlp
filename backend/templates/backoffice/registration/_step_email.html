@@ -11,6 +11,7 @@ ABOUTME: Included by assembly_registration.html when ?section=email
      tabindex="0"
      class="space-y-4">
     {% set email_save_url = url_for('backoffice_registration.save_assembly_registration_email', assembly_id=assembly.id, url_slug=registration_page.url_slug) %}
+    {% set email_test_url = url_for('backoffice_registration.send_assembly_registration_test_email', assembly_id=assembly.id, url_slug=registration_page.url_slug) %}
     {% set email_edit_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email', edit='1') %}
     {% set email_view_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email') %}
     {% set preview_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='preview') %}
@@ -182,6 +183,45 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                 {% endif %}
             </div>
         </form>
+                        {# Test send — view mode only, so what gets sent is exactly what is saved.
+                           The respondent data is made up from the assembly's field schema; the
+                           assembly details are real. Defaults to the signed-in user's address but
+                           any address works, e.g. to check a colleague's email client. #}
+        {# Manage-only action, hidden for CLOSED pages to match the Edit button: the page
+           itself renders for anyone who can view, so view-only members never see it. #}
+        {% if not edit_mode and registration_status != "CLOSED" and can_manage %}
+            {% set has_readiness_error = email_readiness_problems | selectattr("severity", "equalto", "error") | list | length > 0 %}
+            <section class="rounded-lg p-6"
+                     style="background-color: var(--color-tables-cards);
+                            border: 1px solid var(--color-borders-dividers)">
+                <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Send a test email") }}</h2>
+                <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                    {{ _("Check how the auto-reply looks in a real inbox. The email is filled in with sample respondent data and this assembly's real details, then sent to the address below.") }}
+                </p>
+                {% if has_readiness_error %}
+                                        {# The page collects no email, so registrants can't receive the auto-reply —
+                                           a test send to a typed-in address still works, so say so plainly. #}
+                    <p class="text-body-sm mb-4" style="color: var(--color-warning-600);">
+                        {{ _("This only tests the email to the address below. Registrants still won't receive the auto-reply until the problem above is fixed.") }}
+                    </p>
+                {% endif %}
+                <form method="post"
+                      action="{{ email_test_url }}"
+                      x-data
+                      x-preserve-scroll-on-submit
+                      class="flex flex-wrap items-end gap-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <div class="flex-1 min-w-[16rem] max-w-md">
+                        {{ input(name="test_email_to",
+                        label=_("Send to"),
+                        type="email",
+                        value=current_user.email,
+                        required=true) }}
+                    </div>
+                    {{ button(_("Send test email"), type="submit", variant="secondary") }}
+                </form>
+            </section>
+        {% endif %}
                         {# Sticky wizard footer — navigation only (Edit/Cancel/Save live in the card header).
                            While editing, navigation is locked so unsaved changes can't be silently left behind. #}
         <div class="wizard-footer" x-scroll-preserve-links>
