@@ -16,7 +16,7 @@ from opendlp.domain.registration_page import (
 from opendlp.entrypoints.blueprints import backoffice_registration as be_reg
 from opendlp.service_layer.exceptions import EmailTemplateNotFoundError
 from opendlp.service_layer.registration_page_service import page_for_assembly
-from tests.fakes import FakeUnitOfWork
+from tests.fakes import FakeEmailAdapter, FakeUnitOfWork
 
 
 def _seed_page(
@@ -434,3 +434,94 @@ class TestPageCreationSeedsDefaultTemplate:
         # Assigned straight away — the auto-reply is always-on once a template exists.
         page = _get_page(fake_store, assembly_id)
         assert page.auto_reply_email_template_id == templates[0].id
+
+
+def _email_step(client, assembly_id, edit: bool) -> str:
+    suffix = "&edit=1" if edit else ""
+    response = client.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=email{suffix}")
+    assert response.status_code == 200
+    return response.get_data(as_text=True)
+
+
+def _body_textarea(page_html: str) -> str:
+    start = page_html.index('name="template_body_html"')
+    return page_html[page_html.rindex("<textarea", 0, start) : page_html.index(">", start) + 1]
+
+
+class TestVisualEditor:
+    """The email body gets the visual editor, offering only what works in an email."""
+
+    def test_edit_mode_marks_the_body_for_the_visual_editor_without_images_or_tables(
+        self, logged_in_admin, fake_store, assembly_id
+    ):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=True)
+        textarea = _body_textarea(body)
+
+        assert "data-rich-editor " in textarea
+        assert 'data-rich-editor-absolute-links="true"' in textarea
+        assert "data-rich-editor-images" not in textarea
+        assert "data-rich-editor-tables" not in textarea
+        assert "data-code-editor" not in textarea
+        assert "readonly" not in textarea
+
+    def test_edit_mode_toolbar_has_no_image_or_table_buttons(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=True)
+
+        assert 'data-rich-editor-for="template_body_html"' in body
+        assert 'aria-controls="template_body_html-visual"' in body
+        assert 'data-command="link"' in body
+        assert 'data-command="image"' not in body
+        assert 'data-command="imageSize"' not in body
+        assert 'data-command="table"' not in body
+
+    def test_body_is_labelled_for_its_reader_and_names_an_email_variable(
+        self, logged_in_admin, fake_store, assembly_id
+    ):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=True)
+
+        assert 'data-rich-editor-label="Email body"' in body
+        assert "Email body" in body
+        assert "HTML body" not in body
+        assert "Jinja + HTML" not in body
+        assert "highlights variables like {{ assembly.title }} in text" in body
+
+    def test_view_mode_shows_the_editor_read_only_without_a_toolbar(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=False)
+
+        assert 'data-rich-editor-for="template_body_html"' in body
+        assert 'role="toolbar"' not in body
+        assert "readonly" in _body_textarea(body)
+
+    def test_test_send_of_editor_list_has_bullets_in_its_plain_text(
+        self, logged_in_admin, fake_store, assembly_id, monkeypatch
+    ):
+        """The visual editor wraps list items in <p>; the plain-text part must still read as a list."""
+        template = _seed_template(
+            fake_store,
+            assembly_id,
+            body_html="<p>Bring:</p>\n<ul>\n  <li>\n    <p>A pen</p>\n  </li>\n  <li>\n    <p>Your letter</p>\n  </li>\n</ul>",
+        )
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+        adapter = FakeEmailAdapter()
+        monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/send-test",
+            data={"test_email_to": "manager@example.com"},
+        )
+
+        assert response.status_code == 302
+        assert len(adapter.sent) == 1
+        assert adapter.sent[0]["text_body"] == "Bring:\n\n- A pen\n- Your letter"

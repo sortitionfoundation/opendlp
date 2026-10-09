@@ -16,6 +16,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
+from opendlp.service_layer.email_template_service import assign_auto_reply_template, create_email_template
 from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
     page_for_assembly,
@@ -36,6 +37,7 @@ scenarios("../../features/backoffice-assembly-gsheet.feature")
 scenarios("../../features/backoffice-csv-upload.feature")
 scenarios("../../features/backoffice-registration-editor.feature")
 scenarios("../../features/backoffice-registration-visual-editor.feature")
+scenarios("../../features/backoffice-registration-email-editor.feature")
 scenarios("../../features/organiser-assemblies.feature")
 
 # The visual editor's controls wrap both its views, so steps scope to them.
@@ -2317,6 +2319,110 @@ def visual_intro_not_editable(page: Page):
 @then("there should be no formatting toolbar")
 def no_formatting_toolbar(page: Page):
     expect(page.get_by_role("toolbar", name="Formatting")).to_have_count(0)
+
+
+# Visual auto-reply email editor (features/backoffice-registration-email-editor.feature)
+
+EMAIL_EDITOR = "[data-rich-editor-for='template_body_html']"
+VISUAL_EMAIL = f"{EMAIL_EDITOR} .ProseMirror"
+
+
+def _email_section_url(title: str, test_database, edit: bool) -> str:
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    suffix = "&edit=1" if edit else ""
+    return f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=email{suffix}"
+
+
+@given(parsers.parse('there is an assembly called "{title}" with the auto-reply body "{body}"'))
+def create_assembly_with_auto_reply(title: str, body: str, admin_user, test_database):
+    """A registration page whose auto-reply email is already saved."""
+    create_test_assembly_with_registration_page(title, admin_user, test_database)
+    assembly_id = uuid.UUID(str(_assembly_name_id_cache.find_title(title, test_database)))
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        template_id = create_email_template(
+            uow, admin_user.id, assembly_id, name="Registration auto-reply", subject="Thanks", body_html=body
+        ).id
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        assign_auto_reply_template(uow, admin_user.id, assembly_id, template_id)
+
+
+@when(parsers.parse('I visit the auto-reply email editor for "{title}"'))
+def visit_auto_reply_email_editor(page: Page, title: str, test_database):
+    page.goto(_email_section_url(title, test_database, edit=True))
+
+
+@when(parsers.parse('I visit the read-only auto-reply email for "{title}"'))
+def visit_read_only_auto_reply_email(page: Page, title: str, test_database):
+    page.goto(_email_section_url(title, test_database, edit=False))
+
+
+@when("I select everything in the visual email editor")
+def select_all_in_visual_email(page: Page):
+    editor = page.locator(VISUAL_EMAIL)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.focus()
+    page.keyboard.press("ControlOrMeta+a")
+
+
+@when(parsers.parse('I apply the link address "{href}"'))
+def apply_link_address(page: Page, href: str):
+    field = page.locator("#link-modal-url")
+    expect(field).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    field.fill(href)
+    page.get_by_role("dialog", name="Link").get_by_role("button", name="Apply", exact=True).click()
+
+
+@then(parsers.parse('the link dialog should say "{text}"'))
+def link_dialog_says(page: Page, text: str):
+    expect(page.get_by_role("dialog", name="Link")).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the email body should link to "{href}"'))
+def email_body_links_to(page: Page, href: str):
+    expect(page.locator("#link-modal-url")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator(f'{VISUAL_EMAIL} a[href="{href}"]')).to_have_count(1)
+    body = page.evaluate("document.querySelector(\"textarea[name='template_body_html']\").value")
+    assert f'href="{href}"' in body
+
+
+@then(parsers.parse('the email HTML view should contain "{html}"'))
+def email_html_view_contains(page: Page, html: str):
+    page.locator(EMAIL_EDITOR).get_by_role("button", name="HTML", exact=True).click()
+    expect(page.locator(f"{EMAIL_EDITOR} .cm-content")).to_contain_text(html, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the formatting toolbar should offer "{name}"'))
+def toolbar_offers(page: Page, name: str):
+    toolbar = page.get_by_role("toolbar", name="Formatting")
+    expect(toolbar.get_by_role("button", name=name, exact=True)).to_have_count(1, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the formatting toolbar should not offer "{name}"'))
+def toolbar_does_not_offer(page: Page, name: str):
+    toolbar = page.get_by_role("toolbar", name="Formatting")
+    expect(toolbar).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(toolbar.get_by_role("button", name=name, exact=True)).to_have_count(0)
+
+
+@then("the email editor should be in its HTML view, saying why")
+def email_editor_in_html_view(page: Page):
+    editor = page.locator(EMAIL_EDITOR)
+    expect(editor.get_by_role("button", name="HTML", exact=True)).to_have_attribute(
+        "aria-pressed", "true", timeout=PLAYWRIGHT_TIMEOUT
+    )
+    expect(page.locator(VISUAL_EMAIL)).to_be_hidden()
+    expect(editor.locator("[data-rich-editor-notice]")).to_contain_text("so it opens as HTML")
+
+
+@then(parsers.parse('the visual email editor should show "{text}"'))
+def visual_email_shows(page: Page, text: str):
+    expect(page.locator(VISUAL_EMAIL)).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the visual email editor should not be editable")
+def visual_email_not_editable(page: Page):
+    expect(page.locator(VISUAL_EMAIL)).to_have_attribute("contenteditable", "false")
 
 
 # 19px is GOV.UK's body text size from tablet width up; the backoffice body text is smaller.

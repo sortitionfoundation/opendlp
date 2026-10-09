@@ -110,13 +110,19 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             {% set body_attrs %}
                                 {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
                             {% endset %}
+                            {# The visual editor offers only what works in an email: no images or
+                               tables, and only links that work from an inbox. #}
                             {{ textarea(name="template_body_html",
-                            label=_("HTML body"),
+                            label=_("Email body"),
                             value=email_template.body_html,
-                            hint=_("Jinja + HTML. A plain-text version is generated automatically for email clients that need it."),
+                            hint=_("A plain-text version is generated automatically for email clients that need it."),
                             required=true,
                             rows=18,
-                            code_editor=true,
+                            rich_editor=true,
+                            rich_editor_label=_("Email body"),
+                            rich_editor_absolute_links=true,
+                            rich_editor_editable=edit_mode,
+                            rich_editor_variable_example="{{ assembly.title }}",
                             attrs=body_attrs|trim) }}
                         </div>
                     </section>
