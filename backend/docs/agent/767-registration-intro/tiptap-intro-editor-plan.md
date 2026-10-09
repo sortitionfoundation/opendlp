@@ -832,7 +832,20 @@ The plan as written before the work:
 - Vitest round-trip fixtures for each new element, and BDD for building a
   2×1 table of images with the keyboard.
 
-### 11. Formatted HTML from Visual mode (E15)
+### ✅ 11. Formatted HTML from Visual mode (E15)
+
+Done. As built, one change from the plan below: a start tag is written by the
+DOM (a shallow clone's `outerHTML`, cut before its end tag) rather than with
+`escapeAttribute`. `escapeAttribute` always escapes `<` and `>`, which would
+turn a variable such as `alt="{{ a > b }}"` into `{{ a &gt; b }}` and break
+it. The DOM writes attributes exactly as Tiptap's `getHTML()` just did in the
+same browser, so the formatter never escapes anything Tiptap left alone. No existing
+vitest or BDD assertion needed changing, since the exact-value ones all hold
+a single paragraph. A new `rich-editor.test.js` test checks that a Visual
+edit saves the laid-out form.
+
+The plan as written before the work:
+
 
 **`formatHtml(html) → string`** in `rich-editor-html.js`, next to
 `normaliseHtml`, sharing its `BLOCK_TAGS` and `VOID_TAGS`:
