@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import WRITING_TASK_TYPES, SelectionRunStatus, SelectionTaskType
 
 if TYPE_CHECKING:
     from tests.contract.conftest import ContractBackend
@@ -412,6 +412,53 @@ class TestGetAllUnfinished:
         _make_record(selection_run_backend, assembly.id, status=SelectionRunStatus.COMPLETED)
 
         assert selection_run_backend.repo.get_all_unfinished() == []
+
+
+class TestGetUnfinishedForAssembly:
+    def _seed(self, backend: ContractBackend) -> tuple[uuid.UUID, uuid.UUID]:
+        """Two assemblies, each with a mix of unfinished and finished records. Returns (a, b)."""
+        a = backend.make_assembly().id
+        b = backend.make_assembly().id
+        now = datetime.now(UTC)
+        for assembly_id, status, task_type, minutes_ago in [
+            (a, SelectionRunStatus.RUNNING, SelectionTaskType.SELECT_FROM_DB, 30),
+            (a, SelectionRunStatus.PENDING, SelectionTaskType.LIST_OLD_TABS, 10),
+            (a, SelectionRunStatus.PENDING, SelectionTaskType.DELETE_OLD_TABS, 20),
+            (a, SelectionRunStatus.COMPLETED, SelectionTaskType.SELECT_GSHEET, 5),
+            (a, SelectionRunStatus.FAILED, SelectionTaskType.SELECT_FROM_DB, 4),
+            (a, SelectionRunStatus.CANCELLED, SelectionTaskType.SELECT_FROM_DB, 3),
+            (b, SelectionRunStatus.RUNNING, SelectionTaskType.SELECT_GSHEET, 1),
+        ]:
+            _make_record(backend, assembly_id, status, task_type, created_at=now - timedelta(minutes=minutes_ago))
+        return a, b
+
+    def test_returns_only_unfinished_records_of_the_assembly_oldest_first(self, selection_run_backend: ContractBackend):
+        """Finished records and other assemblies' records are left out; the oldest unfinished comes first."""
+        a, _b = self._seed(selection_run_backend)
+
+        found = selection_run_backend.repo.get_unfinished_for_assembly(a)
+
+        assert [r.task_type for r in found] == [
+            SelectionTaskType.SELECT_FROM_DB,
+            SelectionTaskType.DELETE_OLD_TABS,
+            SelectionTaskType.LIST_OLD_TABS,
+        ]
+        assert all(r.assembly_id == a for r in found)
+
+    def test_task_type_filter_leaves_out_other_task_types(self, selection_run_backend: ContractBackend):
+        """Filtering to the writing task types hides the pending read-only tab listing."""
+        a, _b = self._seed(selection_run_backend)
+
+        found = selection_run_backend.repo.get_unfinished_for_assembly(a, WRITING_TASK_TYPES)
+
+        assert [r.task_type for r in found] == [SelectionTaskType.SELECT_FROM_DB, SelectionTaskType.DELETE_OLD_TABS]
+
+    def test_empty_when_nothing_unfinished(self, selection_run_backend: ContractBackend):
+        """An assembly whose runs have all finished has nothing unfinished."""
+        assembly = selection_run_backend.make_assembly()
+        _make_record(selection_run_backend, assembly.id, status=SelectionRunStatus.COMPLETED)
+
+        assert selection_run_backend.repo.get_unfinished_for_assembly(assembly.id) == []
 
 
 class TestGetByAssemblyIdPaginatedSince:
