@@ -199,7 +199,7 @@ class TestDbSelectionModalWiringsProgressIndicator:
         assert messages.startswith('<details class="group mb-2" open>')
         assert "Reading respondents" in messages
         assert "Full run report" not in html
-        assert "<span>Selected</span>" not in html
+        assert "<span>Selected this round</span>" not in html
 
     def test_no_progress_payload_still_renders_generic_spinner(self):
         app = _make_app()
@@ -332,7 +332,7 @@ class TestDbSelectionModalReportLink:
             translated_report_html="<p>Found 4 targets</p>",
         )
 
-        for title in ("Messages", "Full run report", "Selected"):
+        for title in ("Messages", "Full run report", "Selected this round"):
             section = _section(html, title)
             assert "open" not in section[: section.index(">")], title
         assert "Reading respondents" in _section(html, "Messages")
@@ -347,7 +347,7 @@ class TestDbSelectionModalReportLink:
 
         html = self._render(app, run_record, run_id, assembly, selected_respondents=respondents)
 
-        selected = _section(html, "Selected")
+        selected = _section(html, "Selected this round")
         assert "Person p1" in selected
         assert "p1@example.com" in selected
         assert f"/respondents/{assembly.id}/{respondents[0].id}" in selected
@@ -363,7 +363,9 @@ class TestDbSelectionModalReportLink:
 
         html = self._render(app, run_record, run_id, assembly)
 
-        assert "None of the people this run selected are in the respondent list any more." in _section(html, "Selected")
+        assert "None of the people this run selected are in the respondent list any more." in _section(
+            html, "Selected this round"
+        )
 
 
 def _initial_targets_snapshot() -> list[dict[str, Any]]:
@@ -438,7 +440,7 @@ class TestDbSelectionModalTargets:
 
         html = self._render(run_record)
 
-        assert "<span>Targets</span>" not in html
+        assert "<span>Targets used this round</span>" not in html
 
     def test_initial_selection_lists_each_target_with_its_min_and_max(self):
         run_record = _make_run_record(
@@ -449,7 +451,7 @@ class TestDbSelectionModalTargets:
             targets_used=_initial_targets_snapshot(),
         )
 
-        targets = _section(self._render(run_record), "Targets")
+        targets = _section(self._render(run_record), "Targets used this round")
 
         assert "open" not in targets[: targets.index(">")]
         assert targets.count("<table") == 2
@@ -471,7 +473,7 @@ class TestDbSelectionModalTargets:
             targets_used=_replacement_targets_snapshot(),
         )
 
-        targets = _section(self._render(run_record), "Targets")
+        targets = _section(self._render(run_record), "Targets used this round")
 
         for heading in ("Value", "Target", "Currently selected", "Still needed (min)", "Still needed (max)"):
             assert heading in targets
@@ -481,7 +483,7 @@ class TestDbSelectionModalTargets:
     def test_targets_show_while_the_run_is_still_going(self):
         run_record = _make_run_record(None, SelectionTaskType.SELECT_FROM_DB, targets_used=_initial_targets_snapshot())
 
-        targets = _section(self._render(run_record), "Targets")
+        targets = _section(self._render(run_record), "Targets used this round")
 
         assert _row_cells(targets, "Man") == ["Man", "10", "12"]
 
@@ -566,7 +568,7 @@ class TestGsheetSelectionModalCompleted:
         for title in ("Messages", "Full run report"):
             section = _section(html, title)
             assert "open" not in section[: section.index(">")], title
-        assert "<span>Selected</span>" not in html
+        assert "<span>Selected this round</span>" not in html
         assert "Download" not in html
         footer = html[html.index('class="dialog-footer') :]
         assert "Close" in footer

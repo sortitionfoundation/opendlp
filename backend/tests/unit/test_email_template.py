@@ -3,7 +3,12 @@ ABOUTME: Covers rendering delegation, validation problems and detached copies"""
 
 import uuid
 
-from opendlp.domain.email_context import AssemblyContext, RespondentContext, build_context
+from opendlp.domain.email_context import (
+    AssemblyContext,
+    RespondentContext,
+    build_context,
+    sample_respondent_context,
+)
 from opendlp.domain.email_template import EmailTemplate, RenderedEmail
 
 
@@ -75,5 +80,11 @@ def test_create_detached_copy_preserves_identity() -> None:
 
 def test_sample_context_renders_without_missing_variables() -> None:
     template = _template()
-    rendered = template.render(template.sample_context())
+    assembly_context = AssemblyContext(
+        title="Sample Assembly",
+        question="Should the city pedestrianise the centre?",
+        first_assembly_date="2026-01-01",
+        number_to_select=100,
+    )
+    rendered = template.render(build_context(assembly_context, sample_respondent_context([])))
     assert rendered.missing_variables == []
