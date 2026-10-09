@@ -114,3 +114,8 @@ Feature: Backoffice registration visual intro editor
     When I choose the "GOV.UK (recommended, accessible)" intro style
     And I save the registration form
     Then the registration preview should show the paragraph "Styled words" with the class "govuk-body"
+
+  Scenario: A wide image fits a phone-sized page and keeps its shape
+    Given there is an assembly called "Visual Wide Image Assembly" with the intro "<p><img src='/static/img/logosortition.svg' alt='Wide logo' width='2000' height='500'></p>"
+    When I view the registration form preview for "Visual Wide Image Assembly" on a phone-sized screen
+    Then the image "Wide logo" should fit the page and keep its shape

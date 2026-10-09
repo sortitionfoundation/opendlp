@@ -2158,6 +2158,28 @@ def preview_shows_image(page: Page, alt: str):
     assert _image_loaded(image), "the image should load in the preview, not show as broken"
 
 
+@when(parsers.parse('I view the registration form preview for "{title}" on a phone-sized screen'))
+def view_form_preview_on_phone(page: Page, title: str, test_database):
+    """The preview route renders the public template, so it carries the public page's CSS."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    page.set_viewport_size({"width": 375, "height": 800})
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}/form-preview")
+
+
+@then(parsers.parse('the image "{alt}" should fit the page and keep its shape'))
+def image_fits_and_keeps_shape(page: Page, alt: str):
+    image = page.get_by_role("img", name=alt)
+    expect(image).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    image_box = image.bounding_box()
+    main_box = page.locator("main").bounding_box()
+    assert image_box is not None and main_box is not None
+    assert image_box["width"] <= main_box["width"], "the image should not be wider than the page"
+    image.evaluate("(img) => img.decode()")
+    natural_ratio = image.evaluate("(img) => img.naturalWidth / img.naturalHeight")
+    assert image_box["width"] / image_box["height"] == pytest.approx(natural_ratio, rel=0.02)
+
+
 @then(parsers.parse('the visual intro editor should show a level 1 heading "{text}"'))
 def visual_intro_shows_h1(page: Page, text: str):
     expect(page.locator(VISUAL_INTRO).get_by_role("heading", level=1, name=text)).to_be_visible(
