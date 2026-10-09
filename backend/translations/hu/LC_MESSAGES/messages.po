@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-09 09:44+0000\n"
+"POT-Creation-Date: 2026-10-09 09:49+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -3482,14 +3482,21 @@ msgstr "Nincs hozzáadandó érték"
 msgid "Added %(count)s values"
 msgstr "%(count)s érték hozzáadva"
 
-#: src/opendlp/entrypoints/celery/tasks.py:125
+#: src/opendlp/entrypoints/celery/tasks.py:126
 #: src/opendlp/service_layer/sortition.py:1000
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba az "
 "adminisztrátorokkal."
 
-#: src/opendlp/entrypoints/celery/tasks.py:202
+#: src/opendlp/entrypoints/celery/tasks.py:210
+#, python-format
+msgid ""
+"Another task was already writing to this assembly when this one started: "
+"%(task)s"
+msgstr ""
+
+#: src/opendlp/entrypoints/celery/tasks.py:241
 #, python-format
 msgid ""
 "Google returned an error reading the spreadsheet (%(code)s: %(detail)s). "
@@ -3497,11 +3504,11 @@ msgid ""
 "%(email)s."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:228
+#: src/opendlp/entrypoints/celery/tasks.py:267
 msgid "Starting Google Sheets load task"
 msgstr "A Google Táblázat betöltési feladatának indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:242
+#: src/opendlp/entrypoints/celery/tasks.py:281
 #, python-format
 msgid ""
 "The file '%(file_name)s' has the format '%(common_name)s', rather than "
@@ -3512,9 +3519,9 @@ msgstr ""
 "Táblázat. Nyisd meg a Google Táblázatokban, válaszd a Fájl → Mentés "
 "Google-táblázatként lehetőséget, majd használd az így létrejött új fájlt."
 
-#: src/opendlp/entrypoints/celery/tasks.py:274
-#: src/opendlp/entrypoints/celery/tasks.py:414
-#: src/opendlp/entrypoints/celery/tasks.py:1137
+#: src/opendlp/entrypoints/celery/tasks.py:313
+#: src/opendlp/entrypoints/celery/tasks.py:453
+#: src/opendlp/entrypoints/celery/tasks.py:1182
 #, python-format
 msgid ""
 "Failed to load the spreadsheet due to permissions issues. Check the "
@@ -3523,25 +3530,25 @@ msgstr ""
 "A Google Táblázat betöltése jogosultsági hiba miatt sikertelen. "
 "Ellenőrizd, hogy a táblázat meg van-e osztva a következővel: %(email)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:303
+#: src/opendlp/entrypoints/celery/tasks.py:342
 #, python-format
 msgid "Loading spreadsheet with title: %(title)s"
 msgstr "Táblázat betöltése, cím: %(title)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:304
+#: src/opendlp/entrypoints/celery/tasks.py:343
 #, python-format
 msgid "Loading targets from tab: %(tab_name)s"
 msgstr "Célszámok betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:325
+#: src/opendlp/entrypoints/celery/tasks.py:364
 #, python-format
 msgid "Found %(num_features)s targets with a total of %(num_values)s values."
 msgstr ""
 "%(num_features)s kiválasztási szempont található, összesen %(num_values)s"
 " értékkel."
 
-#: src/opendlp/entrypoints/celery/tasks.py:330
-#: src/opendlp/entrypoints/celery/tasks.py:682
+#: src/opendlp/entrypoints/celery/tasks.py:369
+#: src/opendlp/entrypoints/celery/tasks.py:721
 #, python-format
 msgid ""
 "Minimum selection for targets is %(min_select)s, maximum is "
@@ -3550,45 +3557,45 @@ msgstr ""
 "A célszámok szerinti minimális kiválasztás %(min_select)s, a maximális "
 "%(max_select)s."
 
-#: src/opendlp/entrypoints/celery/tasks.py:334
+#: src/opendlp/entrypoints/celery/tasks.py:373
 #, python-format
 msgid "Loading people from tab: %(tab_name)s"
 msgstr "Emberek betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:349
+#: src/opendlp/entrypoints/celery/tasks.py:388
 #, python-format
 msgid "Loaded %(count)s people."
 msgstr "%(count)s ember betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:359
+#: src/opendlp/entrypoints/celery/tasks.py:398
 #, python-format
 msgid "Loading already selected from tab: %(tab_name)s"
 msgstr "A már kiválasztottak betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:376
+#: src/opendlp/entrypoints/celery/tasks.py:415
 #, python-format
 msgid "Loaded %(count)s already selected people."
 msgstr "%(count)s már kiválasztott ember betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:385
+#: src/opendlp/entrypoints/celery/tasks.py:424
 msgid "Google Sheets load completed successfully."
 msgstr "A Google Táblázat betöltése sikeresen befejeződött."
 
-#: src/opendlp/entrypoints/celery/tasks.py:428
+#: src/opendlp/entrypoints/celery/tasks.py:467
 #, python-format
 msgid "Failed to load the spreadsheet: %(error)s"
 msgstr "A Google Táblázat betöltése sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:462
+#: src/opendlp/entrypoints/celery/tasks.py:501
 msgid ": TEST only, do not use for real selection"
 msgstr ": CSAK TESZT, ne használd valódi kiválasztáshoz"
 
-#: src/opendlp/entrypoints/celery/tasks.py:467
+#: src/opendlp/entrypoints/celery/tasks.py:506
 #, python-format
 msgid "Starting selection algorithm for %(number)s people%(suffix)s"
 msgstr "A kiválasztási algoritmus indítása %(number)s emberre%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:480
+#: src/opendlp/entrypoints/celery/tasks.py:519
 #, python-format
 msgid ""
 "Running stratified selection with %(people_count)s people and "
@@ -3597,33 +3604,33 @@ msgstr ""
 "Rétegzett kiválasztás futtatása %(people_count)s emberrel és "
 "%(features_count)s kiválasztási szemponttal%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:506
+#: src/opendlp/entrypoints/celery/tasks.py:545
 #, python-format
 msgid "Selection completed successfully. Selected %(count)s panel(s).%(suffix)s"
 msgstr ""
 "A kiválasztás sikeresen befejeződött. %(count)s csoport-összeállítás "
 "kiválasztva.%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:523
+#: src/opendlp/entrypoints/celery/tasks.py:562
 msgid "Selection algorithm could not find panels meeting the specified criteria"
 msgstr ""
 "A kiválasztási algoritmus nem talált a megadott feltételeknek megfelelő "
 "csoport-összeállítást"
 
-#: src/opendlp/entrypoints/celery/tasks.py:527
+#: src/opendlp/entrypoints/celery/tasks.py:566
 msgid "Selection algorithm failed to find suitable panels"
 msgstr "A kiválasztási algoritmus nem talált megfelelő csoport-összeállítást"
 
-#: src/opendlp/entrypoints/celery/tasks.py:536
+#: src/opendlp/entrypoints/celery/tasks.py:575
 #, python-format
 msgid "Selection task failed: %(error)s"
 msgstr "A kiválasztási feladat sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:569
+#: src/opendlp/entrypoints/celery/tasks.py:608
 msgid "About to write selected and remaining tabs"
 msgstr "A kiválasztottak és a fennmaradók munkalapjának írása következik"
 
-#: src/opendlp/entrypoints/celery/tasks.py:594
+#: src/opendlp/entrypoints/celery/tasks.py:633
 #, python-format
 msgid ""
 "In the remaining tab there are %(count)s people who share an address with"
@@ -3633,7 +3640,7 @@ msgstr ""
 "lakik valaki mással a kiválasztottak vagy a fennmaradók közül. Ők "
 "narancssárgával vannak kiemelve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:606
+#: src/opendlp/entrypoints/celery/tasks.py:645
 #, python-format
 msgid ""
 "Successfully written %(selected_count)s selected and %(remaining_count)s "
@@ -3642,50 +3649,50 @@ msgstr ""
 "%(selected_count)s kiválasztott és %(remaining_count)s fennmaradó "
 "sikeresen kiírva a táblázatba."
 
-#: src/opendlp/entrypoints/celery/tasks.py:617
+#: src/opendlp/entrypoints/celery/tasks.py:656
 #, python-format
 msgid "Writing results failed: %(error)s"
 msgstr "Az eredmények kiírása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:659
+#: src/opendlp/entrypoints/celery/tasks.py:698
 msgid "Starting database data load"
 msgstr "Az adatbázisból való adatbetöltés indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:677
+#: src/opendlp/entrypoints/celery/tasks.py:716
 #, python-format
 msgid "Found %(num_features)s targets with %(num_values)s values."
 msgstr "%(num_features)s kiválasztási szempont található, %(num_values)s értékkel."
 
-#: src/opendlp/entrypoints/celery/tasks.py:686
+#: src/opendlp/entrypoints/celery/tasks.py:725
 msgid "Loading respondents from database"
 msgstr "Jelentkezők betöltése az adatbázisból"
 
-#: src/opendlp/entrypoints/celery/tasks.py:694
+#: src/opendlp/entrypoints/celery/tasks.py:733
 #, python-format
 msgid "Loaded %(count)s respondents."
 msgstr "%(count)s jelentkező betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:702
+#: src/opendlp/entrypoints/celery/tasks.py:741
 #, python-format
 msgid "%(num)s person already holds a place."
 msgid_plural "%(num)s people already hold a place."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:713
+#: src/opendlp/entrypoints/celery/tasks.py:752
 msgid "Database load completed successfully."
 msgstr "Az adatbázisból való betöltés sikeresen befejeződött."
 
-#: src/opendlp/entrypoints/celery/tasks.py:736
+#: src/opendlp/entrypoints/celery/tasks.py:775
 #, python-format
 msgid "Failed to load data from database: %(error)s"
 msgstr "Az adatok betöltése az adatbázisból sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:765
+#: src/opendlp/entrypoints/celery/tasks.py:804
 msgid "Writing selection results to database"
 msgstr "A kiválasztás eredményeinek írása az adatbázisba"
 
-#: src/opendlp/entrypoints/celery/tasks.py:787
+#: src/opendlp/entrypoints/celery/tasks.py:826
 #, python-format
 msgid ""
 "Successfully selected %(selected_count)s people. %(remaining_count)s "
@@ -3694,39 +3701,39 @@ msgstr ""
 "%(selected_count)s fő kiválasztva. %(remaining_count)s fő marad a "
 "jelentkezők között."
 
-#: src/opendlp/entrypoints/celery/tasks.py:799
+#: src/opendlp/entrypoints/celery/tasks.py:838
 #, python-format
 msgid "Writing results to database failed: %(error)s"
 msgstr "Az eredmények adatbázisba írása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1075
+#: src/opendlp/entrypoints/celery/tasks.py:1120
 msgid "listing"
 msgstr "listázása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1075
+#: src/opendlp/entrypoints/celery/tasks.py:1120
 msgid "deleting"
 msgstr "törlése"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1079
+#: src/opendlp/entrypoints/celery/tasks.py:1124
 #, python-format
 msgid "Starting task to %(action)s old output tabs"
 msgstr "A régi kimeneti munkalapok %(action)s – a feladat indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1091
+#: src/opendlp/entrypoints/celery/tasks.py:1136
 msgid "No old output tabs found"
 msgstr "Nem található régi kimeneti munkalap"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1093
+#: src/opendlp/entrypoints/celery/tasks.py:1138
 #, python-format
 msgid "Found %(count)s old output tab(s) that can be deleted"
 msgstr "%(count)s törölhető régi kimeneti munkalap található"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1095
+#: src/opendlp/entrypoints/celery/tasks.py:1140
 #, python-format
 msgid "Successfully deleted %(count)s old output tab(s)"
 msgstr "%(count)s régi kimeneti munkalap sikeresen törölve"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1152
+#: src/opendlp/entrypoints/celery/tasks.py:1197
 #, python-format
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A régi munkalapok %(action)s sikertelen: %(error)s"
@@ -4599,7 +4606,7 @@ msgstr ""
 "OAuth-felhasználóknál nem kapcsolható ki a kétlépcsős azonosítás (nem "
 "használnak ilyet)"
 
-#: src/opendlp/service_layer/writing_guard.py:27
+#: src/opendlp/service_layer/writing_guard.py:28
 #, python-format
 msgid "Another task is already writing to this assembly: %(task)s"
 msgstr ""
