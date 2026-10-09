@@ -292,5 +292,9 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
         Released automatically at commit or rollback, so no cleanup is needed
         and nothing is left behind if the process dies.
+
+        hashtext folds the UUID to 32 bits, so two assemblies can share a key.
+        A collision only makes their writing tasks wait for each other; it
+        can never let two tasks on one assembly through.
         """
         self.session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": str(assembly_id)})
