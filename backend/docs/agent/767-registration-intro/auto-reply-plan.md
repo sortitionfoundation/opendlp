@@ -6,7 +6,7 @@ the intro editor worked, the auto-reply email gets the same editor. Built on
 everything in [tiptap-intro-editor-plan.md](tiptap-intro-editor-plan.md); this
 plan only covers what is different for the email.
 
-**Status: in progress.** Steps 1 to 5 are done (marked ✅).
+**Status: implemented.** Every step is done (marked ✅), with as-built notes.
 
 ## Goal
 
@@ -310,7 +310,7 @@ As built:
   when run on its own (also on `f00fecfe`, before this plan), and passes in
   the full run - it depends on state an earlier scenario leaves.
 
-### 6. Translations and docs
+### ✅ 6. Translations and docs
 
 - New and changed strings → the `translate-catalogues` skill. Changing the
   label and hint discards their Hungarian translations; that's accepted,
@@ -322,6 +322,17 @@ As built:
   it.
 - `CLAUDE.md`'s doc list entry, if the page is renamed.
 - Mark this plan's steps ✅ with any as-built notes.
+
+As built:
+
+- The catalogue was regenerated. The new strings are left for a
+  translator, as the intro editor's were. The email body hint keeps its
+  Hungarian, because the new English is the old one minus "Jinja + HTML.",
+  so the old translation minus its opening is exact. "Email body" lost
+  "HTML törzs" and needs a translator.
+- The docs page keeps its name, and gains a section, "The auto-reply email",
+  which also tells authors to rename the old platform's variables.
+  `CLAUDE.md`'s entry for it mentions the email.
 
 ## Tests
 
