@@ -3,8 +3,10 @@
 The intro is the HTML shown above a registration page's form. Authors edit it
 in a **visual editor**, with a switch to the **HTML** view. This page says what
 the visual editor keeps, what makes it fall back to HTML, what an edit in it
-changes, and how the **intro style** works. It is for developers, and for
-anyone supporting an author who asks why their intro "opens as HTML".
+changes, and how the **intro style** works. The auto-reply email's body uses
+the same editor, with less in it; see [The auto-reply email](#the-auto-reply-email).
+It is for developers, and for anyone supporting an author who asks why their
+intro "opens as HTML".
 
 The design and its decisions are in
 [docs/agent/767-registration-intro/tiptap-intro-editor-plan.md](agent/767-registration-intro/tiptap-intro-editor-plan.md).
@@ -192,3 +194,38 @@ The visual editor previews the chosen style as you switch between the options.
 
 The form below the intro is never given default classes; it carries its own.
 The code is `src/opendlp/domain/html_default_classes.py`.
+
+## The auto-reply email
+
+The auto-reply email's body uses the same visual editor, offering only what
+works in an email. Everything above applies, except:
+
+- **No images.** An email that shows an image needs an absolute URL that
+  stays served for as long as the email might be opened, and many clients
+  block remote images anyway. Not supported yet.
+- **No tables.** Unstyled tables look poor in most email clients.
+- **Links must be full addresses.** A link like `/register/…` works on the
+  registration page but not from an inbox, so the link dialog only accepts
+  an address starting with `https://`, `http://`, `mailto:` or `tel:`, or
+  one starting with a `{{ variable }}` that fills in such an address. Links
+  already in the HTML are left alone, and the HTML view can still write
+  anything.
+- **No content style.** The email is plain HTML, and no GOV.UK classes are
+  added when it is sent; email clients don't have the GOV.UK stylesheet.
+
+A body containing a table or an image opens in HTML mode, with the usual
+notice, and loses nothing.
+
+The email's variables are spelt with dots, like `{{ assembly.title }}` and
+`{{ respondent.first_name_or_friend }}`, and are highlighted the same way.
+An email copied from the team's previous platform uses that platform's
+names, such as `{{ recipient.first_name_or_friend }}` and
+`{{ site.full_url }}`. Rename them: a variable OpenDLP doesn't know renders
+as an empty string, and nothing warns while editing.
+
+Every email is sent with a plain-text version made from the HTML
+(`src/opendlp/domain/html_to_text.py`), which reads lists, quotes and
+horizontal lines as plain text would.
+
+The design and its decisions are in
+[docs/agent/767-registration-intro/auto-reply-plan.md](agent/767-registration-intro/auto-reply-plan.md).
