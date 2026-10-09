@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-09 14:06+0100\n"
+"POT-Creation-Date: 2026-10-09 14:57+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -4817,8 +4817,9 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/registration/_modals.html:303
 #: templates/backoffice/registration/_modals.html:344
 #: templates/backoffice/registration/_step_email.html:93
-#: templates/backoffice/registration/_step_form.html:58
-#: templates/backoffice/registration/_step_intro.html:60
+#: templates/backoffice/registration/_step_form.html:59
+#: templates/backoffice/registration/_step_intro.html:47
+#: templates/backoffice/registration/_step_page.html:33
 #: templates/backoffice/respondent_field_schema/_field_modal.html:203
 #: templates/backoffice/respondents/confirm_upload_diff.html:99
 #: templates/backoffice/respondents/export_modal.html:75
@@ -4857,7 +4858,8 @@ msgstr "Kód másolása"
 
 #: templates/admin/invite_view.html:35
 #: templates/backoffice/assembly_details.html:122
-#: templates/backoffice/registration/_step_intro.html:80
+#: templates/backoffice/registration/_step_page.html:57
+#: templates/backoffice/registration/_step_page.html:74
 #: templates/backoffice/registration/_step_preview.html:49
 msgid "Registration URL"
 msgstr "Regisztrációs URL"
@@ -5144,8 +5146,9 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/components/registration_page_list.html:144
 #: templates/backoffice/components/selection_steps.html:58
 #: templates/backoffice/registration/_step_email.html:96
-#: templates/backoffice/registration/_step_form.html:61
-#: templates/backoffice/registration/_step_intro.html:63
+#: templates/backoffice/registration/_step_form.html:62
+#: templates/backoffice/registration/_step_intro.html:50
+#: templates/backoffice/registration/_step_page.html:36
 #: templates/backoffice/respondent_field_schema/_editor.html:92
 #: templates/backoffice/target_sources/_checklist.html:73
 #: templates/backoffice/target_sources/_setup_modal.html:192
@@ -6122,12 +6125,14 @@ msgstr "Ennek a regisztrációs oldalnak az URL címe"
 
 #: templates/backoffice/assembly_details.html:129
 #: templates/backoffice/components/registration_page_list.html:68
+#: templates/backoffice/registration/_step_page.html:78
 #: templates/backoffice/registration/_step_preview.html:54
 msgid "Short URL"
 msgstr "Rövid URL"
 
 #: templates/backoffice/assembly_details.html:130
-#: templates/backoffice/registration/_step_intro.html:90
+#: templates/backoffice/registration/_step_page.html:67
+#: templates/backoffice/registration/_step_page.html:79
 #: templates/backoffice/registration/_step_preview.html:55
 msgid "A shorter URL for QR codes and paper invitations"
 msgstr "Rövidebb URL QR-kódokhoz és nyomtatott meghívókhoz"
@@ -6262,32 +6267,37 @@ msgid "Close and return to the registration pages"
 msgstr "Bezárás és visszatérés a regisztrációs oldalakhoz"
 
 #: templates/backoffice/assembly_registration.html:92
-#: templates/backoffice/registration/_step_intro.html:126
-msgid "Intro"
+#: templates/backoffice/registration/_step_page.html:29
+msgid "Name and URLs"
 msgstr ""
 
 #: templates/backoffice/assembly_registration.html:93
-msgid "Form"
+#: templates/backoffice/registration/_step_intro.html:82
+msgid "Intro"
 msgstr ""
 
 #: templates/backoffice/assembly_registration.html:94
+msgid "Form"
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:95
 #: templates/backoffice/registration/_step_email.html:38
 msgid "Auto-reply email"
 msgstr "Automatikus válasz e-mail"
 
-#: templates/backoffice/assembly_registration.html:95
+#: templates/backoffice/assembly_registration.html:96
 msgid "Preview and publish"
 msgstr "Előnézet és közzététel"
 
-#: templates/backoffice/assembly_registration.html:97
+#: templates/backoffice/assembly_registration.html:98
 msgid "Registration setup steps"
 msgstr "A regisztráció beállításának lépései"
 
-#: templates/backoffice/assembly_registration.html:109
+#: templates/backoffice/assembly_registration.html:111
 msgid "Test mode"
 msgstr "Teszt üzemmód"
 
-#: templates/backoffice/assembly_registration.html:110
+#: templates/backoffice/assembly_registration.html:112
 msgid ""
 "Submissions are recorded as test entries and don't enter the selection "
 "pool. Publish the registration when you're ready to go live."
@@ -6296,15 +6306,15 @@ msgstr ""
 "jelentkezők közé. Tedd közzé a regisztrációt, amikor készen állsz az éles"
 " indulásra."
 
-#: templates/backoffice/assembly_registration.html:119
+#: templates/backoffice/assembly_registration.html:121
 msgid "Registration closed"
 msgstr "A regisztráció lezárva"
 
-#: templates/backoffice/assembly_registration.html:120
+#: templates/backoffice/assembly_registration.html:122
 msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek át."
 
-#: templates/backoffice/assembly_registration.html:130
+#: templates/backoffice/assembly_registration.html:132
 #: templates/backoffice/components/registration_page_list.html:99
 msgid "Published"
 msgstr "Közzétéve"
@@ -6604,7 +6614,8 @@ msgstr "Módosítások elvetése"
 #: templates/backoffice/components/edit_number_to_select_modal.html:41
 #: templates/backoffice/registration/_step_email.html:94
 #: templates/backoffice/registration/_step_form.html:23
-#: templates/backoffice/registration/_step_intro.html:20
+#: templates/backoffice/registration/_step_intro.html:19
+#: templates/backoffice/registration/_step_page.html:17
 #: templates/backoffice/respondent_field_schema/_field_modal.html:204
 #: templates/backoffice/target_sources/_setup_modal.html:355
 #: templates/targets/components/category_block.html:42
@@ -8027,8 +8038,8 @@ msgid "Upload document"
 msgstr "Dokumentum feltöltése"
 
 #: templates/backoffice/registration/_modals.html:177
-#: templates/backoffice/registration/_step_form.html:125
-#: templates/backoffice/registration/_step_intro.html:159
+#: templates/backoffice/registration/_step_form.html:126
+#: templates/backoffice/registration/_step_intro.html:115
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr "Csak PDF fájlok. Maximális fájlméret: %(max)s MB dokumentumonként."
@@ -8269,8 +8280,10 @@ msgstr "Automatikus válasz e-mail beállítása"
 #: templates/backoffice/registration/_step_email.html:55
 #: templates/backoffice/registration/_step_email.html:237
 #: templates/backoffice/registration/_step_email.html:246
-#: templates/backoffice/registration/_step_form.html:148
-#: templates/backoffice/registration/_step_form.html:157
+#: templates/backoffice/registration/_step_form.html:149
+#: templates/backoffice/registration/_step_form.html:158
+#: templates/backoffice/registration/_step_intro.html:135
+#: templates/backoffice/registration/_step_intro.html:144
 #: templates/backoffice/registration/_step_preview.html:103
 msgid "← Back"
 msgstr "← Vissza"
@@ -8278,10 +8291,12 @@ msgstr "← Vissza"
 #: templates/backoffice/registration/_step_email.html:56
 #: templates/backoffice/registration/_step_email.html:244
 #: templates/backoffice/registration/_step_email.html:247
-#: templates/backoffice/registration/_step_form.html:155
-#: templates/backoffice/registration/_step_form.html:158
-#: templates/backoffice/registration/_step_intro.html:183
-#: templates/backoffice/registration/_step_intro.html:185
+#: templates/backoffice/registration/_step_form.html:156
+#: templates/backoffice/registration/_step_form.html:159
+#: templates/backoffice/registration/_step_intro.html:142
+#: templates/backoffice/registration/_step_intro.html:145
+#: templates/backoffice/registration/_step_page.html:95
+#: templates/backoffice/registration/_step_page.html:97
 msgid "Next →"
 msgstr "Tovább →"
 
@@ -8389,13 +8404,15 @@ msgid "Send test email"
 msgstr ""
 
 #: templates/backoffice/registration/_step_email.html:241
-#: templates/backoffice/registration/_step_form.html:152
-#: templates/backoffice/registration/_step_intro.html:181
+#: templates/backoffice/registration/_step_form.html:153
+#: templates/backoffice/registration/_step_intro.html:139
+#: templates/backoffice/registration/_step_page.html:93
 msgid "Editing in progress — save or cancel to continue"
 msgstr "Szerkesztés folyamatban – a folytatáshoz ments vagy vess el"
 
 #: templates/backoffice/registration/_step_form.html:23
-#: templates/backoffice/registration/_step_intro.html:20
+#: templates/backoffice/registration/_step_intro.html:19
+#: templates/backoffice/registration/_step_page.html:17
 msgid "Save and Republish"
 msgstr "Mentés és újbóli közzététel"
 
@@ -8409,11 +8426,11 @@ msgstr ""
 "ellenőrizd, hogy az űrlap még a megfelelő dolgokat kéri-e. Az Űrlapváz a "
 "jelenlegi kérdéseket tükrözi."
 
-#: templates/backoffice/registration/_step_form.html:53
+#: templates/backoffice/registration/_step_form.html:54
 msgid "Show Form Skeleton"
 msgstr "Űrlapváz megjelenítése"
 
-#: templates/backoffice/registration/_step_form.html:67
+#: templates/backoffice/registration/_step_form.html:68
 msgid ""
 "Paste your HTML form code below. The only required placeholders are {{ "
 "form_action }} for the form's action attribute and {{ csrf_form_element "
@@ -8423,48 +8440,63 @@ msgstr ""
 "a {{ form_action }} az űrlap action attribútumához, és a {{ "
 "csrf_form_element }} a CSRF-védelemhez."
 
-#: templates/backoffice/registration/_step_form.html:110
-#: templates/backoffice/registration/_step_intro.html:143
+#: templates/backoffice/registration/_step_form.html:111
+#: templates/backoffice/registration/_step_intro.html:99
 msgid "Assets"
 msgstr "Eszközök"
 
-#: templates/backoffice/registration/_step_form.html:113
-#: templates/backoffice/registration/_step_intro.html:146
+#: templates/backoffice/registration/_step_form.html:114
+#: templates/backoffice/registration/_step_intro.html:102
 msgid "Images"
 msgstr "Képek"
 
-#: templates/backoffice/registration/_step_form.html:114
-#: templates/backoffice/registration/_step_intro.html:147
+#: templates/backoffice/registration/_step_form.html:115
+#: templates/backoffice/registration/_step_intro.html:103
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
 "Támogatott formátumok: %(formats)s. Maximális fájlméret: %(max)s MB "
 "képenként."
 
-#: templates/backoffice/registration/_step_form.html:115
-#: templates/backoffice/registration/_step_intro.html:148
+#: templates/backoffice/registration/_step_form.html:116
+#: templates/backoffice/registration/_step_intro.html:104
 msgid "No images uploaded yet."
 msgstr "Még nincs feltöltött kép."
 
-#: templates/backoffice/registration/_step_form.html:124
-#: templates/backoffice/registration/_step_intro.html:158
+#: templates/backoffice/registration/_step_form.html:125
+#: templates/backoffice/registration/_step_intro.html:114
 msgid "Documents"
 msgstr "Dokumentumok"
 
-#: templates/backoffice/registration/_step_form.html:126
-#: templates/backoffice/registration/_step_intro.html:160
+#: templates/backoffice/registration/_step_form.html:127
+#: templates/backoffice/registration/_step_intro.html:116
 msgid "No documents uploaded yet."
 msgstr "Még nincs feltöltött dokumentum."
 
-#: templates/backoffice/registration/_step_intro.html:37
-msgid "Registration page name"
-msgstr "A regisztrációs oldal neve"
-
-#: templates/backoffice/registration/_step_intro.html:55
+#: templates/backoffice/registration/_step_intro.html:42
 msgid "Show Intro Skeleton"
 msgstr ""
 
-#: templates/backoffice/registration/_step_intro.html:74
+#: templates/backoffice/registration/_step_intro.html:56
+msgid ""
+"Paste the HTML shown above the form below: a heading, an introduction, "
+"anything visitors should read before they register. You can use {{ "
+"assembly_title }} and {{ assembly_question }} to drop in the assembly's "
+"title and question."
+msgstr ""
+
+#: templates/backoffice/registration/_step_intro.html:64
+msgid "Intro style"
+msgstr ""
+
+#: templates/backoffice/registration/_step_intro.html:67
+msgid ""
+"GOV.UK style gives headings, paragraphs, lists and links the accessible "
+"GOV.UK look when the page is shown. Elements you give a class of your own"
+" keep only your class."
+msgstr ""
+
+#: templates/backoffice/registration/_step_page.html:45
 msgid ""
 "These URLs are locked while the registration page is published or closed,"
 " so links shared in invites, QR codes, and elsewhere keep working. Switch"
@@ -8475,32 +8507,22 @@ msgstr ""
 "linkek továbbra is működjenek. A szerkesztésükhöz állítsd vissza az "
 "űrlapot teszt üzemmódba."
 
-#: templates/backoffice/registration/_step_intro.html:81
+#: templates/backoffice/registration/_step_page.html:50
+msgid "Registration page name"
+msgstr "A regisztrációs oldal neve"
+
+#: templates/backoffice/registration/_step_page.html:58
 msgid "The URL path for this registration page"
 msgstr "Ennek a regisztrációs oldalnak az URL-útvonala"
 
-#: templates/backoffice/registration/_step_intro.html:89
+#: templates/backoffice/registration/_step_page.html:66
 msgid "Short URL (optional)"
 msgstr "Rövid URL (nem kötelező)"
 
-#: templates/backoffice/registration/_step_intro.html:100
-msgid ""
-"Paste the HTML shown above the form below: a heading, an introduction, "
-"anything visitors should read before they register. You can use {{ "
-"assembly_title }} and {{ assembly_question }} to drop in the assembly's "
-"title and question."
-msgstr ""
-
-#: templates/backoffice/registration/_step_intro.html:108
-msgid "Intro style"
-msgstr ""
-
-#: templates/backoffice/registration/_step_intro.html:111
-msgid ""
-"GOV.UK style gives headings, paragraphs, lists and links the accessible "
-"GOV.UK look when the page is shown. Elements you give a class of your own"
-" keep only your class."
-msgstr ""
+#: templates/backoffice/registration/_step_page.html:75
+#: templates/backoffice/registration/_step_preview.html:50
+msgid "The URL for your registration page"
+msgstr "A regisztrációs oldalad URL címe"
 
 #: templates/backoffice/registration/_step_preview.html:19
 msgid "Form preview"
@@ -8523,10 +8545,6 @@ msgstr "A regisztrációs oldal előnézete"
 #: templates/backoffice/registration/_step_preview.html:45
 msgid "Share your form"
 msgstr "Oszd meg az űrlapod"
-
-#: templates/backoffice/registration/_step_preview.html:50
-msgid "The URL for your registration page"
-msgstr "A regisztrációs oldalad URL címe"
 
 #: templates/backoffice/registration/_step_preview.html:63
 msgid "QR Code"
