@@ -159,7 +159,7 @@ As built:
   goes to the form; a taken slug keeps the old slug and returns to
   `section=page&edit=1`.
 
-### Step 2: Templates
+### Step 2: Templates ✅
 
 - **New `registration/_step_page.html`:**
   - The name input, the locked alert and the two `prefixed_url_input`s move
@@ -192,11 +192,29 @@ As built:
   - Add `section=page` and `section=page&edit=1` to the page-script view
     list.
 
+As built:
+
+- **Step 1 is a single column, as decided.** The name uses the `input`
+  macro: a text input with a visible label while editing, and plain text
+  otherwise.
+- **The locked alert shows whether or not you're editing**, whenever
+  `slugs_frozen`.
+- **`TestViewEditModeFlag` now names `?section=intro`.** It used the default
+  section, which is no longer the intro.
+- **The e2e journey was brought forward from step 3.** Without it this
+  commit would have left it failing. It now renames the page and changes
+  both slugs on step 1 with `save_and_next`, lands on the intro at the new
+  slug, and carries on with that slug.
+- **New tests cover step 1:**
+  - its edit and read views, including leaving out an unset short URL;
+  - its footer (Next, no Back);
+  - the locked alert and the disabled slug input on a published page;
+  - no Edit on a closed page;
+  - the intro's Back link.
+
 ### Step 3: Journeys
 
-- **`tests/e2e/test_registration_stepper_journey.py`:** creation lands on step
-  1, and the walk saves the name and URLs, then goes intro → form → email →
-  preview.
+- **`tests/e2e/test_registration_stepper_journey.py`:** done in step 2.
 - **BDD, after `just build-all`:**
   - Update "Opening a page from the list lands on its first step".
   - Add a scenario to `backoffice-registration-editor.feature`: rename the
