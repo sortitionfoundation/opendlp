@@ -1238,6 +1238,46 @@ class TestCleanupOrphanedTasks:
             updated3 = uow.selection_run_records.get_by_task_id(task3_id)
             assert updated3.status == SelectionRunStatus.RUNNING
 
+    def test_cleanup_fails_a_record_stuck_in_pending_for_over_an_hour(self, postgres_session_factory):
+        """A PENDING record older than the pending timeout is FAILED so it stops holding its assembly."""
+        stuck_id = uuid.uuid4()
+        fresh_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=stuck_id,
+                    task_type=SelectionTaskType.SELECT_FROM_DB,
+                    status=SelectionRunStatus.PENDING,
+                    celery_task_id="lost-message-1",
+                    created_at=datetime.now(UTC) - timedelta(minutes=config.PENDING_TASK_TIMEOUT_MINUTES + 5),
+                )
+            )
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=fresh_id,
+                    task_type=SelectionTaskType.SELECT_FROM_DB,
+                    status=SelectionRunStatus.PENDING,
+                    celery_task_id="queued-2",
+                    created_at=datetime.now(UTC) - timedelta(minutes=1),
+                )
+            )
+            uow.commit()
+
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_async_result.return_value = Mock(state="PENDING", info={})
+            result = cleanup_orphaned_tasks(session_factory=postgres_session_factory)
+
+        assert result == {"checked": 2, "marked_failed": 1, "errors": 0}
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            stuck = uow.selection_run_records.get_by_task_id(stuck_id)
+            assert stuck.status == SelectionRunStatus.FAILED
+            assert "did not start" in stuck.error_message
+            assert uow.selection_run_records.get_by_task_id(fresh_id).status == SelectionRunStatus.PENDING
+
     def test_cleanup_handles_no_unfinished_tasks(self, postgres_session_factory):
         """Test that cleanup handles case with no unfinished tasks gracefully."""
         # No tasks created

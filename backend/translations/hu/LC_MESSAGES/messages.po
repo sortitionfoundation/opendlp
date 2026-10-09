@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-09 09:49+0000\n"
+"POT-Creation-Date: 2026-10-09 09:52+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -4363,16 +4363,20 @@ msgstr "A feladat nem szakítható meg – már befejeződött"
 msgid "Task cancelled by %(user_name)s"
 msgstr "A feladatot %(user_name)s szakította meg"
 
-#: src/opendlp/service_layer/sortition.py:1071
+#: src/opendlp/service_layer/sortition.py:1078
 msgid "Task exceeded timeout"
 msgstr "A feladat túllépte az időkorlátot"
 
-#: src/opendlp/service_layer/sortition.py:1098
+#: src/opendlp/service_layer/sortition.py:1097
+msgid "Task did not start"
+msgstr ""
+
+#: src/opendlp/service_layer/sortition.py:1123
 msgid "Task failed to start"
 msgstr "A feladat indítása sikertelen"
 
-#: src/opendlp/service_layer/sortition.py:1110
-#: src/opendlp/service_layer/sortition.py:1121
+#: src/opendlp/service_layer/sortition.py:1135
+#: src/opendlp/service_layer/sortition.py:1146
 msgid "Task stopped unexpectedly"
 msgstr "A feladat váratlanul leállt"
 
