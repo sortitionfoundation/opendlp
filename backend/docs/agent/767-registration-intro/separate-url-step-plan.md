@@ -2,7 +2,7 @@
 
 Branch: `767-separate-url-step`, off `767-rich-text-autoreply`.
 
-**Status: agreed, not started.** Chewie answered the questions; the decisions
+**Status: in progress.** Chewie answered the questions; the decisions
 are below as P1–P8. Steps are marked ✅ as they are done.
 
 ## Goal
@@ -126,10 +126,9 @@ assigned on the email step.
 Each step is committed on its own, after `just check` and the relevant tests
 pass.
 
-### Step 1: Route
+### Step 1: Route ✅
 
-- `_SECTIONS = ("page", "intro", "form", "email", "preview")`, and `page` is
-  both the default and the fallback in `view_registration_page`.
+- `_SECTIONS = ("page", "intro", "form", "email", "preview")`.
 - `_save_origin()` reads the posted `step` field (P6). Update its docstring,
   `_post_action_section`'s docstring and `save_assembly_registration`'s action
   list to match.
@@ -137,16 +136,28 @@ pass.
   commit. The intro and the form are the only ones that post to this route.
   Without the field, an intro save would be treated as coming from the form.
 - Component tests in `test_backoffice_registration_view.py`:
-  - **Default section:** no section and an unknown section both render step 1.
   - **Saving from step 1:** a save lands back on step 1, and `save_and_next`
     lands on the intro.
   - **Saving from the intro:** a save posting `step=intro` lands on the
     intro.
-  - **A missing `step`:** a lifecycle post without it still lands on the
-    preview step.
+  - **A missing or unknown `step`:** treated as the form.
   - **A failed slug save** lands on `section=page&edit=1`.
-  - **Update the tests that assumed the intro was the default** (around lines
-    303, 312, 357 and 398).
+
+As built:
+
+- **The default section moved to step 2.** Making `page` the default before
+  its template exists would have opened every page on an empty step, so the
+  default and fallback change in step 2, alongside the template.
+- **Lifecycle posts weren't retested.** The existing tests already cover
+  them landing on the preview step, and the preview and modal forms carry no
+  `step`.
+- **Two tests in the e2e journey changed.** Its intro and form posts now send
+  `step`.
+- **The page-name and slug tests** in `TestEditorNameAndSlugEditing` now post
+  `step=page` with only the page fields.
+- **New tests:** each step's form posts its name; a save without a known step
+  goes to the form; a taken slug keeps the old slug and returns to
+  `section=page&edit=1`.
 
 ### Step 2: Templates
 
@@ -162,6 +173,9 @@ pass.
 - **`_step_form.html`, `_step_email.html` and `_step_preview.html`:**
   renumber their ABOUTMEs to 3, 4 and 5, and fix the form step's comment
   about where the page is named.
+- **`view_registration_page`:** `page` becomes the default section and the
+  fallback for an unknown one. Update the tests that assumed the intro was
+  the default (around lines 303, 312 and 145).
 - **`assembly_registration.html`:**
   - Add the `page` stepper item, labelled "Name and URLs", first.
   - Add the `include`.
