@@ -1037,13 +1037,63 @@ def _get_celery_task_state(run_record: SelectionRunRecord, task_id: uuid.UUID) -
         return None, ""  # Can't determine health if Celery query fails
 
 
-def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, timeout_hours: int | None = None) -> None:
+def _fail_if_timed_out(uow: AbstractUnitOfWork, run_record: SelectionRunRecord, timeout_hours: int | None) -> bool:
+    """Mark a record FAILED if it is older than the overall task timeout. Returns True if it did."""
+    timeout_hrs = timeout_hours if timeout_hours is not None else config.get_task_timeout_hours()
+    if not (timeout_hrs and run_record.created_at):
+        return False
+    elapsed = datetime.now(UTC) - run_record.created_at
+    if elapsed.total_seconds() <= timeout_hrs * 3600:
+        return False
+    _mark_task_as_failed(
+        uow,
+        run_record,
+        error_msg=_("Task exceeded timeout"),
+        technical_msg=f"Task timed out after {timeout_hrs} hours",
+        celery_state="TIMEOUT",
+    )
+    return True
+
+
+def _fail_if_stuck_pending(
+    uow: AbstractUnitOfWork, run_record: SelectionRunRecord, pending_timeout_minutes: int | None, celery_state: str
+) -> bool:
+    """Mark a record FAILED if it has sat in PENDING past the pending timeout. Returns True if it did.
+
+    A record still PENDING this long was never picked up by a worker, and it
+    must not keep blocking the other writing tasks on its assembly.
+    """
+    pending_mins = (
+        pending_timeout_minutes if pending_timeout_minutes is not None else config.PENDING_TASK_TIMEOUT_MINUTES
+    )
+    if not (run_record.is_pending and pending_mins and run_record.created_at):
+        return False
+    elapsed = datetime.now(UTC) - run_record.created_at
+    if elapsed.total_seconds() <= pending_mins * 60:
+        return False
+    _mark_task_as_failed(
+        uow,
+        run_record,
+        error_msg=_("Task did not start"),
+        technical_msg=f"Still PENDING after {pending_mins} minutes. Celery state: {celery_state}",
+        celery_state=celery_state,
+    )
+    return True
+
+
+def check_and_update_task_health(
+    uow: AbstractUnitOfWork,
+    task_id: uuid.UUID,
+    timeout_hours: int | None = None,
+    pending_timeout_minutes: int | None = None,
+) -> None:
     """
     Check if a task is still alive and update its status if it has died.
 
     Only checks tasks in PENDING or RUNNING state.
     Handles multiple failure scenarios:
     - Task is PENDING but Celery says it FAILED/REVOKED/REJECTED
+    - Task is still PENDING after the pending timeout (never picked up)
     - Task is RUNNING but Celery has no record (>24hrs old, died)
     - Task is RUNNING but Celery says FAILURE/REVOKED/REJECTED
     - Task exceeded timeout (if configured)
@@ -1052,6 +1102,7 @@ def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, ti
         uow: Unit of work for database operations
         task_id: UUID of the task (SelectionRunRecord.task_id)
         timeout_hours: Optional timeout in hours (overrides env config)
+        pending_timeout_minutes: Optional pending timeout in minutes (overrides the config constant)
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -1061,20 +1112,12 @@ def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, ti
         return  # Nothing to check
 
     # Check timeout first
-    timeout_hrs = timeout_hours if timeout_hours is not None else config.get_task_timeout_hours()
-    if timeout_hrs and run_record.created_at:
-        elapsed = datetime.now(UTC) - run_record.created_at
-        if elapsed.total_seconds() > timeout_hrs * 3600:
-            _mark_task_as_failed(
-                uow,
-                run_record,
-                error_msg=_("Task exceeded timeout"),
-                technical_msg=f"Task timed out after {timeout_hrs} hours",
-                celery_state="TIMEOUT",
-            )
-            return
+    if _fail_if_timed_out(uow, run_record, timeout_hours):
+        return
 
     celery_result, celery_state = _get_celery_task_state(run_record, task_id)
+    if _fail_if_stuck_pending(uow, run_record, pending_timeout_minutes, celery_state):
+        return
     if not celery_result:
         return
 

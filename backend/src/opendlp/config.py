@@ -234,6 +234,15 @@ def get_max_csv_upload_bytes() -> int:
     return get_max_csv_upload_mb() * 1024 * 1024
 
 
+# How long a selection run record may sit in PENDING before the health check
+# gives up on it. A writing task moves its record to RUNNING as its first act,
+# so PENDING this long means the worker never picked the task up - most often a
+# Celery message lost between submit and worker. Not configurable: nobody has
+# asked to tune it, and a stuck PENDING record blocks every other writing task
+# on its assembly until it is cleared.
+PENDING_TASK_TIMEOUT_MINUTES = 60
+
+
 def get_task_timeout_hours() -> int:
     """
     Get task timeout in hours from environment.
