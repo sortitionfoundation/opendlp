@@ -109,6 +109,18 @@ describe("mountRichEditor", () => {
     expect(page.notice.textContent).toBe(OPENS_AS_HTML);
   });
 
+  it("opens a table in HTML mode unless the textarea allows tables", () => {
+    const table = "<table><tbody><tr><td><p>a</p></td></tr></tbody></table>";
+    const without = setUp(table);
+    expect(mount(without.textarea).mode).toBe(HTML);
+    expect(without.notice.textContent).toBe(OPENS_AS_HTML);
+    mounted.destroy();
+    mounted = null;
+
+    const allowed = setUp(table, 'data-rich-editor-tables="true"');
+    expect(mount(allowed.textarea).mode).toBe(VISUAL);
+  });
+
   it("leaves the textarea untouched until the author edits", () => {
     const html = "<h1>Title</h1>\n<p>Intro</p>\n";
     const page = setUp(html);
@@ -239,8 +251,22 @@ describe("mountRichEditor toolbar and links", () => {
     page.toolbar.querySelector('[data-command="link"]').click();
     capture.stop();
     expect(capture.requests).toEqual([
-      { editorId: "intro", href: "https://example.org", text: "there" },
+      {
+        editorId: "intro",
+        href: "https://example.org",
+        text: "there",
+        absoluteOnly: false,
+      },
     ]);
+  });
+
+  it("asks for an absolute address when the textarea says links must be absolute", () => {
+    const capture = captureLinkRequests();
+    const page = setUp("<p>a</p>", 'data-rich-editor-absolute-links="true"');
+    mount(page.textarea);
+    page.toolbar.querySelector('[data-command="link"]').click();
+    capture.stop();
+    expect(capture.requests[0].absoluteOnly).toBe(true);
   });
 
   it("opens the link dialog on Ctrl/Cmd-K", () => {

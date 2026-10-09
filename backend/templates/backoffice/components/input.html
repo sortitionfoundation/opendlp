@@ -153,7 +153,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro textarea(name, label="", value="", placeholder="", hint="", error="", required=false, disabled=false, rows=4, id="", classes="", attrs="", dim=true, code_editor=false, rich_editor=false, rich_editor_label="", rich_editor_images=false, rich_editor_editable=true, rich_editor_style="") %}
+{% macro textarea(name, label="", value="", placeholder="", hint="", error="", required=false, disabled=false, rows=4, id="", classes="", attrs="", dim=true, code_editor=false, rich_editor=false, rich_editor_label="", rich_editor_images=false, rich_editor_tables=false, rich_editor_absolute_links=false, rich_editor_editable=true, rich_editor_style="", rich_editor_variable_example="") %}
     {#
     Textarea component using semantic design tokens.
 
@@ -179,8 +179,12 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
              Visual/HTML switch whose HTML view is the CodeMirror editor. Same bundle.
         rich_editor_label: Accessible name for the visual editing area.
         rich_editor_images: Whether the visual editor accepts images.
+        rich_editor_tables: Whether the visual editor offers tables.
+        rich_editor_absolute_links: Whether the link dialog refuses a relative address,
+             as it must for an email.
         rich_editor_editable: False shows the editor read-only, with no toolbar.
         rich_editor_style: The content style ("govuk" or "plain") the visual editor previews.
+        rich_editor_variable_example: A variable the box offers, named in the editor's hint.
 
     Usage:
         {{ textarea("description", label="Description", placeholder="Enter description...") }}
@@ -205,7 +209,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         {% endif %}
 
         {% if rich_editor %}
-            {{ rich_editor_controls(input_id, rich_editor_label, images=rich_editor_images, editable=rich_editor_editable, content_style=rich_editor_style) }}
+            {{ rich_editor_controls(input_id, rich_editor_label, images=rich_editor_images, tables=rich_editor_tables, editable=rich_editor_editable, content_style=rich_editor_style, variable_example=rich_editor_variable_example) }}
         {% endif %}
 
         {# Textarea field #}
@@ -217,7 +221,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {% if required %}required{% endif %}
             {% if disabled %}disabled{% endif %}
             {% if code_editor %}data-code-editor{% endif %}
-            {% if rich_editor %}data-rich-editor {% if rich_editor_images %}data-rich-editor-images="true"{% endif %}{% endif %}
+            {% if rich_editor %}data-rich-editor {% if rich_editor_images %}data-rich-editor-images="true"{% endif %} {% if rich_editor_tables %}data-rich-editor-tables="true"{% endif %} {% if rich_editor_absolute_links %}data-rich-editor-absolute-links="true"{% endif %}{% endif %}
             {% if attrs %}{{ attrs | safe }}{% endif %}
             class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 resize-y {{ classes }}"
             style="

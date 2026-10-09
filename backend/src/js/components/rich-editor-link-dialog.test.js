@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LINK_RESULT_EVENT } from "../lib/rich-editor-events.js";
 import {
+  ABSOLUTE_LINK_PATTERN,
   LINK_URL_FIELD_ID,
   richEditorLinkDialog,
 } from "./rich-editor-link-dialog.js";
@@ -76,6 +77,84 @@ describe("richEditorLinkDialog", () => {
     expect(dialog.linkDialogOpen).toBe(true);
     expect(dialog.linkError).toBe("Enter a link address");
     expect(results).not.toHaveBeenCalled();
+  });
+
+  describe("when links must be absolute, as in an email", () => {
+    const NOT_ABSOLUTE = "Email links must be full addresses";
+
+    function applyAbsolute(href) {
+      const results = listenForResults();
+      const dialog = richEditorLinkDialog({
+        messages: { linkUrlNotAbsolute: NOT_ABSOLUTE },
+      });
+      dialog.openLinkDialog(
+        request({ editorId: "body", href: "", absoluteOnly: true }),
+      );
+      dialog.linkUrl = href;
+      dialog.applyLink();
+      return { dialog, results };
+    }
+
+    it.each([
+      "https://example.org/x",
+      "http://example.org",
+      "HTTPS://EXAMPLE.ORG",
+      "mailto:team@example.org",
+      "tel:+441632960000",
+      "{{ assembly.url }}",
+    ])("accepts %s", (href) => {
+      const { dialog, results } = applyAbsolute(href);
+      expect(dialog.linkDialogOpen).toBe(false);
+      expect(results).toHaveBeenLastCalledWith({
+        editorId: "body",
+        action: "set",
+        href: href,
+      });
+    });
+
+    it.each(["/register/x", "www.example.org", "example.org", "#top"])(
+      "refuses %s, which would not work from an inbox",
+      (href) => {
+        const { dialog, results } = applyAbsolute(href);
+        expect(dialog.linkDialogOpen).toBe(true);
+        expect(dialog.linkError).toBe(NOT_ABSOLUTE);
+        expect(results).not.toHaveBeenCalled();
+      },
+    );
+
+    it("shares one pattern between the check and its tests", () => {
+      expect(ABSOLUTE_LINK_PATTERN.test("https://x")).toBe(true);
+      expect(ABSOLUTE_LINK_PATTERN.test("/x")).toBe(false);
+    });
+
+    it("forgets the rule when the next request does not ask for it", () => {
+      const results = listenForResults();
+      const dialog = richEditorLinkDialog({ messages: {} });
+      dialog.openLinkDialog(
+        request({ editorId: "body", href: "", absoluteOnly: true }),
+      );
+      dialog.openLinkDialog(request({ editorId: "intro", href: "" }));
+      dialog.linkUrl = "/register/x";
+      dialog.applyLink();
+      expect(results).toHaveBeenLastCalledWith({
+        editorId: "intro",
+        action: "set",
+        href: "/register/x",
+      });
+    });
+  });
+
+  it("accepts a relative address when links need not be absolute", () => {
+    const results = listenForResults();
+    const dialog = richEditorLinkDialog({ messages: {} });
+    dialog.openLinkDialog(request({ editorId: "intro", href: "" }));
+    dialog.linkUrl = "/register/x";
+    dialog.applyLink();
+    expect(results).toHaveBeenLastCalledWith({
+      editorId: "intro",
+      action: "set",
+      href: "/register/x",
+    });
   });
 
   it("answers Remove and Cancel", () => {

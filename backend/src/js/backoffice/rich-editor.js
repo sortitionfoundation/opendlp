@@ -60,6 +60,7 @@ export function mountRichEditor(textarea) {
   const extensions = createSchemaExtensions({
     images: imagesAllowed,
     resizable: !readOnly,
+    tables: textarea.dataset.richEditorTables === "true",
   });
 
   let mode = null;
@@ -137,6 +138,7 @@ export function mountRichEditor(textarea) {
           editorId: textarea.id,
           href: editor.getAttributes("link").href || "",
           text: editor.state.doc.textBetween(from, to, " "),
+          absoluteOnly: textarea.dataset.richEditorAbsoluteLinks === "true",
         },
       }),
     );

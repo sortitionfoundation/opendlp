@@ -3,7 +3,7 @@ ABOUTME: Server-rendered controls for the visual HTML editor: the Visual/HTML sw
 ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaScript the plain textarea shows
 #}
 {% from "backoffice/components/icons.html" import icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_text_quote, icon_separator_horizontal, icon_table, icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_list, icon_list_ordered, icon_link, icon_image, icon_scaling, icon_undo_2, icon_redo_2 %}
-{% macro rich_editor_controls(for_id, label, images=false, editable=true, content_style="") %}
+{% macro rich_editor_controls(for_id, label, images=false, tables=false, editable=true, content_style="", variable_example="") %}
     {#
     Controls for a textarea enhanced with the visual editor. Rendered by the textarea macro
     when rich_editor=true; every string is here so it is translated with the rest of the page.
@@ -12,9 +12,11 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         for_id: id of the textarea the editor is mounted over
         label: accessible name for the editing area
         images: whether images can be inserted (drop, paste, the Image button)
+        tables: whether the toolbar offers the Table menu
         editable: false renders no toolbar - the view outside edit mode
         content_style: "govuk" previews the GOV.UK look in the editing area; radios with
             data-rich-editor-style-for="{for_id}" switch it live
+        variable_example: a variable this box offers, named in the hint
     #}
     <div class="rich-editor"
          data-rich-editor-for="{{ for_id }}"
@@ -37,10 +39,10 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         </div>
         {% if editable %}
             <p class="rich-editor__hint text-body-sm">
-                {{ _("The visual editor highlights variables like {{ assembly_title }} in text. To add or change a variable anywhere else, such as in a link address, edit the HTML.") }}
+                {{ _("The visual editor highlights variables like %(example)s in text. To add or change a variable anywhere else, such as in a link address, edit the HTML.", example=variable_example) }}
                 {{ _("Press Alt+F10 to move from the text to the toolbar.") }}
             </p>
-            {{ rich_editor_toolbar(for_id, images=images) }}
+            {{ rich_editor_toolbar(for_id, images=images, tables=tables) }}
         {% endif %}
         <p class="rich-editor__notice text-body-sm"
            data-rich-editor-notice
@@ -65,7 +67,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         <span class="rich-editor__label">{{ label }}</span>
     </button>
 {% endmacro %}
-{% macro rich_editor_toolbar(for_id, images=false) %}
+{% macro rich_editor_toolbar(for_id, images=false, tables=false) %}
     {#
     The formatting toolbar, following the WAI-ARIA toolbar pattern: one Tab stop, arrow keys
     (and Home/End) move between buttons, toggles carry aria-pressed. Unavailable commands use
@@ -98,38 +100,40 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
             {{ rich_editor_tool("imageSize", _("Image size"), icon_scaling(), extra_attrs='aria-haspopup="dialog" aria-disabled="true"') }}
         {% endif %}
         {{ rich_editor_tool("horizontalRule", _("Horizontal line"), icon_separator_horizontal()) }}
-        <div class="rich-editor__menu-anchor">
-            {{ rich_editor_tool("table", _("Table"), icon_table(), extra_attrs='aria-haspopup="menu" aria-expanded="false" aria-controls="' ~ for_id ~ '-table-menu"') }}
+        {% if tables %}
+            <div class="rich-editor__menu-anchor">
+                {{ rich_editor_tool("table", _("Table"), icon_table(), extra_attrs='aria-haspopup="menu" aria-expanded="false" aria-controls="' ~ for_id ~ '-table-menu"') }}
             {#
             The WAI-ARIA menu button pattern: the arrow keys move between items, Escape closes
             the menu and returns to the Table button. Items that do not apply where the cursor
             is are aria-disabled.
             #}
-            <div class="rich-editor__menu"
-                 id="{{ for_id }}-table-menu"
-                 role="menu"
-                 aria-label="{{ _('Table') }}"
-                 hidden>
-                <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="insertTable">
-                    {{ _("Insert table") }}
-                </button>
-                <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="addRowAfter">
-                    {{ _("Add row below") }}
-                </button>
-                <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="addColumnAfter">
-                    {{ _("Add column to the right") }}
-                </button>
-                <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="deleteRow">
-                    {{ _("Delete row") }}
-                </button>
-                <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="deleteColumn">
-                    {{ _("Delete column") }}
-                </button>
-                <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="deleteTable">
-                    {{ _("Delete table") }}
-                </button>
+                <div class="rich-editor__menu"
+                     id="{{ for_id }}-table-menu"
+                     role="menu"
+                     aria-label="{{ _('Table') }}"
+                     hidden>
+                    <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="insertTable">
+                        {{ _("Insert table") }}
+                    </button>
+                    <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="addRowAfter">
+                        {{ _("Add row below") }}
+                    </button>
+                    <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="addColumnAfter">
+                        {{ _("Add column to the right") }}
+                    </button>
+                    <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="deleteRow">
+                        {{ _("Delete row") }}
+                    </button>
+                    <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="deleteColumn">
+                        {{ _("Delete column") }}
+                    </button>
+                    <button type="button" class="rich-editor__menu-item" role="menuitem" data-command="deleteTable">
+                        {{ _("Delete table") }}
+                    </button>
+                </div>
             </div>
-        </div>
+        {% endif %}
         <span class="rich-editor__separator" aria-hidden="true"></span>
         {{ rich_editor_tool("undo", _("Undo"), icon_undo_2(), extra_attrs='aria-disabled="true"') }}
         {{ rich_editor_tool("redo", _("Redo"), icon_redo_2(), extra_attrs='aria-disabled="true"') }}

@@ -85,6 +85,41 @@ describe("createSchemaExtensions", () => {
     ).toBeUndefined();
   });
 
+  it("can leave tables out", () => {
+    const schemaWithoutTables = getSchema(
+      createSchemaExtensions({ tables: false }),
+    );
+    for (const name of ["table", "tableRow", "tableHeader", "tableCell"]) {
+      expect(schemaWithoutTables.nodes[name]).toBeUndefined();
+    }
+    expect(schemaWithoutTables.nodes.blockquote).toBeDefined();
+  });
+
+  it("keeps a styled span as a mark, with its style, class and dir", () => {
+    const text = docFrom(
+      '<p><span style="color: red;" class="x" dir="ltr">a</span></p>',
+    ).firstChild.firstChild;
+    expect(text.marks.map((mark) => mark.type.name)).toEqual(["textStyle"]);
+    expect(text.marks[0].attrs).toMatchObject({
+      style: "color: red;",
+      class: "x",
+      dir: "ltr",
+    });
+  });
+
+  it("gives text typed at the end of a styled span the span's style", () => {
+    const editor = new Editor({
+      element: document.createElement("div"),
+      extensions,
+      content: '<p><span style="color: red;">a</span></p>',
+      injectCSS: false,
+    });
+    editor.commands.setTextSelection(2);
+    editor.view.dispatch(editor.state.tr.insertText("b"));
+    expect(editor.getHTML()).toBe('<p><span style="color: red;">ab</span></p>');
+    editor.destroy();
+  });
+
   it("keeps class, style and dir on blocks", () => {
     const paragraph = docFrom(
       '<p class="lead" style="color: red;" dir="ltr">a</p>',

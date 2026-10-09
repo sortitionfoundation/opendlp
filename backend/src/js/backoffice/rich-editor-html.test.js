@@ -1,6 +1,6 @@
 // ABOUTME: Tests for the visual editor's round-trip check, HTML normalisation and HTML layout.
-// ABOUTME: Uses the starter intros and the real intros in tests/fixtures/registration_intros/.
-import { readFileSync } from "node:fs";
+// ABOUTME: Uses the starter intros, and the real intros and auto-replies in tests/fixtures/.
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -25,13 +25,22 @@ const GOVUK_STARTER_INTRO = [
   "</div>",
 ].join("\n");
 
-const INTRO_FIXTURE_DIR = resolve(
+const FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../tests/fixtures/registration_intros",
+  "../../../tests/fixtures",
+);
+const INTRO_FIXTURE_DIR = resolve(FIXTURE_DIR, "registration_intros");
+const AUTO_REPLY_FIXTURE_DIR = resolve(
+  FIXTURE_DIR,
+  "registration_auto_replies",
 );
 
 function fixture(name) {
   return readFileSync(resolve(INTRO_FIXTURE_DIR, `${name}.html`), "utf8");
+}
+
+function autoReplyFixture(name) {
+  return readFileSync(resolve(AUTO_REPLY_FIXTURE_DIR, `${name}.html`), "utf8");
 }
 
 function contentOf(html) {
@@ -129,12 +138,6 @@ describe("roundTripsCleanly", () => {
   });
 
   it("refuses elements the visual editor cannot hold", () => {
-    expect(
-      roundTripsCleanly(
-        '<p><span style="color: red;">a</span></p>',
-        extensions,
-      ),
-    ).toBe(false);
     expect(roundTripsCleanly("<h4>a</h4>", extensions)).toBe(false);
     expect(roundTripsCleanly("<!-- note --><p>a</p>", extensions)).toBe(false);
   });
@@ -215,6 +218,192 @@ describe("roundTripsCleanly", () => {
         extensions,
       ),
     ).toBe('<p>a<img src="/i.png" alt="logo" width="10">b</p>');
+  });
+});
+
+describe("styled spans (A8 in auto-reply-plan.md)", () => {
+  it("keeps a span with a style, a class and a direction", () => {
+    const html =
+      '<p>a <span style="color: red;" class="x" dir="ltr">b</span> c</p>';
+    expect(roundTripsCleanly(html, extensions)).toBe(true);
+    const template = document.createElement("template");
+    template.innerHTML = roundTrip(html, extensions);
+    const span = template.content.querySelector("span");
+    expect(span.getAttribute("style")).toBe("color: red;");
+    expect(span.getAttribute("class")).toBe("x");
+    expect(span.getAttribute("dir")).toBe("ltr");
+  });
+
+  it("still drops a bare span", () => {
+    expect(roundTrip("<p><span>a</span></p>", extensions)).toBe("<p>a</p>");
+    expect(roundTripsCleanly("<p><span>a</span></p>", extensions)).toBe(true);
+  });
+
+  it("keeps a span round bold text in that order", () => {
+    const html = '<p><span style="color: red;"><strong>a</strong></span></p>';
+    expect(roundTrip(html, extensions)).toBe(html);
+  });
+
+  it("accepts bold round a span when moving the span outside looks the same", () => {
+    expect(
+      roundTripsCleanly(
+        '<p><strong><span style="color: red;">a</span></strong></p>',
+        extensions,
+      ),
+    ).toBe(true);
+  });
+
+  it("accepts the un-bolding span inside <strong>, which the editor writes without the <strong>", () => {
+    const html =
+      '<p><strong><span style="font-weight: 400;">a</span></strong></p>';
+    expect(roundTrip(html, extensions)).toBe(
+      '<p><span style="font-weight: 400;">a</span></p>',
+    );
+    expect(roundTripsCleanly(html, extensions)).toBe(true);
+  });
+
+  it("refuses a span that the editor would move inside bold text it changes", () => {
+    // font-weight: normal un-bolds the text, but the editor keeps the bold and
+    // puts it inside the span, where it wins.
+    expect(
+      roundTripsCleanly(
+        '<p><strong><span style="font-weight: normal;">a</span></strong></p>',
+        extensions,
+      ),
+    ).toBe(false);
+  });
+
+  it("refuses a coloured span round a link, which the editor would put inside the link", () => {
+    expect(
+      roundTripsCleanly(
+        '<p><span style="color: red;"><a href="/x">a</a></span></p>',
+        extensions,
+      ),
+    ).toBe(false);
+    expect(
+      roundTripsCleanly(
+        '<p><a href="/x"><span style="color: red;">a</span></a></p>',
+        extensions,
+      ),
+    ).toBe(true);
+  });
+
+  it("refuses a span nested in a span, whose styles the editor merges", () => {
+    expect(
+      roundTripsCleanly(
+        '<p><span style="color: red;">a<span style="font-size: 2em;">b</span></span></p>',
+        extensions,
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("normaliseHtml with styled spans", () => {
+  it("lets a span's font weight inside <strong> win over the <strong>", () => {
+    expect(
+      normaliseHtml(
+        '<p><strong><span style="font-weight: 400;">a</span></strong></p>',
+      ),
+    ).toBe('<p><span style="font-weight: 400;">a</span></p>');
+  });
+
+  it("keeps the weight of a bold span inside <strong>", () => {
+    expect(
+      normaliseHtml(
+        '<p><strong><span style="font-weight: 700;">a</span></strong></p>',
+      ),
+    ).toBe('<p><span style="font-weight: 700;">a</span></p>');
+  });
+
+  it("lets <strong> inside a span win over the span's font weight", () => {
+    expect(
+      normaliseHtml(
+        '<p><span style="color: red; font-weight: 400;"><strong>a</strong></span></p>',
+      ),
+    ).toBe(
+      normaliseHtml(
+        '<p><span style="color: red;"><strong>a</strong></span></p>',
+      ),
+    );
+  });
+
+  it("lets <em> and a link inside a span win over its font style and colour", () => {
+    expect(
+      normaliseHtml(
+        '<p><span style="font-style: normal; color: red;"><em><a href="/x">a</a></em></span></p>',
+      ),
+    ).toBe(
+      normaliseHtml('<p><span style=""><em><a href="/x">a</a></em></span></p>'),
+    );
+  });
+
+  it("lets a span inside <em> win over the <em> for font style", () => {
+    expect(
+      normaliseHtml(
+        '<p><em><span style="font-style: normal;">a</span></em></p>',
+      ),
+    ).toBe('<p><span style="font-style: normal;">a</span></p>');
+  });
+
+  it("ignores which side of a span formatting it does not compete with sits", () => {
+    expect(
+      normaliseHtml('<p><u><span style="color: red;">a</span></u></p>'),
+    ).toBe(normaliseHtml('<p><span style="color: red;"><u>a</u></span></p>'));
+  });
+});
+
+describe("an editor without tables", () => {
+  const withoutTables = createSchemaExtensions({ tables: false });
+
+  it("refuses a table, which it would flatten into paragraphs", () => {
+    expect(
+      roundTripsCleanly("<table><tr><td>a</td></tr></table>", withoutTables),
+    ).toBe(false);
+  });
+
+  it("accepts everything else", () => {
+    expect(roundTripsCleanly(GOVUK_STARTER_INTRO, withoutTables)).toBe(true);
+    expect(
+      roundTripsCleanly(
+        "<ul><li>a</li></ul><blockquote>b</blockquote><hr>",
+        withoutTables,
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("the real auto-replies", () => {
+  const emailExtensions = createSchemaExtensions({
+    images: false,
+    tables: false,
+  });
+  const names = [
+    "default_auto_reply",
+    "google_docs_list_auto_reply",
+    "unbolded_span_auto_reply",
+    "plain_list_auto_reply",
+    "coloured_text_auto_reply",
+    "placeholder_template_auto_reply",
+  ];
+
+  it("covers every fixture file", () => {
+    const files = readdirSync(AUTO_REPLY_FIXTURE_DIR)
+      .filter((file) => file.endsWith(".html"))
+      .map((file) => file.replace(/\.html$/, ""));
+    expect(files.sort()).toEqual([...names].sort());
+  });
+
+  it.each(names)("%s round-trips cleanly in the email editor", (name) => {
+    expect(roundTripsCleanly(autoReplyFixture(name), emailExtensions)).toBe(
+      true,
+    );
+  });
+
+  it.each(names)("%s keeps its text and link addresses", (name) => {
+    const html = autoReplyFixture(name);
+    expect(contentOf(roundTrip(html, emailExtensions))).toEqual(
+      contentOf(html),
+    );
   });
 });
 

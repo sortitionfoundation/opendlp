@@ -70,6 +70,14 @@ Feature: Backoffice registration visual intro editor
     Then the registration preview should show the image "Partner A"
     And the registration preview should show the image "Partner B"
 
+  Scenario: A styled span pasted from Google Docs survives an edit elsewhere
+    Given there is an assembly called "Visual Span Assembly" with the intro "<p>First paragraph</p><p><span style='color: red;'>Red words</span></p>"
+    When I visit the registration intro editor for "Visual Span Assembly"
+    And I type "Hello " at the start of the visual intro editor
+    And I save the registration form
+    Then the intro HTML view should contain "<p>Hello First paragraph</p>"
+    And the intro HTML view should contain "<span style="color: red;">Red words</span>"
+
   Scenario: Template variables are highlighted in the visual editor
     Given there is an assembly called "Visual Variable Assembly" with a registration page
     When I visit the registration intro editor for "Visual Variable Assembly"

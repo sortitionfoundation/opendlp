@@ -3,8 +3,10 @@
 The intro is the HTML shown above a registration page's form. Authors edit it
 in a **visual editor**, with a switch to the **HTML** view. This page says what
 the visual editor keeps, what makes it fall back to HTML, what an edit in it
-changes, and how the **intro style** works. It is for developers, and for
-anyone supporting an author who asks why their intro "opens as HTML".
+changes, and how the **intro style** works. The auto-reply email's body uses
+the same editor, with less in it; see [The auto-reply email](#the-auto-reply-email).
+It is for developers, and for anyone supporting an author who asks why their
+intro "opens as HTML".
 
 The design and its decisions are in
 [docs/agent/767-registration-intro/tiptap-intro-editor-plan.md](agent/767-registration-intro/tiptap-intro-editor-plan.md).
@@ -33,6 +35,10 @@ to HTML can always happen.
   `s`/`del`/`strike`, `ul`/`ol`/`li`, `blockquote`, `hr`, `a`, `img`, `br`,
   `table` with `tr`, `td` and `th`, and `div` (so wrappers such as the GOV.UK
   grid row survive, although the toolbar cannot make one).
+- **Styled spans:** a `<span>` with a `style`, such as the
+  `<span style="font-weight: 400;">` that pasting from Google Docs wraps round
+  most of the text. The toolbar cannot make one, and cannot show or remove
+  one either: do that in the HTML view.
 - **Attributes:** `class`, `style` and `dir` on all of those; `href`, `target`
   and `rel` on links; `src`, `alt`, `title`, `width` and `height` on images;
   `border` and `role` on tables; `colspan` and `rowspan` on cells.
@@ -54,7 +60,11 @@ causes:
 - **text outside any paragraph**, including a bare Jinja tag such as
   `{% if … %}` between elements. Only `{{ variables }}` are supported in the
   intro;
-- a `<span>` that carries attributes, such as `style`;
+- a `<span>` with a `class` or `dir` but no `style`, or a styled span
+  inside another styled span (the editor would merge them into one);
+- a styled span whose place the editor would change in a way that shows,
+  such as `<span style="color: red;"><a>…</a></span>`: the editor puts
+  the span inside the link, which turns the link red;
 - an image embedded as a `data:` URL.
 
 ## What an edit in Visual mode changes
@@ -72,7 +82,13 @@ the saved HTML is rewritten in the editor's own consistent form:
 - attribute-less `<span>`s (common in text pasted from Google Docs) and empty
   `<strong></strong>` disappear;
 - formatting may nest differently: `<strong><a>…</a></strong>` can come back as
-  `<a><strong>…</strong></a>`;
+  `<a><strong>…</strong></a>`. A styled span always goes inside a link and
+  outside bold, italic, underline and strikethrough. The check only accepts
+  that where it looks the same: where the span and the tag round or in it
+  set the same thing (a weight, `font-style`, or a link's colour), whichever
+  is inner wins;
+- `<strong><span style="font-weight: 400;">…</span></strong>` loses its
+  `<strong>`, which the span had already cancelled;
 - **a list item's, table cell's or quote's text is wrapped in a paragraph**:
   `<li>text</li>` becomes `<li><p>text</p></li>`, and the same for `<td>`,
   `<th>` and `<blockquote>`. This is the one change that can be seen: the
@@ -178,3 +194,38 @@ The visual editor previews the chosen style as you switch between the options.
 
 The form below the intro is never given default classes; it carries its own.
 The code is `src/opendlp/domain/html_default_classes.py`.
+
+## The auto-reply email
+
+The auto-reply email's body uses the same visual editor, offering only what
+works in an email. Everything above applies, except:
+
+- **No images.** An email that shows an image needs an absolute URL that
+  stays served for as long as the email might be opened, and many clients
+  block remote images anyway. Not supported yet.
+- **No tables.** Unstyled tables look poor in most email clients.
+- **Links must be full addresses.** A link like `/register/…` works on the
+  registration page but not from an inbox, so the link dialog only accepts
+  an address starting with `https://`, `http://`, `mailto:` or `tel:`, or
+  one starting with a `{{ variable }}` that fills in such an address. Links
+  already in the HTML are left alone, and the HTML view can still write
+  anything.
+- **No content style.** The email is plain HTML, and no GOV.UK classes are
+  added when it is sent; email clients don't have the GOV.UK stylesheet.
+
+A body containing a table or an image opens in HTML mode, with the usual
+notice, and loses nothing.
+
+The email's variables are spelt with dots, like `{{ assembly.title }}` and
+`{{ respondent.first_name_or_friend }}`, and are highlighted the same way.
+An email copied from the team's previous platform uses that platform's
+names, such as `{{ recipient.first_name_or_friend }}` and
+`{{ site.full_url }}`. Rename them: a variable OpenDLP doesn't know renders
+as an empty string, and nothing warns while editing.
+
+Every email is sent with a plain-text version made from the HTML
+(`src/opendlp/domain/html_to_text.py`), which reads lists, quotes and
+horizontal lines as plain text would.
+
+The design and its decisions are in
+[docs/agent/767-registration-intro/auto-reply-plan.md](agent/767-registration-intro/auto-reply-plan.md).

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-09 11:26+0100\n"
+"POT-Creation-Date: 2026-10-09 14:06+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -227,7 +227,7 @@ msgstr "Kötelező"
 
 #: src/opendlp/domain/respondent_field_schema.py:152
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:204
-#: templates/backoffice/components/rich_editor.html:81
+#: templates/backoffice/components/rich_editor.html:83
 msgid "Text"
 msgstr "Szöveg"
 
@@ -648,7 +648,7 @@ msgstr "A válaszértékeknek különbözniük kell: \"%(value)s\" többször sz
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
-#: templates/backoffice/components/input.html:368
+#: templates/backoffice/components/input.html:372
 #: templates/backoffice/components/table.html:252
 msgid "Yes"
 msgstr "Igen"
@@ -660,7 +660,7 @@ msgstr "Igen"
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
-#: templates/backoffice/components/input.html:368
+#: templates/backoffice/components/input.html:372
 #: templates/backoffice/components/table.html:254
 msgid "No"
 msgstr "Nem"
@@ -2191,7 +2191,7 @@ msgstr "A feltöltött fájl beolvasása sikertelen"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1132
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1169
-#: templates/backoffice/registration/_page_data.html:31
+#: templates/backoffice/registration/_page_data.html:32
 msgid "Alt text is required for accessibility"
 msgstr "Az alternatív szöveg megadása kötelező az akadálymentesség miatt"
 
@@ -2229,7 +2229,7 @@ msgid "An error occurred while uploading the document"
 msgstr "Hiba történt a dokumentum feltöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1272
-#: templates/backoffice/registration/_page_data.html:41
+#: templates/backoffice/registration/_page_data.html:42
 msgid "Label is required"
 msgstr "A címke megadása kötelező"
 
@@ -5679,8 +5679,8 @@ msgid "Chart"
 msgstr "Diagram"
 
 #: templates/backoffice/assembly_dashboard.html:59
-#: templates/backoffice/components/rich_editor.html:102
-#: templates/backoffice/components/rich_editor.html:111
+#: templates/backoffice/components/rich_editor.html:105
+#: templates/backoffice/components/rich_editor.html:114
 msgid "Table"
 msgstr "Táblázat"
 
@@ -7285,11 +7285,11 @@ msgstr "Munkalap neve"
 msgid "Share the spreadsheet with %(email)s so it can be written to."
 msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
-#: templates/backoffice/components/input.html:596
+#: templates/backoffice/components/input.html:600
 msgid "On"
 msgstr "Be"
 
-#: templates/backoffice/components/input.html:596
+#: templates/backoffice/components/input.html:600
 msgid "Off"
 msgstr "Ki"
 
@@ -7551,136 +7551,137 @@ msgstr "például: telefonon megerősítette a résztvevő"
 msgid "Confirm"
 msgstr "Megerősítés"
 
-#: templates/backoffice/components/rich_editor.html:23
+#: templates/backoffice/components/rich_editor.html:25
 msgid ""
 "This HTML uses things the visual editor cannot show, so it opens as HTML."
 " Common causes are comments, headings smaller than level 3, text outside "
 "a paragraph, and tables with set column widths."
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:24
+#: templates/backoffice/components/rich_editor.html:26
 msgid ""
 "This HTML uses things the visual editor cannot show, so it stays in HTML."
 " Common causes are comments, headings smaller than level 3, text outside "
 "a paragraph, and tables with set column widths."
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:27
+#: templates/backoffice/components/rich_editor.html:29
 msgid "Editor view"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:31
+#: templates/backoffice/components/rich_editor.html:33
 msgid "Visual"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:35
+#: templates/backoffice/components/rich_editor.html:37
 msgid "HTML"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:40
+#: templates/backoffice/components/rich_editor.html:42
+#, python-format
 msgid ""
-"The visual editor highlights variables like {{ assembly_title }} in text."
-" To add or change a variable anywhere else, such as in a link address, "
-"edit the HTML."
+"The visual editor highlights variables like %(example)s in text. To add "
+"or change a variable anywhere else, such as in a link address, edit the "
+"HTML."
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:41
+#: templates/backoffice/components/rich_editor.html:43
 msgid "Press Alt+F10 to move from the text to the toolbar."
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:78
+#: templates/backoffice/components/rich_editor.html:80
 msgid "Formatting"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:82
+#: templates/backoffice/components/rich_editor.html:84
 msgid "Heading 1"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:83
+#: templates/backoffice/components/rich_editor.html:85
 msgid "Heading 2"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:84
+#: templates/backoffice/components/rich_editor.html:86
 msgid "Heading 3"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:86
+#: templates/backoffice/components/rich_editor.html:88
 msgid "Bold"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:87
+#: templates/backoffice/components/rich_editor.html:89
 msgid "Italic"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:88
+#: templates/backoffice/components/rich_editor.html:90
 msgid "Underline"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:89
+#: templates/backoffice/components/rich_editor.html:91
 msgid "Strikethrough"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:91
+#: templates/backoffice/components/rich_editor.html:93
 msgid "Bulleted list"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:92
+#: templates/backoffice/components/rich_editor.html:94
 msgid "Numbered list"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:93
+#: templates/backoffice/components/rich_editor.html:95
 msgid "Quote"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:95
+#: templates/backoffice/components/rich_editor.html:97
 #: templates/backoffice/registration/_modals.html:266
 msgid "Link"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:97
+#: templates/backoffice/components/rich_editor.html:99
 msgid "Image"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:98
+#: templates/backoffice/components/rich_editor.html:100
 #: templates/backoffice/registration/_modals.html:311
 msgid "Image size"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:100
+#: templates/backoffice/components/rich_editor.html:102
 msgid "Horizontal line"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:114
+#: templates/backoffice/components/rich_editor.html:117
 msgid "Insert table"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:117
+#: templates/backoffice/components/rich_editor.html:120
 msgid "Add row below"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:120
+#: templates/backoffice/components/rich_editor.html:123
 msgid "Add column to the right"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:123
+#: templates/backoffice/components/rich_editor.html:126
 msgid "Delete row"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:126
+#: templates/backoffice/components/rich_editor.html:129
 msgid "Delete column"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:129
+#: templates/backoffice/components/rich_editor.html:132
 msgid "Delete table"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:134
+#: templates/backoffice/components/rich_editor.html:138
 #: templates/backoffice/targets/bulk_edit_form.html:155
 #: templates/backoffice/targets/bulk_edit_form.html:201
 msgid "Undo"
 msgstr "Visszavonás"
 
-#: templates/backoffice/components/rich_editor.html:135
+#: templates/backoffice/components/rich_editor.html:139
 msgid "Redo"
 msgstr ""
 
@@ -7787,7 +7788,7 @@ msgid "has errors"
 msgstr "hibás"
 
 #: templates/backoffice/components/url_display.html:24
-#: templates/backoffice/registration/_page_data.html:26
+#: templates/backoffice/registration/_page_data.html:27
 msgid "Copied to clipboard"
 msgstr "Vágólapra másolva"
 
@@ -8027,7 +8028,7 @@ msgstr "Dokumentum feltöltése"
 
 #: templates/backoffice/registration/_modals.html:177
 #: templates/backoffice/registration/_step_form.html:125
-#: templates/backoffice/registration/_step_intro.html:157
+#: templates/backoffice/registration/_step_intro.html:159
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr "Csak PDF fájlok. Maximális fájlméret: %(max)s MB dokumentumonként."
@@ -8141,95 +8142,101 @@ msgid "Enter a link address"
 msgstr ""
 
 #: templates/backoffice/registration/_page_data.html:25
+msgid ""
+"Enter a full address, such as https://example.org, so the link works in "
+"an email"
+msgstr ""
+
+#: templates/backoffice/registration/_page_data.html:26
 #, python-format
 msgid "Enter a width in whole pixels, from %(min)s to %(max)s"
 msgstr ""
 
-#: templates/backoffice/registration/_page_data.html:27
+#: templates/backoffice/registration/_page_data.html:28
 msgid "Failed to copy to clipboard"
 msgstr "A vágólapra másolás sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:28
+#: templates/backoffice/registration/_page_data.html:29
 msgid "Snippet copied to clipboard"
 msgstr "A kódrészlet a vágólapra másolva"
 
-#: templates/backoffice/registration/_page_data.html:29
+#: templates/backoffice/registration/_page_data.html:30
 msgid "No public URL available yet"
 msgstr "Még nincs elérhető nyilvános URL"
 
-#: templates/backoffice/registration/_page_data.html:30
+#: templates/backoffice/registration/_page_data.html:31
 msgid "Upload failed"
 msgstr "A feltöltés sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:32
+#: templates/backoffice/registration/_page_data.html:33
 msgid "Image uploaded"
 msgstr "A kép feltöltve"
 
-#: templates/backoffice/registration/_page_data.html:33
+#: templates/backoffice/registration/_page_data.html:34
 msgid "Network error while uploading the image"
 msgstr "Hálózati hiba a kép feltöltése közben"
 
-#: templates/backoffice/registration/_page_data.html:34
+#: templates/backoffice/registration/_page_data.html:35
 msgid "Delete this image?"
 msgstr "Törlöd ezt a képet?"
 
-#: templates/backoffice/registration/_page_data.html:35
+#: templates/backoffice/registration/_page_data.html:36
 msgid "Failed to delete image"
 msgstr "A kép törlése sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:36
+#: templates/backoffice/registration/_page_data.html:37
 msgid "Image deleted"
 msgstr "A kép törölve"
 
-#: templates/backoffice/registration/_page_data.html:37
+#: templates/backoffice/registration/_page_data.html:38
 msgid "Network error while deleting the image"
 msgstr "Hálózati hiba a kép törlése közben"
 
-#: templates/backoffice/registration/_page_data.html:38
+#: templates/backoffice/registration/_page_data.html:39
 msgid "Failed to update image"
 msgstr "A kép frissítése sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:39
+#: templates/backoffice/registration/_page_data.html:40
 msgid "Image updated"
 msgstr "A kép frissítve"
 
-#: templates/backoffice/registration/_page_data.html:40
+#: templates/backoffice/registration/_page_data.html:41
 msgid "Network error while updating the image"
 msgstr "Hálózati hiba a kép frissítése közben"
 
-#: templates/backoffice/registration/_page_data.html:42
+#: templates/backoffice/registration/_page_data.html:43
 msgid "Document uploaded"
 msgstr "A dokumentum feltöltve"
 
-#: templates/backoffice/registration/_page_data.html:43
+#: templates/backoffice/registration/_page_data.html:44
 msgid "Network error while uploading the document"
 msgstr "Hálózati hiba a dokumentum feltöltése közben"
 
-#: templates/backoffice/registration/_page_data.html:44
+#: templates/backoffice/registration/_page_data.html:45
 msgid "Delete this document?"
 msgstr "Törlöd ezt a dokumentumot?"
 
-#: templates/backoffice/registration/_page_data.html:45
+#: templates/backoffice/registration/_page_data.html:46
 msgid "Failed to delete document"
 msgstr "A dokumentum törlése sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:46
+#: templates/backoffice/registration/_page_data.html:47
 msgid "Document deleted"
 msgstr "A dokumentum törölve"
 
-#: templates/backoffice/registration/_page_data.html:47
+#: templates/backoffice/registration/_page_data.html:48
 msgid "Network error while deleting the document"
 msgstr "Hálózati hiba a dokumentum törlése közben"
 
-#: templates/backoffice/registration/_page_data.html:48
+#: templates/backoffice/registration/_page_data.html:49
 msgid "Failed to update document"
 msgstr "A dokumentum frissítése sikertelen"
 
-#: templates/backoffice/registration/_page_data.html:49
+#: templates/backoffice/registration/_page_data.html:50
 msgid "Document updated"
 msgstr "A dokumentum frissítve"
 
-#: templates/backoffice/registration/_page_data.html:50
+#: templates/backoffice/registration/_page_data.html:51
 msgid "Network error while updating the document"
 msgstr "Hálózati hiba a dokumentum frissítése közben"
 
@@ -8260,8 +8267,8 @@ msgid "Set up auto-reply email"
 msgstr "Automatikus válasz e-mail beállítása"
 
 #: templates/backoffice/registration/_step_email.html:55
-#: templates/backoffice/registration/_step_email.html:231
-#: templates/backoffice/registration/_step_email.html:240
+#: templates/backoffice/registration/_step_email.html:237
+#: templates/backoffice/registration/_step_email.html:246
 #: templates/backoffice/registration/_step_form.html:148
 #: templates/backoffice/registration/_step_form.html:157
 #: templates/backoffice/registration/_step_preview.html:103
@@ -8269,12 +8276,12 @@ msgid "← Back"
 msgstr "← Vissza"
 
 #: templates/backoffice/registration/_step_email.html:56
-#: templates/backoffice/registration/_step_email.html:238
-#: templates/backoffice/registration/_step_email.html:241
+#: templates/backoffice/registration/_step_email.html:244
+#: templates/backoffice/registration/_step_email.html:247
 #: templates/backoffice/registration/_step_form.html:155
 #: templates/backoffice/registration/_step_form.html:158
-#: templates/backoffice/registration/_step_intro.html:181
 #: templates/backoffice/registration/_step_intro.html:183
+#: templates/backoffice/registration/_step_intro.html:185
 msgid "Next →"
 msgstr "Tovább →"
 
@@ -8294,23 +8301,24 @@ msgstr "E-mail tárgya"
 msgid "Jinja variables allowed, e.g. {{ assembly.title }}."
 msgstr "Jinja változók használhatók, például {{ assembly.title }}."
 
-#: templates/backoffice/registration/_step_email.html:114
-msgid "HTML body"
-msgstr "HTML törzs"
-
 #: templates/backoffice/registration/_step_email.html:116
-msgid ""
-"Jinja + HTML. A plain-text version is generated automatically for email "
-"clients that need it."
+#: templates/backoffice/registration/_step_email.html:122
+msgid "Email body"
 msgstr ""
-"Jinja + HTML. Az egyszerű szöveges változat automatikusan elkészül "
-"azoknak az e-mail kliensekhez, amelyeknek szükségük van rá."
 
-#: templates/backoffice/registration/_step_email.html:134
+#: templates/backoffice/registration/_step_email.html:118
+msgid ""
+"A plain-text version is generated automatically for email clients that "
+"need it."
+msgstr ""
+"Az egyszerű szöveges változat automatikusan elkészül azoknak az e-mail "
+"kliensekhez, amelyeknek szükségük van rá."
+
+#: templates/backoffice/registration/_step_email.html:140
 msgid "Available variables"
 msgstr "Elérhető változók"
 
-#: templates/backoffice/registration/_step_email.html:136
+#: templates/backoffice/registration/_step_email.html:142
 msgid ""
 "Click a variable to select it, then copy and paste into the subject or "
 "body. Missing values render as an empty string."
@@ -8318,71 +8326,71 @@ msgstr ""
 "Kattints egy változóra a kijelöléséhez, majd másold be a tárgyba vagy a "
 "törzsbe. A hiányzó értékek üres szövegként jelennek meg."
 
-#: templates/backoffice/registration/_step_email.html:139
+#: templates/backoffice/registration/_step_email.html:145
 msgid "Assembly title"
 msgstr "A közösségi gyűlés címe"
 
-#: templates/backoffice/registration/_step_email.html:140
+#: templates/backoffice/registration/_step_email.html:146
 msgid "Assembly question"
 msgstr "A közösségi gyűlés témája"
 
-#: templates/backoffice/registration/_step_email.html:141
+#: templates/backoffice/registration/_step_email.html:147
 msgid "First assembly date (ISO)"
 msgstr "Az első közösségi gyűlés időpontja (ISO)"
 
-#: templates/backoffice/registration/_step_email.html:142
+#: templates/backoffice/registration/_step_email.html:148
 msgid "Respondent first name"
 msgstr "A jelentkező keresztneve"
 
-#: templates/backoffice/registration/_step_email.html:143
+#: templates/backoffice/registration/_step_email.html:149
 msgid "First name, or 'Friend' as a fallback"
 msgstr "Keresztnév, vagy „Résztvevő” tartaléknak"
 
-#: templates/backoffice/registration/_step_email.html:144
+#: templates/backoffice/registration/_step_email.html:150
 msgid "Respondent full name"
 msgstr "A jelentkező teljes neve"
 
-#: templates/backoffice/registration/_step_email.html:145
+#: templates/backoffice/registration/_step_email.html:151
 msgid "Respondent email address"
 msgstr "A jelentkező e-mail címe"
 
-#: templates/backoffice/registration/_step_email.html:169
+#: templates/backoffice/registration/_step_email.html:175
 msgid "Variable copied to clipboard"
 msgstr "A változó a vágólapra másolva"
 
-#: templates/backoffice/registration/_step_email.html:174
+#: templates/backoffice/registration/_step_email.html:180
 #, python-format
 msgid "Copy %(label)s variable"
 msgstr "%(label)s változó másolása"
 
-#: templates/backoffice/registration/_step_email.html:197
+#: templates/backoffice/registration/_step_email.html:203
 msgid "Send a test email"
 msgstr ""
 
-#: templates/backoffice/registration/_step_email.html:199
+#: templates/backoffice/registration/_step_email.html:205
 msgid ""
 "Check how the auto-reply looks in a real inbox. The email is filled in "
 "with sample respondent data and this assembly's real details, then sent "
 "to the address below."
 msgstr ""
 
-#: templates/backoffice/registration/_step_email.html:205
+#: templates/backoffice/registration/_step_email.html:211
 msgid ""
 "This only tests the email to the address below. Registrants still won't "
 "receive the auto-reply until the problem above is fixed."
 msgstr ""
 
-#: templates/backoffice/registration/_step_email.html:216
+#: templates/backoffice/registration/_step_email.html:222
 msgid "Send to"
 msgstr ""
 
-#: templates/backoffice/registration/_step_email.html:221
+#: templates/backoffice/registration/_step_email.html:227
 msgid "Send test email"
 msgstr ""
 
-#: templates/backoffice/registration/_step_email.html:235
+#: templates/backoffice/registration/_step_email.html:241
 #: templates/backoffice/registration/_step_form.html:152
-#: templates/backoffice/registration/_step_intro.html:179
+#: templates/backoffice/registration/_step_intro.html:181
 msgid "Editing in progress — save or cancel to continue"
 msgstr "Szerkesztés folyamatban – a folytatáshoz ments vagy vess el"
 
@@ -8416,17 +8424,17 @@ msgstr ""
 "csrf_form_element }} a CSRF-védelemhez."
 
 #: templates/backoffice/registration/_step_form.html:110
-#: templates/backoffice/registration/_step_intro.html:141
+#: templates/backoffice/registration/_step_intro.html:143
 msgid "Assets"
 msgstr "Eszközök"
 
 #: templates/backoffice/registration/_step_form.html:113
-#: templates/backoffice/registration/_step_intro.html:144
+#: templates/backoffice/registration/_step_intro.html:146
 msgid "Images"
 msgstr "Képek"
 
 #: templates/backoffice/registration/_step_form.html:114
-#: templates/backoffice/registration/_step_intro.html:145
+#: templates/backoffice/registration/_step_intro.html:147
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
@@ -8434,17 +8442,17 @@ msgstr ""
 "képenként."
 
 #: templates/backoffice/registration/_step_form.html:115
-#: templates/backoffice/registration/_step_intro.html:146
+#: templates/backoffice/registration/_step_intro.html:148
 msgid "No images uploaded yet."
 msgstr "Még nincs feltöltött kép."
 
 #: templates/backoffice/registration/_step_form.html:124
-#: templates/backoffice/registration/_step_intro.html:156
+#: templates/backoffice/registration/_step_intro.html:158
 msgid "Documents"
 msgstr "Dokumentumok"
 
 #: templates/backoffice/registration/_step_form.html:126
-#: templates/backoffice/registration/_step_intro.html:158
+#: templates/backoffice/registration/_step_intro.html:160
 msgid "No documents uploaded yet."
 msgstr "Még nincs feltöltött dokumentum."
 
