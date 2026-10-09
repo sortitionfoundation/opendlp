@@ -413,6 +413,47 @@ author's own layout. "Opening an intro in Visual mode and saving without
 changing anything leaves the HTML exactly as it was" still holds, because
 nothing is written back until the author edits.
 
+### E16 — Resizing images: drag handles, a size dialog, and a max-width
+
+Images often arrive at the wrong size, and today the only fix is to add
+`width="250"` in HTML mode. Chewie chose two ways to resize in Visual mode
+(options A and C), plus a CSS fix that the public page needs anyway:
+
+- **A. Drag handles.** `@tiptap/extension-image` (already a dependency)
+  has a built-in `resize` option, off by default. We turn it on with corner
+  handles only, the aspect ratio locked, and a minimum width. Dragging writes
+  ordinary `width` and `height` attributes, in whole pixels, when the drag ends.
+  The handles are drawn with CSSOM (`element.style`), which our CSP allows.
+  They're `div`s marked `data-resize-handle`, so our CSS styles them.
+- **C. An "Image size" dialog.** Handles only work with a mouse or touch, and
+  WCAG 2.5.7 (Dragging Movements, AA) requires a single-pointer alternative.
+  Our component rules also require the keyboard. So an **Image size** toolbar
+  button opens a dialog with a width field in pixels. The button is only
+  enabled when an image is selected. Double-clicking an image opens the dialog
+  too. It follows the link dialog's pattern (E7): two `CustomEvent`s, and an
+  Alpine slice that never imports the editor.
+- **`max-width: 100%; height: auto`** on intro images, on the public page
+  and in the editor. Without it, a wide image already overflows on a phone,
+  and a fixed `height` from a resize would squash the image once the width
+  shrinks to fit. With it, the `width` and `height` attributes give the
+  browser the aspect ratio to reserve space before the image loads, so the
+  page doesn't jump.
+
+Why both `width` and `height`, rather than `width` alone: they are what the
+built-in resize writes, and keeping them avoids layout shift. The dialog
+writes both too, working out the height from the image's natural size, so
+both routes produce the same HTML. If the image hasn't loaded (a broken
+URL), the dialog writes `width` only.
+
+Why pixels and no presets: pixels are what authors write by hand now, and
+what the handles produce. Presets (option B) would make images consistent,
+but would also make 250 impossible without HTML mode.
+
+Round trip: the image node already has `width` and `height` attributes, so
+existing `width="250"` HTML still opens in Visual mode and comes back
+unchanged. A resize changes the attributes, and nothing else, as you'd
+expect from an edit.
+
 ## Implementation steps
 
 Ordered so each step leaves `just check` and `just test-nobdd` green.
@@ -928,6 +969,136 @@ The extra whitespace counts towards the 200 KB intro limit
 it's nowhere near the limit, but that's why it's indentation only and never
 blank lines.
 
+### 12. Resizing images (E16)
+
+**CSS first, since it fixes a live problem on its own** (its own commit):
+
+- `src/scss/application.scss`: `.govuk-main-wrapper img { max-width: 100%;
+  height: auto; }`. The public page (`base_public.html`) puts the rendered
+  intro and form straight into `main.govuk-main-wrapper`. The backoffice
+  preview iframe renders the same template, so it gets the rule too.
+  `base.html` also uses the wrapper, but its header logo sits outside
+  `main`. The one other image it reaches is the 2FA setup QR code
+  (`profile/2fa_setup.html`), so check that it keeps its size and shape.
+  Chewie and Claude considered wrapping the intro and form in
+  `<div class="reg-intro">` and similar for precise targeting. We deferred
+  it: the form can hold images too, so the rule would cover both anyway, and
+  the divs would change every live page's structure for no present need. Add
+  them when something only for intros needs them.
+- The editor surface (`static/backoffice/src/main.css`, beside the other
+  `.rich-editor__content` rules) gets the same rule for `img`, so the editor
+  matches the page.
+- e2e (Flask client) can't see CSS. A BDD check on the public page: an
+  image with `width="2000"` is no wider than its container at a phone-sized
+  viewport, and keeps its aspect ratio.
+
+**A. Drag handles** (`rich-editor-schema.js`):
+
+```js
+Image.configure({
+  inline: true,
+  allowBase64: false,
+  resize: {
+    enabled: true,
+    directions: ["top-left", "top-right", "bottom-left", "bottom-right"],
+    minWidth: 20,
+    alwaysPreserveAspectRatio: true,
+  },
+})
+```
+
+- `addNodeView` returns `null` when `typeof document === "undefined"`, so the
+  schema tests are unaffected. Under jsdom it builds the node view, so check
+  that `rich-editor.test.js` still passes, and that `getHTML()` is unchanged
+  (the node view affects the editing DOM only, not `renderHTML`).
+- The read-only view (E11, `editable: false`) must show no handles. Check
+  whether `ResizableNodeView` respects `editor.isEditable`. If it doesn't,
+  configure `resize` only when the editor is editable, by passing
+  `editable` into `createSchemaExtensions`.
+- CSS in `main.css`: `[data-resize-handle]` corners shown on hover and while
+  the image is selected (`.ProseMirror-selectednode`), with the
+  `nwse`/`nesw` resize cursors and the same focus colour as the toolbar.
+  `[data-resize-state="true"]` shows an outline while dragging.
+- The node view hides the image until it loads (it shows on `onerror`
+  too), so a broken image still appears.
+
+**C. The "Image size" dialog:**
+
+- `rich-editor-events.js`: `IMAGE_SIZE_REQUEST_EVENT`
+  (`"rich-editor-image-size-request"`, detail `{editorId, width}`) and
+  `IMAGE_SIZE_RESULT_EVENT` (`"rich-editor-image-size-result"`, detail
+  `{editorId, action, width}`), where action is `"set"`, `"reset"` or
+  `"cancel"`.
+- Toolbar (`rich_editor.html`, `rich-editor-toolbar.js`): an `imageSize`
+  button next to Image, shown only when images are allowed, with
+  `aria-haspopup="dialog"` and an icon in `icons.html`. Its `COMMANDS` entry
+  has `enabled: (editor) => editor.isActive("image")`, so it carries
+  `aria-disabled` like the table items. The action is supplied through
+  `wireToolbar`'s `actions`, like `link`.
+- `rich-editor.js`:
+  - `requestImageSize()` notes the selected image's position, and its
+    current width: the `width` attribute, or else the image's rendered
+    width. Then it dispatches the request.
+  - On `"set"` it selects that node and runs `updateAttributes("image",
+    {width, height})`. The height is `Math.round(width * naturalHeight /
+    naturalWidth)` from the editor's `<img>`, or `null` if the image hasn't
+    loaded.
+  - On `"reset"` it sets both to `null`.
+  - Every answer puts focus back in the editor, like the link dialog.
+  - A `dblclick` on an image in the editor (`handleDoubleClickOn` in
+    `editorProps`) selects it and opens the dialog.
+- `src/js/components/rich-editor-image-size-dialog.js`: an Alpine slice
+  modelled on `rich-editor-link-dialog.js`, composed into
+  `registration-page-controller.js`. Its state is `imageSizeDialogOpen`,
+  `imageSizeWidth` (a flat `x-model`), `imageSizeEditorId` and
+  `imageSizeError`. It focuses the width field on open.
+  - `applyImageSize()` accepts a whole number of pixels from 20 to 2000. An
+    image is never shown wider than its container anyway; the upper bound
+    only catches typos.
+  - It also has `resetImageSize()` and `cancelImageSize()`.
+- `_modals.html`: an "Image size" `controlled_modal` after the link modal.
+  - A labelled `type="number"` width field (`min`, `max`, `step="1"`) with
+    `inputmode="numeric"`. Its hint says the image keeps its shape and is
+    never shown wider than the page.
+  - `inline_error`.
+  - Footer buttons: **Original size** (reset), **Cancel** and **Apply**.
+    Enter in the field applies.
+- New strings mean regenerating the catalogues (the `translate-catalogues`
+  skill).
+
+**Tests:**
+
+- vitest, dialog slice: opens with the width handed over and focuses the
+  field; rejects empty, non-numeric, fractional and out-of-range widths
+  with the error; answers set, reset and cancel with the right detail.
+- vitest, editor (`rich-editor.test.js`):
+  - A "set" result writes `width` (and `height` when the natural size is
+    known) to the image.
+  - "reset" removes both.
+  - "cancel" changes nothing.
+  - A result for another `editorId` is ignored.
+  - The button is disabled unless an image is selected.
+  - An intro with `width="250"` still round-trips cleanly.
+- vitest, toolbar: `imageSize` is aria-disabled with the cursor in text,
+  and enabled with an image selected.
+- BDD (`backoffice-registration-visual-editor.feature`):
+  - **Keyboard:** insert an image, select it with the arrow keys, open
+    Image size from the toolbar, set 120, and check the intro holds
+    `width="120"` with a height in proportion. Then reopen the dialog and
+    choose Original size, and check both attributes are gone.
+  - **Drag:** drag the bottom-right handle inwards with the mouse, and check
+    the intro holds a smaller `width` with the aspect ratio kept.
+  - **Double-click:** double-clicking an image opens the dialog.
+  - **Read-only:** the read-only view shows no resize handles.
+  - **Public page:** the narrow-viewport check above.
+- Accessibility: the dialog follows the existing modal pattern (focus trap,
+  Escape, focus back to the editor). The disabled button is announced as
+  unavailable, not hidden.
+
+**Docs:** `docs/registration-intro-editor.md` gets a short "Resizing
+images" section covering the handles, the dialog, Original size, what is
+written to the HTML, and that images never overflow the page.
+
 ## Tests summary
 
 | Tier               | What                                                                                                                                                |
@@ -937,7 +1108,7 @@ blank lines.
 | Integration        | ORM round-trip of `content_style`; migration upgrade/downgrade.                                                                                     |
 | e2e (Flask client) | Saving the intro and style; public page output for each style; existing pages unchanged; old and new image routes; slug change keeps images.        |
 | JS unit (vitest)   | `code-editor`, round-trip check (incl. real intros), `formatHtml`, variable ranges, mode switch, sync/dirty, toolbar, a11y, image event bridge.     |
-| BDD (Playwright)   | Visual editing, refused switch, keyboard toolbar, highlight, image drop, read-only view, style radio.                                               |
+| BDD (Playwright)   | Visual editing, refused switch, keyboard toolbar, highlight, image drop/paste/resize, read-only view, style radio, images on a narrow page.         |
 
 Run `just build-all` before BDD (a stale bundle looks like a regression), and
 run `just test-nobdd` and `just test-bdd-headless` one after the other, never
