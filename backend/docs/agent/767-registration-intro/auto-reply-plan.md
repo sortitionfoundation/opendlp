@@ -6,7 +6,7 @@ the intro editor worked, the auto-reply email gets the same editor. Built on
 everything in [tiptap-intro-editor-plan.md](tiptap-intro-editor-plan.md); this
 plan only covers what is different for the email.
 
-**Status: in progress.** Steps 1 to 4 are done (marked ✅).
+**Status: in progress.** Steps 1 to 5 are done (marked ✅).
 
 ## Goal
 
@@ -278,7 +278,7 @@ unaffected. Nothing turns the flag on until step 5.
 As built: the hint's msgid now has `%(example)s` in place of the variable,
 so its Hungarian translation goes with the step 6 regeneration.
 
-### 5. Turn it on in the email step
+### ✅ 5. Turn it on in the email step
 
 - `_step_email.html`: `rich_editor=true`, `rich_editor_label=_("Email
   body")`, `rich_editor_editable=edit_mode`,
@@ -291,6 +291,24 @@ so its Hungarian translation goes with the step 6 regeneration.
 - Confirm the edit guard (`markEditDirty()` / `allowLeave()`) still fires:
   the editor writes to the textarea and dispatches `input`, as on the intro.
 - Load the `ui-components` skill before touching the templates.
+
+As built:
+
+- The monospace and read-only `style` on the textarea stays. The plan was
+  wrong that it only mattered to the raw textarea: without JavaScript the
+  bare textarea is what shows, and the intro keeps the same style for that
+  reason. `code_editor=true` is dropped as planned; the bundle mounts
+  CodeMirror for any `data-rich-editor` textarea that the visual editor
+  can't take, so it changed nothing.
+- The edit guard needed nothing: the email form's `@input` sees the
+  `input` event the editor dispatches on the textarea, as on the intro.
+- New `features/backoffice-registration-email-editor.feature`, five
+  scenarios, as in the Tests table. The link dialog is found by its role and
+  name, not the modal macro's ids.
+- Found while running BDD, not caused by this work:
+  `organiser-assemblies.feature`'s "adds a colleague … by exact email" fails
+  when run on its own (also on `f00fecfe`, before this plan), and passes in
+  the full run - it depends on state an earlier scenario leaves.
 
 ### 6. Translations and docs
 
