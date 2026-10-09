@@ -9,14 +9,26 @@ function makeForm(textareaAttrs = "") {
   return { form, textarea: form.querySelector("textarea") };
 }
 
+// Each test's editors, destroyed afterwards so none is left with a measure
+// pending: jsdom has no layout, so a CodeMirror measure throws.
+let mounted = [];
+
+function mount(textarea, options) {
+  const editor = mountCodeEditor(textarea, options);
+  mounted.push(editor);
+  return editor;
+}
+
 afterEach(() => {
+  mounted.forEach((editor) => editor.destroy());
+  mounted = [];
   document.body.innerHTML = "";
 });
 
 describe("mountCodeEditor", () => {
   it("shows the textarea's HTML and hides the textarea", () => {
     const { textarea } = makeForm();
-    const editor = mountCodeEditor(textarea);
+    const editor = mount(textarea);
     expect(editor.getValue()).toBe("<p>Hi</p>");
     expect(textarea.style.display).toBe("none");
     expect(textarea.nextSibling).toBe(editor.view.dom);
@@ -25,7 +37,7 @@ describe("mountCodeEditor", () => {
   it("writes changes back to the textarea and reports them", () => {
     const { textarea } = makeForm();
     const onChange = vi.fn();
-    const editor = mountCodeEditor(textarea, { onChange });
+    const editor = mount(textarea, { onChange });
     editor.setValue("<h1>New</h1>");
     expect(textarea.value).toBe("<h1>New</h1>");
     expect(onChange).toHaveBeenCalledWith("<h1>New</h1>");
@@ -33,7 +45,7 @@ describe("mountCodeEditor", () => {
 
   it("inserts text at the cursor", () => {
     const { textarea } = makeForm();
-    const editor = mountCodeEditor(textarea);
+    const editor = mount(textarea);
     editor.view.dispatch({ selection: { anchor: 3 } });
     editor.insertAtCursor("X");
     expect(textarea.value).toBe("<p>XHi</p>");
@@ -43,13 +55,13 @@ describe("mountCodeEditor", () => {
     const { textarea, form } = makeForm();
     const container = document.createElement("div");
     form.appendChild(container);
-    const editor = mountCodeEditor(textarea, { container });
+    const editor = mount(textarea, { container });
     expect(container.firstChild).toBe(editor.view.dom);
   });
 
   it("does not let a read-only textarea's editor change the textarea", () => {
     const { textarea } = makeForm("readonly");
-    const editor = mountCodeEditor(textarea);
+    const editor = mount(textarea);
     expect(editor.view.state.readOnly).toBe(true);
     editor.setValue("<p>Changed</p>");
     expect(textarea.value).toBe("<p>Hi</p>");
@@ -57,13 +69,13 @@ describe("mountCodeEditor", () => {
 
   it("drops required so the hidden textarea cannot block submit", () => {
     const { textarea } = makeForm("required");
-    mountCodeEditor(textarea);
+    mount(textarea);
     expect(textarea.hasAttribute("required")).toBe(false);
   });
 
   it("stops syncing on submit once destroyed", () => {
     const { form, textarea } = makeForm();
-    const editor = mountCodeEditor(textarea);
+    const editor = mount(textarea);
     editor.setValue("<p>Editor</p>");
     editor.destroy();
     textarea.value = "<p>Elsewhere</p>";
