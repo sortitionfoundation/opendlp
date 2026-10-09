@@ -103,7 +103,7 @@ def test_admin_walks_intro_form_email_preview_and_publishes(logged_in_admin, adm
     # Step 1: save the intro with save_and_next. Redirects to the form section.
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
-        data={"action": "save_and_next", "intro_content": "<h1>{{ assembly_title }}</h1>"},
+        data={"action": "save_and_next", "step": "intro", "intro_content": "<h1>{{ assembly_title }}</h1>"},
     )
     assert response.status_code == 302
     assert "section=form" in response.location
@@ -111,7 +111,7 @@ def test_admin_walks_intro_form_email_preview_and_publishes(logged_in_admin, adm
     # Step 2: save the form HTML with save_and_next. Redirects to the email section.
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
-        data={"action": "save_and_next", "html_content": READY_FORM_HTML},
+        data={"action": "save_and_next", "step": "form", "html_content": READY_FORM_HTML},
     )
     assert response.status_code == 302
     assert "section=email" in response.location

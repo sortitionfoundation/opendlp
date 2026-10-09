@@ -401,23 +401,23 @@ def _handle_registration_action(
     return _("Registration page saved")
 
 
-_SECTIONS = ("intro", "form", "email", "preview")
+_SECTIONS = ("page", "intro", "form", "email", "preview")
 _SAVE_ACTIONS = frozenset({"save", "save_and_next"})
 _LIFECYCLE_ACTIONS = frozenset({"publish", "unpublish", "close", "reopen"})
 
 
 def _save_origin() -> str:
-    """Which editor step a save was posted from, told by the field it carries.
+    """Which editor step a save was posted from, named by its hidden ``step`` field.
 
-    The intro step posts ``intro_content`` and the form step ``html_content``;
-    a lifecycle post carries neither and is treated as the form step, which
-    only matters for the error redirect."""
-    return "intro" if "intro_content" in request.form else "form"
+    A post without a known step, such as a lifecycle post, is treated as the
+    form step, which only matters for the error redirect."""
+    step = request.form.get("step", "")
+    return step if step in _SECTIONS else "form"
 
 
 def _post_action_section(action: str, origin: str) -> str:
     """Where to land after a successful action that stays in the editor:
-    save_and_next advances to the next step (intro → form, form → email),
+    save_and_next advances to the next step (page → intro → form → email),
     unpublish/reopen return to the preview step (where their buttons live), and
     plain save returns to the step it came from. Publish and close never reach
     this — they leave the editor entirely."""
@@ -494,10 +494,10 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
     """Save the registration HTML and/or trigger a lifecycle transition.
 
     Actions:
-      - save            → update the intro or form HTML; land back in read-only
-                          on the step it was posted from.
-      - save_and_next   → update the intro or form HTML; advance to the next
-                          step (intro → form, form → auto-reply email).
+      - save            → update the name and URLs, the intro or the form HTML;
+                          land back in read-only on the step it was posted from.
+      - save_and_next   → as save, then advance to the next step (page → intro
+                          → form → auto-reply email).
       - publish         → transition TEST → PUBLISHED. No HTML update. Lands on
                           the pages list — the editor modal is done.
       - unpublish       → transition PUBLISHED → TEST (back to test mode); stays

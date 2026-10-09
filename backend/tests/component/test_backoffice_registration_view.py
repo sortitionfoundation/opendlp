@@ -350,7 +350,7 @@ class TestIntroStep:
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
-            data={"action": "save", "intro_content": "<h1>Welcome</h1>"},
+            data={"action": "save", "step": "intro", "intro_content": "<h1>Welcome</h1>"},
         )
 
         assert response.status_code == 302
@@ -366,7 +366,7 @@ class TestIntroStep:
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
-            data={"action": "save_and_next", "intro_content": "<h1>Welcome</h1>"},
+            data={"action": "save_and_next", "step": "intro", "intro_content": "<h1>Welcome</h1>"},
         )
 
         assert response.status_code == 302
@@ -377,11 +377,34 @@ class TestIntroStep:
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
-            data={"action": "save", "html_content": "<p>x</p>"},
+            data={"action": "save", "step": "form", "html_content": "<p>x</p>"},
         )
 
         assert response.status_code == 302
         assert "section=form" in response.location
+
+    @pytest.mark.parametrize("step", ["", "nope"])
+    def test_a_save_without_a_known_step_returns_to_the_form(self, logged_in_admin, fake_store, assembly_id, step):
+        """The posted step names the origin; anything else is treated as the form, as lifecycle posts are."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        data = {"action": "save", "intro_content": "<h1>Welcome</h1>"}
+        if step:
+            data["step"] = step
+
+        response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/my-slug/save", data=data)
+
+        assert response.status_code == 302
+        assert "section=form" in response.location
+
+    @pytest.mark.parametrize("section", ["intro", "form"])
+    def test_each_step_posts_its_name(self, logged_in_admin, fake_store, assembly_id, section):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section={section}&edit=1"
+        ).get_data(as_text=True)
+
+        assert f'<input type="hidden" name="step" value="{section}"' in body
 
     def test_oversize_intro_returns_to_the_intro_step_in_edit_mode(
         self, logged_in_admin, fake_store, assembly_id, temp_env_vars
@@ -391,7 +414,7 @@ class TestIntroStep:
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
-            data={"action": "save", "intro_content": "x" * 2000},
+            data={"action": "save", "step": "intro", "intro_content": "x" * 2000},
         )
 
         assert response.status_code == 302
@@ -947,19 +970,32 @@ class TestEditorNameAndSlugEditing:
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
-            data={"action": "save", "intro_content": "<p>hi</p>", "page_name": "Spanish variant"},
+            data={"action": "save", "step": "page", "page_name": "Spanish variant"},
         )
 
         assert response.status_code == 302
+        assert "section=page" in response.location
+        assert "edit=1" not in response.location
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.registration_pages.get(page.id).name == "Spanish variant"
+
+    def test_save_and_next_from_the_page_step_advances_to_the_intro(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save_and_next", "step": "page", "page_name": "English"},
+        )
+
+        assert response.status_code == 302
+        assert "section=intro" in response.location
 
     def test_save_with_a_new_slug_redirects_to_the_new_url(self, logged_in_admin, fake_store, assembly_id):
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
-            data={"action": "save", "intro_content": "<p>hi</p>", "url_slug": "renamed-slug"},
+            data={"action": "save", "step": "page", "url_slug": "renamed-slug"},
         )
 
         assert response.status_code == 302
@@ -973,13 +1009,28 @@ class TestEditorNameAndSlugEditing:
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
-            data={"action": "save", "intro_content": "<p>hi</p>", "page_name": "Taken"},
+            data={"action": "save", "step": "page", "page_name": "Taken"},
         )
 
         assert response.status_code == 302
+        assert "section=page" in response.location
         assert "edit=1" in response.location
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.registration_pages.get(page.id).name == "English"
+
+    def test_a_taken_slug_returns_to_the_page_step_with_the_old_slug(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="other-slug", name="Other")
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "step": "page", "url_slug": "other-slug"},
+        )
+
+        assert response.status_code == 302
+        assert "/registration/my-slug?section=page&edit=1" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id).url_slug == "my-slug"
 
     def test_intro_edit_mode_offers_name_and_slug_inputs(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
