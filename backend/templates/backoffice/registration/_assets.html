@@ -114,7 +114,7 @@ Args:
 {# ============================================================================
    THE THREE ASSET SURFACES
 ============================================================================ #}
-{% macro asset_list(collection, item, heading, hint, empty_text, upload_click, title_expr, details_click, copy_click, delete_click, deleting_expr, header_classes="mb-4", header_style="") %}
+{% macro asset_list(collection, item, heading, hint, empty_text, upload_click, title_expr, details_click, copy_click, delete_click, deleting_expr, header_classes="mb-4", header_style="", insert_click="") %}
     {#
 One asset kind in the Assets panel: heading + upload CTA, the format hint, an
 empty state, and a row per asset with details / copy-snippet / delete.
@@ -131,6 +131,8 @@ Args:
   deleting_expr: Alpine expression that is true while that row's delete is in flight
   header_classes, header_style: Spacing and rule for the heading row, so a second
     section on the panel can be separated from the first by a divider
+  insert_click: Alpine expression for an Insert button that puts the asset into the
+    page's visual editor; no button when empty
 
 Every button is type="button": the panel sits inside the editor's form, and a
 bare button in a form submits it.
@@ -159,6 +161,11 @@ bare button in a form submits it.
                    style="color: var(--color-body-text)"
                    x-text="{{ item }}.display_name"></a>
                 <div class="flex items-center gap-1 flex-shrink-0">
+                    {% if insert_click %}
+                        {% call icon_button(click=insert_click, aria_label_expr=item ~ ".aria_label_insert") %}
+                            {{ icon_plus() }}
+                        {% endcall %}
+                    {% endif %}
                     {% call icon_button(click=details_click, aria_label_expr=item ~ ".aria_label_details") %}
                         {{ icon_info() }}
                     {% endcall %}
@@ -173,7 +180,7 @@ bare button in a form submits it.
         </template>
     </ul>
 {% endmacro %}
-{% macro asset_upload_modal(id, title, open_expr, close_expr, busy_expr, hint, file_id, file_label, file_ref, file_accept, file_change, file_name_expr, text_id, text_label, text_model, text_hint, text_required, error_expr, submit_click, submit_disabled_expr) %}
+{% macro asset_upload_modal(id, title, open_expr, close_expr, busy_expr, hint, file_id, file_label, file_ref, file_accept, file_change, file_name_expr, text_id, text_label, text_model, text_hint, text_required, error_expr, submit_click, submit_disabled_expr, file_init="") %}
     {#
 The upload dialog for one asset kind. Alt text is required for an image and a
 document's label is optional, so the second field's required marker is a flag
@@ -189,6 +196,7 @@ Args:
   text_required: whether that text field is required
   error_expr: Alpine expression holding the upload error message
   submit_click, submit_disabled_expr: the Upload button's handler and disabled state
+  file_init: optional Alpine expression run as the file input is built, with the input as $el
     #}
     {% call controlled_modal(id=id,
     title=title,
@@ -208,6 +216,7 @@ Args:
                        x-ref="{{ file_ref }}"
                        accept="{{ file_accept }}"
                        @change="{{ file_change }}"
+                       {% if file_init %}x-init="{{ file_init }}"{% endif %}
                        :disabled="{{ busy_expr }}"
                        class="w-full px-3 py-2 rounded-md text-body-sm"
                        style="border: 1px solid var(--color-borders-dividers);

@@ -28,6 +28,7 @@ from opendlp.domain.registration_page import generate_starter_form_html_govuk as
 from opendlp.domain.registration_page import generate_starter_intro_html as _build_starter_intro
 from opendlp.domain.registration_page import generate_starter_intro_html_govuk as _build_starter_intro_govuk
 from opendlp.domain.users import User
+from opendlp.domain.value_objects import ContentStyle
 from opendlp.translations import gettext as _
 
 from .exceptions import (
@@ -42,6 +43,11 @@ from .unit_of_work import AbstractUnitOfWork
 
 _MANAGE_ROLE = "assembly-manager or admin"
 _VIEW_ROLE = "assembly role or admin"
+# Activity entries are stored in English, like "Updated intro HTML".
+_CONTENT_STYLE_CHANGES = {
+    ContentStyle.GOVUK: "Changed the intro style to GOV.UK",
+    ContentStyle.PLAIN: "Changed the intro style to plain",
+}
 
 
 def _load_user_and_assembly(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID):  # type: ignore[no-untyped-def]
@@ -369,6 +375,7 @@ def duplicate_registration_page(
             registration_page_id=page.id,
             form_html=source_html.form_html,
             intro_html=source_html.intro_html,
+            content_style=source_html.content_style,
         )
     )
     return page.create_detached_copy()
@@ -653,10 +660,15 @@ def update_registration_page_html(
 
 
 def update_registration_page_intro_html(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, intro_html: str
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    page_id: uuid.UUID,
+    intro_html: str,
+    content_style: ContentStyle | None = None,
 ) -> RegistrationPageHtml:
-    """Update the page's intro HTML. Raises ValueError if it exceeds the size limit.
+    """Update the page's intro HTML, and its content style when one is given.
 
+    Raises ValueError if the HTML exceeds the size limit.
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     user, page = _load_manageable_page(uow, user_id, page_id)
@@ -666,6 +678,9 @@ def update_registration_page_intro_html(
     if source.intro_html != intro_html:
         source.update_intro_html(intro_html)
         page.record_edit(user.id, "Updated intro HTML")
+    if content_style is not None and source.content_style != content_style:
+        source.update_content_style(content_style)
+        page.record_edit(user.id, _CONTENT_STYLE_CHANGES[content_style])
     return source.create_detached_copy()
 
 

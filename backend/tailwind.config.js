@@ -3,6 +3,8 @@ module.exports = {
   content: [
     // Only scan backoffice templates - keep GOV.UK templates separate
     "./templates/backoffice/**/*.html",
+    // The visual editor sets its own class names on the editing area.
+    "./src/js/backoffice/rich-editor*.js",
   ],
   // Class names built by string concat in Jinja macros never appear as
   // literals in scanned templates, so Tailwind's content-scanner purges
@@ -13,6 +15,10 @@ module.exports = {
     "btn--tertiary",
     "btn--danger",
     "btn--icon",
+    // Added by ProseMirror to the selected image in the visual editor.
+    "ProseMirror-selectednode",
+    // Added by Tiptap's table extension to cells selected across in the visual editor.
+    "selectedCell",
   ],
   theme: {
     extend: {},

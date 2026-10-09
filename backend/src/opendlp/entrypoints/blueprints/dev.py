@@ -47,7 +47,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.validators import SlugError
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import ContentStyle, RespondentStatus
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_with_permissions,
@@ -796,6 +796,7 @@ def _serialise_html_source(html: "RegistrationPageHtml") -> dict[str, Any]:
         "id": str(html.id),
         "intro_html_preview": _html_preview(html.intro_html),
         "form_html_preview": _html_preview(html.form_html),
+        "content_style": html.content_style.value,
     }
 
 
@@ -803,13 +804,19 @@ def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> d
     """Handle update_registration_page_html and update_registration_page_intro_html service calls.
 
     Either HTML is updated only when its key is present, so the two can be
-    changed independently from the docs page.
+    changed independently from the docs page. ``content_style`` ("govuk" or
+    "plain") goes with the intro.
     """
     try:
         page_id = _resolve_page_id(uow, params)
         if "intro_html" in params:
+            content_style = ContentStyle(params["content_style"]) if params.get("content_style") else None
             html_source = update_registration_page_intro_html(
-                uow=uow, user_id=current_user.id, page_id=page_id, intro_html=params["intro_html"]
+                uow=uow,
+                user_id=current_user.id,
+                page_id=page_id,
+                intro_html=params["intro_html"],
+                content_style=content_style,
             )
         if "form_html" in params:
             html_source = update_registration_page_html(
@@ -1126,24 +1133,13 @@ def _handle_set_registration_image_alt(uow: Any, params: dict[str, Any]) -> dict
 def _handle_list_image_snippets(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle list_image_snippets service call.
 
-    Uses the same URL builder as the public registration route so the snippets
-    show the URL the public page would render.
+    Uses the same URL builder as the Assets panel, so the snippets show the URL
+    an author would paste.
     """
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    page_repo_uow = bootstrap.get_flask_uow()
-    with page_repo_uow:
-        page = page_for_assembly(page_repo_uow, assembly_id)
-    url_slug = page.url_slug if page else ""
-
     def url_for_image(image: RegistrationImage) -> str:
-        if url_slug:
-            return url_for(
-                "registration.serve_registration_image",
-                url_slug=url_slug,
-                image_name=f"{image.sha256}.{IMAGE_FILE_EXTENSION}",
-            )
-        return f"<no-slug>/{image.sha256}.{IMAGE_FILE_EXTENSION}"
+        return url_for("registration.serve_registration_image_by_id", image_id=image.id)
 
     try:
         pairs = list_image_snippets(

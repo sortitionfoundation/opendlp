@@ -35,6 +35,14 @@ $govuk-assets-path: "/static/";
     width: auto;
 }
 
+// Images in authored HTML, such as a registration intro, never overflow the page.
+// height: auto keeps the shape when the width shrinks; the width and height
+// attributes still give the browser the aspect ratio before the image loads.
+.govuk-main-wrapper img {
+    max-width: 100%;
+    height: auto;
+}
+
 // Typography
 
 .govuk-heading-xl {

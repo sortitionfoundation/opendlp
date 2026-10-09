@@ -245,3 +245,97 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
         <path d="M22 12A10 10 0 0 0 12 2V12H22Z"/>
     </svg>
 {% endmacro %}
+{# ============================================================================
+   TEXT EDITING (the visual editor's formatting toolbar)
+   Lucide glyphs from the same Figma "Icons" sheet; the names follow Lucide's.
+============================================================================ #}
+{% macro icon_bold(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 12H15C16.0609 12 17.0783 12.4214 17.8284 13.1716C18.5786 13.9217 19 14.9391 19 16C19 17.0609 18.5786 18.0783 17.8284 18.8284C17.0783 19.5786 16.0609 20 15 20H7C6.73478 20 6.48043 19.8946 6.29289 19.7071C6.10536 19.5196 6 19.2652 6 19V5C6 4.73478 6.10536 4.48043 6.29289 4.29289C6.48043 4.10536 6.73478 4 7 4H14C15.0609 4 16.0783 4.42143 16.8284 5.17157C17.5786 5.92172 18 6.93913 18 8C18 9.06087 17.5786 10.0783 16.8284 10.8284C16.0783 11.5786 15.0609 12 14 12"/>
+    </svg>
+{% endmacro %}
+{% macro icon_italic(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 4H10M14 20H5M15 4L9 20"/>
+    </svg>
+{% endmacro %}
+{% macro icon_pilcrow(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M13 4V20M17 4V20M19 4H9.5C8.30653 4 7.16193 4.47411 6.31802 5.31802C5.47411 6.16193 5 7.30653 5 8.5C5 9.69347 5.47411 10.8381 6.31802 11.682C7.16193 12.5259 8.30653 13 9.5 13H13"/>
+    </svg>
+{% endmacro %}
+{% macro icon_heading_1(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 12H12M4 18V6M12 18V6M17 12L20 10V18"/>
+    </svg>
+{% endmacro %}
+{% macro icon_heading_2(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 12H12M4 18V6M12 18V6M21 17.9998H17C17 13.9998 21 14.9998 21 11.9998C21 10.4998 19 9.49982 17 10.9998"/>
+    </svg>
+{% endmacro %}
+{% macro icon_heading_3(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 12H12M4 18V6M12 18V6M17.5 10.5002C19.2 9.50019 21 10.5002 21 12.0002C21 12.5306 20.7893 13.0393 20.4142 13.4144C20.0391 13.7895 19.5304 14.0002 19 14.0002C19.5304 14.0002 20.0391 14.2107 20.4142 14.5858C20.7893 14.9609 21 15.4696 21 16C21 17.8 19 19 17 17.5"/>
+    </svg>
+{% endmacro %}
+{% macro icon_underline(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 4V10C6 11.5913 6.63214 13.1174 7.75736 14.2426C8.88258 15.3679 10.4087 16 12 16C13.5913 16 15.1174 15.3679 16.2426 14.2426C17.3679 13.1174 18 11.5913 18 10V4M4 20H20"/>
+    </svg>
+{% endmacro %}
+{% macro icon_strikethrough(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M16.0001 4H9.00011C8.52003 3.99975 8.04691 4.11471 7.62048 4.33524C7.19405 4.55576 6.82677 4.8754 6.5495 5.26731C6.27223 5.65921 6.09305 6.11194 6.02704 6.58745C5.96102 7.06297 6.01008 7.54738 6.17011 8M14 12C15.0609 12 16.0783 12.4214 16.8284 13.1716C17.5786 13.9217 18 14.9391 18 16C18 17.0609 17.5786 18.0783 16.8284 18.8284C16.0783 19.5786 15.0609 20 14 20H6M4 12H20"/>
+    </svg>
+{% endmacro %}
+{% macro icon_text_quote(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M17 5H3M21 12H8M21 19H8M3 12V19"/>
+    </svg>
+{% endmacro %}
+{% macro icon_separator_horizontal(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M16 16L12 20L8 16M3 12H21M8 8L12 4L16 8"/>
+    </svg>
+{% endmacro %}
+{% macro icon_table(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3V21M3 9H21M3 15H21M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3Z"/>
+    </svg>
+{% endmacro %}
+{% macro icon_list(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 5H3.01M3 12H3.01M3 19H3.01M8 5H21M8 12H21M8 19H21"/>
+    </svg>
+{% endmacro %}
+{% macro icon_list_ordered(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M11 5H21M11 12H21M11 19H21M4 4H5V9M4 9H6M6.4999 20.0002H3.3999C3.3999 19.0002 5.9999 18.0752 5.9999 16.5002C5.99994 16.1987 5.90911 15.9041 5.73926 15.655C5.5694 15.4059 5.32841 15.2137 5.04772 15.1036C4.76702 14.9935 4.45966 14.9705 4.16571 15.0377C3.87177 15.1049 3.6049 15.2591 3.3999 15.4802"/>
+    </svg>
+{% endmacro %}
+{% macro icon_link(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.46997L11.75 5.17997M14 11.0002C13.5705 10.4261 13.0226 9.95104 12.3934 9.60729C11.7642 9.26353 11.0684 9.05911 10.3533 9.00789C9.63816 8.95667 8.92037 9.05986 8.24861 9.31044C7.57685 9.56103 6.96684 9.95316 6.45996 10.4602L3.45996 13.4602C2.54917 14.4032 2.04519 15.6662 2.05659 16.9772C2.06798 18.2882 2.59382 19.5423 3.52086 20.4693C4.4479 21.3964 5.70197 21.9222 7.01295 21.9336C8.32393 21.945 9.58694 21.441 10.53 20.5302L12.24 18.8202"/>
+    </svg>
+{% endmacro %}
+{% macro icon_image(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15.0002L17.914 11.9142C17.5389 11.5392 17.0303 11.3286 16.5 11.3286C15.9697 11.3286 15.4611 11.5392 15.086 11.9142L6 21.0002M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3ZM11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z"/>
+    </svg>
+{% endmacro %}
+{% macro icon_scaling(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M14 15H9v-5M16 3h5v5M21 3L9 15"/>
+    </svg>
+{% endmacro %}
+{% macro icon_undo_2(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 4L4 9L9 14M4 9H14.5C15.2223 9 15.9375 9.14226 16.6048 9.41866C17.272 9.69506 17.8784 10.1002 18.3891 10.6109C18.8998 11.1216 19.3049 11.728 19.5813 12.3952C19.8577 13.0625 20 13.7777 20 14.5C20 15.2223 19.8577 15.9375 19.5813 16.6048C19.3049 17.272 18.8998 17.8784 18.3891 18.3891C17.8784 18.8998 17.272 19.3049 16.6048 19.5813C15.9375 19.8577 15.2223 20 14.5 20H11"/>
+    </svg>
+{% endmacro %}
+{% macro icon_redo_2(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 4L20 9L15 14M20 9H9.5C8.04131 9 6.64236 9.57946 5.61091 10.6109C4.57946 11.6424 4 13.0413 4 14.5C4 15.2223 4.14226 15.9375 4.41866 16.6048C4.69506 17.272 5.10019 17.8784 5.61091 18.3891C6.64236 19.4205 8.04131 20 9.5 20H13"/>
+    </svg>
+{% endmacro %}

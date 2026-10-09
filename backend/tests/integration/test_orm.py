@@ -9,6 +9,7 @@ from requests.structures import CaseInsensitiveDict
 from sortition_algorithms import RunReport
 from sortition_algorithms.errors import InfeasibleQuotasError, SelectionMultilineError
 from sortition_algorithms.features import FeatureValueMinMax
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -28,6 +29,7 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import (
     AssemblyRole,
     AssemblyStatus,
+    ContentStyle,
     GlobalRole,
     SelectionRunStatus,
     SelectionTaskType,
@@ -1175,6 +1177,28 @@ class TestRegistrationPageORM:
         assert retrieved_html is not None
         assert retrieved_html.form_html == "<form>{{ csrf_form_element }} {{ form_action }}</form>"
         assert retrieved_html.intro_html == "<h1>{{ assembly_title }}</h1>"
+        assert retrieved_html.content_style is ContentStyle.GOVUK
+
+    def test_registration_page_content_style_round_trips(self, postgres_session: Session):
+        """A plain content style is stored as its value and read back as the enum."""
+        assembly = Assembly(title="Style Assembly", status=AssemblyStatus.ACTIVE)
+        postgres_session.add(assembly)
+        postgres_session.commit()
+        page = RegistrationPage(assembly_id=assembly.id, url_slug="style-assembly")
+        html = RegistrationPageHtml(registration_page_id=page.id, content_style=ContentStyle.PLAIN)
+        postgres_session.add(page)
+        postgres_session.add(html)
+        postgres_session.commit()
+
+        postgres_session.expire_all()
+
+        stored = postgres_session.execute(
+            text("SELECT content_style FROM registration_page_html_sources WHERE id = :id"), {"id": html.id}
+        ).scalar_one()
+        assert stored == "plain"
+        retrieved_html = postgres_session.query(RegistrationPageHtml).filter_by(registration_page_id=page.id).first()
+        assert retrieved_html is not None
+        assert retrieved_html.content_style is ContentStyle.PLAIN
 
     def test_registration_page_activity_round_trips(self, postgres_session: Session):
         """The activity JSON column round-trips RegistrationPageActivity dataclasses."""

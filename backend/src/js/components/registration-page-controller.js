@@ -1,5 +1,5 @@
 // ABOUTME: The Alpine component driving the backoffice registration page
-// ABOUTME: Composes the toast, edit-guard, skeleton-preview and asset slices into one state
+// ABOUTME: Composes the toast, edit-guard, skeleton-preview, asset and editor-dialog slices into one state
 
 import { formatBytes } from "../lib/format-bytes.js";
 import { registrationDocuments } from "./registration-documents.js";
@@ -7,6 +7,8 @@ import { registrationEditGuard } from "./registration-edit-guard.js";
 import { registrationImages } from "./registration-images.js";
 import { registrationSkeleton } from "./registration-skeleton.js";
 import { registrationToast } from "./registration-toast.js";
+import { richEditorImageSizeDialog } from "./rich-editor-image-size-dialog.js";
+import { richEditorLinkDialog } from "./rich-editor-link-dialog.js";
 
 /**
  * Build the registrationPageController component state.
@@ -60,5 +62,7 @@ export function registrationPageController(config) {
       documentItemUrlTemplate: urls.documentItem || "",
       messages: messages,
     }),
+    richEditorLinkDialog({ messages: messages }),
+    richEditorImageSizeDialog({ messages: messages }),
   );
 }

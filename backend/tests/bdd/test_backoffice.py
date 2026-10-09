@@ -1,10 +1,13 @@
 """ABOUTME: BDD tests for backoffice UI (Pines UI + Tailwind CSS)
 ABOUTME: Tests the separate design system used for admin interfaces"""
 
+import base64
 import re
 import uuid
+from io import BytesIO
 
 import pytest
+from PIL import Image
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -18,6 +21,7 @@ from opendlp.service_layer.registration_page_service import (
     page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
+    update_registration_page_intro_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
@@ -31,7 +35,11 @@ scenarios("../../features/backoffice-assembly-members.feature")
 scenarios("../../features/backoffice-assembly-gsheet.feature")
 scenarios("../../features/backoffice-csv-upload.feature")
 scenarios("../../features/backoffice-registration-editor.feature")
+scenarios("../../features/backoffice-registration-visual-editor.feature")
 scenarios("../../features/organiser-assemblies.feature")
+
+# The visual editor's controls wrap both its views, so steps scope to them.
+INTRO_EDITOR = "[data-rich-editor-for='intro_content']"
 
 
 # Store assembly data between steps
@@ -503,8 +511,9 @@ def visit_registration_intro_editor(page: Page, title: str, test_database):
 
 @when(parsers.parse('I type "{text}" into the intro content code editor'))
 def type_into_intro_content_editor(page: Page, text: str):
-    """Focus the intro step's mounted CodeMirror editor and type into it."""
-    content = page.locator("textarea[name='intro_content'] + .cm-editor .cm-content")
+    """Switch the intro editor to its HTML view, the CodeMirror editor, and type into it."""
+    page.locator(INTRO_EDITOR).get_by_role("button", name="HTML", exact=True).click()
+    content = page.locator(f"{INTRO_EDITOR} .cm-editor .cm-content")
     expect(content).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     content.click()
     page.keyboard.type(text)
@@ -512,8 +521,8 @@ def type_into_intro_content_editor(page: Page, text: str):
 
 @then(parsers.parse('the saved registration intro should contain "{text}"'))
 def saved_registration_intro_contains(page: Page, text: str):
-    """After saving we land on the read-only intro view, whose editor shows the persisted HTML."""
-    editor = page.locator("textarea[name='intro_content'] + .cm-editor")
+    """After saving we land on the read-only intro view, whose editor shows the persisted content."""
+    editor = page.locator(INTRO_EDITOR)
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
@@ -773,7 +782,7 @@ def on_read_only_form_view(page: Page):
 def on_read_only_intro_view(page: Page):
     """Opening a page from the list lands on its first step, the intro, with a non-editable editor."""
     page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
-    content = page.locator("textarea[name='intro_content'] + .cm-editor .cm-content")
+    content = page.locator(f"{INTRO_EDITOR} [contenteditable]:visible")
     expect(content).to_have_attribute("contenteditable", "false", timeout=PLAYWRIGHT_TIMEOUT)
 
 
@@ -1838,3 +1847,495 @@ def see_email_in_search_results(page: Page, email: str):
     retries until the listbox has the text or the timeout expires.
     """
     expect(page.locator("#user_id_listbox")).to_contain_text(email)
+
+
+# Visual intro editor (features/backoffice-registration-visual-editor.feature)
+
+VISUAL_INTRO = f"{INTRO_EDITOR} .ProseMirror"
+
+
+def _png_base64(colour: tuple[int, int, int] = (12, 34, 56)) -> str:
+    buffer = BytesIO()
+    Image.new("RGB", (40, 30), colour).save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("ascii")
+
+
+def _intro_value(page: Page) -> str:
+    return page.evaluate("document.querySelector(\"textarea[name='intro_content']\").value")
+
+
+@given(parsers.parse('there is an assembly called "{title}" with the intro "{intro}"'))
+def create_assembly_with_intro(title: str, intro: str, admin_user, test_database):
+    """A registration page whose intro is already saved."""
+    create_test_assembly_with_registration_page(title, admin_user, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        registration_page = page_for_assembly(uow, assembly_id)
+        assert registration_page is not None
+        update_registration_page_intro_html(uow, admin_user.id, registration_page.id, intro)
+
+
+@when(parsers.parse('I visit the read-only registration intro for "{title}"'))
+def visit_read_only_registration_intro(page: Page, title: str, test_database):
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=intro")
+
+
+@when(parsers.parse('I type "{text}" into the visual intro editor'))
+def type_into_visual_intro(page: Page, text: str):
+    editor = page.locator(VISUAL_INTRO)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.click()
+    page.keyboard.type(text)
+
+
+@when("I select everything in the visual intro editor")
+def select_all_in_visual_intro(page: Page):
+    page.locator(VISUAL_INTRO).focus()
+    page.keyboard.press("ControlOrMeta+a")
+
+
+@when(parsers.parse('I press the "{name}" toolbar button'))
+def press_toolbar_button(page: Page, name: str):
+    page.get_by_role("toolbar", name="Formatting").get_by_role("button", name=name, exact=True).click()
+
+
+@when("I move focus back into the formatting toolbar")
+def shift_tab_into_toolbar(page: Page):
+    page.keyboard.press("Shift+Tab")
+    focused_in_toolbar = page.evaluate("document.activeElement.closest('[role=toolbar]') !== null")
+    assert focused_in_toolbar, "Shift+Tab from the editor should land in the formatting toolbar"
+
+
+@when(parsers.parse("I press the right arrow key {count:d} times"))
+def press_right_arrow(page: Page, count: int):
+    for _ in range(count):
+        page.keyboard.press("ArrowRight")
+
+
+@when("I press Enter")
+def press_enter(page: Page):
+    page.keyboard.press("Enter")
+
+
+@when(parsers.parse('I press "{keys}"'))
+def press_keys(page: Page, keys: str):
+    page.keyboard.press(keys)
+
+
+def _wait_for_focus_in_visual_intro(page: Page) -> None:
+    """Tiptap hands focus back to the editor on the next animation frame, after a menu or dialog closes."""
+    page.wait_for_function(
+        "(selector) => document.activeElement && document.activeElement.closest(selector) !== null",
+        arg=VISUAL_INTRO,
+        timeout=PLAYWRIGHT_TIMEOUT,
+    )
+
+
+@when("I jump to the formatting toolbar with Alt+F10")
+def alt_f10_to_toolbar(page: Page):
+    _wait_for_focus_in_visual_intro(page)
+    page.keyboard.press("Alt+F10")
+    focused_in_toolbar = page.evaluate("document.activeElement.closest('[role=toolbar]') !== null")
+    assert focused_in_toolbar, "Alt+F10 from the editor should land in the formatting toolbar"
+
+
+@when("I press Tab in the visual intro editor")
+def tab_in_visual_intro(page: Page):
+    _wait_for_focus_in_visual_intro(page)
+    page.keyboard.press("Tab")
+
+
+def _focused_label(page: Page) -> str:
+    return page.evaluate("document.activeElement.textContent.trim()")
+
+
+@when(parsers.parse('I move to the "{label}" toolbar button with the arrow keys'))
+def arrow_to_toolbar_button(page: Page, label: str):
+    toolbar = page.get_by_role("toolbar", name="Formatting")
+    count = toolbar.locator("button[data-command]:not([role=menuitem])").count()
+    for _ in range(count):
+        if _focused_label(page) == label:
+            return
+        page.keyboard.press("ArrowRight")
+    raise AssertionError(f'the arrow keys never reached the "{label}" toolbar button')
+
+
+@when(parsers.parse('I choose "{label}" from the open menu with the arrow keys'))
+def choose_from_open_menu(page: Page, label: str):
+    menu = page.locator(f"{INTRO_EDITOR} [role=menu]")
+    expect(menu).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    for _ in range(menu.get_by_role("menuitem").count()):
+        if _focused_label(page) == label:
+            page.keyboard.press("Enter")
+            expect(menu).to_be_hidden()
+            return
+        page.keyboard.press("ArrowDown")
+    raise AssertionError(f'the arrow keys never reached the "{label}" menu item')
+
+
+@when(parsers.parse('I upload the image "{name}" with the alt text "{alt}" in the upload dialog'))
+def upload_image_in_dialog(page: Page, name: str, alt: str):
+    dialog = page.get_by_role("dialog", name="Upload image")
+    expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    page.locator("#image-upload-file").set_input_files(
+        # A colour of its own, so the server does not take it for an earlier upload of the same bytes.
+        files=[
+            {
+                "name": name,
+                "mimeType": "image/png",
+                "buffer": base64.b64decode(_png_base64((sum(map(ord, alt)) % 256, 0, 0))),
+            }
+        ]
+    )
+    page.locator("#image-upload-alt").fill(alt)
+    dialog.get_by_role("button", name="Upload").press("Enter")
+    expect(dialog).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]')).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the intro should hold one table row with the images "{first}" and "{second}"'))
+def intro_holds_image_row(page: Page, first: str, second: str):
+    cells = page.evaluate(
+        """(html) => {
+            const t = document.createElement("template");
+            t.innerHTML = html;
+            return Array.from(t.content.querySelectorAll("table tr"), (row) =>
+                Array.from(row.children, (cell) => Array.from(cell.querySelectorAll("img"), (img) => img.alt)));
+        }""",
+        _intro_value(page),
+    )
+    assert cells == [[[first], [second]]], f"expected one row of two images, the intro holds {cells}"
+
+
+@when("I switch the intro editor to its HTML view")
+def switch_intro_to_html(page: Page):
+    page.locator(INTRO_EDITOR).get_by_role("button", name="HTML", exact=True).click()
+
+
+@when("I switch the intro editor to its Visual view")
+def switch_intro_to_visual(page: Page):
+    page.locator(INTRO_EDITOR).get_by_role("button", name="Visual", exact=True).click()
+
+
+@when(parsers.parse('I enter "{html}" in the intro HTML view'))
+def enter_in_intro_html_view(page: Page, html: str):
+    """Replace the HTML view's content. insert_text avoids CodeMirror auto-closing the tags as they are typed."""
+    content = page.locator(f"{INTRO_EDITOR} .cm-content")
+    expect(content).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    content.click()
+    page.keyboard.press("ControlOrMeta+a")
+    page.keyboard.insert_text(html)
+
+
+@then(parsers.parse('the intro HTML view should contain "{html}"'))
+def intro_html_view_contains(page: Page, html: str):
+    switch_intro_to_html(page)
+    expect(page.locator(f"{INTRO_EDITOR} .cm-content")).to_contain_text(html, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the intro editor should still be in its HTML view")
+def intro_still_in_html_view(page: Page):
+    html_button = page.locator(INTRO_EDITOR).get_by_role("button", name="HTML", exact=True)
+    expect(html_button).to_have_attribute("aria-pressed", "true")
+    expect(page.locator(VISUAL_INTRO)).to_be_hidden()
+
+
+@then("the intro editor should explain that the HTML stays in the HTML view")
+def intro_explains_refusal(page: Page):
+    notice = page.locator(f"{INTRO_EDITOR} [data-rich-editor-notice]")
+    expect(notice).to_be_visible()
+    expect(notice).to_have_attribute("role", "status")
+    expect(notice).to_contain_text("so it stays in HTML")
+
+
+@then(parsers.parse('the intro should hold "{html}"'))
+def intro_holds(page: Page, html: str):
+    assert _intro_value(page) == html
+
+
+@then(parsers.parse('"{text}" should be highlighted as a variable'))
+def variable_highlighted(page: Page, text: str):
+    expect(page.locator(f"{VISUAL_INTRO} .rich-editor__variable")).to_have_text(text)
+
+
+# Builds a PNG file in the page and sends it to the editor in the event a drag from a
+# file manager, or a paste of a copied image, would raise.
+_SEND_IMAGE_FILE = """(target, {name, data, kind}) => {
+    const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], name, { type: "image/png" }));
+    if (kind === "paste") {
+        target.dispatchEvent(new ClipboardEvent("paste", {
+            clipboardData: transfer, bubbles: true, cancelable: true,
+        }));
+        return;
+    }
+    const box = target.getBoundingClientRect();
+    target.dispatchEvent(new DragEvent("drop", {
+        dataTransfer: transfer, bubbles: true, cancelable: true,
+        clientX: box.left + 10, clientY: box.top + 10,
+    }));
+}"""
+
+
+def _send_image_file(page: Page, name: str, kind: str) -> None:
+    editor = page.locator(VISUAL_INTRO)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.evaluate(_SEND_IMAGE_FILE, {"name": name, "data": _png_base64(), "kind": kind})
+
+
+@when(parsers.parse('I drop an image file called "{name}" into the visual intro editor'))
+def drop_image_into_visual_intro(page: Page, name: str):
+    _send_image_file(page, name, "drop")
+
+
+@when(parsers.parse('I paste an image file called "{name}" into the visual intro editor'))
+def paste_image_into_visual_intro(page: Page, name: str):
+    _send_image_file(page, name, "paste")
+
+
+@then(parsers.parse('the image upload dialog should show "{name}"'))
+def upload_dialog_shows(page: Page, name: str):
+    dialog = page.get_by_role("dialog", name="Upload image")
+    expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(dialog).to_contain_text(name)
+
+
+@then(parsers.parse('the image upload file field should hold "{name}"'))
+def upload_file_field_holds(page: Page, name: str):
+    """The field itself, not just the name shown under it, so the dialog doesn't read "No file chosen"."""
+    field = page.locator("#image-upload-file")
+    expect(field).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    assert field.evaluate("(input) => Array.from(input.files, (file) => file.name)") == [name]
+
+
+@when(parsers.parse('I give the image the alt text "{alt}" and upload it'))
+def give_image_alt_text_and_upload(page: Page, alt: str):
+    dialog = page.get_by_role("dialog", name="Upload image")
+    page.locator("#image-upload-alt").fill(alt)
+    dialog.get_by_role("button", name="Upload").click()
+    expect(dialog).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+def _image_loaded(image) -> bool:
+    return image.evaluate("(img) => img.complete && img.naturalWidth > 0")
+
+
+@then(parsers.parse('the visual intro editor should show the image "{alt}"'))
+def visual_intro_shows_image(page: Page, alt: str):
+    image = page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]')
+    expect(image).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(image).to_have_attribute("src", re.compile(r"^/register-assets/images/"))
+    page.wait_for_function(
+        "(alt) => { const i = document.querySelector(`.ProseMirror img[alt='${alt}']`); return i && i.complete; }",
+        arg=alt,
+    )
+    assert _image_loaded(image), "the inserted image should load, not show as broken"
+
+
+@then(parsers.parse('the assets panel should list the image "{name}"'))
+def assets_panel_lists_image(page: Page, name: str):
+    expect(page.locator("aside").get_by_text(name, exact=True)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+def _preview_frame(page: Page):
+    page.get_by_role("tab", name=re.compile("Preview")).click()
+    return page.frame_locator('iframe[title="Registration page preview"]')
+
+
+@then(parsers.parse('the registration preview should show a level 2 heading "{text}"'))
+def preview_shows_h2(page: Page, text: str):
+    expect(_preview_frame(page).get_by_role("heading", level=2, name=text)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the registration preview should show the image "{alt}"'))
+def preview_shows_image(page: Page, alt: str):
+    image = _preview_frame(page).get_by_role("img", name=alt)
+    expect(image).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    image.evaluate("(img) => img.decode()")
+    assert _image_loaded(image), "the image should load in the preview, not show as broken"
+
+
+# The width an image had in the editor before a drag, keyed by its alt text.
+_widths_before_drag: dict[str, float] = {}
+
+
+def _visual_intro_image(page: Page, alt: str):
+    image = page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]')
+    expect(image).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    image.evaluate("(img) => img.decode()")
+    return image
+
+
+@when(parsers.parse('I drag the bottom-right corner of the image "{alt}" {distance:d} pixels to the left'))
+def drag_image_corner(page: Page, alt: str, distance: int):
+    image = _visual_intro_image(page, alt)
+    image.hover()
+    handle = page.locator(f'{VISUAL_INTRO} [data-resize-handle="bottom-right"]')
+    expect(handle).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    image_box = image.bounding_box()
+    handle_box = handle.bounding_box()
+    assert image_box is not None and handle_box is not None
+    _widths_before_drag[alt] = image_box["width"]
+    x = handle_box["x"] + handle_box["width"] / 2
+    y = handle_box["y"] + handle_box["height"] / 2
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.mouse.move(x - distance / 2, y, steps=5)
+    page.mouse.move(x - distance, y, steps=5)
+    page.mouse.up()
+
+
+@then(parsers.parse('the intro image "{alt}" should be {distance:d} pixels narrower and keep its shape'))
+def intro_image_narrower(page: Page, alt: str, distance: int):
+    image = _visual_intro_image(page, alt)
+    natural_ratio = image.evaluate("(img) => img.naturalWidth / img.naturalHeight")
+    saved = _saved_image_size(page, alt)
+    assert saved["width"] is not None and saved["height"] is not None, saved
+    width, height = int(saved["width"]), int(saved["height"])
+    assert width == pytest.approx(_widths_before_drag[alt] - distance, abs=3)
+    assert width / height == pytest.approx(natural_ratio, rel=0.03)
+
+
+def _saved_image_size(page: Page, alt: str) -> dict:
+    return page.evaluate(
+        """(alt) => {
+            const html = document.querySelector("textarea[name='intro_content']").value;
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            const img = doc.querySelector(`img[alt='${alt}']`);
+            return { width: img.getAttribute("width"), height: img.getAttribute("height") };
+        }""",
+        alt,
+    )
+
+
+@when(parsers.parse('I select the image "{alt}" in the visual intro editor with the arrow keys'))
+def select_image_with_arrow_keys(page: Page, alt: str):
+    """The image ends the line, so End then the left arrow lands on it rather than in the text."""
+    _visual_intro_image(page, alt)
+    page.locator(VISUAL_INTRO).click()
+    page.keyboard.press("End")
+    page.keyboard.press("ArrowLeft")
+    expect(page.locator(f'{VISUAL_INTRO} .ProseMirror-selectednode img[alt="{alt}"]')).to_have_count(1)
+
+
+@when(parsers.parse('I double-click the image "{alt}" in the visual intro editor'))
+def double_click_image(page: Page, alt: str):
+    _visual_intro_image(page, alt).dblclick()
+
+
+@when(parsers.parse('I enter the width "{width}" in the image size dialog and press Enter'))
+def enter_image_width(page: Page, width: str):
+    field = page.get_by_role("dialog", name="Image size").get_by_label("Width in pixels")
+    expect(field).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+    page.keyboard.type(width)
+    page.keyboard.press("Enter")
+    expect(page.get_by_role("dialog", name="Image size")).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I press the "{label}" button in the image size dialog'))
+def press_image_size_dialog_button(page: Page, label: str):
+    dialog = page.get_by_role("dialog", name="Image size")
+    dialog.get_by_role("button", name=label, exact=True).click()
+    expect(dialog).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the image size dialog should show the width "{width}"'))
+def image_size_dialog_shows(page: Page, width: str):
+    field = page.get_by_role("dialog", name="Image size").get_by_label("Width in pixels")
+    expect(field).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(field).to_have_value(width)
+
+
+@then(parsers.parse('the intro image "{alt}" should be {width:d} pixels wide and keep its shape'))
+def intro_image_sized(page: Page, alt: str, width: int):
+    natural_ratio = _visual_intro_image(page, alt).evaluate("(img) => img.naturalWidth / img.naturalHeight")
+    saved = _saved_image_size(page, alt)
+    assert saved["width"] == str(width), saved
+    assert saved["height"] is not None, saved
+    assert width / int(saved["height"]) == pytest.approx(natural_ratio, rel=0.03)
+    shown = page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]').bounding_box()
+    assert shown is not None and shown["width"] == pytest.approx(width, abs=1)
+
+
+@then(parsers.parse('the intro image "{alt}" should have no size'))
+def intro_image_has_no_size(page: Page, alt: str):
+    assert _saved_image_size(page, alt) == {"width": None, "height": None}
+
+
+@then(parsers.parse('the image "{alt}" in the visual intro editor should have no resize handles'))
+def visual_intro_image_has_no_handles(page: Page, alt: str):
+    _visual_intro_image(page, alt).hover()
+    expect(page.locator(f"{VISUAL_INTRO} [data-resize-handle]")).to_have_count(0)
+
+
+@when(parsers.parse('I view the registration form preview for "{title}" on a phone-sized screen'))
+def view_form_preview_on_phone(page: Page, title: str, test_database):
+    """The preview route renders the public template, so it carries the public page's CSS."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    page.set_viewport_size({"width": 375, "height": 800})
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}/form-preview")
+
+
+@then(parsers.parse('the image "{alt}" should fit the page and keep its shape'))
+def image_fits_and_keeps_shape(page: Page, alt: str):
+    image = page.get_by_role("img", name=alt)
+    expect(image).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    image_box = image.bounding_box()
+    main_box = page.locator("main").bounding_box()
+    assert image_box is not None and main_box is not None
+    assert image_box["width"] <= main_box["width"], "the image should not be wider than the page"
+    image.evaluate("(img) => img.decode()")
+    natural_ratio = image.evaluate("(img) => img.naturalWidth / img.naturalHeight")
+    assert image_box["width"] / image_box["height"] == pytest.approx(natural_ratio, rel=0.02)
+
+
+@then(parsers.parse('the visual intro editor should show a level 1 heading "{text}"'))
+def visual_intro_shows_h1(page: Page, text: str):
+    expect(page.locator(VISUAL_INTRO).get_by_role("heading", level=1, name=text)).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@then("the visual intro editor should not be editable")
+def visual_intro_not_editable(page: Page):
+    expect(page.locator(VISUAL_INTRO)).to_have_attribute("contenteditable", "false")
+
+
+@then("there should be no formatting toolbar")
+def no_formatting_toolbar(page: Page):
+    expect(page.get_by_role("toolbar", name="Formatting")).to_have_count(0)
+
+
+# 19px is GOV.UK's body text size from tablet width up; the backoffice body text is smaller.
+GOVUK_BODY_FONT_SIZE = "19px"
+
+
+def _visual_paragraph_font_size(page: Page) -> str:
+    paragraph = page.locator(f"{VISUAL_INTRO} p").first
+    expect(paragraph).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    return paragraph.evaluate("(p) => getComputedStyle(p).fontSize")
+
+
+@then("the paragraph in the visual intro editor should use the GOV.UK body font size")
+def visual_paragraph_is_govuk(page: Page):
+    assert _visual_paragraph_font_size(page) == GOVUK_BODY_FONT_SIZE
+
+
+@then("the paragraph in the visual intro editor should not use the GOV.UK body font size")
+def visual_paragraph_is_not_govuk(page: Page):
+    assert _visual_paragraph_font_size(page) != GOVUK_BODY_FONT_SIZE
+
+
+@when(parsers.parse('I choose the "{label}" intro style'))
+def choose_intro_style(page: Page, label: str):
+    page.get_by_role("radio", name=label).check()
+
+
+@then(parsers.parse('the registration preview should show the paragraph "{text}" with the class "{css_class}"'))
+def preview_paragraph_has_class(page: Page, text: str, css_class: str):
+    paragraph = _preview_frame(page).locator("p", has_text=text)
+    expect(paragraph).to_have_class(re.compile(rf"\b{css_class}\b"), timeout=PLAYWRIGHT_TIMEOUT)

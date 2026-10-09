@@ -36,6 +36,7 @@ from opendlp.domain.respondent_field_schema import (
     humanise_field_key,
 )
 from opendlp.domain.validators import SlugError
+from opendlp.domain.value_objects import ContentStyle
 
 ASSEMBLY_ID = uuid.uuid4()
 
@@ -262,7 +263,10 @@ class TestRegistrationPageHtml:
     def test_render_puts_intro_before_form(self):
         """The intro and the form render separately and are joined by a newline."""
         html = RegistrationPageHtml(
-            registration_page_id=uuid.uuid4(), intro_html="<h1>Welcome</h1>", form_html=READY_HTML
+            registration_page_id=uuid.uuid4(),
+            intro_html="<h1>Welcome</h1>",
+            form_html=READY_HTML,
+            content_style=ContentStyle.PLAIN,
         )
         rendered = html.render(RenderContext(csrf_form_element="<csrf>", form_action="/r/submit"))
         assert rendered == "<h1>Welcome</h1>\n<form><csrf> posts to /r/submit</form>"
@@ -273,6 +277,7 @@ class TestRegistrationPageHtml:
             registration_page_id=uuid.uuid4(),
             intro_html="<h1>{{ assembly_title }}</h1><p>{{ assembly_question }}</p>{{ form_errors() }}",
             form_html="<form></form>",
+            content_style=ContentStyle.PLAIN,
         )
         rendered = html.render(
             RenderContext(
@@ -284,6 +289,65 @@ class TestRegistrationPageHtml:
             )
         )
         assert rendered.startswith('<h1>Town Hall</h1><p>How?</p><ul class="form-errors"><li>oops</li></ul>')
+
+    def test_new_html_defaults_to_the_govuk_content_style(self):
+        """Q2: pages created from now on get the accessible default; existing rows stay plain via the migration."""
+        assert RegistrationPageHtml(registration_page_id=uuid.uuid4()).content_style == ContentStyle.GOVUK
+
+    def test_update_content_style_sets_value_and_bumps_updated_at(self):
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4())
+        html.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        html.update_content_style(ContentStyle.PLAIN)
+        assert html.content_style == ContentStyle.PLAIN
+        assert html.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+
+    def test_detached_copy_keeps_the_content_style(self):
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), content_style=ContentStyle.PLAIN)
+        assert html.create_detached_copy().content_style == ContentStyle.PLAIN
+
+    def test_govuk_style_adds_classes_to_the_rendered_intro(self):
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="<h1>{{ assembly_title }}</h1><p>{{ assembly_question }}</p>",
+            form_html=READY_HTML,
+            content_style=ContentStyle.GOVUK,
+        )
+        rendered = html.render(
+            RenderContext(csrf_form_element="<csrf>", form_action="/r/submit", assembly_title="Town Hall")
+        )
+        assert rendered.startswith('<h1 class="govuk-heading-xl">Town Hall</h1><p class="govuk-body"></p>\n')
+
+    def test_govuk_style_leaves_the_form_alone(self):
+        form = '<form>{{ csrf_form_element }}<p>Question</p><a href="{{ form_action }}">x</a></form>'
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="<p>Intro</p>",
+            form_html=form,
+            content_style=ContentStyle.GOVUK,
+        )
+        rendered = html.render(RenderContext(csrf_form_element="<csrf>", form_action="/r/submit"))
+        assert rendered.endswith('\n<form><csrf><p>Question</p><a href="/r/submit">x</a></form>')
+
+    def test_plain_style_renders_the_intro_as_written(self):
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="<p>Intro</p>",
+            form_html=READY_HTML,
+            content_style=ContentStyle.PLAIN,
+        )
+        rendered = html.render(RenderContext(csrf_form_element="<csrf>", form_action="/r/submit"))
+        assert rendered.startswith("<p>Intro</p>\n")
+
+    def test_govuk_style_cannot_be_tricked_by_markup_in_a_variable(self):
+        """Variables are autoescaped before the classes are added, so they cannot inject elements to style."""
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="<h1>{{ assembly_title }}</h1>",
+            form_html=READY_HTML,
+            content_style=ContentStyle.GOVUK,
+        )
+        rendered = html.render(RenderContext(csrf_form_element="x", form_action="/u", assembly_title="<p>Bad</p>"))
+        assert rendered.startswith('<h1 class="govuk-heading-xl">&lt;p&gt;Bad&lt;/p&gt;</h1>')
 
     def test_render_with_empty_intro_matches_the_form_alone(self):
         """A page created before intros existed renders byte-for-byte as it did."""

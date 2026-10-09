@@ -17,6 +17,7 @@ from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
     page_for_assembly,
     publish_registration_page,
+    update_registration_page,
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -94,3 +95,58 @@ class TestServeRegistrationImage:
         assert response.headers["X-Content-Type-Options"] == "nosniff"
         assert "immutable" in response.headers["Cache-Control"]
         assert response.get_etag()[0] == image.sha256
+
+
+class TestServeRegistrationImageById:
+    def _url(self, client: FlaskClient, image: RegistrationImage) -> str:
+        return route_url(client, "registration.serve_registration_image_by_id", image_id=image.id)
+
+    def test_serves_published_image_publicly(self, client: FlaskClient, postgres_session_factory, admin_user) -> None:
+        _slug, image = _seed_page_with_image(postgres_session_factory, admin_user)
+
+        response = client.get(self._url(client, image))
+
+        assert response.status_code == 200
+        assert response.data == image.data
+        assert response.headers["Cache-Control"] == "public, max-age=31536000, immutable"
+        assert response.get_etag()[0] == image.sha256
+
+    def test_both_routes_serve_the_same_image(self, client: FlaskClient, postgres_session_factory, admin_user) -> None:
+        url_slug, image = _seed_page_with_image(postgres_session_factory, admin_user)
+
+        by_id = client.get(self._url(client, image))
+        by_slug = client.get(
+            route_url(
+                client, "registration.serve_registration_image", url_slug=url_slug, image_name=f"{image.sha256}.png"
+            )
+        )
+
+        assert by_id.status_code == by_slug.status_code == 200
+        assert by_id.data == by_slug.data
+
+    def test_keeps_working_after_the_page_slug_changes(
+        self, client: FlaskClient, postgres_session_factory, admin_user
+    ) -> None:
+        old_slug, image = _seed_page_with_image(postgres_session_factory, admin_user, status="test")
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            update_registration_page(
+                uow, admin_user.id, _page_id(uow, image.assembly_id), url_slug=f"{old_slug}-renamed"
+            )
+
+        old_route = route_url(
+            client, "registration.serve_registration_image", url_slug=old_slug, image_name=f"{image.sha256}.png"
+        )
+        assert client.get(old_route).status_code == 404
+        assert client.get(self._url(client, image)).status_code == 200
+
+    def test_closed_page_image_is_hidden_anonymously_but_shown_to_the_admin(
+        self, client: FlaskClient, postgres_session_factory, admin_user, logged_in_admin
+    ) -> None:
+        _slug, image = _seed_page_with_image(postgres_session_factory, admin_user, status="closed")
+
+        response = logged_in_admin.get(self._url(client, image))
+        assert response.status_code == 200
+        assert "no-store" in response.headers["Cache-Control"]
+
+        logged_in_admin.get("/auth/logout")
+        assert client.get(self._url(client, image)).status_code == 404

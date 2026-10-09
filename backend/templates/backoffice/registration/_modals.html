@@ -1,10 +1,10 @@
 {#
-ABOUTME: The registration editor dialogs - skeleton, asset upload/details, confirmations, toast
+ABOUTME: The registration editor dialogs - skeleton, asset upload/details, link, confirmations, toast
 ABOUTME: Included by assembly_registration.html inside the registrationPageController scope
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import controlled_modal, controlled_alert_dialog %}
-{% from "backoffice/registration/_assets.html" import asset_upload_modal, asset_details_modal, asset_original_filename_row, asset_file_size_row %}
+{% from "backoffice/registration/_assets.html" import asset_upload_modal, asset_details_modal, asset_original_filename_row, asset_file_size_row, inline_error %}
 {# Skeleton — the intro step offers the intro skeleton, the form step the form skeleton generated
    from the assembly's field definitions. One modal serves both: only the active step's button
    can open it, so the title and copy follow the active step. #}
@@ -113,7 +113,8 @@ text_hint=_("Describes the image for screen-reader users and is used as the file
 text_required=true,
 error_expr="imageUploadError",
 submit_click="submitImageUpload()",
-submit_disabled_expr="!imageFile || !imageAlt.trim() || imageUploading") }}
+submit_disabled_expr="!imageFile || !imageAlt.trim() || imageUploading",
+file_init="showChosenImageFile($el)") }}
 {% call asset_details_modal(id="image-details-modal",
 title=_("Image details"),
 open_expr="imageDetailsModalOpen && editingImage",
@@ -259,3 +260,88 @@ save_disabled_expr="!editingDocumentLabel.trim() || documentEditing") %}
      :style="toastType === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400); color: var(--color-success-600);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400); color: var(--color-error-600);'">
     <span x-text="toastMessage"></span>
 </div>
+{# Link — opened by the visual editor's Link button or Ctrl/Cmd-K, through the
+   rich-editor-link-request event; the answer goes back as rich-editor-link-result. #}
+{% call controlled_modal(id="link-modal",
+title=_("Link"),
+open_expr="linkDialogOpen",
+close_expr="cancelLink()",
+panel_classes="max-w-lg") %}
+<div class="dialog-body">
+    <div class="space-y-4">
+        <p x-show="linkText"
+           x-cloak
+           class="text-body-sm"
+           style="color: var(--color-secondary-text);">
+            {{ _("Linked text:") }} <span x-text="linkText"></span>
+        </p>
+        <div>
+            <label for="link-modal-url"
+                   class="text-label-md block mb-1"
+                   style="color: var(--color-headings)">{{ _("Link address") }}</label>
+            <input type="text"
+                   id="link-modal-url"
+                   x-model="linkUrl"
+                   @keydown.enter.prevent="applyLink()"
+                   aria-describedby="link-modal-url-hint"
+                   class="w-full px-3 py-2 rounded-md text-body-sm"
+                   style="border: 1px solid var(--color-borders-dividers);
+                          background: var(--color-page-background)" />
+            <p id="link-modal-url-hint"
+               class="text-body-sm mt-1"
+               style="color: var(--color-secondary-text);">
+                {{ _("A web address such as https://example.org, or mailto: followed by an email address.") }}
+            </p>
+        </div>
+        {{ inline_error("linkError") }}
+    </div>
+</div>
+<div class="dialog-footer">
+    <template x-if="linkHasExisting">
+        {{ button(_("Remove link"), variant="danger", attrs='type="button" @click="removeLink()"') }}
+    </template>
+    {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="cancelLink()"') }}
+    {{ button(_("Apply"), variant="primary", attrs='type="button" @click="applyLink()"') }}
+</div>
+{% endcall %}
+{# Image size — opened by the visual editor's Image size button or a double-click on an
+   image, through the rich-editor-image-size-request event; the answer goes back as
+   rich-editor-image-size-result. #}
+{% call controlled_modal(id="image-size-modal",
+title=_("Image size"),
+open_expr="imageSizeDialogOpen",
+close_expr="cancelImageSize()",
+panel_classes="max-w-lg") %}
+<div class="dialog-body">
+    <div class="space-y-4">
+        <div>
+            <label for="image-size-modal-width"
+                   class="text-label-md block mb-1"
+                   style="color: var(--color-headings)">{{ _("Width in pixels") }}</label>
+            <input type="number"
+                   id="image-size-modal-width"
+                   x-model="imageSizeWidth"
+                   @keydown.enter.prevent="applyImageSize()"
+                   min="20"
+                   max="2000"
+                   step="1"
+                   inputmode="numeric"
+                   aria-describedby="image-size-modal-width-hint"
+                   class="w-40 px-3 py-2 rounded-md text-body-sm"
+                   style="border: 1px solid var(--color-borders-dividers);
+                          background: var(--color-page-background)" />
+            <p id="image-size-modal-width-hint"
+               class="text-body-sm mt-1"
+               style="color: var(--color-secondary-text);">
+                {{ _("The height changes to keep the image's shape. The image is never shown wider than the page.") }}
+            </p>
+        </div>
+        {{ inline_error("imageSizeError") }}
+    </div>
+</div>
+<div class="dialog-footer">
+    {{ button(_("Original size"), variant="secondary", attrs='type="button" @click="resetImageSize()"') }}
+    {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="cancelImageSize()"') }}
+    {{ button(_("Apply"), variant="primary", attrs='type="button" @click="applyImageSize()"') }}
+</div>
+{% endcall %}

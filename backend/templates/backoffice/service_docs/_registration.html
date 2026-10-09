@@ -453,6 +453,7 @@ ABOUTME: Documents the registration page lifecycle, the Jinja form helpers, and 
         {{ param_table([
         ("assembly_id", "UUID", true, "Target assembly ID"),
         ("intro_html", "str", true, "HTML content shown above the registration form"),
+        ("content_style", "str", false, "With intro_html: \"govuk\" or \"plain\"; left out, the style is unchanged"),
         ("form_html", "str", true, "HTML content for the registration form"),
         ]) }}
         {{ returns_block("RegistrationPageHtml  →  The updated HTML source object") }}

@@ -3,6 +3,7 @@ ABOUTME: Validates and stores images, builds <img> snippets, resolves images for
 
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from opendlp.config import (
     get_max_image_upload_bytes,
@@ -148,3 +149,35 @@ def get_registration_image_for_serving(
         return None
     image = uow.registration_images.get_by_assembly_and_sha(page.assembly_id, sha256)
     return image.create_detached_copy() if image else None
+
+
+@dataclass(frozen=True)
+class ServedRegistrationImage:
+    """An image to serve, and whether anyone may see it or only a signed-in viewer."""
+
+    image: RegistrationImage
+    public: bool
+
+
+def get_registration_image_for_serving_by_id(
+    uow: AbstractUnitOfWork, image_id: uuid.UUID, user_id: uuid.UUID | None
+) -> ServedRegistrationImage | None:
+    """Resolve an image by its id for the slug-free public URL.
+
+    Public when any of the image's assembly's registration pages loads publicly;
+    otherwise only a user who can view the assembly gets it - which is what lets
+    the editor and preview show images before a page has a URL. None means 404.
+    """
+    image = uow.registration_images.get(image_id)
+    if image is None:
+        return None
+    pages = uow.registration_pages.list_by_assembly_id(image.assembly_id)
+    if any(page.is_publicly_loadable() for page in pages):
+        return ServedRegistrationImage(image=image.create_detached_copy(), public=True)
+    if user_id is None:
+        return None
+    user = uow.users.get(user_id)
+    assembly = uow.assemblies.get(image.assembly_id)
+    if user is None or assembly is None or not can_view_assembly(user, assembly):
+        return None
+    return ServedRegistrationImage(image=image.create_detached_copy(), public=False)
