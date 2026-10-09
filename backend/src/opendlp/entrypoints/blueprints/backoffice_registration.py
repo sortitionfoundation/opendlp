@@ -305,10 +305,10 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
         # have no save path so we always keep them read-only regardless of the param.
         edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
 
-        # Sub-section within the Registration tab (stepper). Default to step 1, the intro.
-        active_section = request.args.get("section", "intro")
+        # Sub-section within the Registration tab (stepper). Default to step 1, the name and URLs.
+        active_section = request.args.get("section", "page")
         if active_section not in _SECTIONS:
-            active_section = "intro"
+            active_section = "page"
 
         return render_template(
             "backoffice/assembly_registration.html",

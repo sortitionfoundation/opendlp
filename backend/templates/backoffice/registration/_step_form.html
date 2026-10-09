@@ -1,5 +1,5 @@
 {#
-ABOUTME: Step 2 of the registration editor - the form HTML editor and assets panel
+ABOUTME: Step 3 of the registration editor - the form HTML editor and assets panel
 ABOUTME: Included by assembly_registration.html when ?section=form
 #}
 {% from "backoffice/components/button.html" import button %}
@@ -38,7 +38,7 @@ ABOUTME: Included by assembly_registration.html when ?section=form
                          style="background-color: var(--color-tables-cards);
                                 border: 1px solid var(--color-borders-dividers)">
                     <div class="flex items-center justify-between mb-4">
-                        {# The page is named (and its URLs set) on the intro step; here the heading just says
+                        {# The page is named (and its URLs set) on the first step; here the heading just says
                            which page's form this is. #}
                         <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ registration_page.name }}</h2>
                                         {# Header right: the editorial controls live here, next to the content they act on —

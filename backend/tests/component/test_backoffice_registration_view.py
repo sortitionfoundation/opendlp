@@ -86,12 +86,12 @@ def _total(body: str, key: str) -> str:
 
 
 class TestViewEditModeFlag:
-    """?edit=1 unlocks the editor of whichever step is shown - here the default one, the intro."""
+    """?edit=1 unlocks the editor of whichever step is shown - here the intro."""
 
     def test_default_test_status_is_read_only(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro")
 
         assert response.status_code == 200
         assert "readonly" in _extract_textarea(response.get_data(as_text=True), "intro_content")
@@ -99,7 +99,7 @@ class TestViewEditModeFlag:
     def test_edit_param_enables_edit_in_test_status(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1")
 
         assert response.status_code == 200
         assert "readonly" not in _extract_textarea(response.get_data(as_text=True), "intro_content")
@@ -107,7 +107,7 @@ class TestViewEditModeFlag:
     def test_edit_param_enables_edit_in_published_status(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1")
 
         assert response.status_code == 200
         assert "readonly" not in _extract_textarea(response.get_data(as_text=True), "intro_content")
@@ -115,7 +115,7 @@ class TestViewEditModeFlag:
     def test_edit_param_is_ignored_in_closed_status(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1")
 
         assert response.status_code == 200
         assert "readonly" in _extract_textarea(response.get_data(as_text=True), "intro_content")
@@ -123,7 +123,9 @@ class TestViewEditModeFlag:
     def test_edit_param_other_values_do_not_enable_edit(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=true")
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=true"
+        )
 
         assert response.status_code == 200
         assert "readonly" in _extract_textarea(response.get_data(as_text=True), "intro_content")
@@ -180,7 +182,7 @@ class TestEditModeRendersExpectedHtml:
 
         assert "<a href" in stepper_markup(view_body)
         assert "<a href" not in stepper_markup(edit_body)
-        assert stepper_markup(edit_body).count('aria-disabled="true"') == 4
+        assert stepper_markup(edit_body).count('aria-disabled="true"') == 5
 
     def test_view_mode_hides_assets_panel_and_edit_mode_shows_it(self, logged_in_admin, fake_store, assembly_id):
         """The Assets panel is an editing tool, so it only renders in edit mode."""
@@ -291,34 +293,62 @@ class TestSaveRedirectPreservesEditMode:
 
 
 class TestIntroStep:
-    """Step 1 of the editor: the intro HTML, saved through the same route as the form."""
+    """Step 2 of the editor: the intro HTML, saved through the same route as the form."""
 
-    def test_bare_editor_url_lands_on_the_intro_step(self, logged_in_admin, fake_store, assembly_id):
+    def test_bare_editor_url_lands_on_the_page_step(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, intro_html="<h1>Welcome</h1>")
 
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
-        assert 'id="reg-steps-panel-intro"' in body
-        assert "&lt;h1&gt;Welcome&lt;/h1&gt;" in body
-        assert 'name="html_content"' not in body
+        assert 'id="reg-steps-panel-page"' in body
+        assert 'id="reg-steps-panel-intro"' not in body
+        assert 'name="intro_content"' not in body
 
-    def test_unknown_section_falls_back_to_the_intro(self, logged_in_admin, fake_store, assembly_id):
+    def test_unknown_section_falls_back_to_the_page_step(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=nope")
 
-        assert 'id="reg-steps-panel-intro"' in response.get_data(as_text=True)
+        assert 'id="reg-steps-panel-page"' in response.get_data(as_text=True)
 
-    def test_stepper_has_four_steps_starting_with_the_intro(self, logged_in_admin, fake_store, assembly_id):
+    def test_intro_section_shows_the_saved_intro(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, intro_html="<h1>Welcome</h1>")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro").get_data(
+            as_text=True
+        )
+
+        assert 'id="reg-steps-panel-intro"' in body
+        assert "&lt;h1&gt;Welcome&lt;/h1&gt;" in body
+        assert 'name="html_content"' not in body
+
+    def test_stepper_has_five_steps_starting_with_name_and_urls(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug").get_data(as_text=True)
 
         stepper = body.split('class="stepper"', 1)[1].split("</ol>", 1)[0]
-        assert stepper.count("<li") == 4
-        assert stepper.index("?section=intro") < stepper.index("?section=form") < stepper.index("?section=email")
+        assert stepper.count("<li") == 5
+        assert "Name and URLs" in stepper
+        assert (
+            stepper.index("?section=page")
+            < stepper.index("?section=intro")
+            < stepper.index("?section=form")
+            < stepper.index("?section=email")
+        )
+
+    def test_intro_footer_goes_back_to_the_page_step(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro").get_data(
+            as_text=True
+        )
+
+        footer = body.split('class="wizard-footer"', 1)[1]
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=page" in footer
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form" in footer
 
     def test_intro_textarea_is_a_code_editor_in_both_modes(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
@@ -963,7 +993,7 @@ class TestEditorAtSlugUrl:
 
 
 class TestEditorNameAndSlugEditing:
-    """The page name and URLs are edited on the intro step, alongside the intro HTML."""
+    """The page name and URLs are edited on their own step, the first."""
 
     def test_save_renames_the_page(self, logged_in_admin, fake_store, assembly_id):
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
@@ -1032,26 +1062,92 @@ class TestEditorNameAndSlugEditing:
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.registration_pages.get(page.id).url_slug == "my-slug"
 
-    def test_intro_edit_mode_offers_name_and_slug_inputs(self, logged_in_admin, fake_store, assembly_id):
+    def test_page_step_edit_mode_offers_name_and_slug_inputs(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
-        base = f"/backoffice/assembly/{assembly_id}/registration/my-slug"
 
-        read_body = logged_in_admin.get(f"{base}?section=intro").get_data(as_text=True)
-        edit_body = logged_in_admin.get(f"{base}?section=intro&edit=1").get_data(as_text=True)
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=page&edit=1"
+        ).get_data(as_text=True)
 
-        assert 'name="page_name"' not in read_body
-        assert 'name="page_name"' in edit_body
-        assert 'name="url_slug"' in edit_body
-        assert 'name="short_url_slug"' in edit_body
-        # The heading shows the page name in read-only mode
-        assert "English" in read_body
+        assert '<input type="hidden" name="step" value="page"' in body
+        assert re.search(r'name="page_name"\s+id="page_name"\s+value="English"', body)
+        assert 'name="url_slug"' in body
+        assert 'name="short_url_slug"' in body
+        assert "Save</span></button>" in body
+        assert "Cancel</span></a>" in body
+        assert "These URLs are locked" not in body
 
-    def test_form_edit_mode_does_not_offer_them(self, logged_in_admin, fake_store, assembly_id):
-        """The form step edits the form HTML only; the heading is the page name, not an input."""
+    def test_page_step_read_view_shows_the_name_and_both_urls(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.registration_pages.get(page.id).update_slugs(short_url_slug="123456")
+            uow.commit()
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=page").get_data(
+            as_text=True
+        )
+        panel = body.split('id="reg-steps-panel-page"', 1)[1].split('class="wizard-footer"', 1)[0]
+
+        assert 'name="page_name"' not in panel
+        assert 'name="url_slug"' not in panel
+        assert "English" in panel
+        assert "/register/my-slug" in panel
+        assert "Short URL" in panel
+        assert "/r/123456" in panel
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=page&amp;edit=1" in panel
+
+    def test_page_step_read_view_leaves_out_an_unset_short_url(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=page").get_data(
+            as_text=True
+        )
+        panel = body.split('id="reg-steps-panel-page"', 1)[1].split('class="wizard-footer"', 1)[0]
+
+        assert "/register/my-slug" in panel
+        assert "Short URL" not in panel
+
+    def test_page_step_footer_goes_on_to_the_intro_and_not_back(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=page").get_data(
+            as_text=True
+        )
+        footer = body.split('class="wizard-footer"', 1)[1]
+
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro" in footer
+        assert "Back" not in footer
+
+    @pytest.mark.parametrize("edit", ["", "&edit=1"])
+    def test_published_page_step_explains_the_locked_urls(self, logged_in_admin, fake_store, assembly_id, edit):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=page{edit}"
+        ).get_data(as_text=True)
+
+        assert "These URLs are locked" in body
+        if edit:
+            assert re.search(r'name="url_slug"[^>]*\sdisabled', body)
+            assert "Save and Republish" in body
+
+    def test_closed_page_step_offers_no_edit(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=page&edit=1"
+        ).get_data(as_text=True)
+
+        assert 'name="page_name"' not in body
+        assert "section=page&amp;edit=1" not in body
+
+    @pytest.mark.parametrize("section", ["intro", "form"])
+    def test_other_steps_do_not_offer_them(self, logged_in_admin, fake_store, assembly_id, section):
+        """The intro and form steps edit their HTML only; the heading is the page name, not an input."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         edit_body = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form&edit=1"
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section={section}&edit=1"
         ).get_data(as_text=True)
 
         assert 'name="page_name"' not in edit_body

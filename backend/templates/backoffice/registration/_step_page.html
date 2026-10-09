@@ -1,0 +1,101 @@
+{#
+ABOUTME: Step 1 of the registration editor - the page name and its registration and short URLs
+ABOUTME: Included by assembly_registration.html when ?section=page
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/prefixed_url_input.html" import prefixed_url_input %}
+{% from "backoffice/components/url_display.html" import readonly_url_display %}
+<div id="reg-steps-panel-page"
+     role="tabpanel"
+     aria-labelledby="reg-steps-tab-page"
+     tabindex="0">
+    {% set edit_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="page", edit="1") %}
+    {% set view_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="page") %}
+    {% set next_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="intro") %}
+    {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
+    <form method="post"
+          action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id, url_slug=registration_page.url_slug) }}"
+          x-data
+          x-preserve-scroll-on-submit
+          {% if edit_mode %}@input="markEditDirty()" @change="markEditDirty()" @submit="allowLeave()"{% endif %}>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="step" value="page" />
+        <section class="rounded-lg p-6"
+                 style="background-color: var(--color-tables-cards);
+                        border: 1px solid var(--color-borders-dividers)">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Name and URLs") }}</h2>
+                {# x-scroll-preserve-links keeps the scroll position across the Edit/Cancel reloads. #}
+                <div class="flex items-center gap-2" x-scroll-preserve-links>
+                    {% if edit_mode %}
+                        {{ button(_("Cancel"), variant="secondary", href=view_url, attrs='@click="guardLeave($event)"') }}
+                        {{ button(save_label, type="submit", variant="primary", attrs='name="action" value="save"') }}
+                    {% elif registration_status != "CLOSED" %}
+                        {{ button(_("Edit"), variant="secondary", href=edit_url) }}
+                    {% endif %}
+                </div>
+            </div>
+            {# The URLs are frozen once the page has been published so shared links keep working. #}
+            {% set slugs_locked = registration_page.slugs_frozen %}
+            <div class="space-y-6 max-w-3xl">
+                {% if slugs_locked %}
+                    {{ alert(
+                    message=_("These URLs are locked while the registration page is published or closed, so links shared in invites, QR codes, and elsewhere keep working. Switch the form back to test mode to edit them."),
+                    variant="info"
+                    ) }}
+                {% endif %}
+                {{ input("page_name",
+                label=_("Registration page name"),
+                value=registration_page.name,
+                required=true,
+                readonly=not edit_mode) }}
+                {% if edit_mode %}
+                    {{ prefixed_url_input(
+                    name="url_slug",
+                    label=_("Registration URL"),
+                    hint=_("The URL path for this registration page"),
+                    prefix=registration_url_prefix,
+                    placeholder="my-assembly-2026",
+                    value=registration_page.url_slug,
+                    disabled=slugs_locked
+                    ) }}
+                    {{ prefixed_url_input(
+                    name="short_url_slug",
+                    label=_("Short URL (optional)"),
+                    hint=_("A shorter URL for QR codes and paper invitations"),
+                    prefix=short_url_prefix,
+                    placeholder="ma26",
+                    value=registration_page.short_url_slug,
+                    disabled=slugs_locked
+                    ) }}
+                {% else %}
+                    {{ readonly_url_display(label=_("Registration URL"),
+                    hint=_("The URL for your registration page"),
+                    url=registration_url) }}
+                    {% if registration_page.short_url_slug %}
+                        {{ readonly_url_display(label=_("Short URL"),
+                        hint=_("A shorter URL for QR codes and paper invitations"),
+                        url=short_url) }}
+                    {% endif %}
+                {% endif %}
+            </div>
+        </section>
+    </form>
+    {# Sticky wizard footer - navigation only. Step 1 has nowhere to go back to. #}
+    <div class="wizard-footer" x-scroll-preserve-links>
+        <div class="wizard-footer-box">
+            {% if edit_mode %}
+                <span id="editing-nav-hint"
+                      class="mr-auto text-body-sm"
+                      style="color: var(--color-secondary-text)">
+                    {{ _("Editing in progress — save or cancel to continue") }}
+                </span>
+                {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
+            {% else %}
+                {{ button(_("Next →"), variant="primary", href=next_url) }}
+            {% endif %}
+        </div>
+    </div>
+</div>
