@@ -29,6 +29,7 @@ class SelectionAlreadyRunning(InvalidSelection):
         )
         self.task_id = blocking.task_id
         self.task_type = blocking.task_type
+        self.task_label = blocking.task_type_verbose
 
 
 def unfinished_writing_runs(
