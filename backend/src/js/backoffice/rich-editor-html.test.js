@@ -352,8 +352,31 @@ describe("normaliseHtml with styled spans", () => {
   });
 });
 
+describe("an editor without tables", () => {
+  const withoutTables = createSchemaExtensions({ tables: false });
+
+  it("refuses a table, which it would flatten into paragraphs", () => {
+    expect(
+      roundTripsCleanly("<table><tr><td>a</td></tr></table>", withoutTables),
+    ).toBe(false);
+  });
+
+  it("accepts everything else", () => {
+    expect(roundTripsCleanly(GOVUK_STARTER_INTRO, withoutTables)).toBe(true);
+    expect(
+      roundTripsCleanly(
+        "<ul><li>a</li></ul><blockquote>b</blockquote><hr>",
+        withoutTables,
+      ),
+    ).toBe(true);
+  });
+});
+
 describe("the real auto-replies", () => {
-  const emailExtensions = createSchemaExtensions({ images: false });
+  const emailExtensions = createSchemaExtensions({
+    images: false,
+    tables: false,
+  });
   const names = [
     "default_auto_reply",
     "google_docs_list_auto_reply",

@@ -181,12 +181,16 @@ const ResizableImage = Image.extend({
  * Anything outside this schema is dropped by Tiptap, which is why an intro
  * using it has to stay in HTML mode (see rich-editor-html.js).
  *
+ * `images` and `tables` leave those nodes out, for an editor that offers
+ * neither, such as the auto-reply email's.
+ *
  * `resizable` is off for a read-only editor: Tiptap only takes the handles
  * away after the editor changes, and a read-only editor never does.
  */
 export function createSchemaExtensions({
   images = true,
   resizable = true,
+  tables = true,
 } = {}) {
   const extensions = [
     StarterKit.configure({
@@ -203,11 +207,15 @@ export function createSchemaExtensions({
     // Keeps a styled <span>, such as one pasted from Google Docs; the toolbar never makes one.
     TextStyle,
     Div,
-    PlainTable.configure({ resizable: false }),
-    TableRow,
-    TableHeader,
-    TableCell,
   ];
+  if (tables) {
+    extensions.push(
+      PlainTable.configure({ resizable: false }),
+      TableRow,
+      TableHeader,
+      TableCell,
+    );
+  }
   if (images) {
     extensions.push(
       ResizableImage.configure({

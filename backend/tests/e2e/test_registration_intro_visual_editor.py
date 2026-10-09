@@ -54,7 +54,7 @@ def _intro_step(client, assembly_id, slug, edit: bool) -> str:
 
 
 def test_intro_step_renders_the_visual_editor_with_toolbar_and_images(logged_in_admin, registration_page):
-    """In edit mode the intro textarea is marked for the visual editor, with images, a toolbar and Insert buttons."""
+    """In edit mode the intro textarea is marked for the visual editor, with images, tables, a toolbar and Insert buttons."""
     assembly_id, _page_id, slug = registration_page
 
     body = _intro_step(logged_in_admin, assembly_id, slug, edit=True)
@@ -64,6 +64,9 @@ def test_intro_step_renders_the_visual_editor_with_toolbar_and_images(logged_in_
     assert 'data-rich-editor-images="true"' in body
     assert 'role="toolbar"' in body
     assert 'data-command="image"' in body
+    assert 'data-rich-editor-tables="true"' in body
+    assert 'data-command="table"' in body
+    assert 'id="intro_content-table-menu"' in body
     assert 'aria-controls="intro_content-visual"' in body
     assert "insertImage(image)" in body
 

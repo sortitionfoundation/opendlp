@@ -60,6 +60,7 @@ export function mountRichEditor(textarea) {
   const extensions = createSchemaExtensions({
     images: imagesAllowed,
     resizable: !readOnly,
+    tables: textarea.dataset.richEditorTables === "true",
   });
 
   let mode = null;

@@ -85,6 +85,16 @@ describe("createSchemaExtensions", () => {
     ).toBeUndefined();
   });
 
+  it("can leave tables out", () => {
+    const schemaWithoutTables = getSchema(
+      createSchemaExtensions({ tables: false }),
+    );
+    for (const name of ["table", "tableRow", "tableHeader", "tableCell"]) {
+      expect(schemaWithoutTables.nodes[name]).toBeUndefined();
+    }
+    expect(schemaWithoutTables.nodes.blockquote).toBeDefined();
+  });
+
   it("keeps a styled span as a mark, with its style, class and dir", () => {
     const text = docFrom(
       '<p><span style="color: red;" class="x" dir="ltr">a</span></p>',

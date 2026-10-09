@@ -76,6 +76,30 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
+describe("a toolbar without tables", () => {
+  it("works when the editor has no table extension and the toolbar no Table button", () => {
+    editor.destroy();
+    toolbar
+      .querySelector(".rich-editor__menu-anchor, [aria-controls='table-menu']")
+      .remove();
+    document.getElementById("table-menu").remove();
+    editor = new Editor({
+      element: document.getElementById("surface"),
+      extensions: createSchemaExtensions({ tables: false }),
+      content: "<p>Hello world</p>",
+      injectCSS: false,
+    });
+    const { refresh } = wireToolbar(toolbar, editor);
+    expect(() => refresh()).not.toThrow();
+    selectAll();
+    button("bold").click();
+    expect(editor.getHTML()).toBe("<p><strong>Hello world</strong></p>");
+    button("bold").focus();
+    key(button("bold"), "End");
+    expect(document.activeElement).toBe(button("redo"));
+  });
+});
+
 describe("wireToolbar commands", () => {
   it.each([
     ["heading1", "<h1>Hello world</h1>"],
