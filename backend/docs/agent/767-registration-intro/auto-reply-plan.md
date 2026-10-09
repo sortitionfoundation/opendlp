@@ -6,8 +6,7 @@ the intro editor worked, the auto-reply email gets the same editor. Built on
 everything in [tiptap-intro-editor-plan.md](tiptap-intro-editor-plan.md); this
 plan only covers what is different for the email.
 
-**Status: planned.** Nothing built yet, apart from the real-email fixtures
-(step 1). They led to A8, which a spike has checked.
+**Status: in progress.** Steps 1 and 1b are done (marked ✅).
 
 ## Goal
 
@@ -166,16 +165,16 @@ Rejected:
 Ordered so each step leaves `just check` and `just test-nobdd` green.
 Commit this plan separately from the code.
 
-### 1. Round-trip fixtures from real auto-reply emails
+### ✅ 1. Round-trip fixtures from real auto-reply emails
 
 Done: five real, anonymised auto-reply bodies are in
 `tests/fixtures/registration_auto_replies/`, with a `README.md` saying what
 each one exercises. (Seven were supplied; two were exact copies.) What they
-showed is A8. Not yet committed.
+showed is A8.
 
 Tests land with step 1b, because until then every fixture is refused.
 
-### 1b. Keep styled spans (A8)
+### ✅ 1b. Keep styled spans (A8)
 
 - `rich-editor-schema.js`: add `TextStyle` to `createSchemaExtensions`, and
   `"textStyle"` to `PRESERVED_ATTRIBUTE_TYPES`. Pin
@@ -205,6 +204,31 @@ Tests land with step 1b, because until then every fixture is refused.
 - BDD: a scenario in the intro editor feature that opens an intro with a
   styled span in Visual mode, edits another paragraph, saves, and still
   finds the span.
+
+As built:
+
+- **Nesting order now matters for styled spans.** A second spike showed
+  Tiptap always nests a span inside a link and outside bold, italic,
+  underline and strikethrough. `normaliseHtml` ignored nesting order, so
+  `<span style="color: red;"><a>` → `<a><span style="color: red;">` (a blue
+  link turning red) would have passed as clean. So the rule is wider than
+  planned: `settleSpanStyle` settles a run's single styled span against the
+  `<strong>`, `<em>` and `<a>` round and in it the way a browser does - the
+  inner one sets `font-weight`, `font-style` or `color`. That covers the
+  un-bolding case and refuses the link case. Tiptap only un-bolds for exactly
+  `font-weight: 400`; `normal` keeps the bold and moves it inside, which the
+  check now refuses. Text in more than one span is left alone, so nested
+  spans stay refused.
+- The `font-weight: 700` test became "keeps the weight of a bold span inside
+  `<strong>`": the span is inner, so its weight is what shows.
+- No `package.json` change: none of the Tiptap packages is pinned exactly;
+  all are `^3.31.4` with the lockfile, and text-style already matched.
+- The default body is a fixture, `default_auto_reply.html`.
+  `tests/unit/test_default_auto_reply_body.py` checks it is the real default,
+  and that every catalogue's translation of it uses the same tags (the
+  Hungarian risk below).
+- Confirmed in a vitest: text typed at the end of a styled span takes its
+  style.
 
 ### 2. Tables become a switch (A1, A3)
 
@@ -286,8 +310,8 @@ Run `just build-all` before BDD, and run `just test-nobdd` and
   auto-reply did, because of styled spans. A8 fixes that; the fixture tests
   are the guard.
 - **Spans make editing slightly odd.** Text typed at the end of a styled
-  span will most likely carry its style (ProseMirror marks extend by
-  default; to confirm in step 1b), as it would in Google Docs. That's what the author
+  span takes its style (confirmed by a test in step 1b), as it would in
+  Google Docs. That's what the author
   will expect from a paste, but the toolbar can't show or remove it; HTML
   mode can. The "Remove pasted formatting" idea in A8 is the answer if
   authors ask.
@@ -300,8 +324,8 @@ Run `just build-all` before BDD, and run `just test-nobdd` and
 - **A Hungarian default body.** `_default_email_template_content` is
   translated. A translator could add markup the editor lacks; the round-trip
   check would send it to HTML mode, which is safe but wrong for a new
-  template. Add a test that the default body round-trips in every catalogue's
-  language, or at least in Hungarian.
+  template. Done in step 1b: a test checks every translation uses the
+  English markup.
 - **Link check is client-side only.** HTML mode, and anyone posting the form
   directly, can still save a relative link. That's fine: A4 is help for the
   author, not a security rule. A server-side readiness warning for relative
