@@ -81,11 +81,22 @@ Feature: Backoffice registration visual intro editor
     When I visit the registration intro editor for "Visual Drop Assembly"
     And I drop an image file called "dropped.png" into the visual intro editor
     Then the image upload dialog should show "dropped.png"
-    When I give the dropped image the alt text "Dropped logo" and upload it
+    And the image upload file field should hold "dropped.png"
+    When I give the image the alt text "Dropped logo" and upload it
     Then the visual intro editor should show the image "Dropped logo"
     And the assets panel should list the image "Dropped logo"
     When I save the registration form
     Then the registration preview should show the image "Dropped logo"
+
+  Scenario: An image pasted into the visual editor is uploaded and shown
+    Given there is an assembly called "Visual Paste Assembly" with a registration page
+    When I visit the registration intro editor for "Visual Paste Assembly"
+    And I paste an image file called "pasted.png" into the visual intro editor
+    Then the image upload dialog should show "pasted.png"
+    And the image upload file field should hold "pasted.png"
+    When I give the image the alt text "Pasted logo" and upload it
+    Then the visual intro editor should show the image "Pasted logo"
+    And the assets panel should list the image "Pasted logo"
 
   Scenario: The read-only intro view shows the visual editor without a toolbar
     Given there is an assembly called "Visual Read Only Assembly" with the intro "<h1>Read only title</h1>"

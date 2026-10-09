@@ -90,6 +90,15 @@ export function registrationImages(options) {
       }
     },
 
+    // The modal's file input is built afresh each time it opens, so a file the
+    // editor handed over is put into it to show as the chosen file.
+    showChosenImageFile: function (input) {
+      if (!this.imageFile) return;
+      var transfer = new DataTransfer();
+      transfer.items.add(this.imageFile);
+      input.files = transfer.files;
+    },
+
     // The Assets panel's Insert button.
     insertImage: function (image) {
       if (!image || !image.public_url) return;

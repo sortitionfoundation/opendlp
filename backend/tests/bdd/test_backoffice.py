@@ -2060,23 +2060,40 @@ def variable_highlighted(page: Page, text: str):
     expect(page.locator(f"{VISUAL_INTRO} .rich-editor__variable")).to_have_text(text)
 
 
-@when(parsers.parse('I drop an image file called "{name}" into the visual intro editor'))
-def drop_image_into_visual_intro(page: Page, name: str):
+# Builds a PNG file in the page and sends it to the editor in the event a drag from a
+# file manager, or a paste of a copied image, would raise.
+_SEND_IMAGE_FILE = """(target, {name, data, kind}) => {
+    const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], name, { type: "image/png" }));
+    if (kind === "paste") {
+        target.dispatchEvent(new ClipboardEvent("paste", {
+            clipboardData: transfer, bubbles: true, cancelable: true,
+        }));
+        return;
+    }
+    const box = target.getBoundingClientRect();
+    target.dispatchEvent(new DragEvent("drop", {
+        dataTransfer: transfer, bubbles: true, cancelable: true,
+        clientX: box.left + 10, clientY: box.top + 10,
+    }));
+}"""
+
+
+def _send_image_file(page: Page, name: str, kind: str) -> None:
     editor = page.locator(VISUAL_INTRO)
     expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    editor.evaluate(
-        """(target, {name, data}) => {
-            const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
-            const transfer = new DataTransfer();
-            transfer.items.add(new File([bytes], name, { type: "image/png" }));
-            const box = target.getBoundingClientRect();
-            target.dispatchEvent(new DragEvent("drop", {
-                dataTransfer: transfer, bubbles: true, cancelable: true,
-                clientX: box.left + 10, clientY: box.top + 10,
-            }));
-        }""",
-        {"name": name, "data": _png_base64()},
-    )
+    editor.evaluate(_SEND_IMAGE_FILE, {"name": name, "data": _png_base64(), "kind": kind})
+
+
+@when(parsers.parse('I drop an image file called "{name}" into the visual intro editor'))
+def drop_image_into_visual_intro(page: Page, name: str):
+    _send_image_file(page, name, "drop")
+
+
+@when(parsers.parse('I paste an image file called "{name}" into the visual intro editor'))
+def paste_image_into_visual_intro(page: Page, name: str):
+    _send_image_file(page, name, "paste")
 
 
 @then(parsers.parse('the image upload dialog should show "{name}"'))
@@ -2086,8 +2103,16 @@ def upload_dialog_shows(page: Page, name: str):
     expect(dialog).to_contain_text(name)
 
 
-@when(parsers.parse('I give the dropped image the alt text "{alt}" and upload it'))
-def upload_dropped_image(page: Page, alt: str):
+@then(parsers.parse('the image upload file field should hold "{name}"'))
+def upload_file_field_holds(page: Page, name: str):
+    """The field itself, not just the name shown under it, so the dialog doesn't read "No file chosen"."""
+    field = page.locator("#image-upload-file")
+    expect(field).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    assert field.evaluate("(input) => Array.from(input.files, (file) => file.name)") == [name]
+
+
+@when(parsers.parse('I give the image the alt text "{alt}" and upload it'))
+def give_image_alt_text_and_upload(page: Page, alt: str):
     dialog = page.get_by_role("dialog", name="Upload image")
     page.locator("#image-upload-alt").fill(alt)
     dialog.get_by_role("button", name="Upload").click()

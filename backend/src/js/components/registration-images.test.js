@@ -266,6 +266,50 @@ describe("inserting into the visual editor", () => {
     expect(state.imageFile).toBeNull();
   });
 
+  describe("showChosenImageFile", () => {
+    // jsdom has no DataTransfer; this one carries the files the way a
+    // browser's does, which is all the method touches.
+    class FileListTransfer {
+      constructor() {
+        this.files = [];
+        this.items = { add: (file) => this.files.push(file) };
+      }
+    }
+
+    beforeEach(() => {
+      vi.stubGlobal("DataTransfer", FileListTransfer);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("puts a dropped or pasted file into the rebuilt file input", () => {
+      const state = images();
+      const file = new File(["x"], "pasted.png", { type: "image/png" });
+      state.requestImageForEditor(
+        editorRequest({ editorId: "intro", file: file, pos: null }),
+      );
+      const input = { files: [] };
+
+      state.showChosenImageFile(input);
+
+      expect(Array.from(input.files)).toEqual([file]);
+    });
+
+    it("leaves the file input empty when no file was handed over", () => {
+      const state = images();
+      state.requestImageForEditor(
+        editorRequest({ editorId: "intro", file: null, pos: null }),
+      );
+      const input = { files: [] };
+
+      state.showChosenImageFile(input);
+
+      expect(input.files).toEqual([]);
+    });
+  });
+
   it("inserts the uploaded image where the editor asked, and lists it", async () => {
     fetchMock.mockResolvedValue(jsonResponse(UPLOADED, true, 201));
     const state = images();
