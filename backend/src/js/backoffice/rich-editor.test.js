@@ -123,6 +123,15 @@ describe("mountRichEditor", () => {
     expect(onInput).toHaveBeenCalledTimes(1);
   });
 
+  it("writes Visual edits laid out one block per line", () => {
+    const page = setUp("<p>Hello</p>");
+    const rich = mount(page.textarea);
+    rich.editor.commands.setContent("<h1>Title</h1><ul><li>One</li></ul>");
+    expect(page.textarea.value).toBe(
+      "<h1>Title</h1>\n<ul>\n  <li>\n    <p>One</p>\n  </li>\n</ul>",
+    );
+  });
+
   it("saves an emptied editor as an empty intro", () => {
     const page = setUp("<p>Hello</p>");
     const rich = mount(page.textarea);

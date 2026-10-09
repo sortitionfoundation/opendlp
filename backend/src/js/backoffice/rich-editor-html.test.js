@@ -1,4 +1,4 @@
-// ABOUTME: Tests for the visual editor's round-trip check and HTML normalisation.
+// ABOUTME: Tests for the visual editor's round-trip check, HTML normalisation and HTML layout.
 // ABOUTME: Uses the starter intros and the real intros in tests/fixtures/registration_intros/.
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createSchemaExtensions } from "./rich-editor-schema.js";
 import {
+  formatHtml,
   normaliseHtml,
   roundTrip,
   roundTripsCleanly,
@@ -244,4 +245,147 @@ describe("the real intros", () => {
       expect(contentOf(roundTrip(html, extensions))).toEqual(contentOf(html));
     },
   );
+});
+
+describe("formatHtml", () => {
+  it("leaves a single paragraph as it is", () => {
+    expect(formatHtml("<p>Hello</p>")).toBe("<p>Hello</p>");
+  });
+
+  it("gives an empty intro back empty", () => {
+    expect(formatHtml("")).toBe("");
+  });
+
+  it("puts each top-level block on its own line", () => {
+    expect(formatHtml("<h1>Title</h1><h2>Sub</h2><p>Text</p><hr>")).toBe(
+      "<h1>Title</h1>\n<h2>Sub</h2>\n<p>Text</p>\n<hr>",
+    );
+  });
+
+  it("indents a nested list by its nesting", () => {
+    const html =
+      "<h1>Hi</h1><ul><li><p>One <strong>two</strong></p>" +
+      "<ul><li><p>x</p></li></ul></li></ul><hr>";
+    expect(formatHtml(html)).toBe(
+      [
+        "<h1>Hi</h1>",
+        "<ul>",
+        "  <li>",
+        "    <p>One <strong>two</strong></p>",
+        "    <ul>",
+        "      <li>",
+        "        <p>x</p>",
+        "      </li>",
+        "    </ul>",
+        "  </li>",
+        "</ul>",
+        "<hr>",
+      ].join("\n"),
+    );
+  });
+
+  it("lays out a table of images", () => {
+    const html =
+      '<table><tbody><tr><td><p><img src="/a.png" alt="a"></p></td>' +
+      '<td><p><img src="/b.png" alt="b"></p></td></tr></tbody></table>';
+    expect(formatHtml(html)).toBe(
+      [
+        "<table>",
+        "  <tbody>",
+        "    <tr>",
+        "      <td>",
+        '        <p><img src="/a.png" alt="a"></p>',
+        "      </td>",
+        "      <td>",
+        '        <p><img src="/b.png" alt="b"></p>',
+        "      </td>",
+        "    </tr>",
+        "  </tbody>",
+        "</table>",
+      ].join("\n"),
+    );
+  });
+
+  it("lays out the GOV.UK wrapper divs and a blockquote", () => {
+    const html =
+      '<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">' +
+      '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>' +
+      "<blockquote><p>Quoted</p></blockquote></div></div>";
+    expect(formatHtml(html)).toBe(
+      [
+        '<div class="govuk-grid-row">',
+        '  <div class="govuk-grid-column-two-thirds">',
+        '    <h1 class="govuk-heading-xl">{{ assembly_title }}</h1>',
+        "    <blockquote>",
+        "      <p>Quoted</p>",
+        "    </blockquote>",
+        "  </div>",
+        "</div>",
+      ].join("\n"),
+    );
+  });
+
+  it("keeps inline content byte-for-byte on one line", () => {
+    const html =
+      '<p>Dear {{ name }},<br>see <a href="/x" target="_blank">this</a> ' +
+      '<em>and <strong>that</strong></em><img src="/i.png" alt="i">.</p>';
+    expect(formatHtml(html)).toBe(html);
+  });
+
+  it("prints a block that mixes text and blocks as given", () => {
+    const html = "<div>loose text<p>a</p></div>";
+    expect(formatHtml(`<p>x</p>${html}`)).toBe(`<p>x</p>\n${html}`);
+  });
+
+  it("gives HTML whose top level is not all blocks back unchanged", () => {
+    const html = "{% if x %}<p>a</p>{% endif %}";
+    expect(formatHtml(html)).toBe(html);
+  });
+
+  it("keeps attributes in their order and escaping", () => {
+    const html =
+      '<div style="margin: 0 auto;" class="x" dir="ltr">' +
+      '<p dir="ltr" style="color: red;">a</p>' +
+      '<p><img src="/i.png" alt="A &quot;quoted&quot; logo"></p></div>';
+    expect(formatHtml(html)).toBe(
+      [
+        '<div style="margin: 0 auto;" class="x" dir="ltr">',
+        '  <p dir="ltr" style="color: red;">a</p>',
+        '  <p><img src="/i.png" alt="A &quot;quoted&quot; logo"></p>',
+        "</div>",
+      ].join("\n"),
+    );
+  });
+
+  it("escapes nothing in an attribute that the DOM left alone", () => {
+    const html = '<div><p><img src="/i.png" alt="{{ a > b }}"></p></div>';
+    expect(formatHtml(html)).toContain('alt="{{ a > b }}"');
+  });
+
+  it("is unchanged by formatting its own output again", () => {
+    const formatted = formatHtml(
+      roundTrip(fixture("centred_image_intro"), extensions),
+    );
+    expect(formatHtml(formatted)).toBe(formatted);
+  });
+
+  it.each([
+    ["the plain starter intro", PLAIN_STARTER_INTRO],
+    ["the GOV.UK starter intro", GOVUK_STARTER_INTRO],
+    [
+      "a nested list",
+      "<ul><li>a<ul><li>b</li></ul></li></ul><ol><li>c</li></ol>",
+    ],
+    ["a table", "<table><tr><th>a</th><td>b<br>c</td></tr></table>"],
+    ["a quote and a rule", "<blockquote>q</blockquote><hr><p>a<br>b</p>"],
+    ["inline_styles_intro", fixture("inline_styles_intro")],
+    ["centred_image_intro", fixture("centred_image_intro")],
+    ["layout_table_intro", fixture("layout_table_intro")],
+  ])("loses nothing in the visual editor for %s", (_name, html) => {
+    const visual = roundTrip(html, extensions);
+    const formatted = formatHtml(visual);
+    expect(formatted).not.toBe(visual);
+    expect(roundTrip(formatted, extensions)).toBe(visual);
+    expect(roundTripsCleanly(formatted, extensions)).toBe(true);
+  });
 });

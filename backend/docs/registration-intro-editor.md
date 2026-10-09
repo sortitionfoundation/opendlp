@@ -63,8 +63,9 @@ The check guarantees **no content is lost**; it does not promise the HTML comes
 back byte-for-byte. The first time an author changes something in Visual mode,
 the saved HTML is rewritten in the editor's own consistent form:
 
-- whitespace between elements goes, and `&nbsp;` may become a literal no-break
-  space (they render the same);
+- the HTML is laid out one block per line, indented by nesting; text inside a
+  paragraph is never rewrapped;
+- `&nbsp;` may become a literal no-break space (they render the same);
 - attribute order changes, and `style` values are re-spelt
   (`color: #0c7e8f` → `color: rgb(12, 126, 143)`);
 - `<b>` becomes `<strong>` and `<i>` becomes `<em>`;

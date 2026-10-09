@@ -1,5 +1,5 @@
 // ABOUTME: Decides whether HTML can go through the visual editor without losing anything.
-// ABOUTME: Compares the HTML with its round trip through the schema, after normalising both.
+// ABOUTME: Compares the HTML with its round trip after normalising both, and lays out the HTML it saves.
 import { generateHTML, generateJSON } from "@tiptap/core";
 
 const BLOCK_TAGS = [
@@ -228,6 +228,53 @@ export function normaliseHtml(html) {
     .replace(/ +/g, " ")
     .replace(BLOCK_EDGE_SPACE, "$1")
     .trim();
+}
+
+function isWhitespaceText(node) {
+  return node.nodeType === Node.TEXT_NODE && node.textContent.trim() === "";
+}
+
+function startTag(element) {
+  const shell = element.cloneNode(false).outerHTML;
+  return shell.slice(0, shell.lastIndexOf("</"));
+}
+
+function formatBlock(element, depth) {
+  const indent = "  ".repeat(depth);
+  const children = Array.from(element.childNodes).filter(
+    (child) => !isWhitespaceText(child),
+  );
+  if (
+    VOID_TAGS.has(element.tagName.toLowerCase()) ||
+    children.length === 0 ||
+    !children.every(isBlock)
+  ) {
+    return [indent + element.outerHTML];
+  }
+  const tag = element.tagName.toLowerCase();
+  return [
+    indent + startTag(element),
+    ...children.flatMap((child) => formatBlock(child, depth + 1)),
+    `${indent}</${tag}>`,
+  ];
+}
+
+/**
+ * `html` laid out one block per line, indented by nesting. A block holding
+ * inline content keeps that content exactly as given, on one line; so does a
+ * block that mixes inline content and blocks. HTML whose top level is not all
+ * blocks comes back unchanged.
+ */
+export function formatHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  const nodes = Array.from(template.content.childNodes).filter(
+    (node) => !isWhitespaceText(node),
+  );
+  if (!nodes.every(isBlock)) {
+    return html;
+  }
+  return nodes.flatMap((node) => formatBlock(node, 0)).join("\n");
 }
 
 /** `html` as the visual editor would hand it back, before any editing. */

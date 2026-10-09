@@ -3,7 +3,7 @@
 import { Editor, Extension } from "@tiptap/core";
 import FileHandler from "@tiptap/extension-file-handler";
 import { isReadOnly, mountCodeEditor } from "./code-editor.js";
-import { roundTripsCleanly } from "./rich-editor-html.js";
+import { formatHtml, roundTripsCleanly } from "./rich-editor-html.js";
 import {
   VariableHighlight,
   createSchemaExtensions,
@@ -196,7 +196,7 @@ export function mountRichEditor(textarea) {
     : null;
 
   function visualHtml() {
-    return editor.isEmpty ? "" : editor.getHTML();
+    return editor.isEmpty ? "" : formatHtml(editor.getHTML());
   }
 
   function showNotice(message) {
