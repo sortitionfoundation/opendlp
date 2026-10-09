@@ -135,7 +135,7 @@ def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tupl
 
 def _update_selection_record(
     task_id: uuid.UUID,
-    status: SelectionRunStatus,
+    status: SelectionRunStatus | None = None,
     log_message: str = "",
     log_messages: list[str] | None = None,
     error_message: str = "",
@@ -154,13 +154,12 @@ def _update_selection_record(
         if record is None:
             raise SelectionRunRecordNotFoundError(f"SelectionRunRecord with task_id {task_id} not found")
 
-        # Update existing record
-        record.status = status
-        if log_message:
-            record.log_messages.append(log_message)
-            flag_modified(record, "log_messages")
-        if log_messages:
-            record.log_messages.extend(log_messages)
+        # Update existing record; a call with no status leaves it as it is
+        if status is not None:
+            record.status = status
+        new_messages = log_messages or ([log_message] if log_message else [])
+        if new_messages:
+            record.log_messages.extend(new_messages)
             flag_modified(record, "log_messages")
         if error_message:
             record.error_message = error_message
@@ -276,10 +275,8 @@ def _internal_load_gsheet(
     data_source = select_data.data_source
     assert isinstance(data_source, adapters.GSheetDataSource | CSVGSheetDataSource)
     report = RunReport()
-    # Update SelectionRunRecord to running status
     _update_selection_record(
         task_id=task_id,
-        status=SelectionRunStatus.RUNNING,
         log_message=_("Starting Google Sheets load task"),
         session_factory=session_factory,
     )
@@ -710,7 +707,6 @@ def _internal_load_db(
     report = RunReport()
     _update_selection_record(
         task_id=task_id,
-        status=SelectionRunStatus.RUNNING,
         log_message=_("Starting database data load"),
         session_factory=session_factory,
     )
@@ -935,6 +931,8 @@ def load_gsheet(
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
+    # A load only reads, so it is not claimed; move its record to RUNNING here.
+    _update_selection_record(task_id=task_id, status=SelectionRunStatus.RUNNING, session_factory=session_factory)
     reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     select_data = adapters.SelectionData(data_source)
     return _internal_load_gsheet(
@@ -1132,11 +1130,12 @@ def manage_old_tabs(
         return False, [], report
     _set_up_celery_logging(task_id, session_factory=session_factory)
 
-    # Update SelectionRunRecord to running status
+    # A listing only reads, so it is not claimed; move its record to RUNNING here.
+    # A delete was moved to RUNNING by the claim above.
     action = _("listing") if dry_run else _("deleting")
     _update_selection_record(
         task_id=task_id,
-        status=SelectionRunStatus.RUNNING,
+        status=SelectionRunStatus.RUNNING if dry_run else None,
         log_message=_("Starting task to %(action)s old output tabs", action=action),
         session_factory=session_factory,
     )
