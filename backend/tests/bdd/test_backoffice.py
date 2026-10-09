@@ -2158,6 +2158,61 @@ def preview_shows_image(page: Page, alt: str):
     assert _image_loaded(image), "the image should load in the preview, not show as broken"
 
 
+# The width an image had in the editor before a drag, keyed by its alt text.
+_widths_before_drag: dict[str, float] = {}
+
+
+def _visual_intro_image(page: Page, alt: str):
+    image = page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]')
+    expect(image).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    image.evaluate("(img) => img.decode()")
+    return image
+
+
+@when(parsers.parse('I drag the bottom-right corner of the image "{alt}" {distance:d} pixels to the left'))
+def drag_image_corner(page: Page, alt: str, distance: int):
+    image = _visual_intro_image(page, alt)
+    image.hover()
+    handle = page.locator(f'{VISUAL_INTRO} [data-resize-handle="bottom-right"]')
+    expect(handle).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    image_box = image.bounding_box()
+    handle_box = handle.bounding_box()
+    assert image_box is not None and handle_box is not None
+    _widths_before_drag[alt] = image_box["width"]
+    x = handle_box["x"] + handle_box["width"] / 2
+    y = handle_box["y"] + handle_box["height"] / 2
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.mouse.move(x - distance / 2, y, steps=5)
+    page.mouse.move(x - distance, y, steps=5)
+    page.mouse.up()
+
+
+@then(parsers.parse('the intro image "{alt}" should be {distance:d} pixels narrower and keep its shape'))
+def intro_image_narrower(page: Page, alt: str, distance: int):
+    image = _visual_intro_image(page, alt)
+    natural_ratio = image.evaluate("(img) => img.naturalWidth / img.naturalHeight")
+    saved = page.evaluate(
+        """(alt) => {
+            const html = document.querySelector("textarea[name='intro_content']").value;
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            const img = doc.querySelector(`img[alt='${alt}']`);
+            return { width: img.getAttribute("width"), height: img.getAttribute("height") };
+        }""",
+        alt,
+    )
+    assert saved["width"] is not None and saved["height"] is not None, saved
+    width, height = int(saved["width"]), int(saved["height"])
+    assert width == pytest.approx(_widths_before_drag[alt] - distance, abs=3)
+    assert width / height == pytest.approx(natural_ratio, rel=0.03)
+
+
+@then(parsers.parse('the image "{alt}" in the visual intro editor should have no resize handles'))
+def visual_intro_image_has_no_handles(page: Page, alt: str):
+    _visual_intro_image(page, alt).hover()
+    expect(page.locator(f"{VISUAL_INTRO} [data-resize-handle]")).to_have_count(0)
+
+
 @when(parsers.parse('I view the registration form preview for "{title}" on a phone-sized screen'))
 def view_form_preview_on_phone(page: Page, title: str, test_database):
     """The preview route renders the public template, so it carries the public page's CSS."""

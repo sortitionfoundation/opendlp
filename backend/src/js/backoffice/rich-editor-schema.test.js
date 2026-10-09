@@ -142,3 +142,81 @@ describe("Tab in a table", () => {
     editor.destroy();
   });
 });
+
+describe("resizable images", () => {
+  function editorWith(content, editable = true) {
+    return new Editor({
+      element: document.createElement("div"),
+      extensions: createSchemaExtensions({ resizable: editable }),
+      content,
+      editable,
+      injectCSS: false,
+    });
+  }
+
+  function shownImage(editor) {
+    return editor.view.dom.querySelector("img[src]");
+  }
+
+  function selectImage(editor) {
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === "image") {
+        editor.commands.setNodeSelection(pos);
+      }
+    });
+  }
+
+  it("gives an editable image a handle at each corner", () => {
+    const editor = editorWith('<p><img src="/a.png" alt="A"></p>');
+    const handles = Array.from(
+      editor.view.dom.querySelectorAll("[data-resize-handle]"),
+      (handle) => handle.dataset.resizeHandle,
+    );
+    expect(handles.sort()).toEqual([
+      "bottom-left",
+      "bottom-right",
+      "top-left",
+      "top-right",
+    ]);
+    editor.destroy();
+  });
+
+  it("gives a read-only image no handles", () => {
+    const editor = editorWith('<p><img src="/a.png" alt="A"></p>', false);
+    expect(editor.view.dom.querySelector("[data-resize-handle]")).toBeNull();
+    editor.destroy();
+  });
+
+  it("shows the saved width and leaves the height to the CSS", () => {
+    const editor = editorWith(
+      '<p><img src="/a.png" alt="A" width="250" height="100"></p>',
+    );
+    expect(shownImage(editor).style.width).toBe("250px");
+    expect(shownImage(editor).style.height).toBe("");
+    editor.destroy();
+  });
+
+  it("redraws the image when its size is changed outside a drag", () => {
+    const editor = editorWith(
+      '<p><img src="/a.png" alt="A" width="250" height="100"></p>',
+    );
+    selectImage(editor);
+    editor.commands.updateAttributes("image", { width: 120, height: 48 });
+    expect(shownImage(editor).style.width).toBe("120px");
+
+    selectImage(editor);
+    editor.commands.updateAttributes("image", { width: null, height: null });
+    expect(shownImage(editor).style.width).toBe("");
+    editor.destroy();
+  });
+
+  it("keeps width and height out of the editing DOM's attributes but in the saved HTML", () => {
+    const editor = editorWith(
+      '<p><img src="/a.png" alt="A" width="250" height="100"></p>',
+    );
+    expect(editor.getHTML()).toBe(
+      '<p><img src="/a.png" alt="A" width="250" height="100"></p>',
+    );
+    editor.destroy();
+  });
+});

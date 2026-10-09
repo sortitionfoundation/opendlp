@@ -55,7 +55,10 @@ export function mountRichEditor(textarea) {
   const modeButtons = controls.querySelectorAll("[data-rich-editor-mode]");
   const toolbar = controls.querySelector("[data-rich-editor-toolbar]");
   const imagesAllowed = textarea.dataset.richEditorImages === "true";
-  const extensions = createSchemaExtensions({ images: imagesAllowed });
+  const extensions = createSchemaExtensions({
+    images: imagesAllowed,
+    resizable: !readOnly,
+  });
 
   let mode = null;
   let codeEditor = null;

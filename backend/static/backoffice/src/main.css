@@ -1666,8 +1666,41 @@ body {
         height: auto;
     }
 
-    .rich-editor__content img.ProseMirror-selectednode {
+    .rich-editor__content img.ProseMirror-selectednode,
+    .rich-editor__content [data-resize-container].ProseMirror-selectednode img {
         outline: 2px solid var(--color-focus-ring);
+    }
+
+    /* Tiptap's resize handles: a square at each corner of a selected or hovered image. */
+    .rich-editor__content [data-resize-container] {
+        max-width: 100%;
+        vertical-align: bottom;
+    }
+
+    .rich-editor__content [data-resize-handle] {
+        display: none;
+        width: 0.75rem;
+        height: 0.75rem;
+        margin: -0.375rem;
+        border: 2px solid var(--color-page-background);
+        background-color: var(--color-focus-ring);
+        z-index: 1;
+    }
+
+    .rich-editor__content [data-resize-container]:hover [data-resize-handle],
+    .rich-editor__content [data-resize-container].ProseMirror-selectednode [data-resize-handle],
+    .rich-editor__content [data-resize-state="true"] [data-resize-handle] {
+        display: block;
+    }
+
+    .rich-editor__content [data-resize-handle="top-left"],
+    .rich-editor__content [data-resize-handle="bottom-right"] {
+        cursor: nwse-resize;
+    }
+
+    .rich-editor__content [data-resize-handle="top-right"],
+    .rich-editor__content [data-resize-handle="bottom-left"] {
+        cursor: nesw-resize;
     }
 
     /* #2B5FA6 on #E8F1FA is 5.6:1, above the 4.5:1 text minimum. */

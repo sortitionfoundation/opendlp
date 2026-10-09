@@ -142,12 +142,48 @@ export const VariableHighlight = Extension.create({
 });
 
 /**
+ * The image node, with Tiptap's resize handles.
+ *
+ * Tiptap's resizable node view ignores a change to `width` or `height` made
+ * outside a drag, such as from the Image size dialog, so a size change redraws
+ * the node instead. Its inline height would also stop the image keeping its
+ * shape when `max-width` narrows it, so the height is left to the CSS.
+ */
+const ResizableImage = Image.extend({
+  addNodeView() {
+    const createView = this.parent?.();
+    if (!createView) {
+      return null;
+    }
+    return (props) => {
+      const view = createView(props);
+      view.element.style.height = "";
+      const update = view.update.bind(view);
+      view.update = (node, ...rest) => {
+        const { width, height } = view.node.attrs;
+        if (node.attrs.width !== width || node.attrs.height !== height) {
+          return false;
+        }
+        return update(node, ...rest);
+      };
+      return view;
+    };
+  },
+});
+
+/**
  * The extensions that define what the visual editor can hold.
  *
  * Anything outside this schema is dropped by Tiptap, which is why an intro
  * using it has to stay in HTML mode (see rich-editor-html.js).
+ *
+ * `resizable` is off for a read-only editor: Tiptap only takes the handles
+ * away after the editor changes, and a read-only editor never does.
  */
-export function createSchemaExtensions({ images = true } = {}) {
+export function createSchemaExtensions({
+  images = true,
+  resizable = true,
+} = {}) {
   const extensions = [
     StarterKit.configure({
       code: false,
@@ -167,7 +203,20 @@ export function createSchemaExtensions({ images = true } = {}) {
     TableCell,
   ];
   if (images) {
-    extensions.push(Image.configure({ inline: true, allowBase64: false }));
+    extensions.push(
+      ResizableImage.configure({
+        inline: true,
+        allowBase64: false,
+        // Corner handles that keep the image's shape; the Image size dialog is
+        // the way to resize without dragging.
+        resize: {
+          enabled: resizable,
+          directions: ["top-left", "top-right", "bottom-left", "bottom-right"],
+          minWidth: 20,
+          alwaysPreserveAspectRatio: true,
+        },
+      }),
+    );
   }
   return extensions;
 }

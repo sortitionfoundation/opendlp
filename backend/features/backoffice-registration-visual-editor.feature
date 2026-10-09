@@ -99,11 +99,12 @@ Feature: Backoffice registration visual intro editor
     And the assets panel should list the image "Pasted logo"
 
   Scenario: The read-only intro view shows the visual editor without a toolbar
-    Given there is an assembly called "Visual Read Only Assembly" with the intro "<h1>Read only title</h1>"
+    Given there is an assembly called "Visual Read Only Assembly" with the intro "<h1>Read only title</h1><p><img src='/static/img/logosortition.svg' alt='Logo'></p>"
     When I visit the read-only registration intro for "Visual Read Only Assembly"
     Then the visual intro editor should show a level 1 heading "Read only title"
     And the visual intro editor should not be editable
     And there should be no formatting toolbar
+    And the image "Logo" in the visual intro editor should have no resize handles
 
   Scenario: The intro style radio changes the look in the editor and on the page
     Given there is an assembly called "Visual Style Assembly" with the intro "<p>Styled words</p>"
@@ -119,3 +120,9 @@ Feature: Backoffice registration visual intro editor
     Given there is an assembly called "Visual Wide Image Assembly" with the intro "<p><img src='/static/img/logosortition.svg' alt='Wide logo' width='2000' height='500'></p>"
     When I view the registration form preview for "Visual Wide Image Assembly" on a phone-sized screen
     Then the image "Wide logo" should fit the page and keep its shape
+
+  Scenario: Resizing an image by dragging its corner
+    Given there is an assembly called "Visual Drag Resize Assembly" with the intro "<p><img src='/static/img/logosortition.svg' alt='Logo'></p>"
+    When I visit the registration intro editor for "Visual Drag Resize Assembly"
+    And I drag the bottom-right corner of the image "Logo" 60 pixels to the left
+    Then the intro image "Logo" should be 60 pixels narrower and keep its shape
