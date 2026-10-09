@@ -2,7 +2,7 @@
 
 Branch: `767-separate-url-step`, off `767-rich-text-autoreply`.
 
-**Status: in progress.** Chewie answered the questions; the decisions
+**Status: implemented.** Chewie answered the questions; the decisions
 are below as P1–P8. Steps are marked ✅ as they are done.
 
 ## Goal
@@ -212,7 +212,7 @@ As built:
   - no Edit on a closed page;
   - the intro's Back link.
 
-### Step 3: Journeys
+### Step 3: Journeys ✅
 
 - **`tests/e2e/test_registration_stepper_journey.py`:** done in step 2.
 - **BDD, after `just build-all`:**
@@ -223,7 +223,23 @@ As built:
   - Check that existing steps opening `?section=intro&edit=1` still find what
     they look for, now that the name input has gone from there.
 
-### Step 4: Catalogues and docs
+As built:
+
+- **The two list scenarios now end on step 1.** They use a new "read-only name
+  and URLs view" step. The intro's read-only step was used nowhere else, so
+  it was removed.
+- **"The stepper navigation should be disabled"** now counts five disabled
+  steps.
+- **The new scenario clicks Edit as a button.** The `button` macro renders
+  links with `role="button"`.
+- **The intro-editing scenarios needed no change.** They open
+  `?section=intro&edit=1` and never touched the name input.
+- **Results:** full BDD run 218 passed and 5 skipped, then the two fixed
+  scenarios passed on a rerun.
+- **Checked by eye:** screenshots of step 1, read-only and editing, at
+  1400px.
+
+### Step 4: Catalogues and docs ✅
 
 - **Catalogues:** run `just translate-regen` and `just translate-check`. The
   new string is the "Name and URLs" label. The rest reuse existing msgids.
@@ -231,3 +247,11 @@ As built:
 - **`docs/registration-intro-editor.md`:** check it doesn't say the URLs are
   on the intro step. I found nothing, but I'll look again once the code is
   done.
+
+As built:
+
+- **Catalogues:** the regen added one msgid, "Name and URLs". No msgid was
+  removed and no translation changed. The rest of the diff is source
+  references moving.
+- **Docs:** none needed changing. `docs/language.md`'s "registration step 1"
+  is about the hub's set-up steps, not the editor's.
