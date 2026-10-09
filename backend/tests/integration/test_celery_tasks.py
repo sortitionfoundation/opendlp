@@ -1,10 +1,8 @@
 """ABOUTME: Integration tests for Celery task functions
 ABOUTME: Tests the public Celery task API with database integration"""
 
-import tempfile
 import uuid
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import gspread
@@ -38,51 +36,6 @@ from opendlp.entrypoints.celery.tasks import (
 )
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.service_layer.monitoring import MonitorResult
-
-
-@pytest.fixture
-def csv_files():
-    """Create CSV files for testing."""
-    test_data_dir = Path(__file__).parent.parent / "csv_fixtures" / "selection_data"
-    features_file = test_data_dir / "features.csv"
-    people_file = test_data_dir / "candidates.csv"
-
-    temp_dir = Path(tempfile.gettempdir()) / "opendlp_test_celery"
-    temp_dir.mkdir(exist_ok=True)
-
-    selected_file = temp_dir / f"selected_{uuid.uuid4()}.csv"
-    remaining_file = temp_dir / f"remaining_{uuid.uuid4()}.csv"
-    already_selected_file = temp_dir / f"already_selected_{uuid.uuid4()}.csv"
-
-    return {
-        "features": features_file,
-        "people": people_file,
-        "selected": selected_file,
-        "remaining": remaining_file,
-        "already_selected": already_selected_file,
-    }
-
-
-@pytest.fixture
-def csv_gsheet_data_source(csv_files):
-    """Create a CSVGSheetDataSource for testing."""
-    csv_data_source = CSVFileDataSource(
-        features_file=csv_files["features"],
-        people_file=csv_files["people"],
-        selected_file=csv_files["selected"],
-        remaining_file=csv_files["remaining"],
-        already_selected_file=csv_files["already_selected"],
-    )
-
-    mock_gsheet = Mock(spec=GSheetDataSource)
-    mock_gsheet.feature_tab_name = "Features"
-    mock_gsheet.people_tab_name = "People"
-    mock_gsheet.already_selected_tab_name = "Already Selected"
-
-    return CSVGSheetDataSource(
-        csv_data_source=csv_data_source,
-        gsheet_data_source=mock_gsheet,
-    )
 
 
 @pytest.fixture
