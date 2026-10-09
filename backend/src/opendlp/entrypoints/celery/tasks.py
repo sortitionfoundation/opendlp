@@ -224,7 +224,10 @@ def _claim_assembly_for_writing(
                 task=blocking[0].task_type_verbose,
             )
             logger.warning(
-                f"Writing task {task_id} refused: assembly {record.assembly_id} is held by run {blocking[0].task_id}"
+                "Writing task refused: assembly held by another run. task_id=%s assembly_id=%s blocking_task_id=%s",
+                task_id,
+                record.assembly_id,
+                blocking[0].task_id,
             )
             report.add_line(error_msg)
             record.status = SelectionRunStatus.FAILED
