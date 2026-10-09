@@ -67,6 +67,7 @@ def test_intro_step_renders_the_visual_editor_with_toolbar_and_images(logged_in_
     assert 'data-rich-editor-tables="true"' in body
     assert 'data-command="table"' in body
     assert 'id="intro_content-table-menu"' in body
+    assert "highlights variables like {{ assembly_title }} in text" in body
     assert 'aria-controls="intro_content-visual"' in body
     assert "insertImage(image)" in body
 
