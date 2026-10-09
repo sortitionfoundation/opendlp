@@ -1236,6 +1236,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         return self._store
 
     def _bind_repositories(self, open_context: bool) -> None:
+        self._in_context = open_context
         for name in _REPO_NAMES:
             repo = getattr(self._store, name) if open_context else ClosedRepository(name)
             setattr(self, name, repo)
@@ -1293,7 +1294,13 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.expire_all_calls += 1
 
     def lock_assembly_for_write(self, assembly_id: uuid.UUID) -> None:
-        """Nothing to lock in memory — record the call so tests can assert a guard took the lock."""
+        """Nothing to lock in memory — record the call so tests can assert a guard took the lock.
+
+        Refuses outside ``with uow:`` as the real one does, since the real
+        lock is tied to the transaction the context opens.
+        """
+        if not self._in_context:
+            raise UnitOfWorkError("lock_assembly_for_write is only available inside `with uow:`")
         self.locked_assembly_ids.append(assembly_id)
 
 
