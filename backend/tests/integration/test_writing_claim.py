@@ -191,6 +191,20 @@ class TestClaimAssemblyForWriting:
 
         assert _claim_assembly_for_writing(task_id, RunReport(), session_factory=postgres_session_factory) is True
 
+    def test_claim_leaves_a_record_that_is_no_longer_pending_alone(self, postgres_session_factory):
+        """A record the cleanup job failed as stuck, or the user cancelled, is not brought back to RUNNING."""
+        assembly_id = _add_assembly(postgres_session_factory)
+        for status in (SelectionRunStatus.FAILED, SelectionRunStatus.CANCELLED):
+            task_id = _add_record(postgres_session_factory, assembly_id, SelectionTaskType.SELECT_FROM_DB, status)
+            report = RunReport()
+
+            assert _claim_assembly_for_writing(task_id, report, session_factory=postgres_session_factory) is False
+
+            record = _record(postgres_session_factory, task_id)
+            assert record["status"] == status
+            assert record["error_message"] == ""
+            assert "cancelled or failed before it started" in report.as_text()
+
     def test_claim_without_a_record_raises(self, postgres_session_factory):
         with pytest.raises(SelectionRunRecordNotFoundError):
             _claim_assembly_for_writing(uuid.uuid4(), RunReport(), session_factory=postgres_session_factory)

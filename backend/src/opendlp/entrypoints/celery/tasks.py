@@ -195,14 +195,27 @@ def _claim_assembly_for_writing(
     """Mark this run RUNNING unless another writing run on its assembly is unfinished.
 
     Returns False, having marked the record FAILED and added the reason to
-    ``report``, when something else holds the assembly. Call it before the
-    run log handler is installed, so nothing logged here can move a record
-    that has just been failed back to RUNNING.
+    ``report``, when something else holds the assembly. Also returns False,
+    leaving the record alone, when the record is no longer PENDING: the user
+    cancelled it, or the cleanup job failed it as stuck, before the worker
+    picked the task up. Call it before the run log handler is installed, so
+    nothing logged here can move a record that has just been failed back to
+    RUNNING.
     """
     with bootstrap(session_factory=session_factory) as uow:
         record = uow.selection_run_records.get_by_task_id(task_id)
         if record is None:
             raise SelectionRunRecordNotFoundError(f"SelectionRunRecord with task_id {task_id} not found")
+
+        if not record.is_pending:
+            logger.warning(
+                "Writing task not started: its record is no longer pending. task_id=%s assembly_id=%s status=%s",
+                task_id,
+                record.assembly_id,
+                record.status.value,
+            )
+            report.add_line(_("This task was cancelled or failed before it started"))
+            return False
 
         blocking = unfinished_writing_runs(uow, record.assembly_id, exclude_task_id=task_id)
         if blocking:
