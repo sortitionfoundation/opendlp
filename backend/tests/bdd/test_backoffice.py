@@ -8,7 +8,7 @@ from io import BytesIO
 
 import pytest
 from PIL import Image
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.assembly import Assembly
@@ -1959,12 +1959,6 @@ def shift_tab_into_toolbar(page: Page):
     assert focused_in_toolbar, "Shift+Tab from the editor should land in the formatting toolbar"
 
 
-@when(parsers.parse("I press the right arrow key {count:d} times"))
-def press_right_arrow(page: Page, count: int):
-    for _ in range(count):
-        page.keyboard.press("ArrowRight")
-
-
 @when("I press Enter")
 def press_enter(page: Page):
     page.keyboard.press("Enter")
@@ -2103,7 +2097,7 @@ def intro_explains_refusal(page: Page):
 
 @then(parsers.parse('the intro should hold "{html}"'))
 def intro_holds(page: Page, html: str):
-    assert _intro_value(page) == html
+    expect(page.locator("textarea[name='intro_content']")).to_have_value(html, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('"{text}" should be highlighted as a variable'))
@@ -2243,11 +2237,26 @@ def drag_image_corner(page: Page, alt: str, distance: int):
 def intro_image_narrower(page: Page, alt: str, distance: int):
     image = _visual_intro_image(page, alt)
     natural_ratio = image.evaluate("(img) => img.naturalWidth / img.naturalHeight")
+    _wait_for_saved_image(page, alt, "(width, height) => width !== null && height !== null")
     saved = _saved_image_size(page, alt)
-    assert saved["width"] is not None and saved["height"] is not None, saved
     width, height = int(saved["width"]), int(saved["height"])
     assert width == pytest.approx(_widths_before_drag[alt] - distance, abs=3)
     assert width / height == pytest.approx(natural_ratio, rel=0.03)
+
+
+def _wait_for_saved_image(page: Page, alt: str, predicate: str) -> None:
+    """Wait until the saved <img> with this alt text passes `predicate`, a JS function of its
+    width and height attributes, so a check does not read the HTML before the editor writes it."""
+    page.wait_for_function(
+        f"""(alt) => {{
+            const html = document.querySelector("textarea[name='intro_content']").value;
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            const img = doc.querySelector(`img[alt='${{alt}}']`);
+            return img !== null && ({predicate})(img.getAttribute("width"), img.getAttribute("height"));
+        }}""",
+        arg=alt,
+        timeout=PLAYWRIGHT_TIMEOUT,
+    )
 
 
 def _saved_image_size(page: Page, alt: str) -> dict:
@@ -2303,8 +2312,8 @@ def image_size_dialog_shows(page: Page, width: str):
 @then(parsers.parse('the intro image "{alt}" should be {width:d} pixels wide and keep its shape'))
 def intro_image_sized(page: Page, alt: str, width: int):
     natural_ratio = _visual_intro_image(page, alt).evaluate("(img) => img.naturalWidth / img.naturalHeight")
+    _wait_for_saved_image(page, alt, f"(width) => width === '{width}'")
     saved = _saved_image_size(page, alt)
-    assert saved["width"] == str(width), saved
     assert saved["height"] is not None, saved
     assert width / int(saved["height"]) == pytest.approx(natural_ratio, rel=0.03)
     shown = page.locator(f'{VISUAL_INTRO} img[alt="{alt}"]').bounding_box()
@@ -2313,7 +2322,7 @@ def intro_image_sized(page: Page, alt: str, width: int):
 
 @then(parsers.parse('the intro image "{alt}" should have no size'))
 def intro_image_has_no_size(page: Page, alt: str):
-    assert _saved_image_size(page, alt) == {"width": None, "height": None}
+    _wait_for_saved_image(page, alt, "(width, height) => width === null && height === null")
 
 
 @then(parsers.parse('the image "{alt}" in the visual intro editor should have no resize handles'))
@@ -2469,20 +2478,20 @@ def visual_email_not_editable(page: Page):
 GOVUK_BODY_FONT_SIZE = "19px"
 
 
-def _visual_paragraph_font_size(page: Page) -> str:
+def _visual_paragraph(page: Page) -> Locator:
     paragraph = page.locator(f"{VISUAL_INTRO} p").first
     expect(paragraph).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    return paragraph.evaluate("(p) => getComputedStyle(p).fontSize")
+    return paragraph
 
 
 @then("the paragraph in the visual intro editor should use the GOV.UK body font size")
 def visual_paragraph_is_govuk(page: Page):
-    assert _visual_paragraph_font_size(page) == GOVUK_BODY_FONT_SIZE
+    expect(_visual_paragraph(page)).to_have_css("font-size", GOVUK_BODY_FONT_SIZE, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("the paragraph in the visual intro editor should not use the GOV.UK body font size")
 def visual_paragraph_is_not_govuk(page: Page):
-    assert _visual_paragraph_font_size(page) != GOVUK_BODY_FONT_SIZE
+    expect(_visual_paragraph(page)).not_to_have_css("font-size", GOVUK_BODY_FONT_SIZE, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I choose the "{label}" intro style'))

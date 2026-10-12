@@ -38,7 +38,7 @@ Feature: Backoffice registration visual intro editor
     And I type "Plain words" into the visual intro editor
     And I select everything in the visual intro editor
     And I move focus back into the formatting toolbar
-    And I press the right arrow key 4 times
+    And I move to the "Bold" toolbar button with the arrow keys
     And I press Enter
     Then the intro should hold "<p><strong>Plain words</strong></p>"
 
