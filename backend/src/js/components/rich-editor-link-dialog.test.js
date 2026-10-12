@@ -5,6 +5,7 @@ import { LINK_RESULT_EVENT } from "../lib/rich-editor-events.js";
 import {
   ABSOLUTE_LINK_PATTERN,
   LINK_URL_FIELD_ID,
+  hasAllowedScheme,
   richEditorLinkDialog,
 } from "./rich-editor-link-dialog.js";
 
@@ -79,6 +80,42 @@ describe("richEditorLinkDialog", () => {
     expect(results).not.toHaveBeenCalled();
   });
 
+  describe("refuses a scheme a link may not use", () => {
+    const NOT_ALLOWED = "That kind of address cannot be a link";
+
+    it.each([
+      "javascript:alert(1)",
+      "JavaScript:alert(1)",
+      "java\tscript:alert(1)",
+      " javascript:alert(1)",
+      "data:text/html,hi",
+      "vbscript:x",
+    ])("refuses %s", (href) => {
+      const results = listenForResults();
+      const dialog = richEditorLinkDialog({
+        messages: { linkUrlNotAllowed: NOT_ALLOWED },
+      });
+      dialog.openLinkDialog(request({ editorId: "intro", href: "" }));
+      dialog.linkUrl = href;
+      dialog.applyLink();
+      expect(dialog.linkDialogOpen).toBe(true);
+      expect(dialog.linkError).toBe(NOT_ALLOWED);
+      expect(results).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      "https://example.org",
+      "mailto:team@example.org",
+      "tel:+441632960000",
+      "/privacy",
+      "privacy.html",
+      "#top",
+      "{{ assembly_url }}",
+    ])("accepts %s", (href) => {
+      expect(hasAllowedScheme(href)).toBe(true);
+    });
+  });
+
   describe("when links must be absolute, as in an email", () => {
     const NOT_ABSOLUTE = "Email links must be full addresses";
 
@@ -112,15 +149,18 @@ describe("richEditorLinkDialog", () => {
       });
     });
 
-    it.each(["/register/x", "www.example.org", "example.org", "#top"])(
-      "refuses %s, which would not work from an inbox",
-      (href) => {
-        const { dialog, results } = applyAbsolute(href);
-        expect(dialog.linkDialogOpen).toBe(true);
-        expect(dialog.linkError).toBe(NOT_ABSOLUTE);
-        expect(results).not.toHaveBeenCalled();
-      },
-    );
+    it.each([
+      "/register/x",
+      "www.example.org",
+      "example.org",
+      "#top",
+      "javascript:alert(1)",
+    ])("refuses %s, which would not work from an inbox", (href) => {
+      const { dialog, results } = applyAbsolute(href);
+      expect(dialog.linkDialogOpen).toBe(true);
+      expect(dialog.linkError).toBe(NOT_ABSOLUTE);
+      expect(results).not.toHaveBeenCalled();
+    });
 
     it("shares one pattern between the check and its tests", () => {
       expect(ABSOLUTE_LINK_PATTERN.test("https://x")).toBe(true);

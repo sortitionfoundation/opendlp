@@ -9,6 +9,24 @@ export const LINK_URL_FIELD_ID = "link-modal-url";
 // variable that the email fills in with one.
 export const ABSOLUTE_LINK_PATTERN = /^(https?:\/\/|mailto:|tel:|\{\{)/i;
 
+// The schemes a link may use. An address with no scheme - a relative address,
+// or a variable - is fine; any other scheme, such as javascript:, is refused.
+const ALLOWED_SCHEMES = ["http", "https", "mailto", "tel"];
+const SCHEME_PATTERN = /^([a-z][a-z0-9+.-]*):/i;
+
+/**
+ * Whether `href` uses a scheme a link may have, or none at all.
+ *
+ * Browsers ignore tabs, newlines and other control characters in an address,
+ * so they are dropped before the scheme is read: "java\tscript:" is still
+ * javascript:.
+ */
+export function hasAllowedScheme(href) {
+  // eslint-disable-next-line no-control-regex
+  var match = SCHEME_PATTERN.exec(href.replace(/[\u0000-\u0020]/g, ""));
+  return !match || ALLOWED_SCHEMES.indexOf(match[1].toLowerCase()) !== -1;
+}
+
 /**
  * Build the link-dialog slice.
  *
@@ -67,8 +85,14 @@ export function richEditorLinkDialog(options) {
         this.linkError = messages.linkUrlRequired || "";
         return;
       }
+      // The absolute pattern only lets allowed schemes through, so it needs no
+      // scheme check of its own - and its message suits an email better.
       if (this.linkAbsoluteOnly && !ABSOLUTE_LINK_PATTERN.test(href)) {
         this.linkError = messages.linkUrlNotAbsolute || "";
+        return;
+      }
+      if (!hasAllowedScheme(href)) {
+        this.linkError = messages.linkUrlNotAllowed || "";
         return;
       }
       this.answerLinkDialog("set", href);
