@@ -18,12 +18,14 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
             data-rich-editor-style-for="{for_id}" switch it live
         variable_example: a variable this box offers, named in the hint
     #}
+    {# The causes are one msgid of their own, so translators do the long sentence once. #}
+    {% set common_causes = _("Common causes are comments, headings smaller than level 3, text outside a paragraph, and tables with set column widths.") %}
     <div class="rich-editor"
          data-rich-editor-for="{{ for_id }}"
          data-rich-editor-label="{{ label }}"
          data-content-style="{{ content_style }}"
-         data-message-opens-as-html="{{ _('This HTML uses things the visual editor cannot show, so it opens as HTML. Common causes are comments, headings smaller than level 3, text outside a paragraph, and tables with set column widths.') }}"
-         data-message-switch-refused="{{ _('This HTML uses things the visual editor cannot show, so it stays in HTML. Common causes are comments, headings smaller than level 3, text outside a paragraph, and tables with set column widths.') }}"
+         data-message-opens-as-html="{{ _('This HTML uses things the visual editor cannot show, so it opens as HTML.') }} {{ common_causes }}"
+         data-message-switch-refused="{{ _('This HTML uses things the visual editor cannot show, so it stays in HTML.') }} {{ common_causes }}"
          hidden>
         <div class="rich-editor__bar">
             <div class="rich-editor__modes" role="group" aria-label="{{ _('Editor view') }}">
