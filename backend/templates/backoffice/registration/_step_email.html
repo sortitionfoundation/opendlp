@@ -108,7 +108,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             required=true,
                             attrs=common_input_attrs|trim) }}
                             {% set body_attrs %}
-                                {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                                {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
                             {% endset %}
                             {# The visual editor offers only what works in an email: no images or
                                tables, and only links that work from an inbox. #}
