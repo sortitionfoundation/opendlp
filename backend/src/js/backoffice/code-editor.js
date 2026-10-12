@@ -70,11 +70,13 @@ export function isReadOnly(textarea) {
  * The textarea is kept in sync on every change and on form submit. The editor
  * is inserted straight after the textarea unless `container` is given, in
  * which case it is appended to that element. `onChange(value)` is called after
- * each change the editor writes back.
+ * each change the editor writes back. `doc` sets the starting HTML; without it
+ * the editor starts from the textarea, falling back to its server-rendered
+ * text when the value is empty.
  */
 export function mountCodeEditor(
   textarea,
-  { container = null, onChange = null } = {},
+  { container = null, onChange = null, doc = null } = {},
 ) {
   const readOnly = isReadOnly(textarea);
 
@@ -112,7 +114,7 @@ export function mountCodeEditor(
   }
 
   const view = new EditorView({
-    doc: textarea.value || textarea.textContent || "",
+    doc: doc ?? (textarea.value || textarea.textContent || ""),
     extensions,
   });
 

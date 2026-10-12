@@ -302,8 +302,11 @@ export function mountRichEditor(textarea) {
     if (mode === HTML) {
       return true;
     }
+    // The textarea's value is the source of truth even when it is empty: its
+    // text content still holds the HTML the server sent.
     codeEditor = mountCodeEditor(textarea, {
       container: codeContainer,
+      doc: textarea.value,
       onChange: () =>
         textarea.dispatchEvent(new Event("input", { bubbles: true })),
     });

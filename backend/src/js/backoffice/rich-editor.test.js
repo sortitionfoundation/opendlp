@@ -154,6 +154,18 @@ describe("mountRichEditor", () => {
     expect(page.textarea.value).toBe("");
   });
 
+  it("keeps an emptied editor empty after switching to HTML and submitting", () => {
+    const page = setUp("");
+    page.textarea.textContent = "<p>Sent by the server</p>";
+    page.textarea.value = "<p>Sent by the server</p>";
+    const rich = mount(page.textarea);
+    rich.editor.commands.clearContent(true);
+    page.htmlButton.click();
+    expect(page.code.querySelector(".cm-content").textContent).toBe("");
+    page.form.dispatchEvent(new Event("submit"));
+    expect(page.textarea.value).toBe("");
+  });
+
   it("refuses to switch to Visual when the HTML would lose something", () => {
     const page = setUp("<p>a</p>");
     const rich = mount(page.textarea);
