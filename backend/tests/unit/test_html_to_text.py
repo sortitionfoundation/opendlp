@@ -71,3 +71,28 @@ def test_html_to_text_quotes_an_unclosed_blockquote() -> None:
 
 def test_html_to_text_shows_a_horizontal_rule_as_a_line() -> None:
     assert html_to_text("<p>Above</p>\n<hr>\n<p>Below</p>") == "Above\n\n---\n\nBelow"
+
+
+# HTML lets </li> be left out; the list's end tag closes the item.
+
+
+def test_html_to_text_list_without_closing_li_is_set_apart_from_what_follows() -> None:
+    assert html_to_text("<ul><li>a<li>b</ul><p>after</p><p>next</p>") == "- a\n- b\n\nafter\n\nnext"
+
+
+def test_html_to_text_nested_list_without_closing_li() -> None:
+    assert html_to_text("<ol><li>one<ul><li>inner</ul><li>two</ol><p>x</p>") == "- one\n- inner\n- two\n\nx"
+
+
+def test_html_to_text_quotes_a_nested_blockquote_twice() -> None:
+    html = "<blockquote><p>a</p><blockquote><p>b</p></blockquote></blockquote>"
+    assert html_to_text(html) == "> a\n>\n> > b"
+
+
+def test_html_to_text_blockquote_in_a_list_item_is_a_line_of_the_item() -> None:
+    html = "<ul><li><p>a</p><blockquote><p>q</p></blockquote></li><li><p>b</p></li></ul><p>after</p>"
+    assert html_to_text(html) == "- a\n> q\n- b\n\nafter"
+
+
+def test_html_to_text_list_item_starting_with_a_list_has_an_empty_bullet() -> None:
+    assert html_to_text("<ul><li><ul><li>inner</li></ul></li><li>b</li></ul>") == "-\n- inner\n- b"
