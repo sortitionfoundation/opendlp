@@ -407,10 +407,17 @@ class RegistrationPageHtml:
         return intro + "\n" + form if intro else form
 
     def readiness_problems(self) -> list[str]:
+        """Everything stopping the page being published, from the intro and the form alike."""
+        return self._intro_problems() + self._form_problems()
+
+    def _intro_problems(self) -> list[str]:
         try:
             _SANDBOX_ENV.parse(self.intro_html)
         except TemplateSyntaxError as e:
             return [f"The intro HTML has a template syntax error on line {e.lineno}: {e.message}"]
+        return []
+
+    def _form_problems(self) -> list[str]:
         if not self.form_html.strip():
             return ["The form HTML is empty"]
         try:

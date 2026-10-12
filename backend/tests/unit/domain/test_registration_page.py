@@ -451,6 +451,18 @@ class TestRegistrationPageHtml:
         assert len(problems) == 1
         assert problems[0].startswith("The intro HTML has a template syntax error on line 1")
 
+    def test_readiness_problems_reports_intro_and_form_problems_together(self):
+        """A broken intro does not hide what is wrong with the form."""
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="<h1>{% if assembly_title</h1>",
+            form_html="",
+        )
+        problems = html.readiness_problems()
+        assert len(problems) == 2
+        assert problems[0].startswith("The intro HTML has a template syntax error on line 1")
+        assert problems[1] == "The form HTML is empty"
+
     def test_readiness_problems_tokens_in_intro_do_not_count(self):
         """The form must carry the tokens itself; an intro with them is not a working form."""
         html = RegistrationPageHtml(
