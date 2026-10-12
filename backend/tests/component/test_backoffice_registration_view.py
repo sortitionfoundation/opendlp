@@ -411,6 +411,22 @@ class TestIntroStep:
         assert response.status_code == 302
         assert "section=form" in response.location
 
+    def test_save_and_next_from_the_last_step_stays_on_it(self, logged_in_admin, fake_store, assembly_id):
+        """The preview step has no next step, so a save_and_next posted from it stays there."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save_and_next", "step": "preview"},
+        )
+
+        assert response.status_code == 302
+        assert "section=preview" in response.location
+        assert "edit=1" not in response.location
+        with logged_in_admin.session_transaction() as session:
+            categories = [category for category, _ in session.get("_flashes", [])]
+        assert categories == ["success"]
+
     def test_save_from_the_form_still_returns_to_the_form(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 

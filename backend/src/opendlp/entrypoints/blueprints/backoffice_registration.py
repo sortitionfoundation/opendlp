@@ -420,9 +420,10 @@ def _post_action_section(action: str, origin: str) -> str:
     """Where to land after a successful action that stays in the editor:
     save_and_next advances to the next step (page → intro → form → email),
     unpublish/reopen return to the preview step (where their buttons live), and
-    plain save returns to the step it came from. Publish and close never reach
+    plain save returns to the step it came from, as does save_and_next from the
+    last step, which has nowhere to advance to. Publish and close never reach
     this — they leave the editor entirely."""
-    if action == "save_and_next":
+    if action == "save_and_next" and origin != _SECTIONS[-1]:
         return _SECTIONS[_SECTIONS.index(origin) + 1]
     if action in _LIFECYCLE_ACTIONS:
         return "preview"
