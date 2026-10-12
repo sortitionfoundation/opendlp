@@ -42,6 +42,23 @@ Feature: Backoffice registration visual intro editor
     And I press Enter
     Then the intro should hold "<p><strong>Plain words</strong></p>"
 
+  Scenario: Nesting a list item with the toolbar and the keyboard
+    Given there is an assembly called "Visual Indent Assembly" with a registration page
+    When I visit the registration intro editor for "Visual Indent Assembly"
+    And I type "One" into the visual intro editor
+    And I press the "Bulleted list" toolbar button
+    And I press "Enter"
+    And I keep typing "Two"
+    And I press the "Indent list item" toolbar button
+    Then the intro should hold "<ul><li><p>One</p><ul><li><p>Two</p></li></ul></li></ul>" laid out on lines
+    When I press "Shift+Tab"
+    Then the intro should hold "<ul><li><p>One</p></li><li><p>Two</p></li></ul>" laid out on lines
+    When I press "Tab"
+    And I jump to the formatting toolbar with Alt+F10
+    And I move to the "Outdent list item" toolbar button with the arrow keys
+    And I press "Enter"
+    Then the intro should hold "<ul><li><p>One</p></li><li><p>Two</p></li></ul>" laid out on lines
+
   Scenario: Building a table of two images side by side with the keyboard
     Given there is an assembly called "Visual Table Assembly" with a registration page
     When I visit the registration intro editor for "Visual Table Assembly"

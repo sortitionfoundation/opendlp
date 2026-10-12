@@ -2,7 +2,7 @@
 ABOUTME: Server-rendered controls for the visual HTML editor: the Visual/HTML switch, hint and notice
 ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaScript the plain textarea shows
 #}
-{% from "backoffice/components/icons.html" import icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_text_quote, icon_separator_horizontal, icon_table, icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_list, icon_list_ordered, icon_link, icon_image, icon_scaling, icon_undo_2, icon_redo_2 %}
+{% from "backoffice/components/icons.html" import icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_text_quote, icon_separator_horizontal, icon_table, icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_list, icon_list_ordered, icon_list_indent_increase, icon_list_indent_decrease, icon_link, icon_image, icon_scaling, icon_undo_2, icon_redo_2 %}
 {% macro rich_editor_controls(for_id, label, images=false, image_min_width="", tables=false, editable=true, content_style="", variable_example="") %}
     {#
     Controls for a textarea enhanced with the visual editor. Rendered by the textarea macro
@@ -96,6 +96,8 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         <span class="rich-editor__separator" aria-hidden="true"></span>
         {{ rich_editor_tool("bulletList", _("Bulleted list"), icon_list(), pressable=true) }}
         {{ rich_editor_tool("orderedList", _("Numbered list"), icon_list_ordered(), pressable=true) }}
+        {{ rich_editor_tool("sinkListItem", _("Indent list item"), icon_list_indent_increase(), extra_attrs='aria-disabled="true"') }}
+        {{ rich_editor_tool("liftListItem", _("Outdent list item"), icon_list_indent_decrease(), extra_attrs='aria-disabled="true"') }}
         {{ rich_editor_tool("blockquote", _("Quote"), icon_text_quote(), pressable=true) }}
         <span class="rich-editor__separator" aria-hidden="true"></span>
         {{ rich_editor_tool("link", _("Link"), icon_link(), extra_attrs='aria-haspopup="dialog"') }}

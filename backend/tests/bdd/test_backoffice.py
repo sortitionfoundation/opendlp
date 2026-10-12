@@ -1941,6 +1941,11 @@ def type_at_start_of_visual_intro(page: Page, text: str):
     page.keyboard.type(text)
 
 
+@when(parsers.parse('I keep typing "{text}"'))
+def keep_typing(page: Page, text: str):
+    page.keyboard.type(text)
+
+
 @when("I select everything in the visual intro editor")
 def select_all_in_visual_intro(page: Page):
     page.locator(VISUAL_INTRO).focus()
@@ -2098,6 +2103,14 @@ def intro_explains_refusal(page: Page):
 @then(parsers.parse('the intro should hold "{html}"'))
 def intro_holds(page: Page, html: str):
     expect(page.locator("textarea[name='intro_content']")).to_have_value(html, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the intro should hold "{html}" laid out on lines'))
+def intro_holds_laid_out(page: Page, html: str):
+    """The intro's HTML, allowing the line breaks and indents the HTML formatter puts between tags."""
+    tags = re.split(r"(?<=>)(?=<)", html)
+    pattern = re.compile("^" + r"\s*".join(re.escape(tag) for tag in tags) + "$")
+    expect(page.locator("textarea[name='intro_content']")).to_have_value(pattern, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('"{text}" should be highlighted as a variable'))

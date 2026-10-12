@@ -17,6 +17,8 @@ const COMMAND_NAMES = [
   "italic",
   "bulletList",
   "orderedList",
+  "sinkListItem",
+  "liftListItem",
   "underline",
   "strike",
   "blockquote",
@@ -48,6 +50,17 @@ function key(target, name) {
 
 function selectAll() {
   editor.commands.selectAll();
+}
+
+// Puts the cursor just inside the first text node that says `text`.
+function cursorIn(text) {
+  let found = null;
+  editor.state.doc.descendants((node, pos) => {
+    if (found === null && node.isText && node.text === text) {
+      found = pos + 1;
+    }
+  });
+  editor.commands.setTextSelection(found);
 }
 
 beforeEach(() => {
@@ -203,6 +216,97 @@ describe("wireToolbar state", () => {
     for (const name of ["link", "undo", "redo"]) {
       expect(button(name).hasAttribute("aria-pressed")).toBe(false);
     }
+  });
+});
+
+describe("wireToolbar list indent", () => {
+  const LIST = "<ul><li><p>One</p></li><li><p>Two</p></li></ul>";
+  const NESTED = "<ul><li><p>One</p><ul><li><p>Two</p></li></ul></li></ul>";
+
+  function disabled(name) {
+    return button(name).getAttribute("aria-disabled");
+  }
+
+  it("nests a list item under the one before it", () => {
+    editor.commands.setContent(LIST);
+    wireToolbar(toolbar, editor);
+    cursorIn("Two");
+    button("sinkListItem").click();
+    expect(editor.getHTML()).toBe(NESTED);
+  });
+
+  it("lifts a nested list item back out", () => {
+    editor.commands.setContent(NESTED);
+    wireToolbar(toolbar, editor);
+    cursorIn("Two");
+    button("liftListItem").click();
+    expect(editor.getHTML()).toBe(LIST);
+  });
+
+  it("turns a top-level list item into a paragraph when outdented", () => {
+    editor.commands.setContent("<ul><li><p>One</p></li></ul>");
+    wireToolbar(toolbar, editor);
+    cursorIn("One");
+    button("liftListItem").click();
+    expect(editor.getHTML()).toBe("<p>One</p>");
+  });
+
+  it("offers neither outside a list", () => {
+    wireToolbar(toolbar, editor);
+    expect(disabled("sinkListItem")).toBe("true");
+    expect(disabled("liftListItem")).toBe("true");
+    button("sinkListItem").click();
+    expect(editor.getHTML()).toBe("<p>Hello world</p>");
+  });
+
+  it("offers Indent only where there is an item to nest under", () => {
+    editor.commands.setContent(LIST);
+    wireToolbar(toolbar, editor);
+    cursorIn("One");
+    expect(disabled("sinkListItem")).toBe("true");
+    expect(disabled("liftListItem")).toBe("false");
+    cursorIn("Two");
+    expect(disabled("sinkListItem")).toBe("false");
+  });
+
+  it("is not a toggle", () => {
+    wireToolbar(toolbar, editor);
+    expect(button("sinkListItem").hasAttribute("aria-pressed")).toBe(false);
+    expect(button("liftListItem").hasAttribute("aria-pressed")).toBe(false);
+  });
+});
+
+describe("Tab in a list inside a table cell", () => {
+  const CELL_LIST =
+    "<table><tr><td><ul><li><p>One</p></li><li><p>Two</p></li></ul></td><td><p>Next</p></td></tr></table>";
+
+  function pressTab(shift = false) {
+    editor.view.dom.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Tab",
+        shiftKey: shift,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  }
+
+  it("moves to the next cell rather than nesting the item", () => {
+    editor.commands.setContent(CELL_LIST);
+    cursorIn("Two");
+    pressTab();
+    expect(editor.getHTML()).not.toContain("<ul><li><p>Two");
+    expect(editor.state.selection.$from.parent.textContent).toBe("Next");
+  });
+
+  it("leaves the Indent button to nest the item", () => {
+    editor.commands.setContent(CELL_LIST);
+    wireToolbar(toolbar, editor);
+    cursorIn("Two");
+    button("sinkListItem").click();
+    expect(editor.getHTML()).toContain(
+      "<ul><li><p>One</p><ul><li><p>Two</p></li></ul></li></ul>",
+    );
   });
 });
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-12 15:19+0100\n"
+"POT-Creation-Date: 2026-10-12 15:50+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -5682,8 +5682,8 @@ msgid "Chart"
 msgstr "Diagram"
 
 #: templates/backoffice/assembly_dashboard.html:59
-#: templates/backoffice/components/rich_editor.html:109
-#: templates/backoffice/components/rich_editor.html:118
+#: templates/backoffice/components/rich_editor.html:111
+#: templates/backoffice/components/rich_editor.html:120
 msgid "Table"
 msgstr "Táblázat"
 
@@ -7642,58 +7642,66 @@ msgid "Numbered list"
 msgstr ""
 
 #: templates/backoffice/components/rich_editor.html:99
-msgid "Quote"
+msgid "Indent list item"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:100
+msgid "Outdent list item"
 msgstr ""
 
 #: templates/backoffice/components/rich_editor.html:101
+msgid "Quote"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:103
 #: templates/backoffice/registration/_modals.html:266
 msgid "Link"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:103
+#: templates/backoffice/components/rich_editor.html:105
 msgid "Image"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:104
+#: templates/backoffice/components/rich_editor.html:106
 #: templates/backoffice/registration/_modals.html:313
 msgid "Image size"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:106
+#: templates/backoffice/components/rich_editor.html:108
 msgid "Horizontal line"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:121
+#: templates/backoffice/components/rich_editor.html:123
 msgid "Insert table"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:124
+#: templates/backoffice/components/rich_editor.html:126
 msgid "Add row below"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:127
+#: templates/backoffice/components/rich_editor.html:129
 msgid "Add column to the right"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:130
+#: templates/backoffice/components/rich_editor.html:132
 msgid "Delete row"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:133
+#: templates/backoffice/components/rich_editor.html:135
 msgid "Delete column"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:136
+#: templates/backoffice/components/rich_editor.html:138
 msgid "Delete table"
 msgstr ""
 
-#: templates/backoffice/components/rich_editor.html:142
+#: templates/backoffice/components/rich_editor.html:144
 #: templates/backoffice/targets/bulk_edit_form.html:155
 #: templates/backoffice/targets/bulk_edit_form.html:201
 msgid "Undo"
 msgstr "Visszavonás"
 
-#: templates/backoffice/components/rich_editor.html:143
+#: templates/backoffice/components/rich_editor.html:145
 msgid "Redo"
 msgstr ""
 

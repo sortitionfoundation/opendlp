@@ -50,6 +50,17 @@ export const COMMANDS = {
     run: (chain) => chain.toggleOrderedList(),
     active: (editor) => editor.isActive("orderedList"),
   },
+  // Nest and un-nest list items, as Tab and Shift+Tab do. They act on lists
+  // only: HTML has no indented paragraph, and an inline margin would carry
+  // meaning a screen reader cannot hear (indent-options.md, option A).
+  sinkListItem: {
+    run: (chain) => chain.sinkListItem("listItem"),
+    enabled: (editor) => editor.can().sinkListItem("listItem"),
+  },
+  liftListItem: {
+    run: (chain) => chain.liftListItem("listItem"),
+    enabled: (editor) => editor.can().liftListItem("listItem"),
+  },
   blockquote: {
     run: (chain) => chain.toggleBlockquote(),
     active: (editor) => editor.isActive("blockquote"),
