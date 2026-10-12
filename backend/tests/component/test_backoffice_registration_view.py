@@ -393,6 +393,100 @@ class TestIntroStep:
         assert f":aria-invalid=\"{error_expr} ? 'true' : 'false'\"" in field.group(0)
         assert f'id="{error_id}"' in body
 
+    def test_intro_step_renders_the_visual_editor_with_toolbar_and_images(
+        self, logged_in_admin, fake_store, assembly_id
+    ):
+        """In edit mode the intro textarea is marked for the visual editor, with images, tables, a toolbar and Insert buttons."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        assert 'data-rich-editor-for="intro_content"' in body
+        assert "data-rich-editor " in body
+        assert 'data-rich-editor-images="true"' in body
+        assert 'role="toolbar"' in body
+        assert 'data-command="image"' in body
+        assert 'data-rich-editor-tables="true"' in body
+        assert 'data-command="table"' in body
+        assert 'id="intro_content-table-menu"' in body
+        assert "highlights variables like {{ assembly_title }} in text" in body
+        assert 'aria-controls="intro_content-visual"' in body
+        assert "insertImage(image)" in body
+
+    def test_editor_page_carries_the_link_dialog_messages(self, logged_in_admin, fake_store, assembly_id):
+        """The link dialog's messages, including the ones for a refused address, come from the server."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        assert '"linkUrlRequired"' in body
+        assert '"linkUrlNotAllowed"' in body
+        assert '"linkUrlNotAbsolute"' in body
+        assert 'data-rich-editor-absolute-links="true"' not in body
+
+    def test_read_only_intro_step_has_no_toolbar(self, logged_in_admin, fake_store, assembly_id):
+        """Outside edit mode the editor is shown read-only, so there is nothing to format with."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro").get_data(
+            as_text=True
+        )
+
+        assert 'data-rich-editor-for="intro_content"' in body
+        assert 'role="toolbar"' not in body
+
+    def test_intro_step_offers_the_content_style_with_govuk_chosen_for_a_new_page(
+        self, logged_in_admin, fake_store, assembly_id
+    ):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        assert 'name="content_style"' in body
+        assert 'value="govuk"' in body and 'value="plain"' in body
+        assert 'data-content-style="govuk"' in body
+        assert "GOV.UK (recommended, accessible)" in body
+
+    def _save_intro_with_style(self, client, assembly_id, content_style=None):
+        data = {"action": "save", "step": "intro", "intro_content": "<h1>Hi</h1>"}
+        if content_style is not None:
+            data["content_style"] = content_style
+        response = client.post(f"/backoffice/assembly/{assembly_id}/registration/my-slug/save", data=data)
+        assert response.status_code == 302
+        assert "edit=1" not in response.location
+
+    def _stored_style(self, fake_store, page):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            html = uow.registration_page_html_sources.get_by_page_id(page.id)
+            assert html is not None
+            return html.content_style
+
+    @pytest.mark.parametrize("style", [ContentStyle.PLAIN, ContentStyle.GOVUK])
+    def test_saving_the_intro_saves_the_chosen_style(self, logged_in_admin, fake_store, assembly_id, style):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        other = ContentStyle.GOVUK if style == ContentStyle.PLAIN else ContentStyle.PLAIN
+        self._save_intro_with_style(logged_in_admin, assembly_id, other.value)
+
+        self._save_intro_with_style(logged_in_admin, assembly_id, style.value)
+
+        assert self._stored_style(fake_store, page) == style
+
+    @pytest.mark.parametrize("posted", [None, "", "fancy"])
+    def test_a_post_without_a_known_style_leaves_it_alone(self, logged_in_admin, fake_store, assembly_id, posted):
+        """No style, or one that is not a style, saves the intro and keeps the style it had."""
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        self._save_intro_with_style(logged_in_admin, assembly_id, "plain")
+
+        self._save_intro_with_style(logged_in_admin, assembly_id, posted)
+
+        assert self._stored_style(fake_store, page) == ContentStyle.PLAIN
+
     def test_intro_step_offers_the_intro_skeleton(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
         base = f"/backoffice/assembly/{assembly_id}/registration/my-slug"

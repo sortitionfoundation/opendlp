@@ -1,5 +1,5 @@
 """ABOUTME: E2E tests for the registration intro's visual editor, over PostgreSQL
-ABOUTME: The intro step renders the editor's controls, and the HTML it produces is saved and served verbatim"""
+ABOUTME: The HTML the editor produces is saved verbatim, and the public page renders it in its content style"""
 
 from datetime import UTC, datetime, timedelta
 
@@ -28,6 +28,12 @@ def enable_registration_feature(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
+def visitor(app):
+    """A second, signed-out client: what a member of the public sees of the page."""
+    return app.test_client()
+
+
+@pytest.fixture
 def registration_page(logged_in_admin, admin_user, postgres_session_factory):
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         assembly = create_assembly(
@@ -46,55 +52,8 @@ def registration_page(logged_in_admin, admin_user, postgres_session_factory):
         return assembly_id, page.id, page.url_slug
 
 
-def _intro_step(client, assembly_id, slug, edit: bool) -> str:
-    suffix = "&edit=1" if edit else ""
-    response = client.get(f"/backoffice/assembly/{assembly_id}/registration/{slug}?section=intro{suffix}")
-    assert response.status_code == 200
-    return response.get_data(as_text=True)
-
-
-def test_intro_step_renders_the_visual_editor_with_toolbar_and_images(logged_in_admin, registration_page):
-    """In edit mode the intro textarea is marked for the visual editor, with images, tables, a toolbar and Insert buttons."""
-    assembly_id, _page_id, slug = registration_page
-
-    body = _intro_step(logged_in_admin, assembly_id, slug, edit=True)
-
-    assert 'data-rich-editor-for="intro_content"' in body
-    assert "data-rich-editor " in body
-    assert 'data-rich-editor-images="true"' in body
-    assert 'role="toolbar"' in body
-    assert 'data-command="image"' in body
-    assert 'data-rich-editor-tables="true"' in body
-    assert 'data-command="table"' in body
-    assert 'id="intro_content-table-menu"' in body
-    assert "highlights variables like {{ assembly_title }} in text" in body
-    assert 'aria-controls="intro_content-visual"' in body
-    assert "insertImage(image)" in body
-
-
-def test_editor_page_carries_the_link_dialog_messages(logged_in_admin, registration_page):
-    """The link dialog's messages, including the one for a relative address in an email, come from the server."""
-    assembly_id, _page_id, slug = registration_page
-
-    body = _intro_step(logged_in_admin, assembly_id, slug, edit=True)
-
-    assert '"linkUrlRequired"' in body
-    assert '"linkUrlNotAbsolute"' in body
-    assert 'data-rich-editor-absolute-links="true"' not in body
-
-
-def test_read_only_intro_step_has_no_toolbar(logged_in_admin, registration_page):
-    """Outside edit mode the editor is shown read-only, so there is nothing to format with."""
-    assembly_id, _page_id, slug = registration_page
-
-    body = _intro_step(logged_in_admin, assembly_id, slug, edit=False)
-
-    assert 'data-rich-editor-for="intro_content"' in body
-    assert 'role="toolbar"' not in body
-
-
 def test_visual_editor_html_is_saved_verbatim_and_rendered_publicly(
-    logged_in_admin, client, registration_page, postgres_session_factory
+    logged_in_admin, visitor, registration_page, postgres_session_factory
 ):
     """The server stores exactly what the editor sends, and the public page renders it with variables filled in."""
     assembly_id, page_id, slug = registration_page
@@ -111,7 +70,7 @@ def test_visual_editor_html_is_saved_verbatim_and_rendered_publicly(
         assert html.intro_html == VISUAL_EDITOR_HTML
 
     # A new page uses the GOV.UK content style, so the rendered intro gains default classes.
-    public = client.get(f"/register/{slug}").get_data(as_text=True)
+    public = visitor.get(f"/register/{slug}").get_data(as_text=True)
     assert '<h2 class="govuk-heading-l"><strong>Welcome to Visual Editor Assembly</strong></h2>' in public
     assert '<a class="govuk-link" href="https://example.org/info">the information pack</a>' in public
 
@@ -131,51 +90,22 @@ def _stored_style(postgres_session_factory, page_id) -> str:
         return html.content_style.value
 
 
-def test_intro_step_offers_the_content_style_with_govuk_chosen_for_a_new_page(logged_in_admin, registration_page):
-    assembly_id, _page_id, slug = registration_page
-
-    body = _intro_step(logged_in_admin, assembly_id, slug, edit=True)
-
-    assert 'name="content_style"' in body
-    assert 'value="govuk"' in body and 'value="plain"' in body
-    assert 'data-content-style="govuk"' in body
-    assert "GOV.UK (recommended, accessible)" in body
-
-
-def test_saving_the_intro_saves_the_chosen_style(logged_in_admin, registration_page, postgres_session_factory):
-    assembly_id, page_id, slug = registration_page
-
-    _save_intro(logged_in_admin, assembly_id, slug, "<h1>Hi</h1>", content_style="plain")
-
-    assert _stored_style(postgres_session_factory, page_id) == "plain"
-
-
-def test_a_post_without_a_style_leaves_it_alone(logged_in_admin, registration_page, postgres_session_factory):
-    assembly_id, page_id, slug = registration_page
-    _save_intro(logged_in_admin, assembly_id, slug, "<h1>Hi</h1>", content_style="plain")
-
-    _save_intro(logged_in_admin, assembly_id, slug, "<h1>Hello</h1>")
-
-    assert _stored_style(postgres_session_factory, page_id) == "plain"
-
-
-def test_public_page_has_govuk_classes_only_under_the_govuk_style(
-    logged_in_admin, client, registration_page, postgres_session_factory
-):
+def test_public_page_has_govuk_classes_only_under_the_govuk_style(logged_in_admin, visitor, registration_page):
     assembly_id, _page_id, slug = registration_page
     intro = '<h1>Title</h1><p class="lead">Mine</p><p>Body</p>'
 
     _save_intro(logged_in_admin, assembly_id, slug, intro, content_style="govuk")
-    govuk = client.get(f"/register/{slug}").get_data(as_text=True)
+    govuk = visitor.get(f"/register/{slug}").get_data(as_text=True)
     assert '<h1 class="govuk-heading-xl">Title</h1><p class="lead">Mine</p><p class="govuk-body">Body</p>' in govuk
 
     _save_intro(logged_in_admin, assembly_id, slug, intro, content_style="plain")
-    plain = client.get(f"/register/{slug}").get_data(as_text=True)
+    plain = visitor.get(f"/register/{slug}").get_data(as_text=True)
     assert intro in plain
 
 
+@pytest.mark.db_semantics
 def test_a_page_from_before_content_styles_renders_unchanged(
-    logged_in_admin, client, registration_page, postgres_session_factory
+    logged_in_admin, visitor, registration_page, postgres_session_factory
 ):
     """Rows that existed before the column get its server default, plain, so a live page does not change."""
     assembly_id, page_id, slug = registration_page
@@ -188,10 +118,10 @@ def test_a_page_from_before_content_styles_renders_unchanged(
         uow.commit()
 
     assert _stored_style(postgres_session_factory, page_id) == "plain"
-    assert "<h1>Title</h1><p>Body</p>" in client.get(f"/register/{slug}").get_data(as_text=True)
+    assert "<h1>Title</h1><p>Body</p>" in visitor.get(f"/register/{slug}").get_data(as_text=True)
 
 
-def test_public_page_styles_quotes_and_lines_but_leaves_tables_alone(logged_in_admin, client, registration_page):
+def test_public_page_styles_quotes_and_lines_but_leaves_tables_alone(logged_in_admin, visitor, registration_page):
     """Quotes and horizontal lines get GOV.UK classes; tables get none until layout or data is decided (Q6)."""
     assembly_id, _page_id, slug = registration_page
     table = '<table><tbody><tr><td><p><img src="/a.png" alt="A"></p></td><td><p>B</p></td></tr></tbody></table>'
@@ -199,7 +129,7 @@ def test_public_page_styles_quotes_and_lines_but_leaves_tables_alone(logged_in_a
 
     _save_intro(logged_in_admin, assembly_id, slug, intro, content_style="govuk")
 
-    public = client.get(f"/register/{slug}").get_data(as_text=True)
+    public = visitor.get(f"/register/{slug}").get_data(as_text=True)
     assert '<blockquote class="govuk-inset-text"><p class="govuk-body">Quoted</p></blockquote>' in public
     assert '<hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">' in public
     assert '<p class="govuk-body"><u>Under</u> <s>struck</s></p>' in public
