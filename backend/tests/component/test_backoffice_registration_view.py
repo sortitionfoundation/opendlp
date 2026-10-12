@@ -22,6 +22,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import ContentStyle, RespondentStatus
+from opendlp.entrypoints.blueprints.backoffice_registration import IMAGE_WIDTH_MAX, IMAGE_WIDTH_MIN
 from tests.fakes import FakeUnitOfWork
 
 
@@ -486,6 +487,22 @@ class TestIntroStep:
         self._save_intro_with_style(logged_in_admin, assembly_id, posted)
 
         assert self._stored_style(fake_store, page) == ContentStyle.PLAIN
+
+    def test_image_width_limits_come_from_one_place(self, logged_in_admin, fake_store, assembly_id):
+        """The Image size dialog, its message and the editor's drag limit all read the server's limits."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        assert f'"imageWidth": {{"max": {IMAGE_WIDTH_MAX}, "min": {IMAGE_WIDTH_MIN}}}' in body
+        assert f"from {IMAGE_WIDTH_MIN} to {IMAGE_WIDTH_MAX}" in body
+        width_field = re.search(r'<input[^>]*id="image-size-modal-width"[^>]*>', body, re.DOTALL)
+        assert width_field is not None
+        assert f'min="{IMAGE_WIDTH_MIN}"' in width_field.group(0)
+        assert f'max="{IMAGE_WIDTH_MAX}"' in width_field.group(0)
+        assert f'data-image-min-width="{IMAGE_WIDTH_MIN}"' in body
 
     def test_intro_step_offers_the_intro_skeleton(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)

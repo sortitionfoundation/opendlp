@@ -3,7 +3,7 @@ ABOUTME: Server-rendered controls for the visual HTML editor: the Visual/HTML sw
 ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaScript the plain textarea shows
 #}
 {% from "backoffice/components/icons.html" import icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_text_quote, icon_separator_horizontal, icon_table, icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_list, icon_list_ordered, icon_link, icon_image, icon_scaling, icon_undo_2, icon_redo_2 %}
-{% macro rich_editor_controls(for_id, label, images=false, tables=false, editable=true, content_style="", variable_example="") %}
+{% macro rich_editor_controls(for_id, label, images=false, image_min_width="", tables=false, editable=true, content_style="", variable_example="") %}
     {#
     Controls for a textarea enhanced with the visual editor. Rendered by the textarea macro
     when rich_editor=true; every string is here so it is translated with the rest of the page.
@@ -12,6 +12,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         for_id: id of the textarea the editor is mounted over
         label: accessible name for the editing area
         images: whether images can be inserted (drop, paste, the Image button)
+        image_min_width: the narrowest, in pixels, an image can be dragged to
         tables: whether the toolbar offers the Table menu
         editable: false renders no toolbar - the view outside edit mode
         content_style: "govuk" previews the GOV.UK look in the editing area; radios with
@@ -24,6 +25,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
          data-rich-editor-for="{{ for_id }}"
          data-rich-editor-label="{{ label }}"
          data-content-style="{{ content_style }}"
+         {% if image_min_width %}data-image-min-width="{{ image_min_width }}"{% endif %}
          data-message-opens-as-html="{{ _('This HTML uses things the visual editor cannot show, so it opens as HTML.') }} {{ common_causes }}"
          data-message-switch-refused="{{ _('This HTML uses things the visual editor cannot show, so it stays in HTML.') }} {{ common_causes }}"
          hidden>

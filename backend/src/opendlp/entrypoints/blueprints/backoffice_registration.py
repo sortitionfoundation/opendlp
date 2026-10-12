@@ -333,6 +333,8 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             documents=documents,
             max_image_upload_mb=get_max_image_upload_mb(),
             max_pdf_upload_mb=get_max_pdf_upload_mb(),
+            image_width_min=IMAGE_WIDTH_MIN,
+            image_width_max=IMAGE_WIDTH_MAX,
             allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
             edit_mode=edit_mode,
             active_section=active_section,
@@ -401,6 +403,12 @@ def _handle_registration_action(
         return _("Registration page saved and republished")
     return _("Registration page saved")
 
+
+# The widths, in pixels, an image in the visual editor can be given - by the Image
+# size dialog or by dragging its corner. Passed to the page so the dialog, the
+# editor and the message stating the limits all read them from here.
+IMAGE_WIDTH_MIN = 20
+IMAGE_WIDTH_MAX = 2000
 
 _SECTIONS = ("page", "intro", "form", "email", "preview")
 _SAVE_ACTIONS = frozenset({"save", "save_and_next"})

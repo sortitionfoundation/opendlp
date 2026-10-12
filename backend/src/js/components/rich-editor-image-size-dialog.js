@@ -4,8 +4,6 @@
 import { IMAGE_SIZE_RESULT_EVENT } from "../lib/rich-editor-events.js";
 
 export const IMAGE_SIZE_FIELD_ID = "image-size-modal-width";
-export const MIN_IMAGE_WIDTH = 20;
-export const MAX_IMAGE_WIDTH = 2000;
 
 /**
  * Build the image-size-dialog slice.
@@ -18,11 +16,15 @@ export const MAX_IMAGE_WIDTH = 2000;
  * whatever the answer.
  *
  * @param {Object} options - configuration
+ * @param {number} options.minWidth - the narrowest width allowed, in pixels
+ * @param {number} options.maxWidth - the widest width allowed, in pixels
  * @param {Object} options.messages - translated strings, rendered server-side
  * @returns {Object} a flat slice of Alpine component state
  */
 export function richEditorImageSizeDialog(options) {
   var messages = options.messages || {};
+  var minWidth = options.minWidth;
+  var maxWidth = options.maxWidth;
 
   return {
     imageSizeDialogOpen: false,
@@ -63,11 +65,7 @@ export function richEditorImageSizeDialog(options) {
     applyImageSize: function () {
       var text = String(this.imageSizeWidth).trim();
       var width = Number(text);
-      if (
-        !/^\d+$/.test(text) ||
-        width < MIN_IMAGE_WIDTH ||
-        width > MAX_IMAGE_WIDTH
-      ) {
+      if (!/^\d+$/.test(text) || width < minWidth || width > maxWidth) {
         this.imageSizeError = messages.imageWidthInvalid || "";
         return;
       }

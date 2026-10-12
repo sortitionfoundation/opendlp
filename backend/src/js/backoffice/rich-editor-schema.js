@@ -186,9 +186,13 @@ const ResizableImage = Image.extend({
  *
  * `resizable` is off for a read-only editor: Tiptap only takes the handles
  * away after the editor changes, and a read-only editor never does.
+ *
+ * `imageMinWidth` is the narrowest an image can be dragged to, which the page
+ * passes in so it matches the Image size dialog; 0 keeps Tiptap's own minimum.
  */
 export function createSchemaExtensions({
   images = true,
+  imageMinWidth = 0,
   resizable = true,
   tables = true,
 } = {}) {
@@ -226,7 +230,7 @@ export function createSchemaExtensions({
         resize: {
           enabled: resizable,
           directions: ["top-left", "top-right", "bottom-left", "bottom-right"],
-          minWidth: 20,
+          ...(imageMinWidth ? { minWidth: imageMinWidth } : {}),
           alwaysPreserveAspectRatio: true,
         },
       }),

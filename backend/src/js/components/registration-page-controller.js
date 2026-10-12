@@ -28,6 +28,7 @@ import { richEditorLinkDialog } from "./rich-editor-link-dialog.js";
  * @param {string} [config.csrfToken=""] - the CSRF token for the session
  * @param {Array} [config.images=[]] - the images already on the page
  * @param {Array} [config.documents=[]] - the documents already on the page
+ * @param {Object} [config.imageWidth={}] - `{min, max}`, the widths an image can be given
  * @param {Object} [config.urls={}] - the routes the page calls
  * @param {Object} [config.messages={}] - translated strings
  * @returns {Object} Alpine component state
@@ -36,6 +37,7 @@ export function registrationPageController(config) {
   var urls = config.urls || {};
   var messages = config.messages || {};
   var csrfToken = config.csrfToken || "";
+  var imageWidth = config.imageWidth || {};
 
   return Object.assign(
     {
@@ -63,6 +65,10 @@ export function registrationPageController(config) {
       messages: messages,
     }),
     richEditorLinkDialog({ messages: messages }),
-    richEditorImageSizeDialog({ messages: messages }),
+    richEditorImageSizeDialog({
+      minWidth: imageWidth.min,
+      maxWidth: imageWidth.max,
+      messages: messages,
+    }),
   );
 }

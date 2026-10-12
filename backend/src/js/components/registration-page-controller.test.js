@@ -11,6 +11,7 @@ const CONFIG = {
   csrfToken: "csrf-123",
   images: [{ id: "image-1", alt: "A logo" }],
   documents: [{ id: "doc-1", label: "Information pack" }],
+  imageWidth: { min: 20, max: 2000 },
   urls: {
     list: "/assembly/1/registration",
     skeleton: "/assembly/1/registration/skeleton",
@@ -104,6 +105,17 @@ describe("the composed controller", () => {
     expect(state.documentItemUrl("doc-1")).toBe(
       "/assembly/1/registration/documents/doc-1",
     );
+  });
+
+  it("gives the Image size dialog the widths the server allows", () => {
+    const state = registrationPageController(CONFIG);
+    state.imageSizeDialogOpen = true;
+    state.imageSizeWidth = "2001";
+    state.applyImageSize();
+    expect(state.imageSizeDialogOpen).toBe(true);
+    state.imageSizeWidth = "2000";
+    state.applyImageSize();
+    expect(state.imageSizeDialogOpen).toBe(false);
   });
 
   it("formats a byte count for the details panels", () => {

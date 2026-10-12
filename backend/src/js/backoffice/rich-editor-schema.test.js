@@ -85,6 +85,18 @@ describe("createSchemaExtensions", () => {
     ).toBeUndefined();
   });
 
+  it("lets an image be dragged no narrower than the width it is given", () => {
+    const image = (extensions) =>
+      extensions.find((extension) => extension.name === "image");
+    expect(
+      image(createSchemaExtensions({ imageMinWidth: 40 })).options.resize
+        .minWidth,
+    ).toBe(40);
+    expect(image(createSchemaExtensions()).options.resize.minWidth).not.toBe(
+      40,
+    );
+  });
+
   it("can leave tables out", () => {
     const schemaWithoutTables = getSchema(
       createSchemaExtensions({ tables: false }),

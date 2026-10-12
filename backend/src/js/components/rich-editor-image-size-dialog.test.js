@@ -23,7 +23,11 @@ function listenForResults() {
 }
 
 function openDialog(width = 250) {
-  const dialog = richEditorImageSizeDialog({ messages: MESSAGES });
+  const dialog = richEditorImageSizeDialog({
+    minWidth: 20,
+    maxWidth: 2000,
+    messages: MESSAGES,
+  });
   dialog.openImageSizeDialog(request({ editorId: "intro", width: width }));
   return dialog;
 }
