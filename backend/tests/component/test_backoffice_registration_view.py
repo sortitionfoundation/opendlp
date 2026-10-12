@@ -362,6 +362,15 @@ class TestIntroStep:
         assert "data-code-editor" in edit_textarea
         assert "readonly" not in edit_textarea
 
+    def test_intro_textarea_has_a_visible_label(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        assert re.search(r'<label for="intro_content"[^>]*>\s*Intro\s*</label>', body)
+
     def test_intro_step_offers_the_intro_skeleton(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
         base = f"/backoffice/assembly/{assembly_id}/registration/my-slug"
