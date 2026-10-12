@@ -1522,7 +1522,7 @@ body {
         border: 1px solid var(--color-borders-dividers);
         border-radius: 0.375rem;
         background-color: var(--color-page-background);
-        box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+        box-shadow: var(--shadow-md);
     }
 
     .rich-editor__menu-item {
