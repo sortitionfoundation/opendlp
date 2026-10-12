@@ -98,6 +98,26 @@ describe("mountRichEditor", () => {
     expect(content.getAttribute("aria-label")).toBe("Intro");
   });
 
+  it("tells assistive technology whether the editing area is read-only", () => {
+    const editable = setUp("<p>a</p>");
+    mount(editable.textarea);
+    expect(
+      editable.surface
+        .querySelector("[contenteditable]")
+        .getAttribute("aria-readonly"),
+    ).toBe("false");
+    mounted.destroy();
+    mounted = null;
+
+    const fixed = setUp("<p>a</p>", "readonly");
+    mount(fixed.textarea);
+    expect(
+      fixed.surface
+        .querySelector("[contenteditable]")
+        .getAttribute("aria-readonly"),
+    ).toBe("true");
+  });
+
   it("opens in HTML mode, saying why, when the editor would lose something", () => {
     const page = setUp("<!-- note --><p>a</p>");
     const rich = mount(page.textarea);

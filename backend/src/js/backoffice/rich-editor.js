@@ -109,6 +109,7 @@ export function mountRichEditor(textarea) {
       attributes: {
         role: "textbox",
         "aria-multiline": "true",
+        "aria-readonly": String(readOnly),
         "aria-label": controls.dataset.richEditorLabel || "",
         id: `${textarea.id}-visual`,
         class: "rich-editor__content",
