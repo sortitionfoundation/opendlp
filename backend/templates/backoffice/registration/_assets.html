@@ -100,8 +100,10 @@ Args:
         <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ hint }}</p>
     </div>
 {% endmacro %}
-{% macro inline_error(error_expr, classes="") %}
+{% macro inline_error(error_expr, classes="", id="") %}
+    {# Give it an id to name it in the field's aria-describedby, so the error is announced. #}
     <div x-show="{{ error_expr }}"
+         {% if id %}id="{{ id }}"{% endif %}
          x-cloak
          class="{{ ('rounded-md p-3 ' ~ classes)|trim }}"
          style="background-color: var(--color-error-100);

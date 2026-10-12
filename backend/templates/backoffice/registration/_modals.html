@@ -283,7 +283,8 @@ panel_classes="max-w-lg") %}
                    id="link-modal-url"
                    x-model="linkUrl"
                    @keydown.enter.prevent="applyLink()"
-                   aria-describedby="link-modal-url-hint"
+                   aria-describedby="link-modal-url-hint link-modal-url-error"
+                   :aria-invalid="linkError ? 'true' : 'false'"
                    class="w-full px-3 py-2 rounded-md text-body-sm"
                    style="border: 1px solid var(--color-borders-dividers);
                           background: var(--color-page-background)" />
@@ -294,7 +295,7 @@ panel_classes="max-w-lg") %}
                 <span x-show="!linkAbsoluteOnly">{{ _("An address on this site, starting with /, works too.") }}</span>
             </p>
         </div>
-        {{ inline_error("linkError") }}
+        {{ inline_error("linkError", id="link-modal-url-error") }}
     </div>
 </div>
 <div class="dialog-footer">
@@ -327,7 +328,8 @@ panel_classes="max-w-lg") %}
                    max="2000"
                    step="1"
                    inputmode="numeric"
-                   aria-describedby="image-size-modal-width-hint"
+                   aria-describedby="image-size-modal-width-hint image-size-modal-width-error"
+                   :aria-invalid="imageSizeError ? 'true' : 'false'"
                    class="w-40 px-3 py-2 rounded-md text-body-sm"
                    style="border: 1px solid var(--color-borders-dividers);
                           background: var(--color-page-background)" />
@@ -337,7 +339,7 @@ panel_classes="max-w-lg") %}
                 {{ _("The height changes to keep the image's shape. The image is never shown wider than the page.") }}
             </p>
         </div>
-        {{ inline_error("imageSizeError") }}
+        {{ inline_error("imageSizeError", id="image-size-modal-width-error") }}
     </div>
 </div>
 <div class="dialog-footer">

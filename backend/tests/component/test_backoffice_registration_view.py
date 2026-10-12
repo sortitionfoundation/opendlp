@@ -371,6 +371,28 @@ class TestIntroStep:
 
         assert re.search(r'<label for="intro_content"[^>]*>\s*Intro\s*</label>', body)
 
+    @pytest.mark.parametrize(
+        ("field_id", "error_id", "error_expr"),
+        [
+            ("link-modal-url", "link-modal-url-error", "linkError"),
+            ("image-size-modal-width", "image-size-modal-width-error", "imageSizeError"),
+        ],
+    )
+    def test_dialog_errors_are_announced_with_their_field(
+        self, logged_in_admin, fake_store, assembly_id, field_id, error_id, error_expr
+    ):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        field = re.search(rf'<input[^>]*id="{field_id}"[^>]*>', body, re.DOTALL)
+        assert field is not None
+        assert re.search(rf'aria-describedby="[^"]*\b{error_id}\b', field.group(0))
+        assert f":aria-invalid=\"{error_expr} ? 'true' : 'false'\"" in field.group(0)
+        assert f'id="{error_id}"' in body
+
     def test_intro_step_offers_the_intro_skeleton(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
         base = f"/backoffice/assembly/{assembly_id}/registration/my-slug"
