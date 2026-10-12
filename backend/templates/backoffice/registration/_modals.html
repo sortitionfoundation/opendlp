@@ -290,7 +290,8 @@ panel_classes="max-w-lg") %}
             <p id="link-modal-url-hint"
                class="text-body-sm mt-1"
                style="color: var(--color-secondary-text);">
-                {{ _("A web address such as https://example.org, or mailto: followed by an email address.") }}
+                {{ _("A web address such as https://example.org, mailto: followed by an email address, tel: followed by a phone number, or a variable that holds an address.") }}
+                <span x-show="!linkAbsoluteOnly">{{ _("An address on this site, starting with /, works too.") }}</span>
             </p>
         </div>
         {{ inline_error("linkError") }}
