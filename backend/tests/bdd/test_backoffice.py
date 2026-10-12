@@ -605,8 +605,13 @@ def type_into_html_content_editor(page: Page, text: str):
 
 @when("I save the registration form")
 def save_registration_form(page: Page):
-    """Submit the form via the 'Save' button; the editor syncs its content back to the textarea."""
+    """Submit the form via the 'Save' button; the editor syncs its content back to the textarea.
+
+    Waits for the redirect to the read-only view, so a following step reads what was saved
+    rather than the editor still on screen.
+    """
     page.get_by_role("button", name="Save", exact=True).click()
+    page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the saved registration HTML should contain "{text}"'))
