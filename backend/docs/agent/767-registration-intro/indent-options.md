@@ -1,9 +1,12 @@
 # Indent and outdent buttons for the visual editor
 
-**Status: undecided.** Chewie asked for buttons that increase and decrease
-the indent of the text. Before building them there's a question for the
-team: what should indent *act on*? This note covers what I found, the
-options, and their pros and cons.
+**Status: decided - option A (lists only), implemented.** Chewie asked for
+buttons that increase and decrease the indent of the text. Before building
+them there was a question for the team: what should indent *act on*? This
+note covers what I found, the options, and their pros and cons. The team
+chose option A. Tab inside a list in a table cell moves to the next cell
+rather than nesting the item; the Indent button nests it, and a vitest pins
+that down.
 
 Related: [tiptap-intro-editor-plan.md](tiptap-intro-editor-plan.md) (E5
 schema, E12 GOV.UK classes, E14 inline styles, step 10 toolbar) and
