@@ -113,6 +113,26 @@ class TestRegistrationDocumentFixtures:
         )
 
 
+class TestRegistrationSkeletonFixtures:
+    def test_skeleton_response_matches_schema_and_fixture(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The intro and form skeletons, plain and styled, that the Show Skeleton buttons display."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            import_respondents_from_csv(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                "external_id,first_name\nR001,Alice\n",
+                replace_existing=True,
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/skeleton")
+
+        assert response.status_code == 200
+        check_api_fixture("registration-skeleton", response.get_json(), schema_name="registration-skeleton")
+
+
 class TestErrorEnvelopeFixtures:
     def test_validation_error_matches_schema_and_fixture(self, logged_in_admin, existing_assembly, registration_page):
         """A rejected upload returns the standard error envelope, not a bespoke shape."""

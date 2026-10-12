@@ -11,6 +11,7 @@ const FIXTURE_SCHEMAS = {
   "registration-image-upload": "registration-image",
   "registration-image-alt-update": "registration-image",
   "registration-document-upload": "registration-document",
+  "registration-skeleton": "registration-skeleton",
   "image-upload-error": "error",
   "respondent-field-spec": "respondent-field-spec",
 };

@@ -3,6 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { loadApiFixture } from "../test-support/api-fixtures.js";
 import { registrationSkeleton } from "./registration-skeleton.js";
 
 const OPTIONS = {
@@ -43,12 +44,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const SKELETON = {
-  html: "<input>",
-  html_govuk: "<div class='govuk'>",
-  intro_html: "<h1>",
-  intro_html_govuk: "<h1 class='govuk'>",
-};
+const SKELETON = loadApiFixture(
+  "registration-skeleton",
+  "registration-skeleton",
+);
 
 describe("fetchFormSkeleton", () => {
   it("requests the skeleton with the CSRF token", async () => {
@@ -73,8 +72,8 @@ describe("fetchFormSkeleton", () => {
 
     expect(state.skeletonModalOpen).toBe(true);
     expect(state.skeletonView).toBe("plain");
-    expect(state.skeletonHtmlPlain).toBe("<input>");
-    expect(state.skeletonHtmlStyled).toBe("<div class='govuk'>");
+    expect(state.skeletonHtmlPlain).toBe(SKELETON.html);
+    expect(state.skeletonHtmlStyled).toBe(SKELETON.html_govuk);
     expect(state.skeletonLoading).toBe(false);
   });
 
@@ -85,8 +84,8 @@ describe("fetchFormSkeleton", () => {
     await state.fetchIntroSkeleton();
 
     expect(state.skeletonModalOpen).toBe(true);
-    expect(state.skeletonHtmlPlain).toBe("<h1>");
-    expect(state.skeletonHtmlStyled).toBe("<h1 class='govuk'>");
+    expect(state.skeletonHtmlPlain).toBe(SKELETON.intro_html);
+    expect(state.skeletonHtmlStyled).toBe(SKELETON.intro_html_govuk);
   });
 
   it("swaps the pair when the other step asks later", async () => {
@@ -97,7 +96,7 @@ describe("fetchFormSkeleton", () => {
     state.showStyledSkeleton();
     await state.fetchFormSkeleton();
 
-    expect(state.skeletonHtmlPlain).toBe("<input>");
+    expect(state.skeletonHtmlPlain).toBe(SKELETON.html);
     expect(state.skeletonView).toBe("plain");
   });
 
