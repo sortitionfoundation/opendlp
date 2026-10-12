@@ -58,7 +58,7 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         {# The option value is the enum's token, never shown; the label is translated. #}
                         {% set content_style_options = [] %}
                         {% for style, style_label in content_style_labels.items() %}
-                            {% set _ = content_style_options.append({"value": style.value, "label": style_label}) %}
+                            {% set _appended = content_style_options.append({"value": style.value, "label": style_label}) %}
                         {% endfor %}
                         {{ radio_group(name="content_style",
                         label=_("Intro style"),
