@@ -21,7 +21,7 @@ from opendlp.domain.respondent_field_schema import (
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import ContentStyle, RespondentStatus
 from tests.fakes import FakeUnitOfWork
 
 
@@ -1263,6 +1263,21 @@ class TestFieldsChangedWarning:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form")
 
         assert b"registration questions have changed" not in response.data
+
+    def test_still_warns_after_the_intro_and_style_are_saved(self, logged_in_admin, fake_store, assembly_id):
+        """Saving the intro or the style does not touch the form HTML, so the warning stays."""
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        self._seed_field(fake_store, assembly_id)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            html = uow.registration_page_html_sources.get_by_page_id(page.id)
+            assert html is not None
+            html.update_intro_html("<h1>Welcome</h1>")
+            html.update_content_style(ContentStyle.PLAIN)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form")
+
+        assert b"registration questions have changed" in response.data
 
     def test_intro_step_never_warns(self, logged_in_admin, fake_store, assembly_id):
         """The intro does not depend on the field schema, so a schema change is not its concern."""

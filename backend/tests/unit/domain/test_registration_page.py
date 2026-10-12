@@ -221,6 +221,28 @@ class TestRegistrationPageHtml:
         assert html.form_html == READY_HTML
         assert html.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
 
+    def test_update_html_bumps_form_updated_at(self):
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4())
+        html.form_updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        html.update_html(READY_HTML)
+        assert html.form_updated_at == html.updated_at
+
+    def test_update_intro_html_leaves_form_updated_at_alone(self):
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4())
+        html.form_updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        html.update_intro_html("<h1>Welcome</h1>")
+        assert html.form_updated_at == datetime(2000, 1, 1, tzinfo=UTC)
+
+    def test_update_content_style_leaves_form_updated_at_alone(self):
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4())
+        html.form_updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        html.update_content_style(ContentStyle.PLAIN)
+        assert html.form_updated_at == datetime(2000, 1, 1, tzinfo=UTC)
+
+    def test_detached_copy_keeps_form_updated_at(self):
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_updated_at=datetime(2000, 1, 1, tzinfo=UTC))
+        assert html.create_detached_copy().form_updated_at == datetime(2000, 1, 1, tzinfo=UTC)
+
     def test_update_html_leaves_intro_alone(self):
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), intro_html="<h1>Welcome</h1>")
         html.update_html(READY_HTML)

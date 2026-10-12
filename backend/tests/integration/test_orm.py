@@ -1178,6 +1178,7 @@ class TestRegistrationPageORM:
         assert retrieved_html.form_html == "<form>{{ csrf_form_element }} {{ form_action }}</form>"
         assert retrieved_html.intro_html == "<h1>{{ assembly_title }}</h1>"
         assert retrieved_html.content_style is ContentStyle.GOVUK
+        assert retrieved_html.form_updated_at.tzinfo is not None
 
     def test_registration_page_content_style_round_trips(self, postgres_session: Session):
         """A plain content style is stored as its value and read back as the enum."""

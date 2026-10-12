@@ -297,7 +297,8 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # The authored HTML doesn't follow the field schema automatically, so
             # warn when any field changed after this HTML was last saved.
             fields_changed_after_save = any(
-                f.updated_at > html.updated_at for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)
+                f.updated_at > html.form_updated_at
+                for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)
             )
         page_rows = registration_page_rows(all_pages, assembly_id, deletable_ids, counts_by_page)
 

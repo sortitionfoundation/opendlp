@@ -770,6 +770,7 @@ registration_page_html_sources = Table(
     ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("form_updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )
 
 # Registration images table — re-encoded PNG bytes shared by an assembly's pages.

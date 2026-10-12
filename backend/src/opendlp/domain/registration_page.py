@@ -359,6 +359,7 @@ class RegistrationPageHtml:
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
         content_style: ContentStyle = ContentStyle.GOVUK,
+        form_updated_at: datetime | None = None,
     ):
         now = datetime.now(UTC)
         self.id = html_id or uuid.uuid4()
@@ -368,10 +369,15 @@ class RegistrationPageHtml:
         self.content_style = content_style
         self.created_at = created_at or now
         self.updated_at = updated_at or now
+        # When the form HTML alone last changed. The "questions changed since the
+        # form was saved" warning compares against this, so editing the intro or
+        # the style does not hide it.
+        self.form_updated_at = form_updated_at or self.updated_at
 
     def update_html(self, form_html: str) -> None:
         self.form_html = form_html
         self.updated_at = datetime.now(UTC)
+        self.form_updated_at = self.updated_at
 
     def update_intro_html(self, intro_html: str) -> None:
         self.intro_html = intro_html
@@ -428,6 +434,7 @@ class RegistrationPageHtml:
             created_at=self.created_at,
             updated_at=self.updated_at,
             content_style=self.content_style,
+            form_updated_at=self.form_updated_at,
         )
 
     def __eq__(self, other: object) -> bool:
