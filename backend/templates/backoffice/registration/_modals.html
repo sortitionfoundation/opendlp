@@ -25,6 +25,8 @@ panel_classes="max-w-4xl") %}
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
         {{ _("The Plain HTML version is the minimal version, for you to enhance. The GOV.UK styled version uses the %(link_start)sGOV.UK Design System%(link_end)s — which has high web accessibility.",
         link_start=('<a href="https://design-system.service.gov.uk/"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         class="text-body-md underline break-all"
                         style="color: var(--color-link-text)">'|safe),
             link_end=("</a>"|safe)) }}

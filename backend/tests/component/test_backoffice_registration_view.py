@@ -517,6 +517,19 @@ class TestIntroStep:
         assert "fetchFormSkeleton()" in form_body
         assert "Form Skeleton" in form_body
 
+    def test_skeleton_design_system_link_opens_in_a_new_tab(self, logged_in_admin, fake_store, assembly_id):
+        """Following the link must not lose the skeleton the organiser was looking at."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro").get_data(
+            as_text=True
+        )
+
+        link = re.search(r'<a href="https://design-system.service.gov.uk/"[^>]*>', body)
+        assert link is not None
+        assert 'target="_blank"' in link.group(0)
+        assert 'rel="noopener noreferrer"' in link.group(0)
+
     def test_save_persists_the_intro_and_returns_to_the_intro_step(self, logged_in_admin, fake_store, assembly_id):
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html="<p>form</p>")
 
