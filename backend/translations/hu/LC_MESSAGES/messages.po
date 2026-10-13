@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-12 15:50+0100\n"
+"POT-Creation-Date: 2026-10-13 13:01+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -7444,7 +7444,7 @@ msgid "Actions for %(name)s"
 msgstr "%(name)s műveletei"
 
 #: templates/backoffice/components/registration_page_list.html:187
-#: templates/backoffice/registration/_modals.html:239
+#: templates/backoffice/registration/_modals.html:238
 #: templates/backoffice/registration/_step_preview.html:122
 msgid "Close registration"
 msgstr "Regisztráció lezárása"
@@ -7945,44 +7945,40 @@ msgstr ""
 #: templates/backoffice/registration/_modals.html:26
 #, python-format
 msgid ""
-"The Plain HTML version is the minimal version, for you to enhance. The "
-"GOV.UK styled version uses the %(link_start)sGOV.UK Design "
+"The Plain version is the minimal version, for you to enhance. The "
+"Accessible version uses the %(link_start)sGOV.UK Design "
 "System%(link_end)s — which has high web accessibility."
 msgstr ""
-"Az egyszerű HTML változat a minimális verzió, amelyet neked kell "
-"továbbfejlesztened. A GOV.UK stílusú változat a %(link_start)sGOV.UK "
-"Design Systemet%(link_end)s használja, amely magas szintű webes "
-"akadálymentességet nyújt."
 
-#: templates/backoffice/registration/_modals.html:37
+#: templates/backoffice/registration/_modals.html:38
 msgid "Skeleton style"
 msgstr ""
 
 #: templates/backoffice/registration/_modals.html:42
-msgid "Plain HTML"
-msgstr "Egyszerű HTML"
+msgid "Plain"
+msgstr ""
 
-#: templates/backoffice/registration/_modals.html:47
-msgid "GOV.UK styled"
-msgstr "GOV.UK stílusú"
+#: templates/backoffice/registration/_modals.html:46
+msgid "Accessible"
+msgstr ""
 
-#: templates/backoffice/registration/_modals.html:62
+#: templates/backoffice/registration/_modals.html:61
 msgid "Skeleton preview"
 msgstr ""
 
-#: templates/backoffice/registration/_modals.html:79
-msgid "Skeleton preview (GOV.UK styled)"
+#: templates/backoffice/registration/_modals.html:78
+msgid "Skeleton preview (Accessible)"
 msgstr ""
 
-#: templates/backoffice/registration/_modals.html:94
+#: templates/backoffice/registration/_modals.html:93
 msgid "Copy All"
 msgstr "Összes másolása"
 
-#: templates/backoffice/registration/_modals.html:98
+#: templates/backoffice/registration/_modals.html:97
 msgid "Upload image"
 msgstr "Kép feltöltése"
 
-#: templates/backoffice/registration/_modals.html:102
+#: templates/backoffice/registration/_modals.html:101
 #, python-format
 msgid ""
 "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image. "
@@ -7992,17 +7988,17 @@ msgstr ""
 "képenként. A fájlok feltöltéskor lekicsinyítve, PNG formátumban "
 "tárolódnak."
 
-#: templates/backoffice/registration/_modals.html:104
+#: templates/backoffice/registration/_modals.html:103
 msgid "Image file"
 msgstr "Képfájl"
 
-#: templates/backoffice/registration/_modals.html:110
-#: templates/backoffice/registration/_modals.html:131
+#: templates/backoffice/registration/_modals.html:109
+#: templates/backoffice/registration/_modals.html:130
 msgid "Alt text"
 msgstr "Alternatív szöveg"
 
-#: templates/backoffice/registration/_modals.html:112
-#: templates/backoffice/registration/_modals.html:133
+#: templates/backoffice/registration/_modals.html:111
+#: templates/backoffice/registration/_modals.html:132
 msgid ""
 "Describes the image for screen-reader users and is used as the file's "
 "display name in the asset list."
@@ -8010,59 +8006,59 @@ msgstr ""
 "Leírja a képet a képernyőolvasót használóknak, és ez lesz a fájl "
 "megjelenő neve az eszközlistában."
 
-#: templates/backoffice/registration/_modals.html:119
+#: templates/backoffice/registration/_modals.html:118
 msgid "Image details"
 msgstr "A kép részletei"
 
-#: templates/backoffice/registration/_modals.html:126
+#: templates/backoffice/registration/_modals.html:125
 msgid "Image snippet"
 msgstr "Kép kódrészlet"
 
-#: templates/backoffice/registration/_modals.html:129
+#: templates/backoffice/registration/_modals.html:128
 msgid "Copy image snippet"
 msgstr "Kép kódrészletének másolása"
 
-#: templates/backoffice/registration/_modals.html:135
+#: templates/backoffice/registration/_modals.html:134
 msgid "Delete image"
 msgstr "Kép törlése"
 
-#: templates/backoffice/registration/_modals.html:138
+#: templates/backoffice/registration/_modals.html:137
 msgid "Save alt"
 msgstr "Alternatív szöveg mentése"
 
-#: templates/backoffice/registration/_modals.html:154
+#: templates/backoffice/registration/_modals.html:153
 msgid "No preview"
 msgstr "Nincs előnézet"
 
-#: templates/backoffice/registration/_modals.html:161
+#: templates/backoffice/registration/_modals.html:160
 msgid "Dimensions"
 msgstr "Méretek"
 
-#: templates/backoffice/registration/_modals.html:166
+#: templates/backoffice/registration/_modals.html:165
 msgid "px"
 msgstr "képpont"
 
-#: templates/backoffice/registration/_modals.html:173
+#: templates/backoffice/registration/_modals.html:172
 msgid "Upload document"
 msgstr "Dokumentum feltöltése"
 
-#: templates/backoffice/registration/_modals.html:177
+#: templates/backoffice/registration/_modals.html:176
 #: templates/backoffice/registration/_step_form.html:126
 #: templates/backoffice/registration/_step_intro.html:117
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr "Csak PDF fájlok. Maximális fájlméret: %(max)s MB dokumentumonként."
 
-#: templates/backoffice/registration/_modals.html:179
+#: templates/backoffice/registration/_modals.html:178
 msgid "PDF file"
 msgstr "PDF fájl"
 
-#: templates/backoffice/registration/_modals.html:185
-#: templates/backoffice/registration/_modals.html:205
+#: templates/backoffice/registration/_modals.html:184
+#: templates/backoffice/registration/_modals.html:204
 msgid "Label"
 msgstr "Címke"
 
-#: templates/backoffice/registration/_modals.html:187
+#: templates/backoffice/registration/_modals.html:186
 msgid ""
 "Shown to visitors as the download link text and used as the file's "
 "display name in the asset list. Defaults to the file name."
@@ -8070,19 +8066,19 @@ msgstr ""
 "A látogatóknak ez jelenik meg a letöltési link szövegeként, és ez lesz a "
 "fájl megjelenő neve az eszközlistában. Alapértelmezés szerint a fájlnév."
 
-#: templates/backoffice/registration/_modals.html:193
+#: templates/backoffice/registration/_modals.html:192
 msgid "Document details"
 msgstr "A dokumentum részletei"
 
-#: templates/backoffice/registration/_modals.html:200
+#: templates/backoffice/registration/_modals.html:199
 msgid "Download link snippet"
 msgstr "Letöltési link kódrészlet"
 
-#: templates/backoffice/registration/_modals.html:203
+#: templates/backoffice/registration/_modals.html:202
 msgid "Copy download link snippet"
 msgstr "Letöltési link kódrészletének másolása"
 
-#: templates/backoffice/registration/_modals.html:207
+#: templates/backoffice/registration/_modals.html:206
 msgid ""
 "Shown to visitors as the download link text and used as the file's "
 "display name in the asset list."
@@ -8090,19 +8086,19 @@ msgstr ""
 "A látogatóknak ez jelenik meg a letöltési link szövegeként, és ez lesz a "
 "fájl megjelenő neve az eszközlistában."
 
-#: templates/backoffice/registration/_modals.html:209
+#: templates/backoffice/registration/_modals.html:208
 msgid "Delete document"
 msgstr "Dokumentum törlése"
 
-#: templates/backoffice/registration/_modals.html:212
+#: templates/backoffice/registration/_modals.html:211
 msgid "Save label"
 msgstr "Címke mentése"
 
-#: templates/backoffice/registration/_modals.html:229
+#: templates/backoffice/registration/_modals.html:228
 msgid "Close registration?"
 msgstr "Lezárod a regisztrációt?"
 
-#: templates/backoffice/registration/_modals.html:230
+#: templates/backoffice/registration/_modals.html:229
 msgid ""
 "This permanently stops new registrations. Visitors who follow the form "
 "link will see the 'registration closed' page, and the form cannot be "
@@ -8112,7 +8108,7 @@ msgstr ""
 "látogatók a „regisztráció lezárva” oldalt látják, és az űrlapot nem lehet"
 " újra megnyitni."
 
-#: templates/backoffice/registration/_modals.html:241
+#: templates/backoffice/registration/_modals.html:240
 msgid "Keep it open"
 msgstr "Maradjon nyitva"
 

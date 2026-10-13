@@ -23,7 +23,7 @@ panel_classes="max-w-4xl") %}
         {% endif %}
     </p>
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-        {{ _("The Plain HTML version is the minimal version, for you to enhance. The GOV.UK styled version uses the %(link_start)sGOV.UK Design System%(link_end)s — which has high web accessibility.",
+        {{ _("The Plain version is the minimal version, for you to enhance. The Accessible version uses the %(link_start)sGOV.UK Design System%(link_end)s — which has high web accessibility.",
         link_start=('<a href="https://design-system.service.gov.uk/"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -31,22 +31,19 @@ panel_classes="max-w-4xl") %}
                         style="color: var(--color-link-text)">'|safe),
             link_end=("</a>"|safe)) }}
     </p>
-        {# Plain/GOV.UK toggle. Hand-rolled rather than the button() macro: the
-           macro's variant classes are fixed at Jinja render time, but which
-           button is "active" here can only be known at runtime. #}
-    <div class="flex gap-2 mb-4"
+        {# Plain/Accessible toggle - the same segmented control as the visual editor's
+           Visual/HTML switch, styled from aria-pressed. #}
+    <div class="toggle-buttons mb-4"
          role="group"
          aria-label="{{ _('Skeleton style') }}">
         <button type="button"
-                class="btn"
-                :class="skeletonView === 'plain' ? 'btn--primary' : 'btn--tertiary'"
+                class="toggle-buttons__button"
                 :aria-pressed="skeletonView === 'plain' ? 'true' : 'false'"
-                @click="showPlainSkeleton()">{{ _("Plain HTML") }}</button>
+                @click="showPlainSkeleton()">{{ _("Plain") }}</button>
         <button type="button"
-                class="btn"
-                :class="skeletonView === 'styled' ? 'btn--primary' : 'btn--tertiary'"
+                class="toggle-buttons__button"
                 :aria-pressed="skeletonView === 'styled' ? 'true' : 'false'"
-                @click="showStyledSkeleton()">{{ _("GOV.UK styled") }}</button>
+                @click="showStyledSkeleton()">{{ _("Accessible") }}</button>
     </div>
         {# Two separate x-if'd textareas, not one x-text-bound textarea switched by
            x-show: html-editor.js mounts a CodeMirror view over the textarea once,
@@ -78,7 +75,7 @@ panel_classes="max-w-4xl") %}
         <div>
             <textarea readonly
                       data-code-editor
-                      aria-label="{{ _('Skeleton preview (GOV.UK styled)') }}"
+                      aria-label="{{ _('Skeleton preview (Accessible)') }}"
                       x-text="skeletonHtmlStyled"
                       class="w-full rounded-lg p-4"
                       rows="18"

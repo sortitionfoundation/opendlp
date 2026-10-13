@@ -859,14 +859,18 @@ def registration_editor_dimmed(page: Page):
     assert_step_dialog_dimmed(page, "#registration-editor-dialogs")
 
 
-@when("I switch the form skeleton to the GOV.UK styled view")
+@when("I switch the form skeleton to the accessible view")
 def switch_skeleton_to_styled_view(page: Page):
-    page.get_by_role("button", name="GOV.UK styled").click()
+    toggle = page.get_by_role("button", name="Accessible", exact=True)
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-pressed", "true")
 
 
-@when("I switch the form skeleton to the plain HTML view")
+@when("I switch the form skeleton to the plain view")
 def switch_skeleton_to_plain_view(page: Page):
-    page.get_by_role("button", name="Plain HTML").click()
+    toggle = page.get_by_role("button", name="Plain", exact=True)
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-pressed", "true")
 
 
 @then("the form skeleton should show GOV.UK styled markup")

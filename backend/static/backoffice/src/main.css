@@ -1420,25 +1420,32 @@ body {
         margin-bottom: 0.5rem;
     }
 
-    .rich-editor__modes {
+    /* The Visual/HTML switch. .toggle-buttons is the same segmented control
+       for anywhere else that switches between two views (the skeleton dialog);
+       the pressed button carries aria-pressed="true". */
+    .rich-editor__modes,
+    .toggle-buttons {
         display: inline-flex;
         border: 1px solid var(--color-borders-dividers);
         border-radius: 0.5rem;
         overflow: hidden;
     }
 
-    .rich-editor__mode {
+    .rich-editor__mode,
+    .toggle-buttons__button {
         padding: 0.25rem 0.875rem;
         font-size: 0.875rem;
         color: var(--color-button-tertiary-text);
         background-color: var(--color-page-background);
     }
 
-    .rich-editor__mode + .rich-editor__mode {
+    .rich-editor__mode + .rich-editor__mode,
+    .toggle-buttons__button + .toggle-buttons__button {
         border-left: 1px solid var(--color-borders-dividers);
     }
 
-    .rich-editor__mode[aria-pressed="true"] {
+    .rich-editor__mode[aria-pressed="true"],
+    .toggle-buttons__button[aria-pressed="true"] {
         color: var(--color-button-primary-text);
         background-color: var(--color-button-primary-bg);
     }

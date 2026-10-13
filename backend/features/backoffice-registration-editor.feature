@@ -46,15 +46,15 @@ Feature: Backoffice registration HTML editor
     And I open the form skeleton preview
     Then the registration editor behind the dialog should be dimmed
 
-  Scenario: The form skeleton can be toggled between plain and GOV.UK styled HTML
+  Scenario: The form skeleton can be toggled between plain and accessible HTML
     Given I am logged in as an admin user
     And there is an assembly called "Skeleton Toggle Assembly" with a registration page
     When I visit the registration form editor for "Skeleton Toggle Assembly"
     And I open the form skeleton preview
     Then the form skeleton should show plain markup
-    When I switch the form skeleton to the GOV.UK styled view
+    When I switch the form skeleton to the accessible view
     Then the form skeleton should show GOV.UK styled markup
-    When I switch the form skeleton to the plain HTML view
+    When I switch the form skeleton to the plain view
     Then the form skeleton should show plain markup
 
   Scenario: Wizard navigation is locked while editing
