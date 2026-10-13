@@ -248,7 +248,8 @@ save_disabled_expr="!editingDocumentLabel.trim() || documentEditing") %}
    single home of the "was leaving intentional?" decision. #}
 {% include "backoffice/components/leave_guard_modal.html" %}
 {# Toast notification. role="status" (polite live region) so screen readers hear
-   copy/upload/delete outcomes - same intent as floating_alerts' aria-live="polite". #}
+   copy/upload/delete outcomes - same intent as floating_alerts' aria-live="polite".
+   .takeover-toast keeps it above the dialogs it reports on. #}
 <div x-cloak
      x-show="toastVisible"
      role="status"
@@ -258,7 +259,7 @@ save_disabled_expr="!editingDocumentLabel.trim() || documentEditing") %}
      x-transition:leave="transition ease-in duration-150"
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-2"
-     class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg"
+     class="takeover-toast fixed top-6 left-1/2 -translate-x-1/2 px-4 py-3 rounded-lg shadow-lg"
      :style="toastType === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400); color: var(--color-success-600);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400); color: var(--color-error-600);'">
     <span x-text="toastMessage"></span>
 </div>

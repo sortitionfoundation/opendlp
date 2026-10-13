@@ -28,6 +28,7 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
 
 from .config import ADMIN_PASSWORD, NORMAL_PASSWORD, ORGANISER_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
+from .helpers import assert_step_dialog_dimmed
 
 # Load all scenarios from the feature files
 scenarios("../../features/backoffice.feature")
@@ -850,6 +851,12 @@ def skeleton_shown_in_read_only_editor(page: Page):
     expect(editor.locator(".cm-content")).to_have_attribute("contenteditable", "false")
     # The generated skeleton always ends with a submit button labelled "Register".
     expect(editor).to_contain_text("Register")
+
+
+@then("the registration editor behind the dialog should be dimmed")
+def registration_editor_dimmed(page: Page):
+    """A dialog opened from the editor greys the editor out, so only the dialog reads as live."""
+    assert_step_dialog_dimmed(page, "#registration-editor-dialogs")
 
 
 @when("I switch the form skeleton to the GOV.UK styled view")

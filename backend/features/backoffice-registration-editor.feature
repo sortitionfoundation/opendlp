@@ -39,6 +39,13 @@ Feature: Backoffice registration HTML editor
     And I open the form skeleton preview
     Then the form skeleton should be shown in a read-only code editor
 
+  Scenario: The skeleton preview dims the registration editor behind it
+    Given I am logged in as an admin user
+    And there is an assembly called "Skeleton Dim Assembly" with a registration page
+    When I visit the registration form editor for "Skeleton Dim Assembly"
+    And I open the form skeleton preview
+    Then the registration editor behind the dialog should be dimmed
+
   Scenario: The form skeleton can be toggled between plain and GOV.UK styled HTML
     Given I am logged in as an admin user
     And there is an assembly called "Skeleton Toggle Assembly" with a registration page

@@ -151,7 +151,11 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     </div>
                 </div>
             </div>
-            {% include "backoffice/registration/_modals.html" %}
+            {# The editor's own dialogs open over the takeover panel, so they lift above it
+               and their backdrop dims it - see [data-takeover-dialog-host] in main.css. #}
+            <div id="registration-editor-dialogs" data-takeover-dialog-host>
+                {% include "backoffice/registration/_modals.html" %}
+            </div>
         </div>
         {% include "backoffice/registration/_page_data.html" %}
     {% endif %}

@@ -1104,6 +1104,7 @@
          backdrop of a dialog over a takeover . 51  (see .dialog-panel--takeover below)
          dialog over a takeover panel ......... 52
          flash alerts over a takeover panel ... 55
+         registration editor toast ............ 55  (.takeover-toast)
        ======================================== */
     #floating-alerts {
         z-index: 45;
@@ -1266,13 +1267,24 @@
     /* A fragment dialog opened from a takeover panel (a registration step's
        set-up or edit modal) lifts above the panel, so its backdrop dims the
        panel as well as the page - the panel is inert while it is open and
-       should look it. See the z-index stack above. */
-    body:has(.dialog-panel--takeover) [data-fragment-dialog-host] .dialog-backdrop {
+       should look it. The registration editor's own dialogs (skeleton, uploads,
+       link, image size) lift the same way from [data-takeover-dialog-host]: a
+       plain wrapper, without the HTMX focus handling a fragment host carries.
+       See the z-index stack above. */
+    body:has(.dialog-panel--takeover) [data-fragment-dialog-host] .dialog-backdrop,
+    body:has(.dialog-panel--takeover) [data-takeover-dialog-host] .dialog-backdrop {
         z-index: 51;
     }
 
-    body:has(.dialog-panel--takeover) [data-fragment-dialog-host] .dialog-positioner {
+    body:has(.dialog-panel--takeover) [data-fragment-dialog-host] .dialog-positioner,
+    body:has(.dialog-panel--takeover) [data-takeover-dialog-host] .dialog-positioner {
         z-index: 52;
+    }
+
+    /* The registration editor's toast reports on what its dialogs did ("Copied"),
+       so it shows above them, level with the flash alerts. */
+    .takeover-toast {
+        z-index: 55;
     }
 
     /* Alert-dialog text block — title + description stack (Figma: gap 8) */
