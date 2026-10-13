@@ -780,6 +780,26 @@ def page_is_scrolled_down(page: Page):
     _wait_until_scrolled(page)
 
 
+def _assert_wizard_footer_is_panel_edge(page: Page) -> None:
+    """The footer bar spans the takeover panel and meets its bottom border."""
+    panel = page.locator(".dialog-panel--takeover").bounding_box()
+    footer = page.locator(".wizard-footer-box").bounding_box()
+    assert panel is not None and footer is not None
+    # One pixel of slack each way for the panel's border.
+    assert abs((panel["y"] + panel["height"]) - (footer["y"] + footer["height"])) <= 2, (panel, footer)
+    assert abs(panel["x"] - footer["x"]) <= 2, (panel, footer)
+    assert abs(panel["width"] - footer["width"]) <= 2, (panel, footer)
+
+
+@then("the wizard footer should be the editor's bottom edge")
+def wizard_footer_is_editor_bottom_edge(page: Page):
+    """However long the step, the footer stays at the bottom of the panel - before and after scrolling."""
+    expect(page.locator(".wizard-footer-box")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    _assert_wizard_footer_is_panel_edge(page)
+    page.locator(".dialog-panel--takeover .dialog-body").evaluate("body => body.scrollTo(0, body.scrollHeight)")
+    _assert_wizard_footer_is_panel_edge(page)
+
+
 @then("the wizard Next button should be disabled")
 def wizard_next_button_disabled(page: Page):
     """While editing, the sticky footer's navigation is locked."""

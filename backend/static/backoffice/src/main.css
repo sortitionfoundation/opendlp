@@ -1262,14 +1262,45 @@
         padding: 1.5rem;
     }
 
-    /* Inside the panel the wizard footer still sticks, but the full-viewport
-       breakout (see .wizard-footer-box's stuck styles) would overflow a panel
-       narrower than the viewport — pin the box styling instead. */
+    /* Inside the panel the wizard footer is the panel's footer, mirroring its
+       header: pinned to the bottom edge whatever the step's length, so it never
+       moves between steps, and edge to edge with nothing scrolling below it.
+       The body and the step's tabpanel become flex columns so margin-top: auto
+       can push a short step's footer down; on a long step it sticks as before.
+       Only bodies holding a wizard footer change - a set-up step's dialog keeps
+       its padding. The selectors carry four parts to outrank a tabpanel's
+       space-y-* utility, which would otherwise set the footer's margin-top. */
+    .dialog-panel--takeover .dialog-body:has(> [role="tabpanel"] > .wizard-footer) {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 0;
+    }
+
+    .dialog-panel--takeover .dialog-body > [role="tabpanel"]:has(> .wizard-footer) {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dialog-panel--takeover .dialog-body > [role="tabpanel"] > .wizard-footer {
+        margin-top: auto;
+        margin-inline: -1.5rem; /* the body's inline padding */
+    }
+
+    /* The gap the footer's own margin-top kept, now that it is auto. */
+    .dialog-panel--takeover .dialog-body > [role="tabpanel"] > :has(+ .wizard-footer) {
+        margin-bottom: 1.5rem;
+    }
+
+    /* The full-viewport breakout (see .wizard-footer-box's stuck styles) would
+       overflow a panel narrower than the viewport - the box is the panel's
+       footer bar instead, like .dialog-footer. */
     .dialog-panel--takeover .wizard-footer-box {
         margin-inline: 0;
         padding-inline: 1.5rem;
-        border-radius: 0.5rem;
-        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0;
+        border: none;
+        border-top: 1px solid var(--color-borders-dividers);
     }
 
     /* While a takeover panel is up: the window must not scroll (the panel body

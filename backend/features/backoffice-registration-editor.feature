@@ -57,6 +57,14 @@ Feature: Backoffice registration HTML editor
     When I switch the form skeleton to the plain view
     Then the form skeleton should show plain markup
 
+  Scenario: The wizard footer is pinned to the bottom of the editor on every step
+    Given I am logged in as an admin user
+    And there is an assembly called "Pinned Footer Assembly" with a registration page
+    When I visit the name and URLs step for "Pinned Footer Assembly"
+    Then the wizard footer should be the editor's bottom edge
+    When I visit the registration form editor for "Pinned Footer Assembly"
+    Then the wizard footer should be the editor's bottom edge
+
   Scenario: Wizard navigation is locked while editing
     Given I am logged in as an admin user
     And there is an assembly called "Locked Nav Assembly" with a registration page
