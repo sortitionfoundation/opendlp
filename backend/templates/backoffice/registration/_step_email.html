@@ -88,7 +88,8 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                                 {{ checkbox(name="auto_reply_enabled",
                                 label=_("Send auto-reply email"),
                                 checked=true,
-                                disabled=true) }}
+                                disabled=true,
+                                dim=false) }}
                                 {% if edit_mode %}
                                     {{ button(_("Cancel"), variant="secondary", href=email_view_url, attrs='@click="guardLeave($event)"') }}
                                     {{ button(_("Save") , type="submit", variant="primary", attrs='name="action" value="save"') }}

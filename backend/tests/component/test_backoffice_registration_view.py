@@ -454,6 +454,23 @@ class TestIntroStep:
         assert 'data-content-style="govuk"' in body
         assert "GOV.UK (recommended, accessible)" in body
 
+    def test_content_style_radios_are_read_only_outside_edit_mode(self, logged_in_admin, fake_store, assembly_id):
+        """The radios stay on show, greyed and disabled, so the choice reads the same in both modes."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        base = f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro"
+
+        view_body = logged_in_admin.get(base).get_data(as_text=True)
+        edit_body = logged_in_admin.get(f"{base}&edit=1").get_data(as_text=True)
+
+        view_radios = re.findall(r'<input[^>]*name="content_style"[^>]*>', view_body, re.DOTALL)
+        assert len(view_radios) == 2
+        assert all("disabled" in radio for radio in view_radios)
+        assert "radio-readonly" in view_body
+        edit_radios = re.findall(r'<input[^>]*name="content_style"[^>]*>', edit_body, re.DOTALL)
+        assert len(edit_radios) == 2
+        assert not any("disabled" in radio for radio in edit_radios)
+        assert "radio-readonly" not in edit_body
+
     def _save_intro_with_style(self, client, assembly_id, content_style=None):
         data = {"action": "save", "step": "intro", "intro_content": "<h1>Hi</h1>"}
         if content_style is not None:

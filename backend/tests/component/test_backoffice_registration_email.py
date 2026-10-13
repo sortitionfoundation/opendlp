@@ -275,6 +275,10 @@ class TestAlwaysOnAutoReply:
         checkbox = html.split('name="auto_reply_enabled"', 1)[1].split(">", 1)[0]
         assert "checked" in checkbox
         assert "disabled" in checkbox
+        # Always on and never editable, so it has the read-only look rather than the dimmed one.
+        label = html.split('name="auto_reply_enabled"', 1)[0].rsplit("<label", 1)[1]
+        assert "checkbox-readonly" in label
+        assert "checkbox-disabled" not in label
 
 
 class TestErrorHandling:

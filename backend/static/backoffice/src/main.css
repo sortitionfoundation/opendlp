@@ -418,6 +418,25 @@
         pointer-events: none;
     }
 
+    /* Read-only state — non-interactive but full-opacity, for view-mode forms.
+       Matches .radio-readonly. */
+    .checkbox-container.checkbox-readonly {
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Read-only box — grey border on a subtle-grey centre so it doesn't read as clickable. */
+    .checkbox-container.checkbox-readonly .checkbox-box {
+        border-color: var(--color-secondary-text);
+        background-color: var(--color-subtle-background-panels);
+    }
+
+    /* Read-only checked box — muted fill so the checked state stays readable but quiet. */
+    .checkbox-container.checkbox-readonly .checkbox-input:checked + .checkbox-box {
+        border-color: var(--color-secondary-text);
+        background-color: var(--color-secondary-text);
+    }
+
     /* Hide native checkbox but keep interactable for Playwright/a11y */
     .checkbox-input {
         position: absolute;

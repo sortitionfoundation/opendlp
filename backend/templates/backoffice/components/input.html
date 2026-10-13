@@ -336,7 +336,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro checkbox(name, label="", checked=false, hint="", error="", disabled=false, readonly=false, id="", attrs="", value="") %}
+{% macro checkbox(name, label="", checked=false, hint="", error="", disabled=false, readonly=false, id="", attrs="", value="", dim=true) %}
     {#
     Checkbox component based on Figma OpenDLP UI specification.
 
@@ -351,6 +351,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         id: Optional id attribute (defaults to name)
         attrs: Additional HTML attributes
         value: Optional value attribute for the checkbox
+        dim: When disabled, controls whether the checkbox is dimmed (default true).
+             Pass dim=false for the read-only look of a view-mode form: full-opacity
+             label, greyed box.
 
     Usage:
         {{ checkbox("agree", label="I agree to the terms", checked=true) }}
@@ -378,7 +381,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {% endif %}
         {% else %}
             {# Editable checkbox with custom styling #}
-            <label class="checkbox-container{% if disabled %} checkbox-disabled{% endif %}">
+            <label class="checkbox-container{% if disabled %} {% if dim %}checkbox-disabled{% else %}checkbox-readonly{% endif %}{% endif %}">
                 {# Hidden native checkbox for accessibility #}
                 <input
                     type="checkbox"
