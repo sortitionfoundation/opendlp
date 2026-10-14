@@ -1,9 +1,10 @@
 // ABOUTME: Tests for the skeleton preview slice of the registration page controller
-// ABOUTME: Covers the form fetch, the plain/styled toggle and copying the shown markup
+// ABOUTME: Covers the form fetch, the plain/styled toggle and writing the shown markup into the form
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { loadApiFixture } from "../test-support/api-fixtures.js";
+import { SET_VALUE_EVENT } from "../lib/code-editor-events.js";
 import { registrationSkeleton } from "./registration-skeleton.js";
 
 const OPTIONS = {
@@ -11,13 +12,10 @@ const OPTIONS = {
   skeletonUrl: "/assembly/1/registration/skeleton",
   messages: {
     skeletonFetchFailed: "An error occurred while fetching the form skeleton",
-    copied: "Copied to clipboard",
-    copyFailed: "Failed to copy to clipboard",
   },
 };
 
 let fetchMock;
-let writeText;
 
 /**
  * showToast lives in the toast slice and only exists once the slices are
@@ -35,9 +33,7 @@ function jsonResponse(body) {
 
 beforeEach(() => {
   fetchMock = vi.fn();
-  writeText = vi.fn().mockResolvedValue(undefined);
   vi.stubGlobal("fetch", fetchMock);
-  vi.stubGlobal("navigator", { clipboard: { writeText: writeText } });
 });
 
 afterEach(() => {
@@ -64,14 +60,14 @@ describe("fetchFormSkeleton", () => {
     );
   });
 
-  it("opens the modal on the plain view with both form renderings held", async () => {
+  it("opens the modal on the accessible view with both form renderings held", async () => {
     fetchMock.mockResolvedValue(jsonResponse(SKELETON));
     const state = skeleton();
 
     await state.fetchFormSkeleton();
 
     expect(state.skeletonModalOpen).toBe(true);
-    expect(state.skeletonView).toBe("plain");
+    expect(state.skeletonView).toBe("styled");
     expect(state.skeletonHtmlPlain).toBe(SKELETON.html);
     expect(state.skeletonHtmlStyled).toBe(SKELETON.html_govuk);
     expect(state.skeletonLoading).toBe(false);
@@ -119,14 +115,15 @@ describe("fetchFormSkeleton", () => {
 });
 
 describe("the plain / GOV.UK styled toggle", () => {
-  it("switches to the styled view and back", () => {
+  it("starts on the styled view and switches to plain and back", () => {
     const state = skeleton();
-
-    state.showStyledSkeleton();
     expect(state.skeletonView).toBe("styled");
 
     state.showPlainSkeleton();
     expect(state.skeletonView).toBe("plain");
+
+    state.showStyledSkeleton();
+    expect(state.skeletonView).toBe("styled");
   });
 
   it("closes the modal", () => {
@@ -139,40 +136,110 @@ describe("the plain / GOV.UK styled toggle", () => {
   });
 });
 
-describe("copySkeletonToClipboard", () => {
-  it("copies whichever rendering is on screen", async () => {
+describe("useSkeletonAsForm", () => {
+  let textarea;
+
+  beforeEach(() => {
+    document.body.innerHTML = '<textarea id="html_content"></textarea>';
+    textarea = document.getElementById("html_content");
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  /** A skeleton slice holding both renderings, with the modal open. */
+  function openSkeleton() {
     const state = skeleton();
+    state.markEditDirty = vi.fn();
+    state.$nextTick = (callback) => callback();
+    state.$refs = {};
     state.skeletonHtmlPlain = "<input>";
     state.skeletonHtmlStyled = "<div class='govuk'>";
+    state.skeletonModalOpen = true;
+    return state;
+  }
 
-    await state.copySkeletonToClipboard();
-    expect(writeText).toHaveBeenCalledWith("<input>");
+  it("writes the shown rendering into an empty form and closes the modal", () => {
+    const state = openSkeleton();
 
-    state.showStyledSkeleton();
-    await state.copySkeletonToClipboard();
-    expect(writeText).toHaveBeenLastCalledWith("<div class='govuk'>");
+    state.useSkeletonAsForm();
+
+    expect(textarea.value).toBe("<div class='govuk'>");
+    expect(state.skeletonModalOpen).toBe(false);
+    expect(state.skeletonReplaceConfirmOpen).toBe(false);
+    expect(state.markEditDirty).toHaveBeenCalled();
   });
 
-  it("confirms the copy", async () => {
-    const state = skeleton();
+  it("writes the plain rendering when that is on screen", () => {
+    const state = openSkeleton();
+    state.showPlainSkeleton();
 
-    await state.copySkeletonToClipboard();
+    state.useSkeletonAsForm();
 
-    expect(state.showToast).toHaveBeenCalledWith(
-      "Copied to clipboard",
-      "success",
-    );
+    expect(textarea.value).toBe("<input>");
   });
 
-  it("reports a clipboard the browser refused", async () => {
-    writeText.mockRejectedValue(new Error("Denied"));
-    const state = skeleton();
+  it("asks the editor over the textarea to show the new content", () => {
+    const state = openSkeleton();
+    const listener = vi.fn();
+    textarea.addEventListener(SET_VALUE_EVENT, listener);
 
-    await state.copySkeletonToClipboard();
+    state.useSkeletonAsForm();
 
-    expect(state.showToast).toHaveBeenCalledWith(
-      "Failed to copy to clipboard",
-      "error",
-    );
+    expect(listener).toHaveBeenCalledOnce();
+    expect(listener.mock.calls[0][0].detail).toEqual({
+      value: "<div class='govuk'>",
+    });
+  });
+
+  it("asks first when the form already has HTML, with only the question open", () => {
+    textarea.value = "<p>mine</p>";
+    const state = openSkeleton();
+    const keepFormBtn = { focus: vi.fn() };
+    state.$refs = { keepFormBtn: keepFormBtn };
+
+    state.useSkeletonAsForm();
+
+    expect(textarea.value).toBe("<p>mine</p>");
+    expect(state.skeletonReplaceConfirmOpen).toBe(true);
+    expect(state.skeletonModalOpen).toBe(false);
+    expect(keepFormBtn.focus).toHaveBeenCalled();
+    expect(state.markEditDirty).not.toHaveBeenCalled();
+  });
+
+  it("treats a form of only whitespace as empty", () => {
+    textarea.value = "  \n ";
+    const state = openSkeleton();
+
+    state.useSkeletonAsForm();
+
+    expect(state.skeletonReplaceConfirmOpen).toBe(false);
+    expect(textarea.value).toBe("<div class='govuk'>");
+  });
+
+  it("replaces the form once the question is confirmed", () => {
+    textarea.value = "<p>mine</p>";
+    const state = openSkeleton();
+    state.useSkeletonAsForm();
+
+    state.confirmReplaceFormWithSkeleton();
+
+    expect(textarea.value).toBe("<div class='govuk'>");
+    expect(state.skeletonReplaceConfirmOpen).toBe(false);
+    expect(state.skeletonModalOpen).toBe(false);
+    expect(state.markEditDirty).toHaveBeenCalled();
+  });
+
+  it("goes back to the skeleton, form untouched, when the question is cancelled", () => {
+    textarea.value = "<p>mine</p>";
+    const state = openSkeleton();
+    state.useSkeletonAsForm();
+
+    state.cancelReplaceFormWithSkeleton();
+
+    expect(textarea.value).toBe("<p>mine</p>");
+    expect(state.skeletonReplaceConfirmOpen).toBe(false);
+    expect(state.skeletonModalOpen).toBe(true);
   });
 });

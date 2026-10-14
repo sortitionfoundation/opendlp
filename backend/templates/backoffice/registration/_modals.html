@@ -13,7 +13,7 @@ close_expr="closeSkeletonModal()",
 panel_classes="max-w-4xl") %}
 <div class="dialog-body">
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-        {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form. Then edit to add extra HTML as required.") }}
+        {{ _("This skeleton is generated from your assembly's field definitions. Use it as the form, then edit to add extra HTML as required.") }}
     </p>
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
         {{ _("The Plain version is the minimal version, for you to enhance. The Accessible version uses the %(link_start)sGOV.UK Design System%(link_end)s — which has high web accessibility.",
@@ -31,12 +31,12 @@ panel_classes="max-w-4xl") %}
          aria-label="{{ _('Skeleton style') }}">
         <button type="button"
                 class="toggle-buttons__button"
-                :aria-pressed="skeletonView === 'plain' ? 'true' : 'false'"
-                @click="showPlainSkeleton()">{{ _("Plain") }}</button>
-        <button type="button"
-                class="toggle-buttons__button"
                 :aria-pressed="skeletonView === 'styled' ? 'true' : 'false'"
                 @click="showStyledSkeleton()">{{ _("Accessible") }}</button>
+        <button type="button"
+                class="toggle-buttons__button"
+                :aria-pressed="skeletonView === 'plain' ? 'true' : 'false'"
+                @click="showPlainSkeleton()">{{ _("Plain") }}</button>
     </div>
         {# Two separate x-if'd textareas, not one x-text-bound textarea switched by
            x-show: html-editor.js mounts a CodeMirror view over the textarea once,
@@ -83,8 +83,17 @@ panel_classes="max-w-4xl") %}
     </template>
 </div>
 <div class="dialog-footer">
-    {{ button(_("Copy All"), variant="secondary", attrs='@click="copySkeletonToClipboard()"') }}
+    {{ button(_("Use this as the form"), variant="primary", attrs='@click="useSkeletonAsForm()"') }}
 </div>
+{% endcall %}
+{# Asked before the skeleton replaces a form that already has HTML. #}
+{% call controlled_alert_dialog(id="skeleton-replace-modal",
+title=_("Replace the form?"),
+description=_("Are you sure? You will lose any changes you have made."),
+open_expr="skeletonReplaceConfirmOpen",
+close_expr="cancelReplaceFormWithSkeleton()") %}
+{{ button(_("Replace the form"), variant="danger", attrs='@click="confirmReplaceFormWithSkeleton()"') }}
+{{ button(_("Cancel"), variant="secondary", attrs='x-ref="keepFormBtn" @click="cancelReplaceFormWithSkeleton()"') }}
 {% endcall %}
 {{ asset_upload_modal(id="image-upload-modal",
 title=_("Upload image"),

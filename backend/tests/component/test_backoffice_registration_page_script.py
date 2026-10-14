@@ -38,7 +38,10 @@ BOUND_NAMES = [
     "closeSkeletonModal()",
     "showPlainSkeleton()",
     "showStyledSkeleton()",
-    "copySkeletonToClipboard()",
+    "useSkeletonAsForm()",
+    "skeletonReplaceConfirmOpen",
+    "confirmReplaceFormWithSkeleton()",
+    "cancelReplaceFormWithSkeleton()",
     "skeletonHtmlPlain",
     "skeletonHtmlStyled",
     "openImageUploadModal()",
@@ -72,7 +75,6 @@ BOUND_NAMES = [
 # undefined, which shows the user an empty toast rather than an error.
 MESSAGE_KEYS = [
     "skeletonFetchFailed",
-    "copied",
     "copyFailed",
     "snippetCopied",
     "noPublicUrl",

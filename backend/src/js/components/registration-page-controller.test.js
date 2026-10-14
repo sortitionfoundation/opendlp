@@ -34,10 +34,11 @@ const TEMPLATE_API = [
   "closeImageUploadModalIfAllowed",
   "closeLeaveModal",
   "closePageGuarded",
+  "cancelReplaceFormWithSkeleton",
   "closeSkeletonModal",
+  "confirmReplaceFormWithSkeleton",
   "copyDocumentSnippet",
   "copyImageSnippet",
-  "copySkeletonToClipboard",
   "copyToClipboard",
   "deleteDocument",
   "deleteEditingDocument",
@@ -63,6 +64,7 @@ const TEMPLATE_API = [
   "submitDocumentUpload",
   "submitImageEdit",
   "submitImageUpload",
+  "useSkeletonAsForm",
 ];
 
 describe("the composed controller", () => {

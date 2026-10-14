@@ -44,11 +44,39 @@ Feature: Backoffice registration HTML editor
     And there is an assembly called "Skeleton Toggle Assembly" with a registration page
     When I visit the registration form editor for "Skeleton Toggle Assembly"
     And I open the form skeleton preview
-    Then the form skeleton should show plain markup
-    When I switch the form skeleton to the accessible view
     Then the form skeleton should show GOV.UK styled markup
     When I switch the form skeleton to the plain view
     Then the form skeleton should show plain markup
+    When I switch the form skeleton to the accessible view
+    Then the form skeleton should show GOV.UK styled markup
+
+  Scenario: The skeleton fills an empty form without asking
+    Given I am logged in as an admin user
+    And there is an assembly called "Skeleton Use Assembly" with a registration page
+    When I visit the registration form editor for "Skeleton Use Assembly"
+    And I open the form skeleton preview
+    And I use the skeleton as the form
+    Then the form skeleton dialog should be closed
+    And the HTML content editor should contain "govuk-button"
+    When I save the registration form
+    Then the saved registration HTML should contain "govuk-button"
+
+  Scenario: The skeleton asks before replacing a form that has HTML
+    Given I am logged in as an admin user
+    And there is an assembly called "Skeleton Replace Assembly" with a registration page
+    When I visit the registration form editor for "Skeleton Replace Assembly"
+    And I type "MINE-4411" into the HTML content code editor
+    And I open the form skeleton preview
+    And I use the skeleton as the form
+    Then I should be asked before the form is replaced
+    When I keep the form as it is
+    Then the form skeleton should show GOV.UK styled markup
+    And the HTML content editor should contain "MINE-4411"
+    When I use the skeleton as the form
+    And I confirm replacing the form
+    Then the form skeleton dialog should be closed
+    And the HTML content editor should contain "govuk-button"
+    And the HTML content editor should not contain "MINE-4411"
 
   Scenario: The wizard footer is pinned to the bottom of the editor on every step
     Given I am logged in as an admin user

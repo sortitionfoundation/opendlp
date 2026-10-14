@@ -2,6 +2,7 @@
 // ABOUTME: Covers textarea sync, read-only handling, set/get and teardown.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountCodeEditor } from "./code-editor.js";
+import { SET_VALUE_EVENT } from "../lib/code-editor-events.js";
 
 function makeForm(textareaAttrs = "") {
   document.body.innerHTML = `<form><textarea name="html" rows="4" ${textareaAttrs}>&lt;p&gt;Hi&lt;/p&gt;</textarea></form>`;
@@ -41,6 +42,26 @@ describe("mountCodeEditor", () => {
     editor.setValue("<h1>New</h1>");
     expect(textarea.value).toBe("<h1>New</h1>");
     expect(onChange).toHaveBeenCalledWith("<h1>New</h1>");
+  });
+
+  it("replaces its content when asked by an event on the textarea", () => {
+    const { textarea } = makeForm();
+    const editor = mount(textarea);
+    textarea.dispatchEvent(
+      new CustomEvent(SET_VALUE_EVENT, { detail: { value: "<h2>Set</h2>" } }),
+    );
+    expect(editor.getValue()).toBe("<h2>Set</h2>");
+    expect(textarea.value).toBe("<h2>Set</h2>");
+  });
+
+  it("ignores the set event once destroyed", () => {
+    const { textarea } = makeForm();
+    const editor = mountCodeEditor(textarea);
+    editor.destroy();
+    textarea.dispatchEvent(
+      new CustomEvent(SET_VALUE_EVENT, { detail: { value: "<h2>Set</h2>" } }),
+    );
+    expect(textarea.value).toBe("<p>Hi</p>");
   });
 
   it("inserts text at the cursor", () => {

@@ -890,6 +890,47 @@ def skeleton_shows_plain_markup(page: Page):
     expect(editor).not_to_contain_text("govuk-button", timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when("I use the skeleton as the form")
+def use_skeleton_as_form(page: Page):
+    page.get_by_role("button", name="Use this as the form").click()
+
+
+@then("the form skeleton dialog should be closed")
+def skeleton_dialog_closed(page: Page):
+    expect(page.locator('[aria-labelledby="skeleton-modal-title"]')).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("I should be asked before the form is replaced")
+def asked_before_form_replaced(page: Page):
+    """Only the question is open: the skeleton dialog steps aside while it is asked."""
+    dialog = page.get_by_role("alertdialog", name="Replace the form?")
+    expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(dialog).to_contain_text("You will lose any changes you have made.")
+    expect(page.locator('[aria-labelledby="skeleton-modal-title"]')).to_have_count(0)
+
+
+@when("I keep the form as it is")
+def keep_form_as_it_is(page: Page):
+    page.get_by_role("alertdialog").get_by_role("button", name="Cancel").click()
+
+
+@when("I confirm replacing the form")
+def confirm_replacing_form(page: Page):
+    page.get_by_role("alertdialog").get_by_role("button", name="Replace the form").click()
+
+
+@then(parsers.parse('the HTML content editor should contain "{text}"'))
+def html_content_editor_contains(page: Page, text: str):
+    editor = page.locator("textarea[name='html_content'] + .cm-editor")
+    expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the HTML content editor should not contain "{text}"'))
+def html_content_editor_not_contains(page: Page, text: str):
+    editor = page.locator("textarea[name='html_content'] + .cm-editor")
+    expect(editor).not_to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when("I try to access the backoffice dashboard")
 def try_access_backoffice_dashboard(page: Page):
     """Attempt to access the backoffice dashboard."""

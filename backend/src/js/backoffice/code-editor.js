@@ -7,6 +7,7 @@ import { indentWithTab } from "@codemirror/commands";
 import { html } from "@codemirror/lang-html";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
+import { SET_VALUE_EVENT } from "../lib/code-editor-events.js";
 
 const highlightStyle = HighlightStyle.define([
   { tag: [tags.tagName, tags.angleBracket], color: "#22863a" },
@@ -72,7 +73,8 @@ export function isReadOnly(textarea) {
  * which case it is appended to that element. `onChange(value)` is called after
  * each change the editor writes back. `doc` sets the starting HTML; without it
  * the editor starts from the textarea, falling back to its server-rendered
- * text when the value is empty.
+ * text when the value is empty. An editable editor replaces its content when
+ * SET_VALUE_EVENT is dispatched on the textarea.
  */
 export function mountCodeEditor(
   textarea,
@@ -132,6 +134,14 @@ export function mountCodeEditor(
   const syncOnSubmit = () => {
     textarea.value = getValue();
   };
+  const setValue = (value) => {
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: value },
+    });
+  };
+  const setValueFromEvent = (event) => {
+    setValue(event.detail.value);
+  };
 
   // A required + display:none textarea blocks submit ("not focusable"); the editor
   // keeps the value in sync and server-side validation still guards emptiness.
@@ -141,6 +151,7 @@ export function mountCodeEditor(
     if (form) {
       form.addEventListener("submit", syncOnSubmit);
     }
+    textarea.addEventListener(SET_VALUE_EVENT, setValueFromEvent);
   }
 
   textarea.style.display = "none";
@@ -153,11 +164,7 @@ export function mountCodeEditor(
   return {
     view,
     getValue,
-    setValue(value) {
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: value },
-      });
-    },
+    setValue,
     focus() {
       view.focus();
     },
@@ -168,6 +175,7 @@ export function mountCodeEditor(
       if (form) {
         form.removeEventListener("submit", syncOnSubmit);
       }
+      textarea.removeEventListener(SET_VALUE_EVENT, setValueFromEvent);
       view.destroy();
       view.dom.remove();
     },
