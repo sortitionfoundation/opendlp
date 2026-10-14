@@ -915,6 +915,51 @@ class TestUpdateRegistrationPageContentStyle:
         assert [a for a in page.activity if a.action is RegistrationPageAction.EDIT] == []
 
 
+class TestFillEmptyRegistrationFormHtml:
+    def test_fills_an_empty_form_with_the_accessible_starter_html(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.fill_empty_registration_form_html(uow, admin.id, _page_id(uow, assembly), ContentStyle.GOVUK)
+
+        assert 'name="first_name"' in source.form_html
+        assert 'class="govuk-input"' in source.form_html
+        page = page_for_assembly(uow, assembly.id)
+        assert [a.text for a in page.activity if a.action is RegistrationPageAction.EDIT] == ["Updated form HTML"]
+
+    def test_fills_an_empty_form_with_the_plain_starter_html(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.fill_empty_registration_form_html(uow, admin.id, _page_id(uow, assembly), ContentStyle.PLAIN)
+
+        assert 'name="first_name"' in source.form_html
+        assert "govuk-input" not in source.form_html
+
+    def test_leaves_a_form_with_html_alone(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_registration_page_html(uow, admin.id, page_id, READY_HTML)
+
+        with pytest.raises(ValueError, match="already has HTML"):
+            service.fill_empty_registration_form_html(uow, admin.id, page_id, ContentStyle.GOVUK)
+
+        source = uow.registration_page_html_sources.get_by_page_id(page_id)
+        assert source is not None
+        assert source.form_html == READY_HTML
+
+    def test_requires_manage_permission(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        viewer = _viewer(uow, assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            service.fill_empty_registration_form_html(uow, viewer.id, _page_id(uow, assembly), ContentStyle.GOVUK)
+
+
 class TestGenerateStarterFormHtmlVariants:
     def test_happy_path_includes_field_names_in_both_variants(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)

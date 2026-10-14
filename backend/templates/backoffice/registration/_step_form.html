@@ -70,6 +70,15 @@ ABOUTME: Included by assembly_registration.html when ?section=form
                                 {{ _("The HTML for the form on the registration page.") }}
                             {% endif %}
                         </p>
+                        {# An empty form gets a one-click start: the server generates the starter HTML
+                           from the current questions and saves it. Not offered once the page is closed,
+                           when it can no longer be edited. #}
+                        {% if not edit_mode and registration_status != "CLOSED" and not html_content | trim %}
+                            <div class="flex flex-wrap gap-2">
+                                {{ button(_("Fill with accessible HTML"), type="submit", variant="primary", attrs='name="fill_form" value="govuk"') }}
+                                {{ button(_("Fill with plain HTML"), type="submit", variant="secondary", attrs='name="fill_form" value="plain"') }}
+                            </div>
+                        {% endif %}
                                         {# HTML Textarea with monospace font. `readonly` is the default;
                        ?edit=1 unlocks it via the Edit CTA below. #}
                         {% set textarea_attrs %}

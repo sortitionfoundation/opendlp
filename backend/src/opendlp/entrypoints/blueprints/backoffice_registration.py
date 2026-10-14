@@ -82,6 +82,7 @@ from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
     deletable_registration_page_ids,
     delete_registration_page,
+    fill_empty_registration_form_html,
     generate_starter_form_html_variants,
     get_registration_page_by_slug,
     get_registration_page_with_source,
@@ -458,7 +459,10 @@ def _apply_posted_html(uow: AbstractUnitOfWork, page: RegistrationPage) -> None:
         update_registration_page_intro_html(
             uow, current_user.id, page.id, request.form["intro_content"], content_style=_posted_content_style()
         )
-    if "html_content" in request.form:
+    fill_style = _posted_fill_style()
+    if fill_style is not None:
+        fill_empty_registration_form_html(uow, current_user.id, page.id, fill_style)
+    elif "html_content" in request.form:
         update_registration_page_html(uow, current_user.id, page.id, request.form["html_content"])
 
 
@@ -485,6 +489,14 @@ def _apply_page_settings(uow: AbstractUnitOfWork, page: RegistrationPage) -> Reg
             short_url_slug=short_url_slug,
         )
     return page
+
+
+def _posted_fill_style() -> ContentStyle | None:
+    """The style an empty form step's fill button asks for, or None when no fill was asked for."""
+    try:
+        return ContentStyle(request.form.get("fill_form", ""))
+    except ValueError:
+        return None
 
 
 def _post_save_redirect(assembly_id: uuid.UUID, url_slug: str, action: str, origin: str) -> str:

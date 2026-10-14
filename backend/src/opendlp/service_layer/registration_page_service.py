@@ -668,6 +668,27 @@ def update_registration_page_html(
     return source.create_detached_copy()
 
 
+def fill_empty_registration_form_html(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, style: ContentStyle
+) -> RegistrationPageHtml:
+    """Write the starter form HTML, in the given style, into a page whose form is empty.
+
+    Generated here rather than posted, so it always matches the current
+    questions. A form that has HTML is left alone: the buttons that ask for
+    this only show while the form is empty, so HTML here means the request is
+    stale and a fill would lose someone's work.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _user, page = _load_manageable_page(uow, user_id, page_id)
+    source = _load_html_source(uow, page)
+    if source.form_html.strip():
+        raise ValueError(_("The form already has HTML, so it was left as it is"))
+    fields = list(uow.respondent_field_definitions.list_by_assembly(page.assembly_id))
+    build = _build_starter_html_govuk if style == ContentStyle.GOVUK else _build_starter_html
+    return update_registration_page_html(uow, user_id, page_id, build(fields))
+
+
 def update_registration_page_intro_html(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,

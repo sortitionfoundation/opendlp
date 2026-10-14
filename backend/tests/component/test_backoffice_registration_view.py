@@ -293,6 +293,69 @@ class TestSaveRedirectPreservesEditMode:
         assert "edit=1" not in response.location
 
 
+class TestFillAnEmptyForm:
+    """The read-only form step offers to fill an empty form with starter HTML."""
+
+    def test_an_empty_form_offers_both_fills(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html="  ")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form").get_data(
+            as_text=True
+        )
+
+        assert re.search(r'name="fill_form" value="govuk"><span>Fill with accessible HTML</span>', body)
+        assert re.search(r'name="fill_form" value="plain"><span>Fill with plain HTML</span>', body)
+
+    @pytest.mark.parametrize(
+        ("form_html", "status", "edit"),
+        [
+            ("<p>hi</p>", RegistrationPageStatus.TEST, ""),
+            ("", RegistrationPageStatus.TEST, "&edit=1"),
+            ("", RegistrationPageStatus.CLOSED, ""),
+        ],
+        ids=["form-has-html", "editing", "closed"],
+    )
+    def test_no_fill_is_offered_otherwise(self, logged_in_admin, fake_store, assembly_id, form_html, status, edit):
+        _seed_page(fake_store, assembly_id, status, form_html=form_html)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form{edit}"
+        ).get_data(as_text=True)
+
+        assert 'name="fill_form"' not in body
+
+    def test_a_fill_saves_the_starter_html_and_lands_read_only(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html="")
+
+        # The read-only textarea posts its (empty) content alongside the button.
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "step": "form", "html_content": "", "fill_form": "govuk"},
+        )
+
+        assert response.status_code == 302
+        assert "section=form" in response.location
+        assert "edit=1" not in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_page_html_sources.get_by_page_id(page.id)
+        assert "{{ csrf_form_element }}" in stored.form_html
+        assert "govuk-button" in stored.form_html
+
+    def test_a_stale_fill_leaves_the_form_alone(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html="<p>mine</p>")
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "step": "form", "html_content": "", "fill_form": "plain"},
+            follow_redirects=True,
+        )
+
+        assert "The form already has HTML, so it was left as it is" in response.get_data(as_text=True)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_page_html_sources.get_by_page_id(page.id)
+        assert stored.form_html == "<p>mine</p>"
+
+
 class TestIntroStep:
     """Step 2 of the editor: the intro HTML, saved through the same route as the form."""
 
