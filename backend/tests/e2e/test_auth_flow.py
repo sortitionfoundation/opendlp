@@ -170,7 +170,7 @@ class TestOpenSignup:
     ):
         response = client.get("/auth/register")
         assert response.status_code == 200
-        assert b"Where are you in the world?" in response.data
+        assert b"Which country are you in?" in response.data
 
         response = self._register(
             client,
@@ -208,7 +208,7 @@ class TestOpenSignup:
     ):
         response = client.get("/auth/register?skipq=1")
         assert response.status_code == 200
-        assert b"Where are you in the world?" not in response.data
+        assert b"Which country are you in?" not in response.data
 
         # Even a crafted POST with survey answers stores nothing when skipq is set
         response = self._register(client, url="/auth/register?skipq=1", survey_location="Budapest")
