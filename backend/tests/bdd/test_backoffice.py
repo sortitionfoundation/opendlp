@@ -1973,6 +1973,12 @@ def create_assembly_with_intro(title: str, intro: str, admin_user, test_database
         update_registration_page_intro_html(uow, admin_user.id, registration_page.id, intro)
 
 
+@given(parsers.parse('there is an assembly called "{title}" with an empty intro'))
+def create_assembly_with_empty_intro(title: str, admin_user, test_database):
+    """A registration page whose intro was emptied, for checking exactly what an edit writes."""
+    create_assembly_with_intro(title, "", admin_user, test_database)
+
+
 @when(parsers.parse('I visit the read-only registration intro for "{title}"'))
 def visit_read_only_registration_intro(page: Page, title: str, test_database):
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)

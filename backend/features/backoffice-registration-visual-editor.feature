@@ -13,7 +13,7 @@ Feature: Backoffice registration visual intro editor
     Given I am logged in as an admin user
 
   Scenario: Formatting the intro from the toolbar and saving it
-    Given there is an assembly called "Visual Format Assembly" with a registration page
+    Given there is an assembly called "Visual Format Assembly" with an empty intro
     When I visit the registration intro editor for "Visual Format Assembly"
     And I type "Welcome everyone" into the visual intro editor
     And I press the "Heading 2" toolbar button
@@ -33,7 +33,7 @@ Feature: Backoffice registration visual intro editor
     And the intro editor should explain that the HTML stays in the HTML view
 
   Scenario: Formatting with the keyboard alone
-    Given there is an assembly called "Visual Keyboard Assembly" with a registration page
+    Given there is an assembly called "Visual Keyboard Assembly" with an empty intro
     When I visit the registration intro editor for "Visual Keyboard Assembly"
     And I type "Plain words" into the visual intro editor
     And I select everything in the visual intro editor
@@ -43,7 +43,7 @@ Feature: Backoffice registration visual intro editor
     Then the intro should hold "<p><strong>Plain words</strong></p>"
 
   Scenario: Nesting a list item with the toolbar and the keyboard
-    Given there is an assembly called "Visual Indent Assembly" with a registration page
+    Given there is an assembly called "Visual Indent Assembly" with an empty intro
     When I visit the registration intro editor for "Visual Indent Assembly"
     And I type "One" into the visual intro editor
     And I press the "Bulleted list" toolbar button
