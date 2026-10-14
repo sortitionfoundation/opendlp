@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-14 14:48+0000\n"
+"POT-Creation-Date: 2026-10-14 14:56+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -8353,11 +8353,9 @@ msgstr ""
 
 #: templates/backoffice/registration/_step_email.html:143
 msgid ""
-"Click a variable to select it, then copy and paste into the subject or "
-"body. Missing values render as an empty string."
+"Click a dynamic field to select it, then copy and paste into the subject "
+"or body. Missing values render as an empty string."
 msgstr ""
-"Kattints egy változóra a kijelöléséhez, majd másold be a tárgyba vagy a "
-"törzsbe. A hiányzó értékek üres szövegként jelennek meg."
 
 #: templates/backoffice/registration/_step_email.html:146
 msgid "Assembly title"

@@ -140,7 +140,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                         <div class="p-6 sticky top-4 w-full">
                             <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Dynamic fields") }}</h2>
                             <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                                {{ _("Click a variable to select it, then copy and paste into the subject or body. Missing values render as an empty string.") }}
+                                {{ _("Click a dynamic field to select it, then copy and paste into the subject or body. Missing values render as an empty string.") }}
                             </p>
                             {% set variables = [
                             {"expr": "{{ assembly.title }}", "label": _("Assembly title")},

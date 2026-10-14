@@ -498,7 +498,7 @@ class TestVisualEditor:
         assert "Jinja + HTML" not in body
         assert "highlights variables like {{ assembly.title }} in text" in body
 
-    def test_the_variables_panel_is_headed_dynamic_fields(self, logged_in_admin, fake_store, assembly_id):
+    def test_the_variables_panel_speaks_of_dynamic_fields(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
@@ -506,6 +506,7 @@ class TestVisualEditor:
 
         assert ">Dynamic fields</h2>" in body
         assert "Available variables" not in body
+        assert "Click a dynamic field to select it" in body
 
     def test_view_mode_shows_the_editor_read_only_without_a_toolbar(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
