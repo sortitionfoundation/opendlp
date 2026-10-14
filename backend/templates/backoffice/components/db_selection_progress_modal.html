@@ -185,4 +185,16 @@ classes="max-w-3xl"
     </div>
     {{ modal_footer_end() }}
 {% endif %}
+{# A failed initial selection usually means the targets cannot be met. Send the
+   organiser straight to the targets check, with the feasibility suggestions
+   showing and ready to accept, rather than leaving them at a dead end. #}
+{% if run_record.is_failed and run_record.task_type.value == 'select_from_db' %}
+    {{ modal_footer_start() }}
+    <div class="w-full flex gap-2 justify-end">
+        {{ button(_("Adjust targets") ,
+        href=url_for('targets.check_targets', assembly_id=assembly.id, **{'from': 'selection', 'run_id': current_selection}),
+        variant="primary") }}
+    </div>
+    {{ modal_footer_end() }}
+{% endif %}
 {% endcall %}

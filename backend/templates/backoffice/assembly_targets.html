@@ -143,6 +143,45 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                 </section>
             {% endif %}
 
+            {# ── Accept recommended changes ──────────────────── #}
+            {# Shown only in the read-only view: the suggestions and their inline
+               Accept editors live there, so the page-level actions belong beside
+               them, not over the edit form. "Accept all & re-run" appears only
+               when the organiser arrived from a failed selection run. #}
+            {% if can_manage and check_result is defined and check_result and check_result.has_suggestions %}
+                <section class="mb-6" x-show="!editingAll">
+                    <div class="rounded-lg p-4 flex flex-wrap items-center gap-3"
+                         style="background-color: var(--color-info-background);
+                                border: 1px solid var(--color-info-400);">
+                        <span class="text-body-md" style="color: var(--color-body-text);">
+                            {{ _("The algorithm has recommended target changes. Accept them individually below, or all at once here.") }}
+                        </span>
+                        <span class="ml-auto flex flex-wrap gap-2">
+                            <form method="post"
+                                  action="{{ url_for('targets.accept_suggestions', assembly_id=assembly.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="scope" value="all" />
+                                <input type="hidden" name="then" value="recheck" />
+                                <input type="hidden" name="from" value="{{ 'selection' if from_selection|default(false) else '' }}" />
+                                <input type="hidden" name="run_id" value="{{ selection_run_id|default('') }}" />
+                                {{ button(_("Accept all suggestions"), type="submit", variant="secondary") }}
+                            </form>
+                            {% if from_selection|default(false) %}
+                                <form method="post"
+                                      action="{{ url_for('targets.accept_suggestions', assembly_id=assembly.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <input type="hidden" name="scope" value="all" />
+                                    <input type="hidden" name="then" value="run" />
+                                    <input type="hidden" name="from" value="selection" />
+                                    <input type="hidden" name="run_id" value="{{ selection_run_id|default('') }}" />
+                                    {{ button(_("Accept all & re-run selection"), type="submit", variant="primary") }}
+                                </form>
+                            {% endif %}
+                        </span>
+                    </div>
+                </section>
+            {% endif %}
+
             {# ── Category Blocks ─────────────────────────────── #}
             {# Rendered even with nothing to edit yet: "Add target" clones into
                this form, so it has to be here before the first target is. #}
