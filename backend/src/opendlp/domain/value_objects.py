@@ -88,7 +88,7 @@ class ContentStyle(Enum):
 
 
 content_style_labels = {
-    ContentStyle.GOVUK: _l("GOV.UK (recommended, accessible)"),
+    ContentStyle.GOVUK: _l("Accessible (recommended)"),
     ContentStyle.PLAIN: _l("Plain — bring your own styles"),
 }
 

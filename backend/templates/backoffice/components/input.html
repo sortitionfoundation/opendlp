@@ -413,7 +413,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro radio_group(name, label="", options=[], value="", hint="", error="", disabled=false, readonly=false, id="", attrs="", inline=false, option_help_text={}, dim=true) %}
+{% macro radio_group(name, label="", options=[], value="", hint="", error="", disabled=false, readonly=false, id="", attrs="", inline=false, option_help_text={}, dim=true, option_info={}) %}
     {#
     Radio button group component based on Figma OpenDLP UI specification.
 
@@ -430,6 +430,8 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         attrs: Additional HTML attributes for each radio
         dim: When disabled, controls whether the labels are dimmed (default true).
              Pass dim=false to keep full-opacity labels for read-only display contexts.
+        option_info: Dict of option value -> a sentence shown as an info icon beside
+             that option's label, and read out as the radio's description
 
     Usage:
         {{ radio_group(
@@ -465,6 +467,11 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {# Editable radio buttons with custom styling #}
             <div class="flex {% if inline %}flex-row flex-wrap gap-4{% else %}flex-col gap-2{% endif %}">
                 {% for option in options %}
+                    {% set info = option_info.get(option.value, "") if option_info else "" %}
+                    {% set info_id = input_id ~ "_" ~ loop.index ~ "-info" %}
+                    {# The info icon sits outside the label, so its sentence describes the
+                       radio rather than becoming part of its name. #}
+                    {% if info %}<div class="flex items-center gap-1">{% endif %}
                     <label class="radio-container{% if disabled %} {% if dim %}radio-disabled{% else %}radio-readonly{% endif %}{% endif %}">
                         {# Hidden native radio for accessibility #}
                         <input
@@ -475,6 +482,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                             {% if option.value == value %}checked{% endif %}
                             {% if disabled %}disabled{% endif %}
                             {% if attrs %}{{ attrs | safe }}{% endif %}
+                            {% if info %}aria-describedby="{{ info_id }}"{% endif %}
                             class="radio-input"
                         />
                         {# Custom radio circle #}
@@ -488,6 +496,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                             <span class="radio-option-help text-body-sm" style="color: var(--color-secondary-text);">— {{ help_text }}</span>
                         {% endif %}
                     </label>
+                    {% if info %}{{ info_icon(info, id=info_id) }}</div>{% endif %}
                 {% endfor %}
             </div>
             {% if has_error %}

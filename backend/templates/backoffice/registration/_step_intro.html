@@ -29,9 +29,7 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                          style="background-color: var(--color-tables-cards);
                                 border: 1px solid var(--color-borders-dividers)">
                     <div class="flex items-center justify-between mb-4">
-                        {# The page is named (and its URLs set) on the first step; here the heading just says
-                           which page's intro this is. #}
-                        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ registration_page.name }}</h2>
+                        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Introduction") }}</h2>
                         {# Header right: the editorial controls live next to the content they act on.
                            x-scroll-preserve-links keeps the scroll position across the Edit/Cancel reloads. #}
                         <div class="flex items-center gap-2" x-scroll-preserve-links>
@@ -45,7 +43,7 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                     </div>
                     <div class="space-y-4">
                         <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                            {{ _("Paste the HTML shown above the form below: a heading, an introduction, anything visitors should read before they register. You can use {{ assembly_title }} and {{ assembly_question }} to drop in the assembly's title and question.") }}
+                            {{ _("Enter the content for registrants to read before they get to the form.") }}
                         </p>
                         {# The option value is the enum's token, never shown; the label is translated.
                            Outside edit mode the radios stay on show, read-only, like the intro below them. #}
@@ -53,11 +51,15 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         {% for style, style_label in content_style_labels.items() %}
                             {% set _appended = content_style_options.append({"value": style.value, "label": style_label}) %}
                         {% endfor %}
+                        {% set content_style_info = {
+                        "govuk": _("The accessible style gives headings, paragraphs, lists and links the accessible GOV.UK look when the page is shown. Elements you give a class of your own keep only your class."),
+                        "plain": _("You can use classes and inline style."),
+                        } %}
                         {{ radio_group(name="content_style",
                         label=_("Intro style"),
                         options=content_style_options,
                         value=content_style.value,
-                        hint=_("GOV.UK style gives headings, paragraphs, lists and links the accessible GOV.UK look when the page is shown. Elements you give a class of your own keep only your class."),
+                        option_info=content_style_info,
                         disabled=not edit_mode,
                         dim=false,
                         attrs='data-rich-editor-style-for="intro_content"') }}
@@ -70,7 +72,6 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         {{ textarea(name="intro_content",
                         label=_("Intro"),
                         value=intro_content,
-                        placeholder="<h1>{{ assembly_title }}</h1>\n<p>{{ assembly_question }}</p>",
                         rows=15,
                         code_editor=true,
                         rich_editor=true,
@@ -80,7 +81,6 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         rich_editor_tables=true,
                         rich_editor_editable=edit_mode,
                         rich_editor_style=content_style.value,
-                        rich_editor_variable_example="{{ assembly_title }}",
                         attrs=textarea_attrs|trim) }}
                     </div>
                 </section>

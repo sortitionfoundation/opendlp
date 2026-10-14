@@ -17,7 +17,8 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         editable: false renders no toolbar - the view outside edit mode
         content_style: "govuk" previews the GOV.UK look in the editing area; radios with
             data-rich-editor-style-for="{for_id}" switch it live
-        variable_example: a variable this box offers, named in the hint
+        variable_example: a variable this box offers, named in the hint. Without one
+            the hint is left out, bar the keyboard tip, which only a screen reader hears
     #}
     {# The causes are one msgid of their own, so translators do the long sentence once. #}
     {% set common_causes = _("Common causes are comments, headings smaller than level 3, text outside a paragraph, and tables with set column widths.") %}
@@ -42,10 +43,14 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
             </div>
         </div>
         {% if editable %}
-            <p class="rich-editor__hint text-body-sm">
-                {{ _("The visual editor highlights variables like %(example)s in text. To add or change a variable anywhere else, such as in a link address, edit the HTML.", example=variable_example) }}
-                {{ _("Press Alt+F10 to move from the text to the toolbar.") }}
-            </p>
+            {% if variable_example %}
+                <p class="rich-editor__hint text-body-sm">
+                    {{ _("The visual editor highlights variables like %(example)s in text. To add or change a variable anywhere else, such as in a link address, edit the HTML.", example=variable_example) }}
+                    {{ _("Press Alt+F10 to move from the text to the toolbar.") }}
+                </p>
+            {% else %}
+                <p class="sr-only">{{ _("Press Alt+F10 to move from the text to the toolbar.") }}</p>
+            {% endif %}
             {{ rich_editor_toolbar(for_id, images=images, tables=tables) }}
         {% endif %}
         <p class="rich-editor__notice text-body-sm"

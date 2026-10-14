@@ -137,7 +137,7 @@ Feature: Backoffice registration visual intro editor
     Then the paragraph in the visual intro editor should use the GOV.UK body font size
     When I choose the "Plain — bring your own styles" intro style
     Then the paragraph in the visual intro editor should not use the GOV.UK body font size
-    When I choose the "GOV.UK (recommended, accessible)" intro style
+    When I choose the "Accessible (recommended)" intro style
     And I save the registration form
     Then the registration preview should show the paragraph "Styled words" with the class "govuk-body"
 

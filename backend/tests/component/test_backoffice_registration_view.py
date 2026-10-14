@@ -412,7 +412,6 @@ class TestIntroStep:
         assert 'data-rich-editor-tables="true"' in body
         assert 'data-command="table"' in body
         assert 'id="intro_content-table-menu"' in body
-        assert "highlights variables like {{ assembly_title }} in text" in body
         assert 'aria-controls="intro_content-visual"' in body
         assert "insertImage(image)" in body
 
@@ -452,7 +451,36 @@ class TestIntroStep:
         assert 'name="content_style"' in body
         assert 'value="govuk"' in body and 'value="plain"' in body
         assert 'data-content-style="govuk"' in body
-        assert "GOV.UK (recommended, accessible)" in body
+        assert "Accessible (recommended)" in body
+        assert "Plain — bring your own styles" in body
+
+    def test_intro_step_explains_each_content_style_in_an_info_icon(self, logged_in_admin, fake_store, assembly_id):
+        """Each style's explanation is the radio's description, not part of its name."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        govuk_radio = re.search(r'<input[^>]*value="govuk"[^>]*>', body)
+        assert govuk_radio is not None
+        assert 'aria-describedby="content_style_1-info"' in govuk_radio.group(0)
+        assert re.search(r'id="content_style_1-info">The accessible style gives headings', body)
+        assert re.search(r'id="content_style_2-info">You can use classes and inline style.<', body)
+
+    def test_intro_step_does_not_mention_variables(self, logged_in_admin, fake_store, assembly_id):
+        """The title and question are written into the intro, so variables are left for the docs."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        assert "<h2" in body and ">Introduction</h2>" in body
+        assert "Enter the content for registrants to read before they get to the form." in body
+        assert "assembly_title" not in body
+        assert "highlights variables" not in body
+        assert '<p class="sr-only">Press Alt+F10 to move from the text to the toolbar.</p>' in body
 
     def test_content_style_radios_are_read_only_outside_edit_mode(self, logged_in_admin, fake_store, assembly_id):
         """The radios stay on show, greyed and disabled, so the choice reads the same in both modes."""
