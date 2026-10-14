@@ -131,6 +131,13 @@ URL inputs, so they are unaffected.
 
 ### D8 — One skeleton route, four strings; the modal shows the part for the step you are on
 
+> **Superseded by team feedback.** There is no intro skeleton. A new page's
+> intro starts with the assembly's title and question written in as literal
+> HTML (`generate_initial_intro_html`), which the author edits directly, so
+> they never meet the variables. The route returns `{"html", "html_govuk"}`
+> again, and only the form step, in edit mode, offers a skeleton. The rest of
+> this decision is kept as the record of what was first built.
+
 `get_registration_skeleton` returns
 `{"html", "html_govuk", "intro_html", "intro_html_govuk"}`. The skeleton slice
 stores all four. The intro step renders a "Show Intro Skeleton" button and the

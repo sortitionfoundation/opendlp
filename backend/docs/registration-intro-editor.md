@@ -11,6 +11,20 @@ intro "opens as HTML".
 The design and its decisions are in
 [docs/agent/767-registration-intro/tiptap-intro-editor-plan.md](agent/767-registration-intro/tiptap-intro-editor-plan.md).
 
+## A new page's intro
+
+A new page's intro starts with the assembly's title as a heading and its
+question as a paragraph, written in as literal text inside the GOV.UK grid
+wrapper that lines the intro up with a GOV.UK styled form
+(`generate_initial_intro_html` in `src/opendlp/domain/registration_page.py`).
+The author edits the words directly. The editor shows whatever was saved
+after that, and an empty intro is allowed: it adds nothing to the page.
+
+The intro also understands `{{ assembly_title }}` and `{{ assembly_question }}`,
+which fill in the assembly's current title and question when the page is
+shown. The editor doesn't mention them; they are for authors who want the
+intro to follow a later change to the assembly.
+
 ## The two views
 
 - **Visual** is a [Tiptap](https://tiptap.dev/) editor
@@ -154,8 +168,8 @@ page doesn't jump about while it does.
 
 The intro step has an **Intro style** choice:
 
-- **GOV.UK** (the default for new pages) gives the intro the accessible GOV.UK
-  look when the page is shown. At render time, each element without a class
+- **Accessible** (the default for new pages, stored as `govuk`) gives the intro
+  the accessible GOV.UK look when the page is shown. At render time, each element without a class
   of its own gets one:
 
   | Element      | Class                                                                     |
@@ -216,7 +230,8 @@ works in an email. Everything above applies, except:
 A body containing a table or an image opens in HTML mode, with the usual
 notice, and loses nothing.
 
-The email's variables are spelt with dots, like `{{ assembly.title }}` and
+The editor lists the email's variables in a **Dynamic fields** panel beside
+the body. They are spelt with dots, like `{{ assembly.title }}` and
 `{{ respondent.first_name_or_friend }}`, and are highlighted the same way.
 An email copied from the team's previous platform uses that platform's
 names, such as `{{ recipient.first_name_or_friend }}` and
