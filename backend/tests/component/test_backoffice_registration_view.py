@@ -521,16 +521,15 @@ class TestIntroStep:
         assert f'max="{IMAGE_WIDTH_MAX}"' in width_field.group(0)
         assert f'data-image-min-width="{IMAGE_WIDTH_MIN}"' in body
 
-    def test_intro_step_offers_the_intro_skeleton(self, logged_in_admin, fake_store, assembly_id):
+    def test_only_the_form_step_offers_a_skeleton(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
         base = f"/backoffice/assembly/{assembly_id}/registration/my-slug"
 
-        intro_body = logged_in_admin.get(f"{base}?section=intro").get_data(as_text=True)
-        form_body = logged_in_admin.get(f"{base}?section=form").get_data(as_text=True)
+        intro_body = logged_in_admin.get(f"{base}?section=intro&edit=1").get_data(as_text=True)
+        form_body = logged_in_admin.get(f"{base}?section=form&edit=1").get_data(as_text=True)
 
-        assert "fetchIntroSkeleton()" in intro_body
-        assert "Intro Skeleton" in intro_body
-        assert "fetchIntroSkeleton()" not in form_body
+        assert "Show Intro Skeleton" not in intro_body
+        assert "fetchFormSkeleton()" not in intro_body
         assert "fetchFormSkeleton()" in form_body
         assert "Form Skeleton" in form_body
 

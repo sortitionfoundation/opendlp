@@ -44,7 +44,6 @@ const TEMPLATE_API = [
   "deleteEditingImage",
   "deleteImage",
   "discardAndLeave",
-  "fetchIntroSkeleton",
   "fetchFormSkeleton",
   "formatBytes",
   "guardLeave",

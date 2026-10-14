@@ -3,7 +3,6 @@ ABOUTME: Step 2 of the registration editor - the intro HTML editor and assets pa
 ABOUTME: Included by assembly_registration.html when ?section=intro
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_code %}
 {% from "backoffice/components/input.html" import textarea, radio_group %}
 {% from "backoffice/registration/_assets.html" import asset_list %}
 <div id="reg-steps-panel-intro"
@@ -36,13 +35,6 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         {# Header right: the editorial controls live next to the content they act on.
                            x-scroll-preserve-links keeps the scroll position across the Edit/Cancel reloads. #}
                         <div class="flex items-center gap-2" x-scroll-preserve-links>
-                            {% set code_icon %}
-                                {{ icon_code() }}
-                            {% endset %}
-                            {{ button(_("Show Intro Skeleton"),
-                            variant="tertiary",
-                            leading_icon=code_icon,
-                            attrs='@click="fetchIntroSkeleton()" :disabled="skeletonLoading"') }}
                             {% if edit_mode %}
                                 {{ button(_("Cancel"), variant="secondary", href=view_url, attrs='@click="guardLeave($event)"') }}
                                 {{ button(save_label, type="submit", variant="primary", attrs='name="action" value="save"') }}

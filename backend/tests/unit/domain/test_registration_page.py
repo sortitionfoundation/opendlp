@@ -24,8 +24,6 @@ from opendlp.domain.registration_page import (
     generate_initial_intro_html,
     generate_starter_form_html,
     generate_starter_form_html_govuk,
-    generate_starter_intro_html,
-    generate_starter_intro_html_govuk,
 )
 from opendlp.domain.respondent_field_schema import (
     GROUP_LABELS,
@@ -1677,38 +1675,12 @@ class TestGenerateInitialIntroHtml:
         assert html.readiness_problems() == []
 
 
-class TestGenerateStarterIntroHtml:
-    def test_plain_intro_carries_title_and_question(self):
-        html = generate_starter_intro_html()
-
-        assert html == "<h1>{{ assembly_title }}</h1>\n<p>{{ assembly_question }}</p>\n"
-
-    def test_plain_form_no_longer_carries_them(self):
+class TestGenerateStarterFormHtmlLeavesOutTheIntro:
+    def test_plain_form_does_not_carry_the_assembly_copy(self):
         html = generate_starter_form_html([])
 
         assert "{{ assembly_title }}" not in html
         assert "{{ assembly_question }}" not in html
-
-    def test_govuk_intro_carries_title_and_question_in_its_own_grid(self):
-        """Rendered as a separate template, the intro needs its own grid wrapper."""
-        html = generate_starter_intro_html_govuk()
-
-        assert html.startswith('<div class="govuk-grid-row">\n<div class="govuk-grid-column-two-thirds"')
-        assert '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>' in html
-        assert '<p class="govuk-body">{{ assembly_question }}</p>' in html
-        assert html.rstrip().endswith("</div>\n</div>")
-
-    def test_intros_render_with_the_assembly_copy(self):
-        for intro in (generate_starter_intro_html(), generate_starter_intro_html_govuk()):
-            html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), intro_html=intro, form_html=READY_HTML)
-            rendered = html.render(
-                RenderContext(
-                    csrf_form_element="x", form_action="/u", assembly_title="Town Hall", assembly_question="How?"
-                )
-            )
-            assert "Town Hall" in rendered
-            assert "How?" in rendered
-            assert html.readiness_problems() == []
 
 
 class TestGenerateStarterFormHtmlGovuk:

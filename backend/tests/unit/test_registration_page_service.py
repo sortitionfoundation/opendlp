@@ -934,16 +934,12 @@ class TestGenerateStarterFormHtmlVariants:
         assert 'class="govuk-input"' in variants.govuk
         assert 'class="govuk-input"' not in variants.plain
 
-    def test_intro_variants_carry_the_assembly_copy_and_the_forms_do_not(self, uow):
+    def test_forms_do_not_carry_the_assembly_copy(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _add_field(uow, assembly.id, "first_name")
 
         variants = service.generate_starter_form_html_variants(uow, admin.id, assembly.id)
 
-        assert "{{ assembly_title }}" in variants.intro_plain
-        assert "{{ assembly_title }}" in variants.intro_govuk
-        assert 'class="govuk-heading-xl"' in variants.intro_govuk
-        assert 'class="govuk-heading-xl"' not in variants.intro_plain
         assert "{{ assembly_title }}" not in variants.plain
         assert "{{ assembly_title }}" not in variants.govuk
 

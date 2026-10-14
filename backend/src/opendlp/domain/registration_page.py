@@ -895,39 +895,12 @@ def generate_initial_intro_html(assembly_title: str, assembly_question: str) -> 
     return "\n".join(parts) + "\n"
 
 
-def generate_starter_intro_html() -> str:
-    """Generate the unstyled starter intro: the assembly title and question.
-
-    The ``{{ assembly_title }}`` and ``{{ assembly_question }}`` placeholders
-    give authors a sensible heading and intro paragraph by default; both
-    substitute to the empty string when not supplied.
-    """
-    return "<h1>{{ assembly_title }}</h1>\n<p>{{ assembly_question }}</p>\n"
-
-
-def generate_starter_intro_html_govuk() -> str:
-    """Generate the GOV.UK-styled starter intro: the assembly title and question.
-
-    Carries its own grid wrapper because the intro and the form are rendered
-    as separate templates, so each must stand alone in the layout.
-    """
-    parts = [
-        '<div class="govuk-grid-row">',
-        '<div class="govuk-grid-column-two-thirds" style="float: none; margin: 0 auto;">',
-        '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>',
-        '<p class="govuk-body">{{ assembly_question }}</p>',
-        "</div>",
-        "</div>",
-    ]
-    return "\n".join(parts) + "\n"
-
-
 def generate_starter_form_html(fields: list[RespondentFieldDefinition]) -> str:
     """Generate an unstyled starter HTML form from a respondent field schema.
 
     Output uses ``{{ csrf_form_element }}`` and ``{{ form_action }}`` so it is
     a valid input for ``RegistrationPageHtml.render``. The heading and intro
-    paragraph live in ``generate_starter_intro_html``, not here. Fields are
+    paragraph live in the page's intro, not here. Fields are
     grouped by ``RespondentFieldGroup`` in ``GROUP_DISPLAY_ORDER`` and
     ordered by ``sort_order`` within each group; empty groups are suppressed.
     Fields whose ``on_registration_page`` is ``NO`` are omitted, and a field

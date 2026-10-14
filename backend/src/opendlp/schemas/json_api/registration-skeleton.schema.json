@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opendlp.sortitionfoundation.org/schemas/json_api/registration-skeleton.schema.json",
   "title": "Registration skeleton response",
-  "description": "Returned by the registration skeleton route: starter HTML for the intro and the form, each plain and GOV.UK styled.",
+  "description": "Returned by the registration skeleton route: starter HTML for the form, plain and GOV.UK styled.",
   "type": "object",
   "properties": {
     "html": {
@@ -14,23 +14,11 @@
       "type": "string",
       "minLength": 1,
       "description": "The form skeleton, with GOV.UK classes."
-    },
-    "intro_html": {
-      "type": "string",
-      "minLength": 1,
-      "description": "The intro skeleton, plain."
-    },
-    "intro_html_govuk": {
-      "type": "string",
-      "minLength": 1,
-      "description": "The intro skeleton, with GOV.UK classes."
     }
   },
   "required": [
     "html",
-    "html_govuk",
-    "intro_html",
-    "intro_html_govuk"
+    "html_govuk"
   ],
   "additionalProperties": false
 }

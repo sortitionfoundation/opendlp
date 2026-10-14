@@ -991,12 +991,7 @@ def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             variants = generate_starter_form_html_variants(uow, current_user.id, assembly_id)
-        return jsonify({
-            "html": variants.plain,
-            "html_govuk": variants.govuk,
-            "intro_html": variants.intro_plain,
-            "intro_html_govuk": variants.intro_govuk,
-        })
+        return jsonify({"html": variants.plain, "html_govuk": variants.govuk})
     except InsufficientPermissions:
         return jsonify({"error": _("You don't have permission to access this assembly")}), 403
     except NotFoundError:

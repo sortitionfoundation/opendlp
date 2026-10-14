@@ -64,7 +64,6 @@ def test_get_registration_skeleton_success(logged_in_admin: FlaskClient, existin
 
     assert response.status_code == 200
     payload = response.get_json()
-    assert set(payload) == {"html", "html_govuk", "intro_html", "intro_html_govuk"}
+    assert set(payload) == {"html", "html_govuk"}
     assert isinstance(payload["html"], str)
-    assert "{{ assembly_title }}" in payload["intro_html"]
     assert "{{ assembly_title }}" not in payload["html"]

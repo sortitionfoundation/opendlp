@@ -34,7 +34,6 @@ BOUND_NAMES = [
     "cancelConfirmClose()",
     "closeLeaveModal()",
     "discardAndLeave()",
-    "fetchIntroSkeleton()",
     "fetchFormSkeleton()",
     "closeSkeletonModal()",
     "showPlainSkeleton()",

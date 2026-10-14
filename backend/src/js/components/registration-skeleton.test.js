@@ -1,5 +1,5 @@
 // ABOUTME: Tests for the skeleton preview slice of the registration page controller
-// ABOUTME: Covers the intro and form fetches, the plain/styled toggle and copying the shown markup
+// ABOUTME: Covers the form fetch, the plain/styled toggle and copying the shown markup
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -77,29 +77,6 @@ describe("fetchFormSkeleton", () => {
     expect(state.skeletonLoading).toBe(false);
   });
 
-  it("shows the intro pair instead when the intro step asks", async () => {
-    fetchMock.mockResolvedValue(jsonResponse(SKELETON));
-    const state = skeleton();
-
-    await state.fetchIntroSkeleton();
-
-    expect(state.skeletonModalOpen).toBe(true);
-    expect(state.skeletonHtmlPlain).toBe(SKELETON.intro_html);
-    expect(state.skeletonHtmlStyled).toBe(SKELETON.intro_html_govuk);
-  });
-
-  it("swaps the pair when the other step asks later", async () => {
-    fetchMock.mockResolvedValue(jsonResponse(SKELETON));
-    const state = skeleton();
-
-    await state.fetchIntroSkeleton();
-    state.showStyledSkeleton();
-    await state.fetchFormSkeleton();
-
-    expect(state.skeletonHtmlPlain).toBe(SKELETON.html);
-    expect(state.skeletonView).toBe("plain");
-  });
-
   it("shows the server's message and stays closed when it reports a problem", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ error: "No form HTML yet" }));
     const state = skeleton();
@@ -133,7 +110,7 @@ describe("fetchFormSkeleton", () => {
     );
     const state = skeleton();
 
-    const pending = state.fetchIntroSkeleton();
+    const pending = state.fetchFormSkeleton();
     expect(state.skeletonLoading).toBe(true);
 
     resolveFetch(jsonResponse(SKELETON));

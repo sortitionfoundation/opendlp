@@ -25,13 +25,6 @@ Feature: Backoffice registration HTML editor
     And I save the registration form
     Then the saved registration intro should contain "INTRO-MARKER-7718"
 
-  Scenario: The intro skeleton preview carries the assembly title placeholder
-    Given I am logged in as an admin user
-    And there is an assembly called "Intro Skeleton Assembly" with a registration page
-    When I visit the registration intro editor for "Intro Skeleton Assembly"
-    And I open the intro skeleton preview
-    Then the intro skeleton should be shown in a read-only code editor
-
   Scenario: The form skeleton preview is shown in a read-only code editor
     Given I am logged in as an admin user
     And there is an assembly called "Skeleton Assembly" with a registration page

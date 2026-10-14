@@ -26,8 +26,6 @@ from opendlp.domain.registration_page import (
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
 from opendlp.domain.registration_page import generate_starter_form_html_govuk as _build_starter_html_govuk
-from opendlp.domain.registration_page import generate_starter_intro_html as _build_starter_intro
-from opendlp.domain.registration_page import generate_starter_intro_html_govuk as _build_starter_intro_govuk
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import ContentStyle
 from opendlp.translations import gettext as _
@@ -974,21 +972,18 @@ def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, asse
 
 @dataclass(frozen=True)
 class StarterFormHtmlVariants:
-    """The starter intro and form HTML, each in an unstyled and a GOV.UK-styled flavour."""
+    """The starter form HTML, in an unstyled and a GOV.UK-styled flavour."""
 
     plain: str
     govuk: str
-    intro_plain: str
-    intro_govuk: str
 
 
 def generate_starter_form_html_variants(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> StarterFormHtmlVariants:
-    """Generate the unstyled and GOV.UK-styled starter intro and form HTML.
+    """Generate the unstyled and GOV.UK-styled starter form HTML.
 
-    The form comes from the assembly's respondent field schema; the intro
-    carries the assembly title and question placeholders.
+    The form comes from the assembly's respondent field schema.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -999,6 +994,4 @@ def generate_starter_form_html_variants(
     return StarterFormHtmlVariants(
         plain=_build_starter_html(fields),
         govuk=_build_starter_html_govuk(fields),
-        intro_plain=_build_starter_intro(),
-        intro_govuk=_build_starter_intro_govuk(),
     )

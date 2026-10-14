@@ -572,22 +572,6 @@ def saved_registration_intro_contains(page: Page, text: str):
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
-@when("I open the intro skeleton preview")
-def open_intro_skeleton_preview(page: Page):
-    """Click the 'Show Intro Skeleton' button to fetch the skeleton and open its modal."""
-    page.get_by_role("button", name="Show Intro Skeleton").click()
-
-
-@then("the intro skeleton should be shown in a read-only code editor")
-def intro_skeleton_shown_in_read_only_editor(page: Page):
-    """The skeleton modal holds the intro skeleton: the assembly title placeholder, no form."""
-    editor = page.locator('[aria-labelledby="skeleton-modal-title"] .cm-editor')
-    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    expect(editor.locator(".cm-content")).to_have_attribute("contenteditable", "false")
-    expect(editor).to_contain_text("assembly_title")
-    expect(editor).not_to_contain_text("<form")
-
-
 @then("the HTML content field should be a mounted code editor")
 def html_content_is_code_editor(page: Page):
     """The CodeMirror editor mounts as the textarea's sibling and becomes visible."""
