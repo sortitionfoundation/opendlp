@@ -561,6 +561,29 @@ class TestIntroStep:
         assert "fetchFormSkeleton()" in form_body
         assert "Form Skeleton" in form_body
 
+    def test_the_form_skeleton_is_only_offered_while_editing(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form").get_data(
+            as_text=True
+        )
+
+        assert "fetchFormSkeleton()" not in body
+
+    def test_form_step_heading_and_help_follow_the_mode(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        base = f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form"
+
+        view_body = logged_in_admin.get(base).get_data(as_text=True)
+        edit_body = logged_in_admin.get(f"{base}&edit=1").get_data(as_text=True)
+
+        for body in (view_body, edit_body):
+            assert ">Registration form</h2>" in body
+        assert "The HTML for the form on the registration page." in view_body
+        assert "Paste/edit your HTML form code below." not in view_body
+        assert "Paste/edit your HTML form code below." in edit_body
+        assert "Other placeholders in the generated HTML help the form work well for registrants." in edit_body
+
     def test_skeleton_design_system_link_opens_in_a_new_tab(self, logged_in_admin, fake_store, assembly_id):
         """Following the link must not lose the skeleton the organiser was looking at."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
