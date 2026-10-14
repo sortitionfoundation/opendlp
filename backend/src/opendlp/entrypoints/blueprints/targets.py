@@ -20,6 +20,7 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_or_create_csv_config,
     get_tab_enabled_states,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
@@ -32,7 +33,8 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
-from opendlp.service_layer.target_checking import check_targets_detailed
+from opendlp.service_layer.sortition import start_db_select_task
+from opendlp.service_layer.target_checking import DetailedCheckResult, check_targets_detailed
 from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_respondent_helpers import (
     build_respondent_counts,
@@ -49,6 +51,7 @@ from opendlp.service_layer.target_service import (
     delete_targets_for_assembly,
     get_targets_for_assembly,
     save_all_targets,
+    update_target_value,
 )
 from opendlp.translations import gettext as _
 
@@ -395,6 +398,10 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             all_selected_counts=selected_counts,
             has_selected=has_selected,
             check_result=check_result,
+            # Carried through from a failed selection run (see accept_suggestions),
+            # so the page offers to re-run and keeps the link alive across rechecks.
+            from_selection=request.args.get("from") == "selection",
+            selection_run_id=request.args.get("run_id", ""),
             **context,
         ), 200
 
@@ -407,6 +414,173 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Error checking targets", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while checking targets"), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+
+def _suggestion_change_phrase(field: str, current: int, suggested: int) -> str:
+    """The "minimum X → Y" fragment shared by the single and combined comments."""
+    if field == "min":
+        return _("minimum %(current)s → %(suggested)s", current=current, suggested=suggested)
+    return _("maximum %(current)s → %(suggested)s", current=current, suggested=suggested)
+
+
+def _suggestion_annotations(check: DetailedCheckResult, category_name: str, value_name: str) -> list:
+    """The applicable min/max suggestions the check holds for one value."""
+    return [
+        annotation
+        for annotation in check.annotations.get(category_name, {}).get(value_name, [])
+        if annotation.level == "suggestion" and annotation.suggested_value is not None
+    ]
+
+
+def _apply_value_suggestions(
+    uow: Any,
+    assembly_id: uuid.UUID,
+    category: Any,
+    value: Any,
+    annotations: list,
+    comment: str,
+) -> None:
+    """Apply every min/max suggestion for one value in a single update.
+
+    Passing only the fields that change leaves the other bound (see
+    `_apply_value_numbers`); accepting a suggestion is a manual override, so this
+    breaks the percentage link and records why in the comment.
+    """
+    min_count = next((a.suggested_value for a in annotations if a.field == "min"), None)
+    max_count = next((a.suggested_value for a in annotations if a.field == "max"), None)
+    update_target_value(
+        uow,
+        current_user.id,
+        assembly_id,
+        category.id,
+        value.value_id,
+        value.value,
+        min_count=min_count,
+        max_count=max_count,
+        comment=comment,
+    )
+
+
+def _accept_one(
+    uow: Any,
+    assembly_id: uuid.UUID,
+    categories: list,
+    check: DetailedCheckResult,
+    form: Any,
+) -> bool:
+    """Apply the single suggestion the form names, with the organiser's comment."""
+    try:
+        category_id = uuid.UUID(form.get("category_id", ""))
+        value_id = uuid.UUID(form.get("value_id", ""))
+    except ValueError:
+        return False
+    field = form.get("field", "")
+    category = next((c for c in categories if c.id == category_id), None)
+    value = next((v for v in (category.values or []) if v.value_id == value_id), None) if category else None
+    if category is None or value is None:
+        return False
+
+    annotations = [a for a in _suggestion_annotations(check, category.name, value.value) if a.field == field]
+    if not annotations:
+        return False
+
+    suggested = annotations[0].suggested_value
+    current = value.min if field == "min" else value.max
+    comment = form.get("comment", "").strip() or _(
+        "Accepted algorithm suggestion — %(change)s",
+        change=_suggestion_change_phrase(field, current, suggested),
+    )
+    _apply_value_suggestions(uow, assembly_id, category, value, annotations, comment)
+    return True
+
+
+def _accept_all(
+    uow: Any,
+    assembly_id: uuid.UUID,
+    categories: list,
+    check: DetailedCheckResult,
+) -> bool:
+    """Apply every outstanding suggestion, each with an auto-written comment."""
+    applied = False
+    for category in categories:
+        for value in category.values or []:
+            annotations = _suggestion_annotations(check, category.name, value.value)
+            if not annotations:
+                continue
+            changes = ", ".join(
+                _suggestion_change_phrase(a.field, value.min if a.field == "min" else value.max, a.suggested_value)
+                for a in sorted(annotations, key=lambda a: a.field)
+            )
+            comment = _("Accepted algorithm suggestion — %(changes)s", changes=changes)
+            _apply_value_suggestions(uow, assembly_id, category, value, annotations, comment)
+            applied = True
+    return applied
+
+
+@targets_bp.route("/assembly/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
+@login_required
+def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Apply one or all of the algorithm's recommended target changes.
+
+    The suggestions are re-derived here rather than trusted from the form, so a
+    stale page cannot apply a number the check no longer recommends. Each applied
+    value gets a comment recording where the change came from; for a single
+    accept the organiser may have edited that comment before saving.
+
+    ``then=run`` re-runs the initial selection after saving, and is only honoured
+    when the organiser arrived from a failed run (``from=selection``).
+    """
+    came_from = request.form.get("from", "")
+    run_id = request.form.get("run_id", "")
+    run_after = request.form.get("then") == "run" and came_from == "selection"
+
+    recheck_args: dict[str, Any] = {"assembly_id": assembly_id}
+    if came_from:
+        recheck_args["from"] = came_from
+        recheck_args["run_id"] = run_id
+    recheck_url = url_for("targets.check_targets", **recheck_args)
+
+    try:
+        uow = bootstrap.get_flask_uow()
+        task_id = None
+        with uow:
+            get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            check = check_targets_detailed(uow, current_user.id, assembly_id)
+            categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+
+            if request.form.get("scope") == "all":
+                applied = _accept_all(uow, assembly_id, categories, check)
+            else:
+                applied = _accept_one(uow, assembly_id, categories, check, request.form)
+
+            if not applied:
+                flash(_("That suggestion is no longer available. The targets have been re-checked."), "warning")
+                return redirect(recheck_url)
+
+            if run_after:
+                csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+                if csv_config.settings_confirmed:
+                    task_id = start_db_select_task(uow, current_user.id, assembly_id)
+                else:
+                    flash(_("Please review and save the selection settings before running selection"), "warning")
+
+        flash(_("Recommended changes applied."), "success")
+        if task_id is not None:
+            return redirect(
+                url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=task_id)
+            )
+        return redirect(recheck_url)
+
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        logger.exception("Error accepting target suggestions", assembly_id=str(assembly_id), error=str(e))
+        flash(_("An unexpected error occurred while applying the recommended changes"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 

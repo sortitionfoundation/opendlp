@@ -65,6 +65,20 @@ class DetailedCheckResult:
     num_features: int = 0
     num_people: int = 0
 
+    @property
+    def has_suggestions(self) -> bool:
+        """True when any value carries an applicable min/max suggestion.
+
+        Drives whether the targets page offers the "accept recommended changes"
+        actions: there is nothing to accept unless the solver relaxed a quota.
+        """
+        return any(
+            annotation.level == "suggestion" and annotation.suggested_value is not None
+            for value_annotations in self.annotations.values()
+            for annotations in value_annotations.values()
+            for annotation in annotations
+        )
+
 
 def _add_annotation(annotations: AnnotationsDict, category: str, value: str, annotation: TargetAnnotation) -> None:
     if category not in annotations:
