@@ -871,6 +871,30 @@ def _group_fields(
     return grouped
 
 
+def _literal_html_text(text: str) -> str:
+    """Escape text for HTML, braces included, so it can never open a template tag."""
+    return html_lib.escape(text).replace("{", "&#123;").replace("}", "&#125;")
+
+
+def generate_initial_intro_html(assembly_title: str, assembly_question: str) -> str:
+    """Generate a new page's intro: the assembly's title and question, written in literally.
+
+    The author edits the words directly, so no template variables are needed.
+    The GOV.UK grid wrapper lines the intro up with a GOV.UK styled form; the
+    heading and paragraph carry no classes, since the default intro style adds
+    them when the page is shown. A blank question gets no paragraph.
+    """
+    parts = [
+        '<div class="govuk-grid-row">',
+        '<div class="govuk-grid-column-two-thirds" style="float: none; margin: 0 auto;">',
+        f"<h1>{_literal_html_text(assembly_title)}</h1>",
+    ]
+    if assembly_question.strip():
+        parts.append(f"<p>{_literal_html_text(assembly_question)}</p>")
+    parts += ["</div>", "</div>"]
+    return "\n".join(parts) + "\n"
+
+
 def generate_starter_intro_html() -> str:
     """Generate the unstyled starter intro: the assembly title and question.
 

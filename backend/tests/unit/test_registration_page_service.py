@@ -13,6 +13,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageAction,
     RegistrationPageSource,
     RegistrationPageStatus,
+    generate_initial_intro_html,
 )
 from opendlp.domain.respondent_field_schema import (
     FieldType,
@@ -98,7 +99,15 @@ class TestCreateRegistrationPage:
         source = uow.registration_page_html_sources.get_by_page_id(page.id)
         assert source is not None
         assert source.form_html == ""
-        assert source.intro_html == ""
+
+    def test_create_seeds_the_intro_with_the_assembly_title_and_question(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = uow.registration_page_html_sources.get_by_page_id(page.id)
+        assert source is not None
+        assert source.intro_html == generate_initial_intro_html(assembly.title, assembly.question)
 
     def test_create_appends_create_activity(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
@@ -880,8 +889,12 @@ class TestUpdateRegistrationPageContentStyle:
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
+        page_id = _page_id(uow, assembly)
+        source = uow.registration_page_html_sources.get_by_page_id(page_id)
+        assert source is not None
+        # The saved intro, so only the style can count as a change.
         service.update_registration_page_intro_html(
-            uow, admin.id, _page_id(uow, assembly), "", content_style=ContentStyle.PLAIN
+            uow, admin.id, page_id, source.intro_html, content_style=ContentStyle.PLAIN
         )
         page = page_for_assembly(uow, assembly.id)
         edits = [a.text for a in page.activity if a.action is RegistrationPageAction.EDIT]
@@ -891,8 +904,12 @@ class TestUpdateRegistrationPageContentStyle:
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
+        page_id = _page_id(uow, assembly)
+        source = uow.registration_page_html_sources.get_by_page_id(page_id)
+        assert source is not None
+        # The saved intro, so only the style can count as a change.
         service.update_registration_page_intro_html(
-            uow, admin.id, _page_id(uow, assembly), "", content_style=ContentStyle.GOVUK
+            uow, admin.id, page_id, source.intro_html, content_style=ContentStyle.GOVUK
         )
         page = page_for_assembly(uow, assembly.id)
         assert [a for a in page.activity if a.action is RegistrationPageAction.EDIT] == []
@@ -1083,6 +1100,18 @@ class TestCreateRegistrationPageWithSlugs:
         assert page.short_url_slug != ""
         assert len(page.short_url_slug) == 6
         assert page.url_slug == "dublin-citizens-assembly"
+
+    def test_seeds_the_intro_with_the_assembly_title_and_question(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Dublin Citizens Assembly", question="What next?", status=AssemblyStatus.ACTIVE)
+        uow.assemblies.add(assembly)
+
+        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="Registration page")
+
+        source = uow.registration_page_html_sources.get_by_page_id(page.id)
+        assert source is not None
+        assert "<h1>Dublin Citizens Assembly</h1>" in source.intro_html
+        assert "<p>What next?</p>" in source.intro_html
 
     def test_generates_unique_slug_on_collision(self, uow):
         admin = _admin(uow)

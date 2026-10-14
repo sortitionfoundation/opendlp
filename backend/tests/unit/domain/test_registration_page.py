@@ -21,6 +21,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageSource,
     RegistrationPageStatus,
     RenderContext,
+    generate_initial_intro_html,
     generate_starter_form_html,
     generate_starter_form_html_govuk,
     generate_starter_intro_html,
@@ -1639,6 +1640,41 @@ class TestGenerateStarterFormHtml:
 
         assert '<fieldset aria-describedby="date_of_birth-hint">' in html
         assert '<p class="hint" id="date_of_birth-hint">For example, 27 3 1985</p>' in html
+
+
+class TestGenerateInitialIntroHtml:
+    def test_writes_the_title_and_question_in_literally(self):
+        html = generate_initial_intro_html("Town Hall Assembly", "How should we travel?")
+
+        assert "<h1>Town Hall Assembly</h1>" in html
+        assert "<p>How should we travel?</p>" in html
+        assert "assembly_title" not in html
+
+    def test_sits_in_the_govuk_grid_so_it_lines_up_with_the_form(self):
+        html = generate_initial_intro_html("Title", "Question")
+
+        assert html.startswith('<div class="govuk-grid-row">\n<div class="govuk-grid-column-two-thirds"')
+        assert html.rstrip().endswith("</div>\n</div>")
+
+    def test_leaves_out_the_paragraph_when_there_is_no_question(self):
+        html = generate_initial_intro_html("Title", "  ")
+
+        assert "<p>" not in html
+
+    def test_escapes_html_in_the_assembly_text(self):
+        html = generate_initial_intro_html("Fish & <Chips>", 'Say "hi"')
+
+        assert "<h1>Fish &amp; &lt;Chips&gt;</h1>" in html
+        assert "<p>Say &quot;hi&quot;</p>" in html
+
+    def test_braces_in_the_assembly_text_render_as_written(self):
+        intro = generate_initial_intro_html("{{ form_action }}", "{% if x %}")
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), intro_html=intro, form_html=READY_HTML)
+
+        rendered = html.render(RenderContext(csrf_form_element="x", form_action="/u"))
+
+        assert "&#123;&#123; form_action &#125;&#125;" in rendered
+        assert html.readiness_problems() == []
 
 
 class TestGenerateStarterIntroHtml:

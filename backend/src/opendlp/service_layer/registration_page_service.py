@@ -22,6 +22,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageSource,
     RegistrationPageStatus,
     RenderContext,
+    generate_initial_intro_html,
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
 from opendlp.domain.registration_page import generate_starter_form_html_govuk as _build_starter_html_govuk
@@ -268,7 +269,12 @@ def create_registration_page(
     )
     page.record_create(user.id)
     uow.registration_pages.add(page)
-    uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
+    uow.registration_page_html_sources.add(
+        RegistrationPageHtml(
+            registration_page_id=page.id,
+            intro_html=generate_initial_intro_html(assembly.title, assembly.question),
+        )
+    )
     return page.create_detached_copy()
 
 
@@ -331,7 +337,12 @@ def create_registration_page_with_slugs(
     )
     page.record_create(user.id)
     uow.registration_pages.add(page)
-    uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
+    uow.registration_page_html_sources.add(
+        RegistrationPageHtml(
+            registration_page_id=page.id,
+            intro_html=generate_initial_intro_html(assembly.title, assembly.question),
+        )
+    )
     return page.create_detached_copy()
 
 
