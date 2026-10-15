@@ -10,10 +10,7 @@ from opendlp import config as _config
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentStatus
-from opendlp.entrypoints.blueprints import respondents as respondents_blueprint
 from opendlp.service_layer.assembly_service import create_assembly
-from opendlp.service_layer.csv_upload_stash import StashedUpload
-from opendlp.service_layer.csv_upload_stash import stash as stash_pending_upload
 from opendlp.service_layer.respondent_field_schema_service import get_schema, initialise_empty_schema
 from opendlp.service_layer.respondent_service import create_respondent
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -541,7 +538,7 @@ class TestEditRespondentPage:
 
 
 class TestUploadCsvCleaning:
-    """What the organiser sees when an uploaded file has blank, unnamed or badly encoded columns."""
+    """A PostgreSQL smoke for the upload's cleaning; the detailed behaviour is in tests/component/."""
 
     def _upload(self, client, assembly_id, content: bytes, id_column=""):
         return client.post(
@@ -572,140 +569,3 @@ class TestUploadCsvCleaning:
         assert self._flashes(logged_in_admin) == [
             ("success", "Respondents uploaded successfully: 2 imported"),
         ]
-
-    def test_an_unnamed_column_with_data_names_the_column(
-        self, logged_in_admin, existing_assembly, postgres_session_factory
-    ):
-        response = self._upload(logged_in_admin, existing_assembly.id, b"id,age,\nR1,30,\nR2,40,note\n")
-
-        assert response.status_code == 302
-        assert self._respondent_ids(postgres_session_factory, existing_assembly.id) == set()
-        [(category, message)] = self._flashes(logged_in_admin)
-        assert category == "error"
-        assert message == (
-            "Invalid CSV format: Column C (after 'age') has no header but has data in it, starting at row 3. "
-            "Delete the column, or give it a header."
-        )
-
-    def test_every_problem_is_listed(self, logged_in_admin, existing_assembly):
-        self._upload(logged_in_admin, existing_assembly.id, b"id,,Email,email\nR1,note,a,b\n")
-
-        [(_, message)] = self._flashes(logged_in_admin)
-        lines = message.split("\n")
-        assert lines[0] == "Invalid CSV format: There are 2 problems with this file:"
-        assert lines[1].startswith("Column B (between 'id' and 'Email')")
-        assert lines[2].startswith("Columns C ('Email'), D ('email') have headers that count as the same field.")
-
-    def test_a_byte_order_mark_does_not_hide_the_id_column(
-        self, logged_in_admin, existing_assembly, postgres_session_factory
-    ):
-        """Excel's "CSV UTF-8" puts an invisible mark before the first header."""
-        self._upload(logged_in_admin, existing_assembly.id, "id,age\nR1,30\n".encode("utf-8-sig"), id_column="id")
-
-        assert self._respondent_ids(postgres_session_factory, existing_assembly.id) == {"R1"}
-
-    def test_a_file_not_in_utf8_says_so(self, logged_in_admin, existing_assembly):
-        self._upload(logged_in_admin, existing_assembly.id, "id,name\nR1,café\n".encode("cp1252"))
-
-        assert self._flashes(logged_in_admin) == [
-            ("error", "Could not read CSV file. Please ensure it is UTF-8 encoded."),
-        ]
-
-    def test_applying_a_stashed_file_with_problems_names_the_column(
-        self, logged_in_admin, admin_user, existing_assembly, test_redis_client
-    ):
-        stash_pending_upload(
-            user_id=admin_user.id,
-            assembly_id=existing_assembly.id,
-            upload=StashedUpload(
-                csv_content="id,age,\nR1,30,note\n", filename="r.csv", id_column=None, replace_existing=True
-            ),
-            redis_client=test_redis_client,
-        )
-
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
-            data={
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
-                ),
-                "action": "confirm",
-            },
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        [(category, message)] = self._flashes(logged_in_admin)
-        assert category == "error"
-        assert message.startswith("Invalid CSV format: Column C (after 'age') has no header")
-
-    def _stash(self, user, assembly, redis_client, csv_content="id,age\nR1,30\n"):
-        stash_pending_upload(
-            user_id=user.id,
-            assembly_id=assembly.id,
-            upload=StashedUpload(csv_content=csv_content, filename="r.csv", id_column=None, replace_existing=True),
-            redis_client=redis_client,
-        )
-
-    def _confirm_url(self, assembly_id) -> str:
-        return f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff"
-
-    def test_an_unexpected_error_on_the_confirm_page_is_not_a_500(
-        self, logged_in_admin, admin_user, existing_assembly, test_redis_client, monkeypatch
-    ):
-        def explode(*args, **kwargs):
-            raise RuntimeError("boom")
-
-        monkeypatch.setattr(respondents_blueprint, "compute_diff_for_pending_csv", explode)
-        self._stash(admin_user, existing_assembly, test_redis_client)
-
-        response = logged_in_admin.get(self._confirm_url(existing_assembly.id), follow_redirects=False)
-
-        assert response.status_code == 302
-        assert self._flashes(logged_in_admin) == [("error", "An error occurred while uploading respondents")]
-        assert test_redis_client.keys(f"csv_import_pending:*:{existing_assembly.id}") == []
-
-    def test_the_confirm_page_without_permission_says_so(
-        self, logged_in_user, regular_user, existing_assembly, test_redis_client
-    ):
-        self._stash(regular_user, existing_assembly, test_redis_client)
-
-        response = logged_in_user.get(self._confirm_url(existing_assembly.id), follow_redirects=False)
-
-        assert response.status_code == 302
-        assert self._flashes(logged_in_user) == [("error", "You don't have permission to upload respondents")]
-        assert test_redis_client.keys(f"csv_import_pending:*:{existing_assembly.id}") == []
-
-    def test_an_unexpected_error_applying_the_upload_is_not_a_500(
-        self, logged_in_admin, admin_user, existing_assembly, test_redis_client, monkeypatch
-    ):
-        def explode(*args, **kwargs):
-            raise RuntimeError("boom")
-
-        monkeypatch.setattr(respondents_blueprint, "import_respondents_from_csv", explode)
-        self._stash(admin_user, existing_assembly, test_redis_client)
-
-        response = logged_in_admin.post(
-            self._confirm_url(existing_assembly.id),
-            data={"csrf_token": get_csrf_token(logged_in_admin, ""), "action": "confirm"},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert self._flashes(logged_in_admin) == [("error", "An error occurred while uploading respondents")]
-        assert test_redis_client.keys(f"csv_import_pending:*:{existing_assembly.id}") == []
-
-    def test_applying_the_upload_without_permission_says_so(
-        self, logged_in_user, regular_user, existing_assembly, test_redis_client
-    ):
-        self._stash(regular_user, existing_assembly, test_redis_client)
-
-        response = logged_in_user.post(
-            self._confirm_url(existing_assembly.id),
-            data={"csrf_token": get_csrf_token(logged_in_user, ""), "action": "confirm"},
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        assert self._flashes(logged_in_user) == [("error", "You don't have permission to upload respondents")]
-        assert test_redis_client.keys(f"csv_import_pending:*:{existing_assembly.id}") == []
