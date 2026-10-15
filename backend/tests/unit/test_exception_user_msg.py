@@ -44,6 +44,7 @@ from opendlp.service_layer.exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
+from opendlp.service_layer.tabular_data import TableProblem, TabularDataError
 from opendlp.service_layer.target_service import TargetLinkedError, TargetsNotSaved
 from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
 
@@ -73,6 +74,7 @@ CURATED = [
     CannotRemoveLastAssemblyManager(),
     FieldDefinitionConflictError("A choice field must keep at least one option"),
     SelectionAlreadyRunning(_RUNNING_SELECTION),
+    TabularDataError([TableProblem(kind="empty", message="The file is empty or has no header row.")]),
 ]
 
 UNCURATED = [
