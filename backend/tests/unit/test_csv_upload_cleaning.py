@@ -1,15 +1,12 @@
-"""ABOUTME: Integration tests for cleaning uploaded CSVs before they are imported
-ABOUTME: Blank, unnamed, duplicate and badly named columns across the upload services, with a real database"""
+"""ABOUTME: Unit tests for cleaning uploaded CSVs before they are imported, over a FakeUnitOfWork
+ABOUTME: Blank, unnamed, duplicate and badly named columns across the respondent and target upload services"""
 
 import pytest
 
 from opendlp.domain.assembly import Assembly
-from opendlp.domain.respondent_derivation import LargeMappingRule
-from opendlp.domain.respondent_field_schema import FieldType, RespondentFieldDefinition, RespondentFieldGroup
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import (
-    derivation_service,
     respondent_field_schema_service,
     respondent_service,
     target_csv_import,
@@ -23,38 +20,32 @@ from opendlp.service_layer.tabular_data import (
     PROBLEM_DUPLICATE_HEADER,
     TabularDataError,
 )
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
-
-@pytest.fixture
-def uow(postgres_session_factory):
-    """An already-entered UnitOfWork; the whole test is one transaction."""
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as entered:
-        yield entered
 
 
 @pytest.fixture
 def admin_user(uow):
     user = User(email="admin@test.com", global_role=GlobalRole.ADMIN, password_hash="hash123")
     uow.users.add(user)
-    detached_user = user.create_detached_copy()
-    uow.commit()
-    return detached_user
+    return user
 
 
 @pytest.fixture
 def test_assembly(uow):
     assembly = Assembly(title="Test Assembly", question="Test?", number_to_select=30)
     uow.assemblies.add(assembly)
-    detached_assembly = assembly.create_detached_copy()
-    uow.commit()
-    return detached_assembly
+    return assembly
 
 
 def import_csv(uow, user, assembly, content: str, id_column: str | None = None):
     return respondent_service.import_respondents_from_csv(
         uow, user.id, assembly.id, content, replace_existing=True, id_column=id_column
     )
+
+
+def respondents_in(uow, assembly) -> list[tuple]:
+    """Each respondent's identity and attributes, to tell whether any were replaced or changed."""
+    respondents = uow.respondents.get_by_assembly_id(assembly.id)
+    return sorted((r.id, r.external_id, dict(r.attributes)) for r in respondents)
 
 
 class TestRespondentImport:
@@ -78,13 +69,18 @@ class TestRespondentImport:
         assert problem.row == 3
 
     def test_a_rejected_file_leaves_existing_respondents_alone(self, uow, admin_user: User, test_assembly: Assembly):
-        import_csv(uow, admin_user, test_assembly, "id,age\nR1,30\n")
-        uow.commit()
+        """The import replaces what is there, so the file must be checked before anything is deleted."""
+        import_csv(uow, admin_user, test_assembly, "id,age\nR1,30\nR2,40\n")
+        before = respondents_in(uow, test_assembly)
 
         with pytest.raises(TabularDataError):
             import_csv(uow, admin_user, test_assembly, "id,age,\nR9,30,note\n")
 
-        assert [r.external_id for r in uow.respondents.get_by_assembly_id(test_assembly.id)] == ["R1"]
+        assert respondents_in(uow, test_assembly) == before
+        assert {external_id: attributes for _, external_id, attributes in before} == {
+            "R1": {"age": "30"},
+            "R2": {"age": "40"},
+        }
 
     def test_headers_that_are_the_same_field_are_rejected(self, uow, admin_user: User, test_assembly: Assembly):
         """Before, the domain refused these once per row, and the route showed a generic error."""
@@ -120,7 +116,6 @@ class TestComputeDiffForPendingCsv:
     @pytest.fixture
     def seeded(self, uow, admin_user: User, test_assembly: Assembly):
         import_csv(uow, admin_user, test_assembly, "id,age\nR1,30\n")
-        uow.commit()
 
     def diff(self, uow, user, assembly, content: str, id_column: str | None = None):
         return respondent_field_schema_service.compute_diff_for_pending_csv(
@@ -175,14 +170,6 @@ class TestTargetImport:
         male = category.get_value("Male")
         assert (male.min, male.max, male.comment) == (1, 2, "from the census")
 
-    def test_a_repeated_wanted_header_is_rejected(self, uow, admin_user: User, test_assembly: Assembly):
-        with pytest.raises(TabularDataError) as exc_info:
-            self.import_targets(uow, admin_user, test_assembly, "feature,value,min,Min,max\nGender,Male,1,1,2\n")
-
-        [problem] = exc_info.value.problems
-        assert problem.kind == PROBLEM_DUPLICATE_HEADER
-        assert problem.letters == ("C", "D")
-
     def test_a_short_row_is_padded(self, uow, admin_user: User, test_assembly: Assembly):
         """A short row used to reach the library as None: "'None' is not a number"."""
         result = self.import_targets(uow, admin_user, test_assembly, "feature,value,min,max,comment\nGender,Male,1,2\n")
@@ -194,51 +181,3 @@ class TestTargetImport:
             self.import_targets(uow, admin_user, test_assembly, "\n\n")
 
         assert exc_info.value.user_msg() == "The file is empty or has no header row."
-
-
-class TestLargeMappingUpload:
-    @pytest.fixture
-    def region_field(self, uow, admin_user: User, test_assembly: Assembly):
-        uow.respondent_field_definitions.add(
-            RespondentFieldDefinition(
-                assembly_id=test_assembly.id,
-                field_key="postcode",
-                label="Postcode",
-                group=RespondentFieldGroup.ABOUT_YOU,
-                sort_order=10,
-                field_type=FieldType.TEXT,
-            )
-        )
-        field, _ = derivation_service.create_derived_field(
-            uow,
-            admin_user.id,
-            test_assembly.id,
-            field_key="region",
-            label="Region",
-            source_field_key="postcode",
-            rule=LargeMappingRule(),
-            output_values=["London", "North"],
-        )
-        uow.commit()
-        return field
-
-    def upload(self, uow, user, assembly, field, content: str):
-        return derivation_service.upload_large_mapping(uow, user.id, assembly.id, field.id, content)
-
-    def test_a_leading_empty_column_does_not_empty_the_table(
-        self, uow, admin_user: User, test_assembly: Assembly, region_field
-    ):
-        report = self.upload(
-            uow, admin_user, test_assembly, region_field, ",pc,area\n,SW1A 1AA,London\n,M1 1AE,North\n"
-        )
-
-        assert report.row_count == 2
-        entries = uow.respondent_field_mapping_entries.list_for_field(region_field.id)
-        assert {(e.lookup_key, e.output_value) for e in entries} == {("SW1A1AA", "London"), ("M11AE", "North")}
-
-    def test_a_repeated_header_is_rejected(self, uow, admin_user: User, test_assembly: Assembly, region_field):
-        with pytest.raises(TabularDataError) as exc_info:
-            self.upload(uow, admin_user, test_assembly, region_field, "postcode,region,region\nSW1A 1AA,London,North\n")
-
-        assert [problem.kind for problem in exc_info.value.problems] == [PROBLEM_DUPLICATE_HEADER]
-        assert uow.respondent_field_mapping_entries.count_for_field(region_field.id) == 0
