@@ -521,7 +521,7 @@ emails but not names or dates of birth.
 
 - [x] 1. `tabular_data.py` (reader, `Table`, `clean_table`, `select_columns`,
    `HeaderCheck`, error) + unit tests, TDD.
-- [ ] 2. Respondent header check + unit tests.
+- [x] 2. Respondent header check + unit tests.
 - [ ] 3. Switch respondents import and the diff to the pipeline; row numbers
    through to warnings; `utf-8-sig` and `UnicodeDecodeError` on the route;
    confirm-diff handlers; `user_msg()`. Integration and e2e tests.

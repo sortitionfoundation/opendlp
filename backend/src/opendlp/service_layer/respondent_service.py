@@ -9,7 +9,12 @@ from typing import Any
 
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
-from opendlp.domain.respondents import Respondent, normalise_field_name, pop_normalised
+from opendlp.domain.respondents import (
+    INTERNAL_IMPORT_SKIP_COLUMNS,
+    Respondent,
+    normalise_field_name,
+    pop_normalised,
+)
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import (
     ALLOWED_SELECTION_STATUS_TRANSITIONS,
@@ -46,18 +51,6 @@ from opendlp.service_layer.respondent_field_schema_service import (
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.writing_guard import refuse_if_writing_run_unfinished
 from opendlp.translations import gettext as _
-
-# Internal, export-only columns recognised and skipped on import. They mirror
-# the extra columns build_respondent_table appends, so an exported file
-# re-imports without colliding with reserved Respondent field names.
-INTERNAL_IMPORT_SKIP_COLUMNS = (
-    "selection_status",
-    "selection_run_id",
-    "source_type",
-    "created_at",
-    "updated_at",
-    "view_url",
-)
 
 
 def create_respondent(
