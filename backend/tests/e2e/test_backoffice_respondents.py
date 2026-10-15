@@ -10,6 +10,7 @@ from opendlp import config as _config
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentStatus
+from opendlp.entrypoints.blueprints import respondents as respondents_blueprint
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.csv_upload_stash import StashedUpload
 from opendlp.service_layer.csv_upload_stash import stash as stash_pending_upload
@@ -638,24 +639,73 @@ class TestUploadCsvCleaning:
         assert category == "error"
         assert message.startswith("Invalid CSV format: Column C (after 'age') has no header")
 
-    def test_an_unexpected_error_on_the_confirm_page_is_not_a_500(
-        self, logged_in_user, regular_user, existing_assembly, test_redis_client
-    ):
-        """Only InvalidSelection was caught here; anything else reached the error page."""
+    def _stash(self, user, assembly, redis_client, csv_content="id,age\nR1,30\n"):
         stash_pending_upload(
-            user_id=regular_user.id,
-            assembly_id=existing_assembly.id,
-            upload=StashedUpload(
-                csv_content="id,age\nR1,30\n", filename="r.csv", id_column=None, replace_existing=True
-            ),
-            redis_client=test_redis_client,
+            user_id=user.id,
+            assembly_id=assembly.id,
+            upload=StashedUpload(csv_content=csv_content, filename="r.csv", id_column=None, replace_existing=True),
+            redis_client=redis_client,
         )
 
-        response = logged_in_user.get(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+    def _confirm_url(self, assembly_id) -> str:
+        return f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff"
+
+    def test_an_unexpected_error_on_the_confirm_page_is_not_a_500(
+        self, logged_in_admin, admin_user, existing_assembly, test_redis_client, monkeypatch
+    ):
+        def explode(*args, **kwargs):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(respondents_blueprint, "compute_diff_for_pending_csv", explode)
+        self._stash(admin_user, existing_assembly, test_redis_client)
+
+        response = logged_in_admin.get(self._confirm_url(existing_assembly.id), follow_redirects=False)
+
+        assert response.status_code == 302
+        assert self._flashes(logged_in_admin) == [("error", "An error occurred while uploading respondents")]
+        assert test_redis_client.keys(f"csv_import_pending:*:{existing_assembly.id}") == []
+
+    def test_the_confirm_page_without_permission_says_so(
+        self, logged_in_user, regular_user, existing_assembly, test_redis_client
+    ):
+        self._stash(regular_user, existing_assembly, test_redis_client)
+
+        response = logged_in_user.get(self._confirm_url(existing_assembly.id), follow_redirects=False)
+
+        assert response.status_code == 302
+        assert self._flashes(logged_in_user) == [("error", "You don't have permission to upload respondents")]
+        assert test_redis_client.keys(f"csv_import_pending:*:{existing_assembly.id}") == []
+
+    def test_an_unexpected_error_applying_the_upload_is_not_a_500(
+        self, logged_in_admin, admin_user, existing_assembly, test_redis_client, monkeypatch
+    ):
+        def explode(*args, **kwargs):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(respondents_blueprint, "import_respondents_from_csv", explode)
+        self._stash(admin_user, existing_assembly, test_redis_client)
+
+        response = logged_in_admin.post(
+            self._confirm_url(existing_assembly.id),
+            data={"csrf_token": get_csrf_token(logged_in_admin, ""), "action": "confirm"},
             follow_redirects=False,
         )
 
         assert response.status_code == 302
-        assert self._flashes(logged_in_user) == [("error", "An error occurred while uploading respondents")]
+        assert self._flashes(logged_in_admin) == [("error", "An error occurred while uploading respondents")]
+        assert test_redis_client.keys(f"csv_import_pending:*:{existing_assembly.id}") == []
+
+    def test_applying_the_upload_without_permission_says_so(
+        self, logged_in_user, regular_user, existing_assembly, test_redis_client
+    ):
+        self._stash(regular_user, existing_assembly, test_redis_client)
+
+        response = logged_in_user.post(
+            self._confirm_url(existing_assembly.id),
+            data={"csrf_token": get_csrf_token(logged_in_user, ""), "action": "confirm"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert self._flashes(logged_in_user) == [("error", "You don't have permission to upload respondents")]
         assert test_redis_client.keys(f"csv_import_pending:*:{existing_assembly.id}") == []

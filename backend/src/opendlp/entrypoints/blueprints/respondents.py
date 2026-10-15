@@ -298,6 +298,21 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Invalid CSV format: %(error)s", error=e.user_msg()), "error")
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions to confirm respondents upload",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to upload respondents"), "error")
+        clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except NotFoundError as e:
+        logger.warning("Assembly not found confirming respondents upload", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Assembly not found"), "error")
+        clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
             "Confirm upload diff error",
@@ -369,6 +384,19 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning("Invalid CSV format applying upload diff", assembly_id=str(assembly_id), error=str(e))
         flash(_("Invalid CSV format: %(error)s", error=e.user_msg()), "error")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions to apply respondents upload",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to upload respondents"), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+    except NotFoundError as e:
+        logger.warning("Assembly not found applying respondents upload", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
             "Apply upload diff error",
