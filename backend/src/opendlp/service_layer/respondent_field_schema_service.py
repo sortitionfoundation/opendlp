@@ -1050,7 +1050,7 @@ def _id_column_problems(columns: list[Column], id_column: str, previous_id_colum
 
 
 def _field_name_problems(columns: list[Column], check_reserved: bool) -> list[TableProblem]:
-    problems = []
+    problems: list[TableProblem] = []
     for column in columns:
         if not normalise_field_name(column.header):
             problems.append(
@@ -1113,7 +1113,7 @@ def _same_field_problems(columns: list[Column]) -> list[TableProblem]:
         normalised = normalise_field_name(column.header)
         if normalised:
             by_field.setdefault(normalised, []).append(column)
-    problems = []
+    problems: list[TableProblem] = []
     for same in by_field.values():
         if len({column.header for column in same}) < 2:
             continue

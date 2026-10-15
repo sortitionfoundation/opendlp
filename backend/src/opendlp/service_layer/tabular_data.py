@@ -263,7 +263,7 @@ def _duplicate_header_problems(columns: list[Column]) -> list[TableProblem]:
     by_header: dict[str, list[Column]] = {}
     for column in columns:
         by_header.setdefault(column.header, []).append(column)
-    problems = []
+    problems: list[TableProblem] = []
     for header, same in by_header.items():
         if len(same) < 2:
             continue
@@ -291,7 +291,7 @@ def _nul_character_problems(
     The csv module reads a NUL without complaint, but the database refuses to
     store one, so it has to be caught here.
     """
-    problems = []
+    problems: list[TableProblem] = []
     for column in columns:
         if "\x00" in column.header:
             first_row = header_row_number
