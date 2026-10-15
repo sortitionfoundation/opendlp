@@ -1002,6 +1002,11 @@ def respondent_header_check(explicit_id_column: str | None, previous_id_column: 
     missing, headers with no letters or numbers, headers that count as the same
     field, reserved names, and headers too long to store. ``explicit_id_column``
     is what the organiser typed; when empty, the first column is the ID column.
+
+    The same-field check is deliberately stricter than the import: it includes
+    the ID column, so 'Person Ref' as the ID beside a 'person_ref' column is
+    refused even though the ID never becomes an attribute and nothing would
+    collide. Two headers that read as one field are a mistake in the file.
     """
 
     def check(columns: list[Column]) -> list[TableProblem]:
@@ -1100,6 +1105,7 @@ def _field_name_problems(columns: list[Column], check_reserved: bool) -> list[Ta
 def _same_field_problems(columns: list[Column]) -> list[TableProblem]:
     """Headers that differ but normalise to one field name, such as 'Age' and 'age '.
 
+    ``columns`` includes the ID column - see ``respondent_header_check``.
     Exact repeats are left to the table cleaning, which reports them already.
     """
     by_field: dict[str, list[Column]] = {}

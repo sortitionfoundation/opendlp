@@ -134,6 +134,13 @@ class TestSameField:
 
         assert problem.kind == PROBLEM_SAME_FIELD
 
+    def test_the_id_column_is_checked_too(self):
+        """Stricter than the import, which never makes the ID an attribute: two headers reading as one is a mistake."""
+        [problem] = problems_of("Person Ref,person_ref,age\nP1,legacy-9,30\n", id_column="Person Ref")
+
+        assert problem.kind == PROBLEM_SAME_FIELD
+        assert problem.letters == ("A", "B")
+
     def test_exact_repeats_are_left_to_the_table_cleaning(self):
         problems = problems_of("id,age,age\n1,30,31\n")
 
