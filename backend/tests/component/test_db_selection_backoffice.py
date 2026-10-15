@@ -1106,3 +1106,65 @@ class TestCsvSelectionHistory:
         assert b"Selection History" in response.data
         assert b"Completed" in response.data
         assert b"View" in response.data
+
+
+class TestWritingRoutesLandInTheRunningTasksModal:
+    """A run or reset submitted while a writing task is unfinished opens that task's modal instead."""
+
+    FLASH = "Another task is already running on this assembly"
+
+    def _running_selection(self, fake_store, assembly_id) -> uuid.UUID:
+        run_id = uuid.uuid4()
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly_id,
+            task_id=run_id,
+            status=SelectionRunStatus.RUNNING,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            log_messages=["Processing data..."],
+        )
+        return run_id
+
+    def test_run_selection_redirects_into_the_running_modal(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        """The POST starts nothing and sends the user to the running selection, cancel button and all."""
+        assembly = assembly_with_csv_config
+        run_id = self._running_selection(fake_store, assembly.id)
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
+            response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/db/run")
+
+        mock_delay.assert_not_called()
+        assert response.status_code == 302
+        assert response.location.endswith(f"/selection?current_selection={run_id}")
+
+        page = logged_in_admin.get(response.location)
+        html = page.data.decode()
+        assert self.FLASH in html
+        assert "Select from database" in html
+        assert "Cancel Task" in html
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert [r.task_id for r in uow.selection_run_records.get_by_assembly_id(assembly.id)] == [run_id]
+
+    def test_reset_redirects_into_the_running_modal_and_resets_nobody(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        """Reset to pool is refused the same way, and every respondent keeps their status."""
+        assembly = assembly_with_csv_config
+        run_id = self._running_selection(fake_store, assembly.id)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            for respondent in uow.respondents.get_by_assembly_id(assembly.id):
+                respondent.selection_status = RespondentStatus.SELECTED
+            uow.commit()
+
+        response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/db/reset")
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/selection?current_selection={run_id}")
+        page = logged_in_admin.get(response.location)
+        assert self.FLASH in page.data.decode()
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondents = uow.respondents.get_by_assembly_id(assembly.id)
+            assert all(r.selection_status == RespondentStatus.SELECTED for r in respondents)
+            assert [r.task_id for r in uow.selection_run_records.get_by_assembly_id(assembly.id)] == [run_id]

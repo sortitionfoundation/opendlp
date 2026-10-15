@@ -42,6 +42,7 @@ from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.error_translation import translate_sortition_error, translate_sortition_error_to_html
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
+from opendlp.service_layer.writing_guard import unfinished_writing_runs
 from opendlp.translations import gettext as _
 from opendlp.translations import ngettext
 
@@ -134,7 +135,7 @@ def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tupl
 
 def _update_selection_record(
     task_id: uuid.UUID,
-    status: SelectionRunStatus,
+    status: SelectionRunStatus | None = None,
     log_message: str = "",
     log_messages: list[str] | None = None,
     error_message: str = "",
@@ -153,13 +154,12 @@ def _update_selection_record(
         if record is None:
             raise SelectionRunRecordNotFoundError(f"SelectionRunRecord with task_id {task_id} not found")
 
-        # Update existing record
-        record.status = status
-        if log_message:
-            record.log_messages.append(log_message)
-            flag_modified(record, "log_messages")
-        if log_messages:
-            record.log_messages.extend(log_messages)
+        # Update existing record; a call with no status leaves it as it is
+        if status is not None:
+            record.status = status
+        new_messages = log_messages or ([log_message] if log_message else [])
+        if new_messages:
+            record.log_messages.extend(new_messages)
             flag_modified(record, "log_messages")
         if error_message:
             record.error_message = error_message
@@ -186,6 +186,60 @@ def _append_run_log(task_id: uuid.UUID, log_messages: list[str], session_factory
     _update_selection_record(
         task_id, status=SelectionRunStatus.RUNNING, log_messages=log_messages, session_factory=session_factory
     )
+
+
+def _claim_assembly_for_writing(
+    task_id: uuid.UUID, report: RunReport, session_factory: sessionmaker | None = None
+) -> bool:
+    """Mark this run RUNNING unless another writing run on its assembly is unfinished.
+
+    Returns False, having marked the record FAILED and added the reason to
+    ``report``, when something else holds the assembly. Also returns False,
+    leaving the record alone, when the record is no longer PENDING: the user
+    cancelled it, or the cleanup job failed it as stuck, before the worker
+    picked the task up. Call it before the run log handler is installed, so
+    nothing logged here can move a record that has just been failed back to
+    RUNNING.
+    """
+    with bootstrap(session_factory=session_factory) as uow:
+        record = uow.selection_run_records.get_by_task_id(task_id)
+        if record is None:
+            raise SelectionRunRecordNotFoundError(f"SelectionRunRecord with task_id {task_id} not found")
+
+        if not record.is_pending:
+            logger.warning(
+                "Writing task not started: its record is no longer pending. task_id=%s assembly_id=%s status=%s",
+                task_id,
+                record.assembly_id,
+                record.status.value,
+            )
+            report.add_line(_("This task was cancelled or failed before it started"))
+            return False
+
+        blocking = unfinished_writing_runs(uow, record.assembly_id, exclude_task_id=task_id)
+        if blocking:
+            error_msg = _(
+                "Another task was already writing to this assembly when this one started: %(task)s",
+                task=blocking[0].task_type_verbose,
+            )
+            logger.warning(
+                "Writing task refused: assembly held by another run. task_id=%s assembly_id=%s blocking_task_id=%s",
+                task_id,
+                record.assembly_id,
+                blocking[0].task_id,
+            )
+            report.add_line(error_msg)
+            record.status = SelectionRunStatus.FAILED
+            record.log_messages.append(error_msg)
+            flag_modified(record, "log_messages")
+            record.error_message = error_msg
+            record.completed_at = datetime.now(UTC)
+            uow.commit()
+            return False
+
+        record.status = SelectionRunStatus.RUNNING
+        uow.commit()
+        return True
 
 
 def _gsheet_api_error_message(err: gspread.exceptions.APIError) -> str:
@@ -221,10 +275,8 @@ def _internal_load_gsheet(
     data_source = select_data.data_source
     assert isinstance(data_source, adapters.GSheetDataSource | CSVGSheetDataSource)
     report = RunReport()
-    # Update SelectionRunRecord to running status
     _update_selection_record(
         task_id=task_id,
-        status=SelectionRunStatus.RUNNING,
         log_message=_("Starting Google Sheets load task"),
         session_factory=session_factory,
     )
@@ -655,7 +707,6 @@ def _internal_load_db(
     report = RunReport()
     _update_selection_record(
         task_id=task_id,
-        status=SelectionRunStatus.RUNNING,
         log_message=_("Starting database data load"),
         session_factory=session_factory,
     )
@@ -823,9 +874,11 @@ def run_select_from_db(
     session_factory: sessionmaker | None = None,
     targets_snapshot: list[dict[str, Any]] | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
+    report = RunReport()
+    if not _claim_assembly_for_writing(task_id, report, session_factory=session_factory):
+        return False, [], report
     _set_up_celery_logging(task_id, session_factory=session_factory)
     reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
-    report = RunReport()
 
     success, features, loaded_people, already_selected, load_report = _internal_load_db(
         task_id=task_id,
@@ -878,6 +931,8 @@ def load_gsheet(
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
+    # A load only reads, so it is not claimed; move its record to RUNNING here.
+    _update_selection_record(task_id=task_id, status=SelectionRunStatus.RUNNING, session_factory=session_factory)
     reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     select_data = adapters.SelectionData(data_source)
     return _internal_load_gsheet(
@@ -903,9 +958,11 @@ def run_select(
     for_replacements: bool = False,
     session_factory: sessionmaker | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
+    report = RunReport()
+    if not _claim_assembly_for_writing(task_id, report, session_factory=session_factory):
+        return False, [], report
     _set_up_celery_logging(task_id, session_factory=session_factory)
     reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
-    report = RunReport()
     select_data = adapters.SelectionData(data_source, gen_rem_tab=gen_rem_tab)
     success, features, people, already_selected, load_report = _internal_load_gsheet(
         task_obj=self,
@@ -1068,14 +1125,17 @@ def manage_old_tabs(
     Returns:
         Tuple of (success: bool, tab_names: list[str], report: RunReport)
     """
-    _set_up_celery_logging(task_id, session_factory=session_factory)
     report = RunReport()
+    if not dry_run and not _claim_assembly_for_writing(task_id, report, session_factory=session_factory):
+        return False, [], report
+    _set_up_celery_logging(task_id, session_factory=session_factory)
 
-    # Update SelectionRunRecord to running status
+    # A listing only reads, so it is not claimed; move its record to RUNNING here.
+    # A delete was moved to RUNNING by the claim above.
     action = _("listing") if dry_run else _("deleting")
     _update_selection_record(
         task_id=task_id,
-        status=SelectionRunStatus.RUNNING,
+        status=SelectionRunStatus.RUNNING if dry_run else None,
         log_message=_("Starting task to %(action)s old output tabs", action=action),
         session_factory=session_factory,
     )

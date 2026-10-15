@@ -1,10 +1,8 @@
 """ABOUTME: Integration tests for Celery task functions
 ABOUTME: Tests the public Celery task API with database integration"""
 
-import tempfile
 import uuid
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import gspread
@@ -38,51 +36,6 @@ from opendlp.entrypoints.celery.tasks import (
 )
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.service_layer.monitoring import MonitorResult
-
-
-@pytest.fixture
-def csv_files():
-    """Create CSV files for testing."""
-    test_data_dir = Path(__file__).parent.parent / "csv_fixtures" / "selection_data"
-    features_file = test_data_dir / "features.csv"
-    people_file = test_data_dir / "candidates.csv"
-
-    temp_dir = Path(tempfile.gettempdir()) / "opendlp_test_celery"
-    temp_dir.mkdir(exist_ok=True)
-
-    selected_file = temp_dir / f"selected_{uuid.uuid4()}.csv"
-    remaining_file = temp_dir / f"remaining_{uuid.uuid4()}.csv"
-    already_selected_file = temp_dir / f"already_selected_{uuid.uuid4()}.csv"
-
-    return {
-        "features": features_file,
-        "people": people_file,
-        "selected": selected_file,
-        "remaining": remaining_file,
-        "already_selected": already_selected_file,
-    }
-
-
-@pytest.fixture
-def csv_gsheet_data_source(csv_files):
-    """Create a CSVGSheetDataSource for testing."""
-    csv_data_source = CSVFileDataSource(
-        features_file=csv_files["features"],
-        people_file=csv_files["people"],
-        selected_file=csv_files["selected"],
-        remaining_file=csv_files["remaining"],
-        already_selected_file=csv_files["already_selected"],
-    )
-
-    mock_gsheet = Mock(spec=GSheetDataSource)
-    mock_gsheet.feature_tab_name = "Features"
-    mock_gsheet.people_tab_name = "People"
-    mock_gsheet.already_selected_tab_name = "Already Selected"
-
-    return CSVGSheetDataSource(
-        csv_data_source=csv_data_source,
-        gsheet_data_source=mock_gsheet,
-    )
 
 
 @pytest.fixture
@@ -1237,6 +1190,46 @@ class TestCleanupOrphanedTasks:
             # Verify task 3 is still RUNNING
             updated3 = uow.selection_run_records.get_by_task_id(task3_id)
             assert updated3.status == SelectionRunStatus.RUNNING
+
+    def test_cleanup_fails_a_record_stuck_in_pending_for_over_an_hour(self, postgres_session_factory):
+        """A PENDING record older than the pending timeout is FAILED so it stops holding its assembly."""
+        stuck_id = uuid.uuid4()
+        fresh_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=stuck_id,
+                    task_type=SelectionTaskType.SELECT_FROM_DB,
+                    status=SelectionRunStatus.PENDING,
+                    celery_task_id="lost-message-1",
+                    created_at=datetime.now(UTC) - timedelta(minutes=config.PENDING_TASK_TIMEOUT_MINUTES + 5),
+                )
+            )
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=fresh_id,
+                    task_type=SelectionTaskType.SELECT_FROM_DB,
+                    status=SelectionRunStatus.PENDING,
+                    celery_task_id="queued-2",
+                    created_at=datetime.now(UTC) - timedelta(minutes=1),
+                )
+            )
+            uow.commit()
+
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_async_result.return_value = Mock(state="PENDING", info={})
+            result = cleanup_orphaned_tasks(session_factory=postgres_session_factory)
+
+        assert result == {"checked": 2, "marked_failed": 1, "errors": 0}
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            stuck = uow.selection_run_records.get_by_task_id(stuck_id)
+            assert stuck.status == SelectionRunStatus.FAILED
+            assert "did not start" in stuck.error_message
+            assert uow.selection_run_records.get_by_task_id(fresh_id).status == SelectionRunStatus.PENDING
 
     def test_cleanup_handles_no_unfinished_tasks(self, postgres_session_factory):
         """Test that cleanup handles case with no unfinished tasks gracefully."""

@@ -3,12 +3,14 @@
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock, patch
 
 import pytest
 from flask.testing import FlaskClient
 
 from opendlp.adapters import database
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from tests.fakes import FakeUnitOfWork
 
@@ -479,3 +481,83 @@ class TestBackofficeSelectionTab:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}")
         assert response.status_code == 302
         assert f"current_selection={run_id}" in response.location
+
+
+class TestGsheetWritingRoutesLandInTheRunningTasksModal:
+    """Select, replace and delete-tabs refuse while a writing task is unfinished and open its modal."""
+
+    FLASH = "Another task is already running on this assembly"
+
+    def _add_running(self, fake_store, assembly_id, task_type) -> uuid.UUID:
+        run_id = uuid.uuid4()
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=run_id,
+                    task_type=task_type,
+                    status=SelectionRunStatus.RUNNING,
+                    log_messages=["Working..."],
+                )
+            )
+            uow.commit()
+        return run_id
+
+    def _assert_modal(self, logged_in_admin, location: str, label: str) -> None:
+        html = logged_in_admin.get(location).data.decode()
+        assert self.FLASH in html
+        assert label in html
+        assert "Cancel Task" in html
+
+    def test_run_selection_opens_the_running_selection(self, logged_in_admin, assembly_with_gsheet, fake_store):
+        assembly, _gsheet = assembly_with_gsheet
+        run_id = self._add_running(fake_store, assembly.id, SelectionTaskType.SELECT_GSHEET)
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select.apply_async") as mock_apply:
+            response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/run")
+
+        mock_apply.assert_not_called()
+        assert response.status_code == 302
+        assert response.location.endswith(f"/selection?current_selection={run_id}")
+        self._assert_modal(logged_in_admin, response.location, "Select from Google Sheets")
+
+    def test_delete_tabs_opens_the_running_tab_deletion(self, logged_in_admin, assembly_with_gsheet, fake_store):
+        """The blocking task here is a tab deletion, so the user lands in the manage-tabs modal."""
+        assembly, _gsheet = assembly_with_gsheet
+        run_id = self._add_running(fake_store, assembly.id, SelectionTaskType.DELETE_OLD_TABS)
+
+        with patch("opendlp.service_layer.sortition.tasks.manage_old_tabs.delay") as mock_delay:
+            response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/manage-tabs/start-delete")
+
+        mock_delay.assert_not_called()
+        assert response.status_code == 302
+        assert response.location.endswith(f"/selection?current_manage_tabs={run_id}")
+        self._assert_modal(logged_in_admin, response.location, "Delete old tabs")
+
+    def test_list_tabs_still_runs_during_a_selection(self, logged_in_admin, assembly_with_gsheet, fake_store):
+        """Listing is read-only, so it is dispatched as normal."""
+        assembly, _gsheet = assembly_with_gsheet
+        self._add_running(fake_store, assembly.id, SelectionTaskType.SELECT_GSHEET)
+
+        with patch("opendlp.service_layer.sortition.tasks.manage_old_tabs.delay") as mock_delay:
+            mock_delay.return_value = Mock(id="celery-id")
+            response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/manage-tabs/start-list")
+
+        mock_delay.assert_called_once()
+        assert response.status_code == 302
+        assert "current_manage_tabs=" in response.location
+
+    def test_replacement_run_opens_the_running_replacement(self, logged_in_admin, assembly_with_gsheet, fake_store):
+        """A Google Sheets replacement blocks on an earlier replacement and opens the replacement modal."""
+        assembly, _gsheet = assembly_with_gsheet
+        run_id = self._add_running(fake_store, assembly.id, SelectionTaskType.SELECT_REPLACEMENT_GSHEET)
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select.delay") as mock_delay:
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly.id}/replacement/run", data={"number_to_select": "3"}
+            )
+
+        mock_delay.assert_not_called()
+        assert response.status_code == 302
+        assert response.location.endswith(f"/selection?current_replacement={run_id}")
+        self._assert_modal(logged_in_admin, response.location, "Select replacements from Google Sheets")

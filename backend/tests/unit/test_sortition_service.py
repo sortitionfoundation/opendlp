@@ -631,6 +631,68 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.FAILED
         assert "timeout" in updated_record.error_message.lower()
 
+    def test_marks_pending_task_as_failed_after_the_pending_timeout(self, uow):
+        """A record still PENDING past the pending timeout was never picked up, so it is FAILED."""
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            status=SelectionRunStatus.PENDING,
+            celery_task_id="celery-never-started",
+            log_messages=["Task submitted"],
+        )
+        record.created_at = datetime.now(UTC) - timedelta(minutes=61)
+        uow.selection_run_records.add(record)
+
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_async_result.return_value = Mock(state="PENDING", info={})
+            sortition.check_and_update_task_health(uow, task_id, pending_timeout_minutes=60)
+
+        updated_record = uow.selection_run_records.get_by_task_id(task_id)
+        assert updated_record.status == SelectionRunStatus.FAILED
+        assert "did not start" in updated_record.error_message
+
+    def test_pending_task_within_the_pending_timeout_is_left_alone(self, uow):
+        """A record that has only just been queued is still waiting for a worker."""
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            status=SelectionRunStatus.PENDING,
+            celery_task_id="celery-queued",
+            log_messages=["Task submitted"],
+        )
+        record.created_at = datetime.now(UTC) - timedelta(minutes=59)
+        uow.selection_run_records.add(record)
+
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_async_result.return_value = Mock(state="PENDING", info={})
+            sortition.check_and_update_task_health(uow, task_id, pending_timeout_minutes=60)
+
+        assert uow.selection_run_records.get_by_task_id(task_id).status == SelectionRunStatus.PENDING
+
+    def test_running_task_is_not_subject_to_the_pending_timeout(self, uow):
+        """The pending timeout is about never starting; a RUNNING record of the same age is fine."""
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            status=SelectionRunStatus.RUNNING,
+            celery_task_id="celery-running",
+            log_messages=["Task started"],
+        )
+        record.created_at = datetime.now(UTC) - timedelta(minutes=61)
+        uow.selection_run_records.add(record)
+
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            mock_async_result.return_value = Mock(state="STARTED", info={})
+            sortition.check_and_update_task_health(uow, task_id, pending_timeout_minutes=60)
+
+        assert uow.selection_run_records.get_by_task_id(task_id).status == SelectionRunStatus.RUNNING
+
     def test_does_not_fail_task_within_timeout(self, uow):
         """Test that task is not marked failed when within timeout period."""
 

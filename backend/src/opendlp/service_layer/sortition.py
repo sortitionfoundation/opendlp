@@ -43,6 +43,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.service_layer.writing_guard import refuse_if_writing_run_unfinished
 from opendlp.translations import gettext as _
 
 logger = structlog.get_logger(__name__)
@@ -161,6 +162,7 @@ def start_gsheet_select_task(
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     sel_settings = _get_selection_settings(assembly)
+    refuse_if_writing_run_unfinished(uow, assembly_id)
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -309,6 +311,7 @@ def start_gsheet_replace_task(
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     sel_settings = _get_selection_settings(assembly)
+    refuse_if_writing_run_unfinished(uow, assembly_id)
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -380,6 +383,9 @@ def start_gsheet_manage_tabs_task(
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
+
+    if not dry_run:
+        refuse_if_writing_run_unfinished(uow, assembly_id)
 
     # Create unique task ID
     task_id = uuid.uuid4()
@@ -510,6 +516,8 @@ def start_db_select_task(
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
+    refuse_if_writing_run_unfinished(uow, assembly_id)
+
     task_id = uuid.uuid4()
     task_type = SelectionTaskType.TEST_SELECT_FROM_DB if test_selection else SelectionTaskType.SELECT_FROM_DB
     log_msg = (
@@ -576,14 +584,13 @@ def start_db_replace_task(
     if number_to_select < 1:
         raise InvalidSelection(_("The number of replacements to select must be at least one"))
 
-    if get_active_initial_selection_run_id(uow, assembly_id) is not None:
-        raise InvalidSelection(_("A selection is already running for this assembly"))
-
     sel_settings = _get_selection_settings(assembly)
     try:
         settings_obj = sel_settings.to_settings(id_column=DB_ID_COLUMN)
     except SortitionBaseError as e:
         raise InvalidSelection(translate_sortition_error(e)) from e
+
+    refuse_if_writing_run_unfinished(uow, assembly_id)
 
     task_id = uuid.uuid4()
     record = SelectionRunRecord(
@@ -926,10 +933,10 @@ def get_active_initial_selection_run_id(uow: AbstractUnitOfWork, assembly_id: uu
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    latest = uow.selection_run_records.get_latest_for_assembly(assembly_id)
-    if latest is None or latest.has_finished or latest.task_type not in _INITIAL_SELECTION_TASK_TYPES:
+    unfinished = uow.selection_run_records.get_unfinished_for_assembly(assembly_id, _INITIAL_SELECTION_TASK_TYPES)
+    if not unfinished:
         return None
-    return latest.task_id
+    return unfinished[0].task_id
 
 
 def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> SelectionRunRecord | None:
@@ -1030,13 +1037,63 @@ def _get_celery_task_state(run_record: SelectionRunRecord, task_id: uuid.UUID) -
         return None, ""  # Can't determine health if Celery query fails
 
 
-def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, timeout_hours: int | None = None) -> None:
+def _fail_if_timed_out(uow: AbstractUnitOfWork, run_record: SelectionRunRecord, timeout_hours: int | None) -> bool:
+    """Mark a record FAILED if it is older than the overall task timeout. Returns True if it did."""
+    timeout_hrs = timeout_hours if timeout_hours is not None else config.get_task_timeout_hours()
+    if not (timeout_hrs and run_record.created_at):
+        return False
+    elapsed = datetime.now(UTC) - run_record.created_at
+    if elapsed.total_seconds() <= timeout_hrs * 3600:
+        return False
+    _mark_task_as_failed(
+        uow,
+        run_record,
+        error_msg=_("Task exceeded timeout"),
+        technical_msg=f"Task timed out after {timeout_hrs} hours",
+        celery_state="TIMEOUT",
+    )
+    return True
+
+
+def _fail_if_stuck_pending(
+    uow: AbstractUnitOfWork, run_record: SelectionRunRecord, pending_timeout_minutes: int | None, celery_state: str
+) -> bool:
+    """Mark a record FAILED if it has sat in PENDING past the pending timeout. Returns True if it did.
+
+    A record still PENDING this long was never picked up by a worker, and it
+    must not keep blocking the other writing tasks on its assembly.
+    """
+    pending_mins = (
+        pending_timeout_minutes if pending_timeout_minutes is not None else config.PENDING_TASK_TIMEOUT_MINUTES
+    )
+    if not (run_record.is_pending and pending_mins and run_record.created_at):
+        return False
+    elapsed = datetime.now(UTC) - run_record.created_at
+    if elapsed.total_seconds() <= pending_mins * 60:
+        return False
+    _mark_task_as_failed(
+        uow,
+        run_record,
+        error_msg=_("Task did not start"),
+        technical_msg=f"Still PENDING after {pending_mins} minutes. Celery state: {celery_state}",
+        celery_state=celery_state,
+    )
+    return True
+
+
+def check_and_update_task_health(
+    uow: AbstractUnitOfWork,
+    task_id: uuid.UUID,
+    timeout_hours: int | None = None,
+    pending_timeout_minutes: int | None = None,
+) -> None:
     """
     Check if a task is still alive and update its status if it has died.
 
     Only checks tasks in PENDING or RUNNING state.
     Handles multiple failure scenarios:
     - Task is PENDING but Celery says it FAILED/REVOKED/REJECTED
+    - Task is still PENDING after the pending timeout (never picked up)
     - Task is RUNNING but Celery has no record (>24hrs old, died)
     - Task is RUNNING but Celery says FAILURE/REVOKED/REJECTED
     - Task exceeded timeout (if configured)
@@ -1045,6 +1102,7 @@ def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, ti
         uow: Unit of work for database operations
         task_id: UUID of the task (SelectionRunRecord.task_id)
         timeout_hours: Optional timeout in hours (overrides env config)
+        pending_timeout_minutes: Optional pending timeout in minutes (overrides the config constant)
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -1054,20 +1112,12 @@ def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, ti
         return  # Nothing to check
 
     # Check timeout first
-    timeout_hrs = timeout_hours if timeout_hours is not None else config.get_task_timeout_hours()
-    if timeout_hrs and run_record.created_at:
-        elapsed = datetime.now(UTC) - run_record.created_at
-        if elapsed.total_seconds() > timeout_hrs * 3600:
-            _mark_task_as_failed(
-                uow,
-                run_record,
-                error_msg=_("Task exceeded timeout"),
-                technical_msg=f"Task timed out after {timeout_hrs} hours",
-                celery_state="TIMEOUT",
-            )
-            return
+    if _fail_if_timed_out(uow, run_record, timeout_hours):
+        return
 
     celery_result, celery_state = _get_celery_task_state(run_record, task_id)
+    if _fail_if_stuck_pending(uow, run_record, pending_timeout_minutes, celery_state):
+        return
     if not celery_result:
         return
 
