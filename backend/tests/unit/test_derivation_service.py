@@ -46,6 +46,11 @@ from opendlp.service_layer.respondent_field_schema_service import (
     update_choice_option,
     update_field,
 )
+from opendlp.service_layer.tabular_data import (
+    PROBLEM_BLANK_HEADER_WITH_DATA,
+    PROBLEM_DUPLICATE_HEADER,
+    TabularDataError,
+)
 from tests.fakes import FakeUnitOfWork
 
 AS_OF = date(2026, 5, 13)
@@ -860,7 +865,7 @@ class TestUploadLargeMapping:
         user, assembly = _seed(uow)
         field = self._region_field(uow, user, assembly)
 
-        with pytest.raises(FieldDefinitionConflictError, match="empty"):
+        with pytest.raises(TabularDataError, match="empty"):
             upload_large_mapping(uow, user.id, assembly.id, field.id, csv_content=content)
 
     def test_rejects_a_single_column_file(self, uow):
@@ -949,22 +954,53 @@ class TestUploadLargeMapping:
 
         assert report.row_count == 2
 
-    def test_stops_parsing_once_the_row_cap_is_exceeded(self, uow, monkeypatch):
+    def test_rejects_a_file_over_the_row_cap(self, uow, monkeypatch):
         user, assembly = _seed(uow)
         field = self._region_field(uow, user, assembly)
         monkeypatch.setattr(derivation_service, "MAX_MAPPING_ROWS", 2)
-        # A field beyond csv's own limit: reaching it would raise csv.Error, so
-        # only a FieldDefinitionConflictError proves parsing stopped at the cap.
-        oversized_row = "X" * 200_000 + ",London\n"
 
-        with pytest.raises(FieldDefinitionConflictError, match="too many rows"):
+        with pytest.raises(FieldDefinitionConflictError, match=r"too many rows \(3\)"):
             upload_large_mapping(
                 uow,
                 user.id,
                 assembly.id,
                 field.id,
-                csv_content="postcode,region\nA1 1AA,London\nB2 2BB,London\nC3 3CC,North\n" + oversized_row,
+                csv_content="postcode,region\nA1 1AA,London\nB2 2BB,London\nC3 3CC,North\n",
             )
+
+    def test_a_leading_empty_column_does_not_take_the_input_position(self, uow):
+        """It used to: every key was blank, and the upload stored an empty table."""
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+
+        report = upload_large_mapping(
+            uow, user.id, assembly.id, field.id, csv_content=",pc,area\n,SW1A 1AA,London\n,M1 1AE,North\n"
+        )
+
+        assert report.row_count == 2
+        assert report.used_positional_headers is True
+
+    def test_rejects_an_unnamed_column_with_data(self, uow):
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+
+        with pytest.raises(TabularDataError) as exc_info:
+            upload_large_mapping(
+                uow, user.id, assembly.id, field.id, csv_content="postcode,region,\nSW1A 1AA,London,note\n"
+            )
+
+        assert [problem.kind for problem in exc_info.value.problems] == [PROBLEM_BLANK_HEADER_WITH_DATA]
+
+    def test_rejects_a_repeated_header(self, uow):
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+
+        with pytest.raises(TabularDataError) as exc_info:
+            upload_large_mapping(
+                uow, user.id, assembly.id, field.id, csv_content="postcode,region,region\nSW1A 1AA,London,North\n"
+            )
+
+        assert [problem.kind for problem in exc_info.value.problems] == [PROBLEM_DUPLICATE_HEADER]
 
     def test_lookups_serve_derivation(self, uow):
         user, assembly = _seed(uow)

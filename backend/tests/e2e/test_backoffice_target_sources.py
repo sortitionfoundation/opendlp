@@ -192,6 +192,49 @@ class TestExactCopyLifecycle:
 
 
 class TestLookupTable:
+    def _set_up_lookup_target(self, client, existing_assembly, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            category_id = _add_target(uow, existing_assembly, "region", ["North", "South"])
+        postcode = _field(postgres_session_factory, admin_user, existing_assembly, "postcode")
+        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        client.post(
+            f"{base}/{category_id}/configure",
+            data={
+                "modal": "1",
+                "method": "large_mapping",
+                "source_mode": "reuse",
+                "reuse_field_id": str(postcode.id),
+                "csrf_token": get_csrf_token(client, base),
+            },
+            headers={"HX-Request": "true"},
+        )
+        return base, category_id
+
+    def test_an_unnamed_column_with_data_is_shown_in_the_modal(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        base, category_id = self._set_up_lookup_target(
+            logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+        )
+
+        upload = logged_in_admin.post(
+            f"{base}/{category_id}/upload",
+            data={
+                "setup_step": "1",
+                "mapping_file": (io.BytesIO(b"postcode,region,\nSW1A 1AA,South,check\n"), "mapping.csv"),
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
+        )
+
+        assert upload.status_code == 422
+        assert (
+            b"Column C (after &#39;region&#39;) has no header but has data in it, starting at row 2. "
+            b"Delete the column, or give it a header."
+        ) in upload.data
+
     def test_set_up_then_upload_round_trip(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):

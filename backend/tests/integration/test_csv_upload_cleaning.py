@@ -4,9 +4,16 @@ ABOUTME: Blank, unnamed, duplicate and badly named columns across the upload ser
 import pytest
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondent_derivation import LargeMappingRule
+from opendlp.domain.respondent_field_schema import FieldType, RespondentFieldDefinition, RespondentFieldGroup
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer import respondent_field_schema_service, respondent_service, target_csv_import
+from opendlp.service_layer import (
+    derivation_service,
+    respondent_field_schema_service,
+    respondent_service,
+    target_csv_import,
+)
 from opendlp.service_layer.respondent_field_schema_service import (
     PROBLEM_ID_COLUMN_MISSING,
     PROBLEM_SAME_FIELD,
@@ -187,3 +194,51 @@ class TestTargetImport:
             self.import_targets(uow, admin_user, test_assembly, "\n\n")
 
         assert exc_info.value.user_msg() == "The file is empty or has no header row."
+
+
+class TestLargeMappingUpload:
+    @pytest.fixture
+    def region_field(self, uow, admin_user: User, test_assembly: Assembly):
+        uow.respondent_field_definitions.add(
+            RespondentFieldDefinition(
+                assembly_id=test_assembly.id,
+                field_key="postcode",
+                label="Postcode",
+                group=RespondentFieldGroup.ABOUT_YOU,
+                sort_order=10,
+                field_type=FieldType.TEXT,
+            )
+        )
+        field, _ = derivation_service.create_derived_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_key="region",
+            label="Region",
+            source_field_key="postcode",
+            rule=LargeMappingRule(),
+            output_values=["London", "North"],
+        )
+        uow.commit()
+        return field
+
+    def upload(self, uow, user, assembly, field, content: str):
+        return derivation_service.upload_large_mapping(uow, user.id, assembly.id, field.id, content)
+
+    def test_a_leading_empty_column_does_not_empty_the_table(
+        self, uow, admin_user: User, test_assembly: Assembly, region_field
+    ):
+        report = self.upload(
+            uow, admin_user, test_assembly, region_field, ",pc,area\n,SW1A 1AA,London\n,M1 1AE,North\n"
+        )
+
+        assert report.row_count == 2
+        entries = uow.respondent_field_mapping_entries.list_for_field(region_field.id)
+        assert {(e.lookup_key, e.output_value) for e in entries} == {("SW1A1AA", "London"), ("M11AE", "North")}
+
+    def test_a_repeated_header_is_rejected(self, uow, admin_user: User, test_assembly: Assembly, region_field):
+        with pytest.raises(TabularDataError) as exc_info:
+            self.upload(uow, admin_user, test_assembly, region_field, "postcode,region,region\nSW1A 1AA,London,North\n")
+
+        assert [problem.kind for problem in exc_info.value.problems] == [PROBLEM_DUPLICATE_HEADER]
+        assert uow.respondent_field_mapping_entries.count_for_field(region_field.id) == 0
