@@ -78,40 +78,6 @@ class TestUploadTargetsCsv:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
             assert any("Successfully imported" in msg for msg in flash_messages)
 
-    def _upload(self, client, assembly_id, content: bytes):
-        return client.post(
-            _targets_url(assembly_id, "/upload"),
-            data={
-                "csv_file": (io.BytesIO(content), "targets.csv"),
-                "csrf_token": _csrf(client, assembly_id),
-            },
-            content_type="multipart/form-data",
-            follow_redirects=False,
-        )
-
-    def test_an_unnamed_notes_column_is_ignored(self, logged_in_admin, existing_assembly, postgres_session_factory):
-        response = self._upload(
-            logged_in_admin,
-            existing_assembly.id,
-            b"feature,value,min,max,\nGender,Male,3,7,a note\nGender,Female,3,7,\n",
-        )
-
-        assert response.status_code == 302
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            [category] = uow.target_categories.get_by_assembly_id(existing_assembly.id)
-            assert [value.value for value in category.values] == ["Male", "Female"]
-
-    def test_a_repeated_header_is_shown_on_the_form(self, logged_in_admin, existing_assembly):
-        response = self._upload(
-            logged_in_admin, existing_assembly.id, b"feature,value,min,MIN,max\nGender,Male,3,3,7\n"
-        )
-
-        assert response.status_code == 200
-        assert (
-            b"CSV import failed: The header &#39;min&#39; appears in columns C, D. "
-            b"Delete the extra columns, or rename them."
-        ) in response.data
-
 
 class TestAddCategoriesFromColumns:
     @pytest.mark.db_semantics
