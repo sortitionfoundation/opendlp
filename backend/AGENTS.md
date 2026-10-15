@@ -109,6 +109,9 @@ See [docs/configuration.md](docs/configuration.md) for complete configuration re
 - Creating an assembly makes you its assembly manager
 - Ask a capability, not a role - see [Roles and permissions](docs/roles-and-permissions.md)
 - OAuth and password authentication both supported
+- Only one task that writes to an assembly (a selection, deleting old tabs,
+  reset to pool) may be unfinished at a time; reads never block. See
+  [Background Tasks](docs/background_tasks.md#one-writing-task-per-assembly)
 
 ## Development Patterns
 

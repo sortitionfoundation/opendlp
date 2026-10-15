@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<!--
+ABOUTME: Explainer with embedded mermaid flow charts for where an assembly's respondents and targets live.
+ABOUTME: Covers the external Google Sheets data source, the OpenDLP database, and the main routes data takes into it.
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Workflow: where respondents and targets live</title>
+        <style>
+            :root {
+                --link: #1d70b8;
+                --ink: #0b0c0c;
+                --muted: #505a5f;
+                --paper: #ffffff;
+                --panel: #f3f2f1;
+                --highlight: #fff7d6;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                max-width: 1100px;
+                margin: 2rem auto;
+                padding: 0 1.25rem 4rem;
+                color: var(--ink);
+                line-height: 1.5;
+                background: var(--paper);
+            }
+            h1, h2, h3 { color: var(--ink); line-height: 1.2; }
+            h1 { border-bottom: 3px solid var(--link); padding-bottom: .5rem; margin-top: 0; }
+            h2 { margin-top: 2.5rem; border-bottom: 1px solid #b1b4b6; padding-bottom: .25rem; }
+            a { color: var(--link); }
+            p.lede { font-size: 1.1rem; color: var(--muted); }
+
+            .legend {
+                display: flex;
+                gap: .5rem;
+                flex-wrap: wrap;
+                font-size: .85rem;
+                margin: 1rem 0 .5rem;
+            }
+            .legend span {
+                padding: .2rem .55rem;
+                border-radius: 3px;
+                border: 1px solid rgba(0,0,0,.15);
+            }
+            .leg-sheet  { background: #c8e6c9; }
+            .leg-db     { background: #cce2f7; }
+            .leg-target { background: #fad7a8; }
+            .leg-resp   { background: #f8bbd0; }
+            .leg-reg    { background: #e1bee7; }
+            .leg-select { background: #d7ccc8; }
+            .leg-copy   { background: #ffffff; border-style: dashed !important; border-color: #505a5f !important; }
+            .leg-plan   { background: #f3f2f1; border-style: dashed !important; border-color: #b1b4b6 !important; color: var(--muted); }
+
+            .flowchart {
+                background: var(--panel);
+                padding: 1rem;
+                border-radius: 4px;
+                overflow-x: auto;
+                margin: 1rem 0 .5rem;
+            }
+            .hint {
+                font-size: .9rem;
+                color: var(--muted);
+                margin: 0 0 2rem;
+            }
+
+            details {
+                background: #f8f8f8;
+                border-left: 4px solid var(--link);
+                padding: .75rem 1rem;
+                margin: .5rem 0;
+                border-radius: 2px;
+            }
+            details summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+            details[open] summary { margin-bottom: .5rem; }
+
+            .callout {
+                background: var(--highlight);
+                border-left: 4px solid #b58840;
+                padding: .75rem 1rem;
+                margin: 1rem 0;
+                border-radius: 2px;
+            }
+            .callout p:last-child { margin-bottom: 0; }
+
+            .glossary dt {
+                font-weight: 700;
+                margin-top: 1.25rem;
+                color: var(--link);
+            }
+            .glossary dd {
+                margin-left: 1.25rem;
+                margin-top: .25rem;
+            }
+            code {
+                background: #eef;
+                padding: 1px 5px;
+                border-radius: 2px;
+                font-size: .9em;
+                word-break: break-all;
+            }
+            ul, ol { padding-left: 1.4rem; }
+            li { margin: .15rem 0; }
+
+            table {
+                border-collapse: collapse;
+                margin: .5rem 0;
+                font-size: .95rem;
+            }
+            th, td {
+                border: 1px solid #b1b4b6;
+                padding: .35rem .6rem;
+                text-align: left;
+                vertical-align: top;
+            }
+            th { background: var(--panel); }
+
+  /* Highlight a section briefly when jumped to via fragment link */
+            :target {
+                animation: flash 1.5s ease-out;
+            }
+            @keyframes flash {
+                0%   { background: var(--highlight); }
+                100% { background: transparent; }
+            }
+
+            .mermaid .node rect, .mermaid .node polygon { cursor: pointer; }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    </head>
+    <body>
+        <h1>Workflow: where respondents and targets live</h1>
+        <p class="lede">
+            Every assembly has one home for its <a href="#g-respondent">respondents</a> and <a href="#g-target">targets</a>: either an external Google Sheets spreadsheet, or the OpenDLP database. This page follows the data from where it starts to where the selection reads it, and back out again.
+        </p>
+
+        <div class="callout">
+            <p>
+                <strong>One source of truth per assembly.</strong> With Google Sheets, the spreadsheet is the truth and OpenDLP keeps nothing on disk. With the OpenDLP database, the database is the truth: copies can exist elsewhere (a CSV you uploaded, a spreadsheet OpenDLP exports to) but they are secondary, and changing them does not change the assembly.
+            </p>
+        </div>
+
+        <div class="legend" aria-label="Flow chart legend">
+            <span class="leg-sheet">Google Sheets</span>
+            <span class="leg-db">OpenDLP database</span>
+            <span class="leg-target">Targets step</span>
+            <span class="leg-resp">Respondents step</span>
+            <span class="leg-reg">Registration page</span>
+            <span class="leg-select">Selection</span>
+            <span class="leg-copy">Secondary copy</span>
+            <span class="leg-plan">Planned, not built yet</span>
+        </div>
+
+        <h2 id="overview">The top-level split</h2>
+        <p>
+            The first choice for an assembly is its <a href="#g-data-source">data source</a>. Everything else on this page hangs off that choice.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart TD
+    classDef sheet  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef db     fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef select fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+
+    Q{"Where do this assembly's&lt;br/&gt;respondents and targets live?"}
+
+    GS["External Google Sheets&lt;br/&gt;spreadsheet"]:::sheet
+    DB[("OpenDLP database")]:::db
+
+    Q --> GS
+    Q --> DB
+
+    GS --> P0["Path 0&lt;br/&gt;You fill the spreadsheet,&lt;br/&gt;OpenDLP reads it"]:::sheet
+
+    DB --> P1["Path 1&lt;br/&gt;Targets CSV +&lt;br/&gt;respondents CSV"]:::db
+    DB --> P2["Path 2&lt;br/&gt;Targets in web UI +&lt;br/&gt;registration page"]:::db
+    DB --> P3["Path 3&lt;br/&gt;Path 2 + auto-export&lt;br/&gt;to Google Sheets"]:::db
+    DB --> P4["Path 4&lt;br/&gt;Path 2 + some&lt;br/&gt;respondents by CSV"]:::db
+    DB --> P5["Path 5&lt;br/&gt;Targets CSV +&lt;br/&gt;registration page"]:::db
+    DB --> P6["Path 6&lt;br/&gt;Respondents CSV, then&lt;br/&gt;targets built from it"]:::db
+
+    S0(["Selection reads the spreadsheet,&lt;br/&gt;writes results back to it"]):::select
+    SD(["Selection reads the database,&lt;br/&gt;writes results back to it"]):::select
+
+    P0 --> S0
+    P1 --> SD
+    P2 --> SD
+    P3 --> SD
+    P4 --> SD
+    P5 --> SD
+    P6 --> SD
+
+    click GS "#path-0" "Path 0 - external Google Sheets"
+    click P0 "#path-0" "Path 0 - external Google Sheets"
+    click DB "#db-routes" "Every route into the database"
+    click P1 "#path-1" "Path 1"
+    click P2 "#path-2" "Path 2"
+    click P3 "#path-3" "Path 3"
+    click P4 "#path-4" "Path 4"
+    click P5 "#path-5" "Path 5"
+    click P6 "#path-6" "Path 6"
+    click S0 "#path-0" "Path 0 - external Google Sheets"
+    click SD "#selection-detail" "Selection from the database"
+            </pre>
+        </div>
+        <p class="hint">
+            Click any box to jump to the flow chart that expands it. The six database paths are the common ones, not every combination: see <a href="#combining">combining routes</a>.
+        </p>
+
+        <h2 id="path-0">Path 0 &mdash; External Google Sheets</h2>
+        <p>
+            The respondents and targets live in a Google Sheets spreadsheet that the organiser looks after. OpenDLP is told the spreadsheet's URL and the names of the two <a href="#g-tab">tabs</a> that hold the respondents and the targets. It never stores the respondents: it reads them into memory when a selection runs, and writes the results straight back to the same spreadsheet.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef sheet  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef resp   fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef select fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+    classDef mem    fill:#ffffff,stroke:#505a5f,color:#0b0c0c,stroke-dasharray:5 5
+
+    subgraph SHEET["Organiser's Google Sheets spreadsheet"]
+        direction TB
+        T["Targets tab"]:::target
+        R["Respondents tab"]:::resp
+        OUT["New tabs:&lt;br/&gt;Original Selected - output - N&lt;br/&gt;Remaining - output - N"]:::sheet
+    end
+
+    C["Organiser gives OpenDLP&lt;br/&gt;the URL + both tab names"]:::sheet
+    M["Selection runs&lt;br/&gt;(data in memory only)"]:::mem
+    S(["Selection result"]):::select
+
+    C --> M
+    T -. read .-> M
+    R -. read .-> M
+    M --> S
+    S -. write .-> OUT
+
+    click C "#gs-config" "Configuring Google Sheets"
+    click M "#gs-memory" "Nothing saved to disk"
+    click OUT "#gs-memory" "Results go back to the spreadsheet"
+            </pre>
+        </div>
+        <p class="hint">Click a box to jump to its details.</p>
+        <details id="gs-config">
+            <summary>Telling OpenDLP about the spreadsheet</summary>
+            <p>
+                On the Data tab the organiser picks Google Sheets, pastes the spreadsheet URL, and names the tab with the respondents and the tab with the targets. For a replacement selection there can also be a third tab, listing the people already selected. The spreadsheet must be shared with OpenDLP's service account so it can read and write.
+            </p>
+            <p>
+                Everything about the data &mdash; adding a respondent, changing a target value, fixing a typo &mdash; happens in the spreadsheet, using whatever tools the organiser already has. OpenDLP only sees the change the next time it reads.
+            </p>
+        </details>
+        <details id="gs-memory">
+            <summary>Nothing about respondents is saved to disk</summary>
+            <p>
+                When a selection runs, OpenDLP reads both tabs into memory, runs the selection, and writes the selected respondents (and the remaining respondents) to new tabs in the same spreadsheet. The tab names come from the sortition-algorithms library (<code>GSheetTabNamer</code>), not from OpenDLP: <code>Original Selected - output - N</code> and <code>Remaining - output - N</code>, where <code>N</code> is the lowest number not already used, so earlier runs are never overwritten. None of the respondent details are saved by OpenDLP; once the task is done they are gone from OpenDLP entirely.
+            </p>
+            <p>
+                That makes this path simple to reason about for <a href="#g-gdpr">erasure requests</a>: the spreadsheet is the only copy to blank.
+            </p>
+        </details>
+
+        <h2 id="db-routes">The OpenDLP database &mdash; every route in</h2>
+        <p>
+            For every other workflow, the canonical data is in the OpenDLP database. This chart shows each route by which targets and respondents can get there, built or planned. The paths further down are particular journeys through it.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef db     fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef resp   fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef reg    fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+    classDef copy   fill:#ffffff,stroke:#505a5f,color:#0b0c0c,stroke-dasharray:5 5
+    classDef plan   fill:#f3f2f1,stroke:#b1b4b6,color:#505a5f,stroke-dasharray:5 5
+
+    subgraph TARGETS_IN["Targets in"]
+        direction TB
+        TUI["Enter in the web UI,&lt;br/&gt;from scratch"]:::target
+        TFR["Build from respondent data,&lt;br/&gt;then enter the numbers&lt;br/&gt;(needs respondents first)"]:::target
+        TCSV["Upload a targets CSV"]:::target
+        TTAB["Import a table: Google Sheets,&lt;br/&gt;xlsx, Excel Online ..."]:::plan
+        TCOPY["Copy from another assembly"]:::plan
+    end
+
+    subgraph RESP_IN["Respondents in"]
+        direction TB
+        RCSV["Upload a respondents CSV"]:::resp
+        RREG["People sign up on&lt;br/&gt;the registration page&lt;br/&gt;(needs targets first)"]:::reg
+        RTAB["Import a table: Google Sheets,&lt;br/&gt;xlsx, Excel Online ..."]:::plan
+    end
+
+    DBT[("Targets")]:::db
+    DBR[("Respondents")]:::db
+
+    TUI --> DBT
+    TFR --> DBT
+    TCSV --> DBT
+    TTAB -.-> DBT
+    TCOPY -.-> DBT
+
+    RCSV --> DBR
+    RREG --> DBR
+    RTAB -.-> DBR
+
+    subgraph OUT["Secondary copies out"]
+        direction TB
+        XCSV["Export respondents to CSV"]:::copy
+        XGS["Export respondents to&lt;br/&gt;Google Sheets"]:::copy
+        XAUTO["Auto-export every&lt;br/&gt;respondent change&lt;br/&gt;to Google Sheets"]:::copy
+        XT["Export targets"]:::plan
+    end
+
+    DBR -.-> XCSV
+    DBR -.-> XGS
+    DBR -.-> XAUTO
+    DBT -.-> XT
+
+    click TUI "#t-ui" "Targets in the web UI"
+    click TFR "#t-from-resp" "Targets from respondent data"
+    click TCSV "#t-csv" "Targets CSV"
+    click TTAB "#planned" "Planned"
+    click TCOPY "#t-copy" "Copy from another assembly"
+    click RCSV "#r-csv" "Respondents CSV"
+    click RREG "#r-reg" "Registration page"
+    click RTAB "#planned" "Planned"
+    click XCSV "#exports" "Exports"
+    click XGS "#exports" "Exports"
+    click XAUTO "#exports" "Exports"
+    click XT "#exports" "Exports"
+            </pre>
+        </div>
+        <p class="hint">
+            Grey dashed boxes are planned. White dashed boxes are secondary copies: OpenDLP is still the source of truth.
+        </p>
+
+        <details id="t-ui">
+            <summary>Targets: enter them in the web UI, from scratch</summary>
+            <p>
+                Add each target (Gender, Age ...), then its values (Woman, Man, Non-binary ...), then the numbers: percentage, and the min and max to select. See <a href="workflow-targets-and-fields.html">the targets and fields workflow</a> for that flow in detail.
+            </p>
+        </details>
+        <details id="t-from-resp">
+            <summary>Targets: build them from respondent data</summary>
+            <p>
+                When respondents are already in the database, OpenDLP can propose targets and values from the respondents' columns: pick a column, and its distinct values become the target's values. The organiser then fills in the numbers in the web UI. This is the only route that needs respondents first.
+            </p>
+        </details>
+        <details id="t-csv">
+            <summary>Targets: upload a targets CSV</summary>
+            <p>
+                One row per target value: the target, the value, and the numbers. The planned imports from Google Sheets, xlsx files, Excel Online and so on take a table of the same shape, so on this page they count as variations of the CSV upload.
+            </p>
+        </details>
+        <details id="t-copy">
+            <summary>Targets: copy from another assembly (planned)</summary>
+            <p>
+                Copies the targets, their values and each value's percentage, but <strong>not</strong> the min and max. Those are worked out afresh from the copied percentage and the new assembly's number to select &mdash; the old assembly's min and max were for a different number of people.
+            </p>
+        </details>
+        <details id="r-csv">
+            <summary>Respondents: upload a respondents CSV</summary>
+            <p>
+                One row per respondent, one column per question. As with targets, the planned imports from other tabular sources take a table of the same shape and count as variations of this upload.
+            </p>
+        </details>
+        <details id="r-reg">
+            <summary>Respondents: the registration page</summary>
+            <p>
+                The organiser builds a registration page, and each person who signs up becomes a respondent in the database. Targets are expected to exist <strong>before</strong> the page is built: building the page starts by linking each target to the question that answers it, so that every respondent arrives with the data every target needs. See <a href="workflow-reg-page.html">the registration page workflow</a>.
+            </p>
+        </details>
+
+        <h2 id="paths">The main paths through the database</h2>
+        <p>
+            Six common journeys. They differ in where the targets come from, where the respondents come from, and what order those happen in. All of them end the same way: a <a href="#selection-detail">selection from the database</a>.
+        </p>
+
+        <h3 id="path-1">Path 1 &mdash; Upload targets, upload respondents</h3>
+        <p>
+            Both arrive as uploads. The order does not matter here &mdash; neither upload depends on the other &mdash; but targets first is the natural way to think about it.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef db     fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef resp   fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef select fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+
+    A["Upload targets CSV"]:::target
+    B["Upload respondents CSV"]:::resp
+    D[("OpenDLP database")]:::db
+    S(["Selection"]):::select
+
+    A --> B --> D --> S
+
+    click A "#t-csv" "Targets CSV"
+    click B "#r-csv" "Respondents CSV"
+    click S "#selection-detail" "Selection"
+            </pre>
+        </div>
+
+        <h3 id="path-2">Path 2 &mdash; Targets in the web UI, then a registration page</h3>
+        <p>
+            The fully in-OpenDLP route: no files at all.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef db     fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef reg    fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+    classDef select fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+
+    A["Enter targets&lt;br/&gt;in the web UI"]:::target
+    B["Build registration page&lt;br/&gt;starting from the targets"]:::reg
+    C["People register"]:::reg
+    D[("Respondents in&lt;br/&gt;OpenDLP database")]:::db
+    S(["Selection"]):::select
+
+    A --> B --> C --> D --> S
+
+    click A "#t-ui" "Targets in the web UI"
+    click B "#r-reg" "Registration page"
+    click C "#r-reg" "Registration page"
+    click S "#selection-detail" "Selection"
+            </pre>
+        </div>
+
+        <h3 id="path-3">Path 3 &mdash; Path 2, with respondents auto-exported to Google Sheets</h3>
+        <p>
+            The same as path 2, but every change to a respondent is copied to a Google Sheets spreadsheet as it happens. The spreadsheet is a convenience for the team &mdash; to filter, sort or share &mdash; not a second source of truth: edits made in it do not come back.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef db     fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef reg    fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+    classDef select fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+    classDef copy   fill:#ffffff,stroke:#505a5f,color:#0b0c0c,stroke-dasharray:5 5
+
+    A["Enter targets&lt;br/&gt;in the web UI"]:::target
+    B["Build registration page&lt;br/&gt;starting from the targets"]:::reg
+    C["People register"]:::reg
+    D[("Respondents in&lt;br/&gt;OpenDLP database")]:::db
+    G["Google Sheets spreadsheet&lt;br/&gt;(read-only copy)"]:::copy
+    S(["Selection"]):::select
+
+    A --> B --> C --> D --> S
+    D -. "auto-export&lt;br/&gt;on every change" .-> G
+
+    click A "#t-ui" "Targets in the web UI"
+    click B "#r-reg" "Registration page"
+    click C "#r-reg" "Registration page"
+    click G "#exports" "Exports"
+    click S "#selection-detail" "Selection"
+            </pre>
+        </div>
+
+        <h3 id="path-4">Path 4 &mdash; Path 2, plus some respondents from a CSV</h3>
+        <p>
+            Most respondents come through the registration page, but the organiser also does some targeted recruitment outside it &mdash; door-knocking, a community group, a phone list &mdash; and uploads those respondents as a CSV. Both streams end up in the same pool.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef db     fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef resp   fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef reg    fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+    classDef select fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+
+    A["Enter targets&lt;br/&gt;in the web UI"]:::target
+    B["Build registration page&lt;br/&gt;starting from the targets"]:::reg
+    C["People register"]:::reg
+    X["Targeted recruitment&lt;br/&gt;outside the page"]:::resp
+    U["Upload respondents CSV"]:::resp
+    D[("Respondents in&lt;br/&gt;OpenDLP database")]:::db
+    S(["Selection"]):::select
+
+    A --> B --> C --> D
+    X --> U --> D
+    D --> S
+
+    click A "#t-ui" "Targets in the web UI"
+    click B "#r-reg" "Registration page"
+    click C "#r-reg" "Registration page"
+    click U "#r-csv" "Respondents CSV"
+    click S "#selection-detail" "Selection"
+            </pre>
+        </div>
+        <p class="hint">
+            The uploaded CSV needs the same columns the registration page collects &mdash; at least one for every target &mdash; or those respondents cannot be selected fairly.
+        </p>
+
+        <h3 id="path-5">Path 5 &mdash; Upload targets, then a registration page</h3>
+        <p>
+            Path 2 with the targets uploaded instead of typed in &mdash; handy when the targets already exist in a spreadsheet from the planning work.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef db     fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef reg    fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+    classDef select fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+
+    A["Upload targets CSV"]:::target
+    B["Build registration page&lt;br/&gt;starting from the targets"]:::reg
+    C["People register"]:::reg
+    D[("Respondents in&lt;br/&gt;OpenDLP database")]:::db
+    S(["Selection"]):::select
+
+    A --> B --> C --> D --> S
+
+    click A "#t-csv" "Targets CSV"
+    click B "#r-reg" "Registration page"
+    click C "#r-reg" "Registration page"
+    click S "#selection-detail" "Selection"
+            </pre>
+        </div>
+
+        <h3 id="path-6">Path 6 &mdash; Upload respondents, then build targets from them</h3>
+        <p>
+            The one path where respondents come first. The respondent data already says which values exist in each column, so the targets and their values are built from it and the organiser only has to fill in the numbers.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef db     fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef resp   fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef select fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+
+    A["Upload respondents CSV"]:::resp
+    B["Create targets and values&lt;br/&gt;from respondent data"]:::target
+    C["Fill in the target numbers&lt;br/&gt;in the web UI"]:::target
+    D[("OpenDLP database")]:::db
+    S(["Selection"]):::select
+
+    A --> B --> C --> D --> S
+
+    click A "#r-csv" "Respondents CSV"
+    click B "#t-from-resp" "Targets from respondent data"
+    click C "#t-ui" "Targets in the web UI"
+    click S "#selection-detail" "Selection"
+            </pre>
+        </div>
+
+        <h2 id="after">Around the paths</h2>
+        <details id="combining" open>
+            <summary>Combining routes</summary>
+            <p>
+                The paths are the common journeys, not the only ones. Any route into the database can be followed by any other, because they all write to the same place:
+            </p>
+            <ul>
+                <li>Upload a targets CSV, then edit it in the web UI: change values, adjust numbers, add a whole new target.</li>
+                <li>Build targets from respondent data, then add a target the data does not cover yet.</li>
+                <li>Run a registration page and upload extra respondents (path 4) while also auto-exporting to Google Sheets (path 3).</li>
+            </ul>
+            <p>
+                The one ordering that matters: a registration page is built <em>from</em> targets, so targets come before the page. Adding a target after the page is live means the page needs a question for it too.
+            </p>
+        </details>
+        <details id="selection-detail">
+            <summary>Selection from the database</summary>
+            <p>
+                The selection reads targets and respondents from the database and records the result there too: each respondent's status changes to show whether they were selected. Nothing needs to go out to a spreadsheet for the selection to happen; exporting the result is an optional extra.
+            </p>
+        </details>
+        <details id="exports">
+            <summary>Exports: secondary copies</summary>
+            <p>
+                Exports are not part of how data gets <em>in</em>, but they help teams with tasks that suit a spreadsheet better than a web page.
+            </p>
+            <table>
+                <thead>
+                    <tr><th>Export</th><th>Status</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Respondents to CSV</td><td>Built</td><td>A one-off download.</td></tr>
+                    <tr><td>Respondents to Google Sheets</td><td>Built</td><td>A one-off write to a spreadsheet.</td></tr>
+                    <tr><td>Auto-export respondents to Google Sheets</td><td>Built</td><td>Every respondent change is copied across, a short while after it happens. See <a href="#path-3">path 3</a>.</td></tr>
+                    <tr><td>Targets</td><td>Planned</td><td></td></tr>
+                </tbody>
+            </table>
+            <p>
+                In every case OpenDLP stays the source of truth. A change made in an exported copy does not flow back, and the next auto-export will overwrite it.
+            </p>
+        </details>
+        <details id="planned">
+            <summary>Planned and possible routes not drawn as paths</summary>
+            <p><strong>Planned:</strong></p>
+            <ul>
+                <li>Import a table of targets or of respondents from Google Sheets, an xlsx file, Excel Online and so on. Same shape as the CSV, so drawn here as a variation of the CSV upload.</li>
+                <li>Copy the targets from another assembly &mdash; <a href="#t-copy">details above</a>.</li>
+                <li>Export targets.</li>
+            </ul>
+            <p><strong>Possible, one day:</strong> import targets or respondents from non-tabular data (such as a JSON upload), or set them through a REST API. Left out of the charts so they stay about what exists or is on the way.</p>
+        </details>
+
+        <h2 id="glossary">Glossary</h2>
+        <dl class="glossary">
+            <dt id="g-data-source">Data source</dt>
+            <dd>
+                Where an assembly's respondents come from, as chosen on the Data tab: Google Sheets, or the OpenDLP database (filled by CSV upload, registration page, or both). It never means where a target's percentages come from.
+            </dd>
+            <dt id="g-respondent">Respondent</dt>
+            <dd>
+                Anyone in an assembly's data, whatever their status: in the pool, selected, or confirmed.
+            </dd>
+            <dt id="g-target">Target</dt>
+            <dd>
+                One thing the selection balances on, such as Gender or Age. Each has values (Woman, 18&ndash;24 ...), and each value has the numbers: a percentage, and a min and max to select.
+            </dd>
+            <dt id="g-tab">Tab</dt>
+            <dd>
+                One tab inside a Google Sheets spreadsheet. The code sometimes calls it a worksheet.
+            </dd>
+            <dt id="g-gdpr">Erasure</dt>
+            <dd>
+                When someone asks for their details to be deleted, every copy has to be found and blanked. On the database paths OpenDLP blanks the respondent's row; any exported copies are the organiser's to deal with. On path 0 the spreadsheet is the only copy.
+            </dd>
+        </dl>
+
+        <script>
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'default',
+                securityLevel: 'loose',
+                flowchart: { curve: 'basis', useMaxWidth: true }
+            });
+
+  // When a flow-chart click jumps to a <details>, open it so the content is visible.
+            window.addEventListener('hashchange', () => {
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+  // Also handle the case where the page loads with a hash already set.
+            window.addEventListener('load', () => {
+                if (!window.location.hash) return;
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+        </script>
+    </body>
+</html>
