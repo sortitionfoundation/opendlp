@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-13 10:15+0200\n"
+"POT-Creation-Date: 2026-10-15 09:50+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -6166,6 +6166,7 @@ msgid "Type to search by email or name…"
 msgstr "Gépelj a kereséshez e-mail cím vagy név alapján…"
 
 #: templates/backoffice/assembly_registration.html:13
+#: templates/backoffice/components/assembly_tabs.html:52
 msgid "Registration"
 msgstr "Regisztráció"
 
@@ -6833,10 +6834,6 @@ msgstr "Bezárás"
 
 #: templates/backoffice/components/assembly_tabs.html:33
 msgid "Project Details"
-msgstr ""
-
-#: templates/backoffice/components/assembly_tabs.html:52
-msgid "Registration Fields"
 msgstr ""
 
 #: templates/backoffice/components/assembly_tabs.html:65
