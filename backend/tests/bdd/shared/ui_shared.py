@@ -47,6 +47,8 @@ def _(page: Page):
 def _(page: Page):
     """the user uses an invalid invite code."""
     page.fill('input[name="invite_code"]', "invalidcode123")
+    page.fill('input[name="first_name"]', "New")
+    page.fill('input[name="last_name"]', "User")
     page.fill('input[name="email"]', NEWUSER_EMAIL)
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
@@ -58,6 +60,8 @@ def _(page: Page):
 def _(page: Page, user_invite: str):
     """the user uses a valid invite code."""
     page.fill('input[name="invite_code"]', user_invite)
+    page.fill('input[name="first_name"]', "New")
+    page.fill('input[name="last_name"]', "User")
     page.fill('input[name="email"]', NEWUSER_EMAIL)
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)

@@ -49,7 +49,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     },
     {
     "key": "registration",
-    "label": _("Registration Fields"),
+    "label": _("Registration"),
     "href": url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "registration"
     },
@@ -68,7 +68,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     "disabled": not selection_enabled
     }
     ] %}
-    {% if feature('results_dashboard') %}
+    {% if feature("results_dashboard") %}
         {% set _ignored = tab_items.append({
         "key": "dashboard",
         "label": _("Dashboard"),

@@ -40,6 +40,8 @@ def _(test_database: sessionmaker, admin_user):
 def _(page: Page, user_invite: str):
     """Fill out and submit password registration form."""
     page.fill('input[name="invite_code"]', user_invite)
+    page.fill('input[name="first_name"]', "New")
+    page.fill('input[name="last_name"]', "User")
     page.fill('input[name="email"]', NEWUSER_EMAIL)
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
