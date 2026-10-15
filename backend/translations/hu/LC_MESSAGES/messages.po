@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-15 11:34+0000\n"
+"POT-Creation-Date: 2026-10-15 13:07+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -535,7 +535,7 @@ msgid "Reset all to pool"
 msgstr ""
 
 #: src/opendlp/domain/value_objects.py:218
-#: src/opendlp/entrypoints/blueprints/respondents.py:489
+#: src/opendlp/entrypoints/blueprints/respondents.py:517
 #: templates/backoffice/components/table.html:203
 #: templates/respondents/view_respondents.html:131
 msgid "Pool"
@@ -543,7 +543,7 @@ msgstr "Jelentkezők"
 
 #: src/opendlp/domain/value_objects.py:219
 #: src/opendlp/entrypoints/blueprints/backoffice.py:269
-#: src/opendlp/entrypoints/blueprints/respondents.py:490
+#: src/opendlp/entrypoints/blueprints/respondents.py:518
 #: src/opendlp/service_layer/dashboard_stats.py:357
 #: src/opendlp/service_layer/selection_report.py:212
 #: templates/backoffice/assembly_dashboard.html:113
@@ -558,7 +558,7 @@ msgstr "Kiválasztva"
 
 #: src/opendlp/domain/value_objects.py:220
 #: src/opendlp/entrypoints/blueprints/backoffice.py:274
-#: src/opendlp/entrypoints/blueprints/respondents.py:491
+#: src/opendlp/entrypoints/blueprints/respondents.py:519
 #: src/opendlp/service_layer/dashboard_stats.py:359
 #: templates/backoffice/assembly_dashboard.html:115
 #: templates/backoffice/assembly_dashboard.html:116
@@ -568,20 +568,20 @@ msgid "Confirmed"
 msgstr "Megerősítve"
 
 #: src/opendlp/domain/value_objects.py:221
-#: src/opendlp/entrypoints/blueprints/respondents.py:492
+#: src/opendlp/entrypoints/blueprints/respondents.py:520
 #: templates/backoffice/components/table.html:212
 #: templates/respondents/view_respondents.html:134
 msgid "Withdrawn"
 msgstr "Visszalépett"
 
 #: src/opendlp/domain/value_objects.py:222
-#: src/opendlp/entrypoints/blueprints/respondents.py:493
+#: src/opendlp/entrypoints/blueprints/respondents.py:521
 #: templates/backoffice/components/table.html:215
 msgid "Test submission"
 msgstr "Tesztbeküldés"
 
 #: src/opendlp/domain/value_objects.py:223
-#: src/opendlp/entrypoints/blueprints/respondents.py:494
+#: src/opendlp/entrypoints/blueprints/respondents.py:522
 #: templates/backoffice/assembly_view_respondent.html:228
 #: templates/backoffice/components/table.html:218
 msgid "Deleted"
@@ -1696,9 +1696,9 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:317
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:651
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:680
-#: src/opendlp/entrypoints/blueprints/respondents.py:760
-#: src/opendlp/entrypoints/blueprints/respondents.py:891
-#: src/opendlp/entrypoints/blueprints/respondents.py:1049
+#: src/opendlp/entrypoints/blueprints/respondents.py:788
+#: src/opendlp/entrypoints/blueprints/respondents.py:919
+#: src/opendlp/entrypoints/blueprints/respondents.py:1077
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/target_sources.py:644
 #: src/opendlp/entrypoints/blueprints/target_sources.py:667
@@ -1773,16 +1773,18 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1214
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1238
 #: src/opendlp/entrypoints/blueprints/respondents.py:263
-#: src/opendlp/entrypoints/blueprints/respondents.py:417
-#: src/opendlp/entrypoints/blueprints/respondents.py:469
-#: src/opendlp/entrypoints/blueprints/respondents.py:510
-#: src/opendlp/entrypoints/blueprints/respondents.py:566
-#: src/opendlp/entrypoints/blueprints/respondents.py:625
-#: src/opendlp/entrypoints/blueprints/respondents.py:751
-#: src/opendlp/entrypoints/blueprints/respondents.py:817
-#: src/opendlp/entrypoints/blueprints/respondents.py:882
-#: src/opendlp/entrypoints/blueprints/respondents.py:1046
-#: src/opendlp/entrypoints/blueprints/respondents.py:1093
+#: src/opendlp/entrypoints/blueprints/respondents.py:313
+#: src/opendlp/entrypoints/blueprints/respondents.py:398
+#: src/opendlp/entrypoints/blueprints/respondents.py:445
+#: src/opendlp/entrypoints/blueprints/respondents.py:497
+#: src/opendlp/entrypoints/blueprints/respondents.py:538
+#: src/opendlp/entrypoints/blueprints/respondents.py:594
+#: src/opendlp/entrypoints/blueprints/respondents.py:653
+#: src/opendlp/entrypoints/blueprints/respondents.py:779
+#: src/opendlp/entrypoints/blueprints/respondents.py:845
+#: src/opendlp/entrypoints/blueprints/respondents.py:910
+#: src/opendlp/entrypoints/blueprints/respondents.py:1074
+#: src/opendlp/entrypoints/blueprints/respondents.py:1121
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -2368,7 +2370,7 @@ msgstr "Hiba történt a beállítások mentése közben"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:499
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:446
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:191
-#: src/opendlp/service_layer/respondent_service.py:375
+#: src/opendlp/service_layer/respondent_service.py:382
 #, python-format
 msgid "Reset %(count)s respondents to the pool"
 msgstr "%(count)s fő visszaállítva Jelentkező állapotba"
@@ -2910,8 +2912,8 @@ msgid "Original option value is required"
 msgstr "Az eredeti választható érték megadása kötelező"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1115
-#: src/opendlp/service_layer/respondent_field_schema_service.py:526
-#: src/opendlp/service_layer/respondent_field_schema_service.py:558
+#: src/opendlp/service_layer/respondent_field_schema_service.py:532
+#: src/opendlp/service_layer/respondent_field_schema_service.py:564
 msgid "Option value cannot be blank"
 msgstr "A választható érték nem lehet üres"
 
@@ -2980,142 +2982,144 @@ msgstr "Nem sikerült beolvasni a CSV fájlt. Győződj meg róla, hogy UTF-8 k�
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:246
 #: src/opendlp/entrypoints/blueprints/respondents.py:298
-#: src/opendlp/entrypoints/blueprints/respondents.py:370
+#: src/opendlp/entrypoints/blueprints/respondents.py:385
 #, python-format
 msgid "Invalid CSV format: %(error)s"
 msgstr "Érvénytelen CSV formátum: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:257
+#: src/opendlp/entrypoints/blueprints/respondents.py:308
+#: src/opendlp/entrypoints/blueprints/respondents.py:394
 msgid "You don't have permission to upload respondents"
 msgstr "Nincs jogosultságod jelentkezők feltöltéséhez"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:272
-#: src/opendlp/entrypoints/blueprints/respondents.py:308
-#: src/opendlp/entrypoints/blueprints/respondents.py:379
+#: src/opendlp/entrypoints/blueprints/respondents.py:323
+#: src/opendlp/entrypoints/blueprints/respondents.py:407
 msgid "An error occurred while uploading respondents"
 msgstr "Hiba történt a jelentkezők feltöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:284
-#: src/opendlp/entrypoints/blueprints/respondents.py:348
+#: src/opendlp/entrypoints/blueprints/respondents.py:363
 msgid "Upload session expired. Please upload the CSV again."
 msgstr "A feltöltési munkamenet lejárt. Töltsd fel újra a CSV-t."
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:353
+#: src/opendlp/entrypoints/blueprints/respondents.py:368
 msgid "Upload cancelled"
 msgstr "A feltöltés megszakítva"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:399
+#: src/opendlp/entrypoints/blueprints/respondents.py:427
 #, python-format
 msgid "Respondents deleted: %(count)d"
 msgstr "Jelentkezők törölve: %(count)d"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:411
-#: src/opendlp/entrypoints/blueprints/respondents.py:804
+#: src/opendlp/entrypoints/blueprints/respondents.py:439
+#: src/opendlp/entrypoints/blueprints/respondents.py:832
 msgid "You don't have permission to delete respondents"
 msgstr "Nincs jogosultságod jelentkezők törléséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:426
+#: src/opendlp/entrypoints/blueprints/respondents.py:454
 msgid "An error occurred while deleting respondents"
 msgstr "Hiba történt a jelentkezők törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:440
-#: src/opendlp/entrypoints/blueprints/respondents.py:539
+#: src/opendlp/entrypoints/blueprints/respondents.py:468
+#: src/opendlp/entrypoints/blueprints/respondents.py:567
 #, python-format
 msgid "Invalid export filter: %(error)s"
 msgstr "Érvénytelen exportszűrő: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:465
-#: src/opendlp/entrypoints/blueprints/respondents.py:507
-#: src/opendlp/entrypoints/blueprints/respondents.py:563
+#: src/opendlp/entrypoints/blueprints/respondents.py:493
+#: src/opendlp/entrypoints/blueprints/respondents.py:535
+#: src/opendlp/entrypoints/blueprints/respondents.py:591
 msgid "You don't have permission to export respondents"
 msgstr "Nincs jogosultságod jelentkezők exportálásához"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:487
+#: src/opendlp/entrypoints/blueprints/respondents.py:515
 #: src/opendlp/service_layer/selection_report.py:210
 msgid "All respondents"
 msgstr "Összes jelentkező"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:488
+#: src/opendlp/entrypoints/blueprints/respondents.py:516
 msgid "Selected or confirmed"
 msgstr "Kiválasztva vagy megerősítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:600
+#: src/opendlp/entrypoints/blueprints/respondents.py:628
 msgid ""
 "Respondents exported to Google Sheets. The tab will now update "
 "automatically."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:602
+#: src/opendlp/entrypoints/blueprints/respondents.py:630
 msgid "Respondents exported to Google Sheets"
 msgstr "A jelentkezők exportálva a Google Táblázatba"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:622
+#: src/opendlp/entrypoints/blueprints/respondents.py:650
 msgid "You don't have permission to change the export settings"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:628
+#: src/opendlp/entrypoints/blueprints/respondents.py:656
 msgid "Automatic export stopped"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:646
+#: src/opendlp/entrypoints/blueprints/respondents.py:674
 #: templates/admin/users.html:90
 #: templates/respondents/view_respondents.html:130
 msgid "All statuses"
 msgstr "Minden állapot"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:769
+#: src/opendlp/entrypoints/blueprints/respondents.py:797
 msgid "An error occurred while loading assembly respondents"
 msgstr "Hiba történt a közösségi gyűlés jelentkezőinek betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:782
+#: src/opendlp/entrypoints/blueprints/respondents.py:810
 msgid "A comment is required when deleting a respondent"
 msgstr "Jelentkező törlésekor meg kell adni egy megjegyzést"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:794
+#: src/opendlp/entrypoints/blueprints/respondents.py:822
 msgid "Respondent personal data deleted"
 msgstr "A jelentkező személyes adatai törölve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:813
-#: src/opendlp/entrypoints/blueprints/respondents.py:878
-#: src/opendlp/entrypoints/blueprints/respondents.py:1043
-#: src/opendlp/entrypoints/blueprints/respondents.py:1090
+#: src/opendlp/entrypoints/blueprints/respondents.py:841
+#: src/opendlp/entrypoints/blueprints/respondents.py:906
+#: src/opendlp/entrypoints/blueprints/respondents.py:1071
+#: src/opendlp/entrypoints/blueprints/respondents.py:1118
 msgid "Respondent not found"
 msgstr "A jelentkező nem található"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:826
+#: src/opendlp/entrypoints/blueprints/respondents.py:854
 msgid "An error occurred while deleting the respondent"
 msgstr "Hiba történt a jelentkező törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:900
+#: src/opendlp/entrypoints/blueprints/respondents.py:928
 msgid "An error occurred while loading the respondent"
 msgstr "Hiba történt a jelentkező betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:976
-#: src/opendlp/entrypoints/blueprints/respondents.py:996
+#: src/opendlp/entrypoints/blueprints/respondents.py:1004
+#: src/opendlp/entrypoints/blueprints/respondents.py:1024
 msgid "You don't have permission to edit respondents"
 msgstr "Nincs jogosultságod jelentkezők szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:978
+#: src/opendlp/entrypoints/blueprints/respondents.py:1006
 msgid "Respondent updated"
 msgstr "A jelentkező frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1006
+#: src/opendlp/entrypoints/blueprints/respondents.py:1034
 msgid "Cannot edit a deleted respondent"
 msgstr "Törölt jelentkező nem szerkeszthető"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1065
+#: src/opendlp/entrypoints/blueprints/respondents.py:1093
 msgid "A comment is required when changing selection status"
 msgstr "A kiválasztási állapot módosításakor meg kell adni egy megjegyzést"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1070
+#: src/opendlp/entrypoints/blueprints/respondents.py:1098
 msgid "Invalid target status"
 msgstr "Érvénytelen célállapot"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1084
+#: src/opendlp/entrypoints/blueprints/respondents.py:1112
 msgid "Status updated"
 msgstr "Az állapot frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1088
+#: src/opendlp/entrypoints/blueprints/respondents.py:1116
 msgid "You don't have permission to change this respondent's status"
 msgstr "Nincs jogosultságod ennek a jelentkezőnek az állapotát módosítani"
 
@@ -3813,13 +3817,13 @@ msgstr ""
 " adni"
 
 #: src/opendlp/service_layer/derivation_service.py:374
-#: src/opendlp/service_layer/respondent_field_schema_service.py:278
+#: src/opendlp/service_layer/respondent_field_schema_service.py:284
 #: src/opendlp/service_layer/target_source_service.py:288
 msgid "Field key cannot be empty"
 msgstr "A mezőkulcs nem lehet üres"
 
 #: src/opendlp/service_layer/derivation_service.py:376
-#: src/opendlp/service_layer/respondent_field_schema_service.py:283
+#: src/opendlp/service_layer/respondent_field_schema_service.py:289
 #, python-format
 msgid "Field '%(key)s' already exists in this assembly"
 msgstr "'%(key)s' mező már létezik ebben a közösségi gyűlésben"
@@ -4161,20 +4165,20 @@ msgstr[1] ""
 msgid "Invalid respondent status filter: %(value)s"
 msgstr "Érvénytelen jelentkezői állapotszűrő: %(value)s"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:314
+#: src/opendlp/service_layer/respondent_field_schema_service.py:320
 #, python-format
 msgid "You can't change the type of '%(key)s' — it is used to derive: %(deps)s"
 msgstr "\"%(key)s\" típusát nem módosíthatod – ebből származtatott mezők: %(deps)s"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:373
+#: src/opendlp/service_layer/respondent_field_schema_service.py:379
 msgid "A computed question always stays in the Derived section"
 msgstr "A számított kérdés mindig a Számított szakaszban marad"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:392
+#: src/opendlp/service_layer/respondent_field_schema_service.py:398
 msgid "You can't change the type or options of a fixed field"
 msgstr "Rögzített mező típusát vagy választható értékeit nem módosíthatod"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:395
+#: src/opendlp/service_layer/respondent_field_schema_service.py:401
 msgid ""
 "You can't change the type or options of a derived field — they are owned "
 "by its derivation"
@@ -4182,7 +4186,7 @@ msgstr ""
 "Származtatott mező típusát vagy választható értékeit nem módosíthatod – "
 "ezeket a származtatás határozza meg"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:400
+#: src/opendlp/service_layer/respondent_field_schema_service.py:406
 msgid ""
 "You can't change the type or answer values of a field that feeds a target"
 " — unlink it on the 'Link targets to questions' step first"
@@ -4191,17 +4195,17 @@ msgstr ""
 "módosíthatod – előbb válaszd le a „Kiválasztási szempontok és kérdések "
 "összekapcsolása” lépésben"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:523
+#: src/opendlp/service_layer/respondent_field_schema_service.py:529
 msgid "Options can only be set on choice fields"
 msgstr "Választható értékeket csak választómezőkön lehet beállítani"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:529
-#: src/opendlp/service_layer/respondent_field_schema_service.py:563
+#: src/opendlp/service_layer/respondent_field_schema_service.py:535
+#: src/opendlp/service_layer/respondent_field_schema_service.py:569
 #, python-format
 msgid "Option '%(value)s' already exists"
 msgstr "'%(value)s' választható érték már létezik"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:616
+#: src/opendlp/service_layer/respondent_field_schema_service.py:622
 #, python-format
 msgid ""
 "'%(value)s' is the last option mapped by '%(key)s'. Change that "
@@ -4210,31 +4214,31 @@ msgstr ""
 "\"%(value)s\" az utolsó választható érték, amelyre \"%(key)s\" "
 "megfeleltetése hivatkozik. Előbb azt a származtatást módosítsd."
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:664
+#: src/opendlp/service_layer/respondent_field_schema_service.py:670
 msgid "A choice field must keep at least one option"
 msgstr "Egy választómezőnek legalább egy választható értéket meg kell tartania"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:749
+#: src/opendlp/service_layer/respondent_field_schema_service.py:755
 #, python-format
 msgid "A question named '%(key)s' already exists — rename or delete it first"
 msgstr "Már létezik \"%(key)s\" nevű kérdés – előbb nevezd át vagy töröld"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:778
+#: src/opendlp/service_layer/respondent_field_schema_service.py:784
 #, python-format
 msgid "Fixed field '%(key)s' cannot be deleted"
 msgstr "'%(key)s' rögzített mező nem törölhető"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:783
+#: src/opendlp/service_layer/respondent_field_schema_service.py:789
 #, python-format
 msgid "'%(key)s' cannot be deleted — it is used to derive: %(deps)s"
 msgstr "\"%(key)s\" nem törölhető – ebből származtatott mezők: %(deps)s"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:969
+#: src/opendlp/service_layer/respondent_field_schema_service.py:975
 #, python-format
 msgid "%(columns)s and %(count)d more"
 msgstr "%(columns)s és még %(count)d"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:979
+#: src/opendlp/service_layer/respondent_field_schema_service.py:985
 #, python-format
 msgid ""
 "This CSV has no column called '%(id_column)s'. Its columns are: "
@@ -4245,39 +4249,39 @@ msgstr ""
 "%(columns)s. Állítsd az ID oszlop mezőt ezek egyikére, vagy töröld ki, "
 "hogy az első oszlop (\"%(first)s\") legyen az azonosító."
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:987
+#: src/opendlp/service_layer/respondent_field_schema_service.py:993
 msgid "The ID Column field was pre-filled from your last upload."
 msgstr "Az ID oszlop mező az előző feltöltésed alapján előre ki van töltve."
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:1028
+#: src/opendlp/service_layer/respondent_field_schema_service.py:1034
 #, python-format
 msgid ""
 "The header of column %(letter)s, the ID column, is longer than %(limit)d "
 "characters. Shorten it."
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:1050
+#: src/opendlp/service_layer/respondent_field_schema_service.py:1056
 #, python-format
 msgid ""
 "The header of column %(letter)s, '%(header)s', has no letters or numbers "
 "in it. Rename it."
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:1066
+#: src/opendlp/service_layer/respondent_field_schema_service.py:1072
 #, python-format
 msgid ""
 "The header of column %(letter)s, '%(header)s', is reserved for a built-in"
 " respondent detail. Rename it."
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:1082
+#: src/opendlp/service_layer/respondent_field_schema_service.py:1088
 #, python-format
 msgid ""
 "The header of column %(letter)s is longer than %(limit)d characters. "
 "Shorten it."
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:1114
+#: src/opendlp/service_layer/respondent_field_schema_service.py:1120
 #, python-format
 msgid ""
 "Columns %(columns)s have headers that count as the same field. Rename "
@@ -4285,7 +4289,12 @@ msgid ""
 "delete the extra columns."
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_service.py:252
+#: src/opendlp/service_layer/respondent_service.py:196
+#: src/opendlp/service_layer/tabular_data.py:190
+msgid "The file is empty or has no header row."
+msgstr ""
+
+#: src/opendlp/service_layer/respondent_service.py:259
 #, python-format
 msgid "Row %(row)s: supplied '%(key)s' was replaced by its computed value"
 msgstr ""
@@ -4418,23 +4427,25 @@ msgstr "A feladat indítása sikertelen"
 msgid "Task stopped unexpectedly"
 msgstr "A feladat váratlanul leállt"
 
-#: src/opendlp/service_layer/tabular_data.py:71
+#: src/opendlp/service_layer/tabular_data.py:75
 #, python-format
 msgid "There are %(count)d problems with this file:"
 msgstr ""
 
-#: src/opendlp/service_layer/tabular_data.py:113
+#: src/opendlp/service_layer/tabular_data.py:78
+#: templates/backoffice/respondent_field_schema/_editor.html:72
+#, python-format
+msgid "… and %(count)d more"
+msgstr "… és még %(count)d"
+
+#: src/opendlp/service_layer/tabular_data.py:120
 #, python-format
 msgid ""
 "This file could not be read as a CSV at row %(row)d. Check that row for a"
 " quotation mark that is not closed."
 msgstr ""
 
-#: src/opendlp/service_layer/tabular_data.py:183
-msgid "The file is empty or has no header row."
-msgstr ""
-
-#: src/opendlp/service_layer/tabular_data.py:229
+#: src/opendlp/service_layer/tabular_data.py:236
 #, python-format
 msgid ""
 "Column %(letter)s (between '%(before)s' and '%(after)s') has no header "
@@ -4442,28 +4453,28 @@ msgid ""
 "it a header."
 msgstr ""
 
-#: src/opendlp/service_layer/tabular_data.py:238
+#: src/opendlp/service_layer/tabular_data.py:245
 #, python-format
 msgid ""
 "Column %(letter)s (after '%(before)s') has no header but has data in it, "
 "starting at row %(row)d. Delete the column, or give it a header."
 msgstr ""
 
-#: src/opendlp/service_layer/tabular_data.py:246
+#: src/opendlp/service_layer/tabular_data.py:253
 #, python-format
 msgid ""
 "Column %(letter)s (before '%(after)s') has no header but has data in it, "
 "starting at row %(row)d. Delete the column, or give it a header."
 msgstr ""
 
-#: src/opendlp/service_layer/tabular_data.py:268
+#: src/opendlp/service_layer/tabular_data.py:275
 #, python-format
 msgid ""
 "The header '%(header)s' appears in columns %(letters)s. Delete the extra "
 "columns, or rename them."
 msgstr ""
 
-#: src/opendlp/service_layer/tabular_data.py:301
+#: src/opendlp/service_layer/tabular_data.py:308
 #, python-format
 msgid ""
 "Column %(letter)s has a null character in it at row %(row)d, which cannot"
@@ -8405,11 +8416,6 @@ msgstr "Kérdés"
 #: templates/backoffice/respondent_field_schema/_field_modal.html:19
 msgid "Question type"
 msgstr "Kérdéstípus"
-
-#: templates/backoffice/respondent_field_schema/_editor.html:72
-#, python-format
-msgid "… and %(count)d more"
-msgstr "… és még %(count)d"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:84
 #: templates/backoffice/respondent_field_schema/_field_modal.html:102
