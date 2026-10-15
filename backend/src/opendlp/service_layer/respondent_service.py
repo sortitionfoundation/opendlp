@@ -44,6 +44,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     update_schema_from_headers,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.service_layer.writing_guard import refuse_if_writing_run_unfinished
 from opendlp.translations import gettext as _
 
 # Internal, export-only columns recognised and skipped on import. They mirror
@@ -351,6 +352,8 @@ def reset_selection_status(
             action="reset selection status",
             required_role="assembly-manager or admin",
         )
+
+    refuse_if_writing_run_unfinished(uow, assembly_id)
 
     # The comments on each reset respondent carry the id of the reset's history row.
     task_id = uuid.uuid4()
