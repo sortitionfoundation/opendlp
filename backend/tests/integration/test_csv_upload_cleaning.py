@@ -6,7 +6,7 @@ import pytest
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer import respondent_field_schema_service, respondent_service
+from opendlp.service_layer import respondent_field_schema_service, respondent_service, target_csv_import
 from opendlp.service_layer.respondent_field_schema_service import (
     PROBLEM_ID_COLUMN_MISSING,
     PROBLEM_SAME_FIELD,
@@ -144,3 +144,46 @@ class TestComputeDiffForPendingCsv:
             self.diff(uow, admin_user, test_assembly, "id,age\nR2,40\n", id_column="person_ref")
 
         assert "no column called 'person_ref'" in exc_info.value.user_msg()
+
+
+class TestTargetImport:
+    def import_targets(self, uow, user, assembly, content: str):
+        return target_csv_import.import_targets_from_csv(uow, user.id, assembly.id, content, replace_existing=True)
+
+    def test_an_unnamed_notes_column_is_ignored(self, uow, admin_user: User, test_assembly: Assembly):
+        """Organisers keep notes beside their targets; that column is not ours to judge."""
+        result = self.import_targets(
+            uow, admin_user, test_assembly, "feature,value,min,max,\nGender,Male,1,2,check this\nGender,Female,1,2,\n"
+        )
+
+        assert [(c.name, [v.value for v in c.values]) for c in result.categories] == [("Gender", ["Male", "Female"])]
+
+    def test_capitalised_headers_import(self, uow, admin_user: User, test_assembly: Assembly):
+        """These used to fail with a message asking for the old column names."""
+        result = self.import_targets(
+            uow, admin_user, test_assembly, "Feature,Value,Min,Max,Comment\nGender,Male,1,2,from the census\n"
+        )
+
+        [category] = result.categories
+        male = category.get_value("Male")
+        assert (male.min, male.max, male.comment) == (1, 2, "from the census")
+
+    def test_a_repeated_wanted_header_is_rejected(self, uow, admin_user: User, test_assembly: Assembly):
+        with pytest.raises(TabularDataError) as exc_info:
+            self.import_targets(uow, admin_user, test_assembly, "feature,value,min,Min,max\nGender,Male,1,1,2\n")
+
+        [problem] = exc_info.value.problems
+        assert problem.kind == PROBLEM_DUPLICATE_HEADER
+        assert problem.letters == ("C", "D")
+
+    def test_a_short_row_is_padded(self, uow, admin_user: User, test_assembly: Assembly):
+        """A short row used to reach the library as None: "'None' is not a number"."""
+        result = self.import_targets(uow, admin_user, test_assembly, "feature,value,min,max,comment\nGender,Male,1,2\n")
+
+        assert result.categories[0].get_value("Male").comment == ""
+
+    def test_an_empty_file_is_rejected(self, uow, admin_user: User, test_assembly: Assembly):
+        with pytest.raises(TabularDataError) as exc_info:
+            self.import_targets(uow, admin_user, test_assembly, "\n\n")
+
+        assert exc_info.value.user_msg() == "The file is empty or has no header row."

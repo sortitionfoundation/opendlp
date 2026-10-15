@@ -3,17 +3,16 @@ ABOUTME: Parsing the extra columns, deriving percentages, and turning it all int
 
 from __future__ import annotations
 
-import csv as csv_module
-from io import StringIO
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from sortition_algorithms.features import read_in_features
+from sortition_algorithms.features import ALL_FEATURE_FIELD_NAMES, read_in_features
 
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.translations import gettext as _
 
 from .constants import SORT_ORDER_STEP
 from .exceptions import InvalidSelection
+from .tabular_data import rows_from_csv, select_columns
 from .target_service import _load_user_and_assembly, release_links_before_deleting_all, relink_fields
 
 if TYPE_CHECKING:
@@ -44,18 +43,29 @@ CATEGORY_COMMENT_COLUMN = "category_comment"
 CATEGORY_SOURCE_URL_COLUMN = "source_url"
 
 
+# The library also accepts these names for the value column, but does not
+# export them, unlike ALL_FEATURE_FIELD_NAMES.
+_LIBRARY_VALUE_COLUMN_ALIASES = ("category value", "category_value", "category-value")
+
+TARGET_CSV_COLUMNS = (
+    *sorted(ALL_FEATURE_FIELD_NAMES),
+    *_LIBRARY_VALUE_COLUMN_ALIASES,
+    VALUE_PERCENTAGE_COLUMN,
+    VALUE_COMMENT_COLUMN,
+    CATEGORY_COMMENT_COLUMN,
+    CATEGORY_SOURCE_URL_COLUMN,
+)
+
+
 def _truncate(text: str) -> str:
     if len(text) <= WARNING_VALUE_CHARS:
         return text
     return text[: WARNING_VALUE_CHARS - 1] + "\u2026"
 
 
-def _cell(row: dict[str, str], columns: dict[str, str], name: str) -> str:
-    """Read one of our optional columns from a raw CSV row, case-insensitively."""
-    header = columns.get(name)
-    if header is None:
-        return ""
-    return (row.get(header) or "").strip()
+def _cell(row: dict[str, str], name: str) -> str:
+    """Read one of our optional columns from a cleaned CSV row."""
+    return row.get(name, "").strip()
 
 
 def _parse_percentage(raw: str, feature: str, value: str) -> float | None:
@@ -72,7 +82,6 @@ def _parse_percentage(raw: str, feature: str, value: str) -> float | None:
 
 def _collect_csv_extras(
     body: list[dict[str, str]],
-    columns: dict[str, str],
     feature_col: str,
     value_col: str,
 ) -> tuple[dict[tuple[str, str], dict[str, str]], dict[str, dict[str, list[str]]]]:
@@ -92,13 +101,13 @@ def _collect_csv_extras(
             continue
 
         value_extras[(feature, value)] = {
-            VALUE_PERCENTAGE_COLUMN: _cell(row, columns, VALUE_PERCENTAGE_COLUMN),
-            VALUE_COMMENT_COLUMN: _cell(row, columns, VALUE_COMMENT_COLUMN),
+            VALUE_PERCENTAGE_COLUMN: _cell(row, VALUE_PERCENTAGE_COLUMN),
+            VALUE_COMMENT_COLUMN: _cell(row, VALUE_COMMENT_COLUMN),
         }
 
         seen = category_extras.setdefault(feature, {CATEGORY_COMMENT_COLUMN: [], CATEGORY_SOURCE_URL_COLUMN: []})
         for column in (CATEGORY_COMMENT_COLUMN, CATEGORY_SOURCE_URL_COLUMN):
-            cell = _cell(row, columns, column)
+            cell = _cell(row, column)
             if cell and cell not in seen[column]:
                 seen[column].append(cell)
 
@@ -142,9 +151,10 @@ def import_targets_from_csv(
     CSV format matches sortition-algorithms feature files with columns:
     feature, value, min, max, min_flex, max_flex
 
-    Four optional columns are read by us rather than the library, which ignores
-    headers it does not recognise: `percentage` and `comment` per value,
-    `category_comment` and `source_url` per category.
+    Four optional columns are read by us rather than the library:
+    `percentage` and `comment` per value, `category_comment` and `source_url`
+    per category. Any other column - named or not, empty or not - is ignored,
+    and headers match ignoring case.
 
     Every imported value is marked `minmax_manual`. The CSV format makes min and
     max mandatory, so imported numbers are always deliberate; leaving the link
@@ -157,22 +167,16 @@ def import_targets_from_csv(
 
     # Parse and validate CSV using sortition-algorithms
     # Note: read_in_features() already calls set_default_max_flex() and check_min_max()
-    csv_file = StringIO(csv_content)
-    reader = csv_module.DictReader(csv_file)
-
-    if not reader.fieldnames:
-        raise InvalidSelection("CSV file is empty or malformed")
-
-    headers = list(reader.fieldnames)
-    body = list(reader)
+    table = select_columns(rows_from_csv(csv_content), TARGET_CSV_COLUMNS)
+    headers = table.headers
+    body = table.as_dicts()
 
     try:
         feature_collection, feature_col, value_col = read_in_features(headers, body)
     except Exception as e:
         raise InvalidSelection(f"Failed to parse CSV: {e!s}") from e
 
-    columns = {h.strip().lower(): h for h in headers}
-    value_extras, category_extras = _collect_csv_extras(body, columns, feature_col, value_col)
+    value_extras, category_extras = _collect_csv_extras(body, feature_col, value_col)
     warnings: list[str] = []
 
     # Replace existing if requested. A target that comes back under the same

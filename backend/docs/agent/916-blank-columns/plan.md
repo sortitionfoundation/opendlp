@@ -525,7 +525,7 @@ emails but not names or dates of birth.
 - [x] 3. Switch respondents import and the diff to the pipeline; row numbers
    through to warnings; `utf-8-sig` and `UnicodeDecodeError` on the route;
    confirm-diff handlers; `user_msg()`. Integration and e2e tests.
-- [ ] 4. Targets via `select_columns`; integration and e2e tests.
+- [x] 4. Targets via `select_columns`; integration and e2e tests.
 - [ ] 5. Large mapping via `clean_table`; route handler; integration and e2e tests.
 - [ ] 6. Write `docs/agent/future_work/csv_upload_errors.md`.
 - [ ] 7. `translate-catalogues`, `just check`, `just test-nobdd`, then BDD.
