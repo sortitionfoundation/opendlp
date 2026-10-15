@@ -15,6 +15,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
 )
 from opendlp.service_layer.tabular_data import (
     PROBLEM_BLANK_HEADER_WITH_DATA,
+    PROBLEM_DUPLICATE_HEADER,
     TableProblem,
     TabularDataError,
     clean_table,
@@ -42,10 +43,14 @@ class TestPassingHeaders:
 
     def test_export_only_columns_pass(self):
         """A previously exported file re-imports cleanly."""
-        check_csv("external_id,selection_status,created_at,view_url\n1,Pool,2026-01-01,https://x\n")
+        table = check_csv("external_id,selection_status,created_at,view_url\n1,Pool,2026-01-01,https://x\n")
+
+        assert table.headers == ["external_id", "selection_status", "created_at", "view_url"]
 
     def test_the_id_column_may_use_a_reserved_name(self):
-        check_csv("name,external_id\nAnn,1\n", id_column="external_id")
+        table = check_csv("name,external_id\nAnn,1\n", id_column="external_id")
+
+        assert table.headers == ["name", "external_id"]
 
 
 class TestIdColumn:
@@ -110,7 +115,9 @@ class TestFieldNames:
         assert long_header not in problem.message
 
     def test_a_header_at_the_limit_is_fine(self):
-        check_csv(f"id,{'h' * MAX_FIELD_KEY_LENGTH}\n1,x\n")
+        table = check_csv(f"id,{'h' * MAX_FIELD_KEY_LENGTH}\n1,x\n")
+
+        assert table.headers == ["id", "h" * MAX_FIELD_KEY_LENGTH]
 
 
 class TestSameField:
@@ -130,7 +137,7 @@ class TestSameField:
     def test_exact_repeats_are_left_to_the_table_cleaning(self):
         problems = problems_of("id,age,age\n1,30,31\n")
 
-        assert [problem.kind for problem in problems] == ["duplicate_header"]
+        assert [problem.kind for problem in problems] == [PROBLEM_DUPLICATE_HEADER]
 
 
 class TestEveryProblemTogether:
