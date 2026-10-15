@@ -3,10 +3,8 @@ ABOUTME: Read, populate, edit, and initialise field schemas."""
 
 from __future__ import annotations
 
-import csv as csv_module
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from io import StringIO
 from typing import TYPE_CHECKING
 
 from opendlp.config import to_bool
@@ -41,7 +39,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
-from opendlp.service_layer.tabular_data import Column, HeaderCheck, TableProblem
+from opendlp.service_layer.tabular_data import Column, HeaderCheck, TableProblem, clean_table, rows_from_csv
 from opendlp.translations import lazy_gettext as _l
 
 if TYPE_CHECKING:
@@ -930,18 +928,6 @@ def update_schema_from_headers(
     return apply_reconciliation(uow, assembly_id, diff)
 
 
-def _parse_csv_headers(csv_content: str) -> list[str]:
-    """Read the header row from a CSV and return the column names in order.
-
-    Raises ``InvalidSelection`` if the CSV has no header row at all.
-    """
-    reader = csv_module.DictReader(StringIO(csv_content))
-    headers = list(reader.fieldnames or [])
-    if not headers:
-        raise InvalidSelection("CSV file is empty or has no header row")
-    return headers
-
-
 def _auto_detect_id_column(headers: list[str], explicit_id_column: str | None) -> str:
     """Mirror ``import_respondents_from_csv``'s id-column rule.
 
@@ -1145,21 +1131,20 @@ def compute_diff_for_pending_csv(
 ) -> ReconciliationDiff | None:
     """Compute the reconciliation diff for a pending CSV upload.
 
-    Read-only. Parses the CSV header row, resolves the id column via the same
-    auto-detect rule the importer uses, pulls the existing schema and target
+    Read-only. Cleans the CSV exactly as the importer will, resolves the id
+    column via the same auto-detect rule, pulls the existing schema and target
     categories, and compares. Returns ``None`` when the assembly has no schema
     yet — the caller interprets that as "skip the confirmation page entirely".
 
-    Raises ``InvalidSelection`` if the CSV has no header row, or if the id
-    column is not one of its columns. Validating here rather than leaving it to
-    the import means the organiser is told before the confirmation page instead
-    of after they apply it, when the stashed upload has already been cleared.
+    Raises ``TabularDataError`` for every problem the import would refuse the
+    file for: a missing header row, unnamed columns with data, the id column not
+    being one of its columns, and the rest of ``respondent_header_check``.
+    Validating here rather than leaving it to the import means the organiser is
+    told before the confirmation page instead of after they apply it, when the
+    stashed upload has already been cleared.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    headers = _parse_csv_headers(csv_content)
-    id_column = _auto_detect_id_column(headers, explicit_id_column)
-
     _ensure_view_permission(uow, user_id, assembly_id)
 
     # Pull the previous id column from the assembly's CSV config so we can
@@ -1172,7 +1157,12 @@ def compute_diff_for_pending_csv(
     if assembly.csv is not None:
         previous_id_column = assembly.csv.csv_id_column
 
-    check_id_column_in_headers(id_column, headers, previous_id_column=previous_id_column)
+    table = clean_table(
+        rows_from_csv(csv_content),
+        header_checks=[respondent_header_check(explicit_id_column, previous_id_column)],
+    )
+    headers = table.headers
+    id_column = _auto_detect_id_column(headers, explicit_id_column)
 
     if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
         return None

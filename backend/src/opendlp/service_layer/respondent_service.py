@@ -1,10 +1,9 @@
 """ABOUTME: Respondent management service layer for participant pool operations
 ABOUTME: Provides functions for respondent creation, CSV import, and validation"""
 
-import csv
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from io import StringIO
 from typing import Any
 
 from opendlp.domain.assembly import SelectionRunRecord
@@ -46,8 +45,10 @@ from opendlp.service_layer.permissions import (
 from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_service import (
     check_id_column_in_headers,
+    respondent_header_check,
     update_schema_from_headers,
 )
+from opendlp.service_layer.tabular_data import clean_table, rows_from_csv
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.writing_guard import refuse_if_writing_run_unfinished
 from opendlp.translations import gettext as _
@@ -124,18 +125,21 @@ def import_respondents_from_csv(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    reader = csv.DictReader(StringIO(csv_content))
-    headers = list(reader.fieldnames) if reader.fieldnames else []
-    rows = list(reader) if reader.fieldnames else []
+    assembly = uow.assemblies.get(assembly_id)
+    previous_id_column = assembly.csv.csv_id_column if assembly is not None and assembly.csv is not None else None
+    table = clean_table(
+        rows_from_csv(csv_content), header_checks=[respondent_header_check(id_column, previous_id_column)]
+    )
     return import_respondents_from_rows(
         uow,
         user_id,
         assembly_id,
-        headers,
-        rows,
+        table.headers,
+        table.as_dicts(),
         replace_existing=replace_existing,
         id_column=id_column,
         filename=filename,
+        row_numbers=table.row_numbers,
     )
 
 
@@ -148,6 +152,7 @@ def import_respondents_from_rows(  # noqa: C901
     replace_existing: bool = False,
     id_column: str | None = None,
     filename: str = "",
+    row_numbers: Sequence[int] = (),
 ) -> tuple[list[Respondent], list[str], str]:
     """Import respondents from already-parsed tabular rows.
 
@@ -155,6 +160,13 @@ def import_respondents_from_rows(  # noqa: C901
     ``headers`` is the ordered column list; ``rows`` maps each header to its
     value. The id_column becomes external_id; all other columns become
     attributes. If id_column is not provided, the first column is used.
+    ``row_numbers`` gives the spreadsheet row of each entry in ``rows``, for the
+    per-row warnings; without it, rows are assumed to follow the header directly.
+
+    The rows must already have been through ``tabular_data`` cleaning with
+    ``respondent_header_check``, as ``import_respondents_from_csv`` does: a
+    future Sheets or xlsx import should read its source into a list of rows and
+    do the same, rather than hand this function a sheet's own row dicts.
     Returns: (list of created respondents, list of error messages, resolved id_column name)
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
@@ -212,10 +224,10 @@ def import_respondents_from_rows(  # noqa: C901
     # Create respondents
     respondents = []
     seen_ids = set()  # Track IDs within this import to catch duplicates
-    # rows have had the header row stripped, so the first data row is line 2
-    # of the file; start=2 makes row_number match what the user sees when
-    # they open the file to fix a flagged row.
-    for row_number, row in enumerate(rows, start=2):
+    # Without row numbers, the first data row is line 2 of the file, just
+    # under the header.
+    numbers = row_numbers or range(2, len(rows) + 2)
+    for row_number, row in zip(numbers, rows, strict=True):
         external_id = row.get(id_column, "").strip()
         if not external_id:
             errors.append(f"Row {row_number}: skipped, empty {id_column}")
