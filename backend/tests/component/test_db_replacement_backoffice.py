@@ -390,34 +390,6 @@ class TestStartReplacement:
         mock_delay.assert_not_called()
         assert _run_records(fake_store, assembly_after_withdrawal.id) == []
 
-    def test_refuses_while_another_selection_is_running(
-        self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user
-    ):
-        with FakeUnitOfWork(store=fake_store) as uow:
-            uow.selection_run_records.add(
-                SelectionRunRecord(
-                    assembly_id=assembly_after_withdrawal.id,
-                    task_id=uuid.uuid4(),
-                    task_type=SelectionTaskType.SELECT_FROM_DB,
-                    status=SelectionRunStatus.RUNNING,
-                    log_messages=[],
-                    user_id=admin_user.id,
-                )
-            )
-            uow.commit()
-        form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, **{"min__Age__31-50": "1"})
-
-        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
-            response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run",
-                data=form,
-                follow_redirects=True,
-            )
-
-        mock_delay.assert_not_called()
-        assert len(_run_records(fake_store, assembly_after_withdrawal.id)) == 1
-        assert "A selection is already running for this assembly" in response.data.decode()
-
 
 class TestFeasibilityInDialog:
     def test_opening_the_dialog_runs_the_check_and_reports_success(self, logged_in_admin, assembly_with_feasible_gaps):
@@ -655,3 +627,36 @@ class TestDialogNotes:
         html = response.data.decode()
         assert "db-replacement-modal" in html
         assert "no matching respondent field, so nobody counts as currently selected" in html
+
+
+class TestReplacementRefusedWhileAnotherTaskWrites:
+    def test_valid_submission_lands_in_the_running_tasks_modal(
+        self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user
+    ):
+        """A replacement submitted during a running selection starts nothing and opens that selection."""
+        running_id = uuid.uuid4()
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_after_withdrawal.id,
+                    task_id=running_id,
+                    task_type=SelectionTaskType.SELECT_FROM_DB,
+                    status=SelectionRunStatus.RUNNING,
+                )
+            )
+            uow.commit()
+        form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, **{"min__Age__31-50": "1"})
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+            )
+
+        mock_delay.assert_not_called()
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith(f"/selection?current_selection={running_id}")
+        page = logged_in_admin.get(response.headers["Location"])
+        html = page.data.decode()
+        assert "Another task is already running on this assembly" in html
+        assert "Cancel Task" in html
+        assert [r.task_id for r, _user in _run_records(fake_store, assembly_after_withdrawal.id)] == [running_id]

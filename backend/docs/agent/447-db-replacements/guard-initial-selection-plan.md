@@ -68,6 +68,12 @@ is a change from what the page allows today.
 
 ## Step 2: the running guard (G2)
 
+**Done on branch `1022-prevent-concurrent-selections`** - see
+`docs/agent/1022-prevent-concurrent-selections/plan.md`. The digging below
+turned up exactly the holes it suspected, and the answer was a guard in
+`service_layer/writing_guard.py` over a Postgres advisory lock. Step 1 (the
+held-count guard) is still to do, on its own branch.
+
 Start by digging, not coding. The rule is wider than "initial selection already
 running", and the existing check is narrower than it looks:
 

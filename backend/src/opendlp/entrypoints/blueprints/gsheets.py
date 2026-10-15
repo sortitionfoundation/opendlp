@@ -4,6 +4,7 @@ ABOUTME: Provides /backoffice/assembly/*/gsheet/*, selection/*, replacement/*, a
 import contextlib
 import uuid
 from collections.abc import Mapping
+from typing import Any
 
 import structlog
 from flask import Blueprint, flash, redirect, render_template, request, url_for
@@ -60,6 +61,7 @@ from opendlp.service_layer.sortition import (
     start_gsheet_select_task,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.service_layer.writing_guard import SelectionAlreadyRunning, running_task_query_param
 from opendlp.translations import gettext as _
 
 gsheets_bp = Blueprint("gsheets", __name__)
@@ -588,6 +590,22 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
+def redirect_to_running_task(assembly_id: uuid.UUID, running: SelectionAlreadyRunning) -> ResponseReturnValue:
+    """Send the user into the progress modal of the task that holds the assembly, saying why.
+
+    The modal has the cancel button, so from there they can wait or cancel.
+    """
+    flash(
+        _(
+            "Another task is already running on this assembly: %(task)s. You can wait for it to finish, or cancel it here.",
+            task=running.task_label,
+        ),
+        "info",
+    )
+    params: dict[str, Any] = {running_task_query_param(running.task_type): running.task_id}
+    return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, **params))
+
+
 @gsheets_bp.route("/assembly/<uuid:assembly_id>/selection/run", methods=["POST"])
 @login_required
 @require_assembly_management
@@ -608,6 +626,8 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 current_selection=task_id,
             )
         )
+    except SelectionAlreadyRunning as e:
+        return redirect_to_running_task(assembly_id, e)
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for selection task", error=str(e))
         flash(_("Please configure Google Sheets first"), "error")
@@ -701,6 +721,8 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(
             url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
         )
+    except SelectionAlreadyRunning as e:
+        return redirect_to_running_task(assembly_id, e)
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for manage tabs delete", error=str(e))
         flash(_("Please configure Google Sheets first"), "error")
@@ -954,6 +976,9 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 max_select=max_select,
             )
         )
+
+    except SelectionAlreadyRunning as e:
+        return redirect_to_running_task(assembly_id, e)
 
     except NotFoundError as e:
         logger.warning("Failed to start replacement for assembly", assembly_id=str(assembly_id), error=str(e))

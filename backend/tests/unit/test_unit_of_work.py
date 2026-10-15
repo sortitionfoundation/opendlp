@@ -244,6 +244,20 @@ class TestFakeUnitOfWorkStrictness:
         with FakeUnitOfWork() as uow:
             assert uow.users.get(uuid.uuid4()) is None
 
+    def test_lock_outside_the_block_raises(self):
+        """The real lock is tied to the transaction the block opens, so the fake refuses outside it too."""
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(UnitOfWorkError):
+            uow.lock_assembly_for_write(uuid.uuid4())
+
+    def test_lock_inside_the_block_is_recorded(self):
+        """The fake lock does nothing but remember which assembly was locked."""
+        assembly_id = uuid.uuid4()
+        with FakeUnitOfWork() as uow:
+            uow.lock_assembly_for_write(assembly_id)
+        assert uow.locked_assembly_ids == [assembly_id]
+
     def test_repository_access_after_the_block_raises(self):
         with FakeUnitOfWork() as uow:
             pass
