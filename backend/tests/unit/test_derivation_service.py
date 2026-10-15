@@ -979,6 +979,8 @@ class TestUploadLargeMapping:
 
         assert report.row_count == 2
         assert report.used_positional_headers is True
+        entries = uow.respondent_field_mapping_entries.list_for_field(field.id)
+        assert {(e.lookup_key, e.output_value) for e in entries} == {("SW1A1AA", "London"), ("M11AE", "North")}
 
     def test_rejects_an_unnamed_column_with_data(self, uow):
         user, assembly = _seed(uow)
@@ -991,9 +993,10 @@ class TestUploadLargeMapping:
 
         assert [problem.kind for problem in exc_info.value.problems] == [PROBLEM_BLANK_HEADER_WITH_DATA]
 
-    def test_rejects_a_repeated_header(self, uow):
+    def test_rejects_a_repeated_header_and_keeps_the_previous_table(self, uow):
         user, assembly = _seed(uow)
         field = self._region_field(uow, user, assembly)
+        upload_large_mapping(uow, user.id, assembly.id, field.id, csv_content="postcode,region\nM1 1AE,North\n")
 
         with pytest.raises(TabularDataError) as exc_info:
             upload_large_mapping(
@@ -1001,6 +1004,8 @@ class TestUploadLargeMapping:
             )
 
         assert [problem.kind for problem in exc_info.value.problems] == [PROBLEM_DUPLICATE_HEADER]
+        entries = uow.respondent_field_mapping_entries.list_for_field(field.id)
+        assert [(e.lookup_key, e.output_value) for e in entries] == [("M11AE", "North")]
 
     def test_lookups_serve_derivation(self, uow):
         user, assembly = _seed(uow)
