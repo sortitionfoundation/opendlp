@@ -7,6 +7,7 @@ import pytest
 
 from opendlp.service_layer.exceptions import InvalidSelection
 from opendlp.service_layer.tabular_data import (
+    MAX_LISTED_PROBLEMS,
     PROBLEM_BLANK_HEADER_WITH_DATA,
     PROBLEM_DUPLICATE_HEADER,
     PROBLEM_EMPTY,
@@ -345,3 +346,23 @@ class TestTabularDataError:
         error = TabularDataError([TableProblem(kind="custom", message="Column C is wrong.")])
 
         assert error.user_msg() == "Column C is wrong."
+
+    def test_lists_a_problem_per_line_up_to_the_limit(self):
+        problems = [TableProblem(kind="custom", message=f"Problem {n}.") for n in range(MAX_LISTED_PROBLEMS)]
+
+        lines = TabularDataError(problems).user_msg().split("\n")
+
+        assert lines == [f"There are {MAX_LISTED_PROBLEMS} problems with this file:"] + [
+            f"Problem {n}." for n in range(MAX_LISTED_PROBLEMS)
+        ]
+
+    def test_summarises_the_problems_past_the_limit(self):
+        problems = [TableProblem(kind="custom", message=f"Problem {n}.") for n in range(MAX_LISTED_PROBLEMS + 140)]
+
+        error = TabularDataError(problems)
+        lines = error.user_msg().split("\n")
+
+        assert lines[0] == f"There are {MAX_LISTED_PROBLEMS + 140} problems with this file:"
+        assert lines[1:-1] == [f"Problem {n}." for n in range(MAX_LISTED_PROBLEMS)]
+        assert lines[-1] == "… and 140 more"
+        assert error.problems == problems

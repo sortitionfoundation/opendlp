@@ -20,6 +20,10 @@ PROBLEM_BLANK_HEADER_WITH_DATA = "blank_header_with_data"
 PROBLEM_DUPLICATE_HEADER = "duplicate_header"
 PROBLEM_NUL_CHARACTER = "nul_character"
 
+# How many problems the message lists before summarising the rest, so a file
+# with a hundred bad columns does not produce a hundred-line message.
+MAX_LISTED_PROBLEMS = 10
+
 
 def column_letter(position: int) -> str:
     """The spreadsheet letter for a 0-based column position: 0 is "A", 26 is "AA"."""
@@ -69,7 +73,10 @@ class TabularDataError(CuratedMessage, InvalidSelection):
             message = self.problems[0].message
         else:
             lead = _("There are %(count)d problems with this file:", count=len(self.problems))
-            message = "\n".join([lead, *(problem.message for problem in self.problems)])
+            lines = [lead, *(problem.message for problem in self.problems[:MAX_LISTED_PROBLEMS])]
+            if len(self.problems) > MAX_LISTED_PROBLEMS:
+                lines.append(_("… and %(count)d more", count=len(self.problems) - MAX_LISTED_PROBLEMS))
+            message = "\n".join(lines)
         super().__init__(message)
 
 
