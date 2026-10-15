@@ -1,7 +1,6 @@
 # 916 - Blank columns in uploaded CSVs
 
-Status: **third draft** - all decisions (D1-D12) agreed; ready to implement
-once the "report every problem" design below has been reviewed.
+Status: **implemented** - all steps of the implementation sketch are done.
 
 ## The problem
 
@@ -528,4 +527,4 @@ emails but not names or dates of birth.
 - [x] 4. Targets via `select_columns`; integration and e2e tests.
 - [x] 5. Large mapping via `clean_table`; route handler; integration and e2e tests.
 - [x] 6. Write `docs/agent/future_work/csv_upload_errors.md`.
-- [ ] 7. `translate-catalogues`, `just check`, `just test-nobdd`, then BDD.
+- [x] 7. `translate-catalogues`, `just check`, `just test-nobdd`, then BDD.
