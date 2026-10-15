@@ -495,6 +495,22 @@ class TestImportRespondentsFromRows:
             )
 
 
+class TestImportRespondentsFromCsv:
+    def test_checks_permission_before_examining_the_file(self, uow):
+        user = User(email="plain@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(user)
+        assembly = Assembly(title="Locked")
+        uow.assemblies.add(assembly)
+        # An unnamed column with data in it would be a TabularDataError.
+        with pytest.raises(InsufficientPermissions):
+            respondent_service.import_respondents_from_csv(uow, user.id, assembly.id, "id,\nR1,note\n")
+
+    def test_checks_the_assembly_exists_before_examining_the_file(self, uow):
+        user, _, _ = _seed(uow)
+        with pytest.raises(AssemblyNotFoundError):
+            respondent_service.import_respondents_from_csv(uow, user.id, uuid.uuid4(), "id,\nR1,note\n")
+
+
 class TestImportSkipsInternalColumns:
     # That the internal columns are discarded from attributes is covered by
     # TestRespondentFromRow.test_discards_internal_columns. This test covers the

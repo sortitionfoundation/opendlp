@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
-from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import (
     INTERNAL_IMPORT_SKIP_COLUMNS,
@@ -106,6 +106,24 @@ def create_respondent(
     return respondent.create_detached_copy()
 
 
+def _assembly_to_import_into(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> Assembly:
+    """The assembly respondents are being imported into, once the user may manage it."""
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="import respondents",
+            required_role="assembly-manager or admin",
+        )
+    return assembly
+
+
 def import_respondents_from_csv(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -125,8 +143,10 @@ def import_respondents_from_csv(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    assembly = uow.assemblies.get(assembly_id)
-    previous_id_column = assembly.csv.csv_id_column if assembly is not None and assembly.csv is not None else None
+    # Check who is asking before examining the file, so someone without access
+    # learns nothing about it from the problems it has.
+    assembly = _assembly_to_import_into(uow, user_id, assembly_id)
+    previous_id_column = assembly.csv.csv_id_column if assembly.csv is not None else None
     table = clean_table(
         rows_from_csv(csv_content), header_checks=[respondent_header_check(id_column, previous_id_column)]
     )
@@ -143,7 +163,7 @@ def import_respondents_from_csv(
     )
 
 
-def import_respondents_from_rows(  # noqa: C901
+def import_respondents_from_rows(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
@@ -171,19 +191,7 @@ def import_respondents_from_rows(  # noqa: C901
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    user = uow.users.get(user_id)
-    if not user:
-        raise UserNotFoundError(f"User {user_id} not found")
-
-    assembly = uow.assemblies.get(assembly_id)
-    if not assembly:
-        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-
-    if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="import respondents",
-            required_role="assembly-manager or admin",
-        )
+    assembly = _assembly_to_import_into(uow, user_id, assembly_id)
 
     if not headers:
         raise InvalidSelection("CSV file is empty or has no header row")
