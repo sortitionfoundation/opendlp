@@ -4,7 +4,7 @@ ABOUTME: Provides functions for respondent creation, CSV import, and validation"
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
@@ -120,7 +120,7 @@ def _assembly_to_import_into(uow: AbstractUnitOfWork, user_id: uuid.UUID, assemb
             action="import respondents",
             required_role="assembly-manager or admin",
         )
-    return assembly
+    return cast("Assembly", assembly)
 
 
 def import_respondents_from_csv(
