@@ -33,13 +33,19 @@ from opendlp.service_layer.exceptions import (
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
     InsufficientPermissions,
-    InvalidSelection,
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
-from opendlp.service_layer.tabular_data import Column, HeaderCheck, TableProblem, clean_table, rows_from_csv
+from opendlp.service_layer.tabular_data import (
+    Column,
+    HeaderCheck,
+    TableProblem,
+    TabularDataError,
+    clean_table,
+    rows_from_csv,
+)
 from opendlp.translations import lazy_gettext as _l
 
 if TYPE_CHECKING:
@@ -945,7 +951,7 @@ def check_id_column_in_headers(
     headers: list[str],
     previous_id_column: str | None = None,
 ) -> None:
-    """Raise ``InvalidSelection`` if ``id_column`` is not one of ``headers``.
+    """Raise ``TabularDataError`` if ``id_column`` is not one of ``headers``.
 
     The message names the columns the CSV does have, so the organiser can
     correct the ID Column field without opening the file to look. Pass
@@ -955,7 +961,7 @@ def check_id_column_in_headers(
     """
     message = _missing_id_column_message(id_column, headers, previous_id_column)
     if message:
-        raise InvalidSelection(message)
+        raise TabularDataError([TableProblem(kind=PROBLEM_ID_COLUMN_MISSING, message=message, header=id_column)])
 
 
 def _missing_id_column_message(id_column: str, headers: list[str], previous_id_column: str | None) -> str:

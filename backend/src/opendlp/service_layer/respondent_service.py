@@ -32,7 +32,6 @@ from opendlp.service_layer.derivation_service import (
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
-    InvalidSelection,
     RespondentNotFoundError,
     UserNotFoundError,
 )
@@ -48,7 +47,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     respondent_header_check,
     update_schema_from_headers,
 )
-from opendlp.service_layer.tabular_data import clean_table, rows_from_csv
+from opendlp.service_layer.tabular_data import PROBLEM_EMPTY, TableProblem, TabularDataError, clean_table, rows_from_csv
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.writing_guard import refuse_if_writing_run_unfinished
 from opendlp.translations import gettext as _
@@ -194,7 +193,7 @@ def import_respondents_from_rows(
     assembly = _assembly_to_import_into(uow, user_id, assembly_id)
 
     if not headers:
-        raise InvalidSelection("CSV file is empty or has no header row")
+        raise TabularDataError([TableProblem(kind=PROBLEM_EMPTY, message=_("The file is empty or has no header row."))])
 
     # Auto-detect id_column from first column if not provided
     if id_column is None:

@@ -6,8 +6,10 @@ import pytest
 from opendlp.service_layer.exceptions import InvalidSelection
 from opendlp.service_layer.respondent_field_schema_service import (
     MAX_LISTED_HEADERS,
+    PROBLEM_ID_COLUMN_MISSING,
     check_id_column_in_headers,
 )
+from opendlp.service_layer.tabular_data import TabularDataError
 
 
 class TestCheckIdColumnInHeaders:
@@ -82,3 +84,13 @@ class TestCheckIdColumnInHeaders:
             check_id_column_in_headers("nationbuilder_id", ["id", "first_name"])
 
         assert "pre-filled" not in str(exc_info.value)
+
+    def test_raises_a_curated_table_problem(self):
+        """So the upload page shows the message rather than a generic one."""
+        with pytest.raises(TabularDataError) as exc_info:
+            check_id_column_in_headers("nationbuilder_id", ["id", "first_name"])
+
+        [problem] = exc_info.value.problems
+        assert problem.kind == PROBLEM_ID_COLUMN_MISSING
+        assert problem.header == "nationbuilder_id"
+        assert exc_info.value.user_msg() == problem.message

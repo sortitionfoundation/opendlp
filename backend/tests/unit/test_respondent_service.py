@@ -21,10 +21,10 @@ from opendlp.service_layer import respondent_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
-    InvalidSelection,
     RespondentNotFoundError,
     UserNotFoundError,
 )
+from opendlp.service_layer.tabular_data import TabularDataError
 from tests.fakes import FakeUnitOfWork
 
 
@@ -481,8 +481,19 @@ class TestImportRespondentsFromRows:
 
     def test_empty_headers_raise(self, uow):
         user, assembly, _ = _seed(uow)
-        with pytest.raises(InvalidSelection):
+        with pytest.raises(TabularDataError) as exc_info:
             respondent_service.import_respondents_from_rows(uow, user.id, assembly.id, [], [])
+
+        assert exc_info.value.user_msg() == "The file is empty or has no header row."
+
+    def test_a_missing_id_column_names_the_columns(self, uow):
+        user, assembly, _ = _seed(uow)
+        with pytest.raises(TabularDataError) as exc_info:
+            respondent_service.import_respondents_from_rows(
+                uow, user.id, assembly.id, ["id", "age"], [{"id": "R1", "age": "30"}], id_column="ref"
+            )
+
+        assert "no column called 'ref'" in exc_info.value.user_msg()
 
     def test_requires_manage_permission(self, uow):
         user = User(email="plain@example.com", global_role=GlobalRole.USER, password_hash="hash")
