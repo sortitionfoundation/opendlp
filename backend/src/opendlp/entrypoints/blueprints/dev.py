@@ -47,7 +47,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.validators import SlugError
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import ContentStyle, RespondentStatus
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_with_permissions,
@@ -115,6 +115,7 @@ from opendlp.service_layer.registration_page_service import (
     unpublish_registration_page,
     update_registration_page,
     update_registration_page_html,
+    update_registration_page_intro_html,
 )
 from opendlp.service_layer.registration_submission_service import (
     submit_registration_by_assembly_id,
@@ -728,10 +729,7 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
         return {
             "status": "success",
             "registration_page": _serialise_registration_page(reg_page),
-            "html_source": {
-                "id": str(html.id),
-                "form_html_preview": html.form_html[:200] + "..." if len(html.form_html) > 200 else html.form_html,
-            },
+            "html_source": _serialise_html_source(html),
         }
     except InsufficientPermissions as e:
         return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
@@ -789,25 +787,44 @@ def _handle_generate_starter_html(uow: Any, params: dict[str, Any]) -> dict[str,
         return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
-def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
-    """Handle update_registration_page_html service call."""
-    form_html = params.get("form_html", "")
+def _html_preview(html: str) -> str:
+    return html[:200] + "..." if len(html) > 200 else html
 
+
+def _serialise_html_source(html: "RegistrationPageHtml") -> dict[str, Any]:
+    return {
+        "id": str(html.id),
+        "intro_html_preview": _html_preview(html.intro_html),
+        "form_html_preview": _html_preview(html.form_html),
+        "content_style": html.content_style.value,
+    }
+
+
+def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle update_registration_page_html and update_registration_page_intro_html service calls.
+
+    Either HTML is updated only when its key is present, so the two can be
+    changed independently from the docs page. ``content_style`` ("govuk" or
+    "plain") goes with the intro.
+    """
     try:
-        html_source = update_registration_page_html(
-            uow=uow,
-            user_id=current_user.id,
-            page_id=_resolve_page_id(uow, params),
-            form_html=form_html,
-        )
+        page_id = _resolve_page_id(uow, params)
+        if "intro_html" in params:
+            content_style = ContentStyle(params["content_style"]) if params.get("content_style") else None
+            html_source = update_registration_page_intro_html(
+                uow=uow,
+                user_id=current_user.id,
+                page_id=page_id,
+                intro_html=params["intro_html"],
+                content_style=content_style,
+            )
+        if "form_html" in params:
+            html_source = update_registration_page_html(
+                uow=uow, user_id=current_user.id, page_id=page_id, form_html=params["form_html"]
+            )
         return {
             "status": "success",
-            "html_source": {
-                "id": str(html_source.id),
-                "form_html_preview": html_source.form_html[:200] + "..."
-                if len(html_source.form_html) > 200
-                else html_source.form_html,
-            },
+            "html_source": _serialise_html_source(html_source),
         }
     except InsufficientPermissions as e:
         return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
@@ -1116,24 +1133,13 @@ def _handle_set_registration_image_alt(uow: Any, params: dict[str, Any]) -> dict
 def _handle_list_image_snippets(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle list_image_snippets service call.
 
-    Uses the same URL builder as the public registration route so the snippets
-    show the URL the public page would render.
+    Uses the same URL builder as the Assets panel, so the snippets show the URL
+    an author would paste.
     """
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    page_repo_uow = bootstrap.get_flask_uow()
-    with page_repo_uow:
-        page = page_for_assembly(page_repo_uow, assembly_id)
-    url_slug = page.url_slug if page else ""
-
     def url_for_image(image: RegistrationImage) -> str:
-        if url_slug:
-            return url_for(
-                "registration.serve_registration_image",
-                url_slug=url_slug,
-                image_name=f"{image.sha256}.{IMAGE_FILE_EXTENSION}",
-            )
-        return f"<no-slug>/{image.sha256}.{IMAGE_FILE_EXTENSION}"
+        return url_for("registration.serve_registration_image_by_id", image_id=image.id)
 
     try:
         pairs = list_image_snippets(

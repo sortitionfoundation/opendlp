@@ -8,7 +8,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from enum import Enum
 
-from opendlp.config import get_registration_form_html_max_bytes, get_registration_thank_you_html_max_bytes
+from opendlp.config import (
+    get_registration_form_html_max_bytes,
+    get_registration_intro_html_max_bytes,
+    get_registration_thank_you_html_max_bytes,
+)
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.registration_page import (
     DEFAULT_THANK_YOU_HTML,
@@ -18,10 +22,12 @@ from opendlp.domain.registration_page import (
     RegistrationPageSource,
     RegistrationPageStatus,
     RenderContext,
+    generate_initial_intro_html,
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
 from opendlp.domain.registration_page import generate_starter_form_html_govuk as _build_starter_html_govuk
 from opendlp.domain.users import User
+from opendlp.domain.value_objects import ContentStyle
 from opendlp.translations import gettext as _
 
 from .exceptions import (
@@ -36,6 +42,11 @@ from .unit_of_work import AbstractUnitOfWork
 
 _MANAGE_ROLE = "assembly-manager or admin"
 _VIEW_ROLE = "assembly role or admin"
+# Activity entries are stored in English, like "Updated intro HTML".
+_CONTENT_STYLE_CHANGES = {
+    ContentStyle.GOVUK: "Changed the intro style to GOV.UK",
+    ContentStyle.PLAIN: "Changed the intro style to plain",
+}
 
 
 def _load_user_and_assembly(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID):  # type: ignore[no-untyped-def]
@@ -256,7 +267,12 @@ def create_registration_page(
     )
     page.record_create(user.id)
     uow.registration_pages.add(page)
-    uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
+    uow.registration_page_html_sources.add(
+        RegistrationPageHtml(
+            registration_page_id=page.id,
+            intro_html=generate_initial_intro_html(assembly.title, assembly.question),
+        )
+    )
     return page.create_detached_copy()
 
 
@@ -319,7 +335,12 @@ def create_registration_page_with_slugs(
     )
     page.record_create(user.id)
     uow.registration_pages.add(page)
-    uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
+    uow.registration_page_html_sources.add(
+        RegistrationPageHtml(
+            registration_page_id=page.id,
+            intro_html=generate_initial_intro_html(assembly.title, assembly.question),
+        )
+    )
     return page.create_detached_copy()
 
 
@@ -357,10 +378,13 @@ def duplicate_registration_page(
     page.record_create(user.id)
     page.activity[-1] = replace(page.activity[-1], text=f"Registration page copied from '{source.name}'")
     uow.registration_pages.add(page)
+    source_html = _load_html_source(uow, source)
     uow.registration_page_html_sources.add(
         RegistrationPageHtml(
             registration_page_id=page.id,
-            form_html=_load_html_source(uow, source).form_html,
+            form_html=source_html.form_html,
+            intro_html=source_html.intro_html,
+            content_style=source_html.content_style,
         )
     )
     return page.create_detached_copy()
@@ -644,6 +668,52 @@ def update_registration_page_html(
     return source.create_detached_copy()
 
 
+def fill_empty_registration_form_html(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, style: ContentStyle
+) -> RegistrationPageHtml:
+    """Write the starter form HTML, in the given style, into a page whose form is empty.
+
+    Generated here rather than posted, so it always matches the current
+    questions. A form that has HTML is left alone: the buttons that ask for
+    this only show while the form is empty, so HTML here means the request is
+    stale and a fill would lose someone's work.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _user, page = _load_manageable_page(uow, user_id, page_id)
+    source = _load_html_source(uow, page)
+    if source.form_html.strip():
+        raise ValueError(_("The form already has HTML, so it was left as it is"))
+    fields = list(uow.respondent_field_definitions.list_by_assembly(page.assembly_id))
+    build = _build_starter_html_govuk if style == ContentStyle.GOVUK else _build_starter_html
+    return update_registration_page_html(uow, user_id, page_id, build(fields))
+
+
+def update_registration_page_intro_html(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    page_id: uuid.UUID,
+    intro_html: str,
+    content_style: ContentStyle | None = None,
+) -> RegistrationPageHtml:
+    """Update the page's intro HTML, and its content style when one is given.
+
+    Raises ValueError if the HTML exceeds the size limit.
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+
+    _check_size(intro_html, get_registration_intro_html_max_bytes(), _("intro HTML"))
+    source = _load_html_source(uow, page)
+    if source.intro_html != intro_html:
+        source.update_intro_html(intro_html)
+        page.record_edit(user.id, "Updated intro HTML")
+    if content_style is not None and source.content_style != content_style:
+        source.update_content_style(content_style)
+        page.record_edit(user.id, _CONTENT_STYLE_CHANGES[content_style])
+    return source.create_detached_copy()
+
+
 def publish_registration_page(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, text: str = ""
 ) -> RegistrationPage:
@@ -923,6 +993,8 @@ def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, asse
 
 @dataclass(frozen=True)
 class StarterFormHtmlVariants:
+    """The starter form HTML, in an unstyled and a GOV.UK-styled flavour."""
+
     plain: str
     govuk: str
 
@@ -930,7 +1002,9 @@ class StarterFormHtmlVariants:
 def generate_starter_form_html_variants(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> StarterFormHtmlVariants:
-    """Generate both the unstyled and GOV.UK-styled starter HTML forms from the assembly's respondent field schema.
+    """Generate the unstyled and GOV.UK-styled starter form HTML.
+
+    The form comes from the assembly's respondent field schema.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -938,4 +1012,7 @@ def generate_starter_form_html_variants(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
     fields = list(uow.respondent_field_definitions.list_by_assembly(assembly_id))
-    return StarterFormHtmlVariants(plain=_build_starter_html(fields), govuk=_build_starter_html_govuk(fields))
+    return StarterFormHtmlVariants(
+        plain=_build_starter_html(fields),
+        govuk=_build_starter_html_govuk(fields),
+    )

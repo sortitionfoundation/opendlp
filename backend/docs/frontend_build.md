@@ -6,12 +6,12 @@ driven through `package.json` scripts and wrapped in `just` targets.
 
 ## The build steps
 
-| Tool           | Source                              | Output (built)                          | npm script          |
-| -------------- | ----------------------------------- | --------------------------------------- | ------------------- |
-| Dart Sass      | `src/scss/`                         | `static/css/application.css`            | `build:sass`        |
-| Tailwind CSS   | `static/backoffice/src/main.css`    | `static/backoffice/dist/main.css`       | `build:backoffice`  |
-| esbuild        | `src/js/`                           | `static/js/`, `static/backoffice/js/`   | `build:js`          |
-| vendor copy    | `node_modules/`                     | `static/js/vendor/`                     | `build:vendor`      |
+| Tool         | Source                           | Output (built)                                             | npm script         |
+| ------------ | -------------------------------- | ---------------------------------------------------------- | ------------------ |
+| Dart Sass    | `src/scss/`                      | `static/css/application.css`, `static/css/rich-editor.css` | `build:sass`       |
+| Tailwind CSS | `static/backoffice/src/main.css` | `static/backoffice/dist/main.css`                          | `build:backoffice` |
+| esbuild      | `src/js/`                        | `static/js/`, `static/backoffice/js/`                      | `build:js`         |
+| vendor copy  | `node_modules/`                  | `static/js/vendor/`                                        | `build:vendor`     |
 
 `npm run build` runs all of them. The first three also have a `watch:*` script for rebuilding on
 change; the vendor copy has none, because its sources only change when a dependency is upgraded.
@@ -51,7 +51,8 @@ See [agent/frontend_js_testing.md](agent/frontend_js_testing.md) for the convent
 ## Built assets are never committed
 
 Every built artifact above is **gitignored** (the `dist/` rule, `static/css/application.css`,
-`static/js/vendor/`, and the bundled `static/js/*.js` / `static/backoffice/js/*.js`).
+`static/css/rich-editor.css`, `static/js/vendor/`, and the bundled `static/js/*.js` /
+`static/backoffice/js/*.js`).
 Built output is regenerated wherever the app is assembled:
 
 - **Local dev:** `just run` runs `just build-all` first; `just install` runs `npm run build`.

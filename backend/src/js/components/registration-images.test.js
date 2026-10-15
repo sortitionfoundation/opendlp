@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { loadApiFixture } from "../test-support/api-fixtures.js";
 import { ID_SENTINEL } from "../lib/url-utils.js";
+import { INSERT_IMAGE_EVENT } from "../lib/rich-editor-events.js";
 import { registrationImages } from "./registration-images.js";
 
 const UPLOADED = loadApiFixture(
@@ -219,6 +220,168 @@ describe("submitImageUpload", () => {
     await state.submitImageUpload();
 
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("inserting into the visual editor", () => {
+  let inserts;
+  let listener;
+
+  beforeEach(() => {
+    inserts = [];
+    listener = (event) => inserts.push(event.detail);
+    document.addEventListener(INSERT_IMAGE_EVENT, listener);
+  });
+
+  afterEach(() => {
+    document.removeEventListener(INSERT_IMAGE_EVENT, listener);
+  });
+
+  function editorRequest(detail) {
+    return { detail: detail };
+  }
+
+  it("opens the upload modal with a dropped file already chosen", () => {
+    const state = images();
+    const file = new File(["x"], "dropped.png", { type: "image/png" });
+
+    state.requestImageForEditor(
+      editorRequest({ editorId: "intro", file: file, pos: 7 }),
+    );
+
+    expect(state.imageUploadModalOpen).toBe(true);
+    expect(state.imageFile).toBe(file);
+    expect(state.imageFileName).toBe("dropped.png");
+    expect(state.imageAlt).toBe("");
+  });
+
+  it("opens the upload modal empty for the Image button", () => {
+    const state = images();
+
+    state.requestImageForEditor(
+      editorRequest({ editorId: "intro", file: null, pos: null }),
+    );
+
+    expect(state.imageUploadModalOpen).toBe(true);
+    expect(state.imageFile).toBeNull();
+  });
+
+  describe("showChosenImageFile", () => {
+    // jsdom has no DataTransfer; this one carries the files the way a
+    // browser's does, which is all the method touches.
+    class FileListTransfer {
+      constructor() {
+        this.files = [];
+        this.items = { add: (file) => this.files.push(file) };
+      }
+    }
+
+    beforeEach(() => {
+      vi.stubGlobal("DataTransfer", FileListTransfer);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("puts a dropped or pasted file into the rebuilt file input", () => {
+      const state = images();
+      const file = new File(["x"], "pasted.png", { type: "image/png" });
+      state.requestImageForEditor(
+        editorRequest({ editorId: "intro", file: file, pos: null }),
+      );
+      const input = { files: [] };
+
+      state.showChosenImageFile(input);
+
+      expect(Array.from(input.files)).toEqual([file]);
+    });
+
+    it("leaves the file input empty when no file was handed over", () => {
+      const state = images();
+      state.requestImageForEditor(
+        editorRequest({ editorId: "intro", file: null, pos: null }),
+      );
+      const input = { files: [] };
+
+      state.showChosenImageFile(input);
+
+      expect(input.files).toEqual([]);
+    });
+  });
+
+  it("inserts the uploaded image where the editor asked, and lists it", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(UPLOADED, true, 201));
+    const state = images();
+    state.requestImageForEditor(
+      editorRequest({
+        editorId: "intro",
+        file: new File(["x"], "logo.png"),
+        pos: 7,
+      }),
+    );
+    state.imageAlt = "Assembly logo";
+
+    await state.submitImageUpload();
+
+    expect(inserts).toEqual([
+      {
+        editorId: "intro",
+        src: UPLOADED.image.public_url,
+        alt: UPLOADED.image.alt,
+        pos: 7,
+      },
+    ]);
+    expect(state.images).toEqual([UPLOADED.image]);
+  });
+
+  it("does not insert anything for an upload started from the Assets panel", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(UPLOADED, true, 201));
+    const state = images();
+    state.requestImageForEditor(
+      editorRequest({ editorId: "intro", file: null, pos: 3 }),
+    );
+    state.closeImageUploadModalIfAllowed();
+    state.openImageUploadModal();
+    state.onImageFileSelected(fileEvent("logo.png"));
+    state.imageAlt = "Assembly logo";
+
+    await state.submitImageUpload();
+
+    expect(inserts).toEqual([]);
+  });
+
+  it("does not insert after a failed upload", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(UPLOAD_ERROR, false, 400));
+    const state = images();
+    state.requestImageForEditor(
+      editorRequest({
+        editorId: "intro",
+        file: new File(["x"], "a.png"),
+        pos: 1,
+      }),
+    );
+    state.imageAlt = "Assembly logo";
+
+    await state.submitImageUpload();
+
+    expect(inserts).toEqual([]);
+    expect(state.imageInsertEditorId).toBe("intro");
+  });
+
+  it("inserts a listed image at the editor's cursor from the Insert button", () => {
+    const state = images([UPLOADED.image]);
+
+    state.insertImage(UPLOADED.image);
+
+    expect(inserts).toEqual([
+      {
+        editorId: "",
+        src: UPLOADED.image.public_url,
+        alt: UPLOADED.image.alt,
+        pos: null,
+      },
+    ]);
   });
 });
 

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opendlp.sortitionfoundation.org/schemas/json_api/registration-skeleton.schema.json",
+  "title": "Registration skeleton response",
+  "description": "Returned by the registration skeleton route: starter HTML for the form, plain and GOV.UK styled.",
+  "type": "object",
+  "properties": {
+    "html": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The form skeleton, plain."
+    },
+    "html_govuk": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The form skeleton, with GOV.UK classes."
+    }
+  },
+  "required": [
+    "html",
+    "html_govuk"
+  ],
+  "additionalProperties": false
+}

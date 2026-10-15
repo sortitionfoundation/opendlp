@@ -24,6 +24,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
 {% from "backoffice/components/icons.html" import icon_check_12 %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
+{% from "backoffice/components/rich_editor.html" import rich_editor_controls %}
 {% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="", info="") %}
     {#
     Text input component using semantic design tokens.
@@ -152,7 +153,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro textarea(name, label="", value="", placeholder="", hint="", error="", required=false, disabled=false, rows=4, id="", classes="", attrs="", dim=true, code_editor=false) %}
+{% macro textarea(name, label="", value="", placeholder="", hint="", error="", required=false, disabled=false, rows=4, id="", classes="", attrs="", dim=true, code_editor=false, rich_editor=false, rich_editor_label="", rich_editor_images=false, rich_editor_image_min_width="", rich_editor_tables=false, rich_editor_absolute_links=false, rich_editor_editable=true, rich_editor_style="", rich_editor_variable_example="") %}
     {#
     Textarea component using semantic design tokens.
 
@@ -174,6 +175,17 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         code_editor: When true, marks the textarea for progressive enhancement into a
              CodeMirror HTML editor (syntax highlighting + auto-indent). Requires the
              backoffice/js/dist/html-editor.js bundle to be loaded on the page. Default off.
+        rich_editor: When true, enhances the textarea into the visual editor, with a
+             Visual/HTML switch whose HTML view is the CodeMirror editor. Same bundle.
+        rich_editor_label: Accessible name for the visual editing area.
+        rich_editor_images: Whether the visual editor accepts images.
+        rich_editor_image_min_width: The narrowest, in pixels, an image can be dragged to.
+        rich_editor_tables: Whether the visual editor offers tables.
+        rich_editor_absolute_links: Whether the link dialog refuses a relative address,
+             as it must for an email.
+        rich_editor_editable: False shows the editor read-only, with no toolbar.
+        rich_editor_style: The content style ("govuk" or "plain") the visual editor previews.
+        rich_editor_variable_example: A variable the box offers, named in the editor's hint.
 
     Usage:
         {{ textarea("description", label="Description", placeholder="Enter description...") }}
@@ -197,6 +209,10 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             <p id="{{ input_id }}-hint" class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
         {% endif %}
 
+        {% if rich_editor %}
+            {{ rich_editor_controls(input_id, rich_editor_label, images=rich_editor_images, image_min_width=rich_editor_image_min_width, tables=rich_editor_tables, editable=rich_editor_editable, content_style=rich_editor_style, variable_example=rich_editor_variable_example) }}
+        {% endif %}
+
         {# Textarea field #}
         {% set described_by = ([input_id ~ "-hint"] if hint else []) + ([input_id ~ "-error"] if has_error else []) %}
         <textarea
@@ -209,6 +225,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {% if required %}required{% endif %}
             {% if disabled %}disabled{% endif %}
             {% if code_editor %}data-code-editor{% endif %}
+            {% if rich_editor %}data-rich-editor {% if rich_editor_images %}data-rich-editor-images="true"{% endif %} {% if rich_editor_tables %}data-rich-editor-tables="true"{% endif %} {% if rich_editor_absolute_links %}data-rich-editor-absolute-links="true"{% endif %}{% endif %}
             {% if attrs %}{{ attrs | safe }}{% endif %}
             class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 resize-y {{ classes }}"
             style="
@@ -322,7 +339,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro checkbox(name, label="", checked=false, hint="", error="", required=false, disabled=false, readonly=false, id="", attrs="", value="") %}
+{% macro checkbox(name, label="", checked=false, hint="", error="", required=false, disabled=false, readonly=false, id="", attrs="", value="", dim=true) %}
     {#
     Checkbox component based on Figma OpenDLP UI specification.
 
@@ -338,6 +355,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         id: Optional id attribute (defaults to name)
         attrs: Additional HTML attributes
         value: Optional value attribute for the checkbox
+        dim: When disabled, controls whether the checkbox is dimmed (default true).
+             Pass dim=false for the read-only look of a view-mode form: full-opacity
+             label, greyed box.
 
     Usage:
         {{ checkbox("agree", label="I agree to the terms", checked=true) }}
@@ -366,7 +386,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         {% else %}
             {# Editable checkbox with custom styling #}
             {% set described_by = ([input_id ~ "-hint"] if hint else []) + ([input_id ~ "-error"] if has_error else []) %}
-            <label class="checkbox-container{% if disabled %} checkbox-disabled{% endif %}">
+            <label class="checkbox-container{% if disabled %} {% if dim %}checkbox-disabled{% else %}checkbox-readonly{% endif %}{% endif %}">
                 {# Hidden native checkbox for accessibility #}
                 <input
                     type="checkbox"
@@ -402,7 +422,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro radio_group(name, label="", options=[], value="", hint="", error="", disabled=false, readonly=false, id="", attrs="", inline=false, option_help_text={}, dim=true) %}
+{% macro radio_group(name, label="", options=[], value="", hint="", error="", disabled=false, readonly=false, id="", attrs="", inline=false, option_help_text={}, dim=true, option_info={}) %}
     {#
     Radio button group component based on Figma OpenDLP UI specification.
 
@@ -419,6 +439,8 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         attrs: Additional HTML attributes for each radio
         dim: When disabled, controls whether the labels are dimmed (default true).
              Pass dim=false to keep full-opacity labels for read-only display contexts.
+        option_info: Dict of option value -> a sentence shown as an info icon beside
+             that option's label, and read out as the radio's description
 
     Usage:
         {{ radio_group(
@@ -454,6 +476,11 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {# Editable radio buttons with custom styling #}
             <div class="flex {% if inline %}flex-row flex-wrap gap-4{% else %}flex-col gap-2{% endif %}">
                 {% for option in options %}
+                    {% set info = option_info.get(option.value, "") if option_info else "" %}
+                    {% set info_id = input_id ~ "_" ~ loop.index ~ "-info" %}
+                    {# The info icon sits outside the label, so its sentence describes the
+                       radio rather than becoming part of its name. #}
+                    {% if info %}<div class="flex items-center gap-1">{% endif %}
                     <label class="radio-container{% if disabled %} {% if dim %}radio-disabled{% else %}radio-readonly{% endif %}{% endif %}">
                         {# Hidden native radio for accessibility #}
                         <input
@@ -464,6 +491,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                             {% if option.value == value %}checked{% endif %}
                             {% if disabled %}disabled{% endif %}
                             {% if attrs %}{{ attrs | safe }}{% endif %}
+                            {% if info %}aria-describedby="{{ info_id }}"{% endif %}
                             class="radio-input"
                         />
                         {# Custom radio circle #}
@@ -477,6 +505,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                             <span class="radio-option-help text-body-sm" style="color: var(--color-secondary-text);">— {{ help_text }}</span>
                         {% endif %}
                     </label>
+                    {% if info %}{{ info_icon(info, id=info_id) }}</div>{% endif %}
                 {% endfor %}
             </div>
             {% if has_error %}

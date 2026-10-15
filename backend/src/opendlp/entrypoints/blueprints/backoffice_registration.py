@@ -33,6 +33,7 @@ from opendlp.domain.registration_page import (
 )
 from opendlp.domain.uploads import human_size
 from opendlp.domain.validators import validate_email_field
+from opendlp.domain.value_objects import ContentStyle
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     registration_url_prefix,
@@ -81,6 +82,7 @@ from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
     deletable_registration_page_ids,
     delete_registration_page,
+    fill_empty_registration_form_html,
     generate_starter_form_html_variants,
     get_registration_page_by_slug,
     get_registration_page_with_source,
@@ -92,6 +94,7 @@ from opendlp.service_layer.registration_page_service import (
     unpublish_registration_page,
     update_registration_page,
     update_registration_page_html,
+    update_registration_page_intro_html,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
@@ -116,17 +119,14 @@ def _list_url(assembly_id: uuid.UUID) -> str:
     return url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id)
 
 
-def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
+def _image_to_dict(image: RegistrationImage) -> dict[str, Any]:
     """Serialise an image for the Assets panel.
 
-    ``public_url`` is the public ``/register/<slug>/assets/<sha>.png`` route. If the
-    page has no slug yet (newly created), we return a placeholder so the front-end
-    can still render the row.
+    ``public_url`` is the slug-free ``/register-assets/images/<id>.png`` route, so
+    it exists before the page has a URL and survives a change of URL.
     """
     file_name = f"{image.sha256}.{IMAGE_FILE_EXTENSION}"
-    public_url = (
-        url_for("registration.serve_registration_image", url_slug=url_slug, image_name=file_name) if url_slug else ""
-    )
+    public_url = url_for("registration.serve_registration_image_by_id", image_id=image.id)
     if image.alt and image.alt.strip():
         display_name = image.alt.strip()
     elif image.original_filename:
@@ -140,7 +140,7 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
         "file_name": file_name,
         "display_name": display_name,
         "public_url": public_url,
-        "img_snippet": generate_image_html(public_url, alt=image.alt) if public_url else "",
+        "img_snippet": generate_image_html(public_url, alt=image.alt),
         "width": image.width,
         "height": image.height,
         "byte_size": image.byte_size,
@@ -148,6 +148,7 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
         # so translators can reorder the parts. Concatenating in the template
         # (e.g. "Delete " + display_name) hard-codes English word order.
         "aria_label_details": _("Details for %(name)s", name=display_name),
+        "aria_label_insert": _("Insert %(name)s into the editor", name=display_name),
         "aria_label_copy_snippet": _("Copy <img> snippet for %(name)s", name=display_name),
         "aria_label_delete": _("Delete %(name)s", name=display_name),
     }
@@ -260,6 +261,8 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             registration_page, html_source = get_registration_page_with_source(uow, current_user.id, page.id)
             html = cast("RegistrationPageHtml", html_source)
             html_content = html.form_html
+            intro_content = html.intro_html
+            content_style = html.content_style
             thank_you_html = registration_page.thank_you_html
             registration_status = registration_page.status.value  # "TEST", "PUBLISHED", or "CLOSED"
 
@@ -274,7 +277,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # Load registration images and PDF documents for the Assets panel.
             # Assets are assembly-scoped and shared by every page of the assembly.
             stored_images = list_registration_images(uow, current_user.id, assembly_id)
-            images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
+            images = [_image_to_dict(image) for image in stored_images]
             stored_documents = list_registration_documents(uow, current_user.id, assembly_id)
             documents = [_document_to_dict(document, registration_page.url_slug) for document in stored_documents]
 
@@ -295,7 +298,8 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # The authored HTML doesn't follow the field schema automatically, so
             # warn when any field changed after this HTML was last saved.
             fields_changed_after_save = any(
-                f.updated_at > html.updated_at for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)
+                f.updated_at > html.form_updated_at
+                for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)
             )
         page_rows = registration_page_rows(all_pages, assembly_id, deletable_ids, counts_by_page)
 
@@ -303,10 +307,10 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
         # have no save path so we always keep them read-only regardless of the param.
         edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
 
-        # Sub-section within the Registration tab (stepper). Default to the form editor.
-        active_section = request.args.get("section", "form")
-        if active_section not in ("form", "email", "preview"):
-            active_section = "form"
+        # Sub-section within the Registration tab (stepper). Default to step 1, the name and URLs.
+        active_section = request.args.get("section", "page")
+        if active_section not in _SECTIONS:
+            active_section = "page"
 
         return render_template(
             "backoffice/assembly_registration.html",
@@ -322,12 +326,16 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             qr_code_data_url=qr_code_data_url,
             registration_status=registration_status,
             html_content=html_content,
+            intro_content=intro_content,
+            content_style=content_style,
             thank_you_html=thank_you_html,
             has_registration_page=True,
             images=images,
             documents=documents,
             max_image_upload_mb=get_max_image_upload_mb(),
             max_pdf_upload_mb=get_max_pdf_upload_mb(),
+            image_width_min=IMAGE_WIDTH_MIN,
+            image_width_max=IMAGE_WIDTH_MAX,
             allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
             edit_mode=edit_mode,
             active_section=active_section,
@@ -397,20 +405,65 @@ def _handle_registration_action(
     return _("Registration page saved")
 
 
+# The widths, in pixels, an image in the visual editor can be given - by the Image
+# size dialog or by dragging its corner. Passed to the page so the dialog, the
+# editor and the message stating the limits all read them from here.
+IMAGE_WIDTH_MIN = 20
+IMAGE_WIDTH_MAX = 2000
+
+_SECTIONS = ("page", "intro", "form", "email", "preview")
 _SAVE_ACTIONS = frozenset({"save", "save_and_next"})
 _LIFECYCLE_ACTIONS = frozenset({"publish", "unpublish", "close", "reopen"})
 
 
-def _post_action_section(action: str) -> str:
+def _save_origin() -> str:
+    """Which editor step a save was posted from, named by its hidden ``step`` field.
+
+    A post without a known step, such as a lifecycle post, is treated as the
+    form step, which only matters for the error redirect."""
+    step = request.form.get("step", "")
+    return step if step in _SECTIONS else "form"
+
+
+def _post_action_section(action: str, origin: str) -> str:
     """Where to land after a successful action that stays in the editor:
-    save_and_next advances to the email step, unpublish/reopen return to the
-    preview step (where their buttons live), and plain save returns to the form
-    step. Publish and close never reach this — they leave the editor entirely."""
-    if action == "save_and_next":
-        return "email"
+    save_and_next advances to the next step (page → intro → form → email),
+    unpublish/reopen return to the preview step (where their buttons live), and
+    plain save returns to the step it came from, as does save_and_next from the
+    last step, which has nowhere to advance to. Publish and close never reach
+    this — they leave the editor entirely."""
+    if action == "save_and_next" and origin != _SECTIONS[-1]:
+        return _SECTIONS[_SECTIONS.index(origin) + 1]
     if action in _LIFECYCLE_ACTIONS:
         return "preview"
-    return "form"
+    return origin
+
+
+def _posted_content_style() -> ContentStyle | None:
+    """The intro step's content style radio, or None to leave the style as it is."""
+    try:
+        return ContentStyle(request.form.get("content_style", ""))
+    except ValueError:
+        return None
+
+
+def _apply_posted_html(uow: AbstractUnitOfWork, page: RegistrationPage) -> None:
+    """Persist whichever HTML the post carries: the intro step's or the form step's.
+
+    Only save-family actions carry HTML content. Publish/close/etc post from
+    buttons that don't render the editor, so guard against blanking the HTML.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    if "intro_content" in request.form:
+        update_registration_page_intro_html(
+            uow, current_user.id, page.id, request.form["intro_content"], content_style=_posted_content_style()
+        )
+    fill_style = _posted_fill_style()
+    if fill_style is not None:
+        fill_empty_registration_form_html(uow, current_user.id, page.id, fill_style)
+    elif "html_content" in request.form:
+        update_registration_page_html(uow, current_user.id, page.id, request.form["html_content"])
 
 
 def _apply_page_settings(uow: AbstractUnitOfWork, page: RegistrationPage) -> RegistrationPage:
@@ -438,7 +491,15 @@ def _apply_page_settings(uow: AbstractUnitOfWork, page: RegistrationPage) -> Reg
     return page
 
 
-def _post_save_redirect(assembly_id: uuid.UUID, url_slug: str, action: str) -> str:
+def _posted_fill_style() -> ContentStyle | None:
+    """The style an empty form step's fill button asks for, or None when no fill was asked for."""
+    try:
+        return ContentStyle(request.form.get("fill_form", ""))
+    except ValueError:
+        return None
+
+
+def _post_save_redirect(assembly_id: uuid.UUID, url_slug: str, action: str, origin: str) -> str:
     """Where a successful save lands. The editor is a modal over the pages list,
     so the actions that finish the flow — publish and close — dismiss it by
     landing on the list. Unpublish stays in the editor (the user unpublished in
@@ -446,7 +507,7 @@ def _post_save_redirect(assembly_id: uuid.UUID, url_slug: str, action: str) -> s
     list's row menu) also lands on the list."""
     if action in ("publish", "close") or request.form.get("return_to") == "list":
         return _list_url(assembly_id)
-    return editor_url(assembly_id, url_slug, section=_post_action_section(action))
+    return editor_url(assembly_id, url_slug, section=_post_action_section(action, origin))
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/save", methods=["POST"])
@@ -455,8 +516,10 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
     """Save the registration HTML and/or trigger a lifecycle transition.
 
     Actions:
-      - save            → update HTML; land back in read-only on the form step.
-      - save_and_next   → update HTML; advance to the auto-reply email step.
+      - save            → update the name and URLs, the intro or the form HTML;
+                          land back in read-only on the step it was posted from.
+      - save_and_next   → as save, then advance to the next step (page → intro
+                          → form → auto-reply email).
       - publish         → transition TEST → PUBLISHED. No HTML update. Lands on
                           the pages list — the editor modal is done.
       - unpublish       → transition PUBLISHED → TEST (back to test mode); stays
@@ -470,10 +533,11 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
     successful lifecycle action — the list's row menu posts it.
     """
     action = request.form.get("action", "save")
-    # On failure of a save action, land back in edit mode of the form step so the
-    # user can fix and retry. Lifecycle actions come from the read-only preview
-    # step, so failure just lands them back on the preview step.
-    error_kwargs: dict[str, Any] = {"section": "form"}
+    origin = _save_origin()
+    # On failure of a save action, land back in edit mode of the step it came
+    # from so the user can fix and retry. Lifecycle actions come from the
+    # read-only preview step, so failure just lands them back on the preview step.
+    error_kwargs: dict[str, Any] = {"section": origin}
     if action in _SAVE_ACTIONS:
         error_kwargs["edit"] = "1"
     elif action in _LIFECYCLE_ACTIONS:
@@ -494,16 +558,13 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
         with uow:
             page = _page_by_slug(uow, assembly_id, url_slug)
 
-            # Only save-family actions carry HTML content. Publish/close/etc post from
-            # buttons that don't render the editor, so guard against blanking the HTML.
-            if "html_content" in request.form:
-                update_registration_page_html(uow, current_user.id, page.id, request.form["html_content"])
+            _apply_posted_html(uow, page)
             page = _apply_page_settings(uow, page)
 
             flash_message = _handle_registration_action(uow, action, current_user.id, page)
 
         flash(flash_message, "success")
-        return redirect_preserving_scroll(_post_save_redirect(assembly_id, page.url_slug, action))
+        return redirect_preserving_scroll(_post_save_redirect(assembly_id, page.url_slug, action, origin))
     except RegistrationPageNotReady as e:
         # Show specific validation errors for publishing
         error_message = "; ".join(e.problems)
@@ -1112,7 +1173,7 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.exception("Image upload error for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify({"error": _("An error occurred while uploading the image")}), 500
 
-    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 201
+    return jsonify({"image": _image_to_dict(image)}), 201
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["PATCH"])
@@ -1140,7 +1201,7 @@ def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
         logger.error("Update image alt error", assembly_id=str(assembly_id), image_id=str(image_id), error=str(e))
         return jsonify({"error": _("An error occurred while updating the image")}), 500
 
-    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 200
+    return jsonify({"image": _image_to_dict(image)}), 200
 
 
 @backoffice_registration_bp.route(

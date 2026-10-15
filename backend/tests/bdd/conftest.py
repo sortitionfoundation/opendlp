@@ -229,6 +229,10 @@ def test_server(test_database, csv_test_data_dir):
     # anything it deleted. Pin the one that would actually do damage: a developer
     # with EMAIL_ADAPTER=smtp would otherwise have the BDD run send real email.
     env["EMAIL_ADAPTER"] = "console"
+    # The registration editor shows images through the public image route, which
+    # the registration_page flag gates. The scrub sets every flag to "false", so
+    # without this an image in the editor or preview would load as broken.
+    env["FF_REGISTRATION_PAGE"] = "true"
     # Known, accepted leak: SUPPORTED_LANGUAGES and BABEL_DEFAULT_LOCALE reach the
     # server the same way, and the steps assert on English text. Playwright sends
     # an en-US Accept-Language, so get_locale() still picks en for anyone whose

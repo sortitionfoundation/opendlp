@@ -41,11 +41,11 @@
         },
         "public_url": {
           "type": "string",
-          "description": "Empty when the registration page has no slug yet."
+          "description": "The slug-free /register-assets/images/<id>.png URL; it does not change with the page URL."
         },
         "img_snippet": {
           "type": "string",
-          "description": "Ready-to-paste <img> tag, html-escaped. Empty when public_url is."
+          "description": "Ready-to-paste <img> tag pointing at public_url, html-escaped."
         },
         "width": {
           "type": "integer",
@@ -60,6 +60,10 @@
           "minimum": 1
         },
         "aria_label_details": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aria_label_insert": {
           "type": "string",
           "minLength": 1
         },
@@ -84,6 +88,7 @@
         "height",
         "byte_size",
         "aria_label_details",
+        "aria_label_insert",
         "aria_label_copy_snippet",
         "aria_label_delete"
       ],

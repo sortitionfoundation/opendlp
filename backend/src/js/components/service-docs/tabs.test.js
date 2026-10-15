@@ -222,10 +222,16 @@ const EXECUTE_CALLS = [
     props: {
       updateHtmlAssemblyId: "a-1",
       updateHtmlPageId: "p-1",
+      updateIntroContent: "<h1>Hi</h1>",
       updateHtmlContent: "<form></form>",
     },
     service: "update_registration_page_html",
-    params: { assembly_id: "a-1", page_id: "p-1", form_html: "<form></form>" },
+    params: {
+      assembly_id: "a-1",
+      page_id: "p-1",
+      intro_html: "<h1>Hi</h1>",
+      form_html: "<form></form>",
+    },
   },
   {
     factory: serviceDocsRegistration,

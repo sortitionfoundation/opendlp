@@ -1,5 +1,9 @@
-// ABOUTME: Form skeleton preview slice of the registration page controller
-// ABOUTME: Fetches the generated markup and holds the plain / GOV.UK styled toggle
+// ABOUTME: Skeleton preview slice of the registration page controller
+// ABOUTME: Fetches the generated form markup, holds the plain / GOV.UK styled toggle and writes the choice into the form
+import { SET_VALUE_EVENT } from "../lib/code-editor-events.js";
+
+// The form step's HTML textarea, which the chosen skeleton replaces.
+var FORM_TEXTAREA_ID = "html_content";
 
 /**
  * Build the skeleton-preview slice of the registration page controller.
@@ -18,12 +22,14 @@ export function registrationSkeleton(options) {
     skeletonModalOpen: false,
     skeletonHtmlPlain: "",
     skeletonHtmlStyled: "",
-    skeletonView: "plain",
+    // The accessible version is the one to recommend, so it is shown first.
+    skeletonView: "styled",
+    skeletonReplaceConfirmOpen: false,
 
     // Uses fetch directly rather than the lib/json-request helpers: this route
     // reports its problems in the body rather than the status, so the parsed
     // body is the whole answer and an unparsable one has to be an error.
-    fetchSkeleton: function () {
+    fetchFormSkeleton: function () {
       var self = this;
       self.skeletonLoading = true;
 
@@ -42,7 +48,7 @@ export function registrationSkeleton(options) {
           }
           self.skeletonHtmlPlain = data.html;
           self.skeletonHtmlStyled = data.html_govuk;
-          self.skeletonView = "plain";
+          self.skeletonView = "styled";
           self.skeletonModalOpen = true;
         })
         .catch(function () {
@@ -63,21 +69,50 @@ export function registrationSkeleton(options) {
       this.skeletonView = "styled";
     },
 
-    copySkeletonToClipboard: function () {
+    // Writing over a form that has HTML loses it, so that asks first. The
+    // skeleton modal closes while the question is asked, so only one dialog
+    // is ever open; cancelling brings it back as it was.
+    useSkeletonAsForm: function () {
       var self = this;
-      var html =
-        self.skeletonView === "plain"
-          ? self.skeletonHtmlPlain
-          : self.skeletonHtmlStyled;
+      var textarea = document.getElementById(FORM_TEXTAREA_ID);
+      if (!textarea) return;
+      if (textarea.value.trim()) {
+        self.skeletonModalOpen = false;
+        self.skeletonReplaceConfirmOpen = true;
+        self.$nextTick(function () {
+          if (self.$refs.keepFormBtn) self.$refs.keepFormBtn.focus();
+        });
+        return;
+      }
+      self._writeSkeletonToForm(textarea);
+    },
 
-      return navigator.clipboard.writeText(html).then(
-        function () {
-          self.showToast(messages.copied, "success");
-        },
-        function () {
-          self.showToast(messages.copyFailed, "error");
-        },
+    confirmReplaceFormWithSkeleton: function () {
+      var textarea = document.getElementById(FORM_TEXTAREA_ID);
+      this.skeletonReplaceConfirmOpen = false;
+      if (textarea) this._writeSkeletonToForm(textarea);
+    },
+
+    cancelReplaceFormWithSkeleton: function () {
+      this.skeletonReplaceConfirmOpen = false;
+      this.skeletonModalOpen = true;
+    },
+
+    // The textarea is written directly too, so the form still carries the
+    // skeleton if no editor is mounted over it to answer the event.
+    _writeSkeletonToForm: function (textarea) {
+      var html =
+        this.skeletonView === "plain"
+          ? this.skeletonHtmlPlain
+          : this.skeletonHtmlStyled;
+      textarea.value = html;
+      textarea.dispatchEvent(
+        new CustomEvent(SET_VALUE_EVENT, { detail: { value: html } }),
       );
+      // A replaced value fires no input event, so the unsaved-changes guard
+      // is told directly.
+      this.markEditDirty();
+      this.skeletonModalOpen = false;
     },
   };
 }

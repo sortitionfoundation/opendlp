@@ -57,7 +57,10 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
     {% if has_registration_page %}
         {% set list_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) %}
         <div x-data="registrationPageController()"
-             @keydown.escape.window="closePageGuarded()">
+             @keydown.escape.window="closePageGuarded()"
+             @rich-editor-link-request.document="openLinkDialog($event)"
+             @rich-editor-image-request.document="requestImageForEditor($event)"
+             @rich-editor-image-size-request.document="openImageSizeDialog($event)">
             {# Dimmed backdrop over the inert pages list. Deliberately not click-to-close:
                a stray click during a long editing session must not risk losing work.
                Closing goes through the X or Esc, both routed through the dirty guard. #}
@@ -79,14 +82,16 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         </a>
                     </div>
                     <div class="dialog-body">
-            {# Sub-navigation within the Registration tab: registration page → auto-reply email → preview & publish.
-           URL contract: ?section=form|email|preview. Panels are peers (any step reachable at any time),
+            {# Sub-navigation within the Registration tab: name and URLs → intro → form → auto-reply email →
+           preview & publish. URL contract: ?section=page|intro|form|email|preview. Panels are peers (any step reachable at any time),
            so the stepper is rendered in tabs mode. While editing, the whole stepper is disabled —
            navigation is locked to the card's Save/Cancel, matching the disabled footer buttons. #}
                         {% set section_base = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug) %}
                         {{ stepper(id="reg-steps",
                         items=[
-                        {"key": "form", "label": _("Registration page"), "href": section_base ~ "?section=form", "active": active_section == "form"},
+                        {"key": "page", "label": _("Name and URLs"), "href": section_base ~ "?section=page", "active": active_section == "page"},
+                        {"key": "intro", "label": _("Intro"), "href": section_base ~ "?section=intro", "active": active_section == "intro"},
+                        {"key": "form", "label": _("Form"), "href": section_base ~ "?section=form", "active": active_section == "form"},
                         {"key": "email", "label": _("Auto-reply email"), "href": section_base ~ "?section=email", "active": active_section == "email"},
                         {"key": "preview", "label": _("Preview and publish"), "href": section_base ~ "?section=preview", "active": active_section == "preview"}
                         ],
@@ -94,8 +99,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         mode="tabs",
                         preserve_scroll=true,
                         disabled=edit_mode) }}
-            {# Whole-artifact status. Sits below the stepper so it applies to all three steps —
-               the form HTML, the auto-reply email, and the preview all share this state. #}
+            {# Whole-artifact status. Sits below the stepper so it applies to all five steps —
+               the name and URLs, the intro, the form HTML, the auto-reply email, and the preview all
+               share this state. #}
                         {% if registration_status == "TEST" %}
                             <div class="rounded-lg p-4 mb-6"
                                  role="alert"
@@ -127,6 +133,12 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 </span>
                             </div>
                         {% endif %}
+                        {% if active_section == "page" %}
+                            {% include "backoffice/registration/_step_page.html" %}
+                        {% endif %}
+                        {% if active_section == "intro" %}
+                            {% include "backoffice/registration/_step_intro.html" %}
+                        {% endif %}
                         {% if active_section == "form" %}
                             {% include "backoffice/registration/_step_form.html" %}
                         {% endif %}
@@ -139,7 +151,11 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     </div>
                 </div>
             </div>
-            {% include "backoffice/registration/_modals.html" %}
+            {# The editor's own dialogs open over the takeover panel, so they lift above it
+               and their backdrop dims it - see [data-takeover-dialog-host] in main.css. #}
+            <div id="registration-editor-dialogs" data-takeover-dialog-host>
+                {% include "backoffice/registration/_modals.html" %}
+            </div>
         </div>
         {% include "backoffice/registration/_page_data.html" %}
     {% endif %}
@@ -147,6 +163,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
 {% block head %}
     {% if has_registration_page %}
+        {# GOV.UK typography for the visual intro editor's preview of the GOV.UK style. #}
+        <link rel="stylesheet"
+              href="{{ url_for('static', filename='css/rich-editor.css', v=static_hashes('css/rich-editor.css')) }}" />
         {# Not deferred, while Alpine is: that is what lets a script tag register the
            component before alpine:init fires. #}
         <script nonce="{{ csp_nonce }}"

@@ -34,11 +34,14 @@ BOUND_NAMES = [
     "cancelConfirmClose()",
     "closeLeaveModal()",
     "discardAndLeave()",
-    "fetchSkeleton()",
+    "fetchFormSkeleton()",
     "closeSkeletonModal()",
     "showPlainSkeleton()",
     "showStyledSkeleton()",
-    "copySkeletonToClipboard()",
+    "useSkeletonAsForm()",
+    "skeletonReplaceConfirmOpen",
+    "confirmReplaceFormWithSkeleton()",
+    "cancelReplaceFormWithSkeleton()",
     "skeletonHtmlPlain",
     "skeletonHtmlStyled",
     "openImageUploadModal()",
@@ -72,7 +75,6 @@ BOUND_NAMES = [
 # undefined, which shows the user an empty toast rather than an error.
 MESSAGE_KEYS = [
     "skeletonFetchFailed",
-    "copied",
     "copyFailed",
     "snippetCopied",
     "noPublicUrl",
@@ -125,12 +127,14 @@ def page_html(logged_in_admin, registration_page, existing_assembly) -> str:
 def every_view_html(logged_in_admin, fake_store, registration_page, existing_assembly) -> str:
     """Every section of the page, in every state, joined together.
 
-    One component drives three sections, edit mode and the published state, but
+    One component drives five sections, edit mode and the published state, but
     each renders only its own markup - so a binding lives on exactly one of them,
     and checking the default view alone would miss most of them.
     """
     base = f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
-    views = [f"{base}?section={section}" for section in ("form", "email", "preview")]
+    views = [f"{base}?section={section}" for section in ("page", "intro", "form", "email", "preview")]
+    views.append(f"{base}?section=page&edit=1")
+    views.append(f"{base}?section=intro&edit=1")
     views.append(f"{base}?section=form&edit=1")
 
     def render(url: str) -> str:

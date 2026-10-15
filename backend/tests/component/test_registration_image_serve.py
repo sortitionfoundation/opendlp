@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for serving registration images from the repository
 # ABOUTME: Seeds a page + image in a FakeStore then GETs the public asset route — no PostgreSQL
 
+import uuid
 from io import BytesIO
 
 import pytest
@@ -19,6 +20,7 @@ from opendlp.service_layer.registration_page_service import (
     publish_registration_page,
     update_registration_page_html,
 )
+from tests.component.conftest import _login
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -182,3 +184,66 @@ class TestAssetsAreSharedAcrossPages:
 
         assert client.get(f"/register/{owning_slug}/assets/{image.sha256}.png").status_code == 200
         assert client.get(f"/register/{other_page.url_slug}/assets/{image.sha256}.png").status_code == 404
+
+
+class TestServeRegistrationImageById:
+    def test_serves_published_image_publicly_and_immutably(
+        self, client: FlaskClient, fake_store: FakeStore, admin_user: User
+    ) -> None:
+        _slug, image = _seed_page_with_image(fake_store, admin_user)
+
+        response = client.get(f"/register-assets/images/{image.id}.png")
+
+        assert response.status_code == 200
+        assert response.mimetype == "image/png"
+        assert response.data == image.data
+        assert response.headers["X-Content-Type-Options"] == "nosniff"
+        assert response.headers["Cache-Control"] == "public, max-age=31536000, immutable"
+        assert response.get_etag()[0] == image.sha256
+
+    def test_serves_test_mode_image(self, client: FlaskClient, fake_store: FakeStore, admin_user: User) -> None:
+        _slug, image = _seed_page_with_image(fake_store, admin_user, status="test")
+
+        assert client.get(f"/register-assets/images/{image.id}.png").status_code == 200
+
+    def test_404_anonymously_when_no_page_loads(
+        self, client: FlaskClient, fake_store: FakeStore, admin_user: User
+    ) -> None:
+        _slug, image = _seed_page_with_image(fake_store, admin_user, status="closed")
+
+        assert client.get(f"/register-assets/images/{image.id}.png").status_code == 404
+
+    def test_serves_to_a_signed_in_viewer_without_public_caching(
+        self, client: FlaskClient, fake_store: FakeStore, admin_user: User
+    ) -> None:
+        """Lets the editor show an image before the page loads publicly, without a shared cache keeping it."""
+        _slug, image = _seed_page_with_image(fake_store, admin_user, status="closed")
+        _login(client, admin_user)
+
+        response = client.get(f"/register-assets/images/{image.id}.png")
+
+        assert response.status_code == 200
+        assert response.data == image.data
+        assert "immutable" not in response.headers["Cache-Control"]
+        assert "no-store" in response.headers["Cache-Control"]
+
+    def test_304_with_matching_etag(self, client: FlaskClient, fake_store: FakeStore, admin_user: User) -> None:
+        _slug, image = _seed_page_with_image(fake_store, admin_user)
+
+        response = client.get(
+            f"/register-assets/images/{image.id}.png",
+            headers={"If-None-Match": f'"{image.sha256}"'},
+        )
+        assert response.status_code == 304
+
+    def test_404_for_unknown_id(self, client: FlaskClient) -> None:
+        assert client.get(f"/register-assets/images/{uuid.uuid4()}.png").status_code == 404
+
+    def test_404_when_feature_disabled(
+        self, client: FlaskClient, fake_store: FakeStore, admin_user: User, monkeypatch
+    ) -> None:
+        _slug, image = _seed_page_with_image(fake_store, admin_user)
+        monkeypatch.setenv("FF_REGISTRATION_PAGE", "false")
+        reload_flags()
+
+        assert client.get(f"/register-assets/images/{image.id}.png").status_code == 404

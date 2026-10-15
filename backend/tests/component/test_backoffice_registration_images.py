@@ -58,17 +58,17 @@ def _stored_images(fake_store, page) -> list[RegistrationImage]:
 
 
 class TestImageToDict:
-    def test_builds_public_url_and_snippet_when_slug_present(self, app):
+    def test_builds_slug_free_public_url_and_snippet(self, app):
         image = _image(alt="A nice logo", sha256="b" * 64)
         with app.test_request_context():
-            result = _image_to_dict(image, url_slug="my-slug")
+            result = _image_to_dict(image)
 
         assert result["id"] == str(image.id)
         assert result["alt"] == "A nice logo"
         assert result["file_name"] == f"{'b' * 64}.png"
         assert result["display_name"] == "A nice logo"
-        assert "/register/my-slug/assets/" in result["public_url"]
-        assert result["public_url"].endswith(f"{'b' * 64}.png")
+        assert result["public_url"] == f"/register-assets/images/{image.id}.png"
+        assert result["aria_label_insert"] == "Insert A nice logo into the editor"
         # Domain helper html-escapes both src and alt
         assert result["img_snippet"].startswith('<img src="')
         assert 'alt="A nice logo"' in result["img_snippet"]
@@ -79,27 +79,28 @@ class TestImageToDict:
     def test_includes_original_filename(self, app):
         image = _image(alt="A nice logo", original_filename="logo.png")
         with app.test_request_context():
-            result = _image_to_dict(image, url_slug="my-slug")
+            result = _image_to_dict(image)
         assert result["original_filename"] == "logo.png"
 
     def test_falls_back_to_original_filename_when_alt_blank(self, app):
         image = _image(alt="   ", sha256="c" * 64, original_filename="holiday photo.png")
         with app.test_request_context():
-            result = _image_to_dict(image, url_slug="my-slug")
+            result = _image_to_dict(image)
         assert result["display_name"] == "holiday photo.png"
 
     def test_falls_back_to_short_sha_when_alt_and_filename_blank(self, app):
         image = _image(alt="   ", sha256="c" * 64)
         with app.test_request_context():
-            result = _image_to_dict(image, url_slug="my-slug")
+            result = _image_to_dict(image)
         assert result["display_name"] == f"{'c' * 8}.png"
 
-    def test_omits_public_url_and_snippet_when_no_slug(self, app):
+    def test_public_url_and_snippet_do_not_depend_on_a_page_slug(self, app):
+        """The URL is keyed on the image id, so it exists before the page has a slug."""
         image = _image(sha256="d" * 64)
         with app.test_request_context():
-            result = _image_to_dict(image, url_slug="")
-        assert result["public_url"] == ""
-        assert result["img_snippet"] == ""
+            result = _image_to_dict(image)
+        assert result["public_url"] == f"/register-assets/images/{image.id}.png"
+        assert f'src="/register-assets/images/{image.id}.png"' in result["img_snippet"]
 
 
 class TestImageRoutesRequireLogin:
@@ -144,7 +145,7 @@ class TestUploadRoute:
         body = response.get_json()
         assert body["image"]["alt"] == "Hello world"
         assert body["image"]["original_filename"] == "logo.png"
-        assert registration_page.url_slug in body["image"]["public_url"]
+        assert body["image"]["public_url"] == f"/register-assets/images/{body['image']['id']}.png"
 
         stored = _stored_images(fake_store, registration_page)
         assert len(stored) == 1

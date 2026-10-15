@@ -26,6 +26,7 @@ export function serviceDocsRegistration() {
     updateRegistrationShortUrlSlug: "",
     updateHtmlAssemblyId: "",
     updateHtmlPageId: "",
+    updateIntroContent: "",
     updateHtmlContent: "",
     publishAssemblyId: "",
     publishPageId: "",
@@ -90,6 +91,7 @@ export function serviceDocsRegistration() {
       return this.executeService("update_registration_page_html", {
         assembly_id: this.updateHtmlAssemblyId,
         page_id: this.updateHtmlPageId,
+        intro_html: this.updateIntroContent,
         form_html: this.updateHtmlContent,
       });
     },

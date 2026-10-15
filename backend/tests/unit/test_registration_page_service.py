@@ -13,6 +13,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageAction,
     RegistrationPageSource,
     RegistrationPageStatus,
+    generate_initial_intro_html,
 )
 from opendlp.domain.respondent_field_schema import (
     FieldType,
@@ -20,7 +21,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, ContentStyle, GlobalRole
 from opendlp.service_layer import registration_page_service as service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -98,6 +99,15 @@ class TestCreateRegistrationPage:
         source = uow.registration_page_html_sources.get_by_page_id(page.id)
         assert source is not None
         assert source.form_html == ""
+
+    def test_create_seeds_the_intro_with_the_assembly_title_and_question(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = uow.registration_page_html_sources.get_by_page_id(page.id)
+        assert source is not None
+        assert source.intro_html == generate_initial_intro_html(assembly.title, assembly.question)
 
     def test_create_appends_create_activity(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
@@ -795,6 +805,161 @@ class TestGenerateStarterFormHtml:
         assert uow.committed is False
 
 
+class TestUpdateRegistrationPageIntroHtml:
+    def test_happy_path(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+        assert source.intro_html == "<h1>Hi</h1>"
+        assert source.form_html == ""
+
+    def test_rejects_oversized_html(self, uow, temp_env_vars):
+        """The intro has its own limit, and the error names the intro."""
+        temp_env_vars(REGISTRATION_INTRO_HTML_MAX_BYTES="1024")
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        with pytest.raises(ValueError, match="intro HTML must be at most 1024 bytes"):
+            service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "x" * 1100)
+
+    def test_appends_edit_when_changed(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+        page = page_for_assembly(uow, assembly.id)
+        edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
+        assert len(edits) == 1
+        assert "intro HTML" in edits[0].text
+
+    def test_no_op_no_activity(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+
+        service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+        page = page_for_assembly(uow, assembly.id)
+        edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
+        assert len(edits) == 1
+
+    def test_requires_manage_permission(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        viewer = _viewer(uow, assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            service.update_registration_page_intro_html(uow, viewer.id, _page_id(uow, assembly), "<h1>Hi</h1>")
+
+    def test_raises_for_an_unknown_page(self, uow):
+        admin = _admin(uow)
+
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.update_registration_page_intro_html(uow, admin.id, uuid.uuid4(), "<h1>Hi</h1>")
+
+
+class TestUpdateRegistrationPageContentStyle:
+    def test_new_pages_start_with_the_govuk_style(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.update_registration_page_intro_html(uow, admin.id, _page_id(uow, assembly), "")
+        assert source.content_style == ContentStyle.GOVUK
+
+    def test_sets_the_style_with_the_intro(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.update_registration_page_intro_html(
+            uow, admin.id, _page_id(uow, assembly), "<h1>Hi</h1>", content_style=ContentStyle.PLAIN
+        )
+        assert source.content_style == ContentStyle.PLAIN
+        assert source.intro_html == "<h1>Hi</h1>"
+
+    def test_leaves_the_style_alone_when_none_is_given(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_registration_page_intro_html(uow, admin.id, page_id, "", content_style=ContentStyle.PLAIN)
+
+        source = service.update_registration_page_intro_html(uow, admin.id, page_id, "<h1>Hi</h1>")
+        assert source.content_style == ContentStyle.PLAIN
+
+    def test_records_a_style_change_in_the_activity(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        page_id = _page_id(uow, assembly)
+        source = uow.registration_page_html_sources.get_by_page_id(page_id)
+        assert source is not None
+        # The saved intro, so only the style can count as a change.
+        service.update_registration_page_intro_html(
+            uow, admin.id, page_id, source.intro_html, content_style=ContentStyle.PLAIN
+        )
+        page = page_for_assembly(uow, assembly.id)
+        edits = [a.text for a in page.activity if a.action is RegistrationPageAction.EDIT]
+        assert edits == ["Changed the intro style to plain"]
+
+    def test_unchanged_style_records_nothing(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        page_id = _page_id(uow, assembly)
+        source = uow.registration_page_html_sources.get_by_page_id(page_id)
+        assert source is not None
+        # The saved intro, so only the style can count as a change.
+        service.update_registration_page_intro_html(
+            uow, admin.id, page_id, source.intro_html, content_style=ContentStyle.GOVUK
+        )
+        page = page_for_assembly(uow, assembly.id)
+        assert [a for a in page.activity if a.action is RegistrationPageAction.EDIT] == []
+
+
+class TestFillEmptyRegistrationFormHtml:
+    def test_fills_an_empty_form_with_the_accessible_starter_html(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.fill_empty_registration_form_html(uow, admin.id, _page_id(uow, assembly), ContentStyle.GOVUK)
+
+        assert 'name="first_name"' in source.form_html
+        assert 'class="govuk-input"' in source.form_html
+        page = page_for_assembly(uow, assembly.id)
+        assert [a.text for a in page.activity if a.action is RegistrationPageAction.EDIT] == ["Updated form HTML"]
+
+    def test_fills_an_empty_form_with_the_plain_starter_html(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.fill_empty_registration_form_html(uow, admin.id, _page_id(uow, assembly), ContentStyle.PLAIN)
+
+        assert 'name="first_name"' in source.form_html
+        assert "govuk-input" not in source.form_html
+
+    def test_leaves_a_form_with_html_alone(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_registration_page_html(uow, admin.id, page_id, READY_HTML)
+
+        with pytest.raises(ValueError, match="already has HTML"):
+            service.fill_empty_registration_form_html(uow, admin.id, page_id, ContentStyle.GOVUK)
+
+        source = uow.registration_page_html_sources.get_by_page_id(page_id)
+        assert source is not None
+        assert source.form_html == READY_HTML
+
+    def test_requires_manage_permission(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        viewer = _viewer(uow, assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            service.fill_empty_registration_form_html(uow, viewer.id, _page_id(uow, assembly), ContentStyle.GOVUK)
+
+
 class TestGenerateStarterFormHtmlVariants:
     def test_happy_path_includes_field_names_in_both_variants(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
@@ -813,6 +978,15 @@ class TestGenerateStarterFormHtmlVariants:
 
         assert 'class="govuk-input"' in variants.govuk
         assert 'class="govuk-input"' not in variants.plain
+
+    def test_forms_do_not_carry_the_assembly_copy(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+
+        variants = service.generate_starter_form_html_variants(uow, admin.id, assembly.id)
+
+        assert "{{ assembly_title }}" not in variants.plain
+        assert "{{ assembly_title }}" not in variants.govuk
 
     def test_requires_manage_permission(self, uow):
         _admin(uow)
@@ -967,6 +1141,18 @@ class TestCreateRegistrationPageWithSlugs:
         assert page.short_url_slug != ""
         assert len(page.short_url_slug) == 6
         assert page.url_slug == "dublin-citizens-assembly"
+
+    def test_seeds_the_intro_with_the_assembly_title_and_question(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Dublin Citizens Assembly", question="What next?", status=AssemblyStatus.ACTIVE)
+        uow.assemblies.add(assembly)
+
+        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="Registration page")
+
+        source = uow.registration_page_html_sources.get_by_page_id(page.id)
+        assert source is not None
+        assert "<h1>Dublin Citizens Assembly</h1>" in source.intro_html
+        assert "<p>What next?</p>" in source.intro_html
 
     def test_generates_unique_slug_on_collision(self, uow):
         admin = _admin(uow)

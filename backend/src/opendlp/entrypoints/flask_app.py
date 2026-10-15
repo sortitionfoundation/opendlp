@@ -17,7 +17,12 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import opendlp.logging
 from opendlp import bootstrap, config
 from opendlp.domain.respondent_field_schema import DERIVATION_TYPE_LABELS, ON_REGISTRATION_PAGE_LABELS
-from opendlp.domain.value_objects import assembly_status_labels, global_role_labels, respondent_status_labels
+from opendlp.domain.value_objects import (
+    assembly_status_labels,
+    content_style_labels,
+    global_role_labels,
+    respondent_status_labels,
+)
 from opendlp.entrypoints.context_processors import (
     inject_capabilities,
     inject_feature_flags,
@@ -125,6 +130,7 @@ def register_context_processors(app: Flask) -> None:
     # Same reason: the role tag macro is imported, and needs the labels.
     app.jinja_env.globals["global_role_labels"] = global_role_labels
     app.jinja_env.globals["assembly_status_labels"] = assembly_status_labels
+    app.jinja_env.globals["content_style_labels"] = content_style_labels
     app.jinja_env.globals["respondent_status_labels"] = respondent_status_labels
     app.jinja_env.globals["derivation_type_labels"] = DERIVATION_TYPE_LABELS
     app.jinja_env.globals["on_registration_page_labels"] = ON_REGISTRATION_PAGE_LABELS
@@ -298,6 +304,17 @@ PUBLIC_IMMUTABLE_ASSET_ENDPOINTS = frozenset({
     "registration.serve_registration_document",
 })
 
+
+def _is_public_immutable_asset() -> bool:
+    """True for a public, content-addressed asset response.
+
+    Either the endpoint is always one, or the view decided this response is one
+    by setting ``g.public_immutable_asset`` (an image served by id is public only
+    once its assembly has a publicly loadable page).
+    """
+    return request.endpoint in PUBLIC_IMMUTABLE_ASSET_ENDPOINTS or bool(g.get("public_immutable_asset"))
+
+
 # Endpoints that the backoffice embeds in a same-origin iframe. The global policy is
 # frame-ancestors 'none' / X-Frame-Options DENY; these endpoints relax it to
 # same-origin only — they must never become framable cross-origin.
@@ -329,7 +346,7 @@ def register_after_request_handlers(app: Flask) -> None:
         when a user is logged in. Public pages (when not logged in) can still be cached normally.
         """
         # Public content-addressed assets are immutable and safe to cache regardless of auth.
-        if request.endpoint in PUBLIC_IMMUTABLE_ASSET_ENDPOINTS:
+        if _is_public_immutable_asset():
             return response
         # Check if user is authenticated
         if current_user.is_authenticated:
@@ -349,7 +366,7 @@ def register_after_request_handlers(app: Flask) -> None:
 
         # The global policy is Cache-Control: no-store. Content-addressed public assets
         # carry their content hash in the URL, so they are safe to cache immutably.
-        if request.endpoint in PUBLIC_IMMUTABLE_ASSET_ENDPOINTS:
+        if _is_public_immutable_asset():
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
 
         # Same-origin-framable endpoints relax the global no-framing policy just enough

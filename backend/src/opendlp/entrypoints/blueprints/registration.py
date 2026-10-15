@@ -1,12 +1,14 @@
 """ABOUTME: Public registration page routes for assembly registration forms
 ABOUTME: Handles form rendering, submission, and URL resolution without login"""
 
+import uuid
 from datetime import UTC, datetime
 from io import BytesIO
 
 import structlog
-from flask import Blueprint, Response, abort, current_app, redirect, render_template, request, send_file, url_for
+from flask import Blueprint, Response, abort, current_app, g, redirect, render_template, request, send_file, url_for
 from flask.typing import ResponseReturnValue
+from flask_login import current_user
 from flask_wtf.csrf import generate_csrf, validate_csrf
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
 from wtforms import ValidationError
@@ -23,7 +25,10 @@ from opendlp.service_layer.registration_bot_protection_service import (
     record_registration_submission,
 )
 from opendlp.service_layer.registration_document_service import get_registration_document_for_serving
-from opendlp.service_layer.registration_image_service import get_registration_image_for_serving
+from opendlp.service_layer.registration_image_service import (
+    get_registration_image_for_serving,
+    get_registration_image_for_serving_by_id,
+)
 from opendlp.service_layer.registration_page_service import (
     RegistrationPageVisibilityState,
     find_registration_page_by_short_url_slug,
@@ -357,6 +362,30 @@ def serve_registration_image(url_slug: str, image_name: str) -> ResponseReturnVa
     response = Response(served.data, mimetype=IMAGE_CONTENT_TYPE)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.set_etag(served.sha256)
+    return response.make_conditional(request)
+
+
+@registration_bp.route("/register-assets/images/<uuid:image_id>.png", methods=["GET"])
+@require_feature("registration_page")
+def serve_registration_image_by_id(image_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve a registration image by its id - a URL that survives a change of page slug.
+
+    Served to anyone once the assembly has a publicly loadable page, and before
+    that only to signed-in users who can view the assembly. Only the public case
+    is marked cacheable; the signed-in case keeps the global no-store.
+    """
+    user_id = current_user.id if current_user.is_authenticated else None
+    uow = bootstrap.get_flask_uow()
+
+    with uow:
+        served = get_registration_image_for_serving_by_id(uow, image_id, user_id)
+    if served is None:
+        abort(404)
+
+    g.public_immutable_asset = served.public
+    response = Response(served.image.data, mimetype=IMAGE_CONTENT_TYPE)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.set_etag(served.image.sha256)
     return response.make_conditional(request)
 
 

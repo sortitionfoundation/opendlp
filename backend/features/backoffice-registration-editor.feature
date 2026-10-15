@@ -17,6 +17,14 @@ Feature: Backoffice registration HTML editor
     And I save the registration form
     Then the saved registration HTML should contain "ROUNDTRIP-MARKER-4931"
 
+  Scenario: Editing the intro in the code editor and saving persists the content
+    Given I am logged in as an admin user
+    And there is an assembly called "Intro Assembly" with a registration page
+    When I visit the registration intro editor for "Intro Assembly"
+    And I type "INTRO-MARKER-7718" into the intro content code editor
+    And I save the registration form
+    Then the saved registration intro should contain "INTRO-MARKER-7718"
+
   Scenario: The form skeleton preview is shown in a read-only code editor
     Given I am logged in as an admin user
     And there is an assembly called "Skeleton Assembly" with a registration page
@@ -24,16 +32,59 @@ Feature: Backoffice registration HTML editor
     And I open the form skeleton preview
     Then the form skeleton should be shown in a read-only code editor
 
-  Scenario: The form skeleton can be toggled between plain and GOV.UK styled HTML
+  Scenario: The skeleton preview dims the registration editor behind it
+    Given I am logged in as an admin user
+    And there is an assembly called "Skeleton Dim Assembly" with a registration page
+    When I visit the registration form editor for "Skeleton Dim Assembly"
+    And I open the form skeleton preview
+    Then the registration editor behind the dialog should be dimmed
+
+  Scenario: The form skeleton can be toggled between plain and accessible HTML
     Given I am logged in as an admin user
     And there is an assembly called "Skeleton Toggle Assembly" with a registration page
     When I visit the registration form editor for "Skeleton Toggle Assembly"
     And I open the form skeleton preview
-    Then the form skeleton should show plain markup
-    When I switch the form skeleton to the GOV.UK styled view
     Then the form skeleton should show GOV.UK styled markup
-    When I switch the form skeleton to the plain HTML view
+    When I switch the form skeleton to the plain view
     Then the form skeleton should show plain markup
+    When I switch the form skeleton to the accessible view
+    Then the form skeleton should show GOV.UK styled markup
+
+  Scenario: The skeleton fills an empty form without asking
+    Given I am logged in as an admin user
+    And there is an assembly called "Skeleton Use Assembly" with a registration page
+    When I visit the registration form editor for "Skeleton Use Assembly"
+    And I open the form skeleton preview
+    And I use the skeleton as the form
+    Then the form skeleton dialog should be closed
+    And the HTML content editor should contain "govuk-button"
+    When I save the registration form
+    Then the saved registration HTML should contain "govuk-button"
+
+  Scenario: The skeleton asks before replacing a form that has HTML
+    Given I am logged in as an admin user
+    And there is an assembly called "Skeleton Replace Assembly" with a registration page
+    When I visit the registration form editor for "Skeleton Replace Assembly"
+    And I type "MINE-4411" into the HTML content code editor
+    And I open the form skeleton preview
+    And I use the skeleton as the form
+    Then I should be asked before the form is replaced
+    When I keep the form as it is
+    Then the form skeleton should show GOV.UK styled markup
+    And the HTML content editor should contain "MINE-4411"
+    When I use the skeleton as the form
+    And I confirm replacing the form
+    Then the form skeleton dialog should be closed
+    And the HTML content editor should contain "govuk-button"
+    And the HTML content editor should not contain "MINE-4411"
+
+  Scenario: The wizard footer is pinned to the bottom of the editor on every step
+    Given I am logged in as an admin user
+    And there is an assembly called "Pinned Footer Assembly" with a registration page
+    When I visit the name and URLs step for "Pinned Footer Assembly"
+    Then the wizard footer should be the editor's bottom edge
+    When I visit the registration form editor for "Pinned Footer Assembly"
+    Then the wizard footer should be the editor's bottom edge
 
   Scenario: Wizard navigation is locked while editing
     Given I am logged in as an admin user
@@ -107,14 +158,25 @@ Feature: Backoffice registration HTML editor
     When I visit the registration tab for "List View Assembly"
     Then I should see the registration page list
     When I open the first registration page from the list
-    Then I should be on the read-only registration form view
+    Then I should be on the read-only name and URLs view
 
   Scenario: A registration page's Edit button opens its editor
     Given I am logged in as an admin user
     And there is an assembly called "List Edit Button Assembly" with a registration page
     When I visit the registration tab for "List Edit Button Assembly"
     And I choose to edit the first registration page from the list
-    Then I should be on the read-only registration form view
+    Then I should be on the read-only name and URLs view
+
+  Scenario: Renaming a page and changing its URL on the first step
+    Given I am logged in as an admin user
+    And there is an assembly called "Rename Step Assembly" with a registration page
+    When I visit the name and URLs step for "Rename Step Assembly"
+    And I click Edit on the name and URLs step
+    And I rename the registration page to "Renamed page" with the URL "renamed-step-page"
+    And I save the name and URLs
+    Then I should be on the read-only name and URLs view
+    And the registration editor title should be "Renamed page"
+    And the editor address should use the slug "renamed-step-page"
 
   Scenario: Deleting a registration page from the list asks for confirmation first
     Given I am logged in as an admin user

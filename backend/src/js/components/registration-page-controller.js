@@ -1,5 +1,5 @@
 // ABOUTME: The Alpine component driving the backoffice registration page
-// ABOUTME: Composes the toast, edit-guard, skeleton-preview and asset slices into one state
+// ABOUTME: Composes the toast, edit-guard, skeleton-preview, asset and editor-dialog slices into one state
 
 import { formatBytes } from "../lib/format-bytes.js";
 import { registrationDocuments } from "./registration-documents.js";
@@ -7,6 +7,8 @@ import { registrationEditGuard } from "./registration-edit-guard.js";
 import { registrationImages } from "./registration-images.js";
 import { registrationSkeleton } from "./registration-skeleton.js";
 import { registrationToast } from "./registration-toast.js";
+import { richEditorImageSizeDialog } from "./rich-editor-image-size-dialog.js";
+import { richEditorLinkDialog } from "./rich-editor-link-dialog.js";
 
 /**
  * Build the registrationPageController component state.
@@ -26,6 +28,7 @@ import { registrationToast } from "./registration-toast.js";
  * @param {string} [config.csrfToken=""] - the CSRF token for the session
  * @param {Array} [config.images=[]] - the images already on the page
  * @param {Array} [config.documents=[]] - the documents already on the page
+ * @param {Object} [config.imageWidth={}] - `{min, max}`, the widths an image can be given
  * @param {Object} [config.urls={}] - the routes the page calls
  * @param {Object} [config.messages={}] - translated strings
  * @returns {Object} Alpine component state
@@ -34,6 +37,7 @@ export function registrationPageController(config) {
   var urls = config.urls || {};
   var messages = config.messages || {};
   var csrfToken = config.csrfToken || "";
+  var imageWidth = config.imageWidth || {};
 
   return Object.assign(
     {
@@ -58,6 +62,12 @@ export function registrationPageController(config) {
       documents: config.documents || [],
       uploadDocumentUrl: urls.uploadDocument,
       documentItemUrlTemplate: urls.documentItem || "",
+      messages: messages,
+    }),
+    richEditorLinkDialog({ messages: messages }),
+    richEditorImageSizeDialog({
+      minWidth: imageWidth.min,
+      maxWidth: imageWidth.max,
       messages: messages,
     }),
   );
