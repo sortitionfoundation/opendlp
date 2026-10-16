@@ -251,7 +251,9 @@ Each step is a separate commit on the `python-314` branch.
    `uv-version` default `"0.12.24"`. In `main.yml`: Codecov leg `'3.14'`;
    update the "local dev pin, 3.12" comments. Push and confirm all legs plus
    BDD are green. (BDD on 3.14 is the one genuinely new signal here.)
-2. **Local dev** — `.python-version` → `3.14`. uv recreates `.venv` on next
+2. ✅ **Local dev** (done: `just test` on CPython 3.14.8 — 7200 passed,
+   5 skipped, 819 JS tests passed; `just check` clean. The 4 pytest warnings
+   also appear on 3.12, so they predate this change) — `.python-version` → `3.14`. uv recreates `.venv` on next
    `uv sync`/`uv run`. Run `just test` (serial, full, includes BDD) and
    `just check`. Note: every worktree's `.venv` gets recreated too. Also:
    local uv is 0.11.7, older than the 0.12.24 CI will use — worth upgrading
