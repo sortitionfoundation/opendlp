@@ -25,7 +25,9 @@ members of the public see the registration pages and receive the email. Those tw
 get different registers. *(A1)*
 
 - **Backoffice and admin: informal (*tegeződés*)** — "jelentkezz be", "próbáld
-  újra", "Üdvözlünk".
+  újra", "Üdvözlünk". The organiser sign-up page (`templates/public/register.html`)
+  counts as backoffice despite its folder: its audience is staff creating an
+  account, and its strings already say "Mesélj egy kicsit magadról".
 - **Public registration pages (`templates/register/`) and all outbound email
   (`templates/emails/`): formal (*magázás*)** — "jelentkezzen be", "próbálja
   újra". A civic process writing to a stranger does not address them as *te*.
@@ -167,6 +169,14 @@ roles and must not read as synonyms. *(C14)*
 | 2FA / two-factor authentication | kétlépcsős azonosítás | |
 | backup code | tartalék kód | |
 | service account (Google) | szolgáltatásfiók | *(unreviewed)* |
+| feasibility (check) | megvalósíthatóság | *(unreviewed)* |
+| form skeleton | (űrlap)váz | *(unreviewed)* |
+| Plain / Accessible (skeleton and intro styles) | Egyszerű / Akadálymentes | *(unreviewed)* |
+| initial / test / replacement selection (a run) | Kezdeti kiválasztás / Tesztkiválasztás / Pótszemély-kiválasztás | *(unreviewed)* |
+| spare (people left in the pool) | tartalék jelentkező | *(unreviewed)* |
+| Undo / Redo | Visszavonás / Ismétlés | *(unreviewed)* |
+| link (in the rich editor) | link | *(unreviewed)* |
+| table (in the rich editor) | táblázat | *(unreviewed)* |
 
 **cancel** as a button — backing out of a dialog or form without doing anything —
 is **Mégse**, the word every Hungarian UI uses for that button. Not
@@ -197,6 +207,23 @@ the other is **Statisztikák**, and where a string clearly means one of those �
 The bare `Dashboard` msgid cannot: the source uses the one string for both the
 per-assembly statistics tab and the nav link to the assembly list, so it takes
 the generic word until someone splits it. *(B11)*
+
+The *(unreviewed)* rows above came in with the replacement-selection and
+rich-editor strings in October 2026, after the review. Use them consistently
+until a native speaker has checked them.
+
+**Selection run names** are compound nouns, because they label rows in the run
+history: *Pótszemély-kiválasztás*, not *Pótszemélyek kiválasztása*. The button
+that starts one is still the noun-form action, "Pótszemélyek kiválasztása".
+
+**link** stays *link*, matching the existing "Links" → *Linkek*; *hivatkozás* is
+correct but stiffer than the rest of the editor.
+
+**table** in the rich editor ("Insert table", "Delete table") is *táblázat*,
+although *táblázat* otherwise means a Google Sheet. In an editor toolbar it can
+only mean an HTML table, and it is the word every Hungarian editor uses. Do not
+borrow this into Google Sheets strings, and do not use it for a lookup table,
+which is *hozzárendelési tábla*.
 
 ### Left in English on purpose
 
@@ -264,6 +291,11 @@ compound in dense report lines — accepted as cosmetic. *(F33)*
   word is *Résztvevő*, so the greeting renders "Kedves Résztvevő!". *(F29)* The
   transactional emails have their own nameless greeting, `Hi,`, which is
   "Kedves Címzett!" — same family, no invented name.
+- **Ordinals that a placeholder can't carry an article for:** where a row or
+  column number would need *a*/*az* mid-sentence, move the number after a
+  colon — "…ennél a sornál: %(row)d", "(az első ilyen sor: %(row)d)" — or start
+  the sentence with it: "%(letter)s oszlop %(row)d. sorában…". This is the
+  no-article rule (D16) applied, not a rewrite to dodge it.
 
 ## Not translated
 
@@ -299,6 +331,11 @@ said something else entirely — `Assembly Role` rendered as "Gyűlés címe"
 (Assembly *Title*), `You don't have permission to create assemblies` as "you
 don't have access to any assemblies", `An error occurred during registration`
 as "an error occurred during *login*". Those are corrected.
+
+Two more were found and fixed in October 2026: the registration-page status
+badges `Test` read "Kezdés dátuma" (*Start date*) and `Closed` read "Menü
+bezárása" (*Close menu*). They are now *Teszt* and *Lezárva*, the latter a past
+participle per the status-value rule (F31).
 
 The lesson survives the fix: **an entry not marked `fuzzy` is not evidence that
 anyone read it.** A bad fuzzy match auto-accepted years ago looks exactly like a
