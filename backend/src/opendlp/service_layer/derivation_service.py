@@ -8,14 +8,11 @@ pool recomputed, and a large mapping's lookup table uploaded. The four
 respondent write paths call ``apply_derivations``; everything else here exists
 to serve the (future) config UI."""
 
-import csv
 import uuid
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
-from io import StringIO
-from itertools import islice
 from typing import Any
 
 from opendlp.domain.respondent_derivation import (
@@ -50,6 +47,7 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_auto_export import request_auto_export
+from opendlp.service_layer.tabular_data import clean_table, rows_from_csv
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import lazy_gettext as _l
 
@@ -523,8 +521,10 @@ def upload_large_mapping(
 
     Headers are matched by normalised name against the source and derived field
     keys; unmatched headers fall back to positional (first = input, second =
-    output). The uploaded content is parsed in memory and never persisted —
-    only the normalised rows are stored.
+    output), counting only columns with a header, as empty unnamed columns are
+    dropped. The uploaded content is parsed in memory and never persisted —
+    only the normalised rows are stored. Raises ``TabularDataError`` for an
+    empty file, an unnamed column with data, or a repeated header.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -533,14 +533,8 @@ def upload_large_mapping(
     if field.derivation_type != DerivationType.LARGE_MAPPING:
         raise FieldDefinitionConflictError(_l("Field '%(key)s' does not use a large mapping", key=field.field_key))
 
-    non_blank_rows = (row for row in csv.reader(StringIO(csv_content)) if any(cell.strip() for cell in row))
-    # Stop parsing once the file is known to be over the cap: a header, the cap
-    # itself and one row beyond it are all the check below needs. An oversized
-    # file therefore reports the cap plus one rather than its true row count.
-    rows = list(islice(non_blank_rows, MAX_MAPPING_ROWS + 2))
-    if not rows:
-        raise FieldDefinitionConflictError(_l("The mapping file is empty"))
-    headers, data_rows = rows[0], rows[1:]
+    cleaned = clean_table(rows_from_csv(csv_content))
+    headers, data_rows = cleaned.headers, cleaned.rows
     if len(data_rows) > MAX_MAPPING_ROWS:
         raise FieldDefinitionConflictError(
             _l(
@@ -556,8 +550,6 @@ def upload_large_mapping(
     duplicates: set[str] = set()
     output_counts: Counter[str] = Counter()
     for row in data_rows:
-        if len(row) <= max(in_idx, out_idx):
-            continue
         key = normalise_lookup_key(row[in_idx])
         value = row[out_idx].strip()
         if not key or not value:

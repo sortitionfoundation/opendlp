@@ -164,6 +164,20 @@ class TestUploadTargetsCsv:
         assert response.status_code == 200
         assert b"Only CSV files are allowed" in response.data
 
+    def test_a_repeated_header_is_shown_on_the_form(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/upload"),
+            data={"csv_file": (io.BytesIO(b"feature,value,min,MIN,max\nGender,Male,3,3,7\n"), "targets.csv")},
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 200
+        assert (
+            b"CSV import failed: The header &#39;min&#39; appears in columns C, D. "
+            b"Delete the extra columns, or rename them."
+        ) in response.data
+
 
 class TestAddCategoriesFromColumns:
     def test_creates_single_category_from_column(self, logged_in_admin, existing_assembly, fake_store):

@@ -1805,6 +1805,21 @@ class TestMappingUpload:
         assert response.status_code == 422
         assert b"empty" in response.data
 
+    def test_an_unnamed_column_with_data_rerenders_as_422_naming_the_column(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = self._upload_csv(
+            logged_in_admin, existing_assembly, category, "Postcode,Region,\nSW1A 1AA,South,check\n"
+        )
+
+        assert response.status_code == 422
+        assert (
+            b"Column C (after &#39;Region&#39;) has no header but has data in it, starting at row 2. "
+            b"Delete the column, or give it a header."
+        ) in response.data
+
     def test_row_cap_is_enforced(self, logged_in_admin, existing_assembly, fake_store, monkeypatch):
         """The 500k cap, exercised with a lowered limit rather than a 500k-row file."""
         monkeypatch.setattr(derivation_service, "MAX_MAPPING_ROWS", 2)

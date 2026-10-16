@@ -535,3 +535,37 @@ class TestEditRespondentPage:
             assert retrieved is not None
             assert retrieved.email == "new@example.com"
             assert any(c.text == "corrected email" for c in retrieved.comments)
+
+
+class TestUploadCsvCleaning:
+    """A PostgreSQL smoke for the upload's cleaning; the detailed behaviour is in tests/component/."""
+
+    def _upload(self, client, assembly_id, content: bytes, id_column=""):
+        return client.post(
+            f"/backoffice/assembly/{assembly_id}/data/upload-respondents",
+            data={
+                "file": (BytesIO(content), "respondents.csv"),
+                "id_column": id_column,
+                "csrf_token": get_csrf_token(client, f"/backoffice/assembly/{assembly_id}/data?source=csv"),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+    def _flashes(self, client) -> list[tuple[str, str]]:
+        """The flashes the upload left, without the one from logging in."""
+        with client.session_transaction() as session:
+            return [flash for flash in session.get("_flashes", []) if flash[1] != "Signed in successfully"]
+
+    def _respondent_ids(self, postgres_session_factory, assembly_id) -> set[str]:
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            return {r.external_id for r in uow.respondents.get_by_assembly_id(assembly_id)}
+
+    def test_trailing_empty_columns_import(self, logged_in_admin, existing_assembly, postgres_session_factory):
+        response = self._upload(logged_in_admin, existing_assembly.id, b"id,age,,\nR1,30,,\nR2,40,,\n")
+
+        assert response.status_code == 302
+        assert self._respondent_ids(postgres_session_factory, existing_assembly.id) == {"R1", "R2"}
+        assert self._flashes(logged_in_admin) == [
+            ("success", "Respondents uploaded successfully: 2 imported"),
+        ]

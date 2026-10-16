@@ -5,7 +5,12 @@ from datetime import UTC, datetime
 
 import pytest
 
-from opendlp.domain.respondents import Respondent, RespondentComment, validate_no_field_name_collisions
+from opendlp.domain.respondents import (
+    Respondent,
+    RespondentComment,
+    is_reserved_import_header,
+    validate_no_field_name_collisions,
+)
 from opendlp.domain.value_objects import (
     ALLOWED_SELECTION_STATUS_TRANSITIONS,
     RespondentAction,
@@ -730,3 +735,13 @@ class TestValidateFieldNameCollisions:
     def test_error_message_includes_normalised_form(self):
         with pytest.raises(ValueError, match="firstname"):
             validate_no_field_name_collisions(["first_name", "FirstName"])
+
+
+class TestIsReservedImportHeader:
+    @pytest.mark.parametrize("header", ["id", "External ID", "comments", "registration_page_id", "assembly_id"])
+    def test_reserved_names_the_import_does_not_handle(self, header):
+        assert is_reserved_import_header(header)
+
+    @pytest.mark.parametrize("header", ["Email", "consent", "can_attend", "selection_status", "created_at", "age"])
+    def test_names_the_import_lifts_or_skips_or_keeps(self, header):
+        assert not is_reserved_import_header(header)

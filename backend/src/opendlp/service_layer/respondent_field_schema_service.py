@@ -3,10 +3,8 @@ ABOUTME: Read, populate, edit, and initialise field schemas."""
 
 from __future__ import annotations
 
-import csv as csv_module
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from io import StringIO
 from typing import TYPE_CHECKING
 
 from opendlp.config import to_bool
@@ -27,6 +25,7 @@ from opendlp.domain.respondent_field_schema import (
     TargetLinkedFieldError,
     humanise_field_key,
 )
+from opendlp.domain.respondents import is_reserved_import_header, normalise_field_name
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD, SORT_ORDER_STEP
 from opendlp.service_layer.derivation_service import derivations_depending_on
 from opendlp.service_layer.exceptions import (
@@ -34,12 +33,19 @@ from opendlp.service_layer.exceptions import (
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
     InsufficientPermissions,
-    InvalidSelection,
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
+from opendlp.service_layer.tabular_data import (
+    Column,
+    HeaderCheck,
+    TableProblem,
+    TabularDataError,
+    clean_table,
+    rows_from_csv,
+)
 from opendlp.translations import lazy_gettext as _l
 
 if TYPE_CHECKING:
@@ -53,6 +59,17 @@ _MAX_RADIO_OPTIONS = 6
 # not among them. Enough to recognise the file by, few enough to stay readable
 # in a flash message - respondent exports can run to dozens of columns.
 MAX_LISTED_HEADERS = 10
+
+# Column limits in adapters/orm.py: respondent_field_definitions.field_key and
+# assembly_csv.csv_id_column. A header past them fails on commit.
+MAX_FIELD_KEY_LENGTH = 255
+MAX_ID_COLUMN_NAME_LENGTH = 100
+
+PROBLEM_ID_COLUMN_MISSING = "id_column_missing"
+PROBLEM_HEADER_WITHOUT_LETTERS = "header_without_letters"
+PROBLEM_RESERVED_HEADER = "reserved_header"
+PROBLEM_SAME_FIELD = "same_field"
+PROBLEM_HEADER_TOO_LONG = "header_too_long"
 
 
 def _ensure_view_permission(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> None:
@@ -917,18 +934,6 @@ def update_schema_from_headers(
     return apply_reconciliation(uow, assembly_id, diff)
 
 
-def _parse_csv_headers(csv_content: str) -> list[str]:
-    """Read the header row from a CSV and return the column names in order.
-
-    Raises ``InvalidSelection`` if the CSV has no header row at all.
-    """
-    reader = csv_module.DictReader(StringIO(csv_content))
-    headers = list(reader.fieldnames or [])
-    if not headers:
-        raise InvalidSelection("CSV file is empty or has no header row")
-    return headers
-
-
 def _auto_detect_id_column(headers: list[str], explicit_id_column: str | None) -> str:
     """Mirror ``import_respondents_from_csv``'s id-column rule.
 
@@ -946,7 +951,7 @@ def check_id_column_in_headers(
     headers: list[str],
     previous_id_column: str | None = None,
 ) -> None:
-    """Raise ``InvalidSelection`` if ``id_column`` is not one of ``headers``.
+    """Raise ``TabularDataError`` if ``id_column`` is not one of ``headers``.
 
     The message names the columns the CSV does have, so the organiser can
     correct the ID Column field without opening the file to look. Pass
@@ -954,8 +959,15 @@ def check_id_column_in_headers(
     likeliest cause: when it matches, the value came from the form's prefill
     rather than from something they typed this time.
     """
+    message = _missing_id_column_message(id_column, headers, previous_id_column)
+    if message:
+        raise TabularDataError([TableProblem(kind=PROBLEM_ID_COLUMN_MISSING, message=message, header=id_column)])
+
+
+def _missing_id_column_message(id_column: str, headers: list[str], previous_id_column: str | None) -> str:
+    """The message for ``id_column`` not being one of ``headers``, or "" when it is."""
     if id_column in headers:
-        return
+        return ""
 
     if len(headers) > MAX_LISTED_HEADERS:
         columns = str(
@@ -979,7 +991,147 @@ def check_id_column_in_headers(
     )
     if previous_id_column and previous_id_column == id_column:
         message += " " + str(_l("The ID Column field was pre-filled from your last upload."))
-    raise InvalidSelection(message)
+    return message
+
+
+def respondent_header_check(explicit_id_column: str | None, previous_id_column: str | None = None) -> HeaderCheck:
+    """Build the check a respondent upload's headers must pass before anything is imported.
+
+    It finds up front what ``validate_no_field_name_collisions`` would otherwise
+    refuse once per row, and the database would refuse on commit: the ID column
+    missing, headers with no letters or numbers, headers that count as the same
+    field, reserved names, and headers too long to store. ``explicit_id_column``
+    is what the organiser typed; when empty, the first column is the ID column.
+
+    The same-field check is deliberately stricter than the import: it includes
+    the ID column, so 'Person Ref' as the ID beside a 'person_ref' column is
+    refused even though the ID never becomes an attribute and nothing would
+    collide. Two headers that read as one field are a mistake in the file.
+    """
+
+    def check(columns: list[Column]) -> list[TableProblem]:
+        if not columns:
+            return []
+        id_column = _auto_detect_id_column([column.header for column in columns], explicit_id_column)
+        problems = _id_column_problems(columns, id_column, previous_id_column)
+        # Which names are reserved depends on which column is the ID, so they
+        # wait until the ID column is one the file has.
+        id_found = not any(problem.kind == PROBLEM_ID_COLUMN_MISSING for problem in problems)
+        non_id_columns = [column for column in columns if column.header != id_column]
+        problems.extend(_field_name_problems(non_id_columns, check_reserved=id_found))
+        problems.extend(_same_field_problems(columns))
+        return problems
+
+    return check
+
+
+def _id_column_problems(columns: list[Column], id_column: str, previous_id_column: str | None) -> list[TableProblem]:
+    message = _missing_id_column_message(id_column, [column.header for column in columns], previous_id_column)
+    if message:
+        return [TableProblem(kind=PROBLEM_ID_COLUMN_MISSING, message=message, header=id_column)]
+    if len(id_column) > MAX_ID_COLUMN_NAME_LENGTH:
+        letters = tuple(column.letter for column in columns if column.header == id_column)
+        return [
+            TableProblem(
+                kind=PROBLEM_HEADER_TOO_LONG,
+                message=str(
+                    _l(
+                        "The header of column %(letter)s, the ID column, is longer than %(limit)d characters. "
+                        "Shorten it.",
+                        letter=letters[0],
+                        limit=MAX_ID_COLUMN_NAME_LENGTH,
+                    )
+                ),
+                letters=letters[:1],
+                header=id_column,
+            )
+        ]
+    return []
+
+
+def _field_name_problems(columns: list[Column], check_reserved: bool) -> list[TableProblem]:
+    problems: list[TableProblem] = []
+    for column in columns:
+        if not normalise_field_name(column.header):
+            problems.append(
+                TableProblem(
+                    kind=PROBLEM_HEADER_WITHOUT_LETTERS,
+                    message=str(
+                        _l(
+                            "The header of column %(letter)s, '%(header)s', has no letters or numbers in it. "
+                            "Rename it.",
+                            letter=column.letter,
+                            header=column.header,
+                        )
+                    ),
+                    letters=(column.letter,),
+                    header=column.header,
+                )
+            )
+        elif check_reserved and is_reserved_import_header(column.header):
+            problems.append(
+                TableProblem(
+                    kind=PROBLEM_RESERVED_HEADER,
+                    message=str(
+                        _l(
+                            "The header of column %(letter)s, '%(header)s', is reserved for a built-in "
+                            "respondent detail. Rename it.",
+                            letter=column.letter,
+                            header=column.header,
+                        )
+                    ),
+                    letters=(column.letter,),
+                    header=column.header,
+                )
+            )
+        if len(column.header) > MAX_FIELD_KEY_LENGTH:
+            problems.append(
+                TableProblem(
+                    kind=PROBLEM_HEADER_TOO_LONG,
+                    message=str(
+                        _l(
+                            "The header of column %(letter)s is longer than %(limit)d characters. Shorten it.",
+                            letter=column.letter,
+                            limit=MAX_FIELD_KEY_LENGTH,
+                        )
+                    ),
+                    letters=(column.letter,),
+                    header=column.header,
+                )
+            )
+    return problems
+
+
+def _same_field_problems(columns: list[Column]) -> list[TableProblem]:
+    """Headers that differ but normalise to one field name, such as 'Age' and 'age '.
+
+    ``columns`` includes the ID column - see ``respondent_header_check``.
+    Exact repeats are left to the table cleaning, which reports them already.
+    """
+    by_field: dict[str, list[Column]] = {}
+    for column in columns:
+        normalised = normalise_field_name(column.header)
+        if normalised:
+            by_field.setdefault(normalised, []).append(column)
+    problems: list[TableProblem] = []
+    for same in by_field.values():
+        if len({column.header for column in same}) < 2:
+            continue
+        letters = tuple(column.letter for column in same)
+        problems.append(
+            TableProblem(
+                kind=PROBLEM_SAME_FIELD,
+                message=str(
+                    _l(
+                        "Columns %(columns)s have headers that count as the same field. Rename them so they differ "
+                        "by more than capitals, spaces or punctuation, or delete the extra columns.",
+                        columns=", ".join(f"{column.letter} ('{column.header}')" for column in same),
+                    )
+                ),
+                letters=letters,
+            )
+        )
+    return problems
 
 
 def compute_diff_for_pending_csv(
@@ -991,21 +1143,20 @@ def compute_diff_for_pending_csv(
 ) -> ReconciliationDiff | None:
     """Compute the reconciliation diff for a pending CSV upload.
 
-    Read-only. Parses the CSV header row, resolves the id column via the same
-    auto-detect rule the importer uses, pulls the existing schema and target
+    Read-only. Cleans the CSV exactly as the importer will, resolves the id
+    column via the same auto-detect rule, pulls the existing schema and target
     categories, and compares. Returns ``None`` when the assembly has no schema
     yet — the caller interprets that as "skip the confirmation page entirely".
 
-    Raises ``InvalidSelection`` if the CSV has no header row, or if the id
-    column is not one of its columns. Validating here rather than leaving it to
-    the import means the organiser is told before the confirmation page instead
-    of after they apply it, when the stashed upload has already been cleared.
+    Raises ``TabularDataError`` for every problem the import would refuse the
+    file for: a missing header row, unnamed columns with data, the id column not
+    being one of its columns, and the rest of ``respondent_header_check``.
+    Validating here rather than leaving it to the import means the organiser is
+    told before the confirmation page instead of after they apply it, when the
+    stashed upload has already been cleared.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    headers = _parse_csv_headers(csv_content)
-    id_column = _auto_detect_id_column(headers, explicit_id_column)
-
     _ensure_view_permission(uow, user_id, assembly_id)
 
     # Pull the previous id column from the assembly's CSV config so we can
@@ -1018,7 +1169,12 @@ def compute_diff_for_pending_csv(
     if assembly.csv is not None:
         previous_id_column = assembly.csv.csv_id_column
 
-    check_id_column_in_headers(id_column, headers, previous_id_column=previous_id_column)
+    table = clean_table(
+        rows_from_csv(csv_content),
+        header_checks=[respondent_header_check(explicit_id_column, previous_id_column)],
+    )
+    headers = table.headers
+    id_column = _auto_detect_id_column(headers, explicit_id_column)
 
     if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
         return None

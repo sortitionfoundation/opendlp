@@ -50,6 +50,7 @@ from opendlp.service_layer.exceptions import (
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
     InsufficientPermissions,
+    InvalidSelection,
     NotFoundError,
     ServiceLayerError,
 )
@@ -974,7 +975,7 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
             )
             report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
             page_ctx = _page_context(uow, assembly_id)
-    except FieldDefinitionConflictError as e:
+    except (FieldDefinitionConflictError, InvalidSelection) as e:
         return _upload_modal_response(assembly_id, category_id, error=e.user_msg(), status=422, setup_step=setup_step)
     except FieldDefinitionNotFoundError:
         # The message names internal ids - show a generic one.

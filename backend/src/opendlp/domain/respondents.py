@@ -113,6 +113,36 @@ _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
 )
 
 
+# Internal, export-only columns recognised and skipped on import. They mirror
+# the extra columns build_respondent_table appends, so an exported file
+# re-imports without colliding with reserved Respondent field names.
+INTERNAL_IMPORT_SKIP_COLUMNS = (
+    "selection_status",
+    "selection_run_id",
+    "source_type",
+    "created_at",
+    "updated_at",
+    "view_url",
+)
+
+# Columns the import reads into a top-level Respondent field rather than an attribute.
+IMPORT_LIFTED_COLUMNS = ("consent", "eligible", "can_attend", "stay_on_db", "email")
+
+_IMPORT_HANDLED_FIELD_NAMES: frozenset[str] = frozenset(
+    normalise_field_name(name) for name in (*INTERNAL_IMPORT_SKIP_COLUMNS, *IMPORT_LIFTED_COLUMNS)
+)
+
+
+def is_reserved_import_header(header: str) -> bool:
+    """True if an imported non-ID column would collide with a reserved Respondent field.
+
+    Columns the import lifts into a top-level field, or skips as export-only,
+    are handled and so are not reported.
+    """
+    normalised = normalise_field_name(header)
+    return normalised in _RESERVED_FIELD_NAMES and normalised not in _IMPORT_HANDLED_FIELD_NAMES
+
+
 def validate_no_field_name_collisions(field_names: Iterable[str]) -> None:
     """Reject attribute field name sets that would collide after normalisation.
 
