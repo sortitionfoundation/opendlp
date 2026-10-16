@@ -264,7 +264,9 @@ Each step is a separate commit on the `python-314` branch.
    apt installs as above; pin the uv image to `0.12.24` via a named `uv`
    stage, with a comment pairing it with the CI `uv-version`. The Node copy
    stays — it pins Node independently of whatever resolute's apt offers.
-   Separate commit: the `docker` entry in `.github/dependabot.yml`.
+   Separate commit: the `docker` entry in `.github/dependabot.yml` ✅ (done;
+   validated against the Dependabot JSON schema — the first Dependabot run
+   after merge is the real check).
 4. ✅ **Verify the image locally** (done, except the hand-over — results below):
    - `docker build` succeeds (with the slimmed build stage, this also proves
      nothing compiled from source); the existing smoke test prints
