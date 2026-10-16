@@ -113,3 +113,20 @@ Feature: Backoffice Assembly Google Sheets Configuration
     And I click the "Remove" button and confirm
     Then the data source selector should be enabled
     And I should see "Select Data Source"
+
+  Scenario: Saving a configuration checks access to the spreadsheet
+    Given I am logged in as an admin user
+    And there is an assembly called "GSheet Access Save Assembly"
+    When I visit the assembly data page for "GSheet Access Save Assembly" with source "gsheet"
+    And I fill in the gsheet URL with "https://docs.google.com/spreadsheets/d/1234567890/edit"
+    And I uncheck the "Check Same Address" checkbox
+    And I click the "Save Configuration" button
+    Then the spreadsheet access check should finish
+
+  Scenario: User can check access to an existing spreadsheet
+    Given I am logged in as an admin user
+    And there is an assembly called "GSheet Access Button Assembly"
+    And the assembly "GSheet Access Button Assembly" has a gsheet configuration
+    When I visit the assembly data page for "GSheet Access Button Assembly" with source "gsheet"
+    And I click the "Check access" button
+    Then the spreadsheet access check should finish
