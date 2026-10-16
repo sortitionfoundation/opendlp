@@ -1,6 +1,6 @@
 # 974 - Check access to a Google Sheet when its URL is saved
 
-Status: **spec, reviewed** - nothing implemented yet.
+Status: **in progress** - steps marked (done) are implemented.
 
 ## The problem
 
@@ -379,7 +379,7 @@ so the swap is confined to one function in `gsheet_access_check.py`.
 
 ## Implementation sketch
 
-1. **Adapter and timeout.** `adapters/gsheet_access.py` with the commented
+1. **(done) Adapter and timeout.** `adapters/gsheet_access.py` with the commented
    `GSHEET_CHECK_TIMEOUT` and the client factory. Register
    `gsheet_access_client_factory` in `flask_app.py`.
 2. **The check and the cache.** `service_layer/gsheet_access_check.py`: the
