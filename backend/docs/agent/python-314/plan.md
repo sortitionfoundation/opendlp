@@ -247,7 +247,7 @@ Leave it until `requires-python >= 3.14`; then removing it is optional churn.
 
 Each step is a separate commit on the `python-314` branch.
 
-1. ✅ **CI** (done; CI run on push still to confirm) — in `setup-env/action.yml`: `python-version` default `"3.14"`,
+1. ✅ **CI** (done; all GitHub Actions green on the PR, including BDD on 3.14 and the image scan) — in `setup-env/action.yml`: `python-version` default `"3.14"`,
    `uv-version` default `"0.12.24"`. In `main.yml`: Codecov leg `'3.14'`;
    update the "local dev pin, 3.12" comments. Push and confirm all legs plus
    BDD are green. (BDD on 3.14 is the one genuinely new signal here.)
