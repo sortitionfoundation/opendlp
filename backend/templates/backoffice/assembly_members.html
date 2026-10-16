@@ -78,7 +78,7 @@ ABOUTME: Displays team members table, with add/remove for anyone who can manage 
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                                 {# TODO: Add danger variant and size parameter to button component in design system #}
                                                 <button type="submit"
-                                                        class="text-button-sm px-3 py-1.5 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:opacity-90"
+                                                        class="text-button-sm px-3 py-1.5 rounded-lg transition-all duration-150 focus:outline-hidden focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 hover:opacity-90"
                                                         style="background-color: var(--color-primary-action); color: var(--color-page-background);">
                                                     {{ _("Remove") }}
                                                 </button>

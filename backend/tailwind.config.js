@@ -8,20 +8,10 @@ module.exports = {
     "./src/js/backoffice/rich-editor*.js",
     "./templates/public/**/*.html",
   ],
-  // Class names built by string concat in Jinja macros never appear as
-  // literals in scanned templates, so Tailwind's content-scanner purges
-  // their @layer components rules. Safelist keeps them in the output.
-  safelist: [
-    "btn--primary",
-    "btn--secondary",
-    "btn--tertiary",
-    "btn--danger",
-    "btn--icon",
-    // Added by ProseMirror to the selected image in the visual editor.
-    "ProseMirror-selectednode",
-    // Added by Tiptap's table extension to cells selected across in the visual editor.
-    "selectedCell",
-  ],
+  // NB: Tailwind v4 dropped the JS `safelist` key. The class names built by
+  // string concat in Jinja macros (btn--*, and the editor's runtime-only
+  // ProseMirror-selectednode / selectedCell) are now kept via an
+  // `@source inline(...)` directive in static/backoffice/src/main.css.
   theme: {
     extend: {},
   },
