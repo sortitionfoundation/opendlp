@@ -1,6 +1,8 @@
 """ABOUTME: Translation helpers for sortition-algorithms library errors
 ABOUTME: Provides functions to translate error messages from sortition_algorithms using error codes and parameters"""
 
+from collections.abc import Mapping
+
 from sortition_algorithms.error_messages import ERROR_MESSAGES
 from sortition_algorithms.errors import (
     ParseTableMultiError,
@@ -92,6 +94,34 @@ def _translate_simple_error(error: SortitionBaseError) -> str:
     else:
         # No error code, use English message
         return str(error)
+
+
+def translate_not_native_gsheet(file_name: str, common_name: str) -> str:
+    """Explain that a Drive file is not a native Google Sheet, and how to convert it."""
+    return _(
+        "The file '%(file_name)s' has the format '%(common_name)s', "
+        "rather than being a native Google Sheets spreadsheet. Open it in Google Sheets and choose "
+        "File → Save as Google Sheets, then use that new file.",
+        file_name=file_name,
+        common_name=common_name,
+    )
+
+
+def translate_error_code(error_code: str, error_params: Mapping[str, str | int]) -> str:
+    """Translate a library error from its stored code and parameters.
+
+    For a result kept after the exception is gone, such as a cached Google
+    Sheets access check. Returns "" for a code that cannot be translated.
+    """
+    if error_code == "not_native_gsheet":
+        return translate_not_native_gsheet(
+            file_name=str(error_params.get("file_name", "")), common_name=str(error_params.get("common_name", ""))
+        )
+    try:
+        return _(ERROR_MESSAGES[error_code]) % error_params
+    except (KeyError, TypeError, ValueError):
+        # an unknown code or mismatched parameters: the caller shows its own fallback
+        return ""
 
 
 def _translate_parse_table_multi_error_lines(error: ParseTableMultiError) -> list[str]:

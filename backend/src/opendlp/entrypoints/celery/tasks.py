@@ -40,7 +40,11 @@ from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.service_layer import password_reset_service
-from opendlp.service_layer.error_translation import translate_sortition_error, translate_sortition_error_to_html
+from opendlp.service_layer.error_translation import (
+    translate_not_native_gsheet,
+    translate_sortition_error,
+    translate_sortition_error_to_html,
+)
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.service_layer.writing_guard import unfinished_writing_runs
 from opendlp.translations import gettext as _
@@ -290,12 +294,8 @@ def _internal_load_gsheet(
         # now rather than after the selection has run
         data_source.require_writable()
     except errors.NotNativeGoogleSheetError as error:
-        user_msg = _(
-            "The file '%(file_name)s' has the format '%(common_name)s', "
-            "rather than being a native Google Sheets spreadsheet. Open it in Google Sheets and choose "
-            "File \u2192 Save as Google Sheets, then use that new file.",
-            file_name=error.file_name,
-            common_name=error.common_name_for(error.mimetype),
+        user_msg = translate_not_native_gsheet(
+            file_name=error.file_name, common_name=error.common_name_for(error.mimetype)
         )
         _update_selection_record(
             task_id,
