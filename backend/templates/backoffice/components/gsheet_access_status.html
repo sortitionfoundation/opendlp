@@ -1,0 +1,99 @@
+{#
+ABOUTME: Status panel saying what the service account can do with an assembly's Google Sheets spreadsheet
+ABOUTME: Rendered into the Assembly Data page's #gsheet-access-status live region, and returned by the check route
+#}
+{#
+Variables:
+    gsheet_access_assembly_id: the assembly whose spreadsheet is checked
+    gsheet_access_result: a GSheetAccessResult, or undefined when nothing is known
+    gsheet_access_auto_check: true to fire the check as soon as the panel loads
+    can_check_gsheet_access: true to offer the Check access / Check again button
+    gsheet_access_unavailable_reason: shown instead of a result when no check can run
+#}
+{% from "backoffice/components/button.html" import button %}
+{% set result = gsheet_access_result if gsheet_access_result is defined else none %}
+{% set auto_check = gsheet_access_auto_check if gsheet_access_auto_check is defined else false %}
+{% set can_check = can_check_gsheet_access if can_check_gsheet_access is defined else false %}
+{% set check_url = url_for('gsheets.check_gsheet_access_route', assembly_id=gsheet_access_assembly_id) %}
+{% set variant_styles = {
+"success": {"bg": "var(--color-success-100)", "border": "var(--color-success-400)", "text": "var(--color-success-600)"},
+"warning": {"bg": "var(--color-warning-100)", "border": "var(--color-warning-400)", "text": "var(--color-warning-600)"},
+"error": {"bg": "var(--color-error-100)", "border": "var(--color-error-400)", "text": "var(--color-error-600)"}
+} %}
+{% if gsheet_access_unavailable_reason is defined and gsheet_access_unavailable_reason %}
+    <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ gsheet_access_unavailable_reason }}</p>
+{% elif result or can_check or auto_check %}
+    <form method="post"
+          action="{{ check_url }}"
+          hx-post="{{ check_url }}"
+          hx-target="#gsheet-access-status"
+          hx-swap="innerHTML"
+          hx-disabled-elt="find button"
+          {% if auto_check %}hx-trigger="load"{% endif %}
+          class="gsheet-access{% if auto_check %} gsheet-access--checking{% endif %} flex flex-col gap-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <p class="gsheet-access__pending text-body-md"
+           style="color: var(--color-secondary-text)">{{ _("Checking access to the spreadsheet…") }}</p>
+        {% if result %}
+            {% set status = result.status.name %}
+            {% if status == "OK" %}
+                {% set variant = "success" %}
+            {% elif status in ("READ_ONLY", "GOOGLE_BUSY", "UNAVAILABLE") %}
+                {% set variant = "warning" %}
+            {% else %}
+                {% set variant = "error" %}
+            {% endif %}
+            <div class="gsheet-access__result flex flex-col gap-3">
+                {% set styles = variant_styles[variant] %}
+                <div class="rounded-lg p-4"
+                     style="background-color: {{ styles.bg }};
+                            border: 1px solid {{ styles.border }}">
+                    <p class="text-body-md" style="color: {{ styles.text }}">
+                        {% if status == "OK" %}
+                            {{ _("Connected to the spreadsheet '%(title)s'.", title=result.title) }}
+                        {% elif status == "GOOGLE_BUSY" %}
+                            {{ _("Google is busy right now. Try again in a minute.") }}
+                        {% elif status == "UNAVAILABLE" %}
+                            {{ _("Could not check the spreadsheet just now. Try again later.") }}
+                        {% else %}
+                            {{ translate_error_code(result.error_code, result.error_params) or _("The spreadsheet cannot be used.") }}
+                        {% endif %}
+                    </p>
+                    {% if result.missing_selection_tabs or result.missing_replacement_tabs %}
+                        <ul class="list-disc pl-5 mt-2">
+                            {% for tab in result.missing_selection_tabs %}
+                                <li class="text-body-sm" style="color: var(--color-body-text);">
+                                    {{ _("There is no tab called '%(tab)s', which a selection needs.", tab=tab) }}
+                                    {% if tab in result.tab_suggestions %}
+                                        {{ _("Did you mean '%(suggestion)s'?", suggestion=result.tab_suggestions[tab]) }}
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                            {% for tab in result.missing_replacement_tabs %}
+                                <li class="text-body-sm" style="color: var(--color-body-text);">
+                                    {{ _("There is no tab called '%(tab)s'. It is only needed for replacements.", tab=tab) }}
+                                    {% if tab in result.tab_suggestions %}
+                                        {{ _("Did you mean '%(suggestion)s'?", suggestion=result.tab_suggestions[tab]) }}
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-4">
+                    {% if can_check %}{{ button(_("Check again") , type="submit", variant="secondary") }}{% endif %}
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Checked at %(time)s", time=result.checked_at|datetimeformat("short")) }}
+                    </p>
+                </div>
+            </div>
+        {% elif can_check and not auto_check %}
+            <div class="gsheet-access__result flex items-center gap-4">
+                {{ button(_("Check access") , type="submit", variant="secondary") }}
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("Check that the spreadsheet is shared with the service account and has the tabs named here.") }}
+                </p>
+            </div>
+        {% endif %}
+    </form>
+{% endif %}

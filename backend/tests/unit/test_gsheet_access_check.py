@@ -3,7 +3,6 @@ ABOUTME: Uses a fake gspread client and FakeRedis, so no Google or Redis access 
 
 import uuid
 from datetime import UTC, datetime
-from unittest.mock import MagicMock
 
 import gspread
 import pytest
@@ -19,101 +18,28 @@ from opendlp.service_layer.gsheet_access_check import (
     forget_cached_result,
     store_cached_result,
 )
-from tests.fakes import FakeRedis
+from tests.fakes import (
+    GOOGLE_DRIVE_NOT_FOUND,
+    GOOGLE_QUOTA_EXCEEDED,
+    GOOGLE_SERVER_ERROR,
+    FakeGSpreadClient,
+    FakeRedis,
+    google_api_error,
+)
 
 _URL = "https://docs.google.com/spreadsheets/d/abc/edit"
-_NATIVE = "application/vnd.google-apps.spreadsheet"
 _XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 _EMAIL = "robot@example.com"
 _NOW = datetime(2026, 10, 16, 14, 2, tzinfo=UTC)
-# Recorded Drive response: the same body comes back for a missing file and for
-# one that exists but is not shared with the service account.
-_DRIVE_NOT_FOUND = {
-    "error": {
-        "code": 404,
-        "message": "File not found: abc.",
-        "errors": [{"message": "File not found: abc.", "domain": "global", "reason": "notFound"}],
-    }
-}
-_QUOTA_EXCEEDED = {
-    "error": {
-        "code": 429,
-        "message": "Quota exceeded for quota metric 'Read requests'",
-        "errors": [{"message": "Quota exceeded", "domain": "global", "reason": "rateLimitExceeded"}],
-        "status": "RESOURCE_EXHAUSTED",
-    }
-}
-_SERVER_ERROR = {"error": {"code": 503, "message": "The service is currently unavailable.", "status": "UNAVAILABLE"}}
 
 
-def _api_error(status_code: int, body: dict) -> gspread.exceptions.APIError:
-    response = MagicMock()
-    response.status_code = status_code
-    response.json.return_value = body
-    return gspread.exceptions.APIError(response)
-
-
-class _FakeWorksheet:
-    def __init__(self, title: str) -> None:
-        self.title = title
-
-
-class _FakeSpreadsheet:
-    def __init__(self, title: str, tabs: list[str]) -> None:
-        self.title = title
-        self.url = _URL
-        self._tabs = tabs
-
-    def worksheets(self) -> list[_FakeWorksheet]:
-        return [_FakeWorksheet(tab) for tab in self._tabs]
-
-
-class _FakeHTTPClient:
-    """Answers open_gsheet's Drive files.get, with a fixed metadata body or an exception."""
-
-    def __init__(self, drive_body: dict, drive_error: Exception | None = None) -> None:
-        self._drive_body = drive_body
-        self._drive_error = drive_error
-        self.auth = MagicMock(service_account_email=_EMAIL)
-
-    def request(self, method: str, url: str, params: dict | None = None) -> MagicMock:
-        if self._drive_error is not None:
-            raise self._drive_error
-        response = MagicMock()
-        response.json.return_value = self._drive_body
-        return response
-
-
-class _FakeClient:
-    def __init__(
-        self,
-        title: str = "Leeds Assembly",
-        tabs: list[str] | None = None,
-        mimetype: str = _NATIVE,
-        can_edit: bool = True,
-        drive_error: Exception | None = None,
-        open_error: Exception | None = None,
-    ) -> None:
-        self._spreadsheet = _FakeSpreadsheet(title, tabs if tabs is not None else [])
-        self._open_error = open_error
-        self.http_client = _FakeHTTPClient(
-            {"name": title, "mimeType": mimetype, "capabilities": {"canEdit": can_edit}},
-            drive_error=drive_error,
-        )
-
-    def open_by_key(self, key: str) -> _FakeSpreadsheet:
-        if self._open_error is not None:
-            raise self._open_error
-        return self._spreadsheet
-
-
-def _check(client: _FakeClient, selection_tabs=("Respondents", "Categories"), replacement_tabs=()):
+def _check(client: FakeGSpreadClient, selection_tabs=("Respondents", "Categories"), replacement_tabs=()):
     return check_gsheet_access(client, _URL, selection_tabs=selection_tabs, replacement_tabs=replacement_tabs, now=_NOW)
 
 
 class TestCheckGSheetAccessStatus:
     def test_editable_sheet_is_ok_with_title(self) -> None:
-        result = _check(_FakeClient(tabs=["Respondents", "Categories"]))
+        result = _check(FakeGSpreadClient(tabs=["Respondents", "Categories"]))
 
         assert result.status == GSheetAccessStatus.OK
         assert result.title == "Leeds Assembly"
@@ -123,7 +49,7 @@ class TestCheckGSheetAccessStatus:
 
     def test_read_only_sheet_reports_title_and_read_only_error(self) -> None:
         """A Viewer share opens fine, but a selection could not write its output tabs."""
-        result = _check(_FakeClient(tabs=["Respondents", "Categories"], can_edit=False))
+        result = _check(FakeGSpreadClient(tabs=["Respondents", "Categories"], can_edit=False))
 
         assert result.status == GSheetAccessStatus.READ_ONLY
         assert result.title == "Leeds Assembly"
@@ -131,8 +57,8 @@ class TestCheckGSheetAccessStatus:
         assert result.error_params["service_account_email"] == _EMAIL
 
     def test_not_shared_names_the_service_account(self) -> None:
-        client = _FakeClient(
-            drive_error=_api_error(404, _DRIVE_NOT_FOUND),
+        client = FakeGSpreadClient(
+            drive_error=google_api_error(GOOGLE_DRIVE_NOT_FOUND),
             open_error=PermissionError(),
         )
 
@@ -144,8 +70,8 @@ class TestCheckGSheetAccessStatus:
         assert result.title == ""
 
     def test_missing_sheet_is_not_found(self) -> None:
-        client = _FakeClient(
-            drive_error=_api_error(404, _DRIVE_NOT_FOUND),
+        client = FakeGSpreadClient(
+            drive_error=google_api_error(GOOGLE_DRIVE_NOT_FOUND),
             open_error=gspread.exceptions.SpreadsheetNotFound(),
         )
 
@@ -155,19 +81,19 @@ class TestCheckGSheetAccessStatus:
         assert result.error_code == "spreadsheet_not_found"
 
     def test_uploaded_excel_file_is_not_native(self) -> None:
-        result = _check(_FakeClient(title="data.xlsx", mimetype=_XLSX))
+        result = _check(FakeGSpreadClient(title="data.xlsx", mimetype=_XLSX))
 
         assert result.status == GSheetAccessStatus.NOT_NATIVE
         assert result.error_code == "not_native_gsheet"
         assert result.error_params["file_name"] == "data.xlsx"
 
     def test_quota_exceeded_is_google_busy(self) -> None:
-        result = _check(_FakeClient(drive_error=_api_error(429, _QUOTA_EXCEEDED)))
+        result = _check(FakeGSpreadClient(drive_error=google_api_error(GOOGLE_QUOTA_EXCEEDED)))
 
         assert result.status == GSheetAccessStatus.GOOGLE_BUSY
 
     def test_server_error_is_unavailable(self) -> None:
-        result = _check(_FakeClient(drive_error=_api_error(503, _SERVER_ERROR)))
+        result = _check(FakeGSpreadClient(drive_error=google_api_error(GOOGLE_SERVER_ERROR)))
 
         assert result.status == GSheetAccessStatus.UNAVAILABLE
 
@@ -176,20 +102,20 @@ class TestCheckGSheetAccessStatus:
         [requests.exceptions.ReadTimeout("slow"), requests.exceptions.ConnectionError("unreachable")],
     )
     def test_timeout_or_connection_failure_is_unavailable(self, error: Exception) -> None:
-        result = _check(_FakeClient(drive_error=error))
+        result = _check(FakeGSpreadClient(drive_error=error))
 
         assert result.status == GSheetAccessStatus.UNAVAILABLE
 
     def test_unexpected_exception_propagates(self) -> None:
         """Anything we did not anticipate is a bug, so the route's outer handler must see it."""
         with pytest.raises(ZeroDivisionError):
-            _check(_FakeClient(drive_error=ZeroDivisionError()))
+            _check(FakeGSpreadClient(drive_error=ZeroDivisionError()))
 
 
 class TestCheckGSheetAccessTabs:
     def test_all_tabs_present_reports_nothing_missing(self) -> None:
         result = _check(
-            _FakeClient(tabs=["Respondents", "Categories", "Remaining"]),
+            FakeGSpreadClient(tabs=["Respondents", "Categories", "Remaining"]),
             replacement_tabs=("Remaining",),
         )
 
@@ -199,7 +125,7 @@ class TestCheckGSheetAccessTabs:
 
     def test_missing_selection_and_replacement_tabs_are_reported_separately(self) -> None:
         result = _check(
-            _FakeClient(tabs=["Respondents"]),
+            FakeGSpreadClient(tabs=["Respondents"]),
             replacement_tabs=("Remaining", "Selected"),
         )
 
@@ -208,24 +134,24 @@ class TestCheckGSheetAccessTabs:
 
     def test_empty_tab_name_is_not_looked_for(self) -> None:
         """An empty already-selected tab means replacements do not read one."""
-        result = _check(_FakeClient(tabs=["Respondents", "Categories"]), replacement_tabs=("",))
+        result = _check(FakeGSpreadClient(tabs=["Respondents", "Categories"]), replacement_tabs=("",))
 
         assert result.missing_replacement_tabs == ()
 
     def test_near_miss_ignoring_case_and_surrounding_spaces_is_suggested(self) -> None:
-        result = _check(_FakeClient(tabs=["respondents ", "Categories"]))
+        result = _check(FakeGSpreadClient(tabs=["respondents ", "Categories"]))
 
         assert result.missing_selection_tabs == ("Respondents",)
         assert result.tab_suggestions == {"Respondents": "respondents "}
 
     def test_no_suggestion_for_a_different_name(self) -> None:
-        result = _check(_FakeClient(tabs=["People", "Categories"]))
+        result = _check(FakeGSpreadClient(tabs=["People", "Categories"]))
 
         assert result.tab_suggestions == {}
 
     def test_tabs_not_checked_when_sheet_cannot_be_opened(self) -> None:
-        client = _FakeClient(
-            drive_error=_api_error(404, _DRIVE_NOT_FOUND),
+        client = FakeGSpreadClient(
+            drive_error=google_api_error(GOOGLE_DRIVE_NOT_FOUND),
             open_error=gspread.exceptions.SpreadsheetNotFound(),
         )
 
@@ -234,7 +160,7 @@ class TestCheckGSheetAccessTabs:
         assert result.missing_selection_tabs == ()
 
     def test_read_only_sheet_still_checks_tabs(self) -> None:
-        result = _check(_FakeClient(tabs=["Respondents"], can_edit=False))
+        result = _check(FakeGSpreadClient(tabs=["Respondents"], can_edit=False))
 
         assert result.missing_selection_tabs == ("Categories",)
 
@@ -242,7 +168,7 @@ class TestCheckGSheetAccessTabs:
 class TestGSheetAccessResultSerialisation:
     def test_round_trips_through_json(self) -> None:
         result = _check(
-            _FakeClient(tabs=["respondents"], can_edit=False),
+            FakeGSpreadClient(tabs=["respondents"], can_edit=False),
             replacement_tabs=("Remaining",),
         )
 

@@ -1797,3 +1797,28 @@ body {
         padding: 0 0.125rem;
     }
 }
+
+/* ========================================
+   GOOGLE SHEETS ACCESS CHECK
+   ======================================== */
+
+/*
+ * While a check runs, the panel shows "Checking…" in place of the last result.
+ * HTMX puts .htmx-request on the form for the length of the request. This uses
+ * display rather than HTMX's own indicator opacity, so screen readers do not
+ * read the hidden text.
+ */
+@layer components {
+    .gsheet-access__pending {
+        display: none;
+    }
+
+    .gsheet-access--checking .gsheet-access__pending,
+    .gsheet-access.htmx-request .gsheet-access__pending {
+        display: block;
+    }
+
+    .gsheet-access.htmx-request .gsheet-access__result {
+        display: none;
+    }
+}
