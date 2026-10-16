@@ -204,7 +204,7 @@ How exceptions map to a status:
 | `SpreadsheetNotFoundError`                               | `NOT_FOUND`   |
 | `NotNativeGoogleSheetError`                              | `NOT_NATIVE`  |
 | `gspread.exceptions.APIError` with code 429              | `GOOGLE_BUSY` |
-| other `APIError`, `requests` timeout or connection error | `UNAVAILABLE` |
+| other `APIError`, or an `OSError` (`requests` raises its timeout and connection errors as `OSError` subclasses, so we don't need to import `requests`, which is only a transitive dependency) | `UNAVAILABLE` |
 
 Anything else is a bug and goes to the route's outer handler, which logs it and
 shows the "couldn't check" panel. Catch narrowly, as the JSON API conventions
@@ -284,8 +284,11 @@ button.
 
 - **Reuse the existing messages.** `translate_sortition_error()` already
   translates the library's `spreadsheet_not_found`, `spreadsheet_not_shared`
-  and `spreadsheet_read_only` codes. Keep the caught exception long enough
-  to translate it, and cache the translated message alongside the status.
+  and `spreadsheet_read_only` codes. The result keeps the error's
+  `error_code` and `error_params`, not a translated message, and the panel
+  translates them with `translate_error_code()` when it renders. A cached
+  result may be shown to viewers using different languages, so text
+  translated at check time would be in the wrong language for some of them.
   `NotNativeGoogleSheetError` is the exception: `load_gsheet` in
   `celery/tasks.py` writes its own OpenDLP wording inline ("Open it in Google
   Sheets and choose File → Save as Google Sheets"). Move that into a helper in
@@ -302,8 +305,9 @@ button.
 
 ### Logging
 
-One structured log line per check: `assembly_id`, `user_id`, `status`, the
-time taken, and the number of requests. No title. This tells us whether
+One structured log line per check: `assembly_id`, `user_id`, `status` and the
+time taken. No title. (Counting requests would mean hooking the HTTP session.
+The time taken already answers the timeout question, so we don't count them.) This tells us whether
 `(3.05, 8)` can come down, and how often we hit `GOOGLE_BUSY`.
 
 ## The library change: one Sheets read per check
@@ -382,7 +386,7 @@ so the swap is confined to one function in `gsheet_access_check.py`.
 1. **(done) Adapter and timeout.** `adapters/gsheet_access.py` with the commented
    `GSHEET_CHECK_TIMEOUT` and the client factory. Register
    `gsheet_access_client_factory` in `flask_app.py`.
-2. **The check and the cache.** `service_layer/gsheet_access_check.py`: the
+2. **(done) The check and the cache.** `service_layer/gsheet_access_check.py`: the
    `GSheetAccessStatus` enum, `GSheetAccessResult`, the classifier, the tab
    comparison, and cache get/set/delete. Unit tests use a fake client, in the
    style of `tests/unit/test_gsheet_export.py`, plus a test against Redis like
