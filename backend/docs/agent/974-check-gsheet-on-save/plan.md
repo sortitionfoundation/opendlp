@@ -264,8 +264,20 @@ Only checked when the sheet opens (`OK` or `READ_ONLY`).
 
 ### What the user sees
 
-The panel sits directly under the Spreadsheet URL field in view mode. Load
-the `ui-components` skill before building it.
+The panel sits at the top of the Google Sheets section in view mode, above
+the configuration card. It can't go directly under the URL field, because
+that field is inside the save form, and HTML doesn't allow a form inside
+another form. Load the `ui-components` skill before building it.
+
+The `#gsheet-access-status` container is the `aria-live="polite"` region,
+and HTMX swaps the panel *inside* it, because a live region replaced
+wholesale isn't reliably announced. While a check runs, the "Checking…" text
+replaces the last result. A small rule in `static/backoffice/src/main.css`
+does this with `display`, not HTMX's own opacity-based indicator, so screen
+readers don't read hidden text. A plain form post (no JavaScript) runs the
+check and redirects back to the page, which shows the result from the cache.
+A transient result is not cached, so in that case the page shows the button
+again.
 
 | State          | Shows                                                                                                                                          |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -391,16 +403,21 @@ so the swap is confined to one function in `gsheet_access_check.py`.
    comparison, and cache get/set/delete. Unit tests use a fake client, in the
    style of `tests/unit/test_gsheet_export.py`, plus a test against Redis like
    the CSV stash tests.
-3. **Route, panel and save hook.** The `POST .../gsheet/check` route, the panel
+3. **(done) Route, panel and save hook.** The `POST .../gsheet/check` route, the panel
    fragment, the include in `assembly_data.html`, `?check=1` on the save
    redirect, and the cache drop on save. Component/e2e tests through the
    injected factory: every status, a permission refusal, no service account,
    and save then redirect then panel. BDD: save a configuration, then see the
-   title.
-4. **Library: `inspect_gsheet()`.** In `~/sftop/sortition-algorithms` on a
-   branch, with tests using recorded responses. Release, bump the pin,
-   then swap the call in `gsheet_access_check.py`.
-5. **Translations.** Run the `translate-catalogues` skill.
+   check finish. The BDD server may or may not have Google credentials, so
+   the BDD scenarios assert that the check completes, not a particular result.
+4. **(blocked) Library: `inspect_gsheet()`.** In the sortition-algorithms
+   repo on a branch, with tests using recorded responses. Release, bump the
+   pin, then swap the call in `gsheet_access_check.py`. Blocked on
+   2026-10-16: there is no checkout of the library on the machine this was
+   implemented on (`~/dev/sf/sortition-algorithms/main` is empty), and a
+   release needs Chewie's go-ahead. Until then a successful check costs 2
+   Sheets reads instead of 1. Nothing else depends on it.
+5. **(done) Translations.** Run the `translate-catalogues` skill.
 
 Steps 1-3 can be one PR. Step 4 is independent until the swap.
 
