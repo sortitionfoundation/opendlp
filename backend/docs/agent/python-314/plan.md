@@ -258,14 +258,14 @@ Each step is a separate commit on the `python-314` branch.
    `just check`. Note: every worktree's `.venv` gets recreated too. Also:
    local uv is 0.11.7, older than the 0.12.24 CI will use — worth upgrading
    locally so the lockfile handling matches.
-3. **Dockerfile** — `noble` → `resolute`; Python packages to 3.14;
+3. ✅ **Dockerfile** (done — see the notes after the sequence) — `noble` → `resolute`; Python packages to 3.14;
    `UV_PYTHON=python3.14` (and the comment above it); remove `libpcre3`,
    `libxml2`, and the dated `apt-get upgrade` line; slim the build stage's
    apt installs as above; pin the uv image to `0.12.24` via a named `uv`
    stage, with a comment pairing it with the CI `uv-version`. The Node copy
    stays — it pins Node independently of whatever resolute's apt offers.
    Separate commit: the `docker` entry in `.github/dependabot.yml`.
-4. **Verify the image locally**:
+4. ✅ **Verify the image locally** (done, except the hand-over — results below):
    - `docker build` succeeds (with the slimmed build stage, this also proves
      nothing compiled from source); the existing smoke test prints
      `Python 3.14.x` and `import opendlp` works.
@@ -277,6 +277,60 @@ Each step is a separate commit on the `python-314` branch.
    - Run Grype locally (or let `docker-security` on the PR do it) and compare
      the findings with a noble build.
    - Hand over to Doctor Chewie for testing of the slimmed build stage.
+
+   **Step 3 notes — two changes the plan didn't anticipate:**
+
+   - **`uv run --no-sync pybabel compile`.** Dropping `git` from the build
+     stage failed the build: a plain `uv run` syncs the default groups first,
+     so the build was installing every *dev* dependency into `/app` (including
+     `gettext-auto` from git) just to compile catalogues, and the final
+     `uv sync --no-dev` then removed them again. Babel is a production
+     dependency (via flask-babel), so `--no-sync` is all that's needed. The
+     final sync now installs exactly 1 package (the project). With that, `git`
+     is dropped as planned.
+   - **`rm -f /usr/bin/pebble` in the runtime stage.** The `ubuntu:resolute`
+     base image ships Canonical's Pebble service manager as a bare binary
+     outside dpkg (noble does not), so `unattended-upgrade` can never patch it.
+     Grype found its Go 1.26.7 standard library carries 1 Critical and 8 High
+     vulnerabilities with fixes available — exactly what makes the
+     `docker-security` job fail. Nothing uses it: the base image's entrypoint
+     is null and ours is gunicorn or celery.
+
+   **Step 4 results:**
+
+   - Red first: the minimal `noble` → `resolute` change failed with
+     `Unable to locate package libpcre3` and `Package 'libxml2' has no
+     installation candidate`, as predicted.
+   - `docker build` succeeds with the slimmed build stage (only
+     `ca-certificates` and `python3.14`). Smoke test: `Python 3.14.4`,
+     `import opendlp` OK.
+   - `ldd` over 257 shared objects: the only "not found" lines are inside
+     `sparsediffpy.libs` (vendored gfortran/quadmath that resolve through the
+     loading module's `$ORIGIN` RPATH, not standalone). Importing every native
+     module in the image (numpy, scipy, cvxpy and solvers, highspy,
+     sparsediffpy, psycopg, cryptography, Pillow, msgspec, markupsafe, ssl,
+     sqlite3, lzma…) succeeds, and a cvxpy solve returns `optimal`. Nothing
+     needed `libpcre3` or `libxml2`. Interpreter `ssl` is OpenSSL 3.5.5.
+   - Production-like stack (scratch compose, gunicorn with production's flags,
+     Celery worker, `FLASK_ENV=production`): `alembic upgrade head` from an
+     empty database, `opendlp database seed`, home page 200, `/health`
+     reports `database_ok` and `celery_worker_running`, static CSS served,
+     Hungarian pages render (`lang="hu"`, so the `.mo` files compiled). Login
+     over HTTP as the seeded admin reaches the dashboard (password hashing
+     goes through `hashlib`/OpenSSL). A real database selection, started with
+     `start_db_select_task`, ran in the containerised worker (pickle
+     serializer round trip) and completed — 5 selected from 40 — and
+     `generate_selection_csvs` exported 5 + 35 rows. No errors or warnings in
+     the app or worker logs.
+   - Grype (local, latest DB): **0 Critical, 0 High**; 219 Medium and 6 Low,
+     of which only 1 Medium and 1 Low have a fix available — below the CI
+     cutoff (`only-fixed`, `high`). The comparison with the noble production
+     image could not run: this VM's 19 GB disk can't hold that image and a
+     freshly hydrated Grype database at once. The `docker-security` job on the
+     PR is the authoritative scan anyway.
+   - The selection and CSV export were driven through the service layer in
+     the container rather than by clicking through the UI; the BDD suite
+     (step 2, now on 3.14) covers the UI path.
 5. **Preview** — `just hdpreview` deploys the image to the preview server; poke
    at it, including a Google Sheets selection (gspread/SSL path) and
    sending an email (SMTP/SSL path), since those are where the base image's

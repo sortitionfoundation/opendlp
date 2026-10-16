@@ -16,6 +16,8 @@ inputs:
     required: true
     default: "22"
   uv-version:
+    # Keep in step with the uv image pinned in backend/Dockerfile, which
+    # Dependabot bumps - it cannot bump this one.
     description: "uv version to use"
     required: true
     default: "0.12.24"
