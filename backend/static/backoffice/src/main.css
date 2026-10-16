@@ -1,6 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Tailwind v4 no longer auto-loads tailwind.config.js. Load it explicitly so
+   the `content` globs (which deliberately scan only the design-system
+   templates, not the GOV.UK ones) and theme/plugins still apply. */
+@config "../../../tailwind.config.js";
+
+/* Class names built by string concat in Jinja macros never appear as literals
+   in the scanned templates, so Tailwind's content-scanner purges their
+   @layer components rules. v4 dropped the JS `safelist` key, so these are the
+   @source inline(...) replacement that keeps them in the output.
+   (btn--primary … btn--icon = button macro variants;
+   ProseMirror-selectednode / selectedCell = added at runtime by the visual
+   editor, never present in a template.) */
+@source inline("btn--primary btn--secondary btn--tertiary btn--danger btn--icon ProseMirror-selectednode selectedCell");
 
 /* ========================================
    Alpine.js Utilities
