@@ -37,7 +37,7 @@ updates:
       default-days: 7
     directories:
       - "/.github/workflows/"
-      - "/.github/actions/setup-python-env/"
+      - "/.github/actions/setup-env/"
     schedule:
       interval: "weekly"
 
