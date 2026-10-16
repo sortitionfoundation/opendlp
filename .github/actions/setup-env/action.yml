@@ -10,7 +10,7 @@ inputs:
   python-version:
     description: "Python version to use"
     required: true
-    default: "3.12"
+    default: "3.14"
   node-version:
     description: "Nodejs version to use"
     required: true
@@ -18,7 +18,7 @@ inputs:
   uv-version:
     description: "uv version to use"
     required: true
-    default: "0.9.17"
+    default: "0.12.24"
   working-directory:
     description: "the working directory for uv commands"
     required: false
@@ -52,7 +52,7 @@ runs:
       shell: bash
       env:
         # Without this, uv obeys .python-version (the local dev pin) and quietly
-        # installs 3.12 whatever python-version the caller asked for.
+        # installs that version whatever python-version the caller asked for.
         UV_PYTHON: ${{ inputs.python-version }}
 
     - name: Install Node.js dependencies and build frontend assets
