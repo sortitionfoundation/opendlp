@@ -100,6 +100,21 @@ def _in_memory_csv_upload_stash(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+@pytest.fixture(autouse=True)
+def _in_memory_gsheet_access_cache(monkeypatch: pytest.MonkeyPatch) -> FakeRedis:
+    """Back the Google Sheets access check cache with a dict for every component test.
+
+    The Assembly Data page reads the cache and saving a configuration clears it,
+    and component tests have no Redis. Each test gets its own store.
+    """
+    fake_redis = FakeRedis()
+    monkeypatch.setattr(
+        "opendlp.service_layer.gsheet_access_check._get_redis",
+        lambda: fake_redis,
+    )
+    return fake_redis
+
+
 @pytest.fixture
 def fake_store():
     """A single in-memory store shared by every UnitOfWork in a test."""

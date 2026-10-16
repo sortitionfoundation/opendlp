@@ -31,6 +31,7 @@ from opendlp.entrypoints.context_processors import (
 from opendlp.entrypoints.extensions import html_lang, init_extensions
 from opendlp.entrypoints.template_filters import register_template_filters
 from opendlp.feature_flags import has_feature
+from opendlp.service_layer.error_translation import translate_error_code
 
 if TYPE_CHECKING:
     from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
@@ -145,6 +146,9 @@ def register_context_processors(app: Flask) -> None:
     app.jinja_env.globals["respondent_status_labels"] = respondent_status_labels
     app.jinja_env.globals["derivation_type_labels"] = DERIVATION_TYPE_LABELS
     app.jinja_env.globals["on_registration_page_labels"] = ON_REGISTRATION_PAGE_LABELS
+    # Translates a stored library error, such as a cached Google Sheets access check,
+    # in the language of whoever views it.
+    app.jinja_env.globals["translate_error_code"] = translate_error_code
     # A global, not a context processor: it reads the request, and the email
     # templates render without one. See the docstring on html_lang.
     app.jinja_env.globals["html_lang"] = html_lang

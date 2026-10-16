@@ -2,12 +2,14 @@
 ABOUTME: Provides /backoffice/assembly/*/gsheet/*, selection/*, replacement/*, and manage-tabs/* routes"""
 
 import contextlib
+import time
 import uuid
 from collections.abc import Mapping
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
@@ -34,6 +36,7 @@ from opendlp.service_layer.assembly_service import (
     update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
+from opendlp.service_layer.gsheet_access_check import check_gsheet_access, forget_cached_result, store_cached_result
 from opendlp.service_layer.replacement_targets import (
     ReplacementPlan,
     ReplacementValidation,
@@ -1094,7 +1097,67 @@ def _handle_gsheet_save_success(
             "warning",
         )
 
-    return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+    # The URL may have changed, so the cached access check may describe another sheet
+    forget_cached_result(assembly_id)
+    return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet", check=1))
+
+
+@gsheets_bp.route("/assembly/<uuid:assembly_id>/gsheet/check", methods=["POST"])
+@login_required
+@require_assembly_management
+def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Check what the service account can do with the configured spreadsheet.
+
+    Always asks Google: the cache only serves page views that did not ask for
+    a check. Returns the status panel for HTMX; a plain form post redirects to
+    the Assembly Data page, which shows the result from the cache.
+    """
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+    if gsheet is None:
+        return render_template(
+            "backoffice/components/gsheet_access_status.html",
+            gsheet_access_assembly_id=assembly_id,
+            gsheet_access_unavailable_reason=_("This assembly has no Google Sheets configuration."),
+        ), 404
+
+    if not get_service_account_email():
+        return render_template(
+            "backoffice/components/gsheet_access_status.html",
+            gsheet_access_assembly_id=assembly_id,
+            gsheet_access_unavailable_reason=_(
+                "The spreadsheet cannot be checked: no Google service account is configured."
+            ),
+        )
+
+    # No UnitOfWork is open here: the Google calls can take seconds.
+    started = time.perf_counter()
+    client = current_app.extensions["gsheet_access_client_factory"]()
+    result = check_gsheet_access(
+        client,
+        gsheet.url,
+        selection_tabs=(gsheet.select_registrants_tab, gsheet.select_targets_tab),
+        replacement_tabs=(gsheet.replace_registrants_tab, gsheet.replace_targets_tab, gsheet.already_selected_tab),
+        now=datetime.now(UTC),
+    )
+    logger.info(
+        "Google Sheets access checked",
+        assembly_id=str(assembly_id),
+        user_id=str(current_user.id),
+        status=result.status.value,
+        seconds=round(time.perf_counter() - started, 2),
+    )
+    store_cached_result(assembly_id, result)
+
+    if request.headers.get("HX-Request") != "true":
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+    return render_template(
+        "backoffice/components/gsheet_access_status.html",
+        gsheet_access_assembly_id=assembly_id,
+        gsheet_access_result=result,
+        can_check_gsheet_access=True,
+    )
 
 
 @gsheets_bp.route("/assembly/<uuid:assembly_id>/gsheet/save", methods=["POST"])
