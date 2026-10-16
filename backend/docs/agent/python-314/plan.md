@@ -154,13 +154,13 @@ COPY --from=uv /uv /usr/local/bin/uv
 ```
 
 Then add a `docker` entry to `.github/dependabot.yml`, matching the style
-of the existing entries (weekly, 7-day cooldown, 14 for majors):
+of the existing entries (weekly, 7-day cooldown). Unlike the other
+ecosystems, `docker` does not support `semver-major-days`:
 
 ```yaml
   - package-ecosystem: "docker"
     cooldown:
       default-days: 7
-      semver-major-days: 14
     directory: "/backend"
     schedule:
       interval: "weekly"
