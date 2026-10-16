@@ -4,7 +4,7 @@ ABOUTME: Creates and configures Flask app instance with all necessary extensions
 import secrets
 import time
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from flask import Config, Flask, Response, g, render_template, request
@@ -50,6 +50,13 @@ def default_gsheet_export_target_factory(spreadsheet_url: str) -> "AbstractGShee
     return GSheetExportTarget(spreadsheet_url=spreadsheet_url)
 
 
+def default_gsheet_access_client_factory() -> Any:
+    """Build the real gspread client the Google Sheets access check uses."""
+    from opendlp.adapters.gsheet_access import make_check_client  # noqa: PLC0415
+
+    return make_check_client()
+
+
 def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None = None) -> Flask:
     """
     Flask application factory.
@@ -90,6 +97,10 @@ def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None =
     # Factory building a Google Sheets export target from a spreadsheet URL.
     # Tests override this to inject a fake target instead of talking to gspread.
     app.extensions["gsheet_export_target_factory"] = default_gsheet_export_target_factory
+
+    # Factory building the gspread client for the Google Sheets access check.
+    # Tests override this to inject a fake client instead of talking to Google.
+    app.extensions["gsheet_access_client_factory"] = default_gsheet_access_client_factory
 
     # Register context processors
     register_context_processors(app)
