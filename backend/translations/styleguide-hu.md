@@ -208,13 +208,16 @@ The bare `Dashboard` msgid cannot: the source uses the one string for both the
 per-assembly statistics tab and the nav link to the assembly list, so it takes
 the generic word until someone splits it. *(B11)*
 
-The *(unreviewed)* rows above came in with the replacement-selection and
-rich-editor strings in October 2026, after the review. Use them consistently
-until a native speaker has checked them.
+The rows above from *service account* to *table* came in with the replacement-selection
+and rich-editor strings in October 2026, and a native speaker reviewed them
+the same month.
 
 **Selection run names** are compound nouns, because they label rows in the run
-history: *Pótszemély-kiválasztás*, not *Pótszemélyek kiválasztása*. The button
+history: *Póttag-választás*, not *Pótszemélyek kiválasztása*. The button
 that starts one is still the noun-form action, "Pótszemélyek kiválasztása".
+
+**Undo / Redo** are *Mégsem* / *Mégis*. *Mégsem* is not the cancel button
+*Mégse*: the two differ by one letter, so check which one a string needs.
 
 **link** stays *link*, matching the existing "Links" → *Linkek*; *hivatkozás* is
 correct but stiffer than the rest of the editor.

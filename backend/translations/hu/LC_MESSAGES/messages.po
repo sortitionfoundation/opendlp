@@ -2171,7 +2171,7 @@ msgstr "Nincs jogosultságod hozzáférni ehhez a közösségi gyűléshez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1013
 msgid "An error occurred while generating the form skeleton"
-msgstr "Hiba történt az űrlapváz létrehozása közben"
+msgstr "Hiba történt az űrlapsablon létrehozása közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1112
 msgid "An error occurred while generating QR code"
@@ -4374,7 +4374,7 @@ msgstr "Tesztkiválasztás"
 
 #: src/opendlp/service_layer/selection_history.py:50
 msgid "Replacement selection"
-msgstr "Pótszemély-kiválasztás"
+msgstr "Póttag-választás"
 
 #: src/opendlp/service_layer/selection_history.py:58
 #, python-format
@@ -7252,12 +7252,12 @@ msgstr "több hely foglalt, mint amennyit a célszám enged"
 
 #: templates/backoffice/components/db_replacement_modal.html:188
 msgid "no spare people in the pool"
-msgstr "nincs tartalék jelentkező"
+msgstr "nincs maradék jelentkező"
 
 #: templates/backoffice/components/db_replacement_modal.html:188
 #, python-format
 msgid "%(count)s spare in the pool"
-msgstr "%(count)s tartalék jelentkező"
+msgstr "%(count)s maradék jelentkező"
 
 #: templates/backoffice/components/db_replacement_modal.html:218
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
@@ -7849,11 +7849,11 @@ msgstr "Táblázat törlése"
 #: templates/backoffice/targets/bulk_edit_form.html:155
 #: templates/backoffice/targets/bulk_edit_form.html:201
 msgid "Undo"
-msgstr "Visszavonás"
+msgstr "Mégsem"
 
 #: templates/backoffice/components/rich_editor.html:150
 msgid "Redo"
-msgstr "Ismétlés"
+msgstr "Mégis"
 
 #: templates/backoffice/components/search_dropdown.html:107
 msgid "Search results"
@@ -8082,14 +8082,14 @@ msgstr[1] "%(num)s kérdés a regisztrációs oldalon"
 
 #: templates/backoffice/registration/_modals.html:10
 msgid "Form Skeleton"
-msgstr "Űrlapváz"
+msgstr "Űrlapsablon"
 
 #: templates/backoffice/registration/_modals.html:16
 msgid ""
 "This skeleton is generated from your assembly's field definitions. Use it"
 " as the form, then edit to add extra HTML as required."
 msgstr ""
-"Ez a váz a közösségi gyűlés meződefinícióiból készült. Használd "
+"Ez a sablon a közösségi gyűlés meződefinícióiból készült. Használd "
 "űrlapként, majd szerkeszd, ha további HTML-re van szükség."
 
 #: templates/backoffice/registration/_modals.html:19
@@ -8099,13 +8099,13 @@ msgid ""
 "Accessible version uses the %(link_start)sGOV.UK Design "
 "System%(link_end)s — which has high web accessibility."
 msgstr ""
-"Az Egyszerű változat a minimális változat, amelyet te bővíthetsz. Az "
-"Akadálymentes változat a %(link_start)sGOV.UK Design Systemet%(link_end)s"
+"Az egyszerű változat a minimális változat, amelyet te bővíthetsz. Az "
+"akadálymentes változat a %(link_start)sGOV.UK Design Systemet%(link_end)s"
 " használja – ez magas szintű webes akadálymentességet biztosít."
 
 #: templates/backoffice/registration/_modals.html:31
 msgid "Skeleton style"
-msgstr "Vázstílus"
+msgstr "Sablonstílus"
 
 #: templates/backoffice/registration/_modals.html:35
 msgid "Accessible"
@@ -8117,11 +8117,11 @@ msgstr "Egyszerű"
 
 #: templates/backoffice/registration/_modals.html:54
 msgid "Skeleton preview"
-msgstr "Váz előnézete"
+msgstr "Sablon előnézete"
 
 #: templates/backoffice/registration/_modals.html:71
 msgid "Skeleton preview (Accessible)"
-msgstr "Váz előnézete (Akadálymentes)"
+msgstr "Sablon előnézete (akadálymentes)"
 
 #: templates/backoffice/registration/_modals.html:86
 msgid "Use this as the form"
@@ -8325,7 +8325,7 @@ msgstr "Eredeti méret"
 
 #: templates/backoffice/registration/_page_data.html:23
 msgid "An error occurred while fetching the form skeleton"
-msgstr "Hiba történt az űrlapváz lekérése közben"
+msgstr "Hiba történt az űrlapsablon lekérése közben"
 
 #: templates/backoffice/registration/_page_data.html:24
 msgid "Enter a link address"
@@ -8618,8 +8618,8 @@ msgid ""
 " reflects the current questions."
 msgstr ""
 "A regisztrációs kérdések megváltoztak az űrlap HTML utolsó mentése óta – "
-"ellenőrizd, hogy az űrlap még a megfelelő dolgokat kéri-e. Az Űrlapváz a "
-"jelenlegi kérdéseket tükrözi."
+"ellenőrizd, hogy az űrlap még a megfelelő dolgokat kéri-e. Az Űrlapsablon"
+" a jelenlegi kérdéseket tükrözi."
 
 #: templates/backoffice/registration/_step_form.html:41
 msgid "Registration form"
@@ -8627,7 +8627,7 @@ msgstr "Regisztrációs űrlap"
 
 #: templates/backoffice/registration/_step_form.html:54
 msgid "Show Form Skeleton"
-msgstr "Űrlapváz megjelenítése"
+msgstr "Űrlapsablon megjelenítése"
 
 #: templates/backoffice/registration/_step_form.html:68
 msgid ""
