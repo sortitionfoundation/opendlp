@@ -53,7 +53,8 @@ from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     NotFoundError,
 )
-from opendlp.service_layer.permissions import can_manage_assembly_members
+from opendlp.service_layer.gsheet_access_check import fetch_cached_result
+from opendlp.service_layer.permissions import can_manage_assembly, can_manage_assembly_members
 from opendlp.service_layer.registration_page_service import (
     list_registration_pages,
 )
@@ -665,6 +666,16 @@ def render_assembly_data_page(
         else:
             gsheet_form = CreateAssemblyGSheetForm()
 
+    # The access check panel shows on the configuration's view mode only
+    gsheet_access_result = None
+    gsheet_access_auto_check = False
+    can_check_gsheet_access = False
+    if gsheet_mode == "view" and nav.gsheet:
+        can_check_gsheet_access = can_manage_assembly(current_user, nav.assembly)
+        gsheet_access_auto_check = can_check_gsheet_access and request.args.get("check", "") == "1"
+        if not gsheet_access_auto_check:
+            gsheet_access_result = fetch_cached_result(assembly_id, nav.gsheet.url)
+
     # Set up CSV settings form if CSV source is selected
     csv_settings_form = None
     csv_available_columns: list[str] = []
@@ -731,6 +742,9 @@ def render_assembly_data_page(
         respondent_attribute_columns=respondent_attribute_columns,
         column_distinct_counts=column_distinct_counts,
         targets_upload_form=targets_upload_form,
+        gsheet_access_result=gsheet_access_result,
+        gsheet_access_auto_check=gsheet_access_auto_check,
+        can_check_gsheet_access=can_check_gsheet_access,
     )
 
 

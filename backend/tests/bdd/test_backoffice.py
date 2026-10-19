@@ -2578,3 +2578,16 @@ def choose_intro_style(page: Page, label: str):
 def preview_paragraph_has_class(page: Page, text: str, css_class: str):
     paragraph = _preview_frame(page).locator("p", has_text=text)
     expect(paragraph).to_have_class(re.compile(rf"\b{css_class}\b"), timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the spreadsheet access check should finish")
+def spreadsheet_access_check_finishes(page: Page):
+    """The status panel replaces "Checking…" with an outcome.
+
+    Which outcome depends on whether the BDD server has Google credentials, so
+    only the panel's progress is asserted; the outcomes have component tests.
+    """
+    panel = page.locator("#gsheet-access-status")
+    expect(panel).to_be_visible()
+    expect(panel.locator(".gsheet-access__pending")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT * 6)
+    expect(panel).not_to_have_text("")

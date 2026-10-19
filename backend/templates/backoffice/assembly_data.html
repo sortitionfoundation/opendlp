@@ -85,6 +85,14 @@ ABOUTME: Displays data source selection and data management for assemblies
                 {{ _("Configure a Google Sheets spreadsheet to import and manage respondent data for this assembly.") }}
             </p>
         {% endif %}
+        {# Outside the configuration form, because a form cannot sit inside another #}
+        {% if readonly and gsheet %}
+            <div id="gsheet-access-status" aria-live="polite" class="mb-6">
+                {% with gsheet_access_assembly_id=assembly.id %}
+                    {% include "backoffice/components/gsheet_access_status.html" %}
+                {% endwith %}
+            </div>
+        {% endif %}
         {# Configuration Form / View #}
         <div class="rounded-lg p-6 mb-6"
              style="background-color: var(--color-tables-cards);

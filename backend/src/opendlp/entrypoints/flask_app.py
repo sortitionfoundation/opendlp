@@ -4,7 +4,7 @@ ABOUTME: Creates and configures Flask app instance with all necessary extensions
 import secrets
 import time
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from flask import Config, Flask, Response, g, render_template, request
@@ -31,6 +31,7 @@ from opendlp.entrypoints.context_processors import (
 from opendlp.entrypoints.extensions import html_lang, init_extensions
 from opendlp.entrypoints.template_filters import register_template_filters
 from opendlp.feature_flags import has_feature
+from opendlp.service_layer.error_translation import translate_error_code
 
 if TYPE_CHECKING:
     from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
@@ -48,6 +49,13 @@ def default_gsheet_export_target_factory(spreadsheet_url: str) -> "AbstractGShee
     from opendlp.adapters.gsheet_export import GSheetExportTarget  # noqa: PLC0415
 
     return GSheetExportTarget(spreadsheet_url=spreadsheet_url)
+
+
+def default_gsheet_access_client_factory() -> Any:
+    """Build the real gspread client the Google Sheets access check uses."""
+    from opendlp.adapters.gsheet_access import make_check_client  # noqa: PLC0415
+
+    return make_check_client()
 
 
 def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None = None) -> Flask:
@@ -90,6 +98,10 @@ def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None =
     # Factory building a Google Sheets export target from a spreadsheet URL.
     # Tests override this to inject a fake target instead of talking to gspread.
     app.extensions["gsheet_export_target_factory"] = default_gsheet_export_target_factory
+
+    # Factory building the gspread client for the Google Sheets access check.
+    # Tests override this to inject a fake client instead of talking to Google.
+    app.extensions["gsheet_access_client_factory"] = default_gsheet_access_client_factory
 
     # Register context processors
     register_context_processors(app)
@@ -134,6 +146,9 @@ def register_context_processors(app: Flask) -> None:
     app.jinja_env.globals["respondent_status_labels"] = respondent_status_labels
     app.jinja_env.globals["derivation_type_labels"] = DERIVATION_TYPE_LABELS
     app.jinja_env.globals["on_registration_page_labels"] = ON_REGISTRATION_PAGE_LABELS
+    # Translates a stored library error, such as a cached Google Sheets access check,
+    # in the language of whoever views it.
+    app.jinja_env.globals["translate_error_code"] = translate_error_code
     # A global, not a context processor: it reads the request, and the email
     # templates render without one. See the docstring on html_lang.
     app.jinja_env.globals["html_lang"] = html_lang

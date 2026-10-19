@@ -7,14 +7,18 @@ from unittest.mock import patch
 from sortition_algorithms.error_messages import ERROR_MESSAGES
 from sortition_algorithms.errors import (
     BadDataError,
+    NotNativeGoogleSheetError,
     ParseTableErrorMsg,
     ParseTableMultiError,
     ParseTableMultiValueErrorMsg,
     SelectionError,
     SelectionMultilineError,
+    SpreadsheetNotFoundError,
 )
 
 from opendlp.service_layer.error_translation import (
+    translate_error_code,
+    translate_not_native_gsheet,
     translate_sortition_error,
     translate_sortition_error_to_html,
 )
@@ -311,3 +315,38 @@ class TestErrorTranslationIntegration:
         # Should return the original formatted message
         assert "The quotas are infeasible:" in result
         assert "Inconsistent numbers in min and max" in result
+
+
+class TestTranslateErrorCode:
+    """Translating a stored error code and parameters, without the exception that produced them"""
+
+    def test_translates_library_error_code(self) -> None:
+        result = translate_error_code(
+            "spreadsheet_not_shared",
+            {"spreadsheet_name": "https://example.com/sheet", "service_account_email": "robot@example.com"},
+        )
+
+        assert result == ERROR_MESSAGES["spreadsheet_not_shared"] % {
+            "spreadsheet_name": "https://example.com/sheet",
+            "service_account_email": "robot@example.com",
+        }
+
+    def test_matches_translating_the_exception(self) -> None:
+        error = SpreadsheetNotFoundError(spreadsheet_name="https://example.com/sheet")
+
+        assert translate_error_code(error.error_code, error.error_params) == translate_sortition_error(error)
+
+    def test_not_native_uses_the_opendlp_wording(self) -> None:
+        """The library's own message gives no instructions; ours says how to convert the file."""
+        error = NotNativeGoogleSheetError(
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", file_name="data.xlsx"
+        )
+
+        result = translate_error_code(error.error_code, error.error_params)
+
+        assert result == translate_not_native_gsheet(file_name="data.xlsx", common_name="Excel spreadsheet (.xlsx)")
+        assert "Save as Google Sheets" in result
+        assert "data.xlsx" in result
+
+    def test_unknown_code_returns_empty_string(self) -> None:
+        assert translate_error_code("no_such_code", {}) == ""
