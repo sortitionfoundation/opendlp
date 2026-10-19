@@ -7849,7 +7849,7 @@ msgstr "Táblázat törlése"
 #: templates/backoffice/targets/bulk_edit_form.html:155
 #: templates/backoffice/targets/bulk_edit_form.html:201
 msgid "Undo"
-msgstr "Mégsem"
+msgstr "Mégse"
 
 #: templates/backoffice/components/rich_editor.html:150
 msgid "Redo"

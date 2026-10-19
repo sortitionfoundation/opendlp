@@ -174,7 +174,7 @@ roles and must not read as synonyms. *(C14)*
 | Plain / Accessible (skeleton and intro styles) | egyszerű / akadálymentes | |
 | initial / test / replacement selection (a run) | kezdeti kiválasztás / tesztkiválasztás / pótszemély-választás | |
 | spare (people left in the pool) | maradék jelentkező | |
-| Undo / Redo | mégsem / mégis | |
+| Undo / Redo | mégse / mégis | |
 | link (in the rich editor) | link | |
 | table (in the rich editor) | táblázat |  |
 
@@ -216,8 +216,9 @@ the same month.
 history: *Pótszemély-választás*, not *Pótszemélyek kiválasztása*. The button
 that starts one is still the noun-form action, "Pótszemélyek kiválasztása".
 
-**Undo / Redo** are *Mégsem* / *Mégis*. *Mégsem* is not the cancel button
-*Mégse*: the two differ by one letter, so check which one a string needs.
+**Undo / Redo** are *Mégse* / *Mégis*. *Mégse* is the same word as the cancel
+button, and *Mégsem* means the same thing; always write *Mégse*, so the
+interface uses one spelling.
 
 **link** stays *link*, matching the existing "Links" → *Linkek*; *hivatkozás* is
 correct but stiffer than the rest of the editor.
