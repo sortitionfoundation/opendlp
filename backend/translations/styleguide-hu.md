@@ -172,7 +172,7 @@ roles and must not read as synonyms. *(C14)*
 | feasibility (check) | megvalósíthatóság | |
 | form skeleton | űrlapsablon | |
 | Plain / Accessible (skeleton and intro styles) | egyszerű / akadálymentes | |
-| initial / test / replacement selection (a run) | kezdeti kiválasztás / tesztkiválasztás / póttag-választás | |
+| initial / test / replacement selection (a run) | kezdeti kiválasztás / tesztkiválasztás / pótszemély-választás | |
 | spare (people left in the pool) | maradék jelentkező | |
 | Undo / Redo | mégsem / mégis | |
 | link (in the rich editor) | link | |
@@ -213,7 +213,7 @@ and rich-editor strings in October 2026, and a native speaker reviewed them
 the same month.
 
 **Selection run names** are compound nouns, because they label rows in the run
-history: *Póttag-választás*, not *Pótszemélyek kiválasztása*. The button
+history: *Pótszemély-választás*, not *Pótszemélyek kiválasztása*. The button
 that starts one is still the noun-form action, "Pótszemélyek kiválasztása".
 
 **Undo / Redo** are *Mégsem* / *Mégis*. *Mégsem* is not the cancel button

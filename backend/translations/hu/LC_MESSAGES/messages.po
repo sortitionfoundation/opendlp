@@ -4374,7 +4374,7 @@ msgstr "Tesztkiválasztás"
 
 #: src/opendlp/service_layer/selection_history.py:50
 msgid "Replacement selection"
-msgstr "Póttag-választás"
+msgstr "Pótszemély-választás"
 
 #: src/opendlp/service_layer/selection_history.py:58
 #, python-format
