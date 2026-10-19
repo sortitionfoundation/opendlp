@@ -168,15 +168,15 @@ roles and must not read as synonyms. *(C14)*
 | URL slug | URL-azonosító | |
 | 2FA / two-factor authentication | kétlépcsős azonosítás | |
 | backup code | tartalék kód | |
-| service account (Google) | szolgáltatásfiók | *(unreviewed)* |
-| feasibility (check) | megvalósíthatóság | *(unreviewed)* |
-| form skeleton | (űrlap)váz | *(unreviewed)* |
-| Plain / Accessible (skeleton and intro styles) | Egyszerű / Akadálymentes | *(unreviewed)* |
-| initial / test / replacement selection (a run) | Kezdeti kiválasztás / Tesztkiválasztás / Pótszemély-kiválasztás | *(unreviewed)* |
-| spare (people left in the pool) | tartalék jelentkező | *(unreviewed)* |
-| Undo / Redo | Visszavonás / Ismétlés | *(unreviewed)* |
-| link (in the rich editor) | link | *(unreviewed)* |
-| table (in the rich editor) | táblázat | *(unreviewed)* |
+| service account (Google) | szolgáltatásfiók | |
+| feasibility (check) | megvalósíthatóság | |
+| form skeleton | űrlapsablon | |
+| Plain / Accessible (skeleton and intro styles) | egyszerű / akadálymentes | |
+| initial / test / replacement selection (a run) | kezdeti kiválasztás / tesztkiválasztás / póttag-választás | |
+| spare (people left in the pool) | maradék jelentkező | |
+| Undo / Redo | mégsem / mégis | |
+| link (in the rich editor) | link | |
+| table (in the rich editor) | táblázat |  |
 
 **cancel** as a button — backing out of a dialog or form without doing anything —
 is **Mégse**, the word every Hungarian UI uses for that button. Not
