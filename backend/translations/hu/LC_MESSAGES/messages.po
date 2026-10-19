@@ -2568,14 +2568,16 @@ msgstr ""
 "adatoszlopokat fogja tartalmazni. Ez szándékos?"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1122
+#, fuzzy
 msgid "This assembly has no Google Sheets configuration."
-msgstr ""
+msgstr "Ehhez a közösségi gyűléshez nincs Google Táblázat beállítva."
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1130
+#, fuzzy
 msgid ""
 "The spreadsheet cannot be checked: no Google service account is "
 "configured."
-msgstr ""
+msgstr "A táblázat nem ellenőrizhető: nincs beállítva Google szolgáltatásfiók."
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1180
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1246
@@ -7429,60 +7431,71 @@ msgid "Version"
 msgstr "Verzió"
 
 #: templates/backoffice/components/gsheet_access_status.html:36
+#, fuzzy
 msgid "Checking access to the spreadsheet…"
-msgstr ""
+msgstr "A táblázat elérésének ellenőrzése…"
 
 #: templates/backoffice/components/gsheet_access_status.html:53
-#, python-format
+#, fuzzy, python-format
 msgid "Connected to the spreadsheet '%(title)s'."
-msgstr ""
+msgstr "Kapcsolódva a táblázathoz: „%(title)s”."
 
 #: templates/backoffice/components/gsheet_access_status.html:55
+#, fuzzy
 msgid "Google is busy right now. Try again in a minute."
-msgstr ""
+msgstr "A Google most túlterhelt. Próbáld újra egy perc múlva."
 
 #: templates/backoffice/components/gsheet_access_status.html:57
+#, fuzzy
 msgid "Could not check the spreadsheet just now. Try again later."
-msgstr ""
+msgstr "A táblázatot most nem sikerült ellenőrizni. Próbáld újra később."
 
 #: templates/backoffice/components/gsheet_access_status.html:59
+#, fuzzy
 msgid "The spreadsheet cannot be used."
-msgstr ""
+msgstr "A táblázat nem használható."
 
 #: templates/backoffice/components/gsheet_access_status.html:66
-#, python-format
+#, fuzzy, python-format
 msgid "There is no tab called '%(tab)s', which a selection needs."
-msgstr ""
+msgstr "Nincs „%(tab)s” nevű munkalap, pedig a kiválasztáshoz szükség van rá."
 
 #: templates/backoffice/components/gsheet_access_status.html:68
 #: templates/backoffice/components/gsheet_access_status.html:76
-#, python-format
+#, fuzzy, python-format
 msgid "Did you mean '%(suggestion)s'?"
-msgstr ""
+msgstr "Erre gondoltál: „%(suggestion)s”?"
 
 #: templates/backoffice/components/gsheet_access_status.html:74
-#, python-format
+#, fuzzy, python-format
 msgid "There is no tab called '%(tab)s'. It is only needed for replacements."
 msgstr ""
+"Nincs „%(tab)s” nevű munkalap. Csak a pótszemélyek kiválasztásához van rá"
+" szükség."
 
 #: templates/backoffice/components/gsheet_access_status.html:84
+#, fuzzy
 msgid "Check again"
-msgstr ""
+msgstr "Újraellenőrzés"
 
 #: templates/backoffice/components/gsheet_access_status.html:86
-#, python-format
+#, fuzzy, python-format
 msgid "Checked at %(time)s"
-msgstr ""
+msgstr "Ellenőrizve: %(time)s"
 
 #: templates/backoffice/components/gsheet_access_status.html:92
+#, fuzzy
 msgid "Check access"
-msgstr ""
+msgstr "Elérés ellenőrzése"
 
 #: templates/backoffice/components/gsheet_access_status.html:94
+#, fuzzy
 msgid ""
 "Check that the spreadsheet is shared with the service account and has the"
 " tabs named here."
 msgstr ""
+"Ellenőrizd, hogy a táblázat meg van-e osztva a szolgáltatásfiókkal, és "
+"megvannak-e benne az itt megnevezett munkalapok."
 
 #: templates/backoffice/components/gsheet_export_fields.html:19
 msgid ""

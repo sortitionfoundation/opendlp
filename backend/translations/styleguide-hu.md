@@ -177,6 +177,7 @@ roles and must not read as synonyms. *(C14)*
 | Undo / Redo | mégse / mégis | |
 | link (in the rich editor) | link | |
 | table (in the rich editor) | táblázat |  |
+| access (to a spreadsheet) | elérés | *(unreviewed)* |
 
 **cancel** as a button — backing out of a dialog or form without doing anything —
 is **Mégse**, the word every Hungarian UI uses for that button. Not
