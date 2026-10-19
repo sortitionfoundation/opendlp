@@ -26,6 +26,26 @@
     display: none !important;
 }
 
+/* ========================================
+   BASE - defaults Tailwind v4's preflight no longer sets
+   ======================================== */
+
+@layer base {
+    /* v3's preflight gave buttons a pointer cursor; v4 leaves the browser
+       default, so buttons styled only with utilities showed an arrow. */
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+
+    /* v4's preflight colours placeholders as the text colour at 50%; keep
+       them on the design-system token instead. */
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-placeholder-text);
+    }
+}
+
 /*
  * Design Tokens are loaded separately in templates:
  * - tokens/primitive.css (raw color values + @font-face + font family primitives)
