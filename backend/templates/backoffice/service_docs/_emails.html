@@ -611,6 +611,8 @@ ABOUTME: Documents CRUD on EmailTemplate, auto-reply assignment, readiness check
   name: str,
   subject: str,           # Jinja
   body_html: str,         # Jinja, HTML
+  reply_to_name: str,     # may be empty
+  reply_to_email: str,    # may be empty
   created_at: datetime,
   updated_at: datetime
 }</pre>
@@ -622,7 +624,7 @@ ABOUTME: Documents CRUD on EmailTemplate, auto-reply assignment, readiness check
   respondent_id: UUID,
   email_template_id: UUID | None,
   to_email: str,
-  from_email: str,
+  reply_to_email: str,         # the reply-to used, or empty
   subject: str,
   outcome: EmailSendOutcome,   # SENT | FAILED
   missing_variables: list[str],

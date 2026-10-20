@@ -15,7 +15,7 @@ class TestAddAndGet:
         respondent = backend.make_respondent()
         record = make_respondent_email_send_record(
             respondent.id,
-            from_email="team@example.com",
+            reply_to_email="team@example.com",
             outcome=EmailSendOutcome.FAILED,
             missing_variables=["first_name", "info_url"],
         )
@@ -27,6 +27,7 @@ class TestAddAndGet:
         assert retrieved.respondent_id == respondent.id
         assert retrieved.outcome is EmailSendOutcome.FAILED
         assert retrieved.missing_variables == ["first_name", "info_url"]
+        assert retrieved.reply_to_email == "team@example.com"
 
     def test_get_nonexistent_returns_none(self, respondent_email_send_record_backend: ContractBackend):
         assert respondent_email_send_record_backend.repo.get(uuid.uuid4()) is None
