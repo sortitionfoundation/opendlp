@@ -282,6 +282,26 @@ class TestDuplicateRegistrationPage:
         assert copied_template is not None
         assert copied_template.body_html == "Hello in English"
 
+    def test_copy_keeps_the_auto_reply_reply_to(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        template = EmailTemplate(
+            assembly_id=assembly.id,
+            name="Auto-reply",
+            subject="Thanks",
+            body_html="Hello",
+            reply_to_name="The Team",
+            reply_to_email="team@example.com",
+        )
+        uow.email_templates.add(template)
+        source = service.create_registration_page(uow, admin.id, assembly.id, name="English")
+        service.set_auto_reply_template(uow, admin.id, source.id, template.id)
+
+        copy = service.duplicate_registration_page(uow, admin.id, source.id, name="Español", language="es")
+
+        copied_template = uow.email_templates.get(copy.auto_reply_email_template_id)
+        assert copied_template.reply_to_name == "The Team"
+        assert copied_template.reply_to_email == "team@example.com"
+
     def test_duplicating_a_page_without_an_auto_reply_leaves_it_unset(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         source = service.create_registration_page(uow, admin.id, assembly.id, name="English")
