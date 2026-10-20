@@ -11,13 +11,15 @@ Feature: Backoffice registration auto-reply email visual editor
   Background:
     Given I am logged in as an admin user
 
-  Scenario: Formatting the auto-reply email from the toolbar and saving it
+  Scenario: Formatting the auto-reply email from the toolbar, setting where replies go, and saving it
     Given there is an assembly called "Email Format Assembly" with the auto-reply body "<p>Thanks for registering</p>"
     When I visit the auto-reply email editor for "Email Format Assembly"
     And I select everything in the visual email editor
     And I press the "Bold" toolbar button
+    And I set replies to go to "The Team" at "team@example.com"
     And I save the registration form
     Then the email HTML view should contain "<p><strong>Thanks for registering</strong></p>"
+    And replies should go to "The Team" at "team@example.com"
 
   Scenario: The email toolbar offers no images or tables
     Given there is an assembly called "Email Toolbar Assembly" with the auto-reply body "<p>Hello</p>"

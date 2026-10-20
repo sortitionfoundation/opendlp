@@ -2,6 +2,7 @@
 ABOUTME: Submits the public form and checks a RespondentEmailSendRecord is written"""
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from flask.testing import FlaskClient
@@ -26,6 +27,7 @@ from opendlp.service_layer.registration_page_service import (
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token, route_url
+from tests.fakes import FakeEmailAdapter
 
 
 def _page_id(uow, assembly_id):  # type: ignore[no-untyped-def]
@@ -56,7 +58,9 @@ def enable_registration_feature(monkeypatch: pytest.MonkeyPatch) -> None:
     reload_flags()
 
 
-def _build_published_page_with_auto_reply(session_factory, admin_id) -> RegistrationPage:
+def _build_published_page_with_auto_reply(
+    session_factory, admin_id, *, template_reply_to_name: str = "", template_reply_to_email: str = ""
+) -> RegistrationPage:
     """Create a published registration page wired to an assigned auto-reply template,
     with a reply-to address and an email field on the page."""
     with SqlAlchemyUnitOfWork(session_factory) as uow:
@@ -111,6 +115,8 @@ def _build_published_page_with_auto_reply(session_factory, admin_id) -> Registra
             name="Auto-reply",
             subject=AUTO_REPLY_SUBJECT,
             body_html=AUTO_REPLY_BODY,
+            reply_to_name=template_reply_to_name,
+            reply_to_email=template_reply_to_email,
         )
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         assign_auto_reply_template(uow, admin_id, assembly_id, template.id)
@@ -139,3 +145,47 @@ def test_live_submission_writes_sent_record(client: FlaskClient, admin_user, pos
         assert len(records) == 1
         assert records[0].outcome is EmailSendOutcome.SENT
         assert records[0].to_email == "ada-autoreply@example.com"
+
+
+def _submit(client: FlaskClient, page: RegistrationPage, email: str) -> None:
+    form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
+    csrf_token = get_csrf_token(client, form_url)
+    response = client.post(form_url, data={"csrf_token": csrf_token, "name": "Ada", "email": email})
+    assert response.status_code == 302
+
+
+def _only_record(session_factory, assembly_id):  # type: ignore[no-untyped-def]
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        respondents = uow.respondents.get_by_assembly_id(assembly_id, status=RespondentStatus.POOL)
+        records = uow.respondent_email_send_records.list_by_respondent(respondents[0].id)
+        assert len(records) == 1
+        return records[0].create_detached_copy()
+
+
+def test_template_reply_to_is_used_for_the_send(client: FlaskClient, admin_user, postgres_session_factory) -> None:
+    """The page's own reply-to wins over the assembly's, and the record keeps the one used."""
+    page = _build_published_page_with_auto_reply(
+        postgres_session_factory,
+        admin_user.id,
+        template_reply_to_name="Page Team",
+        template_reply_to_email="page-team@example.com",
+    )
+    adapter = FakeEmailAdapter()
+    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
+        _submit(client, page, "ada-page-reply@example.com")
+
+    assert adapter.sent[0]["reply_to"] == ("Page Team", "page-team@example.com")
+    record = _only_record(postgres_session_factory, page.assembly_id)
+    assert record.reply_to_email == "page-team@example.com"
+
+
+def test_assembly_reply_to_is_the_fallback(client: FlaskClient, admin_user, postgres_session_factory) -> None:
+    """With no reply-to on the page's template, the assembly's reply-to is used."""
+    page = _build_published_page_with_auto_reply(postgres_session_factory, admin_user.id)
+    adapter = FakeEmailAdapter()
+    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
+        _submit(client, page, "ada-assembly-reply@example.com")
+
+    assert adapter.sent[0]["reply_to"] == ("The Team", "team@example.com")
+    record = _only_record(postgres_session_factory, page.assembly_id)
+    assert record.reply_to_email == "team@example.com"
