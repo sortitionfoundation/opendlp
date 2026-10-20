@@ -11,11 +11,12 @@ def test_construction_defaults() -> None:
     record = RespondentEmailSendRecord(
         respondent_id=respondent_id,
         to_email="person@example.com",
-        from_email="team@example.com",
+        reply_to_email="team@example.com",
         subject="Thanks",
         outcome=EmailSendOutcome.SENT,
     )
     assert record.respondent_id == respondent_id
+    assert record.reply_to_email == "team@example.com"
     assert record.outcome == EmailSendOutcome.SENT
     assert record.missing_variables == []
     assert record.email_template_id is None

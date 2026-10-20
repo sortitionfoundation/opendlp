@@ -66,7 +66,7 @@ def _build_and_send(
         respondent_id=respondent.id,
         email_template_id=template.id,
         to_email=respondent.email,
-        from_email=assembly.reply_to_email,
+        reply_to_email=assembly.reply_to_email,
         subject=rendered.subject,
         outcome=EmailSendOutcome.SENT if ok else EmailSendOutcome.FAILED,
         missing_variables=rendered.missing_variables,
