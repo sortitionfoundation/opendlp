@@ -410,7 +410,7 @@
         color: var(--color-body-text);
         border: none;
         cursor: pointer;
-        font: 400 0.875rem/1.25rem var(--font-body);
+        @apply text-body-md;
         transition: background-color 0.15s ease;
     }
 
@@ -552,11 +552,7 @@
 
     /* Label text styling */
     .checkbox-label {
-        font-family: var(--font-body);
-        font-weight: 500;
-        font-size: 14px;
-        line-height: 20px;
-        letter-spacing: 0.3px;
+        @apply text-label-lg;
         color: var(--color-headings);
     }
 
@@ -653,11 +649,7 @@
 
     /* Label text styling */
     .radio-label {
-        font-family: var(--font-body);
-        font-weight: 500;
-        font-size: 14px;
-        line-height: 20px;
-        letter-spacing: 0.3px;
+        @apply text-label-lg;
         color: var(--color-headings);
     }
 
@@ -745,11 +737,7 @@
 
     /* Label text styling */
     .switch-label {
-        font-family: var(--font-body);
-        font-weight: 500;
-        font-size: 14px;
-        line-height: 20px;
-        letter-spacing: 0.3px;
+        @apply text-label-lg;
         color: var(--color-headings);
     }
 
@@ -902,22 +890,16 @@
         width: 24px;
         height: 24px;
         border-radius: 16px;
-        font-family: var(--font-body);
-        font-size: 14px;
-        font-weight: 500;
+        @apply text-label-lg;
+        /* Tighter than label-lg so the number centres in the 24px pill */
         line-height: 16px;
-        letter-spacing: 0.1px;
         color: #FFFFFF;
         background-color: var(--color-secondary-text);
         flex-shrink: 0;
     }
 
     .stepper-label {
-        font-family: var(--font-body);
-        font-size: 14px;
-        line-height: 20px;
-        letter-spacing: 0.25px;
-        font-weight: 400;
+        @apply text-body-md;
         color: var(--color-secondary-text);
         white-space: nowrap;
     }
@@ -1186,7 +1168,7 @@
         list-style: none;
         margin: 0;
         padding: 0;
-        font: 400 0.875rem/1.25rem var(--font-body);
+        @apply text-body-md;
         color: var(--color-body-text);
     }
 
@@ -1497,7 +1479,7 @@
     }
 
     .dialog-text-stack__description {
-        font: 400 0.875rem/1.25rem var(--font-body);
+        @apply text-body-md;
         color: var(--color-secondary-text);
         margin: 0;
     }
@@ -1660,7 +1642,7 @@ body {
     .rich-editor__mode,
     .toggle-buttons__button {
         padding: 0.25rem 0.875rem;
-        font-size: 0.875rem;
+        @apply text-body-md;
         color: var(--color-button-tertiary-text);
         background-color: var(--color-page-background);
     }
@@ -1725,8 +1707,7 @@ body {
         transform: translateX(-50%);
         padding: 0.25rem 0.5rem;
         border-radius: 0.25rem;
-        font-size: 0.75rem;
-        line-height: 1.2;
+        @apply text-caption;
         color: var(--color-page-background);
         background-color: var(--color-navigation-bars);
     }
@@ -1775,7 +1756,7 @@ body {
         width: 100%;
         padding: 0.375rem 0.75rem;
         text-align: left;
-        font-size: 0.875rem;
+        @apply text-body-md;
         color: var(--color-body-text);
     }
 

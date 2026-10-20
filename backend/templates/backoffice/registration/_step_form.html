@@ -82,7 +82,7 @@ ABOUTME: Included by assembly_registration.html when ?section=form
                                         {# HTML Textarea with monospace font. `readonly` is the default;
                        ?edit=1 unlocks it via the Edit CTA below. #}
                         {% set textarea_attrs %}
-                            {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                            {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
                         {% endset %}
                         {{ textarea(name="html_content",
                         label="",
@@ -104,6 +104,7 @@ ABOUTME: Included by assembly_registration.html when ?section=form
                         ",
                         rows=25,
                         code_editor=true,
+                        classes="text-code",
                         attrs=textarea_attrs|trim) }}
                     </div>
                 </section>
