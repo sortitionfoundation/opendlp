@@ -285,6 +285,89 @@ class TestReRunGating:
         assert "/targets/check" in response.headers["Location"]
 
 
+def _flashes(client):
+    with client.session_transaction() as session:
+        return [msg[1] for msg in session.get("_flashes", [])]
+
+
+class TestAcceptFailures:
+    """What accept-suggestions does when the form or the assembly is not what it expects."""
+
+    @pytest.mark.parametrize(
+        "form",
+        [
+            {"category_id": "not-a-uuid", "value_id": "also-not"},
+            {"category_id": str(uuid.uuid4()), "value_id": str(uuid.uuid4())},
+        ],
+        ids=["malformed ids", "unknown target"],
+    )
+    def test_a_target_that_cannot_be_found_changes_nothing(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets, form
+    ):
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.post(
+                _accept_url(assembly_with_targets),
+                data={"scope": "one", "field": "min", "then": "recheck", **form},
+            )
+
+        assert "/targets/check" in response.headers["Location"]
+        assert any("no longer available" in msg for msg in _flashes(logged_in_admin))
+        assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 5
+
+    def test_rerun_waits_for_unconfirmed_selection_settings(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_csv_config(
+                uow=uow, user_id=admin_user.id, assembly_id=assembly_with_targets, settings_confirmed=False
+            )
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+
+        with patch(CHECK, return_value=check), patch(START) as start:
+            response = logged_in_admin.post(
+                _accept_url(assembly_with_targets),
+                data={"scope": "all", "then": "run", "from": "selection", "run_id": "r"},
+            )
+
+        assert not start.called
+        assert "/targets/check" in response.headers["Location"]
+        assert any("review and save the selection settings" in msg for msg in _flashes(logged_in_admin))
+        # The accepted change is still saved; only the re-run waits.
+        assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 3
+
+    def test_an_unknown_assembly_goes_back_to_the_dashboard(self, logged_in_admin):
+        response = logged_in_admin.post(_accept_url(uuid.uuid4()), data={"scope": "all", "then": "recheck"})
+
+        assert response.headers["Location"].endswith("/dashboard")
+        assert "Assembly not found" in _flashes(logged_in_admin)
+
+    def test_someone_who_may_not_manage_the_assembly_is_turned_away(
+        self, logged_in_user, admin_user, fake_store, assembly_with_targets
+    ):
+        with patch(CHECK) as check:
+            response = logged_in_user.post(_accept_url(assembly_with_targets), data={"scope": "all", "then": "recheck"})
+
+        assert not check.called
+        assert response.headers["Location"].endswith("/dashboard")
+        assert any("permission" in msg for msg in _flashes(logged_in_user))
+        assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 5
+
+    def test_an_unexpected_error_goes_back_to_the_targets_page(self, logged_in_admin, assembly_with_targets):
+        with patch(CHECK, side_effect=RuntimeError("boom")):
+            response = logged_in_admin.post(
+                _accept_url(assembly_with_targets), data={"scope": "all", "then": "recheck"}
+            )
+
+        assert response.headers["Location"].endswith(f"/backoffice/assembly/{assembly_with_targets}/targets")
+        assert any("unexpected error" in msg for msg in _flashes(logged_in_admin))
+
+
 class TestCheckPageControls:
     def _check_url(self, assembly_id, query=""):
         return f"/backoffice/assembly/{assembly_id}/targets/check{query}"
