@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 16:00+0000\n"
+"POT-Creation-Date: 2026-10-20 16:04+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -3950,7 +3950,7 @@ msgstr ""
 #: src/opendlp/service_layer/email_template_service.py:87
 msgid ""
 "Replies to the auto-reply will go to the address it is sent from, which "
-"may not be monitored. Set where replies go so registrants can reach you."
+"may not be monitored. Set where replies go so they reach your team."
 msgstr ""
 
 #: src/opendlp/service_layer/email_template_service.py:122
@@ -8635,7 +8635,7 @@ msgid "Replies go to"
 msgstr ""
 
 #: templates/backoffice/registration/_step_email.html:115
-msgid "When registrants reply to the auto-reply, their email goes here."
+msgid "When someone replies to the auto-reply, their email goes here."
 msgstr ""
 
 #: templates/backoffice/registration/_step_email.html:132
