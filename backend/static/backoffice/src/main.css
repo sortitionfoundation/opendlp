@@ -62,41 +62,41 @@
 
     /* Body (Lato) - Content text */
     .text-body-lg {
-        font: 400 1rem/1.5rem var(--font-body);
+        font: 400 1.0625rem/1.625rem var(--font-body);
         letter-spacing: 0;
     }
 
     .text-body-md {
-        font: 400 0.875rem/1.25rem var(--font-body);
+        font: 400 0.9375rem/1.375rem var(--font-body);
         letter-spacing: 0;
     }
 
     .text-body-sm {
-        font: 400 0.8125rem/1.125rem var(--font-body);
+        font: 400 0.875rem/1.25rem var(--font-body);
         letter-spacing: 0.1px;
     }
 
     /* Caption (Lato) - Metadata / dense secondary text */
     .text-caption {
-        font: 400 0.75rem/1rem var(--font-caption);
+        font: 400 0.8125rem/1.125rem var(--font-caption);
         letter-spacing: 0.2px;
     }
 
     /* Overline (Lato) - Uppercase micro-labels */
     .text-overline {
-        font: 500 0.6875rem/0.875rem var(--font-overline);
+        font: 500 0.75rem/1rem var(--font-overline);
         letter-spacing: 0.8px;
         text-transform: uppercase;
     }
 
     /* Label (Lato) - Form labels */
     .text-label-lg {
-        font: 500 0.875rem/1.25rem var(--font-label);
+        font: 500 0.9375rem/1.375rem var(--font-label);
         letter-spacing: 0.3px;
     }
 
     .text-label-md {
-        font: 500 0.8125rem/1.125rem var(--font-label);
+        font: 500 0.875rem/1.25rem var(--font-label);
         letter-spacing: 0.3px;
     }
 
@@ -121,37 +121,37 @@
        colour differs at the semantic-token layer (input=body-text,
        placeholder=placeholder-text). */
     .text-input-text {
-        font: 400 0.875rem/1.25rem var(--font-body);
+        font: 400 0.9375rem/1.375rem var(--font-body);
         letter-spacing: 0;
     }
 
     /* Table (Lato) - Column headers, cells, numeric cells */
     .text-table-header {
-        font: 600 0.75rem/1rem var(--font-label);
+        font: 600 0.8125rem/1.125rem var(--font-label);
         letter-spacing: 0.4px;
     }
 
     .text-table-cell {
-        font: 400 0.8125rem/1.125rem var(--font-body);
+        font: 400 0.875rem/1.25rem var(--font-body);
         letter-spacing: 0;
     }
 
     .text-numeric {
-        font: 500 0.8125rem/1.125rem var(--font-body);
+        font: 500 0.875rem/1.25rem var(--font-body);
         letter-spacing: 0.1px;
         font-variant-numeric: tabular-nums;
     }
 
     /* Code (monospace) - inline code chips and code blocks */
     .text-code {
-        font: 400 0.8125rem/1.125rem var(--font-mono);
+        font: 400 0.875rem/1.25rem var(--font-mono);
         letter-spacing: 0;
     }
 
     /* Inline code chip - text-code + subtle panel background + tight padding.
        Used to render class names / identifiers in prose. */
     .code-inline {
-        font: 400 0.8125rem/1.125rem var(--font-mono);
+        font: 400 0.875rem/1.25rem var(--font-mono);
         letter-spacing: 0;
         background-color: var(--color-subtle-background-panels);
         border: 1px solid var(--color-borders-dividers);

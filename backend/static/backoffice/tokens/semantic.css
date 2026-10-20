@@ -29,10 +29,10 @@
     --color-tables-cards: var(--color-neutral-0);
     --color-borders-dividers: var(--color-neutral-200);
     --color-disabled-borders: var(--color-neutral-300);
-    --color-placeholder-text: var(--color-neutral-400);
-    --color-secondary-text: var(--color-neutral-500);
-    --color-body-text: var(--color-neutral-600);
-    --color-headings: var(--color-neutral-700);
+    --color-placeholder-text: var(--color-neutral-500);
+    --color-secondary-text: var(--color-neutral-600);
+    --color-body-text: var(--color-neutral-800);
+    --color-headings: var(--color-neutral-900);
     --color-navigation-bars: var(--color-neutral-800);
     --color-dark-mode-base: var(--color-neutral-900);
     --color-table-row-alt: var(--color-neutral-50);
