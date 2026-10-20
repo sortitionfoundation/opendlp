@@ -272,6 +272,101 @@ class TestCheckPageControls:
         assert b"re-run selection" not in response.data
 
 
+class TestEditModeEntry:
+    """ "Adjust targets" opens the editor, each suggestion under the row it would change."""
+
+    def _check_url(self, assembly_id, query=""):
+        return f"/backoffice/assembly/{assembly_id}/targets/check{query}"
+
+    def _get(self, client, assembly_id, query):
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+        with patch(CHECK, return_value=check):
+            return client.get(self._check_url(assembly_id, query))
+
+    def test_edit_flag_opens_the_editor_with_suggestions_filling_the_row(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        category_id, male = _ids(fake_store, admin_user, assembly_with_targets, "Gender", "Male")
+        response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}&edit=1")
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "editingAll: true" in html
+        # The edit-form suggestion fills the row's own min and comment inputs in.
+        prefix = f"bulk-{category_id}-{male.value_id}"
+        assert f"&#34;{prefix}-min&#34;: 3" in html or f'"{prefix}-min": 3' in html
+        assert f'data-comment-target="{prefix}-comment"' in html
+        assert "Save & re-run selection" in html
+
+    def test_without_the_edit_flag_the_page_opens_read_only(self, logged_in_admin, fake_store, assembly_with_targets):
+        response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}")
+
+        assert "editingAll: false" in response.data.decode()
+
+    def test_save_and_rerun_is_only_offered_from_a_run(self, logged_in_admin, fake_store, assembly_with_targets):
+        response = self._get(logged_in_admin, assembly_with_targets, "?edit=1")
+
+        assert b"Save & re-run selection" not in response.data
+
+
+class TestSaveAllFromSelection:
+    def _post(self, client, fake_store, admin_user, assembly_id, extra):
+        category_id, male = _ids(fake_store, admin_user, assembly_id, "Gender", "Male")
+        prefix = f"cat[{category_id}]"
+        data = {
+            f"{prefix}[name]": "Gender",
+            f"{prefix}[values][{male.value_id}][value]": "Male",
+            f"{prefix}[values][{male.value_id}][min]": "3",
+            f"{prefix}[values][{male.value_id}][max]": "7",
+            f"{prefix}[values][{male.value_id}][comment]": "Accepted algorithm suggestion — minimum 5 → 3",
+            **extra,
+        }
+        return client.post(f"/backoffice/assembly/{assembly_id}/targets/save-all", data=data)
+
+    def test_save_and_rerun_saves_then_starts_a_selection(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        task_id = uuid.uuid4()
+        with patch(START, return_value=task_id) as start:
+            response = self._post(
+                logged_in_admin,
+                fake_store,
+                admin_user,
+                assembly_with_targets,
+                {"from": "selection", "run_id": str(uuid.uuid4()), "then": "run"},
+            )
+
+        assert start.called
+        assert f"current_selection={task_id}" in response.headers["Location"]
+        assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 3
+
+    def test_plain_save_from_a_run_keeps_the_provenance(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        run_id = str(uuid.uuid4())
+        with patch(START) as start:
+            response = self._post(
+                logged_in_admin, fake_store, admin_user, assembly_with_targets, {"from": "selection", "run_id": run_id}
+            )
+
+        assert not start.called
+        location = response.headers["Location"]
+        assert "/targets/check" in location
+        assert "from=selection" in location
+        assert run_id in location
+
+    def test_run_is_ignored_without_the_selection_provenance(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        with patch(START) as start:
+            response = self._post(logged_in_admin, fake_store, admin_user, assembly_with_targets, {"then": "run"})
+
+        assert not start.called
+        assert "/targets/check" in response.headers["Location"]
+
+
 def _add_failed_run(fake_store, assembly_id, task_type):
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.selection_run_records.add(
@@ -300,6 +395,7 @@ class TestFailureViewLink:
         assert response.status_code == 200
         assert b"Adjust targets" in response.data
         assert b"from=selection" in response.data
+        assert b"edit=1" in response.data
 
     def test_failed_replacement_run_has_no_adjust_targets_link(
         self, logged_in_admin, fake_store, assembly_with_targets

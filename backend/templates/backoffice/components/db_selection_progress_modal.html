@@ -192,7 +192,7 @@ classes="max-w-3xl"
     {{ modal_footer_start() }}
     <div class="w-full flex gap-2 justify-end">
         {{ button(_("Adjust targets") ,
-        href=url_for('targets.check_targets', assembly_id=assembly.id, **{'from': 'selection', 'run_id': current_selection}),
+        href=url_for('targets.check_targets', assembly_id=assembly.id, **{'from': 'selection', 'run_id': current_selection, 'edit': '1'}),
         variant="primary") }}
     </div>
     {{ modal_footer_end() }}

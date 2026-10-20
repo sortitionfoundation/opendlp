@@ -1,0 +1,54 @@
+{#
+ABOUTME: The algorithm's min/max suggestions for one target value, as suggestion rows
+ABOUTME: Shared by the read-only view (accept saves) and the edit form (accept fills the row in)
+#}
+{% from "backoffice/components/suggestion_row.html" import suggestion_row %}
+{#
+    One suggestion_row per suggestion the check made for this value.
+
+    In the read-only view (`field_prefix` empty) Accept posts straight to
+    accept_suggestions, which re-derives the suggestion and saves it. In the
+    edit form `field_prefix` is the id stem of the value's inputs, and Accept
+    writes the number and the comment into them, to be saved with everything
+    else.
+
+    Someone who may not change the targets sees the suggestion and no Accept.
+#}
+{% macro value_suggestion_rows(category, val, annotations, colspan, can_manage=false, assembly_id="", field_prefix="", from_selection=false, selection_run_id="") %}
+    {% for ann in annotations if ann.level == "suggestion" %}
+        {% set acceptable = can_manage and ann.suggested_value is not none and ann.field in ("min", "max") %}
+        {% set current_value = val.min if ann.field == "min" else val.max %}
+        {% if ann.field == "min" %}
+            {% set default_comment = _("Accepted algorithm suggestion — minimum %(current)s → %(suggested)s", current=current_value, suggested=ann.suggested_value) %}
+        {% else %}
+            {% set default_comment = _("Accepted algorithm suggestion — maximum %(current)s → %(suggested)s", current=current_value, suggested=ann.suggested_value) %}
+        {% endif %}
+        {% set comment_id = "accept-comment-" ~ val.value_id ~ "-" ~ ann.field ~ ("-edit" if field_prefix else "") %}
+        {% if not acceptable %}
+            {{ suggestion_row(ann.message, colspan=colspan) }}
+        {% elif field_prefix %}
+            {{ suggestion_row(ann.message,
+            colspan=colspan,
+            comment=default_comment,
+            comment_id=comment_id,
+            apply={field_prefix ~ "-" ~ ann.field: ann.suggested_value},
+            comment_target=field_prefix ~ "-comment") }}
+        {% else %}
+            {{ suggestion_row(ann.message,
+            colspan=colspan,
+            comment=default_comment,
+            comment_id=comment_id,
+            action=url_for('targets.accept_suggestions', assembly_id=assembly_id),
+            form_attrs="x-data x-preserve-scroll-on-submit",
+            hidden_fields={
+            "scope": "one",
+            "category_id": category.id,
+            "value_id": val.value_id,
+            "field": ann.field,
+            "then": "recheck",
+            "from": "selection" if from_selection else "",
+            "run_id": selection_run_id,
+            }) }}
+        {% endif %}
+    {% endfor %}
+{% endmacro %}

@@ -7,6 +7,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary %}
+{% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
 {# ────────────────────────────────────────────────────────────────────────
    The row controls come from the Figma at node 4908:15647. They are sized and
    coloured by `.btn-icon svg`, so they are drawn with no class of their own and
@@ -157,7 +158,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         </td>
     </tr>
 {% endmacro %}
-{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None, first_row_id="") %}
+{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None, first_row_id="", value_annotations={}) %}
     {% set cat_prefix = "cat[" ~ cat_id ~ "]" %}
                     {# Both count columns are only worth a column when there is something to
        count, so a category with no matching respondent data shows neither. #}
@@ -283,6 +284,11 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 <tbody x-ref="rows">
                     {% for val in (category.values if category else []) or [] %}
                         {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                        {# The check's suggestions, right under the row they would change.
+                           Accept writes into that row's inputs; Save keeps it. #}
+                        {{ value_suggestion_rows(category, val, value_annotations.get(val.value, []), column_count,
+                        can_manage=true,
+                        field_prefix="bulk-" ~ cat_id ~ "-" ~ val.value_id) }}
                     {% endfor %}
                                                 {# A target with no values is not worth saving, so a block
                        cloned for a new one arrives with the row its author is
@@ -373,6 +379,12 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
       @targets-changed="markEditDirty()"
       @submit="allowLeave()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    {# Arriving from a failed selection run is carried through the save, so the
+       page it lands on can still offer to re-run - and "Save & re-run" can. #}
+    {% if from_selection|default(false) %}
+        <input type="hidden" name="from" value="selection" />
+        <input type="hidden" name="run_id" value="{{ selection_run_id|default('') }}" />
+    {% endif %}
     <div id="bulk-categories" x-ref="categories">
         {% for category in form_categories %}
             {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
@@ -386,8 +398,9 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     {% endif %}
                 {% endfor %}
             {% endif %}
+            {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
             {{ category_block(category.id, category=category, missing_values=missing_values, errors=errors,
-            respondent_counts=respondent_counts, selected_counts=selected_counts) }}
+            respondent_counts=respondent_counts, selected_counts=selected_counts, value_annotations=value_annotations) }}
         {% endfor %}
     </div>
                                         {# Blank category blocks are cloned from here by the "Add target" dialog;

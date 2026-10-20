@@ -402,6 +402,9 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # so the page offers to re-run and keeps the link alive across rechecks.
             from_selection=request.args.get("from") == "selection",
             selection_run_id=request.args.get("run_id", ""),
+            # "Adjust targets" on a failed run opens straight into the editor,
+            # with each suggestion under the row it would change.
+            editing_all=can_manage and request.args.get("edit") == "1",
             **context,
         ), 200
 
@@ -518,6 +521,30 @@ def _accept_all(
     return applied
 
 
+def _start_rerun(uow: Any, assembly_id: uuid.UUID) -> uuid.UUID | None:
+    """Start a fresh initial selection, unless its settings still need confirming."""
+    csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+    if csv_config.settings_confirmed:
+        task_id: uuid.UUID = start_db_select_task(uow, current_user.id, assembly_id)
+        return task_id
+    flash(_("Please review and save the selection settings before running selection"), "warning")
+    return None
+
+
+def _redirect_after_save(assembly_id: uuid.UUID, task_id: uuid.UUID | None, recheck_url: str) -> ResponseReturnValue:
+    """To the new selection run if one was started, otherwise back to the check."""
+    if task_id is not None:
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=task_id))
+    return redirect_preserving_scroll(recheck_url)
+
+
+def _selection_provenance(form: Any) -> dict[str, Any]:
+    """The from/run_id pair that marks a visit as coming from a failed selection run."""
+    if form.get("from") != "selection":
+        return {}
+    return {"from": "selection", "run_id": form.get("run_id", "")}
+
+
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
 @login_required
 def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -556,21 +583,13 @@ def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
             if not applied:
                 flash(_("That suggestion is no longer available. The targets have been re-checked."), "warning")
-                return redirect(recheck_url)
+                return redirect_preserving_scroll(recheck_url)
 
             if run_after:
-                csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
-                if csv_config.settings_confirmed:
-                    task_id = start_db_select_task(uow, current_user.id, assembly_id)
-                else:
-                    flash(_("Please review and save the selection settings before running selection"), "warning")
+                task_id = _start_rerun(uow, assembly_id)
 
         flash(_("Recommended changes applied."), "success")
-        if task_id is not None:
-            return redirect(
-                url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=task_id)
-            )
-        return redirect(recheck_url)
+        return _redirect_after_save(assembly_id, task_id, recheck_url)
 
     except NotFoundError:
         flash(_("Assembly not found"), "error")
@@ -613,6 +632,8 @@ def _render_targets_edit_errors(
         pending_categories=pending_categories(form_data),
         field_errors=errors_by_field(errors),
         editing_all=True,
+        from_selection=form_data.get("from") == "selection",
+        selection_run_id=form_data.get("run_id", ""),
         value_form=TargetValueForm(),
         can_manage=_can_manage(assembly_id),
         all_respondent_counts=build_respondent_counts(assembly_id, target_categories, attribute_columns),
@@ -666,6 +687,9 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if errors:
             return _render_targets_edit_errors(assembly_id, request.form, errors)
 
+        provenance = _selection_provenance(request.form)
+        run_after = bool(provenance) and request.form.get("then") == "run"
+        task_id = None
         uow = bootstrap.get_flask_uow()
         with uow:
             save_all_targets(
@@ -675,11 +699,15 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 edits,
                 force_unlink=request.form.get("force_unlink") == "1",
             )
+            if run_after:
+                task_id = _start_rerun(uow, assembly_id)
 
         flash(_("Targets saved"), "success")
         # The detailed check is the whole point of saving: land on the page that
         # runs it, so its annotations arrive without anyone asking for them.
-        return redirect(url_for("targets.check_targets", assembly_id=assembly_id))
+        return _redirect_after_save(
+            assembly_id, task_id, url_for("targets.check_targets", assembly_id=assembly_id, **provenance)
+        )
 
     except TargetLinkedError as e:
         return _render_force_unlink_confirm(assembly_id, request.form, e.blocks)
