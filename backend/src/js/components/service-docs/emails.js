@@ -14,17 +14,22 @@ export function serviceDocsEmails() {
     createTemplateName: "",
     createTemplateSubject: "",
     createTemplateBodyHtml: "",
+    createTemplateReplyToName: "",
+    createTemplateReplyToEmail: "",
     listTemplatesAssemblyId: "",
     getTemplateId: "",
     updateTemplateId: "",
     updateTemplateName: "",
     updateTemplateSubject: "",
     updateTemplateBodyHtml: "",
+    updateTemplateReplyToName: "",
+    updateTemplateReplyToEmail: "",
     deleteTemplateId: "",
     assignAutoReplyAssemblyId: "",
     assignAutoReplyTemplateId: "",
     assignAutoReplyPageId: "",
     autoReplyReadinessAssemblyId: "",
+    autoReplyReadinessPageId: "",
 
     executeCreateEmailTemplate: function () {
       return this.executeService("create_email_template", {
@@ -32,6 +37,8 @@ export function serviceDocsEmails() {
         name: this.createTemplateName,
         subject: this.createTemplateSubject,
         body_html: this.createTemplateBodyHtml,
+        reply_to_name: this.createTemplateReplyToName,
+        reply_to_email: this.createTemplateReplyToEmail,
       });
     },
 
@@ -56,6 +63,10 @@ export function serviceDocsEmails() {
         params.subject = this.updateTemplateSubject;
       if (this.updateTemplateBodyHtml)
         params.body_html = this.updateTemplateBodyHtml;
+      if (this.updateTemplateReplyToName)
+        params.reply_to_name = this.updateTemplateReplyToName;
+      if (this.updateTemplateReplyToEmail)
+        params.reply_to_email = this.updateTemplateReplyToEmail;
 
       return this.executeService("update_email_template", params);
     },
@@ -78,6 +89,8 @@ export function serviceDocsEmails() {
     executeAutoReplyReadinessProblems: function () {
       return this.executeService("auto_reply_readiness_problems", {
         assembly_id: this.autoReplyReadinessAssemblyId,
+        // Without a page only the email field is checked, not the reply-to.
+        page_id: this.autoReplyReadinessPageId || null,
       });
     },
 
