@@ -14,7 +14,7 @@ ABOUTME: Shared by the read-only view (accept saves) and the edit form (accept f
 
     Someone who may not change the targets sees the suggestion and no Accept.
 #}
-{% macro value_suggestion_rows(category, val, annotations, colspan, can_manage=false, assembly_id="", field_prefix="", from_selection=false, selection_run_id="") %}
+{% macro value_suggestion_rows(category, val, annotations, colspan, can_manage=false, assembly_id="", field_prefix="", selection_provenance={}) %}
     {% for ann in annotations if ann.level == "suggestion" %}
         {% set acceptable = can_manage and ann.suggested_value is not none and ann.field in ("min", "max") %}
         {% set current_value = val.min if ann.field == "min" else val.max %}
@@ -40,15 +40,13 @@ ABOUTME: Shared by the read-only view (accept saves) and the edit form (accept f
             comment_id=comment_id,
             action=url_for('targets.accept_suggestions', assembly_id=assembly_id),
             form_attrs="x-data x-preserve-scroll-on-submit",
-            hidden_fields={
+            hidden_fields=dict({
             "scope": "one",
             "category_id": category.id,
             "value_id": val.value_id,
             "field": ann.field,
             "then": "recheck",
-            "from": "selection" if from_selection else "",
-            "run_id": selection_run_id,
-            }) }}
+            }, **selection_provenance)) }}
         {% endif %}
     {% endfor %}
 {% endmacro %}

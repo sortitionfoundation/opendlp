@@ -196,8 +196,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                     {{ value_suggestion_rows(category, val, val_annotations, col_count,
                     can_manage=can_manage,
                     assembly_id=assembly_id,
-                    from_selection=from_selection|default(false),
-                    selection_run_id=selection_run_id|default("")) }}
+                    selection_provenance=selection_provenance|default({})) }}
                 {% endfor %}
                 {% if not category.values %}
                     <tr>

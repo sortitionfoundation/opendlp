@@ -74,10 +74,15 @@ ABOUTME: Displays target categories and values, with respondent counts and check
            discardUrl is passed in rather than read from the address bar: a
            rejected save re-renders this page at the save-all POST url, which
            would 405 on the GET a reload makes. #}
+        {# Where a failed selection run sent the organiser from - from, run_id and,
+           for a test run, test - carried on every form and link that leads back
+           here, so a re-run starts the same kind of selection. Empty otherwise. #}
+        {% set provenance = selection_provenance|default({}) %}
+        {% set rerun_is_test = provenance.get("test") == "1" %}
         {# Discarding edits made against the check's suggestions goes back to the
            check, suggestions and all, rather than to a page without them. #}
         {% if check_result is defined and check_result %}
-            {% set discard_url = url_for('targets.check_targets', assembly_id=assembly.id, **({'from': 'selection', 'run_id': selection_run_id|default('')} if from_selection|default(false) else {})) %}
+            {% set discard_url = url_for('targets.check_targets', assembly_id=assembly.id, **provenance) %}
         {% else %}
             {% set discard_url = url_for('targets.view_assembly_targets', assembly_id=assembly.id) %}
         {% endif %}
@@ -175,19 +180,17 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <input type="hidden" name="scope" value="all" />
                                 <input type="hidden" name="then" value="recheck" />
-                                <input type="hidden" name="from" value="{{ 'selection' if from_selection|default(false) else '' }}" />
-                                <input type="hidden" name="run_id" value="{{ selection_run_id|default('') }}" />
+                                {% for name, value in provenance.items() %}<input type="hidden" name="{{ name }}" value="{{ value }}" />{% endfor %}
                                 {{ button(_("Accept all suggestions"), type="submit", variant="secondary") }}
                             </form>
-                            {% if from_selection|default(false) %}
+                            {% if provenance %}
                                 <form method="post"
                                       action="{{ url_for('targets.accept_suggestions', assembly_id=assembly.id) }}">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <input type="hidden" name="scope" value="all" />
                                     <input type="hidden" name="then" value="run" />
-                                    <input type="hidden" name="from" value="selection" />
-                                    <input type="hidden" name="run_id" value="{{ selection_run_id|default('') }}" />
-                                    {{ button(_("Accept all & re-run selection"), type="submit", variant="primary") }}
+                                    {% for name, value in provenance.items() %}<input type="hidden" name="{{ name }}" value="{{ value }}" />{% endfor %}
+                                    {{ button(_("Accept all & re-run test selection") if rerun_is_test else _("Accept all & re-run selection"), type="submit", variant="primary") }}
                                 </form>
                             {% endif %}
                         </span>
@@ -231,8 +234,8 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                 <div class="wizard-footer" x-show="editingAll" x-cloak>
                     <div class="wizard-footer-box">
                         {{ button(_("Discard changes"), variant="tertiary", attrs='@click="discardEdits()"') }}
-                        {% if from_selection|default(false) %}
-                            {{ button(_("Save & re-run selection"), variant="secondary", type="submit", attrs='form="save-all-form" name="then" value="run"') }}
+                        {% if provenance %}
+                            {{ button(_("Save & re-run test selection") if rerun_is_test else _("Save & re-run selection"), variant="secondary", type="submit", attrs='form="save-all-form" name="then" value="run"') }}
                         {% endif %}
                         {{ button(_("Save"), variant="primary", type="submit", attrs='form="save-all-form"') }}
                     </div>

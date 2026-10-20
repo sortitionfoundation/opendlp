@@ -400,8 +400,7 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             check_result=check_result,
             # Carried through from a failed selection run (see accept_suggestions),
             # so the page offers to re-run and keeps the link alive across rechecks.
-            from_selection=request.args.get("from") == "selection",
-            selection_run_id=request.args.get("run_id", ""),
+            selection_provenance=_selection_provenance(request.args),
             # "Adjust targets" on a failed run opens straight into the editor,
             # with each suggestion under the row it would change.
             editing_all=can_manage and request.args.get("edit") == "1",
@@ -521,11 +520,16 @@ def _accept_all(
     return applied
 
 
-def _start_rerun(uow: Any, assembly_id: uuid.UUID) -> uuid.UUID | None:
-    """Start a fresh initial selection, unless its settings still need confirming."""
+def _start_rerun(uow: Any, assembly_id: uuid.UUID, provenance: dict[str, Any]) -> uuid.UUID | None:
+    """Re-run the kind of selection that failed, unless its settings still need confirming.
+
+    A failed test selection is re-run as a test selection, never as the real one.
+    """
     csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
     if csv_config.settings_confirmed:
-        task_id: uuid.UUID = start_db_select_task(uow, current_user.id, assembly_id)
+        task_id: uuid.UUID = start_db_select_task(
+            uow, current_user.id, assembly_id, test_selection=provenance.get("test") == "1"
+        )
         return task_id
     flash(_("Please review and save the selection settings before running selection"), "warning")
     return None
@@ -538,11 +542,20 @@ def _redirect_after_save(assembly_id: uuid.UUID, task_id: uuid.UUID | None, rech
     return redirect_preserving_scroll(recheck_url)
 
 
-def _selection_provenance(form: Any) -> dict[str, Any]:
-    """The from/run_id pair that marks a visit as coming from a failed selection run."""
-    if form.get("from") != "selection":
+def _selection_provenance(params: Any) -> dict[str, Any]:
+    """What marks a visit as coming from a failed selection run, as url or form params.
+
+    ``from=selection`` and the ``run_id``, plus ``test=1`` when the run was a test
+    selection - the same flag the selection page starts a test run with - so a
+    re-run starts the same kind of selection that failed. Empty for any other
+    visit, so it can be splatted into ``url_for`` or rendered as hidden fields.
+    """
+    if params.get("from") != "selection":
         return {}
-    return {"from": "selection", "run_id": form.get("run_id", "")}
+    provenance = {"from": "selection", "run_id": params.get("run_id", "")}
+    if params.get("test") == "1":
+        provenance["test"] = "1"
+    return provenance
 
 
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
@@ -555,18 +568,13 @@ def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
     value gets a comment recording where the change came from; for a single
     accept the organiser may have edited that comment before saving.
 
-    ``then=run`` re-runs the initial selection after saving, and is only honoured
-    when the organiser arrived from a failed run (``from=selection``).
+    ``then=run`` re-runs the failed selection after saving - a test run as a test
+    run - and is only honoured when the organiser arrived from one
+    (``from=selection``).
     """
-    came_from = request.form.get("from", "")
-    run_id = request.form.get("run_id", "")
-    run_after = request.form.get("then") == "run" and came_from == "selection"
-
-    recheck_args: dict[str, Any] = {"assembly_id": assembly_id}
-    if came_from:
-        recheck_args["from"] = came_from
-        recheck_args["run_id"] = run_id
-    recheck_url = url_for("targets.check_targets", **recheck_args)
+    provenance = _selection_provenance(request.form)
+    run_after = bool(provenance) and request.form.get("then") == "run"
+    recheck_url = url_for("targets.check_targets", assembly_id=assembly_id, **provenance)
 
     try:
         uow = bootstrap.get_flask_uow()
@@ -586,7 +594,7 @@ def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 return redirect_preserving_scroll(recheck_url)
 
             if run_after:
-                task_id = _start_rerun(uow, assembly_id)
+                task_id = _start_rerun(uow, assembly_id, provenance)
 
         flash(_("Recommended changes applied."), "success")
         return _redirect_after_save(assembly_id, task_id, recheck_url)
@@ -632,8 +640,7 @@ def _render_targets_edit_errors(
         pending_categories=pending_categories(form_data),
         field_errors=errors_by_field(errors),
         editing_all=True,
-        from_selection=form_data.get("from") == "selection",
-        selection_run_id=form_data.get("run_id", ""),
+        selection_provenance=_selection_provenance(form_data),
         value_form=TargetValueForm(),
         can_manage=_can_manage(assembly_id),
         all_respondent_counts=build_respondent_counts(assembly_id, target_categories, attribute_columns),
@@ -700,7 +707,7 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 force_unlink=request.form.get("force_unlink") == "1",
             )
             if run_after:
-                task_id = _start_rerun(uow, assembly_id)
+                task_id = _start_rerun(uow, assembly_id, provenance)
 
         flash(_("Targets saved"), "success")
         # The detailed check is the whole point of saving: land on the page that

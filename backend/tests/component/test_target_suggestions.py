@@ -221,6 +221,51 @@ class TestReRunGating:
         assert response.status_code == 302
         assert f"current_selection={task_id}" in response.headers["Location"]
 
+    def test_accept_all_and_rerun_starts_a_real_selection_for_an_initial_run(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+
+        with patch(CHECK, return_value=check), patch(START, return_value=uuid.uuid4()) as start:
+            logged_in_admin.post(
+                _accept_url(assembly_with_targets),
+                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
+            )
+
+        assert start.call_args.kwargs["test_selection"] is False
+
+    def test_a_failed_test_selection_is_rerun_as_a_test_selection(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+
+        with patch(CHECK, return_value=check), patch(START, return_value=uuid.uuid4()) as start:
+            logged_in_admin.post(
+                _accept_url(assembly_with_targets),
+                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4()), "test": "1"},
+            )
+
+        assert start.call_args.kwargs["test_selection"] is True
+
+    def test_recheck_after_accepting_keeps_the_test_flag(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.post(
+                _accept_url(assembly_with_targets),
+                data={"scope": "all", "then": "recheck", "from": "selection", "run_id": "r", "test": "1"},
+            )
+
+        assert "test=1" in response.headers["Location"]
+
     def test_run_is_ignored_without_the_selection_provenance(
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
     ):
@@ -305,6 +350,16 @@ class TestEditModeEntry:
 
         assert "editingAll: false" in response.data.decode()
 
+    def test_a_test_run_is_offered_a_test_rerun_and_carries_the_flag(
+        self, logged_in_admin, fake_store, assembly_with_targets
+    ):
+        response = self._get(logged_in_admin, assembly_with_targets, "?from=selection&run_id=r&test=1&edit=1")
+
+        html = response.data.decode()
+        assert "Save & re-run test selection" in html
+        assert "Accept all & re-run test selection" in html
+        assert '<input type="hidden" name="test" value="1" />' in html
+
     def test_save_and_rerun_is_only_offered_from_a_run(self, logged_in_admin, fake_store, assembly_with_targets):
         response = self._get(logged_in_admin, assembly_with_targets, "?edit=1")
 
@@ -341,6 +396,20 @@ class TestSaveAllFromSelection:
         assert start.called
         assert f"current_selection={task_id}" in response.headers["Location"]
         assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 3
+
+    def test_save_and_rerun_after_a_test_run_starts_a_test_selection(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        with patch(START, return_value=uuid.uuid4()) as start:
+            self._post(
+                logged_in_admin,
+                fake_store,
+                admin_user,
+                assembly_with_targets,
+                {"from": "selection", "run_id": str(uuid.uuid4()), "then": "run", "test": "1"},
+            )
+
+        assert start.call_args.kwargs["test_selection"] is True
 
     def test_plain_save_from_a_run_keeps_the_provenance(
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
@@ -396,6 +465,24 @@ class TestFailureViewLink:
         assert b"Adjust targets" in response.data
         assert b"from=selection" in response.data
         assert b"edit=1" in response.data
+
+    def test_failed_test_selection_offers_adjust_targets_marked_as_a_test(
+        self, logged_in_admin, fake_store, assembly_with_targets
+    ):
+        run_id = _add_failed_run(fake_store, assembly_with_targets, SelectionTaskType.TEST_SELECT_FROM_DB)
+        response = self._modal(logged_in_admin, assembly_with_targets, run_id)
+
+        assert response.status_code == 200
+        assert b"Adjust targets" in response.data
+        assert b"test=1" in response.data
+
+    def test_failed_initial_selection_link_is_not_marked_as_a_test(
+        self, logged_in_admin, fake_store, assembly_with_targets
+    ):
+        run_id = _add_failed_run(fake_store, assembly_with_targets, SelectionTaskType.SELECT_FROM_DB)
+        response = self._modal(logged_in_admin, assembly_with_targets, run_id)
+
+        assert b"test=1" not in response.data
 
     def test_failed_replacement_run_has_no_adjust_targets_link(
         self, logged_in_admin, fake_store, assembly_with_targets
