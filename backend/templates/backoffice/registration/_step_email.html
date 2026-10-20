@@ -100,6 +100,32 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                         </div>
                         <div class="space-y-4">
                             {% set common_input_attrs %}{% if not edit_mode %}readonly aria-readonly="true" style="background-color: var(--color-subtle-background-panels); cursor: default;"{% endif %}{% endset %}
+                            {# The From address is set by the deployment's mail configuration and is
+                               the same for every assembly, so it is shown, never edited. #}
+                            {% if email_sent_from %}
+                                <p class="text-body-md" style="color: var(--color-body-text);">
+                                    <span class="font-semibold">{{ _("Sent from") }}:</span>
+                                    {{ email_sent_from }}.
+                                    <span style="color: var(--color-secondary-text);">{{ _("This can't be changed.") }}</span>
+                                </p>
+                            {% endif %}
+                            <fieldset class="flex flex-col gap-4" aria-describedby="reply-to-hint">
+                                <legend class="text-heading-sm mb-1" style="color: var(--color-headings);">{{ _("Replies go to") }}</legend>
+                                <p id="reply-to-hint" class="text-body-sm" style="color: var(--color-secondary-text);">
+                                    {{ _("When registrants reply to the auto-reply, their email goes here.") }}
+                                </p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {{ input(name="template_reply_to_name",
+                                    label=_("Name"),
+                                    value=email_template.reply_to_name,
+                                    attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                    {{ input(name="template_reply_to_email",
+                                    label=_("Email address"),
+                                    type="email",
+                                    value=email_template.reply_to_email,
+                                    attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                </div>
+                            </fieldset>
                                             {# Template name is not exposed yet — one template per page, always called "Registration
 auto-reply". When multi-template support ships this becomes a visible input. #}
                             {{ input(name="template_subject",

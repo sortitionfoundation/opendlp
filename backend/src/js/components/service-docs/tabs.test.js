@@ -378,6 +378,8 @@ const EXECUTE_CALLS = [
       createTemplateName: "Auto reply",
       createTemplateSubject: "Thanks",
       createTemplateBodyHtml: "<p>Hi</p>",
+      createTemplateReplyToName: "The Team",
+      createTemplateReplyToEmail: "team@example.com",
     },
     service: "create_email_template",
     params: {
@@ -385,6 +387,8 @@ const EXECUTE_CALLS = [
       name: "Auto reply",
       subject: "Thanks",
       body_html: "<p>Hi</p>",
+      reply_to_name: "The Team",
+      reply_to_email: "team@example.com",
     },
   },
   {
@@ -422,9 +426,12 @@ const EXECUTE_CALLS = [
   {
     factory: serviceDocsEmails,
     method: "executeAutoReplyReadinessProblems",
-    props: { autoReplyReadinessAssemblyId: "a-1" },
+    props: {
+      autoReplyReadinessAssemblyId: "a-1",
+      autoReplyReadinessPageId: "p-1",
+    },
     service: "auto_reply_readiness_problems",
-    params: { assembly_id: "a-1" },
+    params: { assembly_id: "a-1", page_id: "p-1" },
   },
   {
     factory: serviceDocsDashboard,
@@ -537,6 +544,34 @@ describe("optional and parsed parameters", () => {
       template_id: "t-1",
       subject: "New subject",
     });
+  });
+});
+
+describe("executeUpdateEmailTemplate reply-to", () => {
+  it("sends the reply-to fields when they are filled in", () => {
+    const state = slice(serviceDocsEmails);
+    state.updateTemplateId = "t-1";
+    state.updateTemplateReplyToName = "The Team";
+    state.updateTemplateReplyToEmail = "team@example.com";
+
+    state.executeUpdateEmailTemplate();
+
+    expect(state.executeService).toHaveBeenCalledWith("update_email_template", {
+      template_id: "t-1",
+      reply_to_name: "The Team",
+      reply_to_email: "team@example.com",
+    });
+  });
+});
+
+describe("executeAutoReplyReadinessProblems", () => {
+  it("sends a null page id when none is given, which checks only the email field", () => {
+    const state = slice(serviceDocsEmails);
+    state.autoReplyReadinessAssemblyId = "a-1";
+
+    state.executeAutoReplyReadinessProblems();
+
+    expect(state.executeService.mock.calls[0][1].page_id).toBeNull();
   });
 });
 
