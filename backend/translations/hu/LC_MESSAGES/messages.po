@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 16:31+0100\n"
+"POT-Creation-Date: 2026-10-20 12:36+0200\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -5001,9 +5001,9 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/dashboard_export_modal.html:62
 #: templates/backoffice/registration/_assets.html:254
 #: templates/backoffice/registration/_assets.html:310
-#: templates/backoffice/registration/_modals.html:96
-#: templates/backoffice/registration/_modals.html:307
-#: templates/backoffice/registration/_modals.html:349
+#: templates/backoffice/registration/_modals.html:90
+#: templates/backoffice/registration/_modals.html:301
+#: templates/backoffice/registration/_modals.html:343
 #: templates/backoffice/registration/_step_email.html:94
 #: templates/backoffice/registration/_step_form.html:58
 #: templates/backoffice/registration/_step_intro.html:37
@@ -7654,7 +7654,7 @@ msgid "Actions for %(name)s"
 msgstr "%(name)s műveletei"
 
 #: templates/backoffice/components/registration_page_list.html:187
-#: templates/backoffice/registration/_modals.html:240
+#: templates/backoffice/registration/_modals.html:234
 #: templates/backoffice/registration/_step_preview.html:122
 msgid "Close registration"
 msgstr "Regisztráció lezárása"
@@ -7874,7 +7874,7 @@ msgid "Quote"
 msgstr "Idézet"
 
 #: templates/backoffice/components/rich_editor.html:108
-#: templates/backoffice/registration/_modals.html:268
+#: templates/backoffice/registration/_modals.html:262
 msgid "Link"
 msgstr "Link"
 
@@ -7883,7 +7883,7 @@ msgid "Image"
 msgstr "Kép"
 
 #: templates/backoffice/components/rich_editor.html:111
-#: templates/backoffice/registration/_modals.html:315
+#: templates/backoffice/registration/_modals.html:309
 msgid "Image size"
 msgstr "Képméret"
 
@@ -8189,31 +8189,31 @@ msgstr "Egyszerű"
 msgid "Skeleton preview"
 msgstr "Sablon előnézete"
 
-#: templates/backoffice/registration/_modals.html:71
+#: templates/backoffice/registration/_modals.html:68
 msgid "Skeleton preview (Accessible)"
 msgstr "Sablon előnézete (akadálymentes)"
 
-#: templates/backoffice/registration/_modals.html:86
+#: templates/backoffice/registration/_modals.html:80
 msgid "Use this as the form"
 msgstr "Használat űrlapként"
 
-#: templates/backoffice/registration/_modals.html:91
+#: templates/backoffice/registration/_modals.html:85
 msgid "Replace the form?"
 msgstr "Lecseréled az űrlapot?"
 
-#: templates/backoffice/registration/_modals.html:92
+#: templates/backoffice/registration/_modals.html:86
 msgid "Are you sure? You will lose any changes you have made."
 msgstr "Biztos vagy benne? Minden eddigi módosításod elvész."
 
-#: templates/backoffice/registration/_modals.html:95
+#: templates/backoffice/registration/_modals.html:89
 msgid "Replace the form"
 msgstr "Űrlap cseréje"
 
-#: templates/backoffice/registration/_modals.html:99
+#: templates/backoffice/registration/_modals.html:93
 msgid "Upload image"
 msgstr "Kép feltöltése"
 
-#: templates/backoffice/registration/_modals.html:103
+#: templates/backoffice/registration/_modals.html:97
 #, python-format
 msgid ""
 "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image. "
@@ -8223,17 +8223,17 @@ msgstr ""
 "képenként. A fájlok feltöltéskor lekicsinyítve, PNG formátumban "
 "tárolódnak."
 
-#: templates/backoffice/registration/_modals.html:105
+#: templates/backoffice/registration/_modals.html:99
 msgid "Image file"
 msgstr "Képfájl"
 
-#: templates/backoffice/registration/_modals.html:111
-#: templates/backoffice/registration/_modals.html:132
+#: templates/backoffice/registration/_modals.html:105
+#: templates/backoffice/registration/_modals.html:126
 msgid "Alt text"
 msgstr "Alternatív szöveg"
 
-#: templates/backoffice/registration/_modals.html:113
-#: templates/backoffice/registration/_modals.html:134
+#: templates/backoffice/registration/_modals.html:107
+#: templates/backoffice/registration/_modals.html:128
 msgid ""
 "Describes the image for screen-reader users and is used as the file's "
 "display name in the asset list."
@@ -8241,59 +8241,59 @@ msgstr ""
 "Leírja a képet a képernyőolvasót használóknak, és ez lesz a fájl "
 "megjelenő neve az eszközlistában."
 
-#: templates/backoffice/registration/_modals.html:120
+#: templates/backoffice/registration/_modals.html:114
 msgid "Image details"
 msgstr "A kép részletei"
 
-#: templates/backoffice/registration/_modals.html:127
+#: templates/backoffice/registration/_modals.html:121
 msgid "Image snippet"
 msgstr "Kép kódrészlet"
 
-#: templates/backoffice/registration/_modals.html:130
+#: templates/backoffice/registration/_modals.html:124
 msgid "Copy image snippet"
 msgstr "Kép kódrészletének másolása"
 
-#: templates/backoffice/registration/_modals.html:136
+#: templates/backoffice/registration/_modals.html:130
 msgid "Delete image"
 msgstr "Kép törlése"
 
-#: templates/backoffice/registration/_modals.html:139
+#: templates/backoffice/registration/_modals.html:133
 msgid "Save alt"
 msgstr "Alternatív szöveg mentése"
 
-#: templates/backoffice/registration/_modals.html:155
+#: templates/backoffice/registration/_modals.html:149
 msgid "No preview"
 msgstr "Nincs előnézet"
 
-#: templates/backoffice/registration/_modals.html:162
+#: templates/backoffice/registration/_modals.html:156
 msgid "Dimensions"
 msgstr "Méretek"
 
-#: templates/backoffice/registration/_modals.html:167
+#: templates/backoffice/registration/_modals.html:161
 msgid "px"
 msgstr "képpont"
 
-#: templates/backoffice/registration/_modals.html:174
+#: templates/backoffice/registration/_modals.html:168
 msgid "Upload document"
 msgstr "Dokumentum feltöltése"
 
-#: templates/backoffice/registration/_modals.html:178
-#: templates/backoffice/registration/_step_form.html:138
-#: templates/backoffice/registration/_step_intro.html:111
+#: templates/backoffice/registration/_modals.html:172
+#: templates/backoffice/registration/_step_form.html:139
+#: templates/backoffice/registration/_step_intro.html:112
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr "Csak PDF fájlok. Maximális fájlméret: %(max)s MB dokumentumonként."
 
-#: templates/backoffice/registration/_modals.html:180
+#: templates/backoffice/registration/_modals.html:174
 msgid "PDF file"
 msgstr "PDF fájl"
 
-#: templates/backoffice/registration/_modals.html:186
-#: templates/backoffice/registration/_modals.html:206
+#: templates/backoffice/registration/_modals.html:180
+#: templates/backoffice/registration/_modals.html:200
 msgid "Label"
 msgstr "Címke"
 
-#: templates/backoffice/registration/_modals.html:188
+#: templates/backoffice/registration/_modals.html:182
 msgid ""
 "Shown to visitors as the download link text and used as the file's "
 "display name in the asset list. Defaults to the file name."
@@ -8301,19 +8301,19 @@ msgstr ""
 "A látogatóknak ez jelenik meg a letöltési link szövegeként, és ez lesz a "
 "fájl megjelenő neve az eszközlistában. Alapértelmezés szerint a fájlnév."
 
-#: templates/backoffice/registration/_modals.html:194
+#: templates/backoffice/registration/_modals.html:188
 msgid "Document details"
 msgstr "A dokumentum részletei"
 
-#: templates/backoffice/registration/_modals.html:201
+#: templates/backoffice/registration/_modals.html:195
 msgid "Download link snippet"
 msgstr "Letöltési link kódrészlet"
 
-#: templates/backoffice/registration/_modals.html:204
+#: templates/backoffice/registration/_modals.html:198
 msgid "Copy download link snippet"
 msgstr "Letöltési link kódrészletének másolása"
 
-#: templates/backoffice/registration/_modals.html:208
+#: templates/backoffice/registration/_modals.html:202
 msgid ""
 "Shown to visitors as the download link text and used as the file's "
 "display name in the asset list."
@@ -8321,19 +8321,19 @@ msgstr ""
 "A látogatóknak ez jelenik meg a letöltési link szövegeként, és ez lesz a "
 "fájl megjelenő neve az eszközlistában."
 
-#: templates/backoffice/registration/_modals.html:210
+#: templates/backoffice/registration/_modals.html:204
 msgid "Delete document"
 msgstr "Dokumentum törlése"
 
-#: templates/backoffice/registration/_modals.html:213
+#: templates/backoffice/registration/_modals.html:207
 msgid "Save label"
 msgstr "Címke mentése"
 
-#: templates/backoffice/registration/_modals.html:230
+#: templates/backoffice/registration/_modals.html:224
 msgid "Close registration?"
 msgstr "Lezárod a regisztrációt?"
 
-#: templates/backoffice/registration/_modals.html:231
+#: templates/backoffice/registration/_modals.html:225
 msgid ""
 "This permanently stops new registrations. Visitors who follow the form "
 "link will see the 'registration closed' page, and the form cannot be "
@@ -8343,19 +8343,19 @@ msgstr ""
 "látogatók a „regisztráció lezárva” oldalt látják, és az űrlapot nem lehet"
 " újra megnyitni."
 
-#: templates/backoffice/registration/_modals.html:242
+#: templates/backoffice/registration/_modals.html:236
 msgid "Keep it open"
 msgstr "Maradjon nyitva"
 
-#: templates/backoffice/registration/_modals.html:278
+#: templates/backoffice/registration/_modals.html:272
 msgid "Linked text:"
 msgstr "Linkelt szöveg:"
 
-#: templates/backoffice/registration/_modals.html:283
+#: templates/backoffice/registration/_modals.html:277
 msgid "Link address"
 msgstr "Link címe"
 
-#: templates/backoffice/registration/_modals.html:296
+#: templates/backoffice/registration/_modals.html:290
 msgid ""
 "A web address such as https://example.org, mailto: followed by an email "
 "address, tel: followed by a phone number, or a variable that holds an "
@@ -8364,24 +8364,24 @@ msgstr ""
 "Webcím, például https://example.org, mailto: és utána egy e-mail cím, "
 "tel: és utána egy telefonszám, vagy egy címet tartalmazó változó."
 
-#: templates/backoffice/registration/_modals.html:297
+#: templates/backoffice/registration/_modals.html:291
 msgid "An address on this site, starting with /, works too."
 msgstr "Az oldalon belüli, /-rel kezdődő cím is működik."
 
-#: templates/backoffice/registration/_modals.html:305
+#: templates/backoffice/registration/_modals.html:299
 msgid "Remove link"
 msgstr "Link eltávolítása"
 
-#: templates/backoffice/registration/_modals.html:308
-#: templates/backoffice/registration/_modals.html:350
+#: templates/backoffice/registration/_modals.html:302
+#: templates/backoffice/registration/_modals.html:344
 msgid "Apply"
 msgstr "Alkalmazás"
 
-#: templates/backoffice/registration/_modals.html:324
+#: templates/backoffice/registration/_modals.html:318
 msgid "Width in pixels"
 msgstr "Szélesség pixelben"
 
-#: templates/backoffice/registration/_modals.html:341
+#: templates/backoffice/registration/_modals.html:335
 msgid ""
 "The height changes to keep the image's shape. The image is never shown "
 "wider than the page."
@@ -8389,7 +8389,7 @@ msgstr ""
 "A magasság úgy változik, hogy a kép arányai megmaradjanak. A kép sosem "
 "jelenik meg az oldalnál szélesebben."
 
-#: templates/backoffice/registration/_modals.html:348
+#: templates/backoffice/registration/_modals.html:342
 msgid "Original size"
 msgstr "Eredeti méret"
 
@@ -8537,23 +8537,23 @@ msgid "Set up auto-reply email"
 msgstr "Automatikus válasz e-mail beállítása"
 
 #: templates/backoffice/registration/_step_email.html:55
-#: templates/backoffice/registration/_step_email.html:238
-#: templates/backoffice/registration/_step_email.html:247
-#: templates/backoffice/registration/_step_form.html:161
-#: templates/backoffice/registration/_step_form.html:170
-#: templates/backoffice/registration/_step_intro.html:131
-#: templates/backoffice/registration/_step_intro.html:140
+#: templates/backoffice/registration/_step_email.html:239
+#: templates/backoffice/registration/_step_email.html:248
+#: templates/backoffice/registration/_step_form.html:162
+#: templates/backoffice/registration/_step_form.html:171
+#: templates/backoffice/registration/_step_intro.html:132
+#: templates/backoffice/registration/_step_intro.html:141
 #: templates/backoffice/registration/_step_preview.html:103
 msgid "← Back"
 msgstr "← Vissza"
 
 #: templates/backoffice/registration/_step_email.html:56
-#: templates/backoffice/registration/_step_email.html:245
-#: templates/backoffice/registration/_step_email.html:248
-#: templates/backoffice/registration/_step_form.html:168
-#: templates/backoffice/registration/_step_form.html:171
-#: templates/backoffice/registration/_step_intro.html:138
-#: templates/backoffice/registration/_step_intro.html:141
+#: templates/backoffice/registration/_step_email.html:246
+#: templates/backoffice/registration/_step_email.html:249
+#: templates/backoffice/registration/_step_form.html:169
+#: templates/backoffice/registration/_step_form.html:172
+#: templates/backoffice/registration/_step_intro.html:139
+#: templates/backoffice/registration/_step_intro.html:142
 #: templates/backoffice/registration/_step_page.html:95
 #: templates/backoffice/registration/_step_page.html:97
 msgid "Next →"
@@ -8588,11 +8588,11 @@ msgstr ""
 "Az ezt igénylő levelezőprogramok számára automatikusan készül egy "
 "egyszerű szöveges változat."
 
-#: templates/backoffice/registration/_step_email.html:141
+#: templates/backoffice/registration/_step_email.html:142
 msgid "Dynamic fields"
 msgstr "Dinamikus mezők"
 
-#: templates/backoffice/registration/_step_email.html:143
+#: templates/backoffice/registration/_step_email.html:144
 msgid ""
 "Click a dynamic field to select it, then copy and paste into the subject "
 "or body. Missing values render as an empty string."
@@ -8600,48 +8600,48 @@ msgstr ""
 "Kattints egy dinamikus mezőre a kijelöléséhez, majd másold be a tárgyba "
 "vagy a törzsbe. A hiányzó értékek üres szövegként jelennek meg."
 
-#: templates/backoffice/registration/_step_email.html:146
+#: templates/backoffice/registration/_step_email.html:147
 msgid "Assembly title"
 msgstr "A közösségi gyűlés címe"
 
-#: templates/backoffice/registration/_step_email.html:147
+#: templates/backoffice/registration/_step_email.html:148
 msgid "Assembly question"
 msgstr "A közösségi gyűlés témája"
 
-#: templates/backoffice/registration/_step_email.html:148
+#: templates/backoffice/registration/_step_email.html:149
 msgid "First assembly date (ISO)"
 msgstr "Az első közösségi gyűlés időpontja (ISO)"
 
-#: templates/backoffice/registration/_step_email.html:149
+#: templates/backoffice/registration/_step_email.html:150
 msgid "Respondent first name"
 msgstr "A jelentkező keresztneve"
 
-#: templates/backoffice/registration/_step_email.html:150
+#: templates/backoffice/registration/_step_email.html:151
 msgid "First name, or 'Friend' as a fallback"
 msgstr "Keresztnév, vagy „Résztvevő” tartaléknak"
 
-#: templates/backoffice/registration/_step_email.html:151
+#: templates/backoffice/registration/_step_email.html:152
 msgid "Respondent full name"
 msgstr "A jelentkező teljes neve"
 
-#: templates/backoffice/registration/_step_email.html:152
+#: templates/backoffice/registration/_step_email.html:153
 msgid "Respondent email address"
 msgstr "A jelentkező e-mail címe"
 
-#: templates/backoffice/registration/_step_email.html:176
+#: templates/backoffice/registration/_step_email.html:177
 msgid "Variable copied to clipboard"
 msgstr "A változó a vágólapra másolva"
 
-#: templates/backoffice/registration/_step_email.html:181
+#: templates/backoffice/registration/_step_email.html:182
 #, python-format
 msgid "Copy %(label)s variable"
 msgstr "%(label)s változó másolása"
 
-#: templates/backoffice/registration/_step_email.html:204
+#: templates/backoffice/registration/_step_email.html:205
 msgid "Send a test email"
 msgstr "Teszt e-mail küldése"
 
-#: templates/backoffice/registration/_step_email.html:206
+#: templates/backoffice/registration/_step_email.html:207
 msgid ""
 "Check how the auto-reply looks in a real inbox. The email is filled in "
 "with sample respondent data and this assembly's real details, then sent "
@@ -8651,7 +8651,7 @@ msgstr ""
 "postafiókban. Az e-mail minta jelentkezőadatokkal és a közösségi gyűlés "
 "valódi adataival töltődik ki, majd az alábbi címre megy."
 
-#: templates/backoffice/registration/_step_email.html:212
+#: templates/backoffice/registration/_step_email.html:213
 msgid ""
 "This only tests the email to the address below. Registrants still won't "
 "receive the auto-reply until the problem above is fixed."
@@ -8660,17 +8660,17 @@ msgstr ""
 "nem kapják meg az automatikus választ, amíg a fenti probléma nincs "
 "megoldva."
 
-#: templates/backoffice/registration/_step_email.html:223
+#: templates/backoffice/registration/_step_email.html:224
 msgid "Send to"
 msgstr "Címzett"
 
-#: templates/backoffice/registration/_step_email.html:228
+#: templates/backoffice/registration/_step_email.html:229
 msgid "Send test email"
 msgstr "Teszt e-mail küldése"
 
-#: templates/backoffice/registration/_step_email.html:242
-#: templates/backoffice/registration/_step_form.html:165
-#: templates/backoffice/registration/_step_intro.html:135
+#: templates/backoffice/registration/_step_email.html:243
+#: templates/backoffice/registration/_step_form.html:166
+#: templates/backoffice/registration/_step_intro.html:136
 #: templates/backoffice/registration/_step_page.html:93
 msgid "Editing in progress — save or cancel to continue"
 msgstr "Szerkesztés folyamatban – a folytatáshoz ments vagy vess el"
@@ -8725,36 +8725,36 @@ msgstr "Kitöltés akadálymentes HTML-lel"
 msgid "Fill with plain HTML"
 msgstr "Kitöltés egyszerű HTML-lel"
 
-#: templates/backoffice/registration/_step_form.html:123
-#: templates/backoffice/registration/_step_intro.html:95
+#: templates/backoffice/registration/_step_form.html:124
+#: templates/backoffice/registration/_step_intro.html:96
 msgid "Assets"
 msgstr "Eszközök"
 
-#: templates/backoffice/registration/_step_form.html:126
-#: templates/backoffice/registration/_step_intro.html:98
+#: templates/backoffice/registration/_step_form.html:127
+#: templates/backoffice/registration/_step_intro.html:99
 msgid "Images"
 msgstr "Képek"
 
-#: templates/backoffice/registration/_step_form.html:127
-#: templates/backoffice/registration/_step_intro.html:99
+#: templates/backoffice/registration/_step_form.html:128
+#: templates/backoffice/registration/_step_intro.html:100
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
 "Támogatott formátumok: %(formats)s. Maximális fájlméret: %(max)s MB "
 "képenként."
 
-#: templates/backoffice/registration/_step_form.html:128
-#: templates/backoffice/registration/_step_intro.html:100
+#: templates/backoffice/registration/_step_form.html:129
+#: templates/backoffice/registration/_step_intro.html:101
 msgid "No images uploaded yet."
 msgstr "Még nincs feltöltött kép."
 
-#: templates/backoffice/registration/_step_form.html:137
-#: templates/backoffice/registration/_step_intro.html:110
+#: templates/backoffice/registration/_step_form.html:138
+#: templates/backoffice/registration/_step_intro.html:111
 msgid "Documents"
 msgstr "Dokumentumok"
 
-#: templates/backoffice/registration/_step_form.html:139
-#: templates/backoffice/registration/_step_intro.html:112
+#: templates/backoffice/registration/_step_form.html:140
+#: templates/backoffice/registration/_step_intro.html:113
 msgid "No documents uploaded yet."
 msgstr "Még nincs feltöltött dokumentum."
 
