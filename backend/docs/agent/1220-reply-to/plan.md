@@ -1,6 +1,6 @@
 # 1220 — Reply-to address for the registration auto-reply
 
-Status: **all decisions made, ready to implement**. Questions are marked **Q1…Qn**.
+Status: **implemented** on `1220-reply-to`. Questions are marked **Q1…Qn**.
 Each answered one keeps its options for the record, with the decision marked ✅.
 
 ## 1. Goal
@@ -128,7 +128,7 @@ publishing.
 - Wording: the default From is a no-reply address in most deployments, but that's a
   deployment fact, not a code fact. So the message hedges:
   *"Replies to the auto-reply will go to the address it is sent from, which may not
-  be monitored. Set where replies go so registrants can reach you."*
+  be monitored. Set where replies go so they reach your team."*
 - Signature change: `auto_reply_readiness_problems` currently takes only
   `assembly_id` and looks at the email field definition. The new check needs the
   page's template, so it gains a `page_id` (or the template). Update both callers:
@@ -239,7 +239,7 @@ fields.
   - ✅ A group headed **"Replies go to"** (Q9). Use a `<fieldset>` with that legend, so
     a screen reader announces the context for both inputs. It holds two inputs:
     **"Name"** (optional) and **"Email address"** (`type="email"`, optional). A hint
-    on the fieldset says something like *"When registrants reply to the auto-reply,
+    on the fieldset says something like *"When someone replies to the auto-reply,
     their email goes here."* The inputs use the same readonly/edit treatment as the
     subject (`common_input_attrs`).
 - Check `docs/language.md` and add the term if it fits the glossary. Then run the
@@ -328,4 +328,19 @@ fields.
       readiness warning, byte-limit message
 - [x] Phase 4 — entrypoints, email step template, dev service docs, catalogues
 - [x] Phase 5 — e2e and BDD
-- [ ] Phase 6 — docs
+- [x] Phase 6 — docs
+
+## 11. Implementation notes
+
+- §2 says nothing sets `Assembly.reply_to_*`. More precisely, no route does:
+  `assembly_service.update_assembly(**updates)` applies any keyword with
+  `setattr`, which bypasses `set_reply_to()`'s validation. Only tests use it to set
+  the reply-to.
+- The two new user-facing strings avoid "registrants" (the glossary says
+  "respondent"): the warning ends "so they reach your team", and the hint reads
+  "When someone replies to the auto-reply, their email goes here."
+- "replies go to" is now in the glossary in `docs/language.md`.
+- The BDD step extends the existing save scenario, now called "Formatting the
+  auto-reply email from the toolbar, setting where replies go, and saving it".
+- The line references on the service-docs page (`email_template_service.py:NNN`)
+  were already stale, and are corrected.

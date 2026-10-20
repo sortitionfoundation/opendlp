@@ -85,7 +85,7 @@ def _reply_to_problems(
             AutoReplyReadinessSeverity.WARNING,
             _(
                 "Replies to the auto-reply will go to the address it is sent from, which may not be "
-                "monitored. Set where replies go so registrants can reach you."
+                "monitored. Set where replies go so they reach your team."
             ),
         )
     ]

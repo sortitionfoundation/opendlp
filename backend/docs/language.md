@@ -67,6 +67,7 @@ in, and don't add a third variant.
 | invite                | What an admin sends so that someone can create an account                     |                                    |
 | invite code           | The code in an invite                                                         | invitation code                    |
 | assembly question     | What the assembly is convened to decide                                       |                                    |
+| replies go to         | Where replies to an email the app sends are delivered (its Reply-To)          | reply-to, reply address            |
 
 **assembly** is lowercase in running text: "Run the replacement selection for
 this assembly". Use "citizens' assembly" where the reader might not know what an

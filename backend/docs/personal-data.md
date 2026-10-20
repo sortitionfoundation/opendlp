@@ -169,6 +169,10 @@ records - the organiser has to do the erasing. To help, export offers a "Deleted
 rows carry each deleted respondent's external ID with every detail blank, a list of whom to
 erase elsewhere. "All" never includes deleted respondents.
 
+The reply-to name and address on an auto-reply email are free text typed by the team, and may
+be a team member's own address. They are not linked to a user account, so deleting a user does
+not blank them; like a name typed into an email body, they have to be found and edited by hand.
+
 When adding a table that holds personal data, add a corresponding `DELETE` to
 `_delete_all_test_data()` in `tests/conftest.py` and to `delete_all_except_standard_users()` in
 `tests/bdd/conftest.py`, respecting foreign-key ordering.

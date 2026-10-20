@@ -242,5 +242,28 @@ Every email is sent with a plain-text version made from the HTML
 (`src/opendlp/domain/html_to_text.py`), which reads lists, quotes and
 horizontal lines as plain text would.
 
+### Where replies go
+
+The step shows the address the email is **sent from**. It comes from the
+deployment's mail settings (`SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`) and is the
+same for every assembly. It can't be changed per page, because the mail relay
+and the sending domain's SPF, DKIM and DMARC records only vouch for that one
+address. It is often a no-reply address that nobody reads.
+
+**Replies go to** sets the email's Reply-To: a name and an email address,
+both optional, stored on the page's auto-reply template. When someone replies,
+their mail client uses this address instead of the sending one. A copied
+page keeps it.
+
+If the template has no reply-to address, the assembly's reply-to is used.
+Nothing in the interface sets that yet; it is there for a future default for
+each assembly. If neither is set, the email has no Reply-To, and the step
+shows a warning. Every send records the reply-to address it used.
+
+The name may not contain line breaks or other control characters: a line
+break in an email header makes the send fail.
+
 The design and its decisions are in
-[docs/agent/767-registration-intro/auto-reply-plan.md](agent/767-registration-intro/auto-reply-plan.md).
+[docs/agent/767-registration-intro/auto-reply-plan.md](agent/767-registration-intro/auto-reply-plan.md)
+and, for the reply-to,
+[docs/agent/1220-reply-to/plan.md](agent/1220-reply-to/plan.md).
