@@ -12,6 +12,7 @@ from sortition_algorithms.utils import RunReport
 
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
+from opendlp.domain.email_template import ReplyTo, reply_to_address
 from opendlp.domain.respondents import normalise_field_name
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator, validate_email
 from opendlp.domain.value_objects import (
@@ -126,6 +127,9 @@ class Assembly:
         self.reply_to_name = name
         self.reply_to_email = _validated_reply_to_email(email)
         self.updated_at = datetime.now(UTC)
+
+    def reply_to(self) -> ReplyTo:
+        return reply_to_address(self.reply_to_name, self.reply_to_email)
 
     def is_active(self) -> bool:
         """Check if assembly is active."""

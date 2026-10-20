@@ -64,3 +64,13 @@ def test_registration_page_detached_copy_preserves_auto_reply() -> None:
     page = RegistrationPage(assembly_id=uuid.uuid4(), auto_reply_email_template_id=template_id)
     copy = page.create_detached_copy()
     assert copy.auto_reply_email_template_id == template_id
+
+
+def test_assembly_reply_to_shapes() -> None:
+    assert Assembly(title="A").reply_to() is None
+    assert Assembly(title="A", reply_to_email="team@example.com").reply_to() == "team@example.com"
+    assert Assembly(title="A", reply_to_name="The Team", reply_to_email="team@example.com").reply_to() == (
+        "The Team",
+        "team@example.com",
+    )
+    assert Assembly(title="A", reply_to_name="The Team").reply_to() is None

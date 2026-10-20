@@ -318,3 +318,14 @@ fields.
   translatable. They're in the §6 domain changes.
 - The `Assembly.reply_to_*` fields have no UI at all. That's left for the
   assembly-default round.
+
+## 10. Progress
+
+- [x] Phase 1 — domain: `EmailTemplate` reply-to fields, `reply_to()`, validation,
+      translatable validation messages; `Assembly.reply_to()`
+- [ ] Phase 2 — ORM, migration and send-record rename
+- [ ] Phase 3 — service layer: create/update, send-time resolution, page copy,
+      readiness warning, byte-limit message
+- [ ] Phase 4 — entrypoints, email step template, dev service docs, catalogues
+- [ ] Phase 5 — e2e and BDD
+- [ ] Phase 6 — docs
