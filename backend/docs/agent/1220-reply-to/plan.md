@@ -327,5 +327,5 @@ fields.
 - [x] Phase 3 — service layer: create/update, send-time resolution, page copy,
       readiness warning, byte-limit message
 - [x] Phase 4 — entrypoints, email step template, dev service docs, catalogues
-- [ ] Phase 5 — e2e and BDD
+- [x] Phase 5 — e2e and BDD
 - [ ] Phase 6 — docs

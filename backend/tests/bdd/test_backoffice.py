@@ -2516,6 +2516,21 @@ def email_html_view_contains(page: Page, html: str):
     expect(page.locator(f"{EMAIL_EDITOR} .cm-content")).to_contain_text(html, timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I set replies to go to "{name}" at "{email}"'))
+def set_replies_go_to(page: Page, name: str, email: str):
+    replies = page.get_by_role("group", name="Replies go to")
+    replies.get_by_label("Name", exact=True).fill(name)
+    replies.get_by_label("Email address", exact=True).fill(email)
+
+
+@then(parsers.parse('replies should go to "{name}" at "{email}"'))
+def replies_go_to(page: Page, name: str, email: str):
+    replies = page.get_by_role("group", name="Replies go to")
+    expect(replies.get_by_label("Name", exact=True)).to_have_value(name, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(replies.get_by_label("Email address", exact=True)).to_have_value(email)
+    expect(replies.get_by_label("Email address", exact=True)).to_have_attribute("readonly", "")
+
+
 @then(parsers.parse('the formatting toolbar should offer "{name}"'))
 def toolbar_offers(page: Page, name: str):
     toolbar = page.get_by_role("toolbar", name="Formatting")
