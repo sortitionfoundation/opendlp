@@ -35,6 +35,16 @@ just watch-css        # or watch-backoffice / watch-js
 just run  # Automatically runs build-all first
 ```
 
+### Tailwind v4 notes for the backoffice CSS
+
+- **Classes Tailwind cannot see** — built by string concatenation in a Jinja
+  macro, or added by JavaScript at runtime — go in the `@source inline(...)`
+  line at the top of `static/backoffice/src/main.css`. v4 ignores a `safelist`
+  key in `tailwind.config.js`, so a class listed there is silently purged.
+- **A class used with a variant** (`file:`, `hover:`, `md:` …) must be declared
+  with `@utility`, as the `text-*` typography classes are. v4 generates no
+  variants for classes inside `@layer components`, and says nothing about it.
+
 ## Sortition Foundation Color Palette
 
 Custom color variables defined in `_sortition.scss`:
