@@ -62,41 +62,41 @@
 
     /* Body (Lato) - Content text */
     .text-body-lg {
-        font: 400 1rem/1.5rem var(--font-body);
+        font: 400 1.0625rem/1.625rem var(--font-body);
         letter-spacing: 0;
     }
 
     .text-body-md {
-        font: 400 0.875rem/1.25rem var(--font-body);
+        font: 400 0.9375rem/1.375rem var(--font-body);
         letter-spacing: 0;
     }
 
     .text-body-sm {
-        font: 400 0.8125rem/1.125rem var(--font-body);
+        font: 400 0.875rem/1.25rem var(--font-body);
         letter-spacing: 0.1px;
     }
 
     /* Caption (Lato) - Metadata / dense secondary text */
     .text-caption {
-        font: 400 0.75rem/1rem var(--font-caption);
+        font: 400 0.8125rem/1.125rem var(--font-caption);
         letter-spacing: 0.2px;
     }
 
     /* Overline (Lato) - Uppercase micro-labels */
     .text-overline {
-        font: 500 0.6875rem/0.875rem var(--font-overline);
+        font: 500 0.75rem/1rem var(--font-overline);
         letter-spacing: 0.8px;
         text-transform: uppercase;
     }
 
     /* Label (Lato) - Form labels */
     .text-label-lg {
-        font: 500 0.875rem/1.25rem var(--font-label);
+        font: 500 0.9375rem/1.375rem var(--font-label);
         letter-spacing: 0.3px;
     }
 
     .text-label-md {
-        font: 500 0.8125rem/1.125rem var(--font-label);
+        font: 500 0.875rem/1.25rem var(--font-label);
         letter-spacing: 0.3px;
     }
 
@@ -121,37 +121,37 @@
        colour differs at the semantic-token layer (input=body-text,
        placeholder=placeholder-text). */
     .text-input-text {
-        font: 400 0.875rem/1.25rem var(--font-body);
+        font: 400 0.9375rem/1.375rem var(--font-body);
         letter-spacing: 0;
     }
 
     /* Table (Lato) - Column headers, cells, numeric cells */
     .text-table-header {
-        font: 600 0.75rem/1rem var(--font-label);
+        font: 600 0.8125rem/1.125rem var(--font-label);
         letter-spacing: 0.4px;
     }
 
     .text-table-cell {
-        font: 400 0.8125rem/1.125rem var(--font-body);
+        font: 400 0.875rem/1.25rem var(--font-body);
         letter-spacing: 0;
     }
 
     .text-numeric {
-        font: 500 0.8125rem/1.125rem var(--font-body);
+        font: 500 0.875rem/1.25rem var(--font-body);
         letter-spacing: 0.1px;
         font-variant-numeric: tabular-nums;
     }
 
     /* Code (monospace) - inline code chips and code blocks */
     .text-code {
-        font: 400 0.8125rem/1.125rem var(--font-mono);
+        font: 400 0.875rem/1.25rem var(--font-mono);
         letter-spacing: 0;
     }
 
     /* Inline code chip - text-code + subtle panel background + tight padding.
        Used to render class names / identifiers in prose. */
     .code-inline {
-        font: 400 0.8125rem/1.125rem var(--font-mono);
+        font: 400 0.875rem/1.25rem var(--font-mono);
         letter-spacing: 0;
         background-color: var(--color-subtle-background-panels);
         border: 1px solid var(--color-borders-dividers);
@@ -374,7 +374,7 @@
         color: var(--color-body-text);
         border: none;
         cursor: pointer;
-        font: 400 0.875rem/1.25rem var(--font-body);
+        @apply text-body-md;
         transition: background-color 0.15s ease;
     }
 
@@ -509,11 +509,7 @@
 
     /* Label text styling */
     .checkbox-label {
-        font-family: var(--font-body);
-        font-weight: 500;
-        font-size: 14px;
-        line-height: 20px;
-        letter-spacing: 0.3px;
+        @apply text-label-lg;
         color: var(--color-headings);
     }
 
@@ -610,11 +606,7 @@
 
     /* Label text styling */
     .radio-label {
-        font-family: var(--font-body);
-        font-weight: 500;
-        font-size: 14px;
-        line-height: 20px;
-        letter-spacing: 0.3px;
+        @apply text-label-lg;
         color: var(--color-headings);
     }
 
@@ -702,11 +694,7 @@
 
     /* Label text styling */
     .switch-label {
-        font-family: var(--font-body);
-        font-weight: 500;
-        font-size: 14px;
-        line-height: 20px;
-        letter-spacing: 0.3px;
+        @apply text-label-lg;
         color: var(--color-headings);
     }
 
@@ -859,22 +847,16 @@
         width: 24px;
         height: 24px;
         border-radius: 16px;
-        font-family: var(--font-body);
-        font-size: 14px;
-        font-weight: 500;
+        @apply text-label-lg;
+        /* Tighter than label-lg so the number centres in the 24px pill */
         line-height: 16px;
-        letter-spacing: 0.1px;
         color: #FFFFFF;
         background-color: var(--color-secondary-text);
         flex-shrink: 0;
     }
 
     .stepper-label {
-        font-family: var(--font-body);
-        font-size: 14px;
-        line-height: 20px;
-        letter-spacing: 0.25px;
-        font-weight: 400;
+        @apply text-body-md;
         color: var(--color-secondary-text);
         white-space: nowrap;
     }
@@ -1051,8 +1033,7 @@
 
     .question-table thead th {
         padding: 0 8px 8px;
-        font: 600 0.75rem/1rem var(--font-body);
-        letter-spacing: 0.4px;
+        @apply text-table-header;
         color: var(--color-headings);
     }
 
@@ -1081,7 +1062,7 @@
         list-style: none;
         margin: 0;
         padding: 0;
-        font: 400 0.875rem/1.25rem var(--font-body);
+        @apply text-body-md;
         color: var(--color-body-text);
     }
 
@@ -1370,7 +1351,7 @@
     }
 
     .dialog-text-stack__description {
-        font: 400 0.875rem/1.25rem var(--font-body);
+        @apply text-body-md;
         color: var(--color-secondary-text);
         margin: 0;
     }
@@ -1501,7 +1482,7 @@ body {
     .rich-editor__mode,
     .toggle-buttons__button {
         padding: 0.25rem 0.875rem;
-        font-size: 0.875rem;
+        @apply text-body-md;
         color: var(--color-button-tertiary-text);
         background-color: var(--color-page-background);
     }
@@ -1566,8 +1547,7 @@ body {
         transform: translateX(-50%);
         padding: 0.25rem 0.5rem;
         border-radius: 0.25rem;
-        font-size: 0.75rem;
-        line-height: 1.2;
+        @apply text-caption;
         color: var(--color-page-background);
         background-color: var(--color-navigation-bars);
     }
@@ -1616,7 +1596,7 @@ body {
         width: 100%;
         padding: 0.375rem 0.75rem;
         text-align: left;
-        font-size: 0.875rem;
+        @apply text-body-md;
         color: var(--color-body-text);
     }
 

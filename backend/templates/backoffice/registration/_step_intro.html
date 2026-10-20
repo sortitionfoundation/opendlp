@@ -66,7 +66,7 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         {# HTML Textarea with monospace font. `readonly` is the default;
                            ?edit=1 unlocks it via the Edit CTA above. #}
                         {% set textarea_attrs %}
-                            {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                            {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
                         {% endset %}
                         {# A visible label, so the HTML view (CodeMirror) has an accessible name too. #}
                         {{ textarea(name="intro_content",
@@ -81,6 +81,7 @@ ABOUTME: Included by assembly_registration.html when ?section=intro
                         rich_editor_tables=true,
                         rich_editor_editable=edit_mode,
                         rich_editor_style=content_style.value,
+                        classes="text-code",
                         attrs=textarea_attrs|trim) }}
                     </div>
                 </section>
