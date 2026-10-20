@@ -324,7 +324,7 @@ fields.
 - [x] Phase 1 — domain: `EmailTemplate` reply-to fields, `reply_to()`, validation,
       translatable validation messages; `Assembly.reply_to()`
 - [x] Phase 2 — ORM, migration and send-record rename
-- [ ] Phase 3 — service layer: create/update, send-time resolution, page copy,
+- [x] Phase 3 — service layer: create/update, send-time resolution, page copy,
       readiness warning, byte-limit message
 - [ ] Phase 4 — entrypoints, email step template, dev service docs, catalogues
 - [ ] Phase 5 — e2e and BDD

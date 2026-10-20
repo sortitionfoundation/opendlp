@@ -405,6 +405,8 @@ def _copy_auto_reply_template(uow: AbstractUnitOfWork, source: RegistrationPage,
         name=f"{original.name} ({page_name})",
         subject=original.subject,
         body_html=original.body_html,
+        reply_to_name=original.reply_to_name,
+        reply_to_email=original.reply_to_email,
     )
     uow.email_templates.add(copy)
     return copy.id

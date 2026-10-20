@@ -76,6 +76,56 @@ class TestSendTemplatedEmail:
 
         assert adapter.send_email.call_args.kwargs["reply_to"] is None
 
+    def test_template_reply_to_wins_over_assembly(self, uow):
+        adapter = MagicMock()
+        adapter.send_email.return_value = True
+        assembly = _assembly(reply_to_name="Assembly Team", reply_to_email="assembly@example.com")
+        template = _template(assembly.id, reply_to_name="Page Team", reply_to_email="page@example.com")
+
+        record = service.send_templated_email(
+            uow, adapter, template=template, assembly=assembly, respondent=_respondent(assembly.id)
+        )
+
+        assert adapter.send_email.call_args.kwargs["reply_to"] == ("Page Team", "page@example.com")
+        assert record.reply_to_email == "page@example.com"
+
+    def test_name_and_email_resolve_together(self, uow):
+        """A template with an email but no name does not borrow the assembly's name."""
+        adapter = MagicMock()
+        adapter.send_email.return_value = True
+        assembly = _assembly(reply_to_name="Assembly Team", reply_to_email="assembly@example.com")
+        template = _template(assembly.id, reply_to_email="page@example.com")
+
+        service.send_templated_email(
+            uow, adapter, template=template, assembly=assembly, respondent=_respondent(assembly.id)
+        )
+
+        assert adapter.send_email.call_args.kwargs["reply_to"] == "page@example.com"
+
+    def test_falls_back_to_assembly_reply_to_when_template_has_none(self, uow):
+        adapter = MagicMock()
+        adapter.send_email.return_value = True
+        assembly = _assembly(reply_to_name="Assembly Team", reply_to_email="assembly@example.com")
+        template = _template(assembly.id, reply_to_name="Name Without Address")
+
+        record = service.send_templated_email(
+            uow, adapter, template=template, assembly=assembly, respondent=_respondent(assembly.id)
+        )
+
+        assert adapter.send_email.call_args.kwargs["reply_to"] == ("Assembly Team", "assembly@example.com")
+        assert record.reply_to_email == "assembly@example.com"
+
+    def test_record_reply_to_is_empty_when_none_used(self, uow):
+        adapter = MagicMock()
+        adapter.send_email.return_value = True
+        assembly = _assembly()
+
+        record = service.send_templated_email(
+            uow, adapter, template=_template(assembly.id), assembly=assembly, respondent=_respondent(assembly.id)
+        )
+
+        assert record.reply_to_email == ""
+
     def test_records_failure_when_adapter_returns_false(self, uow):
         adapter = MagicMock()
         adapter.send_email.return_value = False

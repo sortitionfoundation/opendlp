@@ -15,7 +15,7 @@ from opendlp.domain.email_context import (
     sample_respondent_context,
 )
 from opendlp.domain.email_send_record import EmailSendOutcome, RespondentEmailSendRecord
-from opendlp.domain.email_template import EmailTemplate
+from opendlp.domain.email_template import EmailTemplate, ReplyTo
 from opendlp.domain.respondents import Respondent
 
 from .exceptions import (
@@ -33,12 +33,20 @@ def build_email_context(assembly: Assembly, respondent: Respondent) -> dict:
     return build_context(AssemblyContext.from_assembly(assembly), RespondentContext.from_respondent(respondent))
 
 
-def _reply_to(assembly: Assembly) -> str | tuple[str, str] | None:
-    if not assembly.reply_to_email:
-        return None
-    if assembly.reply_to_name:
-        return (assembly.reply_to_name, assembly.reply_to_email)
-    return assembly.reply_to_email
+def resolve_reply_to(template: EmailTemplate, assembly: Assembly) -> ReplyTo:
+    """The template's reply-to if it has an address, else the assembly's, else None.
+
+    Name and address come from the same source, never one from each.
+    """
+    return template.reply_to() or assembly.reply_to()
+
+
+def _reply_to_email(reply_to: ReplyTo) -> str:
+    if reply_to is None:
+        return ""
+    if isinstance(reply_to, tuple):
+        return reply_to[1]
+    return reply_to
 
 
 def _build_and_send(
@@ -49,6 +57,7 @@ def _build_and_send(
     respondent: Respondent,
 ) -> RespondentEmailSendRecord:
     rendered = template.render(build_email_context(assembly, respondent))
+    reply_to = resolve_reply_to(template, assembly)
     if rendered.missing_variables:
         logger.warning("Email template %s rendered with missing variables: %s", template.id, rendered.missing_variables)
     try:
@@ -57,7 +66,7 @@ def _build_and_send(
             subject=rendered.subject,
             text_body=rendered.text_body,
             html_body=rendered.html_body,
-            reply_to=_reply_to(assembly),
+            reply_to=reply_to,
         )
     except Exception:
         logger.exception("Failed to send templated email for template %s", template.id)
@@ -66,7 +75,7 @@ def _build_and_send(
         respondent_id=respondent.id,
         email_template_id=template.id,
         to_email=respondent.email,
-        reply_to_email=assembly.reply_to_email,
+        reply_to_email=_reply_to_email(reply_to),
         subject=rendered.subject,
         outcome=EmailSendOutcome.SENT if ok else EmailSendOutcome.FAILED,
         missing_variables=rendered.missing_variables,
@@ -117,7 +126,7 @@ class PreparedTestAutoReply:
     subject: str
     text_body: str
     html_body: str
-    reply_to: str | tuple[str, str] | None
+    reply_to: ReplyTo
     missing_variables: list[str]
 
 
@@ -161,7 +170,7 @@ def prepare_test_auto_reply(
         subject=rendered.subject,
         text_body=rendered.text_body,
         html_body=rendered.html_body,
-        reply_to=_reply_to(assembly),
+        reply_to=resolve_reply_to(template, assembly),
         missing_variables=rendered.missing_variables,
     )
 
