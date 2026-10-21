@@ -79,6 +79,7 @@ exclude-newer = "1 week"
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
 # made shorter to get security fixes
+certifi = "0 days"
 cryptography = "0 days"
 oauthlib = "3 days"
 pillow = "3 days"
