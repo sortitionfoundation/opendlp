@@ -80,7 +80,8 @@ exclude-newer = "1 week"
 sortition-algorithms = "0 days"
 # made shorter to get security fixes
 cryptography = "0 days"
-oauthlib = "0 days"
+oauthlib = "3 days"
+pillow = "3 days"
 
 [tool.mypy]
 files = ["src"]
