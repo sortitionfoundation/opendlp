@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 16:04+0000\n"
+"POT-Creation-Date: 2026-10-21 19:40+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -128,33 +128,45 @@ msgstr ""
 msgid "The email body has a template syntax error on line %(line)s: %(error)s"
 msgstr ""
 
-#: src/opendlp/domain/registration_page.py:566
+#: src/opendlp/domain/registration_page.py:292
+#, python-format
+msgid ""
+"The thank-you page has a template syntax error on line %(line)s: "
+"%(detail)s"
+msgstr ""
+
+#: src/opendlp/domain/registration_page.py:299
+#, python-format
+msgid "The thank-you page uses %(variable)s, which it does not offer"
+msgstr ""
+
+#: src/opendlp/domain/registration_page.py:627
 #: templates/backoffice/assembly_edit_respondent.html:128
 #: templates/backoffice/target_sources/_setup_modal.html:263
 msgid "Day"
 msgstr "Nap"
 
-#: src/opendlp/domain/registration_page.py:566
+#: src/opendlp/domain/registration_page.py:627
 msgid "DD"
 msgstr "NN"
 
-#: src/opendlp/domain/registration_page.py:567
+#: src/opendlp/domain/registration_page.py:628
 #: templates/backoffice/assembly_edit_respondent.html:131
 #: templates/backoffice/target_sources/_setup_modal.html:266
 msgid "Month"
 msgstr "Hónap"
 
-#: src/opendlp/domain/registration_page.py:567
+#: src/opendlp/domain/registration_page.py:628
 msgid "MM"
 msgstr "HH"
 
-#: src/opendlp/domain/registration_page.py:568
+#: src/opendlp/domain/registration_page.py:629
 #: templates/backoffice/assembly_edit_respondent.html:134
 #: templates/backoffice/target_sources/_setup_modal.html:269
 msgid "Year"
 msgstr "Év"
 
-#: src/opendlp/domain/registration_page.py:568
+#: src/opendlp/domain/registration_page.py:629
 msgid "YYYY"
 msgstr "ÉÉÉÉ"
 
@@ -1723,8 +1735,8 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:385
 #: src/opendlp/entrypoints/blueprints/backoffice.py:770
 #: src/opendlp/entrypoints/blueprints/backoffice.py:831
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:226
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:363
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:228
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:367
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:93
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:94
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:129
@@ -1771,21 +1783,21 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:612
 #: src/opendlp/entrypoints/blueprints/backoffice.py:761
 #: src/opendlp/entrypoints/blueprints/backoffice.py:822
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:232
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:369
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:593
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:817
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:884
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:950
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:994
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1023
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1121
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1184
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1212
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1237
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1285
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1315
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1342
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:234
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:373
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:609
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:833
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:900
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:966
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1010
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1039
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1137
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1200
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1228
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1253
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1301
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1331
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1358
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:90
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:197
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:476
@@ -2010,101 +2022,101 @@ msgstr ""
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:150
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:186
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:152
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:188
 #, python-format
 msgid "Details for %(name)s"
 msgstr "%(name)s részletei"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:151
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:153
 #, python-format
 msgid "Insert %(name)s into the editor"
 msgstr "%(name)s beszúrása a szerkesztőbe"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:152
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:154
 #, python-format
 msgid "Copy <img> snippet for %(name)s"
 msgstr "%(name)s <img> kódrészletének másolása"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:153
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:188
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:155
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:190
 #, python-format
 msgid "Delete %(name)s"
 msgstr "%(name)s törlése"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:187
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:189
 #, python-format
 msgid "Copy download link snippet for %(name)s"
 msgstr "%(name)s letöltési link kódrészletének másolása"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:238
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:379
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:240
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:383
 msgid "An error occurred while loading registration settings"
 msgstr "Hiba történt a regisztrációs beállítások betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:354
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:578
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:811
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:878
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:980
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:358
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:594
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:827
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:894
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:996
 msgid "That registration page could not be found"
 msgstr "Ez a regisztrációs oldal nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:393
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:397
 msgid "Registration page published successfully"
 msgstr "A regisztrációs oldal sikeresen közzétéve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:394
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:398
 msgid "Registration page HTML updated successfully"
 msgstr "A regisztrációs oldal HTML-je sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:397
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:401
 msgid "Registration page unpublished"
 msgstr "A regisztrációs oldal közzététele visszavonva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:400
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:404
 msgid "Registration page closed"
 msgstr "A regisztrációs oldal lezárva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:403
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:407
 msgid "Registration page reopened"
 msgstr "A regisztrációs oldal újra megnyitva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:405
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:409
 msgid "Registration page saved and republished"
 msgstr "A regisztrációs oldal mentve és újra közzétéve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:406
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:410
 msgid "Registration page saved"
 msgstr "A regisztrációs oldal mentve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:587
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:814
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:881
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:947
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:988
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1182
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1210
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1235
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1283
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1313
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1340
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:603
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:830
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:897
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:963
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1004
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1198
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1226
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1251
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1299
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1329
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1356
 msgid "You don't have permission to modify this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés módosításához"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:603
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:619
 msgid "An error occurred while saving registration settings"
 msgstr "Hiba történt a regisztrációs beállítások mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:684
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:700
 msgid "Registration auto-reply"
 msgstr "Regisztrációs automatikus válasz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:685
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:701
 msgid "Thanks for registering for {{ assembly.title }}"
 msgstr "Köszönjük, hogy regisztráltál a következőre: {{ assembly.title }}"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:687
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:703
 msgid ""
 "<p>Hi {{ respondent.first_name_or_friend }},</p>\n"
 "<p>Thanks for registering for <strong>{{ assembly.title }}</strong>.</p>\n"
@@ -2119,46 +2131,46 @@ msgstr ""
 " kapcsolatban jelentkezünk.</p>\n"
 "<p>Üdvözlettel,<br>a csapat</p>"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:725
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:741
 msgid "Auto-reply email created. Edit it below and click Save."
 msgstr ""
 "Az automatikus válasz e-mail létrejött. Szerkeszd alább, majd kattints a "
 "Mentés gombra."
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:737
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:753
 msgid "There is no auto-reply email to save yet — set one up first"
 msgstr "Még nincs menthető automatikus válasz e-mail – előbb hozz létre egyet"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:753
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:769
 msgid "Auto-reply email saved"
 msgstr "Az automatikus válasz e-mail mentve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:772
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:788
 msgid "Unknown action — nothing was changed"
 msgstr "Ismeretlen művelet – semmi sem változott"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:808
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:824
 msgid "The auto-reply email could not be found"
 msgstr "Az automatikus válasz e-mail nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:826
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:842
 msgid "An error occurred while saving the auto-reply email"
 msgstr "Hiba történt az automatikus válasz e-mail mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:843
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:859
 msgid "Enter a valid email address to send the test email to"
 msgstr "Adj meg egy érvényes e-mail címet a teszt e-mail elküldéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:850
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:866
 msgid "This registration page is closed, so test emails can't be sent"
 msgstr "Ez a regisztrációs oldal le van zárva, ezért nem küldhető teszt e-mail"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:862
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:878
 #, python-format
 msgid "Test email sent to %(email)s"
 msgstr "Teszt e-mail elküldve ide: %(email)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:864
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:880
 msgid ""
 "The test email could not be sent — check the email configuration and try "
 "again"
@@ -2166,27 +2178,27 @@ msgstr ""
 "A teszt e-mailt nem sikerült elküldeni – ellenőrizd az e-mail "
 "beállításokat, és próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:868
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:884
 #, python-format
 msgid "Some template variables had no value and rendered blank: %(names)s"
 msgstr ""
 "Néhány sablonváltozónak nem volt értéke, ezért üresen jelent meg: "
 "%(names)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:875
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:891
 msgid "There is no auto-reply email to test yet — set one up first"
 msgstr "Még nincs tesztelhető automatikus válasz e-mail – előbb hozz létre egyet"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:893
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:909
 msgid "An error occurred while sending the test email"
 msgstr "Hiba történt a teszt e-mail küldése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:918
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:934
 #: templates/backoffice/components/registration_page_list.html:13
 msgid "Registration page"
 msgstr "Regisztrációs oldal"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:942
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:958
 msgid ""
 "Registration page created. URLs have been generated automatically and can"
 " be edited below."
@@ -2194,96 +2206,96 @@ msgstr ""
 "A regisztrációs oldal létrejött. Az URL-ek automatikusan létrejöttek, "
 "alább szerkesztheted őket."
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:958
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:974
 msgid "An error occurred while creating the registration page"
 msgstr "Hiba történt a regisztrációs oldal létrehozása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:978
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:994
 #, python-format
 msgid "Registration page '%(name)s' deleted"
 msgstr "'%(name)s' regisztrációs oldal törölve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1007
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1023
 msgid "An error occurred while deleting the registration page"
 msgstr "Hiba történt a regisztrációs oldal törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1021
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1115
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1037
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1131
 msgid "You don't have permission to access this assembly"
 msgstr "Nincs jogosultságod hozzáférni ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1026
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1042
 msgid "An error occurred while generating the form skeleton"
 msgstr "Hiba történt az űrlapsablon létrehozása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1125
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1141
 msgid "An error occurred while generating QR code"
 msgstr "Hiba történt a QR-kód létrehozása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1152
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1255
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1168
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1271
 msgid "No file was selected"
 msgstr "Nem választottál ki fájlt"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1158
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1261
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1174
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1277
 msgid "Failed to read the uploaded file"
 msgstr "A feltöltött fájl beolvasása sikertelen"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1162
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1199
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1178
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1215
 #: templates/backoffice/registration/_page_data.html:32
 msgid "Alt text is required for accessibility"
 msgstr "Az alternatív szöveg megadása kötelező az akadálymentesség miatt"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1180
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1281
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1196
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1297
 msgid "Please create a registration page first from the Details tab."
 msgstr "Előbb hozz létre egy regisztrációs oldalt a Részletek lapon."
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1187
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1203
 msgid "An error occurred while uploading the image"
 msgstr "Hiba történt a kép feltöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1206
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1231
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1222
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1247
 msgid "Image not found"
 msgstr "A kép nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1208
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1233
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1311
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1338
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1224
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1249
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1327
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1354
 msgid "Registration page not found"
 msgstr "A regisztrációs oldal nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1215
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1231
 msgid "An error occurred while updating the image"
 msgstr "Hiba történt a kép frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1240
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1256
 msgid "An error occurred while deleting the image"
 msgstr "Hiba történt a kép törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1288
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1304
 msgid "An error occurred while uploading the document"
 msgstr "Hiba történt a dokumentum feltöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1302
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1318
 #: templates/backoffice/registration/_page_data.html:42
 msgid "Label is required"
 msgstr "A címke megadása kötelező"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1309
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1336
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1325
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1352
 msgid "Document not found"
 msgstr "A dokumentum nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1320
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1336
 msgid "An error occurred while updating the document"
 msgstr "Hiba történt a dokumentum frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1345
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1361
 msgid "An error occurred while deleting the document"
 msgstr "Hiba történt a dokumentum törlése közben"
 
@@ -4141,21 +4153,21 @@ msgstr "bejelentkezés"
 msgid "registration"
 msgstr "regisztráció"
 
-#: src/opendlp/service_layer/registration_page_service.py:84
+#: src/opendlp/service_layer/registration_page_service.py:85
 #, python-format
 msgid "The %(label)s must be at most %(max_bytes)s bytes; got %(size)s"
 msgstr "%(label)s legfeljebb %(max_bytes)s bájt lehet; a kapott méret %(size)s"
 
-#: src/opendlp/service_layer/registration_page_service.py:182
+#: src/opendlp/service_layer/registration_page_service.py:183
 msgid "Failed to generate unique short URL slug after multiple attempts"
 msgstr "Több próbálkozás után sem sikerült egyedi rövid URL-azonosítót előállítani"
 
-#: src/opendlp/service_layer/registration_page_service.py:237
+#: src/opendlp/service_layer/registration_page_service.py:238
 #: src/opendlp/service_layer/registration_page_service.py:614
 msgid "The registration page name is required"
 msgstr "A regisztrációs oldal nevét meg kell adni"
 
-#: src/opendlp/service_layer/registration_page_service.py:240
+#: src/opendlp/service_layer/registration_page_service.py:241
 #: src/opendlp/service_layer/registration_page_service.py:617
 #, python-format
 msgid "This assembly already has a registration page named '%(name)s'"
@@ -4177,19 +4189,23 @@ msgstr "Ezen a regisztrációs oldalon vannak regisztrációk, ezért nem törö
 msgid "The slug '%(slug)s' is already in use by another registration page"
 msgstr "'%(slug)s' azonosítót már használja egy másik regisztrációs oldal"
 
-#: src/opendlp/service_layer/registration_page_service.py:649
+#: src/opendlp/service_layer/registration_page_service.py:659
 msgid "thank-you HTML"
 msgstr "köszönőoldal HTML"
 
-#: src/opendlp/service_layer/registration_page_service.py:665
+#: src/opendlp/service_layer/registration_page_service.py:689
+msgid "The thank-you page already has HTML, so it was left as it is"
+msgstr ""
+
+#: src/opendlp/service_layer/registration_page_service.py:702
 msgid "form HTML"
 msgstr "űrlap HTML"
 
-#: src/opendlp/service_layer/registration_page_service.py:688
+#: src/opendlp/service_layer/registration_page_service.py:725
 msgid "The form already has HTML, so it was left as it is"
 msgstr "Az űrlapban már van HTML, ezért változatlan maradt"
 
-#: src/opendlp/service_layer/registration_page_service.py:708
+#: src/opendlp/service_layer/registration_page_service.py:745
 msgid "intro HTML"
 msgstr "bevezető HTML"
 
@@ -5062,6 +5078,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/registration/_step_form.html:58
 #: templates/backoffice/registration/_step_intro.html:37
 #: templates/backoffice/registration/_step_page.html:33
+#: templates/backoffice/registration/_step_thank_you.html:34
 #: templates/backoffice/respondent_field_schema/_field_modal.html:203
 #: templates/backoffice/respondents/confirm_upload_diff.html:99
 #: templates/backoffice/respondents/export_modal.html:75
@@ -5391,6 +5408,7 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/registration/_step_form.html:61
 #: templates/backoffice/registration/_step_intro.html:40
 #: templates/backoffice/registration/_step_page.html:36
+#: templates/backoffice/registration/_step_thank_you.html:37
 #: templates/backoffice/respondent_field_schema/_editor.html:92
 #: templates/backoffice/target_sources/_checklist.html:73
 #: templates/backoffice/target_sources/_setup_modal.html:192
@@ -6459,23 +6477,28 @@ msgid "Form"
 msgstr "Űrlap"
 
 #: templates/backoffice/assembly_registration.html:95
+#: templates/backoffice/registration/_step_thank_you.html:31
+msgid "Thank-you page"
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:96
 #: templates/backoffice/registration/_step_email.html:38
 msgid "Auto-reply email"
 msgstr "Automatikus válasz e-mail"
 
-#: templates/backoffice/assembly_registration.html:96
+#: templates/backoffice/assembly_registration.html:97
 msgid "Preview and publish"
 msgstr "Előnézet és közzététel"
 
-#: templates/backoffice/assembly_registration.html:98
+#: templates/backoffice/assembly_registration.html:99
 msgid "Registration setup steps"
 msgstr "A regisztráció beállításának lépései"
 
-#: templates/backoffice/assembly_registration.html:111
+#: templates/backoffice/assembly_registration.html:112
 msgid "Test mode"
 msgstr "Teszt üzemmód"
 
-#: templates/backoffice/assembly_registration.html:112
+#: templates/backoffice/assembly_registration.html:113
 msgid ""
 "Submissions are recorded as test entries and don't enter the selection "
 "pool. Publish the registration when you're ready to go live."
@@ -6484,15 +6507,15 @@ msgstr ""
 "jelentkezők közé. Tedd közzé a regisztrációt, amikor készen állsz az éles"
 " indulásra."
 
-#: templates/backoffice/assembly_registration.html:121
+#: templates/backoffice/assembly_registration.html:122
 msgid "Registration closed"
 msgstr "A regisztráció lezárva"
 
-#: templates/backoffice/assembly_registration.html:122
+#: templates/backoffice/assembly_registration.html:123
 msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek át."
 
-#: templates/backoffice/assembly_registration.html:132
+#: templates/backoffice/assembly_registration.html:133
 #: templates/backoffice/components/registration_page_list.html:99
 msgid "Published"
 msgstr "Közzétéve"
@@ -6796,6 +6819,7 @@ msgstr "Módosítások elvetése"
 #: templates/backoffice/registration/_step_form.html:23
 #: templates/backoffice/registration/_step_intro.html:18
 #: templates/backoffice/registration/_step_page.html:17
+#: templates/backoffice/registration/_step_thank_you.html:16
 #: templates/backoffice/respondent_field_schema/_field_modal.html:204
 #: templates/backoffice/target_sources/_setup_modal.html:355
 #: templates/targets/components/category_block.html:42
@@ -8335,6 +8359,7 @@ msgstr "Dokumentum feltöltése"
 #: templates/backoffice/registration/_modals.html:178
 #: templates/backoffice/registration/_step_form.html:138
 #: templates/backoffice/registration/_step_intro.html:111
+#: templates/backoffice/registration/_step_thank_you.html:113
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr "Csak PDF fájlok. Maximális fájlméret: %(max)s MB dokumentumonként."
@@ -8599,6 +8624,8 @@ msgstr "Automatikus válasz e-mail beállítása"
 #: templates/backoffice/registration/_step_intro.html:131
 #: templates/backoffice/registration/_step_intro.html:140
 #: templates/backoffice/registration/_step_preview.html:103
+#: templates/backoffice/registration/_step_thank_you.html:133
+#: templates/backoffice/registration/_step_thank_you.html:142
 msgid "← Back"
 msgstr "← Vissza"
 
@@ -8611,6 +8638,8 @@ msgstr "← Vissza"
 #: templates/backoffice/registration/_step_intro.html:141
 #: templates/backoffice/registration/_step_page.html:95
 #: templates/backoffice/registration/_step_page.html:97
+#: templates/backoffice/registration/_step_thank_you.html:140
+#: templates/backoffice/registration/_step_thank_you.html:143
 msgid "Next →"
 msgstr "Tovább →"
 
@@ -8743,12 +8772,14 @@ msgstr "Teszt e-mail küldése"
 #: templates/backoffice/registration/_step_form.html:165
 #: templates/backoffice/registration/_step_intro.html:135
 #: templates/backoffice/registration/_step_page.html:93
+#: templates/backoffice/registration/_step_thank_you.html:137
 msgid "Editing in progress — save or cancel to continue"
 msgstr "Szerkesztés folyamatban – a folytatáshoz ments vagy vess el"
 
 #: templates/backoffice/registration/_step_form.html:23
 #: templates/backoffice/registration/_step_intro.html:18
 #: templates/backoffice/registration/_step_page.html:17
+#: templates/backoffice/registration/_step_thank_you.html:16
 msgid "Save and Republish"
 msgstr "Mentés és újbóli közzététel"
 
@@ -8798,16 +8829,19 @@ msgstr "Kitöltés egyszerű HTML-lel"
 
 #: templates/backoffice/registration/_step_form.html:123
 #: templates/backoffice/registration/_step_intro.html:95
+#: templates/backoffice/registration/_step_thank_you.html:97
 msgid "Assets"
 msgstr "Eszközök"
 
 #: templates/backoffice/registration/_step_form.html:126
 #: templates/backoffice/registration/_step_intro.html:98
+#: templates/backoffice/registration/_step_thank_you.html:100
 msgid "Images"
 msgstr "Képek"
 
 #: templates/backoffice/registration/_step_form.html:127
 #: templates/backoffice/registration/_step_intro.html:99
+#: templates/backoffice/registration/_step_thank_you.html:101
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
@@ -8816,16 +8850,19 @@ msgstr ""
 
 #: templates/backoffice/registration/_step_form.html:128
 #: templates/backoffice/registration/_step_intro.html:100
+#: templates/backoffice/registration/_step_thank_you.html:102
 msgid "No images uploaded yet."
 msgstr "Még nincs feltöltött kép."
 
 #: templates/backoffice/registration/_step_form.html:137
 #: templates/backoffice/registration/_step_intro.html:110
+#: templates/backoffice/registration/_step_thank_you.html:112
 msgid "Documents"
 msgstr "Dokumentumok"
 
 #: templates/backoffice/registration/_step_form.html:139
 #: templates/backoffice/registration/_step_intro.html:112
+#: templates/backoffice/registration/_step_thank_you.html:114
 msgid "No documents uploaded yet."
 msgstr "Még nincs feltöltött dokumentum."
 
@@ -8932,6 +8969,36 @@ msgstr "Közzététel"
 #: templates/backoffice/registration/_step_preview.html:120
 msgid "Unpublish"
 msgstr "Közzététel visszavonása"
+
+#: templates/backoffice/registration/_step_thank_you.html:45
+msgid "Choose what respondents see after they send the form."
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:48
+msgid "Which thank-you page to show"
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:49
+msgid "Standard thank-you page"
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:49
+#: templates/backoffice/registration/_step_thank_you.html:69
+#: templates/backoffice/registration/_step_thank_you.html:74
+msgid "Your own thank-you page"
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:51
+msgid "A short thank-you, in the language the respondent is viewing the page in."
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:58
+msgid "Fill with starter content"
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:87
+msgid "View the thank-you page (opens in a new tab)"
+msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:36
 msgid "Rows stored:"
@@ -11355,7 +11422,7 @@ msgstr "A regisztrációját megkaptuk"
 msgid "We'll be in touch."
 msgstr "Jelentkezünk."
 
-#: templates/register/thank_you_default.html:14
+#: templates/register/thank_you_default.html:13
 msgid "Please click here if you wish to start a new registration."
 msgstr "Kattintson ide, ha új regisztrációt szeretne kezdeni."
 

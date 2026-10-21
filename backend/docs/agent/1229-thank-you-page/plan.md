@@ -1,7 +1,7 @@
 # 1229 — Edit the thank-you page
 
-Status: draft plan, third round — all questions resolved, ready for a final
-read before implementing.
+Status: implemented — all phases below are done. (Planning: all questions
+resolved over three rounds of review.)
 
 ## Implementation phases
 
@@ -12,7 +12,22 @@ read before implementing.
 - [x] P5. Backoffice step: template, stepper, saving
 - [x] P6. JS round-trip test against a fixture of the starter
 - [x] P7. E2E journey and BDD scenario
-- [ ] P8. Docs and translation catalogues
+- [x] P8. Docs and translation catalogues
+
+### Where the implementation differs from the plan below
+
+- The radio group posts `thank_you_page` = `standard` | `own`, not
+  `thank_you_use_default`; the column and domain attribute keep that name.
+- `update_thank_you_html` grew a keyword-only `use_default=False` rather than a
+  new `update_thank_you` function, so existing callers keep their meaning.
+- The render fallback (log, then the standard page) lives in the public route,
+  not the service, which has no logger; `render_thank_you_html` raises.
+- `STARTER_THANK_YOU_HTML` is indented, as DjHTML formats its fixture
+  (`tests/fixtures/registration_thank_you/starter.html`); the round trip
+  ignores the indentation.
+- The BDD scenarios open the public thank-you URL directly rather than send
+  the form, whose bot protection makes a fast scripted submission unreliable.
+  A third scenario covers the editor mounted while hidden, then shown.
 
 ## Goal
 
