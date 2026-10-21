@@ -83,6 +83,7 @@ from opendlp.service_layer.registration_page_service import (
     deletable_registration_page_ids,
     delete_registration_page,
     fill_empty_registration_form_html,
+    fill_empty_thank_you_html,
     generate_starter_form_html_variants,
     get_registration_page_by_slug,
     get_registration_page_with_source,
@@ -95,6 +96,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page,
     update_registration_page_html,
     update_registration_page_intro_html,
+    update_thank_you_html,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
@@ -264,6 +266,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             intro_content = html.intro_html
             content_style = html.content_style
             thank_you_html = registration_page.thank_you_html
+            thank_you_use_default = registration_page.thank_you_use_default
             registration_status = registration_page.status.value  # "TEST", "PUBLISHED", or "CLOSED"
 
             # Build registration URLs and a QR code for the short URL, when configured
@@ -329,6 +332,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             intro_content=intro_content,
             content_style=content_style,
             thank_you_html=thank_you_html,
+            thank_you_use_default=thank_you_use_default,
             has_registration_page=True,
             images=images,
             documents=documents,
@@ -412,7 +416,7 @@ def _handle_registration_action(
 IMAGE_WIDTH_MIN = 20
 IMAGE_WIDTH_MAX = 2000
 
-_SECTIONS = ("page", "intro", "form", "email", "preview")
+_SECTIONS = ("page", "intro", "form", "thank-you", "email", "preview")
 _SAVE_ACTIONS = frozenset({"save", "save_and_next"})
 _LIFECYCLE_ACTIONS = frozenset({"publish", "unpublish", "close", "reopen"})
 
@@ -428,7 +432,7 @@ def _save_origin() -> str:
 
 def _post_action_section(action: str, origin: str) -> str:
     """Where to land after a successful action that stays in the editor:
-    save_and_next advances to the next step (page → intro → form → email),
+    save_and_next advances to the next step (page → intro → form → thank-you → email),
     unpublish/reopen return to the preview step (where their buttons live), and
     plain save returns to the step it came from, as does save_and_next from the
     last step, which has nowhere to advance to. Publish and close never reach
@@ -449,7 +453,8 @@ def _posted_content_style() -> ContentStyle | None:
 
 
 def _apply_posted_html(uow: AbstractUnitOfWork, page: RegistrationPage) -> None:
-    """Persist whichever HTML the post carries: the intro step's or the form step's.
+    """Persist whichever HTML the post carries: the intro step's, the form step's or
+    the thank-you step's.
 
     Only save-family actions carry HTML content. Publish/close/etc post from
     buttons that don't render the editor, so guard against blanking the HTML.
@@ -465,6 +470,16 @@ def _apply_posted_html(uow: AbstractUnitOfWork, page: RegistrationPage) -> None:
         fill_empty_registration_form_html(uow, current_user.id, page.id, fill_style)
     elif "html_content" in request.form:
         update_registration_page_html(uow, current_user.id, page.id, request.form["html_content"])
+    if request.form.get("fill_thank_you"):
+        fill_empty_thank_you_html(uow, current_user.id, page.id)
+    elif "thank_you_page" in request.form:
+        update_thank_you_html(
+            uow,
+            current_user.id,
+            page.id,
+            request.form.get("thank_you_html", page.thank_you_html),
+            use_default=request.form["thank_you_page"] == "standard",
+        )
 
 
 def _apply_page_settings(uow: AbstractUnitOfWork, page: RegistrationPage) -> RegistrationPage:
@@ -517,10 +532,11 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
     """Save the registration HTML and/or trigger a lifecycle transition.
 
     Actions:
-      - save            → update the name and URLs, the intro or the form HTML;
+      - save            → update the name and URLs, the intro, the form HTML or
+                          the thank-you page;
                           land back in read-only on the step it was posted from.
       - save_and_next   → as save, then advance to the next step (page → intro
-                          → form → auto-reply email).
+                          → form → thank-you page → auto-reply email).
       - publish         → transition TEST → PUBLISHED. No HTML update. Lands on
                           the pages list — the editor modal is done.
       - unpublish       → transition PUBLISHED → TEST (back to test mode); stays

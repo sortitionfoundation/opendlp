@@ -1,5 +1,5 @@
 {#
-ABOUTME: Step 4 of the registration editor - the auto-reply email template
+ABOUTME: Step 5 of the registration editor - the auto-reply email template
 ABOUTME: Included by assembly_registration.html when ?section=email
 #}
 {% from "backoffice/components/button.html" import button %}
@@ -15,7 +15,7 @@ ABOUTME: Included by assembly_registration.html when ?section=email
     {% set email_edit_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email', edit='1') %}
     {% set email_view_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email') %}
     {% set preview_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='preview') %}
-    {% set back_to_form_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='form') %}
+    {% set back_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='thank-you') %}
                     {# Readiness banner — surfaces problems that would stop the auto-reply from actually being delivered #}
     {% for problem in email_readiness_problems %}
         {% set is_error = problem.severity == "error" %}
@@ -52,7 +52,7 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                            available even before a template exists. #}
         <div class="wizard-footer" x-scroll-preserve-links>
             <div class="wizard-footer-box">
-                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
+                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_url) }}</span>
                 {{ button(_("Next →"), variant="primary", href=preview_url) }}
             </div>
         </div>
@@ -270,7 +270,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                     </span>
                     {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
                 {% else %}
-                    <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
+                    <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_url) }}</span>
                     {{ button(_("Next →"), variant="primary", href=preview_url) }}
                 {% endif %}
             </div>
