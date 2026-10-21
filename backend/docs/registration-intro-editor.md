@@ -3,8 +3,9 @@
 The intro is the HTML shown above a registration page's form. Authors edit it
 in a **visual editor**, with a switch to the **HTML** view. This page says what
 the visual editor keeps, what makes it fall back to HTML, what an edit in it
-changes, and how the **intro style** works. The auto-reply email's body uses
-the same editor, with less in it; see [The auto-reply email](#the-auto-reply-email).
+changes, and how the **intro style** works. The thank-you page uses the same
+editor; see [The thank-you page](#the-thank-you-page). The auto-reply email's
+body uses it too, with less in it; see [The auto-reply email](#the-auto-reply-email).
 It is for developers, and for anyone supporting an author who asks why their
 intro "opens as HTML".
 
@@ -208,6 +209,44 @@ The visual editor previews the chosen style as you switch between the options.
 
 The form below the intro is never given default classes; it carries its own.
 The code is `src/opendlp/domain/html_default_classes.py`.
+
+## The thank-you page
+
+The **Thank-you page** step chooses what a respondent sees after sending the
+form:
+
+- **Standard thank-you page** (`thank_you_use_default`, on for a new page):
+  `templates/register/thank_you_default.html`, a short confirmation in the
+  language the respondent is viewing the page in, with a link back to the
+  form.
+- **Your own thank-you page**: the page's `thank_you_html`, in the same
+  visual editor as the intro, images and tables included. It is shown in the
+  intro's style, so under the GOV.UK style a plain paragraph gets
+  `govuk-body` as it would in the intro.
+
+Switching to the standard page keeps the page's own HTML, so an author can
+try the standard page and switch back. Own HTML that is blank shows the
+standard page too.
+
+While the saved HTML is blank, the read-only step offers **Fill with starter
+content**, as the form step offers its fills. It writes
+`STARTER_THANK_YOU_HTML` (`src/opendlp/domain/registration_page.py`) and
+switches to it. The starter is in English, whatever the page's language.
+
+Own HTML can use three variables, and no others:
+
+- `{{ assembly_title }}` and `{{ assembly_question }}`, as in the intro;
+- `{{ restart_url }}`, the page's registration form, for a link to register
+  someone else.
+
+Nothing about the respondent is on offer: the thank-you page is a plain GET
+after a redirect, and does not know who registered.
+
+A broken thank-you page would show *after* the registration has been saved,
+so its HTML is checked harder than the intro's. Saving own HTML with a
+template syntax error or an unknown variable is refused, and so is
+publishing a page that holds one. If it still fails when shown, the error is
+logged and the respondent gets the standard page.
 
 ## The auto-reply email
 
