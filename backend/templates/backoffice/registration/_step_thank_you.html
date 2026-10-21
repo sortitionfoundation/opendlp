@@ -1,0 +1,147 @@
+{#
+ABOUTME: Step 4 of the registration editor - the standard thank-you page or the page's own HTML
+ABOUTME: Included by assembly_registration.html when ?section=thank-you
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import textarea, radio_group %}
+{% from "backoffice/registration/_assets.html" import asset_list %}
+<div id="reg-steps-panel-thank-you"
+     role="tabpanel"
+     aria-labelledby="reg-steps-tab-thank-you"
+     tabindex="0">
+    {% set edit_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="thank-you", edit="1") %}
+    {% set view_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="thank-you") %}
+    {% set next_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="email") %}
+    {% set back_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="form") %}
+    {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
+    {% set thank_you_choice = "standard" if thank_you_use_default else "own" %}
+    <form method="post"
+          action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id, url_slug=registration_page.url_slug) }}"
+          x-data
+          x-preserve-scroll-on-submit
+          {% if edit_mode %}@input="markEditDirty()" @change="markEditDirty()" @submit="allowLeave()"{% endif %}>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="step" value="thank-you" />
+        <div class="flex flex-col lg:flex-row gap-6">
+            <div class="flex-1 min-w-0">
+                <section class="rounded-lg p-6"
+                         style="background-color: var(--color-tables-cards);
+                                border: 1px solid var(--color-borders-dividers)">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Thank-you page") }}</h2>
+                        <div class="flex items-center gap-2" x-scroll-preserve-links>
+                            {% if edit_mode %}
+                                {{ button(_("Cancel"), variant="secondary", href=view_url, attrs='@click="guardLeave($event)"') }}
+                                {{ button(save_label, type="submit", variant="primary", attrs='name="action" value="save"') }}
+                            {% elif registration_status != "CLOSED" %}
+                                {{ button(_("Edit"), variant="secondary", href=edit_url) }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {# A data-only scope: the CSP Alpine build reads plain properties from an
+                       inline object, and the radios' x-model shows the editor only for own HTML. #}
+                    <div class="space-y-4" x-data="{ thankYouChoice: '{{ thank_you_choice }}' }">
+                        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("Choose what respondents see after they send the form.") }}
+                        </p>
+                        {{ radio_group(name="thank_you_page",
+                        label=_("Which thank-you page to show"),
+                        options=[{"value": "standard", "label": _("Standard thank-you page")}, {"value": "own", "label": _("Your own thank-you page")}],
+                        value=thank_you_choice,
+                        option_info={"standard": _("A short thank-you, in the language the respondent is viewing the page in.")},
+                        disabled=not edit_mode,
+                        dim=false,
+                        attrs='x-model="thankYouChoice"') }}
+                        {# Shown like the form step's fill buttons: only while there is no HTML to lose. #}
+                        {% if not edit_mode and registration_status != "CLOSED" and not thank_you_html | trim %}
+                            <div class="flex flex-wrap gap-2">
+                                {{ button(_("Fill with starter content"), type="submit", variant="secondary", attrs='name="fill_thank_you" value="1"') }}
+                            </div>
+                        {% endif %}
+                        {# Hidden, not removed, while the standard page is chosen: the textarea
+                           still posts, so switching back and forth before saving keeps the HTML. #}
+                        <div x-show="thankYouChoice === 'own'"
+                             {% if thank_you_use_default %}style="display: none;"{% endif %}>
+                            {% set textarea_attrs %}
+                                {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                            {% endset %}
+                            {{ textarea(name="thank_you_html",
+                            label=_("Your own thank-you page"),
+                            value=thank_you_html,
+                            rows=15,
+                            code_editor=true,
+                            rich_editor=true,
+                            rich_editor_label=_("Your own thank-you page"),
+                            rich_editor_images=true,
+                            rich_editor_image_min_width=image_width_min,
+                            rich_editor_tables=true,
+                            rich_editor_editable=edit_mode,
+                            rich_editor_style=content_style.value,
+                            rich_editor_variable_example="{{ assembly_title }}",
+                            attrs=textarea_attrs|trim) }}
+                        </div>
+                        <p class="text-body-sm">
+                            <a class="govuk-link"
+                               href="{{ url_for('registration.thank_you', url_slug=registration_page.url_slug) }}"
+                               target="_blank"
+                               rel="noopener">{{ _("View the thank-you page (opens in a new tab)") }}</a>
+                        </p>
+                    </div>
+                </section>
+            </div>
+            {% if edit_mode %}
+                <aside class="lg:flex-shrink-0 w-full lg:w-[400px] rounded-lg"
+                       style="background-color: var(--color-tables-cards);
+                              border: 1px solid var(--color-borders-dividers)">
+                    <div class="p-6 sticky top-4 w-full">
+                        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
+                        {{ asset_list(collection="images",
+                        item="image",
+                        heading=_("Images"),
+                        hint=_("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb),
+                        empty_text=_("No images uploaded yet."),
+                        upload_click="openImageUploadModal()",
+                        title_expr="image.alt || image.file_name",
+                        details_click="openImageDetailsModal(image)",
+                        copy_click="copyImageSnippet(image)",
+                        delete_click="deleteImage(image)",
+                        deleting_expr="imageBeingDeletedId === image.id",
+                        insert_click="insertImage(image)") }}
+                        {{ asset_list(collection="documents",
+                        item="doc",
+                        heading=_("Documents"),
+                        hint=_("PDF files only. Maximum file size: %(max)s MB per document.", max=max_pdf_upload_mb),
+                        empty_text=_("No documents uploaded yet."),
+                        upload_click="openDocumentUploadModal()",
+                        title_expr="doc.label || doc.file_name",
+                        details_click="openDocumentDetailsModal(doc)",
+                        copy_click="copyDocumentSnippet(doc)",
+                        delete_click="deleteDocument(doc)",
+                        deleting_expr="documentBeingDeletedId === doc.id",
+                        header_classes="mt-6 mb-4 pt-4",
+                        header_style="border-top: 1px solid var(--color-borders-dividers)") }}
+                    </div>
+                </aside>
+            {% endif %}
+        </div>
+    </form>
+    {# Sticky wizard footer - navigation only. #}
+    <div class="wizard-footer" x-scroll-preserve-links>
+        <div class="wizard-footer-box">
+            {% if edit_mode %}
+                <span class="mr-auto flex items-center gap-3">
+                    {{ button(_("← Back"), variant="tertiary", disabled=true, aria_describedby="editing-nav-hint") }}
+                    <span id="editing-nav-hint"
+                          class="text-body-sm"
+                          style="color: var(--color-secondary-text)">
+                        {{ _("Editing in progress — save or cancel to continue") }}
+                    </span>
+                </span>
+                {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
+            {% else %}
+                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_url) }}</span>
+                {{ button(_("Next →"), variant="primary", href=next_url) }}
+            {% endif %}
+        </div>
+    </div>
+</div>

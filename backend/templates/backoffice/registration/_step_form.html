@@ -18,7 +18,7 @@ ABOUTME: Included by assembly_registration.html when ?section=form
            use type="button" so they never accidentally submit the editor form. #}
     {% set edit_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="form", edit="1") %}
     {% set view_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="form") %}
-    {% set next_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="email") %}
+    {% set next_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="thank-you") %}
     {% set back_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="intro") %}
     {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
     {% if fields_changed_after_save | default(false) %}

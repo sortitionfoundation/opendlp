@@ -36,8 +36,18 @@ def _seed_page(
     intro_html="",
     name="English",
     language="",
+    thank_you_html="",
+    thank_you_use_default=True,
 ):
-    page = RegistrationPage(assembly_id=assembly_id, url_slug=url_slug, status=status, name=name, language=language)
+    page = RegistrationPage(
+        assembly_id=assembly_id,
+        url_slug=url_slug,
+        status=status,
+        name=name,
+        language=language,
+        thank_you_html=thank_you_html,
+        thank_you_use_default=thank_you_use_default,
+    )
     html = RegistrationPageHtml(registration_page_id=page.id, form_html=form_html, intro_html=intro_html)
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.registration_pages.add(page)
@@ -183,7 +193,7 @@ class TestEditModeRendersExpectedHtml:
 
         assert "<a href" in stepper_markup(view_body)
         assert "<a href" not in stepper_markup(edit_body)
-        assert stepper_markup(edit_body).count('aria-disabled="true"') == 5
+        assert stepper_markup(edit_body).count('aria-disabled="true"') == 6
 
     def test_view_mode_hides_assets_panel_and_edit_mode_shows_it(self, logged_in_admin, fake_store, assembly_id):
         """The Assets panel is an editing tool, so it only renders in edit mode."""
@@ -388,19 +398,21 @@ class TestIntroStep:
         assert "&lt;h1&gt;Welcome&lt;/h1&gt;" in body
         assert 'name="html_content"' not in body
 
-    def test_stepper_has_five_steps_starting_with_name_and_urls(self, logged_in_admin, fake_store, assembly_id):
+    def test_stepper_has_six_steps_starting_with_name_and_urls(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug").get_data(as_text=True)
 
         stepper = body.split('class="stepper"', 1)[1].split("</ol>", 1)[0]
-        assert stepper.count("<li") == 5
+        assert stepper.count("<li") == 6
         assert "Name and URLs" in stepper
         assert (
             stepper.index("?section=page")
             < stepper.index("?section=intro")
             < stepper.index("?section=form")
+            < stepper.index("?section=thank-you")
             < stepper.index("?section=email")
+            < stepper.index("?section=preview")
         )
 
     def test_intro_footer_goes_back_to_the_page_step(self, logged_in_admin, fake_store, assembly_id):
@@ -727,7 +739,7 @@ class TestIntroStep:
         assert response.status_code == 302
         assert "section=form" in response.location
 
-    @pytest.mark.parametrize("section", ["intro", "form"])
+    @pytest.mark.parametrize("section", ["intro", "form", "thank-you"])
     def test_each_step_posts_its_name(self, logged_in_admin, fake_store, assembly_id, section):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
@@ -753,6 +765,228 @@ class TestIntroStep:
         assert "edit=1" in response.location
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.registration_page_html_sources.get_by_page_id(page.id).intro_html == ""
+
+
+class TestThankYouStep:
+    """Step 4 of the editor: the standard thank-you page, or the page's own HTML."""
+
+    def _get(self, client, assembly_id, query=""):
+        return client.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=thank-you{query}").get_data(
+            as_text=True
+        )
+
+    def _save(self, client, assembly_id, **data):
+        return client.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "step": "thank-you", **data},
+        )
+
+    def _stored(self, fake_store, page):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            return uow.registration_pages.get(page.id)
+
+    def test_renders_its_panel_with_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(
+            fake_store,
+            assembly_id,
+            RegistrationPageStatus.TEST,
+            thank_you_html="<p>Thanks a lot</p>",
+            thank_you_use_default=False,
+        )
+
+        body = self._get(logged_in_admin, assembly_id)
+
+        assert 'id="reg-steps-panel-thank-you"' in body
+        assert "&lt;p&gt;Thanks a lot&lt;/p&gt;" in body
+        assert "readonly" in _extract_textarea(body, "thank_you_html")
+
+    def test_edit_mode_unlocks_the_editor_with_variables_and_images(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._get(logged_in_admin, assembly_id, "&edit=1")
+
+        assert "readonly" not in _extract_textarea(body, "thank_you_html")
+        assert 'data-rich-editor-for="thank_you_html"' in body
+        assert "{{ assembly_title }}" in body
+        assert 'data-command="image"' in body
+
+    def test_closed_page_stays_read_only(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
+
+        body = self._get(logged_in_admin, assembly_id, "&edit=1")
+
+        assert "readonly" in _extract_textarea(body, "thank_you_html")
+
+    def test_standard_page_is_chosen_and_the_editor_hidden_for_a_new_page(
+        self, logged_in_admin, fake_store, assembly_id
+    ):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._get(logged_in_admin, assembly_id, "&edit=1")
+
+        assert re.search(r'name="thank_you_page"\s+id="[^"]+"\s+value="standard"\s+checked', body)
+        assert re.search(r"x-show=\"thankYouChoice === 'own'\"\s+style=\"display: none;\"", body)
+
+    def test_own_page_is_chosen_and_the_editor_shown(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(
+            fake_store, assembly_id, RegistrationPageStatus.TEST, thank_you_html="<p>x</p>", thank_you_use_default=False
+        )
+
+        body = self._get(logged_in_admin, assembly_id, "&edit=1")
+
+        assert re.search(r'name="thank_you_page"\s+id="[^"]+"\s+value="own"\s+checked', body)
+        assert 'style="display: none;"' not in body.split("thankYouChoice === 'own'", 1)[1].split(">", 1)[0]
+
+    def test_links_to_the_public_thank_you_page_in_a_new_tab(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._get(logged_in_admin, assembly_id)
+
+        assert re.search(r'href="/register/my-slug/thank-you"\s+target="_blank"', body)
+
+    def test_footer_goes_back_to_the_form_and_on_to_the_email(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        footer = self._get(logged_in_admin, assembly_id).split('class="wizard-footer"', 1)[1]
+
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form" in footer
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=email" in footer
+
+    def test_the_neighbouring_steps_point_at_it(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        step_url = f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=thank-you"
+
+        for section in ("form", "email"):
+            body = logged_in_admin.get(
+                f"/backoffice/assembly/{assembly_id}/registration/my-slug?section={section}"
+            ).get_data(as_text=True)
+            assert step_url in body.split('class="wizard-footer"', 1)[1], section
+
+    def test_save_stores_own_html_and_returns_to_the_step(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = self._save(logged_in_admin, assembly_id, thank_you_page="own", thank_you_html="<p>Ta</p>")
+
+        assert response.status_code == 302
+        assert "section=thank-you" in response.location
+        assert "edit=1" not in response.location
+        stored = self._stored(fake_store, page)
+        assert stored.thank_you_html == "<p>Ta</p>"
+        assert stored.thank_you_use_default is False
+
+    def test_choosing_the_standard_page_keeps_the_html(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(
+            fake_store, assembly_id, RegistrationPageStatus.TEST, thank_you_html="<p>x</p>", thank_you_use_default=False
+        )
+
+        self._save(logged_in_admin, assembly_id, thank_you_page="standard", thank_you_html="<p>x</p>")
+
+        stored = self._stored(fake_store, page)
+        assert stored.thank_you_use_default is True
+        assert stored.thank_you_html == "<p>x</p>"
+
+    def test_save_and_next_advances_to_the_email(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save_and_next", "step": "thank-you", "thank_you_page": "standard", "thank_you_html": ""},
+        )
+
+        assert "section=email" in response.location
+
+    def test_save_and_next_from_the_form_advances_to_it(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save_and_next", "step": "form", "html_content": "<p>x</p>"},
+        )
+
+        assert "section=thank-you" in response.location
+
+    def test_broken_own_html_is_refused_back_in_edit_mode(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = self._save(logged_in_admin, assembly_id, thank_you_page="own", thank_you_html="<p>{{ name }}</p>")
+
+        assert "section=thank-you" in response.location
+        assert "edit=1" in response.location
+        with logged_in_admin.session_transaction() as session:
+            messages = [message for _, message in session.get("_flashes", [])]
+        assert any("{{ name }}" in message for message in messages)
+        assert self._stored(fake_store, page).thank_you_html == ""
+
+    def test_oversize_html_is_refused_back_in_edit_mode(self, logged_in_admin, fake_store, assembly_id, temp_env_vars):
+        temp_env_vars(REGISTRATION_THANK_YOU_HTML_MAX_BYTES="1024")
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = self._save(logged_in_admin, assembly_id, thank_you_page="own", thank_you_html="x" * 2000)
+
+        assert "edit=1" in response.location
+        assert self._stored(fake_store, page).thank_you_html == ""
+
+    def test_a_post_without_the_choice_leaves_the_thank_you_alone(self, logged_in_admin, fake_store, assembly_id):
+        """Other steps and lifecycle posts carry no thank-you fields."""
+        page = _seed_page(
+            fake_store, assembly_id, RegistrationPageStatus.TEST, thank_you_html="<p>x</p>", thank_you_use_default=False
+        )
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "step": "intro", "intro_content": "<h1>Hi</h1>"},
+        )
+
+        stored = self._stored(fake_store, page)
+        assert stored.thank_you_html == "<p>x</p>"
+        assert stored.thank_you_use_default is False
+
+    def test_blank_html_offers_the_starter(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._get(logged_in_admin, assembly_id)
+
+        assert re.search(r'name="fill_thank_you" value="1"><span>Fill with starter content</span>', body)
+
+    @pytest.mark.parametrize(
+        ("thank_you_html", "status", "edit"),
+        [
+            ("<p>x</p>", RegistrationPageStatus.TEST, ""),
+            ("", RegistrationPageStatus.TEST, "&edit=1"),
+            ("", RegistrationPageStatus.CLOSED, ""),
+        ],
+        ids=["has-html", "editing", "closed"],
+    )
+    def test_no_starter_is_offered_otherwise(
+        self, logged_in_admin, fake_store, assembly_id, thank_you_html, status, edit
+    ):
+        _seed_page(fake_store, assembly_id, status, thank_you_html=thank_you_html)
+
+        assert 'name="fill_thank_you"' not in self._get(logged_in_admin, assembly_id, edit)
+
+    def test_the_starter_fills_and_shows_the_page_and_lands_read_only(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        # The read-only textarea posts its (empty) content alongside the button.
+        response = self._save(logged_in_admin, assembly_id, thank_you_html="", fill_thank_you="1")
+
+        assert "section=thank-you" in response.location
+        assert "edit=1" not in response.location
+        stored = self._stored(fake_store, page)
+        assert "Thank you for registering" in stored.thank_you_html
+        assert stored.thank_you_use_default is False
+
+    def test_a_stale_starter_fill_leaves_the_html_alone(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, thank_you_html="<p>mine</p>")
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "step": "thank-you", "thank_you_html": "", "fill_thank_you": "1"},
+            follow_redirects=True,
+        )
+
+        assert "The thank-you page already has HTML, so it was left as it is" in response.get_data(as_text=True)
+        assert self._stored(fake_store, page).thank_you_html == "<p>mine</p>"
 
 
 class TestCodeEditorEnhancement:

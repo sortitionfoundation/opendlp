@@ -92,6 +92,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {"key": "page", "label": _("Name and URLs"), "href": section_base ~ "?section=page", "active": active_section == "page"},
                         {"key": "intro", "label": _("Intro"), "href": section_base ~ "?section=intro", "active": active_section == "intro"},
                         {"key": "form", "label": _("Form"), "href": section_base ~ "?section=form", "active": active_section == "form"},
+                        {"key": "thank-you", "label": _("Thank-you page"), "href": section_base ~ "?section=thank-you", "active": active_section == "thank-you"},
                         {"key": "email", "label": _("Auto-reply email"), "href": section_base ~ "?section=email", "active": active_section == "email"},
                         {"key": "preview", "label": _("Preview and publish"), "href": section_base ~ "?section=preview", "active": active_section == "preview"}
                         ],
@@ -99,7 +100,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         mode="tabs",
                         preserve_scroll=true,
                         disabled=edit_mode) }}
-            {# Whole-artifact status. Sits below the stepper so it applies to all five steps —
+            {# Whole-artifact status. Sits below the stepper so it applies to all six steps —
                the name and URLs, the intro, the form HTML, the auto-reply email, and the preview all
                share this state. #}
                         {% if registration_status == "TEST" %}
@@ -141,6 +142,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {% endif %}
                         {% if active_section == "form" %}
                             {% include "backoffice/registration/_step_form.html" %}
+                        {% endif %}
+                        {% if active_section == "thank-you" %}
+                            {% include "backoffice/registration/_step_thank_you.html" %}
                         {% endif %}
                         {% if active_section == "email" %}
                             {% include "backoffice/registration/_step_email.html" %}
