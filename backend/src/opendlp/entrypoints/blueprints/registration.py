@@ -420,15 +420,23 @@ def serve_registration_document(url_slug: str, document_name: str) -> ResponseRe
 @registration_bp.route("/register/<url_slug>/thank-you", methods=["GET"])
 @require_feature("registration_page")
 def thank_you(url_slug: str) -> ResponseReturnValue:
-    """Display the thank-you page after successful registration submission."""
+    """Display the thank-you page after successful registration submission.
+
+    The registration is already saved by now, so a page whose own HTML fails to
+    render gets the standard page rather than an error.
+    """
     uow = bootstrap.get_flask_uow()
 
     with uow:
         page = find_registration_page_by_url_slug(uow, url_slug)
-    if page is None:
-        abort(404)
-
-    custom_html = render_thank_you_html(page)
+        if page is None:
+            abort(404)
+        restart_url = registration_url(page.url_slug)
+        try:
+            custom_html = render_thank_you_html(uow, page, restart_url)
+        except Exception as e:
+            logger.exception("Thank-you page failed to render", registration_page_id=str(page.id), error=str(e))
+            custom_html = ""
 
     if custom_html.strip():
         return render_template(
@@ -436,7 +444,7 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
             custom_html=custom_html,
         )
 
-    return render_template("register/thank_you_default.html", referer=request.referrer or "")
+    return render_template("register/thank_you_default.html", restart_url=restart_url)
 
 
 @registration_bp.route("/r/<short_url_slug>", methods=["GET"])
