@@ -23,6 +23,7 @@ from opendlp.service_layer.registration_page_service import (
     publish_registration_page,
     update_registration_page_html,
     update_registration_page_intro_html,
+    update_thank_you_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
@@ -38,6 +39,7 @@ scenarios("../../features/backoffice-assembly-gsheet.feature")
 scenarios("../../features/backoffice-csv-upload.feature")
 scenarios("../../features/backoffice-registration-editor.feature")
 scenarios("../../features/backoffice-registration-visual-editor.feature")
+scenarios("../../features/backoffice-registration-thank-you.feature")
 scenarios("../../features/backoffice-registration-email-editor.feature")
 scenarios("../../features/organiser-assemblies.feature")
 
@@ -2606,3 +2608,120 @@ def spreadsheet_access_check_finishes(page: Page):
     expect(panel).to_be_visible()
     expect(panel.locator(".gsheet-access__pending")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT * 6)
     expect(panel).not_to_have_text("")
+
+
+# Thank-you step (features/backoffice-registration-thank-you.feature)
+
+THANK_YOU_EDITOR = "[data-rich-editor-for='thank_you_html']"
+VISUAL_THANK_YOU = f"{THANK_YOU_EDITOR} .ProseMirror"
+
+
+def _thank_you_step_url(title: str, test_database, edit: bool = False) -> str:
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    url = f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=thank-you"
+    return url + "&edit=1" if edit else url
+
+
+@given(parsers.parse('there is an assembly called "{title}" with its own thank-you page "{html}"'))
+def create_assembly_with_own_thank_you(title: str, html: str, admin_user, test_database):
+    create_test_assembly_with_registration_page(title, admin_user, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        registration_page = page_for_assembly(uow, assembly_id)
+        assert registration_page is not None
+        update_thank_you_html(uow, admin_user.id, registration_page.id, html)
+
+
+@when(parsers.parse('I visit the thank-you step for "{title}"'))
+def visit_thank_you_step(page: Page, title: str, test_database):
+    page.goto(_thank_you_step_url(title, test_database))
+
+
+@when(parsers.parse('I visit the thank-you step for "{title}" in edit mode'))
+def visit_thank_you_step_editing(page: Page, title: str, test_database):
+    page.goto(_thank_you_step_url(title, test_database, edit=True))
+
+
+@when("I fill the thank-you page with starter content")
+def fill_thank_you_starter(page: Page):
+    page.get_by_role("button", name="Fill with starter content", exact=True).click()
+    expect(page.locator("#reg-steps-panel-thank-you")).to_contain_text(
+        "Thank you for registering", timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I click Edit on the thank-you step")
+def click_edit_on_thank_you_step(page: Page):
+    page.locator("#reg-steps-panel-thank-you").get_by_role("button", name="Edit", exact=True).click()
+    page.wait_for_url(lambda url: "edit=1" in url, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the thank-you editor should be in its Visual view")
+def thank_you_editor_in_visual_view(page: Page):
+    editor = page.locator(THANK_YOU_EDITOR)
+    expect(editor.get_by_role("button", name="Visual", exact=True)).to_have_attribute(
+        "aria-pressed", "true", timeout=PLAYWRIGHT_TIMEOUT
+    )
+    expect(page.locator(VISUAL_THANK_YOU)).to_be_visible()
+    expect(editor.locator("[data-rich-editor-notice]")).to_be_hidden()
+
+
+@when(parsers.parse('I type "{text}" at the start of the visual thank-you editor'))
+def type_at_start_of_visual_thank_you(page: Page, text: str):
+    editor = page.locator(VISUAL_THANK_YOU)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.locator("p.govuk-body").first.click()
+    page.keyboard.press("Home")
+    page.keyboard.type(text)
+
+
+@when(parsers.parse('I open the public thank-you page for "{title}"'))
+def open_public_thank_you_page(page: Page, title: str, test_database):
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/register/{_page_slug(assembly_id, test_database)}/thank-you")
+
+
+@then(parsers.parse('the public page should show "{text}"'))
+def public_page_shows(page: Page, text: str):
+    expect(page.locator("main")).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I follow the "{name}" link'))
+def follow_link(page: Page, name: str):
+    page.get_by_role("link", name=name, exact=True).click()
+
+
+@then(parsers.parse('I should be on the public registration form for "{title}"'))
+def on_public_registration_form(page: Page, title: str, test_database):
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    page.wait_for_url(f"{Urls.base}/register/{slug}", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the thank-you editor should be shown")
+def thank_you_editor_shown(page: Page):
+    expect(page.locator(THANK_YOU_EDITOR)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the thank-you editor should be hidden")
+def thank_you_editor_hidden(page: Page):
+    expect(page.locator(THANK_YOU_EDITOR)).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I choose the "{label}" option'))
+def choose_option(page: Page, label: str):
+    page.get_by_role("radio", name=label).check()
+
+
+@then(parsers.parse('the visual thank-you editor should show "{text}"'))
+def visual_thank_you_shows(page: Page, text: str):
+    expect(page.locator(VISUAL_THANK_YOU)).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I type "{text}" into the visual thank-you editor'))
+def type_into_visual_thank_you(page: Page, text: str):
+    editor = page.locator(VISUAL_THANK_YOU)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.click()
+    page.keyboard.type(text)

@@ -11,7 +11,7 @@ read before implementing.
 - [x] P4. Public route and the standard page's restart link
 - [x] P5. Backoffice step: template, stepper, saving
 - [x] P6. JS round-trip test against a fixture of the starter
-- [ ] P7. E2E journey and BDD scenario
+- [x] P7. E2E journey and BDD scenario
 - [ ] P8. Docs and translation catalogues
 
 ## Goal
