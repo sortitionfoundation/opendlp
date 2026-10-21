@@ -714,6 +714,7 @@ registration_pages = Table(
     ),
     Column("source_type", EnumAsString(RegistrationPageSource, 32), nullable=False),
     Column("thank_you_html", Text, nullable=False, default=""),
+    Column("thank_you_use_default", Boolean, nullable=False, default=True, server_default=text("true")),
     Column("activity", RegistrationPageActivityListJSON, nullable=False, default=list),
     Column(
         "auto_reply_email_template_id",

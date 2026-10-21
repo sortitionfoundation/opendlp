@@ -3,6 +3,17 @@
 Status: draft plan, third round — all questions resolved, ready for a final
 read before implementing.
 
+## Implementation phases
+
+- [x] P1. Domain: starter, flag, variables, validation, rendering, readiness
+- [x] P2. ORM column, migration, test cleanup
+- [x] P3. Service layer: seeding, duplicate, save with flag, fill, render with fallback
+- [x] P4. Public route and the standard page's restart link
+- [ ] P5. Backoffice step: template, stepper, saving
+- [x] P6. JS round-trip test against a fixture of the starter
+- [ ] P7. E2E journey and BDD scenario
+- [ ] P8. Docs and translation catalogues
+
 ## Goal
 
 Give authors a way to set what a respondent sees after sending the form.

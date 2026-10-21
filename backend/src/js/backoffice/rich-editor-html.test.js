@@ -1,5 +1,5 @@
 // ABOUTME: Tests for the visual editor's round-trip check, HTML normalisation and HTML layout.
-// ABOUTME: Uses the starter intros, and the real intros and auto-replies in tests/fixtures/.
+// ABOUTME: Uses the starter intros and thank-you, and the real intros and auto-replies in tests/fixtures/.
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -404,6 +404,24 @@ describe("the real auto-replies", () => {
     expect(contentOf(roundTrip(html, emailExtensions))).toEqual(
       contentOf(html),
     );
+  });
+});
+
+describe("the starter thank-you page", () => {
+  // A Python test checks this fixture matches STARTER_THANK_YOU_HTML.
+  const starter = readFileSync(
+    resolve(FIXTURE_DIR, "registration_thank_you", "starter.html"),
+    "utf8",
+  );
+
+  it("round-trips cleanly, so it opens in the visual editor", () => {
+    expect(roundTripsCleanly(starter, extensions)).toBe(true);
+  });
+
+  it("keeps its restart link's variable address", () => {
+    expect(contentOf(roundTrip(starter, extensions)).hrefs).toEqual([
+      "{{ restart_url }}",
+    ]);
   });
 });
 

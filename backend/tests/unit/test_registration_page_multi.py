@@ -238,6 +238,7 @@ class TestDuplicateRegistrationPage:
         assert result[1].intro_html == "<h1>Welcome</h1>"
         assert result[1].content_style == ContentStyle.PLAIN
         assert result[0].thank_you_html == "<p>thanks</p>"
+        assert result[0].thank_you_use_default is False
 
     def test_copy_starts_in_test_with_its_own_slugs(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
