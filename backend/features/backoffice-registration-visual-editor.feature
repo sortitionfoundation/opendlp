@@ -123,6 +123,18 @@ Feature: Backoffice registration visual intro editor
     Then the visual intro editor should show the image "Pasted logo"
     And the assets panel should list the image "Pasted logo"
 
+  Scenario: An image copied from the assets panel pastes into the visual editor as an image
+    Given there is an assembly called "Visual Copy Image Assembly" with an empty intro
+    When I visit the registration intro editor for "Visual Copy Image Assembly"
+    And I paste an image file called "copied.png" into the visual intro editor
+    And I give the image the alt text "Copied logo" and upload it
+    Then the visual intro editor should show the image "Copied logo"
+    When I select everything in the visual intro editor
+    And I press "Delete"
+    And I copy the image "Copied logo" from the assets panel
+    And I paste into the visual intro editor
+    Then the visual intro editor should show the image "Copied logo"
+
   Scenario: The read-only intro view shows the visual editor without a toolbar
     Given there is an assembly called "Visual Read Only Assembly" with the intro "<h1>Read only title</h1><p><img src='/static/img/logosortition.svg' alt='Logo'></p>"
     When I visit the read-only registration intro for "Visual Read Only Assembly"

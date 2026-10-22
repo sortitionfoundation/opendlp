@@ -8,6 +8,7 @@ import { createSchemaExtensions } from "./rich-editor-schema.js";
 import {
   formatHtml,
   normaliseHtml,
+  relativiseOwnUrls,
   roundTrip,
   roundTripsCleanly,
 } from "./rich-editor-html.js";
@@ -594,5 +595,39 @@ describe("formatHtml", () => {
     expect(formatted).not.toBe(visual);
     expect(roundTrip(formatted, extensions)).toBe(visual);
     expect(roundTripsCleanly(formatted, extensions)).toBe(true);
+  });
+});
+
+describe("relativiseOwnUrls", () => {
+  const ORIGIN = "https://opendlp.example";
+
+  it("gives an image on this site as a path", () => {
+    expect(
+      relativiseOwnUrls(
+        '<img src="https://opendlp.example/register-assets/images/a.png" alt="A">',
+        ORIGIN,
+      ),
+    ).toBe('<img src="/register-assets/images/a.png" alt="A">');
+  });
+
+  it("gives a link on this site as a path, keeping its query and fragment", () => {
+    expect(
+      relativiseOwnUrls(
+        '<a href="https://opendlp.example/register/x/documents/a.pdf?v=1#p2">Leaflet</a>',
+        ORIGIN,
+      ),
+    ).toBe('<a href="/register/x/documents/a.pdf?v=1#p2">Leaflet</a>');
+  });
+
+  it("leaves URLs on other sites alone", () => {
+    const html =
+      '<p><a href="https://other.example/page">Other</a><img src="https://other.example/a.png" alt="B"></p>';
+    expect(relativiseOwnUrls(html, ORIGIN)).toBe(html);
+  });
+
+  it("leaves paths and variables alone", () => {
+    const html =
+      '<p><a href="{{ form_url }}">Form</a><img src="/static/a.png" alt="C"></p>';
+    expect(relativiseOwnUrls(html, ORIGIN)).toBe(html);
   });
 });
