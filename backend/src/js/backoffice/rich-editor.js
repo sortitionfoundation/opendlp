@@ -61,6 +61,7 @@ export function mountRichEditor(textarea) {
   const modeButtons = controls.querySelectorAll("[data-rich-editor-mode]");
   const toolbar = controls.querySelector("[data-rich-editor-toolbar]");
   const imagesAllowed = textarea.dataset.richEditorImages === "true";
+  const absoluteLinks = textarea.dataset.richEditorAbsoluteLinks === "true";
   const extensions = createSchemaExtensions({
     images: imagesAllowed,
     imageMinWidth: Number(controls.dataset.imageMinWidth) || 0,
@@ -119,8 +120,9 @@ export function mountRichEditor(textarea) {
         id: `${textarea.id}-visual`,
         class: "rich-editor__content",
       },
+      // An email is read in an inbox, not on this site, so its links stay absolute.
       transformPastedHTML: (html) =>
-        relativiseOwnUrls(html, window.location.origin),
+        absoluteLinks ? html : relativiseOwnUrls(html, window.location.origin),
       handleDoubleClickOn: (_view, _pos, node, nodePos) => {
         if (node.type.name !== "image" || !imagesAllowed || readOnly) {
           return false;
@@ -146,7 +148,7 @@ export function mountRichEditor(textarea) {
           editorId: textarea.id,
           href: editor.getAttributes("link").href || "",
           text: editor.state.doc.textBetween(from, to, " "),
-          absoluteOnly: textarea.dataset.richEditorAbsoluteLinks === "true",
+          absoluteOnly: absoluteLinks,
         },
       }),
     );
