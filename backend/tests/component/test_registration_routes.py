@@ -4,6 +4,7 @@
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from flask.testing import FlaskClient
@@ -330,7 +331,17 @@ class TestThankYouPage:
         assert b"Custom Thank You" not in response.data
         assert b"Thank you for registering" in response.data
 
-    def test_show_own_shows_the_own_html_while_the_standard_page_is_chosen(
+    def test_show_own_shows_the_own_html_behind_the_standard_page_to_someone_who_can_view_the_assembly(
+        self, logged_in_admin: FlaskClient, fake_store, admin_user: User
+    ) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_thank_you_html(uow, admin_user.id, page.id, "<h1>Custom Thank You</h1>", use_default=True)
+
+        response = logged_in_admin.get(f"/register/{page.url_slug}/thank-you?show=own")
+        assert b"Custom Thank You" in response.data
+
+    def test_show_own_is_ignored_for_a_visitor_who_is_not_signed_in(
         self, client: FlaskClient, fake_store, admin_user: User
     ) -> None:
         page = _seed_published_page(fake_store, admin_user)
@@ -338,16 +349,27 @@ class TestThankYouPage:
             update_thank_you_html(uow, admin_user.id, page.id, "<h1>Custom Thank You</h1>", use_default=True)
 
         response = client.get(f"/register/{page.url_slug}/thank-you?show=own")
-        assert b"Custom Thank You" in response.data
+        assert b"Custom Thank You" not in response.data
+        assert b"Thank you for registering" in response.data
+
+    def test_show_own_is_ignored_for_someone_who_cannot_view_the_assembly(
+        self, logged_in_user: FlaskClient, fake_store, admin_user: User
+    ) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_thank_you_html(uow, admin_user.id, page.id, "<h1>Custom Thank You</h1>", use_default=True)
+
+        response = logged_in_user.get(f"/register/{page.url_slug}/thank-you?show=own")
+        assert b"Custom Thank You" not in response.data
 
     def test_show_standard_shows_the_standard_page_while_own_html_is_chosen(
-        self, client: FlaskClient, fake_store, admin_user: User
+        self, logged_in_admin: FlaskClient, fake_store, admin_user: User
     ) -> None:
         page = _seed_published_page(fake_store, admin_user)
         with FakeUnitOfWork(store=fake_store) as uow:
             update_thank_you_html(uow, admin_user.id, page.id, "<h1>Custom Thank You</h1>")
 
-        response = client.get(f"/register/{page.url_slug}/thank-you?show=standard")
+        response = logged_in_admin.get(f"/register/{page.url_slug}/thank-you?show=standard")
         assert b"Custom Thank You" not in response.data
         assert b"Thank you for registering" in response.data
 
@@ -387,6 +409,18 @@ class TestThankYouPage:
         assert response.status_code == 200
         assert b"Thank you for registering" in response.data
         assert "Thank-you page failed to render" in caplog.text
+
+    def test_an_error_that_is_not_the_template_s_is_not_swallowed(
+        self, client: FlaskClient, fake_store, admin_user: User
+    ) -> None:
+        """Only a broken template falls back; anything else is a bug for the error handler."""
+        page = _seed_published_page(fake_store, admin_user)
+
+        with (
+            patch("opendlp.entrypoints.blueprints.registration.render_thank_you_html", side_effect=RuntimeError("x")),
+            pytest.raises(RuntimeError),
+        ):
+            client.get(f"/register/{page.url_slug}/thank-you")
 
 
 class TestShortUrlRedirect:
