@@ -1,4 +1,17 @@
-<p>Hi {{ respondent.first_name_or_friend }},</p>
-<p>Thanks for registering for <strong>{{ assembly.title }}</strong>.</p>
-<p>We'll be in touch about the assembly on {{ assembly.first_assembly_date }}.</p>
-<p>Best wishes,<br>The team</p>
+<p>Dear {{ respondent.first_name_or_friend }},</p>
+<p>Thank you for registering your interest in <strong>{{ assembly.title }}</strong>, which will look at the question:</p>
+<p><strong>{{ assembly.question }}</strong></p>
+<p>The assembly will meet on these dates:</p>
+<ul>
+    <li>[Date, time and place of each session]</li>
+</ul>
+<p><strong>What happens next</strong></p>
+<p>When registration closes, we will choose the members of the assembly by lottery from everyone who registered. Depending on how many people register, you will usually have around a [10 to 20] in 100 chance of being selected.</p>
+<ul>
+    <li><strong>[Date]:</strong> if you have been selected, we will tell you by email or phone, and arrange a short call to answer any questions you have.</li>
+    <li><strong>[Date]:</strong> if you have not been selected, we will tell you by email.</li>
+    <li><strong>[Date]:</strong> the first session of the assembly.</li>
+</ul>
+<p>You can read how we look after your details in our privacy policy: [link to your privacy policy].</p>
+<p>If you have any questions, or your plans change and you can no longer take part, please reply to this email as soon as you can.</p>
+<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>
