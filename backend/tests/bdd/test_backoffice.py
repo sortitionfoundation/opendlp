@@ -2308,6 +2308,12 @@ def preview_shows_h2(page: Page, text: str):
     expect(_preview_frame(page).get_by_role("heading", level=2, name=text)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then(parsers.parse('the registration preview should show the paragraph "{text}" centred'))
+def preview_shows_centred_paragraph(page: Page, text: str):
+    paragraph = _preview_frame(page).get_by_text(text, exact=True)
+    expect(paragraph).to_have_css("text-align", "center", timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then(parsers.parse('the registration preview should show the image "{alt}"'))
 def preview_shows_image(page: Page, alt: str):
     image = _preview_frame(page).get_by_role("img", name=alt)

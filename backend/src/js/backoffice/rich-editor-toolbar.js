@@ -63,6 +63,22 @@ export const COMMANDS = {
     run: (chain) => chain.toggleStrike(),
     active: (editor) => editor.isActive("strike"),
   },
+  // Left is the default, so choosing it removes any alignment rather than
+  // writing text-align: left into the HTML.
+  alignLeft: {
+    run: (chain) => chain.unsetTextAlign(),
+    active: (editor) =>
+      !editor.isActive({ textAlign: "center" }) &&
+      !editor.isActive({ textAlign: "right" }),
+  },
+  alignCenter: {
+    run: (chain) => chain.toggleTextAlign("center"),
+    active: (editor) => editor.isActive({ textAlign: "center" }),
+  },
+  alignRight: {
+    run: (chain) => chain.toggleTextAlign("right"),
+    active: (editor) => editor.isActive({ textAlign: "right" }),
+  },
   bulletList: {
     run: (chain) => chain.toggleBulletList(),
     active: (editor) => editor.isActive("bulletList"),

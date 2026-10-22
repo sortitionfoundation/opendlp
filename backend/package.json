@@ -31,6 +31,7 @@
     "@tiptap/extension-file-handler": "^3.31.4",
     "@tiptap/extension-image": "^3.31.4",
     "@tiptap/extension-table": "^3.31.4",
+    "@tiptap/extension-text-align": "^3.31.4",
     "@tiptap/extension-text-style": "^3.31.4",
     "@tiptap/pm": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@tailwindcss/cli": "^4.3.3",
     "ajv": "^8.20.0",
     "esbuild": "^0.28.1",
     "eslint": "^10.8.1",
@@ -52,7 +54,6 @@
     "prettier": "^3.9.6",
     "sass": "^1.103.1",
     "tailwindcss": "^4.3.3",
-    "@tailwindcss/cli": "^4.3.3",
     "vitest": "^4.1.11"
   }
 }

@@ -480,6 +480,7 @@ class TestVisualEditor:
         assert 'data-rich-editor-for="template_body_html"' in body
         assert 'aria-controls="template_body_html-visual"' in body
         assert 'data-command="link"' in body
+        assert 'data-command="alignCenter"' in body
         assert 'data-command="image"' not in body
         assert 'data-command="imageSize"' not in body
         assert 'data-command="table"' not in body

@@ -544,6 +544,8 @@ class TestIntroStep:
         assert 'data-rich-editor-images="true"' in body
         assert 'role="toolbar"' in body
         assert 'data-command="image"' in body
+        for command in ("alignLeft", "alignCenter", "alignRight"):
+            assert f'data-command="{command}"' in body
         assert 'data-rich-editor-tables="true"' in body
         assert 'data-command="table"' in body
         assert 'id="intro_content-table-menu"' in body

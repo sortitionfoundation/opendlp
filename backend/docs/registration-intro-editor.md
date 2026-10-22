@@ -30,8 +30,9 @@ intro to follow a later change to the assembly.
 
 - **Visual** is a [Tiptap](https://tiptap.dev/) editor
   (`src/js/backoffice/rich-editor.js`). Its toolbar offers text, headings 1–3,
-  bold, italic, underline, strikethrough, bulleted and numbered lists, quotes,
-  links, images, horizontal lines, tables, undo and redo.
+  bold, italic, underline, strikethrough, left, centre and right alignment,
+  bulleted and numbered lists, quotes, links, images, horizontal lines,
+  tables, undo and redo.
 - **HTML** is the CodeMirror editor that every other HTML box uses
   (`src/js/backoffice/code-editor.js`).
 
@@ -57,6 +58,11 @@ to HTML can always happen.
 - **Attributes:** `class`, `style` and `dir` on all of those; `href`, `target`
   and `rel` on links; `src`, `alt`, `title`, `width` and `height` on images;
   `border` and `role` on tables; `colspan` and `rowspan` on cells.
+- **Alignment:** the toolbar centres or right-aligns a paragraph or heading
+  with `style="text-align: …"`, from `@tiptap/extension-text-align`. Left is
+  the default, so aligning left removes the style rather than writing
+  `text-align: left`. Any other alignment, such as `justify`, is kept as part
+  of the style but the toolbar does not show it.
 - **Template variables** like `{{ assembly_title }}`, which are highlighted in
   text. A variable in an attribute, such as `href="{{ url }}"`, survives too,
   but the visual editor cannot show it or offer a way to change it: edit it in
