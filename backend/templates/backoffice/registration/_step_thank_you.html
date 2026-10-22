@@ -23,7 +23,11 @@ ABOUTME: Included by assembly_registration.html when ?section=thank-you
           {% if edit_mode %}@input="markEditDirty()" @change="markEditDirty()" @submit="allowLeave()"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="step" value="thank-you" />
-        <div class="flex flex-col lg:flex-row gap-6">
+        {# A data-only scope: the CSP Alpine build reads plain properties from an
+           inline object. The radios' x-model shows the editor and the Assets panel
+           only for own HTML; the standard page has no use for either. #}
+        <div class="flex flex-col lg:flex-row gap-6"
+             x-data="{ thankYouChoice: '{{ thank_you_choice }}' }">
             <div class="flex-1 min-w-0">
                 <section class="rounded-lg p-6"
                          style="background-color: var(--color-tables-cards);
@@ -39,9 +43,7 @@ ABOUTME: Included by assembly_registration.html when ?section=thank-you
                             {% endif %}
                         </div>
                     </div>
-                    {# A data-only scope: the CSP Alpine build reads plain properties from an
-                       inline object, and the radios' x-model shows the editor only for own HTML. #}
-                    <div class="space-y-4" x-data="{ thankYouChoice: '{{ thank_you_choice }}' }">
+                    <div class="space-y-4">
                         <p class="text-body-sm" style="color: var(--color-secondary-text);">
                             {{ _("Choose what respondents see after they send the form.") }}
                         </p>
@@ -117,8 +119,10 @@ ABOUTME: Included by assembly_registration.html when ?section=thank-you
             </div>
             {% if edit_mode %}
                 <aside class="lg:flex-shrink-0 w-full lg:w-[400px] rounded-lg"
+                       x-show="thankYouChoice === 'own'"
                        style="background-color: var(--color-tables-cards);
-                              border: 1px solid var(--color-borders-dividers)">
+                              border: 1px solid var(--color-borders-dividers);
+                              {% if thank_you_use_default %}display: none;{% endif %}">
                     <div class="p-6 sticky top-4 w-full">
                         <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
                         {{ asset_list(collection="images",

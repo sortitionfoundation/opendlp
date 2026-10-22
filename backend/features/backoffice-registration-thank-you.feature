@@ -28,8 +28,10 @@ Feature: Backoffice registration thank-you page
     Given there is an assembly called "Standard Thanks Assembly" with its own thank-you page "<p>Our own thanks</p>"
     When I visit the thank-you step for "Standard Thanks Assembly" in edit mode
     Then the thank-you editor should be shown
+    And the Assets panel should be shown
     When I choose the "Standard thank-you page" option
     Then the thank-you editor should be hidden
+    And the Assets panel should be hidden
     When I save the registration form
     And I open the public thank-you page for "Standard Thanks Assembly"
     Then the public page should show "Thank you for registering"
@@ -41,8 +43,10 @@ Feature: Backoffice registration thank-you page
     Given there is an assembly called "Hidden Editor Assembly" with a registration page
     When I visit the thank-you step for "Hidden Editor Assembly" in edit mode
     Then the thank-you editor should be hidden
+    And the Assets panel should be hidden
     When I choose the "Your own thank-you page" option
-    And I type "Thanks, everyone" into the visual thank-you editor
+    Then the Assets panel should be shown
+    When I type "Thanks, everyone" into the visual thank-you editor
     And I save the registration form
     And I open the public thank-you page for "Hidden Editor Assembly"
     Then the public page should show "Thanks, everyone"
