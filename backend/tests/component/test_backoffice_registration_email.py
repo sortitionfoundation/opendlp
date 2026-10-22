@@ -586,14 +586,14 @@ class TestReplyTo:
         # Back in edit mode, so the Save button is offered again.
         assert 'name="action" value="save"' in body
 
-    def test_edit_mode_has_replies_go_to_fieldset(self, logged_in_admin, fake_store, assembly_id):
+    def test_edit_mode_has_reply_to_fieldset(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         body = _email_step(logged_in_admin, assembly_id, edit=True)
 
         assert "<legend" in body
-        assert "Replies go to" in body
+        assert "Reply-to</legend>" in body
         assert 'name="template_reply_to_name"' in body
         assert 'name="template_reply_to_email"' in body
         assert 'type="email"' in body
@@ -613,28 +613,24 @@ class TestReplyTo:
         assert "readonly" in email_input
         assert 'value="The Team"' in body
 
-    def test_sent_from_address_is_shown_when_configured(self, logged_in_admin, fake_store, assembly_id, monkeypatch):
+    def test_sent_from_address_is_not_shown(self, logged_in_admin, fake_store, assembly_id, monkeypatch):
         monkeypatch.setenv("SMTP_FROM_EMAIL", "noreply@example.org")
-        monkeypatch.setenv("SMTP_FROM_NAME", "OpenDLP")
-        template = _seed_template(fake_store, assembly_id)
-        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
-
-        body = _email_step(logged_in_admin, assembly_id, edit=False)
-
-        assert "Sent from" in body
-        assert "OpenDLP &lt;noreply@example.org&gt;" in body
-        assert "be changed." in body
-
-    def test_sent_from_line_is_left_out_when_not_configured(
-        self, logged_in_admin, fake_store, assembly_id, monkeypatch
-    ):
-        monkeypatch.delenv("SMTP_FROM_EMAIL", raising=False)
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         body = _email_step(logged_in_admin, assembly_id, edit=False)
 
         assert "Sent from" not in body
+        assert "noreply@example.org" not in body
+
+    def test_subject_hint_names_dynamic_fields(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=True)
+
+        assert "Dynamic fields allowed" in body
+        assert "Jinja" not in body
 
     def test_readiness_warning_shows_when_no_reply_to(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)

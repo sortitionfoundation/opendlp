@@ -11,7 +11,7 @@ from flask_login import current_user, login_required
 from werkzeug.exceptions import HTTPException
 
 from opendlp import bootstrap
-from opendlp.config import SMTPEmailCfg, get_max_image_upload_mb, get_max_pdf_upload_mb
+from opendlp.config import get_max_image_upload_mb, get_max_pdf_upload_mb
 from opendlp.domain.registration_document import (
     PDF_FILE_EXTENSION,
     DocumentValidationError,
@@ -345,7 +345,6 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             active_section=active_section,
             email_template=email_template,
             email_readiness_problems=email_readiness_problems,
-            email_sent_from=_email_sent_from(),
             can_manage=can_manage,
             registration_url_prefix=registration_url_prefix(),
             short_url_prefix=short_url_prefix(),
@@ -675,16 +674,6 @@ def _load_auto_reply_context(
     problems = auto_reply_readiness_problems(uow, assembly_id, registration_page.id)
     email_readiness_problems = [{"severity": p.severity.value, "message": p.message} for p in problems]
     return email_template, email_readiness_problems
-
-
-def _email_sent_from() -> str:
-    """The configured From address as display text, or empty when none is configured."""
-    smtp_config = SMTPEmailCfg.from_env()
-    if not smtp_config.from_email:
-        return ""
-    if smtp_config.from_name:
-        return f"{smtp_config.from_name} <{smtp_config.from_email}>"
-    return smtp_config.from_email
 
 
 def _default_email_template_content() -> dict[str, str]:
