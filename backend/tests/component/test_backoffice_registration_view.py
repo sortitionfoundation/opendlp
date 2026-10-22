@@ -241,6 +241,66 @@ class TestViewPermissions:
         assert response.status_code == 302
 
 
+def _dialog_header(body: str) -> str:
+    """The editor dialog's header: everything from it to the start of the dialog body."""
+    return body.split('class="dialog-header', 1)[1].split('class="dialog-body', 1)[0]
+
+
+class TestEditorHeader:
+    """The page's registration URL and status sit in the header, for every step."""
+
+    @pytest.mark.parametrize("section", ["page", "intro", "form", "thank-you", "email", "preview"])
+    def test_header_shows_the_registration_url(self, logged_in_admin, fake_store, assembly_id, section):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section={section}")
+
+        header = _dialog_header(response.get_data(as_text=True))
+        assert re.search(r'href="[^"]*/register/my-slug"', header)
+
+    @pytest.mark.parametrize(
+        ("status", "label"),
+        [
+            (RegistrationPageStatus.TEST, "Test mode"),
+            (RegistrationPageStatus.PUBLISHED, "Published"),
+            (RegistrationPageStatus.CLOSED, "Closed"),
+        ],
+    )
+    def test_header_shows_the_status(self, logged_in_admin, fake_store, assembly_id, status, label):
+        _seed_page(fake_store, assembly_id, status)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro")
+
+        assert label in _dialog_header(response.get_data(as_text=True))
+
+    def test_test_mode_has_no_warning_banner(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro")
+
+        assert "Submissions are recorded as test entries" not in response.get_data(as_text=True)
+
+    def test_closed_warning_points_to_the_preview_step(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro")
+
+        body = response.get_data(as_text=True)
+        assert "Registration closed" in body
+        assert re.search(r'href="[^"]*\?section=preview"[^>]*>\s*Go to Preview and publish to re-open it.', body)
+
+    def test_closed_warning_on_the_preview_step_does_not_point_to_itself(
+        self, logged_in_admin, fake_store, assembly_id
+    ):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=preview")
+
+        body = response.get_data(as_text=True)
+        assert "Registration closed" in body
+        assert "Go to Preview and publish to re-open it." not in body
+
+
 class TestSaveRedirectPreservesEditMode:
     def test_save_success_redirects_to_read_only(self, logged_in_admin, fake_store, assembly_id):
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
