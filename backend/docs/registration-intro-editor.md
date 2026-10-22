@@ -294,6 +294,13 @@ names, such as `{{ recipient.first_name_or_friend }}` and
 `{{ site.full_url }}`. Rename them: a variable OpenDLP doesn't know renders
 as an empty string, and nothing warns while editing.
 
+`assembly.first_assembly_date` is the date as `2026-11-14`.
+`assembly.first_assembly_date_text` is the same date written out in the
+language the respondent registered in, such as "14 November 2026" or
+"2026. november 14.". The auto-reply is sent while their request is still
+open, so that request's language is the one used; a test send uses the
+organiser's.
+
 `respondent.first_name` comes from a question keyed like "first name". When
 there is none, it is the whole answer to a question keyed "name" or "full
 name", not split into parts: splitting would guess wrong for names written

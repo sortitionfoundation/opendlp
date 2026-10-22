@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from babel.dates import format_date
 from flask.testing import FlaskClient
 
 from opendlp.domain.email_send_record import EmailSendOutcome
@@ -65,6 +66,7 @@ def _build_published_page_with_auto_reply(
     template_reply_to_name: str = "",
     template_reply_to_email: str = "",
     email_question_key: str = "",
+    body_html: str = AUTO_REPLY_BODY,
 ) -> RegistrationPage:
     """Create a published registration page wired to an assigned auto-reply template,
     with a reply-to address and an email field on the page.
@@ -129,7 +131,7 @@ def _build_published_page_with_auto_reply(
             assembly_id,
             name="Auto-reply",
             subject=AUTO_REPLY_SUBJECT,
-            body_html=AUTO_REPLY_BODY,
+            body_html=body_html,
             reply_to_name=template_reply_to_name,
             reply_to_email=template_reply_to_email,
         )
@@ -228,3 +230,26 @@ def test_a_sole_email_question_receives_the_auto_reply(
     assert "Hi Ada Lovelace," in adapter.sent[0]["html_body"]
     record = _only_record(postgres_session_factory, page.assembly_id)
     assert record.to_email == "ada-question@example.com"
+
+
+def test_first_assembly_date_is_written_in_the_respondents_language(
+    client: FlaskClient, admin_user, postgres_session_factory
+) -> None:
+    """The auto-reply is sent while the respondent's request is open, so a date in it
+    follows the language they registered in."""
+    page = _build_published_page_with_auto_reply(
+        postgres_session_factory,
+        admin_user.id,
+        body_html="<p>We start on {{ assembly.first_assembly_date_text }}.</p>",
+    )
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        first_date = uow.assemblies.get(page.assembly_id).first_assembly_date
+    form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
+    client.get(f"{form_url}?lang=de")
+    csrf_token = get_csrf_token(client, form_url)
+    adapter = FakeEmailAdapter()
+    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
+        response = client.post(form_url, data={"csrf_token": csrf_token, "name": "Ada", "email": "ada-de@example.com"})
+    assert response.status_code == 302
+
+    assert f"We start on {format_date(first_date, 'long', locale='de')}." in adapter.sent[0]["html_body"]
