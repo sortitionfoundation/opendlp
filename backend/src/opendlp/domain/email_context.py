@@ -5,6 +5,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from babel.dates import format_date
+
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     CHOICE_TYPES,
@@ -26,14 +28,19 @@ class AssemblyContext:
     title: str = ""
     question: str = ""
     first_assembly_date: str = ""
+    # The same date written out for the reader, such as "14 November 2026".
+    first_assembly_date_text: str = ""
     number_to_select: int = 0
 
     @classmethod
-    def from_assembly(cls, assembly: "Assembly") -> "AssemblyContext":
+    def from_assembly(cls, assembly: "Assembly", locale: str = "en") -> "AssemblyContext":
+        """``locale`` is the language the email is read in, such as "hu" or "en_GB"."""
+        first_date = assembly.first_assembly_date
         return cls(
             title=assembly.title,
             question=assembly.question,
-            first_assembly_date=assembly.first_assembly_date.isoformat() if assembly.first_assembly_date else "",
+            first_assembly_date=first_date.isoformat() if first_date else "",
+            first_assembly_date_text=format_date(first_date, "long", locale=locale) if first_date else "",
             number_to_select=assembly.number_to_select,
         )
 

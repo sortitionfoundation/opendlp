@@ -29,8 +29,11 @@ from .unit_of_work import AbstractUnitOfWork
 logger = structlog.get_logger(__name__)
 
 
-def build_email_context(assembly: Assembly, respondent: Respondent) -> dict:
-    return build_context(AssemblyContext.from_assembly(assembly), RespondentContext.from_respondent(respondent))
+def build_email_context(assembly: Assembly, respondent: Respondent, locale: str = "en") -> dict:
+    """The template variables for an email read in ``locale``, such as "hu" or "en_GB"."""
+    return build_context(
+        AssemblyContext.from_assembly(assembly, locale=locale), RespondentContext.from_respondent(respondent)
+    )
 
 
 def resolve_reply_to(template: EmailTemplate, assembly: Assembly) -> ReplyTo:
@@ -55,8 +58,9 @@ def _build_and_send(
     template: EmailTemplate,
     assembly: Assembly,
     respondent: Respondent,
+    locale: str = "en",
 ) -> RespondentEmailSendRecord:
-    rendered = template.render(build_email_context(assembly, respondent))
+    rendered = template.render(build_email_context(assembly, respondent, locale))
     reply_to = resolve_reply_to(template, assembly)
     if rendered.missing_variables:
         logger.warning("Email template %s rendered with missing variables: %s", template.id, rendered.missing_variables)
@@ -91,12 +95,15 @@ def send_templated_email(
     template: EmailTemplate,
     assembly: Assembly,
     respondent: Respondent,
+    locale: str = "en",
 ) -> RespondentEmailSendRecord:
     """Render and send a template to a respondent, recording the outcome. Never raises on send failure.
 
+    ``locale`` is the language the email is read in, which sets how dates are written.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    record = _build_and_send(uow, email_adapter, template, assembly, respondent)
+    record = _build_and_send(uow, email_adapter, template, assembly, respondent, locale)
     return record.create_detached_copy()
 
 
@@ -136,6 +143,7 @@ def prepare_test_auto_reply(
     user_id: uuid.UUID,
     page_id: uuid.UUID,
     to_email: str,
+    locale: str = "en",
 ) -> PreparedTestAutoReply:
     """Load and render a page's auto-reply for a test send, using a made-up respondent.
 
@@ -161,7 +169,7 @@ def prepare_test_auto_reply(
 
     field_definitions = uow.respondent_field_definitions.list_by_assembly(page.assembly_id)
     respondent_ctx = sample_respondent_context(field_definitions, to_email)
-    rendered = template.render(build_context(AssemblyContext.from_assembly(assembly), respondent_ctx))
+    rendered = template.render(build_context(AssemblyContext.from_assembly(assembly, locale=locale), respondent_ctx))
     return PreparedTestAutoReply(
         user_id=user_id,
         page_id=page.id,
@@ -210,6 +218,7 @@ def send_test_auto_reply(
     user_id: uuid.UUID,
     page_id: uuid.UUID,
     to_email: str,
+    locale: str = "en",
 ) -> TestAutoReplySend:
     """Render and send a page's auto-reply to a manager-chosen address in one call.
 
@@ -220,7 +229,7 @@ def send_test_auto_reply(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    prepared = prepare_test_auto_reply(uow, user_id=user_id, page_id=page_id, to_email=to_email)
+    prepared = prepare_test_auto_reply(uow, user_id=user_id, page_id=page_id, to_email=to_email, locale=locale)
     return deliver_test_auto_reply(email_adapter, prepared)
 
 
@@ -229,6 +238,7 @@ def send_registration_auto_reply(
     email_adapter: EmailAdapter,
     *,
     respondent: Respondent,
+    locale: str = "en",
 ) -> RespondentEmailSendRecord | None:
     """Send the auto-reply of the page the respondent registered through.
 
@@ -238,7 +248,8 @@ def send_registration_auto_reply(
     a respondent that came from anywhere but a registration page has no
     auto-reply to send. When an auto-reply *is* configured but the respondent
     has no email address, logs a warning (a likely page misconfiguration) and
-    writes no record.
+    writes no record. ``locale`` is the language the respondent registered in,
+    which sets how dates in the email are written.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -258,5 +269,5 @@ def send_registration_auto_reply(
     assembly = uow.assemblies.get(page.assembly_id)
     if template is None or assembly is None:
         return None
-    record = _build_and_send(uow, email_adapter, template, assembly, respondent)
+    record = _build_and_send(uow, email_adapter, template, assembly, respondent, locale)
     return record.create_detached_copy()

@@ -18,7 +18,7 @@ from opendlp import bootstrap
 from opendlp.domain.registration_document import PDF_CONTENT_TYPE, PDF_FILE_EXTENSION, RegistrationDocument
 from opendlp.domain.registration_image import IMAGE_CONTENT_TYPE
 from opendlp.entrypoints.decorators import require_feature
-from opendlp.entrypoints.extensions import csrf
+from opendlp.entrypoints.extensions import csrf, get_locale
 from opendlp.service_layer.email_send_service import send_registration_auto_reply
 from opendlp.service_layer.exceptions import RateLimitExceeded
 from opendlp.service_layer.registration_bot_protection_service import (
@@ -344,7 +344,9 @@ def _send_registration_auto_reply(respondent) -> None:  # type: ignore[no-untype
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            send_registration_auto_reply(uow, bootstrap.get_email_adapter(), respondent=respondent)
+            # Sent while the respondent's own request is open, so its locale is the
+            # language they registered in.
+            send_registration_auto_reply(uow, bootstrap.get_email_adapter(), respondent=respondent, locale=get_locale())
     except Exception:
         logger.exception("Failed to send registration auto-reply")
 

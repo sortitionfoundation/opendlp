@@ -40,6 +40,7 @@ from opendlp.entrypoints.blueprints.registration import (
     short_url,
     short_url_prefix,
 )
+from opendlp.entrypoints.extensions import get_locale
 from opendlp.entrypoints.registration_hub import editor_url, registration_hub_context, registration_page_rows
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
@@ -706,7 +707,7 @@ def _default_email_template_content() -> dict[str, str]:
             "    <li><strong>[Date]:</strong> if you have been selected, we will tell you by email or phone, "
             "and arrange a short call to answer any questions you have.</li>\n"
             "    <li><strong>[Date]:</strong> if you have not been selected, we will tell you by email.</li>\n"
-            "    <li><strong>[Date]:</strong> the first session of the assembly.</li>\n"
+            "    <li><strong>{{ assembly.first_assembly_date_text }}:</strong> the first session of the assembly.</li>\n"
             "</ul>\n"
             "<p>You can read how we look after your details in our privacy policy: "
             "[link to your privacy policy].</p>\n"
@@ -881,6 +882,7 @@ def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str)
                 user_id=current_user.id,
                 page_id=page.id,
                 to_email=to_email,
+                locale=get_locale(),
             )
         result = deliver_test_auto_reply(bootstrap.get_email_adapter(), prepared)
         if result.sent:

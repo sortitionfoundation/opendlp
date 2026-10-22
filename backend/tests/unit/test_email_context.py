@@ -2,6 +2,9 @@
 ABOUTME: Covers best-effort name derivation and raw attribute passthrough"""
 
 import uuid
+from datetime import date
+
+import pytest
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_context import (
@@ -82,6 +85,18 @@ def test_assembly_context_from_assembly() -> None:
     assert ctx.question == "Should we?"
     assert ctx.number_to_select == 50
     assert ctx.first_assembly_date == ""
+    assert ctx.first_assembly_date_text == ""
+
+
+@pytest.mark.parametrize(
+    ("locale", "expected"),
+    [("en", "November 14, 2026"), ("en_GB", "14 November 2026"), ("hu", "2026. november 14.")],
+)
+def test_first_assembly_date_is_written_out_in_the_readers_language(locale: str, expected: str) -> None:
+    assembly = Assembly(title="A", first_assembly_date=date(2026, 11, 14))
+    ctx = AssemblyContext.from_assembly(assembly, locale=locale)
+    assert ctx.first_assembly_date == "2026-11-14"
+    assert ctx.first_assembly_date_text == expected
 
 
 def test_respondent_context_from_respondent() -> None:
