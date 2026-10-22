@@ -334,6 +334,13 @@ Nothing in the interface sets that yet; it is there for a future default for
 each assembly. If neither is set, the email has no Reply-To, and the step
 shows a warning. Every send records the reply-to address it used.
 
+The step warns about two more things in the email itself. Text in square
+brackets with a letter in it, such as `[Your name]`, is a placeholder the
+default auto-reply leaves for the organiser to replace; the warning lists the
+ones still there. And an email that shows the first assembly date, in either
+form, warns while the assembly has no date, as it would send a blank. Like
+the reply-to warning, neither stops the page being published.
+
 The name may not contain line breaks or other control characters: a line
 break in an email header makes the send fail.
 

@@ -508,6 +508,7 @@ class TestVisualEditor:
         assert ">Dynamic fields</h2>" in body
         assert "Available variables" not in body
         assert "Click a dynamic field to select it" in body
+        assert 'value="{{ assembly.first_assembly_date_text }}"' in body
 
     def test_view_mode_shows_the_editor_read_only_without_a_toolbar(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
@@ -640,6 +641,14 @@ class TestReplyTo:
         body = _email_step(logged_in_admin, assembly_id, edit=False)
 
         assert "may not be monitored" in body
+
+    def test_readiness_warning_lists_placeholders_left_to_replace(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id, body_html="<p>Kind regards,<br>[Your name]</p>")
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=False)
+
+        assert "still has text in square brackets for you to replace: [Your name]." in body
 
     def test_no_readiness_warning_when_reply_to_set(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)

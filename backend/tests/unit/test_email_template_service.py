@@ -2,6 +2,7 @@
 ABOUTME: Covers CRUD, permission checks, validation and auto-reply assignment"""
 
 import uuid
+from datetime import date
 
 import pytest
 import structlog
@@ -374,3 +375,45 @@ class TestReplyToReadiness:
         self._page_with_template(uow, assembly)
 
         assert service.auto_reply_readiness_problems(uow, assembly.id) == []
+
+
+class TestTemplateContentReadiness:
+    def _page_with_body(self, uow, assembly: Assembly, body_html: str, subject: str = "Thanks") -> RegistrationPage:
+        uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.YES_REQUIRED))
+        template = EmailTemplate(
+            assembly_id=assembly.id,
+            name="Auto-reply",
+            subject=subject,
+            body_html=body_html,
+            reply_to_email="team@example.com",
+        )
+        uow.email_templates.add(template)
+        page = RegistrationPage(assembly_id=assembly.id, auto_reply_email_template_id=template.id)
+        uow.registration_pages.add(page)
+        return page
+
+    def test_warns_about_placeholders_left_to_replace(self, uow):
+        assembly = _assembly(uow)
+        page = self._page_with_body(uow, assembly, "<p>[Date]: the first session.</p><p>[Your name]</p>")
+
+        problems = service.auto_reply_readiness_problems(uow, assembly.id, page_id=page.id)
+
+        assert len(problems) == 1
+        assert problems[0].severity is AutoReplyReadinessSeverity.WARNING
+        assert "[Date], [Your name]" in problems[0].message
+
+    def test_warns_when_the_first_assembly_date_is_shown_but_not_set(self, uow):
+        assembly = _assembly(uow)
+        page = self._page_with_body(uow, assembly, "<p>We start on {{ assembly.first_assembly_date_text }}.</p>")
+
+        problems = service.auto_reply_readiness_problems(uow, assembly.id, page_id=page.id)
+
+        assert len(problems) == 1
+        assert "does not have one yet" in problems[0].message
+
+    def test_no_date_warning_once_the_assembly_has_a_date(self, uow):
+        assembly = _assembly(uow)
+        assembly.first_assembly_date = date(2026, 11, 14)
+        page = self._page_with_body(uow, assembly, "<p>We start on {{ assembly.first_assembly_date_text }}.</p>")
+
+        assert service.auto_reply_readiness_problems(uow, assembly.id, page_id=page.id) == []

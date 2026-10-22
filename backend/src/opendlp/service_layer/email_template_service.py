@@ -69,25 +69,52 @@ def _email_field_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> li
     return []
 
 
-def _reply_to_problems(
+def _template_problems(
     uow: AbstractUnitOfWork, assembly_id: uuid.UUID, page_id: uuid.UUID
 ) -> list[AutoReplyReadinessProblem]:
+    """What is missing from the page's auto-reply itself: where replies go, the
+    [placeholders] left to replace, and a first assembly date it shows but the
+    assembly doesn't have."""
     page = uow.registration_pages.get(page_id)
     if page is None or page.auto_reply_email_template_id is None:
         return []
     template = uow.email_templates.get(page.auto_reply_email_template_id)
     assembly = uow.assemblies.get(assembly_id)
-    if template is None or assembly is None or resolve_reply_to(template, assembly) is not None:
+    if template is None or assembly is None:
         return []
-    return [
-        AutoReplyReadinessProblem(
-            AutoReplyReadinessSeverity.WARNING,
-            _(
-                "Replies to the auto-reply will go to the address it is sent from, which may not be "
-                "monitored. Set where replies go so they reach your team."
-            ),
+    problems: list[AutoReplyReadinessProblem] = []
+    if resolve_reply_to(template, assembly) is None:
+        problems.append(
+            AutoReplyReadinessProblem(
+                AutoReplyReadinessSeverity.WARNING,
+                _(
+                    "Replies to the auto-reply will go to the address it is sent from, which may not be "
+                    "monitored. Set where replies go so they reach your team."
+                ),
+            )
         )
-    ]
+    placeholders = template.unfilled_placeholders()
+    if placeholders:
+        problems.append(
+            AutoReplyReadinessProblem(
+                AutoReplyReadinessSeverity.WARNING,
+                _(
+                    "The auto-reply still has text in square brackets for you to replace: %(placeholders)s.",
+                    placeholders=", ".join(placeholders),
+                ),
+            )
+        )
+    if template.uses_first_assembly_date() and assembly.first_assembly_date is None:
+        problems.append(
+            AutoReplyReadinessProblem(
+                AutoReplyReadinessSeverity.WARNING,
+                _(
+                    "The auto-reply shows the first assembly date, but the assembly does not have one yet, "
+                    "so it will be blank. Set it in the assembly's details."
+                ),
+            )
+        )
+    return problems
 
 
 def _auto_reply_readiness_problems(
@@ -95,7 +122,7 @@ def _auto_reply_readiness_problems(
 ) -> list[AutoReplyReadinessProblem]:
     problems = _email_field_problems(uow, assembly_id)
     if page_id is not None:
-        problems.extend(_reply_to_problems(uow, assembly_id, page_id))
+        problems.extend(_template_problems(uow, assembly_id, page_id))
     return problems
 
 
@@ -107,7 +134,9 @@ def auto_reply_readiness_problems(
     Checks how the page collects email: an ERROR when no email is collected (the
     auto-reply can never send), a WARNING when email is optional. Given a page_id,
     also warns when the page's auto-reply has nowhere for replies to go - no
-    reply-to on its template or on the assembly. Returns every problem found.
+    reply-to on its template or on the assembly - when it still has [placeholders]
+    to replace, and when it shows a first assembly date the assembly doesn't have.
+    Returns every problem found.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
