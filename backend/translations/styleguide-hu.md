@@ -153,12 +153,22 @@ yet. Use them consistently until someone does.
 | standard thank-you page | alapértelmezett köszönőoldal | *(unreviewed)* |
 | your own thank-you page | saját köszönőoldal | *(unreviewed)* |
 | name / email address for replies | a válaszokhoz megadott név / e-mail cím | *(unreviewed)* |
-| Sent from (label) | Feladó | *(unreviewed)* |
-| Replies go to (label) | Válaszok címzettje | *(unreviewed)* |
+| Reply-to (label) | Válaszcím | *(unreviewed)* |
+| re-open (a closed registration) | újranyitás | *(unreviewed)* |
+| align left / centre / right (rich editor) | balra / középre / jobbra igazítás | *(unreviewed)* |
 | template syntax error | sablonszintaxis-hiba | *(unreviewed)* |
 
 **standard** is *alapértelmezett*, the built-in page shown unless the organiser
 writes their own, not *szabványos*, which suggests a published standard.
+
+**The default auto-reply body** goes to the public, so it is formal (*magázás*),
+but its `[placeholders]` are notes to the organiser who edits it, so those are
+informal: "[A neved]", "[A szervezeted neve]". Every placeholder needs at least
+one letter between its brackets — the email step warns about bracketed text
+with a letter in it, so "[10–20]" would slip through where "[10–20 főt]" is
+caught. The list of dates puts the date first and an en dash after it,
+"<strong>[Dátum]</strong> – …", rather than the English colon, because a
+Hungarian date ends in a full stop and "2026. november 14.:" reads badly.
 
 **A sentence built from link placeholders** — `View %(own_link)s or the
 %(standard_link)s (opens in a new tab).` — carries its article and case ending
