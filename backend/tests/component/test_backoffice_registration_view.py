@@ -550,6 +550,17 @@ class TestIntroStep:
         assert 'aria-controls="intro_content-visual"' in body
         assert "insertImage(image)" in body
 
+    @pytest.mark.parametrize("label", ["insert", "details", "copy_snippet", "delete"])
+    def test_asset_row_buttons_have_hover_text(self, logged_in_admin, fake_store, assembly_id, label):
+        """Each icon-only asset button shows its accessible name on hover, too."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro&edit=1"
+        ).get_data(as_text=True)
+
+        assert re.search(rf':aria-label="image.aria_label_{label}"\s+:title="image.aria_label_{label}"', body)
+
     def test_editor_page_carries_the_link_dialog_messages(self, logged_in_admin, fake_store, assembly_id):
         """The link dialog's messages, including the ones for a refused address, come from the server."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
