@@ -277,7 +277,9 @@ works in an email. Everything above applies, except:
   an address starting with `https://`, `http://`, `mailto:` or `tel:`, or
   one starting with a `{{ variable }}` that fills in such an address. Links
   already in the HTML are left alone, and the HTML view can still write
-  anything.
+  anything. The page editors turn a pasted link or image on this site into a
+  path, so it isn't tied to the host it was edited on; the email's editor
+  doesn't, so a pasted link keeps its full address.
 - **No content style.** The email is plain HTML, and no GOV.UK classes are
   added when it is sent; email clients don't have the GOV.UK stylesheet.
 
