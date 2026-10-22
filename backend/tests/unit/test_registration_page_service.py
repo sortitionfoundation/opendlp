@@ -829,6 +829,24 @@ class TestRenderThankYouHtml:
 
         assert service.render_thank_you_html(uow, page_for_assembly(uow, assembly.id), restart_url="") == ""
 
+    def test_can_render_the_own_html_while_the_standard_page_is_chosen(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_registration_page_intro_html(uow, admin.id, page_id, "", content_style=ContentStyle.PLAIN)
+        service.update_thank_you_html(uow, admin.id, page_id, "<p>thanks</p>", use_default=True)
+        page = page_for_assembly(uow, assembly.id)
+
+        assert service.render_thank_you_html(uow, page, restart_url="", use_default=False) == "<p>thanks</p>"
+
+    def test_can_ask_for_the_standard_page_while_own_html_is_chosen(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>thanks</p>")
+        page = page_for_assembly(uow, assembly.id)
+
+        assert service.render_thank_you_html(uow, page, restart_url="", use_default=True) == ""
+
     def test_a_broken_page_raises_for_the_caller_to_handle(self, uow):
         """Saved before the check existed, or set by other means."""
         admin, assembly = _admin(uow), _assembly(uow)

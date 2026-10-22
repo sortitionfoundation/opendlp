@@ -330,6 +330,37 @@ class TestThankYouPage:
         assert b"Custom Thank You" not in response.data
         assert b"Thank you for registering" in response.data
 
+    def test_show_own_shows_the_own_html_while_the_standard_page_is_chosen(
+        self, client: FlaskClient, fake_store, admin_user: User
+    ) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_thank_you_html(uow, admin_user.id, page.id, "<h1>Custom Thank You</h1>", use_default=True)
+
+        response = client.get(f"/register/{page.url_slug}/thank-you?show=own")
+        assert b"Custom Thank You" in response.data
+
+    def test_show_standard_shows_the_standard_page_while_own_html_is_chosen(
+        self, client: FlaskClient, fake_store, admin_user: User
+    ) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_thank_you_html(uow, admin_user.id, page.id, "<h1>Custom Thank You</h1>")
+
+        response = client.get(f"/register/{page.url_slug}/thank-you?show=standard")
+        assert b"Custom Thank You" not in response.data
+        assert b"Thank you for registering" in response.data
+
+    def test_any_other_show_value_shows_the_chosen_page(
+        self, client: FlaskClient, fake_store, admin_user: User
+    ) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_thank_you_html(uow, admin_user.id, page.id, "<h1>Custom Thank You</h1>")
+
+        response = client.get(f"/register/{page.url_slug}/thank-you?show=nonsense")
+        assert b"Custom Thank You" in response.data
+
     def test_own_page_fills_its_variables(self, client: FlaskClient, fake_store, admin_user: User) -> None:
         page = _seed_published_page(fake_store, admin_user)
         with FakeUnitOfWork(store=fake_store) as uow:

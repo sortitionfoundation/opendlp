@@ -230,6 +230,11 @@ Switching to the standard page keeps the page's own HTML, so an author can
 try the standard page and switch back. Own HTML that is blank shows the
 standard page too.
 
+The step links to both pages, whichever is chosen: the public thank-you URL
+takes `?show=own` or `?show=standard` to show that page instead of the chosen
+one. The links show what is saved, not edits still in the editor. Anyone can
+add `?show=own`, so own HTML that is saved but not chosen is not private.
+
 While the saved HTML is blank, the read-only step offers **Fill with starter
 content**, as the form step offers its fills. It writes
 `STARTER_THANK_YOU_HTML` (`src/opendlp/domain/registration_page.py`) and
