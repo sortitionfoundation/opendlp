@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 16:18+0000\n"
-"PO-Revision-Date: 2026-10-22 13:54+0000\n"
+"POT-Creation-Date: 2026-10-22 16:33+0000\n"
+"PO-Revision-Date: 2026-10-22 16:33+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
@@ -85,6 +85,11 @@ msgstr "Jelentkezők"
 #: src/opendlp/domain/assembly_export_gsheet.py:18
 msgid "Results"
 msgstr "Eredmények"
+
+#: src/opendlp/domain/email_context.py:112
+#, fuzzy
+msgid "Friend"
+msgstr "Résztvevő"
 
 #: src/opendlp/domain/email_template.py:51
 #, fuzzy
@@ -2126,6 +2131,7 @@ msgid "Thanks for registering for {{ assembly.title }}"
 msgstr "Köszönjük, hogy regisztráltál a következőre: {{ assembly.title }}"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:694
+#, fuzzy
 msgid ""
 "<p>Dear {{ respondent.first_name_or_friend }},</p>\n"
 "<p>Thank you for registering your interest in <strong>{{ assembly.title "
@@ -2155,6 +2161,33 @@ msgid ""
 "take part, please reply to this email as soon as you can.</p>\n"
 "<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>"
 msgstr ""
+"<p>Kedves {{ respondent.first_name_or_friend }}!</p>\n"
+"<p>Köszönjük, hogy jelentkezett erre a közösségi gyűlésre: <strong>{{ "
+"assembly.title }}</strong>. A közösségi gyűlés témája:</p>\n"
+"<p><strong>{{ assembly.question }}</strong></p>\n"
+"<p>A közösségi gyűlés alkalmai:</p>\n"
+"<ul>\n"
+"    <li>[Az egyes alkalmak dátuma, időpontja és helyszíne]</li>\n"
+"</ul>\n"
+"<p><strong>A következő lépések</strong></p>\n"
+"<p>A jelentkezés lezárulta után a közösségi gyűlés tagjait sorsolással "
+"választjuk ki az összes jelentkező közül. Attól függően, hogy hányan "
+"jelentkeznek, általában 100 jelentkezőből nagyjából [10–20 főt] "
+"választunk ki.</p>\n"
+"<ul>\n"
+"    <li><strong>[Dátum]</strong> – ha Önt kiválasztották, e-mailben vagy "
+"telefonon értesítjük, és egyeztetünk egy rövid telefonbeszélgetést, "
+"amelyben megválaszoljuk a kérdéseit.</li>\n"
+"    <li><strong>[Dátum]</strong> – ha Önt nem választották ki, e-mailben "
+"értesítjük.</li>\n"
+"    <li><strong>{{ assembly.first_assembly_date_text }}</strong> – a "
+"közösségi gyűlés első alkalma.</li>\n"
+"</ul>\n"
+"<p>Arról, hogyan kezeljük az adatait, az adatvédelmi tájékoztatónkban "
+"olvashat: [link az adatvédelmi tájékoztatóhoz].</p>\n"
+"<p>Ha kérdése van, vagy megváltoztak a tervei, és mégsem tud részt venni,"
+" kérjük, minél előbb válaszoljon erre az e-mailre.</p>\n"
+"<p>Üdvözlettel,<br>[A neved]<br>[A szervezeted neve]</p>"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:751
 msgid "Auto-reply email created. Edit it below and click Save."
@@ -3995,17 +4028,23 @@ msgstr ""
 "menjenek a válaszok, hogy eljussanak a csapatodhoz."
 
 #: src/opendlp/service_layer/email_template_service.py:102
-#, python-format
+#, fuzzy, python-format
 msgid ""
 "The auto-reply still has text in square brackets for you to replace: "
 "%(placeholders)s."
 msgstr ""
+"Az automatikus válaszban még van szögletes zárójelbe tett szöveg, amelyet"
+" ki kell cserélned: %(placeholders)s."
 
 #: src/opendlp/service_layer/email_template_service.py:112
+#, fuzzy
 msgid ""
 "The auto-reply shows the first assembly date, but the assembly does not "
 "have one yet, so it will be blank. Set it in the assembly's details."
 msgstr ""
+"Az automatikus válasz megjeleníti az első közösségi gyűlés időpontját, de"
+" ez még nincs megadva, ezért üres lesz. Add meg a közösségi gyűlés "
+"adatainál."
 
 #: src/opendlp/service_layer/email_template_service.py:150
 #, fuzzy, python-format
@@ -6566,8 +6605,9 @@ msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek át."
 
 #: templates/backoffice/assembly_registration.html:153
+#, fuzzy
 msgid "Go to Preview and publish to re-open it."
-msgstr ""
+msgstr "Az újranyitáshoz lépj az „Előnézet és közzététel” lépésre."
 
 #: templates/backoffice/assembly_respondents.html:42
 msgid "Respondents are configured in Google Sheets"
@@ -7978,16 +8018,19 @@ msgid "Strikethrough"
 msgstr "Áthúzott"
 
 #: templates/backoffice/components/rich_editor.html:102
+#, fuzzy
 msgid "Align left"
-msgstr ""
+msgstr "Balra igazítás"
 
 #: templates/backoffice/components/rich_editor.html:103
+#, fuzzy
 msgid "Align centre"
-msgstr ""
+msgstr "Középre igazítás"
 
 #: templates/backoffice/components/rich_editor.html:104
+#, fuzzy
 msgid "Align right"
-msgstr ""
+msgstr "Jobbra igazítás"
 
 #: templates/backoffice/components/rich_editor.html:106
 msgid "Bulleted list"
@@ -8467,11 +8510,15 @@ msgid "Close registration?"
 msgstr "Lezárod a regisztrációt?"
 
 #: templates/backoffice/registration/_modals.html:231
+#, fuzzy
 msgid ""
 "This stops new registrations. Visitors who follow the form link will see "
 "the 'registration closed' page until you re-open it from Preview and "
 "publish."
 msgstr ""
+"Ezzel leállítod az új jelentkezéseket. Aki az űrlap linkjét követi, a "
+"„regisztráció lezárva” oldalt látja, amíg újra meg nem nyitod a "
+"regisztrációt az „Előnézet és közzététel” lépésnél."
 
 #: templates/backoffice/registration/_modals.html:242
 msgid "Keep it open"
@@ -8702,8 +8749,9 @@ msgid "Send auto-reply email"
 msgstr "Automatikus válasz e-mail küldése"
 
 #: templates/backoffice/registration/_step_email.html:104
+#, fuzzy
 msgid "Reply-to"
-msgstr ""
+msgstr "Válaszcím"
 
 #: templates/backoffice/registration/_step_email.html:106
 #, fuzzy
@@ -8715,8 +8763,9 @@ msgid "Email subject"
 msgstr "E-mail tárgya"
 
 #: templates/backoffice/registration/_step_email.html:125
+#, fuzzy
 msgid "Dynamic fields allowed, e.g. {{ assembly.title }}."
-msgstr ""
+msgstr "Dinamikus mezők használhatók, például: {{ assembly.title }}."
 
 #: templates/backoffice/registration/_step_email.html:134
 #: templates/backoffice/registration/_step_email.html:140
@@ -8756,8 +8805,9 @@ msgid "First assembly date (ISO)"
 msgstr "Az első közösségi gyűlés időpontja (ISO)"
 
 #: templates/backoffice/registration/_step_email.html:166
+#, fuzzy
 msgid "First assembly date, written out in the reader's language"
-msgstr ""
+msgstr "Az első közösségi gyűlés időpontja, az olvasó nyelvén kiírva"
 
 #: templates/backoffice/registration/_step_email.html:167
 msgid "Respondent first name"
@@ -9018,8 +9068,9 @@ msgid "Unpublish"
 msgstr "Közzététel visszavonása"
 
 #: templates/backoffice/registration/_step_preview.html:130
+#, fuzzy
 msgid "Re-open registration"
-msgstr ""
+msgstr "Regisztráció újranyitása"
 
 #: templates/backoffice/registration/_step_thank_you.html:48
 #, fuzzy
