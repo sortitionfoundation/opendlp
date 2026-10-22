@@ -12,13 +12,19 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% from "backoffice/components/registration_page_list.html" import registration_page_list %}
 {% from "backoffice/components/url_display.html" import copy_button %}
 {% macro status_pill(label, tone) %}
-    {# The page's status, in the same pill the pages list uses. tone is success, warning or error. #}
+    {# The page's status, in the same pill the pages list uses. tone is success, warning or error.
+       The tokens are spelt out in full so the design-token check can find them. #}
+    {% set tones = {
+    "success": ["var(--color-success-100)", "var(--color-success-600)", "var(--color-success-400)"],
+    "warning": ["var(--color-warning-100)", "var(--color-warning-600)", "var(--color-warning-400)"],
+    "error": ["var(--color-error-100)", "var(--color-error-600)", "var(--color-error-400)"]
+    } %}
+    {% set background, text, accent = tones[tone] %}
     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-body-sm whitespace-nowrap"
-          style="background-color: var(--color-{{ tone }}-100);
-                 color: var(--color-{{ tone }}-600);
-                 border: 1px solid var(--color-{{ tone }}-400)">
-        <span class="w-2 h-2 rounded-full"
-              style="background-color: var(--color-{{ tone }}-400)"></span>
+          style="background-color: {{ background }};
+                 color: {{ text }};
+                 border: 1px solid {{ accent }}">
+        <span class="w-2 h-2 rounded-full" style="background-color: {{ accent }}"></span>
         {{ label }}
     </span>
 {% endmacro %}
