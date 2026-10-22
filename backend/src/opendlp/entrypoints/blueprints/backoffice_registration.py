@@ -541,10 +541,9 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
                           the pages list — the editor modal is done.
       - unpublish       → transition PUBLISHED → TEST (back to test mode); stays
                           in the editor on the preview step.
-      - close           → transition to CLOSED; lands on the pages list. Terminal
-                          from the UI's point of view: reopen exists only for
-                          backwards compatibility with older POSTs and is not
-                          offered anywhere.
+      - close           → transition PUBLISHED → CLOSED; lands on the pages list.
+      - reopen          → transition CLOSED → PUBLISHED, offered on the preview
+                          step; stays in the editor on the preview step.
 
     A ``return_to=list`` form field sends the user back to the page list after a
     successful lifecycle action — the list's row menu posts it.

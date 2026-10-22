@@ -1225,7 +1225,7 @@ class TestFormPreviewRoute:
 
 class TestLifecycleFooterControls:
     """The preview step's footer offers the lifecycle actions for the current status:
-    TEST → Publish; PUBLISHED → Unpublish + Close registration; CLOSED → nothing."""
+    TEST → Publish; PUBLISHED → Unpublish + Close registration; CLOSED → Re-open."""
 
     def _preview_body(self, logged_in_admin, assembly_id) -> str:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=preview")
@@ -1250,17 +1250,38 @@ class TestLifecycleFooterControls:
         assert 'value="unpublish"' in body
         assert "Unpublish</span></button>" in body
         assert "Close registration</span></button>" in body
-        # Close goes through the confirmation dialog (terminal action, no reopen).
+        # Close goes through the confirmation dialog, as it turns visitors away at once.
         assert "Close registration?" in body
 
-    def test_closed_status_offers_no_lifecycle_actions(self, logged_in_admin, fake_store, assembly_id):
+    def test_closed_status_offers_reopen_only(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
 
         body = self._preview_body(logged_in_admin, assembly_id)
 
+        assert 'value="reopen"' in body
+        assert "Re-open registration</span></button>" in body
         assert 'value="publish"' not in body
         assert 'value="unpublish"' not in body
         assert "Close registration/my-slug" not in body
+
+    def test_reopen_publishes_the_page_and_lands_on_preview(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(
+            fake_store,
+            assembly_id,
+            RegistrationPageStatus.CLOSED,
+            form_html="<form>{{ csrf_form_element }}{{ form_action }}</form>",
+        )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "reopen"},
+        )
+
+        assert response.status_code == 302
+        assert "section=preview" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+        assert stored.status == RegistrationPageStatus.PUBLISHED
 
     def test_publish_publishes_the_page_and_lands_on_the_list(self, logged_in_admin, fake_store, assembly_id):
         # Publishing finishes the editor flow, so it dismisses the editor modal:

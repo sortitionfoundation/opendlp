@@ -18,6 +18,7 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.email_template_service import assign_auto_reply_template, create_email_template
 from opendlp.service_layer.registration_page_service import (
+    close_registration_page,
     create_registration_page_with_slugs,
     page_for_assembly,
     publish_registration_page,
@@ -652,6 +653,26 @@ def create_test_assembly_with_published_form(title: str, admin_user, test_databa
     registration_page = _create_assembly_with_saved_form(title, admin_user, test_database)
     with SqlAlchemyUnitOfWork(test_database) as uow:
         publish_registration_page(uow=uow, user_id=admin_user.id, page_id=registration_page.id)
+
+
+@given(parsers.parse('there is an assembly called "{title}" with a closed registration form'))
+def create_test_assembly_with_closed_form(title: str, admin_user, test_database):
+    """Create an assembly whose saved registration form was published, then closed."""
+    registration_page = _create_assembly_with_saved_form(title, admin_user, test_database)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        publish_registration_page(uow=uow, user_id=admin_user.id, page_id=registration_page.id)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        close_registration_page(uow=uow, user_id=admin_user.id, page_id=registration_page.id)
+
+
+@when("I click the Re-open registration button")
+def click_reopen_registration(page: Page):
+    page.get_by_role("button", name="Re-open registration", exact=True).click()
+
+
+@then("the registration should be shown as published")
+def registration_shown_as_published(page: Page):
+    expect(page.locator(".dialog-header").get_by_text("Published")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when("I click the Unpublish button")

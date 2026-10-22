@@ -221,14 +221,14 @@ save_disabled_expr="!editingDocumentLabel.trim() || documentEditing") %}
     {{ asset_file_size_row("editingDocument") }}
 </div>
 {% endcall %}
-{# Close-registration confirmation — closing is terminal (there is no reopen), so the
+{# Close-registration confirmation — closing turns visitors away at once, so the
    destructive action must be explicit. The safe action is the primary on the right and
    receives initial focus; the destructive action is a plain red button. Rendered only
    where its opener exists (preview step of a published page). #}
 {% if active_section == "preview" and registration_status == "PUBLISHED" and registration_page %}
     {% call controlled_alert_dialog(id="close-registration-modal",
     title=_("Close registration?"),
-    description=_("This permanently stops new registrations. Visitors who follow the form link will see the 'registration closed' page, and the form cannot be reopened."),
+    description=_("This stops new registrations. Visitors who follow the form link will see the 'registration closed' page until you re-open it from Preview and publish."),
     open_expr="confirmCloseOpen",
     close_expr="cancelConfirmClose()") %}
     <form method="post"
