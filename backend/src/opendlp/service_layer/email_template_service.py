@@ -10,7 +10,7 @@ import structlog
 from opendlp.config import get_email_template_body_max_bytes
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.registration_page import RegistrationPage
-from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
+from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage, registration_email_field
 from opendlp.translations import gettext as _
 
 from .email_send_service import resolve_reply_to
@@ -27,7 +27,6 @@ from .unit_of_work import AbstractUnitOfWork
 logger = structlog.get_logger(__name__)
 
 _VIEW_ROLE = "assembly role or admin"
-_EMAIL_FIELD_KEY = "email"
 
 
 class AutoReplyReadinessSeverity(Enum):
@@ -46,8 +45,8 @@ class AutoReplyReadinessProblem:
 
 
 def _email_field_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> list[AutoReplyReadinessProblem]:
-    email_field = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, _EMAIL_FIELD_KEY)
-    if email_field is None or email_field.on_registration_page == FieldOnRegistrationPage.NO:
+    email_field = registration_email_field(uow.respondent_field_definitions.list_by_assembly(assembly_id))
+    if email_field is None:
         return [
             AutoReplyReadinessProblem(
                 AutoReplyReadinessSeverity.ERROR,

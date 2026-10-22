@@ -59,10 +59,18 @@ def enable_registration_feature(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _build_published_page_with_auto_reply(
-    session_factory, admin_id, *, template_reply_to_name: str = "", template_reply_to_email: str = ""
+    session_factory,
+    admin_id,
+    *,
+    template_reply_to_name: str = "",
+    template_reply_to_email: str = "",
+    email_question_key: str = "",
 ) -> RegistrationPage:
     """Create a published registration page wired to an assigned auto-reply template,
-    with a reply-to address and an email field on the page."""
+    with a reply-to address and an email field on the page.
+
+    Given an ``email_question_key``, the fixed email field is left off the page and
+    the address is asked for in a question of type Email with that key instead."""
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         assembly = create_assembly(
             uow=uow,
@@ -77,6 +85,13 @@ def _build_published_page_with_auto_reply(
         ("email", FieldType.EMAIL, True, FieldOnRegistrationPage.YES_REQUIRED),
         ("name", FieldType.TEXT, False, FieldOnRegistrationPage.YES_OPTIONAL),
     ]
+    form_html = MINIMAL_FORM_HTML
+    if email_question_key:
+        field_defs[0] = ("email", FieldType.EMAIL, True, FieldOnRegistrationPage.NO)
+        field_defs.append((email_question_key, FieldType.EMAIL, False, FieldOnRegistrationPage.YES_REQUIRED))
+        form_html = MINIMAL_FORM_HTML.replace("email", email_question_key).replace(
+            f'type="{email_question_key}"', 'type="email"'
+        )
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         for sort, (key, ftype, is_fixed, on_page) in enumerate(field_defs):
             uow.respondent_field_definitions.add(
@@ -105,7 +120,7 @@ def _build_published_page_with_auto_reply(
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         create_registration_page_with_slugs(uow, admin_id, assembly_id, name="Registration page")
     with SqlAlchemyUnitOfWork(session_factory) as uow:
-        update_registration_page_html(uow, admin_id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
+        update_registration_page_html(uow, admin_id, _page_id(uow, assembly_id), form_html)
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         template = create_email_template(
@@ -189,3 +204,27 @@ def test_assembly_reply_to_is_the_fallback(client: FlaskClient, admin_user, post
     assert adapter.sent[0]["reply_to"] == ("The Team", "team@example.com")
     record = _only_record(postgres_session_factory, page.assembly_id)
     assert record.reply_to_email == "team@example.com"
+
+
+def test_a_sole_email_question_receives_the_auto_reply(
+    client: FlaskClient, admin_user, postgres_session_factory
+) -> None:
+    """Without the fixed email field, the page's one question of type Email is where the
+    auto-reply goes, and a form asking only for a name greets the respondent by it."""
+    page = _build_published_page_with_auto_reply(
+        postgres_session_factory, admin_user.id, email_question_key="contact_address"
+    )
+    form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
+    csrf_token = get_csrf_token(client, form_url)
+    adapter = FakeEmailAdapter()
+    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
+        response = client.post(
+            form_url,
+            data={"csrf_token": csrf_token, "name": "Ada Lovelace", "contact_address": "ada-question@example.com"},
+        )
+    assert response.status_code == 302
+
+    assert adapter.sent[0]["to"] == ["ada-question@example.com"]
+    assert "Hi Ada Lovelace," in adapter.sent[0]["html_body"]
+    record = _only_record(postgres_session_factory, page.assembly_id)
+    assert record.to_email == "ada-question@example.com"

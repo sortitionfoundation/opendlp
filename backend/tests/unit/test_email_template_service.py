@@ -290,6 +290,23 @@ class TestAutoReplyReadiness:
         assert len(problems) == 1
         assert problems[0].severity is AutoReplyReadinessSeverity.ERROR
 
+    def test_a_sole_email_question_stands_in_for_the_email_field(self, uow):
+        assembly = _assembly(uow)
+        uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.NO))
+        uow.respondent_field_definitions.add(
+            RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="contact_address",
+                label="Your email",
+                group=RespondentFieldGroup.NAME_AND_CONTACT,
+                sort_order=20,
+                field_type=FieldType.EMAIL,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        )
+
+        assert service.auto_reply_readiness_problems(uow, assembly.id) == []
+
     def test_missing_email_field_is_error(self, uow):
         assembly = _assembly(uow)
 
