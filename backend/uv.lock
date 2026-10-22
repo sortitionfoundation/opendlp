@@ -1616,6 +1616,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "authlib" },
+    { name = "babel" },
     { name = "cachelib" },
     { name = "celery" },
     { name = "click" },
@@ -1678,6 +1679,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.18.5" },
     { name = "authlib", specifier = ">=1.6.6" },
+    { name = "babel", specifier = ">=2.18.0" },
     { name = "cachelib", specifier = ">=0.13.0" },
     { name = "celery", specifier = ">=5.5.3" },
     { name = "click", specifier = ">=8.2.1" },
