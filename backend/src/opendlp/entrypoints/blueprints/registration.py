@@ -424,8 +424,12 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
 
     The registration is already saved by now, so a page whose own HTML fails to
     render gets the standard page rather than an error.
+
+    `?show=standard` or `?show=own` shows that page whichever is chosen, for the
+    registration editor's links to each.
     """
     uow = bootstrap.get_flask_uow()
+    use_default = {"standard": True, "own": False}.get(request.args.get("show", ""))
 
     with uow:
         page = find_registration_page_by_url_slug(uow, url_slug)
@@ -433,7 +437,7 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
             abort(404)
         restart_url = registration_url(page.url_slug)
         try:
-            custom_html = render_thank_you_html(uow, page, restart_url)
+            custom_html = render_thank_you_html(uow, page, restart_url, use_default=use_default)
         except Exception as e:
             logger.exception("Thank-you page failed to render", registration_page_id=str(page.id), error=str(e))
             custom_html = ""

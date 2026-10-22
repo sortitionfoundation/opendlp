@@ -303,7 +303,13 @@ class RegistrationPage:
     def render_thank_you(self, ctx: ThankYouContext, content_style: ContentStyle) -> str:
         """The page's own thank-you HTML with its variables filled in, or "" when the
         standard page should be shown instead. Takes the intro's content style."""
-        if self.thank_you_use_default or not self.thank_you_html.strip():
+        if self.thank_you_use_default:
+            return ""
+        return self.render_own_thank_you(ctx, content_style)
+
+    def render_own_thank_you(self, ctx: ThankYouContext, content_style: ContentStyle) -> str:
+        """The page's own thank-you HTML whichever page is chosen, or "" when it is blank."""
+        if not self.thank_you_html.strip():
             return ""
         rendered = _SANDBOX_ENV.from_string(self.thank_you_html).render(
             assembly_title=ctx.assembly_title,

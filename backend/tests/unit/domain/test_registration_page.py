@@ -925,6 +925,15 @@ class TestRenderThankYou:
         with pytest.raises(SecurityError):
             _own_thank_you("{{ assembly_title.__class__.__mro__ }}").render_thank_you(self.CTX, ContentStyle.PLAIN)
 
+    def test_own_html_can_be_rendered_while_the_standard_page_is_chosen(self):
+        """So an author can look at the HTML they keep while showing the standard page."""
+        page = _own_thank_you("<p>mine</p>")
+        page.set_thank_you_use_default(True)
+        assert page.render_own_thank_you(self.CTX, ContentStyle.PLAIN) == "<p>mine</p>"
+
+    def test_blank_own_html_renders_nothing_even_when_asked_for(self):
+        assert _own_thank_you(" \n").render_own_thank_you(self.CTX, ContentStyle.GOVUK) == ""
+
 
 class TestPublishAndReadiness:
     def test_readiness_problems_empty_when_ready(self):

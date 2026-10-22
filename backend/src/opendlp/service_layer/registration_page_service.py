@@ -1013,14 +1013,21 @@ def render_registration_form(
     return source.render(ctx)
 
 
-def render_thank_you_html(uow: AbstractUnitOfWork, page: RegistrationPage, restart_url: str) -> str:
+def render_thank_you_html(
+    uow: AbstractUnitOfWork, page: RegistrationPage, restart_url: str, *, use_default: bool | None = None
+) -> str:
     """The page's own thank-you HTML, rendered in its intro's style, or "" when the
     standard page should be shown. Raises what the template raises - a page saved
     before its HTML was checked can still be broken.
 
+    `use_default` overrides the page's choice, so an author can look at either page;
+    None follows the choice.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    if page.thank_you_use_default or not page.thank_you_html.strip():
+    if page.thank_you_use_default if use_default is None else use_default:
+        return ""
+    if not page.thank_you_html.strip():
         return ""
     assembly = uow.assemblies.get(page.assembly_id)
     source = _load_html_source(uow, page)
@@ -1029,7 +1036,7 @@ def render_thank_you_html(uow: AbstractUnitOfWork, page: RegistrationPage, resta
         assembly_question=assembly.question if assembly else "",
         restart_url=restart_url,
     )
-    return page.render_thank_you(ctx, source.content_style)
+    return page.render_own_thank_you(ctx, source.content_style)
 
 
 def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:

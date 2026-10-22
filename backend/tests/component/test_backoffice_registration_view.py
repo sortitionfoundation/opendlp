@@ -837,21 +837,23 @@ class TestThankYouStep:
         assert re.search(r'name="thank_you_page"\s+id="[^"]+"\s+value="own"\s+checked', body)
         assert 'style="display: none;"' not in body.split("thankYouChoice === 'own'", 1)[1].split(">", 1)[0]
 
-    def test_links_to_the_public_thank_you_page_in_a_new_tab(self, logged_in_admin, fake_store, assembly_id):
+    @pytest.mark.parametrize(
+        ("show", "text"), [("own", "your thank-you page"), ("standard", "standard thank-you page")]
+    )
+    def test_links_to_each_public_thank_you_page_in_a_new_tab(
+        self, logged_in_admin, fake_store, assembly_id, show, text
+    ):
+        """Both, whichever is chosen, so the link never points at the page the radios are not on."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         body = self._get(logged_in_admin, assembly_id)
 
-        assert re.search(r'href="/register/my-slug/thank-you"\s+target="_blank"', body)
-
-    def test_the_link_to_the_public_page_looks_like_a_link(self, logged_in_admin, fake_store, assembly_id):
-        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
-
-        body = self._get(logged_in_admin, assembly_id)
-
-        link = re.search(r'<a[^>]*href="/register/my-slug/thank-you"[^>]*>', body).group(0)
-        assert 'class="underline"' in link
-        assert "color: var(--color-links)" in link
+        link = re.search(rf'<a[^>]*href="/register/my-slug/thank-you\?show={show}"[^>]*>([^<]*)</a>', body)
+        assert link is not None
+        assert link.group(1) == text
+        assert 'target="_blank"' in link.group(0)
+        assert 'class="underline"' in link.group(0)
+        assert "color: var(--color-links)" in link.group(0)
 
     @pytest.mark.parametrize(
         ("style", "label"),
