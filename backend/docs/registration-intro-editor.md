@@ -291,6 +291,12 @@ there is none, it is the whole answer to a question keyed "name" or "full
 name", not split into parts: splitting would guess wrong for names written
 family name first, as in Hungarian.
 
+The auto-reply goes to the address given in the fixed email field. When that
+field is not on the page, a question of type Email stands in for it, but only
+if it is the page's only one: with two, there is no telling which address to
+use. The answer is copied to the respondent's email address and also kept
+under its own question. Respondents imported from a file are not affected.
+
 Every email is sent with a plain-text version made from the HTML
 (`src/opendlp/domain/html_to_text.py`), which reads lists, quotes and
 horizontal lines as plain text would.

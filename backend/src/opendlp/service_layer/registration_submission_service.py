@@ -12,6 +12,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
+    registration_email_field,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.validators import (
@@ -197,6 +198,11 @@ def _create_and_save_respondent(
     respondent_status = RespondentStatus.TEST_SUBMISSION if is_test else RespondentStatus.POOL
 
     email = str(cleaned_data.pop("email", ""))
+    # A page without the fixed email field may ask for the address in a question
+    # of its own. The answer stays in that question's attribute as well.
+    email_field = registration_email_field(field_definitions)
+    if not email and email_field is not None:
+        email = str(cleaned_data.get(email_field.field_key, ""))
     consent = cleaned_data.pop("consent", None)
     eligible = cleaned_data.pop("eligible", None)
     can_attend = cleaned_data.pop("can_attend", None)

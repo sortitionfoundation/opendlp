@@ -27,6 +27,7 @@ from opendlp.domain.respondent_field_schema import (
     TargetLinkedFieldError,
     humanise_field_key,
     normalise_field_key,
+    registration_email_field,
 )
 
 
@@ -952,3 +953,40 @@ class TestResyncOptions:
         field = self._linked_field()
         with pytest.raises(ValueError, match="needs at least one option"):
             field.resync_options([])
+
+
+def _email_candidate(key, field_type=FieldType.EMAIL, on_page=FieldOnRegistrationPage.YES_REQUIRED):
+    return RespondentFieldDefinition(
+        assembly_id=uuid.uuid4(),
+        field_key=key,
+        label=key,
+        group=RespondentFieldGroup.NAME_AND_CONTACT,
+        sort_order=10,
+        field_type=field_type,
+        on_registration_page=on_page,
+    )
+
+
+class TestRegistrationEmailField:
+    def test_the_fixed_email_field_wins(self):
+        fixed = _email_candidate("email")
+        other = _email_candidate("contact_address")
+
+        assert registration_email_field([other, fixed]) is fixed
+
+    def test_a_sole_email_question_stands_in(self):
+        other = _email_candidate("contact_address")
+        fields = [_email_candidate("email", on_page=FieldOnRegistrationPage.NO), other]
+
+        assert registration_email_field(fields) is other
+
+    def test_two_email_questions_give_none(self):
+        assert registration_email_field([_email_candidate("home"), _email_candidate("work")]) is None
+
+    def test_questions_off_the_page_are_ignored(self):
+        fields = [_email_candidate("home"), _email_candidate("work", on_page=FieldOnRegistrationPage.NO)]
+
+        assert registration_email_field(fields).field_key == "home"
+
+    def test_no_email_question_gives_none(self):
+        assert registration_email_field([_email_candidate("name", field_type=FieldType.TEXT)]) is None

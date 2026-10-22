@@ -104,6 +104,51 @@ class TestSubmitRegistrationValidationErrors:
         assert "name" in result.field_errors
 
 
+class TestSubmitRegistrationEmail:
+    """The respondent's email address comes from the fixed email field or, without it,
+    from the page's only question of type Email."""
+
+    def _submit(self, uow, assembly, form_data):
+        result = submit_registration_by_assembly_id(uow, assembly_id=assembly.id, form_data=form_data)
+        assert result.respondent is not None, result.field_errors
+        return result.respondent
+
+    def test_the_fixed_email_field_sets_the_email(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "email", field_type=FieldType.EMAIL, is_fixed=True)
+
+        respondent = self._submit(uow, assembly, {"email": "ada@example.com"})
+
+        assert respondent.email == "ada@example.com"
+        assert "email" not in respondent.attributes
+
+    def test_a_sole_email_question_sets_the_email_and_keeps_its_answer(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(
+            uow,
+            assembly,
+            "email",
+            field_type=FieldType.EMAIL,
+            is_fixed=True,
+            on_registration_page=FieldOnRegistrationPage.NO,
+        )
+        _add_field(uow, assembly, "contact_address", field_type=FieldType.EMAIL)
+
+        respondent = self._submit(uow, assembly, {"contact_address": "ada@example.com"})
+
+        assert respondent.email == "ada@example.com"
+        assert respondent.attributes["contact_address"] == "ada@example.com"
+
+    def test_two_email_questions_set_no_email(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "home_email", field_type=FieldType.EMAIL)
+        _add_field(uow, assembly, "work_email", field_type=FieldType.EMAIL)
+
+        respondent = self._submit(uow, assembly, {"home_email": "a@example.com", "work_email": "b@example.com"})
+
+        assert respondent.email == ""
+
+
 class TestSubmitRegistrationCreateComment:
     """A successful submission records a CREATE comment whose text makes clear,
     for test submissions, that the page was in TEST status (Q13)."""
