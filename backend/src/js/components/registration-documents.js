@@ -6,6 +6,7 @@ import {
   patchJson,
   postFormData,
 } from "../lib/json-request.js";
+import { writeHtmlToClipboard } from "../lib/clipboard.js";
 import { urlWithId } from "../lib/url-utils.js";
 
 /**
@@ -155,7 +156,7 @@ export function registrationDocuments(options) {
         return Promise.resolve();
       }
 
-      return navigator.clipboard.writeText(doc.a_snippet).then(
+      return writeHtmlToClipboard(doc.a_snippet).then(
         function () {
           self.showToast(messages.snippetCopied, "success");
         },

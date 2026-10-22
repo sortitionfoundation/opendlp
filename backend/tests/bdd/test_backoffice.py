@@ -2254,6 +2254,21 @@ def upload_file_field_holds(page: Page, name: str):
     assert field.evaluate("(input) => Array.from(input.files, (file) => file.name)") == [name]
 
 
+@when(parsers.parse('I copy the image "{alt}" from the assets panel'))
+def copy_image_from_assets(page: Page, alt: str):
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    page.get_by_role("button", name=f"Copy <img> snippet for {alt}").click()
+    expect(page.get_by_role("status").filter(has_text="Snippet copied to clipboard")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I paste into the visual intro editor")
+def paste_into_visual_intro(page: Page):
+    page.locator(VISUAL_INTRO).click()
+    page.keyboard.press("ControlOrMeta+V")
+
+
 @when(parsers.parse('I give the image the alt text "{alt}" and upload it'))
 def give_image_alt_text_and_upload(page: Page, alt: str):
     dialog = page.get_by_role("dialog", name="Upload image")

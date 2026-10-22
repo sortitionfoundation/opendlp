@@ -3,7 +3,11 @@
 import { Editor, Extension } from "@tiptap/core";
 import FileHandler from "@tiptap/extension-file-handler";
 import { isReadOnly, mountCodeEditor } from "./code-editor.js";
-import { formatHtml, roundTripsCleanly } from "./rich-editor-html.js";
+import {
+  formatHtml,
+  relativiseOwnUrls,
+  roundTripsCleanly,
+} from "./rich-editor-html.js";
 import {
   VariableHighlight,
   createSchemaExtensions,
@@ -115,6 +119,8 @@ export function mountRichEditor(textarea) {
         id: `${textarea.id}-visual`,
         class: "rich-editor__content",
       },
+      transformPastedHTML: (html) =>
+        relativiseOwnUrls(html, window.location.origin),
       handleDoubleClickOn: (_view, _pos, node, nodePos) => {
         if (node.type.name !== "image" || !imagesAllowed || readOnly) {
           return false;
