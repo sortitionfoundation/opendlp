@@ -873,6 +873,15 @@ class TestThankYouStep:
         assert label in note
         assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro" in note
 
+    def test_the_editor_and_the_radio_have_different_names(self, logged_in_admin, fake_store, assembly_id):
+        """A screen reader would otherwise announce two different controls the same way."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._get(logged_in_admin, assembly_id)
+
+        assert re.search(r'<label for="thank_you_html"[^>]*>\s*Content of your thank-you page', body)
+        assert 'data-rich-editor-label="Content of your thank-you page"' in body
+
     def test_does_not_offer_to_leave_for_the_intro_step_while_editing(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 

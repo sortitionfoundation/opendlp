@@ -78,12 +78,12 @@ ABOUTME: Included by assembly_registration.html when ?section=thank-you
                                 {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
                             {% endset %}
                             {{ textarea(name="thank_you_html",
-                            label=_("Your own thank-you page"),
+                            label=_("Content of your thank-you page"),
                             value=thank_you_html,
                             rows=15,
                             code_editor=true,
                             rich_editor=true,
-                            rich_editor_label=_("Your own thank-you page"),
+                            rich_editor_label=_("Content of your thank-you page"),
                             rich_editor_images=true,
                             rich_editor_image_min_width=image_width_min,
                             rich_editor_tables=true,
@@ -93,70 +93,81 @@ ABOUTME: Included by assembly_registration.html when ?section=thank-you
                             attrs=textarea_attrs|trim) }}
                         </div>
                         {# A link to each page, whichever the radios are on, so neither link goes stale
-                           when the choice changes before it is saved. #}
-                        {% set link_attrs = '" class="underline" style="color: var(--color-links);" target="_blank" rel="noopener">' %}
+                           when the choice changes before it is saved. Each link is a whole element,
+                           built here rather than in the _() call, so the HTML formatter can read it. #}
+                        {% set own_link %}
+                            <a href="{{ url_for('registration.thank_you', url_slug=registration_page.url_slug, show='own') }}"
+                               class="underline"
+                               style="color: var(--color-links);"
+                               target="_blank"
+                               rel="noopener">{{ _("your thank-you page") }}</a>
+                        {% endset %}
+                        {% set standard_link %}
+                            <a href="{{ url_for('registration.thank_you', url_slug=registration_page.url_slug, show='standard') }}"
+                               class="underline"
+                               style="color: var(--color-links);"
+                               target="_blank"
+                               rel="noopener">{{ _("standard thank-you page") }}</a>
+                        {% endset %}
                         <p class="text-body-sm">
-                            {{ _("View %(own_start)syour thank-you page%(link_end)s or the %(standard_start)sstandard thank-you page%(link_end)s (opens in a new tab).",
-                            own_start=('<a href="' ~ url_for('registration.thank_you', url_slug=registration_page.url_slug, show='own') ~ link_attrs)|safe,
-                                                 standard_start=('<a href="' ~ url_for('registration.thank_you', url_slug=registration_page.url_slug, show='standard') ~ link_attrs)|safe,
-                                                                                                                                                               link_end='</a>'|safe) }}
-                            </p>
-                        </div>
-                    </section>
-                </div>
-                {% if edit_mode %}
-                    <aside class="lg:flex-shrink-0 w-full lg:w-[400px] rounded-lg"
-                           style="background-color: var(--color-tables-cards);
-                                  border: 1px solid var(--color-borders-dividers)">
-                        <div class="p-6 sticky top-4 w-full">
-                            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
-                            {{ asset_list(collection="images",
-                            item="image",
-                            heading=_("Images"),
-                            hint=_("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb),
-                            empty_text=_("No images uploaded yet."),
-                            upload_click="openImageUploadModal()",
-                            title_expr="image.alt || image.file_name",
-                            details_click="openImageDetailsModal(image)",
-                            copy_click="copyImageSnippet(image)",
-                            delete_click="deleteImage(image)",
-                            deleting_expr="imageBeingDeletedId === image.id",
-                            insert_click="insertImage(image)") }}
-                            {{ asset_list(collection="documents",
-                            item="doc",
-                            heading=_("Documents"),
-                            hint=_("PDF files only. Maximum file size: %(max)s MB per document.", max=max_pdf_upload_mb),
-                            empty_text=_("No documents uploaded yet."),
-                            upload_click="openDocumentUploadModal()",
-                            title_expr="doc.label || doc.file_name",
-                            details_click="openDocumentDetailsModal(doc)",
-                            copy_click="copyDocumentSnippet(doc)",
-                            delete_click="deleteDocument(doc)",
-                            deleting_expr="documentBeingDeletedId === doc.id",
-                            header_classes="mt-6 mb-4 pt-4",
-                            header_style="border-top: 1px solid var(--color-borders-dividers)") }}
-                        </div>
-                    </aside>
-                {% endif %}
+                            {{ _("View %(own_link)s or the %(standard_link)s (opens in a new tab).", own_link=own_link | trim, standard_link=standard_link | trim) }}
+                        </p>
+                    </div>
+                </section>
             </div>
-        </form>
+            {% if edit_mode %}
+                <aside class="lg:flex-shrink-0 w-full lg:w-[400px] rounded-lg"
+                       style="background-color: var(--color-tables-cards);
+                              border: 1px solid var(--color-borders-dividers)">
+                    <div class="p-6 sticky top-4 w-full">
+                        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
+                        {{ asset_list(collection="images",
+                        item="image",
+                        heading=_("Images"),
+                        hint=_("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb),
+                        empty_text=_("No images uploaded yet."),
+                        upload_click="openImageUploadModal()",
+                        title_expr="image.alt || image.file_name",
+                        details_click="openImageDetailsModal(image)",
+                        copy_click="copyImageSnippet(image)",
+                        delete_click="deleteImage(image)",
+                        deleting_expr="imageBeingDeletedId === image.id",
+                        insert_click="insertImage(image)") }}
+                        {{ asset_list(collection="documents",
+                        item="doc",
+                        heading=_("Documents"),
+                        hint=_("PDF files only. Maximum file size: %(max)s MB per document.", max=max_pdf_upload_mb),
+                        empty_text=_("No documents uploaded yet."),
+                        upload_click="openDocumentUploadModal()",
+                        title_expr="doc.label || doc.file_name",
+                        details_click="openDocumentDetailsModal(doc)",
+                        copy_click="copyDocumentSnippet(doc)",
+                        delete_click="deleteDocument(doc)",
+                        deleting_expr="documentBeingDeletedId === doc.id",
+                        header_classes="mt-6 mb-4 pt-4",
+                        header_style="border-top: 1px solid var(--color-borders-dividers)") }}
+                    </div>
+                </aside>
+            {% endif %}
+        </div>
+    </form>
     {# Sticky wizard footer - navigation only. #}
-        <div class="wizard-footer" x-scroll-preserve-links>
-            <div class="wizard-footer-box">
-                {% if edit_mode %}
-                    <span class="mr-auto flex items-center gap-3">
-                        {{ button(_("← Back"), variant="tertiary", disabled=true, aria_describedby="editing-nav-hint") }}
-                        <span id="editing-nav-hint"
-                              class="text-body-sm"
-                              style="color: var(--color-secondary-text)">
-                            {{ _("Editing in progress — save or cancel to continue") }}
-                        </span>
+    <div class="wizard-footer" x-scroll-preserve-links>
+        <div class="wizard-footer-box">
+            {% if edit_mode %}
+                <span class="mr-auto flex items-center gap-3">
+                    {{ button(_("← Back"), variant="tertiary", disabled=true, aria_describedby="editing-nav-hint") }}
+                    <span id="editing-nav-hint"
+                          class="text-body-sm"
+                          style="color: var(--color-secondary-text)">
+                        {{ _("Editing in progress — save or cancel to continue") }}
                     </span>
-                    {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
-                {% else %}
-                    <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_url) }}</span>
-                    {{ button(_("Next →"), variant="primary", href=next_url) }}
-                {% endif %}
-            </div>
+                </span>
+                {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
+            {% else %}
+                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_url) }}</span>
+                {{ button(_("Next →"), variant="primary", href=next_url) }}
+            {% endif %}
         </div>
     </div>
+</div>

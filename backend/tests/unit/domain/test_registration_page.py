@@ -24,6 +24,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageStatus,
     RenderContext,
     ThankYouContext,
+    find_thank_you_problems,
     generate_initial_intro_html,
     generate_starter_form_html,
     generate_starter_form_html_govuk,
@@ -858,6 +859,11 @@ def _own_thank_you(html: str) -> RegistrationPage:
 
 
 class TestThankYouProblems:
+    def test_html_can_be_checked_without_a_page(self):
+        """The service checks HTML before it changes the page."""
+        assert find_thank_you_problems("<p>{{ assembly_title }}</p>") == []
+        assert "{{ name }}" in find_thank_you_problems("<p>{{ name }}</p>")[0]
+
     def test_variables_on_offer(self):
         assert THANK_YOU_VARIABLES == ("assembly_title", "assembly_question", "restart_url")
 
@@ -929,10 +935,14 @@ class TestRenderThankYou:
         """So an author can look at the HTML they keep while showing the standard page."""
         page = _own_thank_you("<p>mine</p>")
         page.set_thank_you_use_default(True)
-        assert page.render_own_thank_you(self.CTX, ContentStyle.PLAIN) == "<p>mine</p>"
+        assert page.render_thank_you(self.CTX, ContentStyle.PLAIN, use_default=False) == "<p>mine</p>"
+
+    def test_the_standard_page_can_be_asked_for_while_own_html_is_chosen(self):
+        page = _own_thank_you("<p>mine</p>")
+        assert page.render_thank_you(self.CTX, ContentStyle.PLAIN, use_default=True) == ""
 
     def test_blank_own_html_renders_nothing_even_when_asked_for(self):
-        assert _own_thank_you(" \n").render_own_thank_you(self.CTX, ContentStyle.GOVUK) == ""
+        assert _own_thank_you(" \n").render_thank_you(self.CTX, ContentStyle.GOVUK, use_default=False) == ""
 
 
 class TestPublishAndReadiness:

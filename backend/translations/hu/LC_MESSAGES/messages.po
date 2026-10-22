@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 13:00+0000\n"
+"POT-Creation-Date: 2026-10-22 13:45+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -128,45 +128,45 @@ msgstr ""
 msgid "The email body has a template syntax error on line %(line)s: %(error)s"
 msgstr ""
 
-#: src/opendlp/domain/registration_page.py:292
+#: src/opendlp/domain/registration_page.py:134
 #, python-format
 msgid ""
 "The thank-you page has a template syntax error on line %(line)s: "
 "%(detail)s"
 msgstr ""
 
-#: src/opendlp/domain/registration_page.py:299
+#: src/opendlp/domain/registration_page.py:141
 #, python-format
 msgid "The thank-you page uses %(variable)s, which it does not offer"
 msgstr ""
 
-#: src/opendlp/domain/registration_page.py:633
+#: src/opendlp/domain/registration_page.py:639
 #: templates/backoffice/assembly_edit_respondent.html:128
 #: templates/backoffice/target_sources/_setup_modal.html:263
 msgid "Day"
 msgstr "Nap"
 
-#: src/opendlp/domain/registration_page.py:633
+#: src/opendlp/domain/registration_page.py:639
 msgid "DD"
 msgstr "NN"
 
-#: src/opendlp/domain/registration_page.py:634
+#: src/opendlp/domain/registration_page.py:640
 #: templates/backoffice/assembly_edit_respondent.html:131
 #: templates/backoffice/target_sources/_setup_modal.html:266
 msgid "Month"
 msgstr "Hónap"
 
-#: src/opendlp/domain/registration_page.py:634
+#: src/opendlp/domain/registration_page.py:640
 msgid "MM"
 msgstr "HH"
 
-#: src/opendlp/domain/registration_page.py:635
+#: src/opendlp/domain/registration_page.py:641
 #: templates/backoffice/assembly_edit_respondent.html:134
 #: templates/backoffice/target_sources/_setup_modal.html:269
 msgid "Year"
 msgstr "Év"
 
-#: src/opendlp/domain/registration_page.py:635
+#: src/opendlp/domain/registration_page.py:641
 msgid "YYYY"
 msgstr "ÉÉÉÉ"
 
@@ -2832,11 +2832,11 @@ msgstr "Add meg az ellenőrző kódot a tartalék kódok újragenerálásához"
 msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a tartalék kódok újragenerálása közben"
 
-#: src/opendlp/entrypoints/blueprints/registration.py:93
+#: src/opendlp/entrypoints/blueprints/registration.py:94
 msgid "Leave this blank"
 msgstr "Ezt hagyd üresen"
 
-#: src/opendlp/entrypoints/blueprints/registration.py:314
+#: src/opendlp/entrypoints/blueprints/registration.py:315
 msgid "Too many registrations from your location. Please try again later."
 msgstr "Túl sok regisztráció érkezett a helyedről. Kérjük, próbáld újra később."
 
@@ -4153,59 +4153,59 @@ msgstr "bejelentkezés"
 msgid "registration"
 msgstr "regisztráció"
 
-#: src/opendlp/service_layer/registration_page_service.py:85
+#: src/opendlp/service_layer/registration_page_service.py:86
 #, python-format
 msgid "The %(label)s must be at most %(max_bytes)s bytes; got %(size)s"
 msgstr "%(label)s legfeljebb %(max_bytes)s bájt lehet; a kapott méret %(size)s"
 
-#: src/opendlp/service_layer/registration_page_service.py:183
+#: src/opendlp/service_layer/registration_page_service.py:184
 msgid "Failed to generate unique short URL slug after multiple attempts"
 msgstr "Több próbálkozás után sem sikerült egyedi rövid URL-azonosítót előállítani"
 
-#: src/opendlp/service_layer/registration_page_service.py:238
-#: src/opendlp/service_layer/registration_page_service.py:614
+#: src/opendlp/service_layer/registration_page_service.py:239
+#: src/opendlp/service_layer/registration_page_service.py:615
 msgid "The registration page name is required"
 msgstr "A regisztrációs oldal nevét meg kell adni"
 
-#: src/opendlp/service_layer/registration_page_service.py:241
-#: src/opendlp/service_layer/registration_page_service.py:617
+#: src/opendlp/service_layer/registration_page_service.py:242
+#: src/opendlp/service_layer/registration_page_service.py:618
 #, python-format
 msgid "This assembly already has a registration page named '%(name)s'"
 msgstr "Ennek a közösségi gyűlésnek már van '%(name)s' nevű regisztrációs oldala"
 
-#: src/opendlp/service_layer/registration_page_service.py:423
+#: src/opendlp/service_layer/registration_page_service.py:424
 msgid ""
 "A registration page that has been published cannot be deleted; close it "
 "instead"
 msgstr "A már közzétett regisztrációs oldal nem törölhető; zárd le helyette"
 
-#: src/opendlp/service_layer/registration_page_service.py:425
+#: src/opendlp/service_layer/registration_page_service.py:426
 msgid "This registration page has registrations, so it cannot be deleted"
 msgstr "Ezen a regisztrációs oldalon vannak regisztrációk, ezért nem törölhető"
 
-#: src/opendlp/service_layer/registration_page_service.py:543
-#: src/opendlp/service_layer/registration_page_service.py:551
+#: src/opendlp/service_layer/registration_page_service.py:544
+#: src/opendlp/service_layer/registration_page_service.py:552
 #, python-format
 msgid "The slug '%(slug)s' is already in use by another registration page"
 msgstr "'%(slug)s' azonosítót már használja egy másik regisztrációs oldal"
 
-#: src/opendlp/service_layer/registration_page_service.py:659
+#: src/opendlp/service_layer/registration_page_service.py:660
 msgid "thank-you HTML"
 msgstr "köszönőoldal HTML"
 
-#: src/opendlp/service_layer/registration_page_service.py:689
+#: src/opendlp/service_layer/registration_page_service.py:687
 msgid "The thank-you page already has HTML, so it was left as it is"
 msgstr ""
 
-#: src/opendlp/service_layer/registration_page_service.py:702
+#: src/opendlp/service_layer/registration_page_service.py:700
 msgid "form HTML"
 msgstr "űrlap HTML"
 
-#: src/opendlp/service_layer/registration_page_service.py:725
+#: src/opendlp/service_layer/registration_page_service.py:723
 msgid "The form already has HTML, so it was left as it is"
 msgstr "Az űrlapban már van HTML, ezért változatlan maradt"
 
-#: src/opendlp/service_layer/registration_page_service.py:745
+#: src/opendlp/service_layer/registration_page_service.py:743
 msgid "intro HTML"
 msgstr "bevezető HTML"
 
@@ -8359,7 +8359,7 @@ msgstr "Dokumentum feltöltése"
 #: templates/backoffice/registration/_modals.html:178
 #: templates/backoffice/registration/_step_form.html:138
 #: templates/backoffice/registration/_step_intro.html:111
-#: templates/backoffice/registration/_step_thank_you.html:128
+#: templates/backoffice/registration/_step_thank_you.html:139
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr "Csak PDF fájlok. Maximális fájlméret: %(max)s MB dokumentumonként."
@@ -8624,8 +8624,8 @@ msgstr "Automatikus válasz e-mail beállítása"
 #: templates/backoffice/registration/_step_intro.html:131
 #: templates/backoffice/registration/_step_intro.html:140
 #: templates/backoffice/registration/_step_preview.html:103
-#: templates/backoffice/registration/_step_thank_you.html:148
-#: templates/backoffice/registration/_step_thank_you.html:157
+#: templates/backoffice/registration/_step_thank_you.html:159
+#: templates/backoffice/registration/_step_thank_you.html:168
 msgid "← Back"
 msgstr "← Vissza"
 
@@ -8638,8 +8638,8 @@ msgstr "← Vissza"
 #: templates/backoffice/registration/_step_intro.html:141
 #: templates/backoffice/registration/_step_page.html:95
 #: templates/backoffice/registration/_step_page.html:97
-#: templates/backoffice/registration/_step_thank_you.html:155
-#: templates/backoffice/registration/_step_thank_you.html:158
+#: templates/backoffice/registration/_step_thank_you.html:166
+#: templates/backoffice/registration/_step_thank_you.html:169
 msgid "Next →"
 msgstr "Tovább →"
 
@@ -8772,7 +8772,7 @@ msgstr "Teszt e-mail küldése"
 #: templates/backoffice/registration/_step_form.html:165
 #: templates/backoffice/registration/_step_intro.html:135
 #: templates/backoffice/registration/_step_page.html:93
-#: templates/backoffice/registration/_step_thank_you.html:152
+#: templates/backoffice/registration/_step_thank_you.html:163
 msgid "Editing in progress — save or cancel to continue"
 msgstr "Szerkesztés folyamatban – a folytatáshoz ments vagy vess el"
 
@@ -8829,19 +8829,19 @@ msgstr "Kitöltés egyszerű HTML-lel"
 
 #: templates/backoffice/registration/_step_form.html:123
 #: templates/backoffice/registration/_step_intro.html:95
-#: templates/backoffice/registration/_step_thank_you.html:112
+#: templates/backoffice/registration/_step_thank_you.html:123
 msgid "Assets"
 msgstr "Eszközök"
 
 #: templates/backoffice/registration/_step_form.html:126
 #: templates/backoffice/registration/_step_intro.html:98
-#: templates/backoffice/registration/_step_thank_you.html:115
+#: templates/backoffice/registration/_step_thank_you.html:126
 msgid "Images"
 msgstr "Képek"
 
 #: templates/backoffice/registration/_step_form.html:127
 #: templates/backoffice/registration/_step_intro.html:99
-#: templates/backoffice/registration/_step_thank_you.html:116
+#: templates/backoffice/registration/_step_thank_you.html:127
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
@@ -8850,19 +8850,19 @@ msgstr ""
 
 #: templates/backoffice/registration/_step_form.html:128
 #: templates/backoffice/registration/_step_intro.html:100
-#: templates/backoffice/registration/_step_thank_you.html:117
+#: templates/backoffice/registration/_step_thank_you.html:128
 msgid "No images uploaded yet."
 msgstr "Még nincs feltöltött kép."
 
 #: templates/backoffice/registration/_step_form.html:137
 #: templates/backoffice/registration/_step_intro.html:110
-#: templates/backoffice/registration/_step_thank_you.html:127
+#: templates/backoffice/registration/_step_thank_you.html:138
 msgid "Documents"
 msgstr "Dokumentumok"
 
 #: templates/backoffice/registration/_step_form.html:139
 #: templates/backoffice/registration/_step_intro.html:112
-#: templates/backoffice/registration/_step_thank_you.html:129
+#: templates/backoffice/registration/_step_thank_you.html:140
 msgid "No documents uploaded yet."
 msgstr "Még nincs feltöltött dokumentum."
 
@@ -8983,8 +8983,6 @@ msgid "Standard thank-you page"
 msgstr ""
 
 #: templates/backoffice/registration/_step_thank_you.html:50
-#: templates/backoffice/registration/_step_thank_you.html:81
-#: templates/backoffice/registration/_step_thank_you.html:86
 msgid "Your own thank-you page"
 msgstr ""
 
@@ -9005,12 +9003,22 @@ msgstr ""
 msgid "Change it on the Intro step"
 msgstr ""
 
-#: templates/backoffice/registration/_step_thank_you.html:99
+#: templates/backoffice/registration/_step_thank_you.html:81
+#: templates/backoffice/registration/_step_thank_you.html:86
+msgid "Content of your thank-you page"
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:103
+msgid "your thank-you page"
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:110
+msgid "standard thank-you page"
+msgstr ""
+
+#: templates/backoffice/registration/_step_thank_you.html:113
 #, python-format
-msgid ""
-"View %(own_start)syour thank-you page%(link_end)s or the "
-"%(standard_start)sstandard thank-you page%(link_end)s (opens in a new "
-"tab)."
+msgid "View %(own_link)s or the %(standard_link)s (opens in a new tab)."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:36

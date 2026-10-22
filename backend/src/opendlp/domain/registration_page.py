@@ -123,6 +123,26 @@ class RegistrationPageActivity:
         )
 
 
+def find_thank_you_problems(thank_you_html: str) -> list[str]:
+    """Why this thank-you HTML cannot be shown: a syntax error, or a variable other
+    than THANK_YOU_VARIABLES."""
+    try:
+        parsed = _SANDBOX_ENV.parse(thank_you_html)
+    except TemplateSyntaxError as e:
+        return [
+            _(
+                "The thank-you page has a template syntax error on line %(line)s: %(detail)s",
+                line=e.lineno,
+                detail=e.message or "",
+            )
+        ]
+    unknown = sorted(meta.find_undeclared_variables(parsed) - set(THANK_YOU_VARIABLES))
+    return [
+        _("The thank-you page uses %(variable)s, which it does not offer", variable=f"{{{{ {name} }}}}")
+        for name in unknown
+    ]
+
+
 @dataclass(frozen=True)
 class ThankYouContext:
     """Values substituted into a page's own thank-you HTML - one per THANK_YOU_VARIABLES.
@@ -280,35 +300,21 @@ class RegistrationPage:
         self.updated_at = datetime.now(UTC)
 
     def thank_you_problems(self) -> list[str]:
-        """Why the page's own thank-you HTML cannot be shown: a syntax error, or a
-        variable other than THANK_YOU_VARIABLES. None while the standard page is used."""
+        """Why the page's own thank-you HTML cannot be shown. None while the standard page is used."""
         if self.thank_you_use_default:
             return []
-        try:
-            parsed = _SANDBOX_ENV.parse(self.thank_you_html)
-        except TemplateSyntaxError as e:
-            return [
-                _(
-                    "The thank-you page has a template syntax error on line %(line)s: %(detail)s",
-                    line=e.lineno,
-                    detail=e.message or "",
-                )
-            ]
-        unknown = sorted(meta.find_undeclared_variables(parsed) - set(THANK_YOU_VARIABLES))
-        return [
-            _("The thank-you page uses %(variable)s, which it does not offer", variable=f"{{{{ {name} }}}}")
-            for name in unknown
-        ]
+        return find_thank_you_problems(self.thank_you_html)
 
-    def render_thank_you(self, ctx: ThankYouContext, content_style: ContentStyle) -> str:
+    def render_thank_you(
+        self, ctx: ThankYouContext, content_style: ContentStyle, *, use_default: bool | None = None
+    ) -> str:
         """The page's own thank-you HTML with its variables filled in, or "" when the
-        standard page should be shown instead. Takes the intro's content style."""
-        if self.thank_you_use_default:
-            return ""
-        return self.render_own_thank_you(ctx, content_style)
+        standard page should be shown instead. Takes the intro's content style.
 
-    def render_own_thank_you(self, ctx: ThankYouContext, content_style: ContentStyle) -> str:
-        """The page's own thank-you HTML whichever page is chosen, or "" when it is blank."""
+        `use_default` overrides the page's choice, so an author can look at either
+        page; None follows the choice."""
+        if self.thank_you_use_default if use_default is None else use_default:
+            return ""
         if not self.thank_you_html.strip():
             return ""
         rendered = _SANDBOX_ENV.from_string(self.thank_you_html).render(

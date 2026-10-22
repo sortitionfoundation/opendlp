@@ -829,23 +829,44 @@ class TestRenderThankYouHtml:
 
         assert service.render_thank_you_html(uow, page_for_assembly(uow, assembly.id), restart_url="") == ""
 
-    def test_can_render_the_own_html_while_the_standard_page_is_chosen(self, uow):
+    def _kept_behind_the_standard_page(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         page_id = _page_id(uow, assembly)
         service.update_registration_page_intro_html(uow, admin.id, page_id, "", content_style=ContentStyle.PLAIN)
         service.update_thank_you_html(uow, admin.id, page_id, "<p>thanks</p>", use_default=True)
-        page = page_for_assembly(uow, assembly.id)
+        return assembly, page_for_assembly(uow, assembly.id)
 
-        assert service.render_thank_you_html(uow, page, restart_url="", use_default=False) == "<p>thanks</p>"
+    def test_someone_who_can_view_the_assembly_can_see_the_own_html_behind_the_standard_page(self, uow):
+        assembly, page = self._kept_behind_the_standard_page(uow)
+        viewer = _viewer(uow, assembly)
 
-    def test_can_ask_for_the_standard_page_while_own_html_is_chosen(self, uow):
+        rendered = service.render_thank_you_html(uow, page, restart_url="", use_default=False, viewer_id=viewer.id)
+
+        assert rendered == "<p>thanks</p>"
+
+    def test_without_a_viewer_the_choice_stands(self, uow):
+        """Own HTML behind the standard page may be a draft, so the public never sees it."""
+        _assembly, page = self._kept_behind_the_standard_page(uow)
+
+        assert service.render_thank_you_html(uow, page, restart_url="", use_default=False) == ""
+
+    def test_someone_who_cannot_view_the_assembly_gets_the_choice(self, uow):
+        _assembly, page = self._kept_behind_the_standard_page(uow)
+        outsider = User(email="outsider@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(outsider)
+
+        rendered = service.render_thank_you_html(uow, page, restart_url="", use_default=False, viewer_id=outsider.id)
+
+        assert rendered == ""
+
+    def test_a_viewer_can_ask_for_the_standard_page_while_own_html_is_chosen(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>thanks</p>")
         page = page_for_assembly(uow, assembly.id)
 
-        assert service.render_thank_you_html(uow, page, restart_url="", use_default=True) == ""
+        assert service.render_thank_you_html(uow, page, restart_url="", use_default=True, viewer_id=admin.id) == ""
 
     def test_a_broken_page_raises_for_the_caller_to_handle(self, uow):
         """Saved before the check existed, or set by other means."""

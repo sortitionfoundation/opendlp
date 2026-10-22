@@ -11,6 +11,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user
 from flask_wtf.csrf import generate_csrf, validate_csrf
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
+from jinja2 import TemplateError
 from wtforms import ValidationError
 
 from opendlp import bootstrap
@@ -426,10 +427,12 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
     render gets the standard page rather than an error.
 
     `?show=standard` or `?show=own` shows that page whichever is chosen, for the
-    registration editor's links to each.
+    registration editor's links to each. It is ignored unless the visitor is signed
+    in and can view the assembly.
     """
     uow = bootstrap.get_flask_uow()
     use_default = {"standard": True, "own": False}.get(request.args.get("show", ""))
+    viewer_id = current_user.id if current_user.is_authenticated else None
 
     with uow:
         page = find_registration_page_by_url_slug(uow, url_slug)
@@ -437,8 +440,8 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
             abort(404)
         restart_url = registration_url(page.url_slug)
         try:
-            custom_html = render_thank_you_html(uow, page, restart_url, use_default=use_default)
-        except Exception as e:
+            custom_html = render_thank_you_html(uow, page, restart_url, use_default=use_default, viewer_id=viewer_id)
+        except TemplateError as e:
             logger.exception("Thank-you page failed to render", registration_page_id=str(page.id), error=str(e))
             custom_html = ""
 

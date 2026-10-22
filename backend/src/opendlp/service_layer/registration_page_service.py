@@ -23,6 +23,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageStatus,
     RenderContext,
     ThankYouContext,
+    find_thank_you_problems,
     generate_initial_intro_html,
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
@@ -657,10 +658,7 @@ def update_thank_you_html(
     user, page = _load_manageable_page(uow, user_id, page_id)
 
     _check_size(thank_you_html, get_registration_thank_you_html_max_bytes(), _("thank-you HTML"))
-    candidate = RegistrationPage(
-        assembly_id=page.assembly_id, thank_you_html=thank_you_html, thank_you_use_default=use_default
-    )
-    problems = candidate.thank_you_problems()
+    problems = [] if use_default else find_thank_you_problems(thank_you_html)
     if problems:
         raise ValueError("; ".join(problems))
     if page.thank_you_html != thank_you_html:
@@ -1014,29 +1012,39 @@ def render_registration_form(
 
 
 def render_thank_you_html(
-    uow: AbstractUnitOfWork, page: RegistrationPage, restart_url: str, *, use_default: bool | None = None
+    uow: AbstractUnitOfWork,
+    page: RegistrationPage,
+    restart_url: str,
+    *,
+    use_default: bool | None = None,
+    viewer_id: uuid.UUID | None = None,
 ) -> str:
     """The page's own thank-you HTML, rendered in its intro's style, or "" when the
     standard page should be shown. Raises what the template raises - a page saved
     before its HTML was checked can still be broken.
 
-    `use_default` overrides the page's choice, so an author can look at either page;
-    None follows the choice.
+    `use_default` overrides the page's choice, so an author can look at either page.
+    It counts only when `viewer_id` is someone who can view the assembly: own HTML
+    kept behind the standard page may be an unfinished draft, and it is not checked
+    when saved. Otherwise the page's choice stands.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
+    assembly = uow.assemblies.get(page.assembly_id)
+    viewer = uow.users.get(viewer_id) if viewer_id else None
+    if not (viewer and assembly and can_view_assembly(viewer, assembly)):
+        use_default = None
     if page.thank_you_use_default if use_default is None else use_default:
         return ""
     if not page.thank_you_html.strip():
         return ""
-    assembly = uow.assemblies.get(page.assembly_id)
     source = _load_html_source(uow, page)
     ctx = ThankYouContext(
         assembly_title=assembly.title if assembly else "",
         assembly_question=assembly.question if assembly else "",
         restart_url=restart_url,
     )
-    return page.render_own_thank_you(ctx, source.content_style)
+    return page.render_thank_you(ctx, source.content_style, use_default=use_default)
 
 
 def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:

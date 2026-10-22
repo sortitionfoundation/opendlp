@@ -232,8 +232,10 @@ standard page too.
 
 The step links to both pages, whichever is chosen: the public thank-you URL
 takes `?show=own` or `?show=standard` to show that page instead of the chosen
-one. The links show what is saved, not edits still in the editor. Anyone can
-add `?show=own`, so own HTML that is saved but not chosen is not private.
+one. The links show what is saved, not edits still in the editor. `?show=` is
+honoured only for a signed-in user who can view the assembly, because own HTML
+kept behind the standard page may be an unfinished draft, and is not checked
+when it is saved. Anyone else gets the chosen page.
 
 While the saved HTML is blank, the read-only step offers **Fill with starter
 content**, as the form step offers its fills. It writes
