@@ -2541,14 +2541,14 @@ def email_html_view_contains(page: Page, html: str):
 
 @when(parsers.parse('I set replies to go to "{name}" at "{email}"'))
 def set_replies_go_to(page: Page, name: str, email: str):
-    replies = page.get_by_role("group", name="Replies go to")
+    replies = page.get_by_role("group", name="Reply-to")
     replies.get_by_label("Name", exact=True).fill(name)
     replies.get_by_label("Email address", exact=True).fill(email)
 
 
 @then(parsers.parse('replies should go to "{name}" at "{email}"'))
 def replies_go_to(page: Page, name: str, email: str):
-    replies = page.get_by_role("group", name="Replies go to")
+    replies = page.get_by_role("group", name="Reply-to")
     expect(replies.get_by_label("Name", exact=True)).to_have_value(name, timeout=PLAYWRIGHT_TIMEOUT)
     expect(replies.get_by_label("Email address", exact=True)).to_have_value(email)
     expect(replies.get_by_label("Email address", exact=True)).to_have_attribute("readonly", "")

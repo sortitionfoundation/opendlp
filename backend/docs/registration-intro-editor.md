@@ -292,13 +292,13 @@ horizontal lines as plain text would.
 
 ### Where replies go
 
-The step shows the address the email is **sent from**. It comes from the
-deployment's mail settings (`SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`) and is the
-same for every assembly. It can't be changed per page, because the mail relay
-and the sending domain's SPF, DKIM and DMARC records only vouch for that one
-address. It is often a no-reply address that nobody reads.
+The email is sent from the deployment's mail settings (`SMTP_FROM_EMAIL`,
+`SMTP_FROM_NAME`), the same for every assembly. The step doesn't show that
+address and it can't be changed per page, because the mail relay and the
+sending domain's SPF, DKIM and DMARC records only vouch for that one address.
+It is often a no-reply address that nobody reads.
 
-**Replies go to** sets the email's Reply-To: a name and an email address,
+**Reply-to** sets the email's Reply-To: a name and an email address,
 both optional, stored on the page's auto-reply template. When someone replies,
 their mail client uses this address instead of the sending one. A copied
 page keeps it.
