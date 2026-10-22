@@ -1,6 +1,7 @@
 """ABOUTME: EmailTemplate domain aggregate for database-stored templated emails
 ABOUTME: Holds subject, HTML body and reply-to; renders against a context and validates itself"""
 
+import re
 import unicodedata
 import uuid
 from collections.abc import Mapping
@@ -22,6 +23,13 @@ ReplyTo = str | tuple[str, str] | None
 REPLY_TO_MAX_LENGTH = 255
 
 _LINE_SEPARATORS = ("\u2028", "\u2029")
+
+# Text in square brackets with at least one letter in it, such as "[Your name]",
+# which the default auto-reply leaves for the organiser to replace. A bracketed
+# number such as a footnote "[1]" is not one.
+_PLACEHOLDER = re.compile(r"\[[^\[\]<>]*?[^\W\d_][^\[\]<>]*?\]")
+_TAG = re.compile(r"<[^>]*>")
+_FIRST_ASSEMBLY_DATE = re.compile(r"\{\{\s*assembly\.first_assembly_date(?:_text)?\s*\}\}")
 
 
 def reply_to_address(name: str, email: str) -> ReplyTo:
@@ -81,6 +89,19 @@ class EmailTemplate:
 
     def render(self, context: Mapping[str, Any]) -> RenderedEmail:
         return render_template_string(self.subject, self.body_html, context)
+
+    def unfilled_placeholders(self) -> list[str]:
+        """The [placeholders] still in the subject or body's text, in order and without repeats.
+
+        The body's tags are left out, so a bracket in an attribute doesn't count.
+        """
+        body_text = _TAG.sub(" ", self.body_html)
+        found = _PLACEHOLDER.findall(self.subject) + _PLACEHOLDER.findall(body_text)
+        return list(dict.fromkeys(found))
+
+    def uses_first_assembly_date(self) -> bool:
+        """True when the subject or body shows the assembly's first date, in either form."""
+        return bool(_FIRST_ASSEMBLY_DATE.search(self.subject) or _FIRST_ASSEMBLY_DATE.search(self.body_html))
 
     def reply_to(self) -> ReplyTo:
         return reply_to_address(self.reply_to_name, self.reply_to_email)

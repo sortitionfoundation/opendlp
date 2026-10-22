@@ -189,3 +189,44 @@ def test_validation_problems_are_translated(monkeypatch: pytest.MonkeyPatch) -> 
     ).validation_problems()
     assert len(problems) == 5
     assert all(p.startswith("TR:") for p in problems), problems
+
+
+def test_unfilled_placeholders_finds_bracketed_text_in_order_once() -> None:
+    template = _template(
+        subject="Welcome to [Assembly name]",
+        body_html="<p>[Date]: we will call. [Date]: the first session.</p><p>[Your name]</p>",
+    )
+    assert template.unfilled_placeholders() == ["[Assembly name]", "[Date]", "[Your name]"]
+
+
+def test_unfilled_placeholders_finds_letters_in_any_language() -> None:
+    assert _template(body_html="<p>Üdvözlettel, [Neved]</p>").unfilled_placeholders() == ["[Neved]"]
+
+
+def test_unfilled_placeholders_ignores_numbers_and_attributes() -> None:
+    template = _template(body_html='<p>See note [1].</p><p><a href="https://example.org/[x]">Link</a></p>')
+    assert template.unfilled_placeholders() == []
+
+
+def test_the_default_auto_reply_has_placeholders_to_fill() -> None:
+    body = (
+        "<li>[Date, time and place of each session]</li>"
+        "<p>around a [10 to 20] in 100 chance</p><p>Kind regards,<br>[Your name]</p>"
+    )
+    assert _template(body_html=body).unfilled_placeholders() == [
+        "[Date, time and place of each session]",
+        "[10 to 20]",
+        "[Your name]",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("subject", "body", "uses"),
+    [
+        ("Hi", "<p>{{ assembly.first_assembly_date_text }}</p>", True),
+        ("Starts {{assembly.first_assembly_date}}", "<p>x</p>", True),
+        ("Hi", "<p>{{ assembly.title }}</p>", False),
+    ],
+)
+def test_uses_first_assembly_date(subject: str, body: str, uses: bool) -> None:
+    assert _template(subject=subject, body_html=body).uses_first_assembly_date() is uses
