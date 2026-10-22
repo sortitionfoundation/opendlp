@@ -222,6 +222,29 @@ describe("roundTripsCleanly", () => {
   });
 });
 
+describe("text alignment", () => {
+  it("keeps a centred or right-aligned paragraph and heading, writing the style once", () => {
+    for (const html of [
+      '<p style="text-align: center">Middle</p>',
+      '<h2 style="text-align: right">Edge</h2>',
+    ]) {
+      expect(roundTripsCleanly(html, extensions)).toBe(true);
+      expect(roundTrip(html, extensions).match(/text-align/g)).toHaveLength(1);
+    }
+  });
+
+  it("keeps the rest of a block's style beside its alignment", () => {
+    const html = '<p style="color: red; text-align: center">Red middle</p>';
+    expect(roundTripsCleanly(html, extensions)).toBe(true);
+    expect(roundTrip(html, extensions).match(/text-align/g)).toHaveLength(1);
+  });
+
+  it("keeps an alignment the toolbar doesn't offer as part of the style", () => {
+    const html = '<p style="text-align: justify">Even</p>';
+    expect(roundTripsCleanly(html, extensions)).toBe(true);
+  });
+});
+
 describe("styled spans (A8 in auto-reply-plan.md)", () => {
   it("keeps a span with a style, a class and a direction", () => {
     const html =

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 14:41+0000\n"
+"POT-Creation-Date: 2026-10-22 14:53+0000\n"
 "PO-Revision-Date: 2026-10-22 13:54+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -229,93 +229,93 @@ msgstr ""
 "hogy melyik hány éves kortól kezdődik, vagy módosítsd a célértékeket "
 "ilyen alakúra: 16-29, 30-44, 45-59, 60+."
 
-#: src/opendlp/domain/respondent_field_schema.py:74
+#: src/opendlp/domain/respondent_field_schema.py:75
 #: templates/backoffice/target_sources/_setup_modal.html:187
 msgid "Age ranges"
 msgstr "Korcsoportok"
 
-#: src/opendlp/domain/respondent_field_schema.py:75
+#: src/opendlp/domain/respondent_field_schema.py:76
 msgid "Map more options to fewer"
 msgstr "Több lehetőség összevonása kevesebbé"
 
-#: src/opendlp/domain/respondent_field_schema.py:76
+#: src/opendlp/domain/respondent_field_schema.py:77
 msgid "Map postcode to value"
 msgstr "Irányítószám hozzárendelése értékhez"
 
-#: src/opendlp/domain/respondent_field_schema.py:109
+#: src/opendlp/domain/respondent_field_schema.py:110
 msgid "Eligibility"
 msgstr "Jogosultság"
 
-#: src/opendlp/domain/respondent_field_schema.py:110
+#: src/opendlp/domain/respondent_field_schema.py:111
 msgid "Name and contact"
 msgstr "Név és elérhetőség"
 
-#: src/opendlp/domain/respondent_field_schema.py:111
+#: src/opendlp/domain/respondent_field_schema.py:112
 msgid "Address"
 msgstr "Cím"
 
-#: src/opendlp/domain/respondent_field_schema.py:112
+#: src/opendlp/domain/respondent_field_schema.py:113
 msgid "About you"
 msgstr "Rólad"
 
-#: src/opendlp/domain/respondent_field_schema.py:113
+#: src/opendlp/domain/respondent_field_schema.py:114
 #: templates/backoffice/assembly_view_respondent.html:169
 #: templates/respondents/view_respondents.html:165
 msgid "Consent"
 msgstr "Hozzájárulás"
 
-#: src/opendlp/domain/respondent_field_schema.py:114
+#: src/opendlp/domain/respondent_field_schema.py:115
 msgid "Other"
 msgstr "Egyéb"
 
-#: src/opendlp/domain/respondent_field_schema.py:115
+#: src/opendlp/domain/respondent_field_schema.py:116
 msgid "Derived"
 msgstr "Számított"
 
-#: src/opendlp/domain/respondent_field_schema.py:145
+#: src/opendlp/domain/respondent_field_schema.py:146
 msgid "Not on registration page"
 msgstr "Nem szerepel a regisztrációs oldalon"
 
-#: src/opendlp/domain/respondent_field_schema.py:146
+#: src/opendlp/domain/respondent_field_schema.py:147
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:247
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:257
 msgid "Optional"
 msgstr "Nem kötelező"
 
-#: src/opendlp/domain/respondent_field_schema.py:147
+#: src/opendlp/domain/respondent_field_schema.py:148
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:247
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:257
 msgid "Required"
 msgstr "Kötelező"
 
-#: src/opendlp/domain/respondent_field_schema.py:152
+#: src/opendlp/domain/respondent_field_schema.py:153
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:204
 #: templates/backoffice/components/rich_editor.html:92
 msgid "Text"
 msgstr "Szöveg"
 
-#: src/opendlp/domain/respondent_field_schema.py:153
+#: src/opendlp/domain/respondent_field_schema.py:154
 msgid "Long text"
 msgstr "Hosszú szöveg"
 
-#: src/opendlp/domain/respondent_field_schema.py:156
 #: src/opendlp/domain/respondent_field_schema.py:157
+#: src/opendlp/domain/respondent_field_schema.py:158
 msgid "Checkbox"
 msgstr "Jelölőnégyzet"
 
-#: src/opendlp/domain/respondent_field_schema.py:158
+#: src/opendlp/domain/respondent_field_schema.py:159
 msgid "Choice (radios)"
 msgstr "Választás (rádiógombok)"
 
-#: src/opendlp/domain/respondent_field_schema.py:159
+#: src/opendlp/domain/respondent_field_schema.py:160
 msgid "Choice (dropdown)"
 msgstr "Választás (legördülő lista)"
 
-#: src/opendlp/domain/respondent_field_schema.py:160
+#: src/opendlp/domain/respondent_field_schema.py:161
 msgid "Whole number"
 msgstr "Egész szám"
 
-#: src/opendlp/domain/respondent_field_schema.py:161
+#: src/opendlp/domain/respondent_field_schema.py:162
 #: templates/admin/invite_view.html:48 templates/admin/invites.html:67
 #: templates/admin/user_view.html:23 templates/admin/users.html:116
 #: templates/backoffice/assembly_members.html:48
@@ -327,25 +327,25 @@ msgstr "Egész szám"
 msgid "Email"
 msgstr "E-mail"
 
-#: src/opendlp/domain/respondent_field_schema.py:162
+#: src/opendlp/domain/respondent_field_schema.py:163
 msgid "Date"
 msgstr "Dátum"
 
-#: src/opendlp/domain/respondent_field_schema.py:195
+#: src/opendlp/domain/respondent_field_schema.py:196
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:808
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:979
 msgid "A choice field needs at least one option"
 msgstr "Választásos mezőhöz legalább egy választható érték szükséges"
 
-#: src/opendlp/domain/respondent_field_schema.py:197
+#: src/opendlp/domain/respondent_field_schema.py:198
 msgid "Only a choice field can have options"
 msgstr "Csak választásos mezőnek lehetnek választható értékei"
 
-#: src/opendlp/domain/respondent_field_schema.py:207
+#: src/opendlp/domain/respondent_field_schema.py:208
 msgid "An option value cannot be blank"
 msgstr "Választható érték nem lehet üres"
 
-#: src/opendlp/domain/respondent_field_schema.py:310
+#: src/opendlp/domain/respondent_field_schema.py:311
 msgid "The label cannot be empty"
 msgstr "A címke nem lehet üres"
 
@@ -3952,7 +3952,7 @@ msgstr "A PDF fájl túl nagy"
 msgid "The file must be a PDF"
 msgstr "A fájlnak PDF-nek kell lennie"
 
-#: src/opendlp/service_layer/email_template_service.py:55
+#: src/opendlp/service_layer/email_template_service.py:54
 msgid ""
 "The registration page does not collect an email address, so the auto-"
 "reply can never be sent. Add a required email field to the page."
@@ -3960,7 +3960,7 @@ msgstr ""
 "A regisztrációs oldal nem kér be e-mail címet, így az automatikus válasz "
 "sosem küldhető el. Vegyél fel egy kötelező e-mail mezőt az oldalra."
 
-#: src/opendlp/service_layer/email_template_service.py:65
+#: src/opendlp/service_layer/email_template_service.py:64
 msgid ""
 "The email address is optional on the registration page, so respondents "
 "who leave it blank will not receive the auto-reply."
@@ -3968,7 +3968,7 @@ msgstr ""
 "Az e-mail cím megadása nem kötelező a regisztrációs oldalon, így azok a "
 "jelentkezők, akik üresen hagyják, nem kapják meg az automatikus választ."
 
-#: src/opendlp/service_layer/email_template_service.py:87
+#: src/opendlp/service_layer/email_template_service.py:86
 #, fuzzy
 msgid ""
 "Replies to the auto-reply will go to the address it is sent from, which "
@@ -3978,7 +3978,7 @@ msgstr ""
 "e-mailt küldik, és lehet, hogy azt senki sem figyeli. Add meg, hová "
 "menjenek a válaszok, hogy eljussanak a csapatodhoz."
 
-#: src/opendlp/service_layer/email_template_service.py:122
+#: src/opendlp/service_layer/email_template_service.py:121
 #, fuzzy, python-format
 msgid "The email body must be at most %(max_bytes)s bytes"
 msgstr "Az e-mail törzse legfeljebb %(max_bytes)s bájt lehet"
@@ -5083,8 +5083,8 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:88
 #: templates/backoffice/dashboard_export_modal.html:62
-#: templates/backoffice/registration/_assets.html:254
-#: templates/backoffice/registration/_assets.html:310
+#: templates/backoffice/registration/_assets.html:256
+#: templates/backoffice/registration/_assets.html:312
 #: templates/backoffice/registration/_modals.html:96
 #: templates/backoffice/registration/_modals.html:307
 #: templates/backoffice/registration/_modals.html:349
@@ -5092,7 +5092,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/registration/_step_form.html:58
 #: templates/backoffice/registration/_step_intro.html:37
 #: templates/backoffice/registration/_step_page.html:33
-#: templates/backoffice/registration/_step_thank_you.html:35
+#: templates/backoffice/registration/_step_thank_you.html:39
 #: templates/backoffice/respondent_field_schema/_field_modal.html:203
 #: templates/backoffice/respondents/confirm_upload_diff.html:99
 #: templates/backoffice/respondents/export_modal.html:75
@@ -5422,7 +5422,7 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/registration/_step_form.html:61
 #: templates/backoffice/registration/_step_intro.html:40
 #: templates/backoffice/registration/_step_page.html:36
-#: templates/backoffice/registration/_step_thank_you.html:38
+#: templates/backoffice/registration/_step_thank_you.html:42
 #: templates/backoffice/respondent_field_schema/_editor.html:92
 #: templates/backoffice/target_sources/_checklist.html:73
 #: templates/backoffice/target_sources/_setup_modal.html:192
@@ -5890,8 +5890,8 @@ msgid "Chart"
 msgstr "Diagram"
 
 #: templates/backoffice/assembly_dashboard.html:59
-#: templates/backoffice/components/rich_editor.html:116
-#: templates/backoffice/components/rich_editor.html:125
+#: templates/backoffice/components/rich_editor.html:120
+#: templates/backoffice/components/rich_editor.html:129
 msgid "Table"
 msgstr "Táblázat"
 
@@ -6195,8 +6195,8 @@ msgstr "Válassz ki egy kiválasztási szempontokat tartalmazó CSV fájlt."
 
 #: templates/backoffice/assembly_data.html:368
 #: templates/backoffice/assembly_data.html:447
-#: templates/backoffice/registration/_assets.html:144
-#: templates/backoffice/registration/_assets.html:255
+#: templates/backoffice/registration/_assets.html:146
+#: templates/backoffice/registration/_assets.html:257
 #: templates/backoffice/target_sources/_upload_modal.html:80
 #: templates/backoffice/target_sources/_upload_modal.html:85
 msgid "Upload"
@@ -6510,7 +6510,7 @@ msgid "Form"
 msgstr "Űrlap"
 
 #: templates/backoffice/assembly_registration.html:126
-#: templates/backoffice/registration/_step_thank_you.html:32
+#: templates/backoffice/registration/_step_thank_you.html:36
 #, fuzzy
 msgid "Thank-you page"
 msgstr "Köszönőoldal"
@@ -7949,74 +7949,86 @@ msgid "Strikethrough"
 msgstr "Áthúzott"
 
 #: templates/backoffice/components/rich_editor.html:102
+msgid "Align left"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:103
+msgid "Align centre"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:104
+msgid "Align right"
+msgstr ""
+
+#: templates/backoffice/components/rich_editor.html:106
 msgid "Bulleted list"
 msgstr "Felsorolás"
 
-#: templates/backoffice/components/rich_editor.html:103
+#: templates/backoffice/components/rich_editor.html:107
 msgid "Numbered list"
 msgstr "Számozott lista"
 
-#: templates/backoffice/components/rich_editor.html:104
+#: templates/backoffice/components/rich_editor.html:108
 msgid "Indent list item"
 msgstr "Listaelem behúzása"
 
-#: templates/backoffice/components/rich_editor.html:105
+#: templates/backoffice/components/rich_editor.html:109
 msgid "Outdent list item"
 msgstr "Listaelem behúzásának csökkentése"
 
-#: templates/backoffice/components/rich_editor.html:106
+#: templates/backoffice/components/rich_editor.html:110
 msgid "Quote"
 msgstr "Idézet"
 
-#: templates/backoffice/components/rich_editor.html:108
+#: templates/backoffice/components/rich_editor.html:112
 #: templates/backoffice/registration/_modals.html:268
 msgid "Link"
 msgstr "Link"
 
-#: templates/backoffice/components/rich_editor.html:110
+#: templates/backoffice/components/rich_editor.html:114
 msgid "Image"
 msgstr "Kép"
 
-#: templates/backoffice/components/rich_editor.html:111
+#: templates/backoffice/components/rich_editor.html:115
 #: templates/backoffice/registration/_modals.html:315
 msgid "Image size"
 msgstr "Képméret"
 
-#: templates/backoffice/components/rich_editor.html:113
+#: templates/backoffice/components/rich_editor.html:117
 msgid "Horizontal line"
 msgstr "Vízszintes vonal"
 
-#: templates/backoffice/components/rich_editor.html:128
+#: templates/backoffice/components/rich_editor.html:132
 msgid "Insert table"
 msgstr "Táblázat beszúrása"
 
-#: templates/backoffice/components/rich_editor.html:131
+#: templates/backoffice/components/rich_editor.html:135
 msgid "Add row below"
 msgstr "Sor hozzáadása alá"
 
-#: templates/backoffice/components/rich_editor.html:134
+#: templates/backoffice/components/rich_editor.html:138
 msgid "Add column to the right"
 msgstr "Oszlop hozzáadása jobbra"
 
-#: templates/backoffice/components/rich_editor.html:137
+#: templates/backoffice/components/rich_editor.html:141
 msgid "Delete row"
 msgstr "Sor törlése"
 
-#: templates/backoffice/components/rich_editor.html:140
+#: templates/backoffice/components/rich_editor.html:144
 msgid "Delete column"
 msgstr "Oszlop törlése"
 
-#: templates/backoffice/components/rich_editor.html:143
+#: templates/backoffice/components/rich_editor.html:147
 msgid "Delete table"
 msgstr "Táblázat törlése"
 
-#: templates/backoffice/components/rich_editor.html:149
+#: templates/backoffice/components/rich_editor.html:153
 #: templates/backoffice/targets/bulk_edit_form.html:155
 #: templates/backoffice/targets/bulk_edit_form.html:201
 msgid "Undo"
 msgstr "Mégse"
 
-#: templates/backoffice/components/rich_editor.html:150
+#: templates/backoffice/components/rich_editor.html:154
 msgid "Redo"
 msgstr "Mégis"
 
@@ -8130,23 +8142,23 @@ msgstr "hibás"
 msgid "Copied to clipboard"
 msgstr "Vágólapra másolva"
 
-#: templates/backoffice/registration/_assets.html:289
+#: templates/backoffice/registration/_assets.html:291
 msgid "File name"
 msgstr "Fájlnév"
 
-#: templates/backoffice/registration/_assets.html:291
+#: templates/backoffice/registration/_assets.html:293
 msgid "Copy file name"
 msgstr "Fájlnév másolása"
 
-#: templates/backoffice/registration/_assets.html:293
+#: templates/backoffice/registration/_assets.html:295
 msgid "File name copied to clipboard"
 msgstr "A fájlnév a vágólapra másolva"
 
-#: templates/backoffice/registration/_assets.html:318
+#: templates/backoffice/registration/_assets.html:320
 msgid "File size"
 msgstr "Fájlméret"
 
-#: templates/backoffice/registration/_assets.html:328
+#: templates/backoffice/registration/_assets.html:330
 msgid "Original filename"
 msgstr "Eredeti fájlnév"
 
@@ -8371,7 +8383,7 @@ msgstr "Dokumentum feltöltése"
 #: templates/backoffice/registration/_modals.html:178
 #: templates/backoffice/registration/_step_form.html:138
 #: templates/backoffice/registration/_step_intro.html:111
-#: templates/backoffice/registration/_step_thank_you.html:139
+#: templates/backoffice/registration/_step_thank_you.html:143
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr "Csak PDF fájlok. Maximális fájlméret: %(max)s MB dokumentumonként."
@@ -8633,8 +8645,8 @@ msgstr "Automatikus válasz e-mail beállítása"
 #: templates/backoffice/registration/_step_intro.html:131
 #: templates/backoffice/registration/_step_intro.html:140
 #: templates/backoffice/registration/_step_preview.html:103
-#: templates/backoffice/registration/_step_thank_you.html:159
-#: templates/backoffice/registration/_step_thank_you.html:168
+#: templates/backoffice/registration/_step_thank_you.html:163
+#: templates/backoffice/registration/_step_thank_you.html:172
 msgid "← Back"
 msgstr "← Vissza"
 
@@ -8647,8 +8659,8 @@ msgstr "← Vissza"
 #: templates/backoffice/registration/_step_intro.html:141
 #: templates/backoffice/registration/_step_page.html:95
 #: templates/backoffice/registration/_step_page.html:97
-#: templates/backoffice/registration/_step_thank_you.html:166
-#: templates/backoffice/registration/_step_thank_you.html:169
+#: templates/backoffice/registration/_step_thank_you.html:170
+#: templates/backoffice/registration/_step_thank_you.html:173
 msgid "Next →"
 msgstr "Tovább →"
 
@@ -8774,7 +8786,7 @@ msgstr "Teszt e-mail küldése"
 #: templates/backoffice/registration/_step_form.html:165
 #: templates/backoffice/registration/_step_intro.html:135
 #: templates/backoffice/registration/_step_page.html:93
-#: templates/backoffice/registration/_step_thank_you.html:163
+#: templates/backoffice/registration/_step_thank_you.html:167
 msgid "Editing in progress — save or cancel to continue"
 msgstr "Szerkesztés folyamatban – a folytatáshoz ments vagy vess el"
 
@@ -8831,19 +8843,19 @@ msgstr "Kitöltés egyszerű HTML-lel"
 
 #: templates/backoffice/registration/_step_form.html:123
 #: templates/backoffice/registration/_step_intro.html:95
-#: templates/backoffice/registration/_step_thank_you.html:123
+#: templates/backoffice/registration/_step_thank_you.html:127
 msgid "Assets"
 msgstr "Eszközök"
 
 #: templates/backoffice/registration/_step_form.html:126
 #: templates/backoffice/registration/_step_intro.html:98
-#: templates/backoffice/registration/_step_thank_you.html:126
+#: templates/backoffice/registration/_step_thank_you.html:130
 msgid "Images"
 msgstr "Képek"
 
 #: templates/backoffice/registration/_step_form.html:127
 #: templates/backoffice/registration/_step_intro.html:99
-#: templates/backoffice/registration/_step_thank_you.html:127
+#: templates/backoffice/registration/_step_thank_you.html:131
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
@@ -8852,19 +8864,19 @@ msgstr ""
 
 #: templates/backoffice/registration/_step_form.html:128
 #: templates/backoffice/registration/_step_intro.html:100
-#: templates/backoffice/registration/_step_thank_you.html:128
+#: templates/backoffice/registration/_step_thank_you.html:132
 msgid "No images uploaded yet."
 msgstr "Még nincs feltöltött kép."
 
 #: templates/backoffice/registration/_step_form.html:137
 #: templates/backoffice/registration/_step_intro.html:110
-#: templates/backoffice/registration/_step_thank_you.html:138
+#: templates/backoffice/registration/_step_thank_you.html:142
 msgid "Documents"
 msgstr "Dokumentumok"
 
 #: templates/backoffice/registration/_step_form.html:139
 #: templates/backoffice/registration/_step_intro.html:112
-#: templates/backoffice/registration/_step_thank_you.html:140
+#: templates/backoffice/registration/_step_thank_you.html:144
 msgid "No documents uploaded yet."
 msgstr "Még nincs feltöltött dokumentum."
 
@@ -8976,63 +8988,63 @@ msgstr "Közzététel visszavonása"
 msgid "Re-open registration"
 msgstr ""
 
-#: templates/backoffice/registration/_step_thank_you.html:46
+#: templates/backoffice/registration/_step_thank_you.html:48
 #, fuzzy
 msgid "Choose what respondents see after they send the form."
 msgstr "Válaszd ki, mit lássanak a jelentkezők az űrlap elküldése után."
 
-#: templates/backoffice/registration/_step_thank_you.html:49
+#: templates/backoffice/registration/_step_thank_you.html:51
 #, fuzzy
 msgid "Which thank-you page to show"
 msgstr "Melyik köszönőoldal jelenjen meg"
 
-#: templates/backoffice/registration/_step_thank_you.html:50
+#: templates/backoffice/registration/_step_thank_you.html:52
 #, fuzzy
 msgid "Standard thank-you page"
 msgstr "Alapértelmezett köszönőoldal"
 
-#: templates/backoffice/registration/_step_thank_you.html:50
+#: templates/backoffice/registration/_step_thank_you.html:52
 #, fuzzy
 msgid "Your own thank-you page"
 msgstr "Saját köszönőoldal"
 
-#: templates/backoffice/registration/_step_thank_you.html:52
+#: templates/backoffice/registration/_step_thank_you.html:54
 #, fuzzy
 msgid "A short thank-you, in the language the respondent is viewing the page in."
 msgstr "Rövid köszönet azon a nyelven, amelyen a jelentkező az oldalt nézi."
 
-#: templates/backoffice/registration/_step_thank_you.html:59
+#: templates/backoffice/registration/_step_thank_you.html:61
 #, fuzzy
 msgid "Fill with starter content"
 msgstr "Kitöltés kezdő tartalommal"
 
-#: templates/backoffice/registration/_step_thank_you.html:70
+#: templates/backoffice/registration/_step_thank_you.html:72
 #, fuzzy, python-format
 msgid "Style: %(style)s, the same as the intro."
 msgstr "Stílus: %(style)s, ugyanaz, mint a bevezetőé."
 
-#: templates/backoffice/registration/_step_thank_you.html:74
+#: templates/backoffice/registration/_step_thank_you.html:76
 #, fuzzy
 msgid "Change it on the Intro step"
 msgstr "Módosítás a Bevezető lépésnél"
 
-#: templates/backoffice/registration/_step_thank_you.html:81
-#: templates/backoffice/registration/_step_thank_you.html:86
+#: templates/backoffice/registration/_step_thank_you.html:83
+#: templates/backoffice/registration/_step_thank_you.html:88
 #, fuzzy
 msgid "Content of your thank-you page"
 msgstr "A köszönőoldalad tartalma"
 
-#: templates/backoffice/registration/_step_thank_you.html:103
+#: templates/backoffice/registration/_step_thank_you.html:105
 #, fuzzy
 msgid "your thank-you page"
 msgstr "a saját köszönőoldaladat"
 
-#: templates/backoffice/registration/_step_thank_you.html:110
+#: templates/backoffice/registration/_step_thank_you.html:112
 #, fuzzy
 msgid "standard thank-you page"
 msgstr "az alapértelmezett köszönőoldalt"
 
-#: templates/backoffice/registration/_step_thank_you.html:113
+#: templates/backoffice/registration/_step_thank_you.html:115
 #, fuzzy, python-format
 msgid "View %(own_link)s or the %(standard_link)s (opens in a new tab)."
 msgstr "Nézd meg %(own_link)s vagy %(standard_link)s (új lapon nyílnak meg)."

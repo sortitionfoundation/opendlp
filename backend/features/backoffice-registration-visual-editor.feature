@@ -23,6 +23,15 @@ Feature: Backoffice registration visual intro editor
     Then the intro HTML view should contain "<h2><strong>Welcome everyone</strong></h2>"
     And the registration preview should show a level 2 heading "Welcome everyone"
 
+  Scenario: Centring a paragraph from the toolbar
+    Given there is an assembly called "Visual Align Assembly" with an empty intro
+    When I visit the registration intro editor for "Visual Align Assembly"
+    And I type "In the middle" into the visual intro editor
+    And I press the "Align centre" toolbar button
+    And I save the registration form
+    Then the intro HTML view should contain "<p style="text-align: center;">In the middle</p>"
+    And the registration preview should show the paragraph "In the middle" centred
+
   Scenario: HTML the visual editor cannot show stays in the HTML view
     Given there is an assembly called "Visual Refuse Assembly" with a registration page
     When I visit the registration intro editor for "Visual Refuse Assembly"

@@ -3,6 +3,7 @@
 import { Extension, Node } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import {
   Table,
@@ -34,6 +35,32 @@ const PRESERVED_ATTRIBUTE_TYPES = [
   "textStyle",
 ];
 
+// The blocks the toolbar can align, and the alignments it offers.
+export const ALIGNABLE_TYPES = ["paragraph", "heading"];
+export const ALIGNMENTS = ["left", "center", "right"];
+
+const ALIGNMENT_DECLARATION = new RegExp(
+  `(^|;)\\s*text-align\\s*:\\s*(${ALIGNMENTS.join("|")})\\s*(;|$)`,
+  "i",
+);
+
+/**
+ * An alignable block's style, less the alignment TextAlign keeps as an
+ * attribute of its own - kept here as well, it would be written twice. An
+ * alignment the toolbar doesn't offer, such as justify, stays in the style.
+ */
+function styleWithoutAlignment(element) {
+  const style = element.getAttribute("style");
+  if (style === null) {
+    return null;
+  }
+  const rest = style
+    .replace(ALIGNMENT_DECLARATION, "$1")
+    .replace(/^\s*;\s*/, "")
+    .trim();
+  return rest === "" ? null : rest;
+}
+
 function preservedAttribute(name) {
   return {
     default: null,
@@ -50,10 +77,23 @@ const PreservedAttributes = Extension.create({
   addGlobalAttributes() {
     return [
       {
-        types: PRESERVED_ATTRIBUTE_TYPES,
+        types: PRESERVED_ATTRIBUTE_TYPES.filter(
+          (type) => !ALIGNABLE_TYPES.includes(type),
+        ),
         attributes: {
           class: preservedAttribute("class"),
           style: preservedAttribute("style"),
+          dir: preservedAttribute("dir"),
+        },
+      },
+      {
+        types: ALIGNABLE_TYPES,
+        attributes: {
+          class: preservedAttribute("class"),
+          style: {
+            ...preservedAttribute("style"),
+            parseHTML: styleWithoutAlignment,
+          },
           dir: preservedAttribute("dir"),
         },
       },
@@ -208,6 +248,7 @@ export function createSchemaExtensions({
       },
     }),
     PreservedAttributes,
+    TextAlign.configure({ types: ALIGNABLE_TYPES, alignments: ALIGNMENTS }),
     // Keeps a styled <span>, such as one pasted from Google Docs; the toolbar never makes one.
     TextStyle,
     Div,
