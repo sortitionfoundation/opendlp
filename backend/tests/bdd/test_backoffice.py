@@ -2730,6 +2730,16 @@ def thank_you_editor_hidden(page: Page):
     expect(page.locator(THANK_YOU_EDITOR)).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then("the Assets panel should be shown")
+def assets_panel_shown(page: Page):
+    expect(page.get_by_role("heading", name="Assets", exact=True)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the Assets panel should be hidden")
+def assets_panel_hidden(page: Page):
+    expect(page.get_by_role("heading", name="Assets", exact=True)).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when(parsers.parse('I choose the "{label}" option'))
 def choose_option(page: Page, label: str):
     page.get_by_role("radio", name=label).check()

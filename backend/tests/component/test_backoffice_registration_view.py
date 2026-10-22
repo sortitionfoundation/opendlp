@@ -908,6 +908,25 @@ class TestThankYouStep:
         assert re.search(r'name="thank_you_page"\s+id="[^"]+"\s+value="own"\s+checked', body)
         assert 'style="display: none;"' not in body.split("thankYouChoice === 'own'", 1)[1].split(">", 1)[0]
 
+    @pytest.mark.parametrize(("use_default", "hidden"), [(True, True), (False, False)])
+    def test_assets_panel_is_shown_only_for_own_page(
+        self, logged_in_admin, fake_store, assembly_id, use_default, hidden
+    ):
+        """The standard page can't use images or documents, so the Assets panel goes with the editor."""
+        _seed_page(
+            fake_store,
+            assembly_id,
+            RegistrationPageStatus.TEST,
+            thank_you_html="<p>x</p>",
+            thank_you_use_default=use_default,
+        )
+
+        body = self._get(logged_in_admin, assembly_id, "&edit=1")
+
+        aside = body.split("<aside", 1)[1].split(">", 1)[0]
+        assert "x-show=\"thankYouChoice === 'own'\"" in aside
+        assert ("display: none;" in aside) is hidden
+
     @pytest.mark.parametrize(
         ("show", "text"), [("own", "your thank-you page"), ("standard", "standard thank-you page")]
     )
