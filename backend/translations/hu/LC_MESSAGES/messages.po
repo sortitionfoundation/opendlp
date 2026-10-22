@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-10-22 13:45+0000\n"
-"PO-Revision-Date: 2026-09-16 14:15+0000\n"
+"PO-Revision-Date: 2026-10-22 13:54+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
@@ -87,58 +87,67 @@ msgid "Results"
 msgstr "Eredmények"
 
 #: src/opendlp/domain/email_template.py:43
+#, fuzzy
 msgid ""
 "The name for replies cannot contain line breaks or other control "
 "characters"
 msgstr ""
+"A válaszokhoz megadott név nem tartalmazhat sortörést vagy más "
+"vezérlőkaraktert"
 
 #: src/opendlp/domain/email_template.py:45
-#, python-format
+#, fuzzy, python-format
 msgid "The name for replies must be at most %(max)s characters"
-msgstr ""
+msgstr "A válaszokhoz megadott név legfeljebb %(max)s karakter lehet"
 
 #: src/opendlp/domain/email_template.py:47
-#, python-format
+#, fuzzy, python-format
 msgid "The email address for replies must be at most %(max)s characters"
-msgstr ""
+msgstr "A válaszokhoz megadott e-mail cím legfeljebb %(max)s karakter lehet"
 
 #: src/opendlp/domain/email_template.py:52
+#, fuzzy
 msgid "The email address for replies is not valid"
-msgstr ""
+msgstr "A válaszokhoz megadott e-mail cím érvénytelen"
 
 #: src/opendlp/domain/email_template.py:91
+#, fuzzy
 msgid "The email template needs a name"
-msgstr ""
+msgstr "Az e-mail sablonnak nevet kell adni"
 
 #: src/opendlp/domain/email_template.py:93
+#, fuzzy
 msgid "The email template needs a subject"
-msgstr ""
+msgstr "Az e-mail sablonnak tárgyat kell adni"
 
 #: src/opendlp/domain/email_template.py:95
+#, fuzzy
 msgid "The email template body is empty"
-msgstr ""
+msgstr "Az e-mail sablon törzse üres"
 
 #: src/opendlp/domain/email_template_render.py:70
-#, python-format
+#, fuzzy, python-format
 msgid "The email subject has a template syntax error on line %(line)s: %(error)s"
-msgstr ""
+msgstr "Az e-mail tárgyában sablonszintaxis-hiba van, %(line)s. sor: %(error)s"
 
 #: src/opendlp/domain/email_template_render.py:78
-#, python-format
+#, fuzzy, python-format
 msgid "The email body has a template syntax error on line %(line)s: %(error)s"
-msgstr ""
+msgstr "Az e-mail törzsében sablonszintaxis-hiba van, %(line)s. sor: %(error)s"
 
 #: src/opendlp/domain/registration_page.py:134
-#, python-format
+#, fuzzy, python-format
 msgid ""
 "The thank-you page has a template syntax error on line %(line)s: "
 "%(detail)s"
-msgstr ""
+msgstr "A köszönőoldalon sablonszintaxis-hiba van, %(line)s. sor: %(detail)s"
 
 #: src/opendlp/domain/registration_page.py:141
-#, python-format
+#, fuzzy, python-format
 msgid "The thank-you page uses %(variable)s, which it does not offer"
 msgstr ""
+"A köszönőoldal olyan változót használ, amely itt nem érhető el: "
+"%(variable)s"
 
 #: src/opendlp/domain/registration_page.py:639
 #: templates/backoffice/assembly_edit_respondent.html:128
@@ -3960,15 +3969,19 @@ msgstr ""
 "jelentkezők, akik üresen hagyják, nem kapják meg az automatikus választ."
 
 #: src/opendlp/service_layer/email_template_service.py:87
+#, fuzzy
 msgid ""
 "Replies to the auto-reply will go to the address it is sent from, which "
 "may not be monitored. Set where replies go so they reach your team."
 msgstr ""
+"Az automatikus válaszra érkező válaszok arra a címre mennek, ahonnan az "
+"e-mailt küldik, és lehet, hogy azt senki sem figyeli. Add meg, hová "
+"menjenek a válaszok, hogy eljussanak a csapatodhoz."
 
 #: src/opendlp/service_layer/email_template_service.py:122
-#, python-format
+#, fuzzy, python-format
 msgid "The email body must be at most %(max_bytes)s bytes"
-msgstr ""
+msgstr "Az e-mail törzse legfeljebb %(max_bytes)s bájt lehet"
 
 #: src/opendlp/service_layer/error_translation.py:102
 #, python-format
@@ -4194,8 +4207,9 @@ msgid "thank-you HTML"
 msgstr "köszönőoldal HTML"
 
 #: src/opendlp/service_layer/registration_page_service.py:687
+#, fuzzy
 msgid "The thank-you page already has HTML, so it was left as it is"
-msgstr ""
+msgstr "A köszönőoldal már tartalmaz HTML-t, ezért változatlan maradt"
 
 #: src/opendlp/service_layer/registration_page_service.py:700
 msgid "form HTML"
@@ -6478,8 +6492,9 @@ msgstr "Űrlap"
 
 #: templates/backoffice/assembly_registration.html:95
 #: templates/backoffice/registration/_step_thank_you.html:32
+#, fuzzy
 msgid "Thank-you page"
-msgstr ""
+msgstr "Köszönőoldal"
 
 #: templates/backoffice/assembly_registration.html:96
 #: templates/backoffice/registration/_step_email.html:38
@@ -8652,20 +8667,24 @@ msgid "Send auto-reply email"
 msgstr "Automatikus válasz e-mail küldése"
 
 #: templates/backoffice/registration/_step_email.html:107
+#, fuzzy
 msgid "Sent from"
-msgstr ""
+msgstr "Feladó"
 
 #: templates/backoffice/registration/_step_email.html:109
+#, fuzzy
 msgid "This can't be changed."
-msgstr ""
+msgstr "Ez nem módosítható."
 
 #: templates/backoffice/registration/_step_email.html:113
+#, fuzzy
 msgid "Replies go to"
-msgstr ""
+msgstr "Válaszok címzettje"
 
 #: templates/backoffice/registration/_step_email.html:115
+#, fuzzy
 msgid "When someone replies to the auto-reply, their email goes here."
-msgstr ""
+msgstr "Ha valaki válaszol az automatikus válaszra, az e-mailje ide érkezik."
 
 #: templates/backoffice/registration/_step_email.html:132
 msgid "Email subject"
@@ -8971,55 +8990,65 @@ msgid "Unpublish"
 msgstr "Közzététel visszavonása"
 
 #: templates/backoffice/registration/_step_thank_you.html:46
+#, fuzzy
 msgid "Choose what respondents see after they send the form."
-msgstr ""
+msgstr "Válaszd ki, mit lássanak a jelentkezők az űrlap elküldése után."
 
 #: templates/backoffice/registration/_step_thank_you.html:49
+#, fuzzy
 msgid "Which thank-you page to show"
-msgstr ""
+msgstr "Melyik köszönőoldal jelenjen meg"
 
 #: templates/backoffice/registration/_step_thank_you.html:50
+#, fuzzy
 msgid "Standard thank-you page"
-msgstr ""
+msgstr "Alapértelmezett köszönőoldal"
 
 #: templates/backoffice/registration/_step_thank_you.html:50
+#, fuzzy
 msgid "Your own thank-you page"
-msgstr ""
+msgstr "Saját köszönőoldal"
 
 #: templates/backoffice/registration/_step_thank_you.html:52
+#, fuzzy
 msgid "A short thank-you, in the language the respondent is viewing the page in."
-msgstr ""
+msgstr "Rövid köszönet azon a nyelven, amelyen a jelentkező az oldalt nézi."
 
 #: templates/backoffice/registration/_step_thank_you.html:59
+#, fuzzy
 msgid "Fill with starter content"
-msgstr ""
+msgstr "Kitöltés kezdő tartalommal"
 
 #: templates/backoffice/registration/_step_thank_you.html:70
-#, python-format
+#, fuzzy, python-format
 msgid "Style: %(style)s, the same as the intro."
-msgstr ""
+msgstr "Stílus: %(style)s, ugyanaz, mint a bevezetőé."
 
 #: templates/backoffice/registration/_step_thank_you.html:74
+#, fuzzy
 msgid "Change it on the Intro step"
-msgstr ""
+msgstr "Módosítás a Bevezető lépésnél"
 
 #: templates/backoffice/registration/_step_thank_you.html:81
 #: templates/backoffice/registration/_step_thank_you.html:86
+#, fuzzy
 msgid "Content of your thank-you page"
-msgstr ""
+msgstr "A köszönőoldalad tartalma"
 
 #: templates/backoffice/registration/_step_thank_you.html:103
+#, fuzzy
 msgid "your thank-you page"
-msgstr ""
+msgstr "a saját köszönőoldaladat"
 
 #: templates/backoffice/registration/_step_thank_you.html:110
+#, fuzzy
 msgid "standard thank-you page"
-msgstr ""
+msgstr "az alapértelmezett köszönőoldalt"
 
 #: templates/backoffice/registration/_step_thank_you.html:113
-#, python-format
+#, fuzzy, python-format
 msgid "View %(own_link)s or the %(standard_link)s (opens in a new tab)."
-msgstr ""
+msgstr "Nézd meg %(own_link)s vagy %(standard_link)s (új lapon nyílnak meg)."
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:36
 msgid "Rows stored:"
