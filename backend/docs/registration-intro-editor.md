@@ -286,6 +286,11 @@ names, such as `{{ recipient.first_name_or_friend }}` and
 `{{ site.full_url }}`. Rename them: a variable OpenDLP doesn't know renders
 as an empty string, and nothing warns while editing.
 
+`respondent.first_name` comes from a question keyed like "first name". When
+there is none, it is the whole answer to a question keyed "name" or "full
+name", not split into parts: splitting would guess wrong for names written
+family name first, as in Hungarian.
+
 Every email is sent with a plain-text version made from the HTML
 (`src/opendlp/domain/html_to_text.py`), which reads lists, quotes and
 horizontal lines as plain text would.

@@ -64,6 +64,10 @@ def _derive_names(attributes: Mapping[str, Any]) -> tuple[str, str, str]:
     first = _first_non_empty(normalised, _FIRST_NAME_KEYS)
     last = _first_non_empty(normalised, _LAST_NAME_KEYS)
     full = _first_non_empty(normalised, _FULL_NAME_KEYS)
+    # A form that asks only for a name gets the whole of it as the first name:
+    # splitting it would guess wrong for names written family name first.
+    if not first:
+        first = full
     if not full:
         full = " ".join(part for part in (first, last) if part)
     return first, last, full

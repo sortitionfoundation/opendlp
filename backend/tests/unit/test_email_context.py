@@ -44,6 +44,25 @@ def test_name_key_supported() -> None:
     assert ctx.full_name == "Sam Sample"
 
 
+def test_first_name_falls_back_to_the_whole_name() -> None:
+    ctx = RespondentContext(email="a@b.com", attributes={"Name": "Kovács Anna"})
+    assert ctx.first_name == "Kovács Anna"
+    assert ctx.first_name_or_friend == "Kovács Anna"
+    assert ctx.last_name == ""
+
+
+def test_first_name_field_wins_over_name() -> None:
+    ctx = RespondentContext(email="a@b.com", attributes={"name": "Sam Sample", "first_name": "Sammy"})
+    assert ctx.first_name == "Sammy"
+    assert ctx.full_name == "Sam Sample"
+
+
+def test_last_name_alone_is_not_a_first_name() -> None:
+    ctx = RespondentContext(email="a@b.com", attributes={"surname": "Sample"})
+    assert ctx.first_name == ""
+    assert ctx.full_name == "Sample"
+
+
 def test_first_name_or_friend_fallback() -> None:
     with_name = RespondentContext(email="a@b.com", attributes={"firstname": "Sam"})
     without_name = RespondentContext(email="a@b.com", attributes={"age": "40"})
