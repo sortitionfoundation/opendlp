@@ -222,7 +222,9 @@ form:
 - **Your own thank-you page**: the page's `thank_you_html`, in the same
   visual editor as the intro, images and tables included. It is shown in the
   intro's style, so under the GOV.UK style a plain paragraph gets
-  `govuk-body` as it would in the intro.
+  `govuk-body` as it would in the intro. A page has one style, so the step
+  names it and links to the intro step to change it, rather than offering
+  radios of its own.
 
 Switching to the standard page keeps the page's own HTML, so an author can
 try the standard page and switch back. Own HTML that is blank shows the
