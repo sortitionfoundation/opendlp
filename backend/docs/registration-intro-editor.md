@@ -304,7 +304,9 @@ organiser's.
 `respondent.first_name` comes from a question keyed like "first name". When
 there is none, it is the whole answer to a question keyed "name" or "full
 name", not split into parts: splitting would guess wrong for names written
-family name first, as in Hungarian.
+family name first, as in Hungarian. `respondent.first_name_or_friend` falls
+back to the word "Friend" when there is no first name, translated into the
+language the email is read in.
 
 The auto-reply goes to the address given in the fixed email field. When that
 field is not on the page, a question of type Email stands in for it, but only
