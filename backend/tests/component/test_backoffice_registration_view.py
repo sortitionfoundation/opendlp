@@ -844,6 +844,42 @@ class TestThankYouStep:
 
         assert re.search(r'href="/register/my-slug/thank-you"\s+target="_blank"', body)
 
+    def test_the_link_to_the_public_page_looks_like_a_link(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._get(logged_in_admin, assembly_id)
+
+        link = re.search(r'<a[^>]*href="/register/my-slug/thank-you"[^>]*>', body).group(0)
+        assert 'class="underline"' in link
+        assert "color: var(--color-links)" in link
+
+    @pytest.mark.parametrize(
+        ("style", "label"),
+        [(ContentStyle.GOVUK, "Accessible (recommended)"), (ContentStyle.PLAIN, "Plain — bring your own styles")],
+    )
+    def test_says_which_style_the_page_uses_and_where_to_change_it(
+        self, logged_in_admin, fake_store, assembly_id, style, label
+    ):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.registration_page_html_sources.get_by_page_id(page.id).update_content_style(style)
+            uow.commit()
+
+        body = self._get(logged_in_admin, assembly_id)
+
+        note = body.split('id="thank-you-content-style"', 1)[1].split("</p>", 1)[0]
+        assert label in note
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=intro" in note
+
+    def test_does_not_offer_to_leave_for_the_intro_step_while_editing(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._get(logged_in_admin, assembly_id, "&edit=1")
+
+        note = body.split('id="thank-you-content-style"', 1)[1].split("</p>", 1)[0]
+        assert "Accessible (recommended)" in note
+        assert "section=intro" not in note
+
     def test_footer_goes_back_to_the_form_and_on_to_the_email(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 

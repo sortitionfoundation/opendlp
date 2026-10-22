@@ -13,6 +13,7 @@ ABOUTME: Included by assembly_registration.html when ?section=thank-you
     {% set view_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="thank-you") %}
     {% set next_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="email") %}
     {% set back_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="form") %}
+    {% set intro_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="intro") %}
     {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
     {% set thank_you_choice = "standard" if thank_you_use_default else "own" %}
     <form method="post"
@@ -62,6 +63,17 @@ ABOUTME: Included by assembly_registration.html when ?section=thank-you
                            still posts, so switching back and forth before saving keeps the HTML. #}
                         <div x-show="thankYouChoice === 'own'"
                              {% if thank_you_use_default %}style="display: none;"{% endif %}>
+                            {# The page has one style, set on the intro step, so it is shown here but not offered. #}
+                            <p id="thank-you-content-style"
+                               class="text-body-sm mb-4"
+                               style="color: var(--color-secondary-text);">
+                                {{ _("Style: %(style)s, the same as the intro.", style=content_style_labels[content_style]) }}
+                                {% if not edit_mode %}
+                                    <a href="{{ intro_url }}"
+                                       class="underline"
+                                       style="color: var(--color-links);">{{ _("Change it on the Intro step") }}</a>
+                                {% endif %}
+                            </p>
                             {% set textarea_attrs %}
                                 {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
                             {% endset %}
@@ -81,7 +93,8 @@ ABOUTME: Included by assembly_registration.html when ?section=thank-you
                             attrs=textarea_attrs|trim) }}
                         </div>
                         <p class="text-body-sm">
-                            <a class="govuk-link"
+                            <a class="underline"
+                               style="color: var(--color-links);"
                                href="{{ url_for('registration.thank_you', url_slug=registration_page.url_slug) }}"
                                target="_blank"
                                rel="noopener">{{ _("View the thank-you page (opens in a new tab)") }}</a>
