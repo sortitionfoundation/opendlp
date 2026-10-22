@@ -380,6 +380,27 @@ describe("wireToolbar table menu", () => {
     );
   });
 
+  it("inserts a table after a selected image rather than over it", () => {
+    editor.commands.setContent('<p>Hi <img src="/a.png" alt="A"></p>');
+    wireToolbar(toolbar, editor);
+    editor.commands.setNodeSelection(4);
+    button("table").click();
+    item("insertTable").click();
+    const html = editor.getHTML();
+    expect(html).toContain('<img src="/a.png" alt="A">');
+    expect(html.indexOf("<img")).toBeLessThan(html.indexOf("<table>"));
+  });
+
+  it("inserts a table after selected text rather than over it", () => {
+    wireToolbar(toolbar, editor);
+    selectAll();
+    button("table").click();
+    item("insertTable").click();
+    const html = editor.getHTML();
+    expect(html).toContain("Hello world");
+    expect(html.indexOf("Hello world")).toBeLessThan(html.indexOf("<table>"));
+  });
+
   it("offers only insert outside a table, and only the edits inside one", () => {
     wireToolbar(toolbar, editor);
     button("table").click();

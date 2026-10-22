@@ -87,6 +87,16 @@ Feature: Backoffice registration visual intro editor
     Then the registration preview should show the image "Partner A"
     And the registration preview should show the image "Partner B"
 
+  Scenario: Inserting a table while an image is selected keeps the image
+    Given there is an assembly called "Visual Table Keeps Image Assembly" with the intro "<p>Our logo <img src='/static/img/logosortition.svg' alt='Logo'></p>"
+    When I visit the registration intro editor for "Visual Table Keeps Image Assembly"
+    And I select the image "Logo" in the visual intro editor with the arrow keys
+    And I jump to the formatting toolbar with Alt+F10
+    And I move to the "Table" toolbar button with the arrow keys
+    And I press "Enter"
+    And I choose "Insert table" from the open menu with the arrow keys
+    Then the intro should hold "<p>Our logo <img src="/static/img/logosortition.svg" alt="Logo"></p><table><tbody><tr><td><p></p></td><td><p></p></td></tr><tr><td><p></p></td><td><p></p></td></tr></tbody></table>" laid out on lines
+
   Scenario: A styled span pasted from Google Docs survives an edit elsewhere
     Given there is an assembly called "Visual Span Assembly" with the intro "<p>First paragraph</p><p><span style='color: red;'>Red words</span></p>"
     When I visit the registration intro editor for "Visual Span Assembly"
