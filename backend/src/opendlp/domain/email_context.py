@@ -15,6 +15,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
 )
 from opendlp.domain.respondents import normalise_field_name
+from opendlp.translations import gettext as _
 
 if TYPE_CHECKING:
     from opendlp.domain.assembly import Assembly
@@ -106,7 +107,9 @@ class RespondentContext:
 
     @property
     def first_name_or_friend(self) -> str:
-        return self._first or "Friend"
+        # Translated at render time, so it follows the language the email is read
+        # in. It completes a greeting such as "Hi Friend," or "Kedves Résztvevő!".
+        return self._first or _("Friend")
 
 
 def build_context(assembly: AssemblyContext, respondent: RespondentContext) -> dict[str, Any]:

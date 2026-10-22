@@ -6,6 +6,7 @@ from datetime import date
 
 import pytest
 
+from opendlp.domain import email_context as email_context_module
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_context import (
     AssemblyContext,
@@ -71,6 +72,12 @@ def test_first_name_or_friend_fallback() -> None:
     without_name = RespondentContext(email="a@b.com", attributes={"age": "40"})
     assert with_name.first_name_or_friend == "Sam"
     assert without_name.first_name_or_friend == "Friend"
+
+
+def test_first_name_or_friend_fallback_is_translated(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(email_context_module, "_", lambda message: {"Friend": "Résztvevő"}.get(message, message))
+    without_name = RespondentContext(email="a@b.com", attributes={"age": "40"})
+    assert without_name.first_name_or_friend == "Résztvevő"
 
 
 def test_raw_attributes_passthrough() -> None:
