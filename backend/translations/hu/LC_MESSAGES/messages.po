@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 13:45+0000\n"
+"POT-Creation-Date: 2026-10-22 14:38+0000\n"
 "PO-Revision-Date: 2026-10-22 13:54+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -5049,7 +5049,7 @@ msgstr "Meghívók kezelése"
 #: templates/backoffice/assembly_data.html:18
 #: templates/backoffice/assembly_details.html:19
 #: templates/backoffice/assembly_members.html:20
-#: templates/backoffice/assembly_registration.html:18
+#: templates/backoffice/assembly_registration.html:30
 #: templates/backoffice/assembly_registration_list.html:13
 #: templates/backoffice/assembly_respondents.html:23
 #: templates/backoffice/assembly_selection.html:19
@@ -6450,16 +6450,16 @@ msgstr "Felhasználó hozzáadása a közösségi gyűléshez"
 msgid "Type to search by email or name…"
 msgstr "Gépelj a kereséshez e-mail cím vagy név alapján…"
 
-#: templates/backoffice/assembly_registration.html:13
+#: templates/backoffice/assembly_registration.html:25
 #: templates/backoffice/components/assembly_tabs.html:52
 msgid "Registration"
 msgstr "Regisztráció"
 
-#: templates/backoffice/assembly_registration.html:44
+#: templates/backoffice/assembly_registration.html:56
 msgid "Registration page not created"
 msgstr "A regisztrációs oldal nem készült el"
 
-#: templates/backoffice/assembly_registration.html:46
+#: templates/backoffice/assembly_registration.html:58
 msgid ""
 "Before you can configure the registration page, you need to create it "
 "from the Details tab."
@@ -6467,73 +6467,78 @@ msgstr ""
 "A regisztrációs oldal beállítása előtt létre kell hoznod azt a Részletek "
 "lapon."
 
-#: templates/backoffice/assembly_registration.html:48
+#: templates/backoffice/assembly_registration.html:60
 msgid "Go to Details tab"
 msgstr "Ugrás a Részletek lapra"
 
-#: templates/backoffice/assembly_registration.html:80
+#: templates/backoffice/assembly_registration.html:96
+#: templates/backoffice/components/url_display.html:58
+msgid "Copy URL to clipboard"
+msgstr "URL másolása a vágólapra"
+
+#: templates/backoffice/assembly_registration.html:99
+#: templates/backoffice/components/registration_page_list.html:99
+msgid "Published"
+msgstr "Közzétéve"
+
+#: templates/backoffice/assembly_registration.html:101
+#: templates/backoffice/components/registration_page_list.html:105
+msgid "Closed"
+msgstr "Lezárva"
+
+#: templates/backoffice/assembly_registration.html:103
+msgid "Test mode"
+msgstr "Teszt üzemmód"
+
+#: templates/backoffice/assembly_registration.html:111
 msgid "Close and return to the registration pages"
 msgstr "Bezárás és visszatérés a regisztrációs oldalakhoz"
 
-#: templates/backoffice/assembly_registration.html:92
+#: templates/backoffice/assembly_registration.html:123
 #: templates/backoffice/registration/_step_page.html:29
 msgid "Name and URLs"
 msgstr "Név és URL-ek"
 
-#: templates/backoffice/assembly_registration.html:93
+#: templates/backoffice/assembly_registration.html:124
 #: templates/backoffice/registration/_step_intro.html:73
 #: templates/backoffice/registration/_step_intro.html:78
 msgid "Intro"
 msgstr "Bevezető"
 
-#: templates/backoffice/assembly_registration.html:94
+#: templates/backoffice/assembly_registration.html:125
 msgid "Form"
 msgstr "Űrlap"
 
-#: templates/backoffice/assembly_registration.html:95
+#: templates/backoffice/assembly_registration.html:126
 #: templates/backoffice/registration/_step_thank_you.html:32
 #, fuzzy
 msgid "Thank-you page"
 msgstr "Köszönőoldal"
 
-#: templates/backoffice/assembly_registration.html:96
+#: templates/backoffice/assembly_registration.html:127
 #: templates/backoffice/registration/_step_email.html:38
 msgid "Auto-reply email"
 msgstr "Automatikus válasz e-mail"
 
-#: templates/backoffice/assembly_registration.html:97
+#: templates/backoffice/assembly_registration.html:128
 msgid "Preview and publish"
 msgstr "Előnézet és közzététel"
 
-#: templates/backoffice/assembly_registration.html:99
+#: templates/backoffice/assembly_registration.html:130
 msgid "Registration setup steps"
 msgstr "A regisztráció beállításának lépései"
 
-#: templates/backoffice/assembly_registration.html:112
-msgid "Test mode"
-msgstr "Teszt üzemmód"
-
-#: templates/backoffice/assembly_registration.html:113
-msgid ""
-"Submissions are recorded as test entries and don't enter the selection "
-"pool. Publish the registration when you're ready to go live."
-msgstr ""
-"A beküldések tesztbejegyzésként rögzülnek, és nem kerülnek be a "
-"jelentkezők közé. Tedd közzé a regisztrációt, amikor készen állsz az éles"
-" indulásra."
-
-#: templates/backoffice/assembly_registration.html:122
+#: templates/backoffice/assembly_registration.html:142
 msgid "Registration closed"
 msgstr "A regisztráció lezárva"
 
-#: templates/backoffice/assembly_registration.html:123
+#: templates/backoffice/assembly_registration.html:143
 msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek át."
 
-#: templates/backoffice/assembly_registration.html:133
-#: templates/backoffice/components/registration_page_list.html:99
-msgid "Published"
-msgstr "Közzétéve"
+#: templates/backoffice/assembly_registration.html:147
+msgid "Go to Preview and publish to re-open it."
+msgstr ""
 
 #: templates/backoffice/assembly_respondents.html:42
 msgid "Respondents are configured in Google Sheets"
@@ -7724,10 +7729,6 @@ msgstr "%(name)s QR-kódjának letöltése"
 msgid "QR code for %(name)s"
 msgstr "%(name)s QR-kódja"
 
-#: templates/backoffice/components/registration_page_list.html:105
-msgid "Closed"
-msgstr "Lezárva"
-
 #: templates/backoffice/components/registration_page_list.html:111
 msgid "Test"
 msgstr "Teszt"
@@ -8128,10 +8129,6 @@ msgstr "hibás"
 #: templates/backoffice/components/url_display.html:24
 msgid "Copied to clipboard"
 msgstr "Vágólapra másolva"
-
-#: templates/backoffice/components/url_display.html:58
-msgid "Copy URL to clipboard"
-msgstr "URL másolása a vágólapra"
 
 #: templates/backoffice/registration/_assets.html:289
 msgid "File name"

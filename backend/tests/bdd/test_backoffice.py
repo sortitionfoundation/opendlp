@@ -698,7 +698,7 @@ def registration_shown_as_closed(page: Page):
 
 @then("the registration should be shown as in test mode")
 def registration_shown_as_test_mode(page: Page):
-    expect(page.get_by_role("alert").filter(has_text="Test mode")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator(".dialog-header").get_by_text("Test mode")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I visit the registration preview step for "{title}"'))
