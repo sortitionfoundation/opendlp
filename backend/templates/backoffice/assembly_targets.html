@@ -74,9 +74,24 @@ ABOUTME: Displays target categories and values, with respondent counts and check
            discardUrl is passed in rather than read from the address bar: a
            rejected save re-renders this page at the save-all POST url, which
            would 405 on the GET a reload makes. #}
+        {# The failed selection run that sent the organiser here - from and run_id -
+           carried on every form and link that leads back here, so the route can
+           look the run up and re-run the same kind of selection. Empty otherwise. #}
+        {% set provenance = selection_provenance|default({}) %}
+        {% set rerun_is_test = rerun_is_test|default(false) %}
+        {# Discarding edits made against the check's suggestions goes back to the
+           check, suggestions and all, rather than to a page without them.
+           The url goes into a quoted string in x-data below. That is only safe
+           because the route accepts run_id only as the UUID of a real run; |tojson is no help
+           here, as the CSP build of Alpine does not decode its \u escapes. #}
+        {% if check_result is defined and check_result %}
+            {% set discard_url = url_for('targets.check_targets', assembly_id=assembly.id, **provenance) %}
+        {% else %}
+            {% set discard_url = url_for('targets.view_assembly_targets', assembly_id=assembly.id) %}
+        {% endif %}
         <div x-data="targetsPage({
                      editingAll: {{ "true" if editing_all is defined and editing_all else "false" }},
-                     discardUrl: '{{ url_for('targets.view_assembly_targets', assembly_id=assembly.id) }}'
+                     discardUrl: '{{ discard_url }}'
                      })">
             {# ── Targets Heading and Actions ──────────────── #}
             <section class="mb-6 flex items-start justify-between gap-4">
@@ -143,6 +158,49 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                 </section>
             {% endif %}
 
+            {# ── Accept recommended changes ──────────────────── #}
+            {# Both views carry the suggestions, so both get the page-level
+               actions. Read-only, they save at once. Editing, "Accept all" only
+               fills the rows in - the save bar keeps them, or saves and re-runs.
+               Re-running is offered only to an organiser who arrived from a
+               failed selection run. #}
+            {% if can_manage and check_result is defined and check_result and check_result.has_suggestions %}
+                <section class="mb-6">
+                    <div class="rounded-lg p-4 flex flex-wrap items-center gap-3"
+                         style="background-color: var(--color-info-background);
+                                border: 1px solid var(--color-info-400);">
+                        <span class="text-body-md" style="color: var(--color-body-text);">
+                            {{ _("The algorithm has recommended target changes. Accept them individually below, or all at once here.") }}
+                        </span>
+                        <span class="ml-auto flex flex-wrap gap-2" x-show="editingAll" x-cloak>
+                            {{ button(_("Accept all suggestions"), variant="secondary", attrs='@click="acceptAllSuggestions()"') }}
+                        </span>
+                        <span class="ml-auto flex flex-wrap gap-2" x-show="!editingAll">
+                            <form method="post"
+                                  x-data
+                                  x-preserve-scroll-on-submit
+                                  action="{{ url_for('targets.accept_suggestions', assembly_id=assembly.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="scope" value="all" />
+                                <input type="hidden" name="then" value="recheck" />
+                                {% for name, value in provenance.items() %}<input type="hidden" name="{{ name }}" value="{{ value }}" />{% endfor %}
+                                {{ button(_("Accept all suggestions"), type="submit", variant="secondary") }}
+                            </form>
+                            {% if provenance %}
+                                <form method="post"
+                                      action="{{ url_for('targets.accept_suggestions', assembly_id=assembly.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <input type="hidden" name="scope" value="all" />
+                                    <input type="hidden" name="then" value="run" />
+                                    {% for name, value in provenance.items() %}<input type="hidden" name="{{ name }}" value="{{ value }}" />{% endfor %}
+                                    {{ button(_("Accept all and re-run test selection") if rerun_is_test else _("Accept all and re-run selection"), type="submit", variant="primary") }}
+                                </form>
+                            {% endif %}
+                        </span>
+                    </div>
+                </section>
+            {% endif %}
+
             {# ── Category Blocks ─────────────────────────────── #}
             {# Rendered even with nothing to edit yet: "Add target" clones into
                this form, so it has to be here before the first target is. #}
@@ -179,6 +237,9 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                 <div class="wizard-footer" x-show="editingAll" x-cloak>
                     <div class="wizard-footer-box">
                         {{ button(_("Discard changes"), variant="tertiary", attrs='@click="discardEdits()"') }}
+                        {% if provenance %}
+                            {{ button(_("Save and re-run test selection") if rerun_is_test else _("Save and re-run selection"), variant="secondary", type="submit", attrs='form="save-all-form" name="then" value="run"') }}
+                        {% endif %}
                         {{ button(_("Save"), variant="primary", type="submit", attrs='form="save-all-form"') }}
                     </div>
                 </div>

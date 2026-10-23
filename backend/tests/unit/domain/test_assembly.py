@@ -6,6 +6,9 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
+from sortition_algorithms.errors import InfeasibleQuotasError, SelectionError
+from sortition_algorithms.features import FeatureValueMinMax
+from sortition_algorithms.utils import RunReport
 
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
@@ -390,3 +393,33 @@ class TestTaskTypeVerbose:
             task_type=SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
         )
         assert record.task_type_verbose == "Select replacements from Google Sheets"
+
+
+class TestFailedOnInfeasibleTargets:
+    def _record(self, status, error=None):
+        report = RunReport()
+        if error is not None:
+            report.add_error(error)
+        return SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=uuid.uuid4(),
+            status=status,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            run_report=report,
+        )
+
+    def _infeasible(self):
+        return InfeasibleQuotasError(features={"Gender": {"Male": FeatureValueMinMax(min=3, max=7)}}, output=[])
+
+    def test_a_run_that_failed_on_infeasible_quotas(self):
+        assert self._record(SelectionRunStatus.FAILED, self._infeasible()).failed_on_infeasible_targets is True
+
+    def test_a_run_that_failed_for_another_reason(self):
+        record = self._record(SelectionRunStatus.FAILED, SelectionError("Could not read the pool"))
+        assert record.failed_on_infeasible_targets is False
+
+    def test_a_failed_run_with_no_error_recorded(self):
+        assert self._record(SelectionRunStatus.FAILED).failed_on_infeasible_targets is False
+
+    def test_a_run_that_has_not_failed(self):
+        assert self._record(SelectionRunStatus.RUNNING, self._infeasible()).failed_on_infeasible_targets is False

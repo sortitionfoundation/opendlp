@@ -482,3 +482,57 @@ class TestSaveAll:
         assert response.status_code == 200
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].source_url == ""
+
+
+# Ten to select from ten older men and ten younger women: at least six young
+# people are wanted, but every young person is a woman and at most five women
+# may be chosen. The check suggests a young minimum of 5 and an old maximum of 5.
+INFEASIBLE_TARGETS_CSV = "feature,value,min,max\nGender,Male,5,6\nGender,Female,4,5\nAge,Young,6,7\nAge,Old,3,4\n"
+
+
+class TestAcceptSuggestions:
+    def _infeasible_assembly(self, assembly_id, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_targets_from_csv(
+                uow=uow, user_id=admin_user.id, assembly_id=assembly_id, csv_content=INFEASIBLE_TARGETS_CSV
+            )
+        _add_respondents(
+            postgres_session_factory,
+            assembly_id,
+            [(f"m{i}", {"Gender": "Male", "Age": "Old"}) for i in range(10)]
+            + [(f"f{i}", {"Gender": "Female", "Age": "Young"}) for i in range(10)],
+        )
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = uow.assemblies.get(assembly_id)
+            assembly.number_to_select = 10
+            assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+            assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
+            uow.commit()
+
+    def test_accepting_all_suggestions_makes_the_targets_feasible(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        self._infeasible_assembly(existing_assembly.id, admin_user, postgres_session_factory)
+
+        check_page = logged_in_admin.get(_targets_url(existing_assembly.id, "/check"))
+        assert check_page.status_code == 200
+        assert b"Suggested minimum: 5" in check_page.data
+        assert b"Accept all suggestions" in check_page.data
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/accept-suggestions"),
+            data={"csrf_token": _csrf(logged_in_admin, existing_assembly.id), "scope": "all"},
+        )
+        assert response.status_code == 302
+        assert "/targets/check" in response.location
+
+        landed = logged_in_admin.get(response.location)
+        assert b"Recommended changes applied." in landed.data
+        assert b"All checks passed" in landed.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            categories = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)
+        age = {v.value: v for v in next(c for c in categories if c.name == "Age").values}
+        assert age["Young"].min == 5
+        assert age["Old"].max == 5
+        assert age["Young"].comment == "Accepted algorithm suggestion — minimum 6 → 5"

@@ -7,6 +7,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary %}
+{% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
 {# ────────────────────────────────────────────────────────────────────────
    The row controls come from the Figma at node 4908:15647. They are sized and
    coloured by `.btn-icon svg`, so they are drawn with no class of their own and
@@ -29,7 +30,25 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         {% endif %}
     </td>
 {% endmacro %}
-{% macro value_row(category_id, row_id, val=None, is_new=false, prefill="", errors={}, respondent_counts=None, selected_counts=None, show_counts=false, show_selected=false) %}
+{#
+    A min or max input, outlined in the suggestion's orange when a suggestion
+    under the row would change it, so it is plain which one it is about.
+#}
+{% macro suggested_outline(suggested) %}
+    {% if suggested %}
+        <div class="rounded-lg"
+             data-suggested="true"
+             style="box-shadow: 0 0 0 2px var(--color-warning-400)">{{ caller() }}</div>
+    {% else %}
+        {{ caller() }}
+    {% endif %}
+{% endmacro %}
+{#
+    `suggested_fields` lists which of "min" and "max" a suggestion under the row
+    would change. A row with suggestions under it leaves its dividing line off,
+    and the last suggestion draws it, so the line closes the group.
+#}
+{% macro value_row(category_id, row_id, val=None, is_new=false, prefill="", errors={}, respondent_counts=None, selected_counts=None, show_counts=false, show_selected=false, suggested_fields=[]) %}
     {% set val_prefix = "cat[" ~ category_id ~ "][values][" ~ row_id ~ "]" %}
     {% set field_id = "bulk-" ~ category_id ~ "-" ~ row_id %}
     {% set can_relink = val and val.minmax_manual and val.percentage_target is not none %}
@@ -45,7 +64,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         data-deleted="{{ row_deleted }}"
         x-data="bulkTargetsValueRow({ isNew: {{ 'true' if is_new else 'false' }}, deleted: {{ row_deleted }} })"
         :class="rowClass"
-        style="border-bottom: 1px solid var(--color-borders-dividers)">
+        {% if not suggested_fields %}style="border-bottom: 1px solid var(--color-borders-dividers)"{% endif %}>
         <td class="py-3 pr-4">
             <input type="hidden"
                    name="{{ val_prefix }}[deleted]"
@@ -102,24 +121,28 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         {% if show_counts %}{{ count_cell(respondent_counts, val.value if val else prefill) }}{% endif %}
         {% if show_selected %}{{ count_cell(selected_counts, val.value if val else prefill) }}{% endif %}
         <td class="py-3 px-4">
-            {{ input(name=val_prefix ~ "[min]",
-            id=field_id ~ "-min",
-            error=errors.get(val_prefix ~ "[min]", ""),
-            type="number",
-            value=val.min if val else "",
-            classes="w-20",
-            aria_label=_("Minimum for %(row)s", row=row_name),
-            attrs='min="0" data-field="min" :disabled="relink"') }}
+            {% call suggested_outline("min" in suggested_fields) %}
+                {{ input(name=val_prefix ~ "[min]",
+                id=field_id ~ "-min",
+                error=errors.get(val_prefix ~ "[min]", ""),
+                type="number",
+                value=val.min if val else "",
+                classes="w-20",
+                aria_label=_("Minimum for %(row)s", row=row_name),
+                attrs='min="0" data-field="min" :disabled="relink"') }}
+            {% endcall %}
         </td>
         <td class="py-3 px-4">
-            {{ input(name=val_prefix ~ "[max]",
-            id=field_id ~ "-max",
-            error=errors.get(val_prefix ~ "[max]", ""),
-            type="number",
-            value=val.max if val else "",
-            classes="w-20",
-            aria_label=_("Maximum for %(row)s", row=row_name),
-            attrs='min="0" data-field="max" :disabled="relink"') }}
+            {% call suggested_outline("max" in suggested_fields) %}
+                {{ input(name=val_prefix ~ "[max]",
+                id=field_id ~ "-max",
+                error=errors.get(val_prefix ~ "[max]", ""),
+                type="number",
+                value=val.max if val else "",
+                classes="w-20",
+                aria_label=_("Maximum for %(row)s", row=row_name),
+                attrs='min="0" data-field="max" :disabled="relink"') }}
+            {% endcall %}
         </td>
         <td class="py-3 px-4">
             {{ input(name=val_prefix ~ "[comment]",
@@ -157,7 +180,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         </td>
     </tr>
 {% endmacro %}
-{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None, first_row_id="") %}
+{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None, first_row_id="", value_annotations={}) %}
     {% set cat_prefix = "cat[" ~ cat_id ~ "]" %}
                     {# Both count columns are only worth a column when there is something to
        count, so a category with no matching respondent data shows neither. #}
@@ -282,7 +305,15 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 </thead>
                 <tbody x-ref="rows">
                     {% for val in (category.values if category else []) or [] %}
-                        {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                        {% set val_annotations = value_annotations.get(val.value, []) %}
+                        {% set suggested_fields = val_annotations | selectattr("is_applicable") | map(attribute="field") | list %}
+                        {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected, suggested_fields=suggested_fields) }}
+                        {# The check's suggestions, right under the row they would change.
+                           Accept writes into that row's inputs; Save keeps it. #}
+                        {{ value_suggestion_rows(category, val, val_annotations, column_count,
+                        can_manage=true,
+                        field_prefix="bulk-" ~ cat_id ~ "-" ~ val.value_id,
+                        divider=true) }}
                     {% endfor %}
                                                 {# A target with no values is not worth saving, so a block
                        cloned for a new one arrives with the row its author is
@@ -373,6 +404,11 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
       @targets-changed="markEditDirty()"
       @submit="allowLeave()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    {# Arriving from a failed selection run is carried through the save, so the
+       page it lands on can still offer to re-run - and "Save and re-run" can. #}
+    {% for name, value in (selection_provenance|default({})).items() %}
+        <input type="hidden" name="{{ name }}" value="{{ value }}" />
+    {% endfor %}
     <div id="bulk-categories" x-ref="categories">
         {% for category in form_categories %}
             {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
@@ -386,8 +422,9 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     {% endif %}
                 {% endfor %}
             {% endif %}
+            {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
             {{ category_block(category.id, category=category, missing_values=missing_values, errors=errors,
-            respondent_counts=respondent_counts, selected_counts=selected_counts) }}
+            respondent_counts=respondent_counts, selected_counts=selected_counts, value_annotations=value_annotations) }}
         {% endfor %}
     </div>
                                         {# Blank category blocks are cloned from here by the "Add target" dialog;
