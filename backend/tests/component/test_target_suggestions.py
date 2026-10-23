@@ -6,6 +6,9 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from sortition_algorithms.errors import InfeasibleQuotasError, SelectionError
+from sortition_algorithms.features import FeatureValueMinMax
+from sortition_algorithms.utils import RunReport
 
 from opendlp.adapters import database
 from opendlp.domain.assembly import SelectionRunRecord
@@ -674,7 +677,15 @@ def _add_running_run(fake_store, assembly_id):
         uow.commit()
 
 
-def _add_failed_run(fake_store, assembly_id, task_type):
+def _infeasible_report():
+    """The report of a run that failed because no panel meets all the targets."""
+    report = RunReport()
+    relaxed = {"Gender": {"Male": FeatureValueMinMax(min=3, max=7)}}
+    report.add_error(InfeasibleQuotasError(features=relaxed, output=["Lower the minimum for Male"]))
+    return report
+
+
+def _add_failed_run(fake_store, assembly_id, task_type, run_report=None):
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.selection_run_records.add(
             SelectionRunRecord(
@@ -685,6 +696,7 @@ def _add_failed_run(fake_store, assembly_id, task_type):
                 log_messages=["Task failed"],
                 error_message="The targets cannot all be met from the pool.",
                 completed_at=datetime.now(UTC),
+                run_report=run_report if run_report is not None else _infeasible_report(),
             )
         )
         uow.commit()
@@ -726,6 +738,17 @@ class TestFailureViewLink:
         self, logged_in_admin, fake_store, assembly_with_targets
     ):
         run_id = _add_failed_run(fake_store, assembly_with_targets, SelectionTaskType.SELECT_REPLACEMENT_FROM_DB)
+        response = self._modal(logged_in_admin, assembly_with_targets, run_id)
+
+        assert response.status_code == 200
+        assert b"Adjust targets" not in response.data
+
+    def test_a_failure_for_another_reason_has_no_adjust_targets_link(
+        self, logged_in_admin, fake_store, assembly_with_targets
+    ):
+        report = RunReport()
+        report.add_error(SelectionError("The pool could not be read"))
+        run_id = _add_failed_run(fake_store, assembly_with_targets, SelectionTaskType.SELECT_FROM_DB, report)
         response = self._modal(logged_in_admin, assembly_with_targets, run_id)
 
         assert response.status_code == 200

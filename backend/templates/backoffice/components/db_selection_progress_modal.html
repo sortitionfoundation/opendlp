@@ -185,16 +185,17 @@ classes="max-w-3xl"
     </div>
     {{ modal_footer_end() }}
 {% endif %}
-{# A failed initial or test selection usually means the targets cannot be met. Send the
-   organiser straight to the targets check, with the feasibility suggestions
-   showing and ready to accept, rather than leaving them at a dead end. #}
-{% if run_record.is_failed and run_record.task_type.value in ('select_from_db', 'test_select_from_db') %}
+{# An initial or test selection that failed because the targets cannot all be met
+   sends the organiser straight to the targets check, with the feasibility
+   suggestions showing and ready to accept, rather than leaving them at a dead
+   end. A failure for any other reason has nothing there to fix it. #}
+{% if run_record.failed_on_infeasible_targets and run_record.task_type.value in ('select_from_db', 'test_select_from_db') %}
     {# test=1 is how the targets page knows to re-run a test selection, not the real one. #}
     {% set adjust_args = {'from': 'selection', 'run_id': current_selection, 'edit': '1'} %}
     {% if is_test_selection %}{% set adjust_args = dict(adjust_args, test='1') %}{% endif %}
     {{ modal_footer_start() }}
     <div class="w-full flex gap-2 justify-end">
-        {{ button(_("Adjust targets") ,
+        {{ button(_("Adjust targets"),
         href=url_for('targets.check_targets', assembly_id=assembly.id, **adjust_args),
         variant="primary") }}
     </div>
