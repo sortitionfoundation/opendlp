@@ -13,8 +13,11 @@ ABOUTME: Shared by the read-only view (accept saves) and the edit form (accept f
     else.
 
     Someone who may not change the targets sees the suggestion and no Accept.
+
+    `divider` draws the table's dividing line under the last suggestion, for a
+    table whose value row leaves its own line off when suggestions follow it.
 #}
-{% macro value_suggestion_rows(category, val, annotations, colspan, can_manage=false, assembly_id="", field_prefix="", selection_provenance={}) %}
+{% macro value_suggestion_rows(category, val, annotations, colspan, can_manage=false, assembly_id="", field_prefix="", selection_provenance={}, divider=false) %}
     {% for ann in annotations if ann.level == "suggestion" %}
         {% set acceptable = can_manage and ann.suggested_value is not none and ann.field in ("min", "max") %}
         {% set current_value = val.min if ann.field == "min" else val.max %}
@@ -25,14 +28,15 @@ ABOUTME: Shared by the read-only view (accept saves) and the edit form (accept f
         {% endif %}
         {% set comment_id = "accept-comment-" ~ val.value_id ~ "-" ~ ann.field ~ ("-edit" if field_prefix else "") %}
         {% if not acceptable %}
-            {{ suggestion_row(ann.message, colspan=colspan) }}
+            {{ suggestion_row(ann.message, colspan=colspan, divider=divider and loop.last) }}
         {% elif field_prefix %}
             {{ suggestion_row(ann.message,
             colspan=colspan,
             comment=default_comment,
             comment_id=comment_id,
             apply={field_prefix ~ "-" ~ ann.field: ann.suggested_value},
-            comment_target=field_prefix ~ "-comment") }}
+            comment_target=field_prefix ~ "-comment",
+            divider=divider and loop.last) }}
         {% else %}
             {{ suggestion_row(ann.message,
             colspan=colspan,
@@ -46,7 +50,8 @@ ABOUTME: Shared by the read-only view (accept saves) and the edit form (accept f
             "value_id": val.value_id,
             "field": ann.field,
             "then": "recheck",
-            }, **selection_provenance)) }}
+            }, **selection_provenance),
+            divider=divider and loop.last) }}
         {% endif %}
     {% endfor %}
 {% endmacro %}

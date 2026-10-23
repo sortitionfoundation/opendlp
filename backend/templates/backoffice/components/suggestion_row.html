@@ -37,6 +37,9 @@ ABOUTME: Accept either posts to the server or writes the change into inputs else
         apply: {input id: value} written in on Accept, in apply mode
         comment_target: id of the input the comment is written into
         accept_label: the Accept button's text
+        divider: draw the table's dividing line under this row - for the last
+                 suggestion under a row whose own line has been left off, so
+                 the line closes the group rather than splitting it
 
     Usage:
         {{ suggestion_row(_("Suggested minimum: 3"), colspan=6,
@@ -46,7 +49,7 @@ ABOUTME: Accept either posts to the server or writes the change into inputs else
                           comment="Accepted algorithm suggestion", comment_id="c-1",
                           apply={"row-1-min": 3}, comment_target="row-1-comment") }}
 #}
-{% macro suggestion_row(message, colspan=1, comment="", comment_id="", action="", hidden_fields={}, form_attrs="", apply={}, comment_target="", accept_label="") %}
+{% macro suggestion_row(message, colspan=1, comment="", comment_id="", action="", hidden_fields={}, form_attrs="", apply={}, comment_target="", accept_label="", divider=false) %}
     {% set applies = apply | length > 0 %}
     {% set actionable = action or applies %}
     {% set accept_text = accept_label or _("Accept") %}
@@ -54,6 +57,7 @@ ABOUTME: Accept either posts to the server or writes the change into inputs else
     {# tojson escapes quotes and angle brackets, so the map is safe inside a
        single-quoted attribute - and Alpine never has to parse it. #}
     <tr data-suggestion-row="true"
+        {% if divider %}style="border-bottom: 1px solid var(--color-borders-dividers)"{% endif %}
         {% if applies %}x-data="suggestionRow" data-apply='{{ apply | tojson }}' data-comment-target="{{ comment_target }}" @suggestions-accept-all.window="accept()"{% endif %}>
         <td colspan="{{ colspan }}" class="px-0 py-1" style="border: none;">
             <div class="rounded-lg p-3 flex flex-col gap-2"

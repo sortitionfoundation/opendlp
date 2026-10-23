@@ -107,6 +107,11 @@ Check page then doesn't surface.
   then=recheck`), and — **only if `from=selection`** — **Accept all & re-run selection**
   (`scope=all, then=run`).
 
+Layout: a value's notes and suggestions sit inside its row group, with the dividing line
+under the whole group, so they cannot be read as belonging to the value below. The min or
+max box a suggestion would change is outlined in the suggestion's orange
+(`--color-warning-400`), in both the read-only view and the edit form.
+
 Comment behaviour A is pure server-side (no JS). Behaviour B (review-before-save) would
 instead stage the edit into the existing targets edit form with the comment pre-filled —
 decide before building.

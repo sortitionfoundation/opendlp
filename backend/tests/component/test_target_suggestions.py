@@ -449,6 +449,76 @@ class TestEditModeEntry:
         assert b"Save & re-run selection" not in response.data
 
 
+class TestSuggestionLayout:
+    """A suggestion reads as belonging to the value above it, and points at the box it changes."""
+
+    def _check_page(self, client, assembly_id):
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+        with patch(CHECK, return_value=check):
+            response = client.get(f"/backoffice/assembly/{assembly_id}/targets/check?edit=1")
+        assert response.status_code == 200
+        return response.data.decode()
+
+    @staticmethod
+    def _table(html, block_id):
+        start = html.index(f'id="{block_id}"')
+        return html[start : html.index("</table>", start)]
+
+    def test_read_only_view_groups_the_suggestion_with_its_value(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        category_id, _male = _ids(fake_store, admin_user, assembly_with_targets, "Gender", "Male")
+        table = self._table(self._check_page(logged_in_admin, assembly_with_targets), f"category-{category_id}")
+
+        groups = table.split("<tbody")[1:]
+        male_group = next(g for g in groups if ">Male</td>" in g)
+        female_group = next(g for g in groups if ">Female</td>" in g)
+        # The dividing line is under the group, so it falls after the suggestion.
+        assert male_group.startswith(' style="border-bottom: 1px solid var(--color-borders-dividers)"')
+        assert "data-suggestion-row" in male_group
+        assert "data-suggestion-row" not in female_group
+
+    def test_read_only_view_outlines_the_box_the_suggestion_changes(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        category_id, _male = _ids(fake_store, admin_user, assembly_with_targets, "Gender", "Male")
+        table = self._table(self._check_page(logged_in_admin, assembly_with_targets), f"category-{category_id}")
+
+        assert table.count('data-suggested="true"') == 1
+        # The outlined box is Male's minimum (5), not its maximum (7).
+        outlined = table.split('data-suggested="true"')[1].split("</td>")[0]
+        assert "<span>5</span>" in outlined
+        assert "var(--color-warning-400)" in outlined
+
+    def test_edit_form_draws_the_line_under_the_last_suggestion(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        category_id, male = _ids(fake_store, admin_user, assembly_with_targets, "Gender", "Male")
+        _cid, female = _ids(fake_store, admin_user, assembly_with_targets, "Gender", "Female")
+        table = self._table(self._check_page(logged_in_admin, assembly_with_targets), f"bulk-category-{category_id}")
+
+        rows = table.split("<tr")
+        male_row = next(r for r in rows if f'id="bulk-{category_id}-{male.value_id}-min"' in r)
+        female_row = next(r for r in rows if f'id="bulk-{category_id}-{female.value_id}-min"' in r)
+        suggestion_row = next(r for r in rows if "data-suggestion-row" in r)
+        divider = "border-bottom: 1px solid var(--color-borders-dividers)"
+        assert divider not in male_row.split(">")[0]
+        assert divider in suggestion_row.split(">")[0]
+        assert divider in female_row.split(">")[0]
+
+    def test_edit_form_outlines_the_input_the_suggestion_changes(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        category_id, male = _ids(fake_store, admin_user, assembly_with_targets, "Gender", "Male")
+        table = self._table(self._check_page(logged_in_admin, assembly_with_targets), f"bulk-category-{category_id}")
+
+        assert table.count('data-suggested="true"') == 1
+        outlined = table.split('data-suggested="true"')[1].split("</td>")[0]
+        assert f'id="bulk-{category_id}-{male.value_id}-min"' in outlined
+
+
 class TestSaveAllFromSelection:
     def _post(self, client, fake_store, admin_user, assembly_id, extra):
         category_id, male = _ids(fake_store, admin_user, assembly_id, "Gender", "Male")
