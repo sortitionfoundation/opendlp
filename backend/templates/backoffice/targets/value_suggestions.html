@@ -19,7 +19,7 @@ ABOUTME: Shared by the read-only view (accept saves) and the edit form (accept f
 #}
 {% macro value_suggestion_rows(category, val, annotations, colspan, can_manage=false, assembly_id="", field_prefix="", selection_provenance={}, divider=false) %}
     {% for ann in annotations if ann.level == "suggestion" %}
-        {% set acceptable = can_manage and ann.suggested_value is not none and ann.field in ("min", "max") %}
+        {% set acceptable = can_manage and ann.is_applicable %}
         {% set current_value = val.min if ann.field == "min" else val.max %}
         {% if ann.field == "min" %}
             {% set default_comment = _("Accepted algorithm suggestion — minimum %(current)s → %(suggested)s", current=current_value, suggested=ann.suggested_value) %}

@@ -306,7 +306,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 <tbody x-ref="rows">
                     {% for val in (category.values if category else []) or [] %}
                         {% set val_annotations = value_annotations.get(val.value, []) %}
-                        {% set suggested_fields = val_annotations | selectattr("level", "equalto", "suggestion") | map(attribute="field") | list %}
+                        {% set suggested_fields = val_annotations | selectattr("is_applicable") | map(attribute="field") | list %}
                         {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected, suggested_fields=suggested_fields) }}
                         {# The check's suggestions, right under the row they would change.
                            Accept writes into that row's inputs; Save keeps it. #}

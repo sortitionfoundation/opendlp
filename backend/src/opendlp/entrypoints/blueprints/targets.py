@@ -431,7 +431,7 @@ def _suggestion_annotations(check: DetailedCheckResult, category_name: str, valu
     return [
         annotation
         for annotation in check.annotations.get(category_name, {}).get(value_name, [])
-        if annotation.level == "suggestion" and annotation.suggested_value is not None
+        if annotation.is_applicable
     ]
 
 

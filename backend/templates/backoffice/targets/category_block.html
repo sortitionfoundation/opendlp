@@ -158,7 +158,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                as if they belonged to the value below. #}
             {% for val in category.values or [] %}
                 {% set val_annotations = value_annotations.get(val.value, []) if value_annotations is defined and value_annotations else [] %}
-                {% set suggested_fields = val_annotations | selectattr("level", "equalto", "suggestion") | map(attribute="field") | list %}
+                {% set suggested_fields = val_annotations | selectattr("is_applicable") | map(attribute="field") | list %}
                 <tbody style="border-bottom: 1px solid var(--color-borders-dividers)">
                     <tr>
                         <td class="py-3 pr-4" style="color: var(--color-body-text)">{{ val.value }}</td>
