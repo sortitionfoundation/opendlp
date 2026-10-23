@@ -341,6 +341,24 @@ class TestAcceptFailures:
         # The accepted change is still saved; only the re-run waits.
         assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 3
 
+    def test_a_refused_rerun_keeps_the_accepted_change(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        _add_running_run(fake_store, assembly_with_targets)
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.post(
+                _accept_url(assembly_with_targets),
+                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
+            )
+
+        assert "/targets/check" in response.headers["Location"]
+        assert any("Could not start selection task" in msg for msg in _flashes(logged_in_admin))
+        assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 3
+
     def test_an_unknown_assembly_goes_back_to_the_dashboard(self, logged_in_admin):
         response = logged_in_admin.post(_accept_url(uuid.uuid4()), data={"scope": "all", "then": "recheck"})
 
@@ -579,6 +597,23 @@ class TestSaveAllFromSelection:
         assert "from=selection" in location
         assert run_id in location
 
+    def test_a_refused_rerun_keeps_the_saved_edits(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        _add_running_run(fake_store, assembly_with_targets)
+
+        response = self._post(
+            logged_in_admin,
+            fake_store,
+            admin_user,
+            assembly_with_targets,
+            {"from": "selection", "run_id": str(uuid.uuid4()), "then": "run"},
+        )
+
+        assert "/targets/check" in response.headers["Location"]
+        assert any("Could not start selection task" in msg for msg in _flashes(logged_in_admin))
+        assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 3
+
     def test_run_is_ignored_without_the_selection_provenance(
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
     ):
@@ -587,6 +622,20 @@ class TestSaveAllFromSelection:
 
         assert not start.called
         assert "/targets/check" in response.headers["Location"]
+
+
+def _add_running_run(fake_store, assembly_id):
+    """A selection still running on the assembly, so a new one is refused."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=uuid.uuid4(),
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+            )
+        )
+        uow.commit()
 
 
 def _add_failed_run(fake_store, assembly_id, task_type):

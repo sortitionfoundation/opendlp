@@ -524,15 +524,25 @@ def _start_rerun(uow: Any, assembly_id: uuid.UUID, provenance: dict[str, Any]) -
     """Re-run the kind of selection that failed, unless its settings still need confirming.
 
     A failed test selection is re-run as a test selection, never as the real one.
+
+    A refused start - another task writing to the assembly, or settings the
+    selection cannot use - is reported and swallowed rather than raised: the
+    target changes are in the same unit of work, and raising would roll them back.
     """
     csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
-    if csv_config.settings_confirmed:
+    if not csv_config.settings_confirmed:
+        flash(_("Please review and save the selection settings before running selection"), "warning")
+        return None
+    try:
         task_id: uuid.UUID = start_db_select_task(
             uow, current_user.id, assembly_id, test_selection=provenance.get("test") == "1"
         )
-        return task_id
-    flash(_("Please review and save the selection settings before running selection"), "warning")
-    return None
+    except InvalidSelection as e:
+        # SelectionAlreadyRunning is an InvalidSelection too. Both are raised before
+        # the run record is written, so the session is clean and the targets commit.
+        flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
+        return None
+    return task_id
 
 
 def _redirect_after_save(assembly_id: uuid.UUID, task_id: uuid.UUID | None, recheck_url: str) -> ResponseReturnValue:
