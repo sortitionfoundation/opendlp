@@ -559,10 +559,18 @@ def _selection_provenance(params: Any) -> dict[str, Any]:
     selection - the same flag the selection page starts a test run with - so a
     re-run starts the same kind of selection that failed. Empty for any other
     visit, so it can be splatted into ``url_for`` or rendered as hidden fields.
+
+    A ``run_id`` that is not a UUID drops the provenance altogether. It comes from
+    the address bar and ends up inside an Alpine expression on the targets page,
+    where a quote in it would break out of the string it sits in.
     """
     if params.get("from") != "selection":
         return {}
-    provenance = {"from": "selection", "run_id": params.get("run_id", "")}
+    try:
+        run_id = uuid.UUID(params.get("run_id", ""))
+    except ValueError:
+        return {}
+    provenance = {"from": "selection", "run_id": str(run_id)}
     if params.get("test") == "1":
         provenance["test"] = "1"
     return provenance

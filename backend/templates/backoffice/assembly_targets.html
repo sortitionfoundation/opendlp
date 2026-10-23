@@ -80,7 +80,10 @@ ABOUTME: Displays target categories and values, with respondent counts and check
         {% set provenance = selection_provenance|default({}) %}
         {% set rerun_is_test = provenance.get("test") == "1" %}
         {# Discarding edits made against the check's suggestions goes back to the
-           check, suggestions and all, rather than to a page without them. #}
+           check, suggestions and all, rather than to a page without them.
+           The url goes into a quoted string in x-data below. That is only safe
+           because the route accepts run_id only as a UUID; |tojson is no help
+           here, as the CSP build of Alpine does not decode its \u escapes. #}
         {% if check_result is defined and check_result %}
             {% set discard_url = url_for('targets.check_targets', assembly_id=assembly.id, **provenance) %}
         {% else %}

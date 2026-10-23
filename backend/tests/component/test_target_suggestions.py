@@ -261,7 +261,7 @@ class TestReRunGating:
         with patch(CHECK, return_value=check):
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
-                data={"scope": "all", "then": "recheck", "from": "selection", "run_id": "r", "test": "1"},
+                data={"scope": "all", "then": "recheck", "from": "selection", "run_id": str(uuid.uuid4()), "test": "1"},
             )
 
         assert "test=1" in response.headers["Location"]
@@ -332,7 +332,7 @@ class TestAcceptFailures:
         with patch(CHECK, return_value=check), patch(START) as start:
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
-                data={"scope": "all", "then": "run", "from": "selection", "run_id": "r"},
+                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
             )
 
         assert not start.called
@@ -406,6 +406,20 @@ class TestCheckPageControls:
         assert b"Accept all suggestions" in response.data
         assert b"re-run selection" in response.data
 
+    def test_a_run_id_that_is_not_a_uuid_is_dropped(self, logged_in_admin, fake_store, assembly_with_targets):
+        check = DetailedCheckResult(
+            success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
+        )
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.get(
+                self._check_url(assembly_with_targets, "?from=selection&run_id=x%27%2Balert(1)%2B%27")
+            )
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "alert(1)" not in html
+        assert "re-run selection" not in html
+
     def test_direct_visit_omits_the_rerun_button(self, logged_in_admin, fake_store, assembly_with_targets):
         check = DetailedCheckResult(
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
@@ -454,7 +468,9 @@ class TestEditModeEntry:
     def test_a_test_run_is_offered_a_test_rerun_and_carries_the_flag(
         self, logged_in_admin, fake_store, assembly_with_targets
     ):
-        response = self._get(logged_in_admin, assembly_with_targets, "?from=selection&run_id=r&test=1&edit=1")
+        response = self._get(
+            logged_in_admin, assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}&test=1&edit=1"
+        )
 
         html = response.data.decode()
         assert "Save & re-run test selection" in html
