@@ -34,7 +34,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.sortition import start_db_select_task
-from opendlp.service_layer.target_checking import DetailedCheckResult, check_targets_detailed
+from opendlp.service_layer.target_checking import check_targets_detailed
 from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_respondent_helpers import (
     build_respondent_counts,
@@ -51,8 +51,9 @@ from opendlp.service_layer.target_service import (
     delete_targets_for_assembly,
     get_targets_for_assembly,
     save_all_targets,
-    update_target_value,
 )
+from opendlp.service_layer.target_suggestions import accept_all_suggestions, accept_suggestion
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
 from ..forms import (
@@ -419,108 +420,27 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 
-def _suggestion_change_phrase(field: str, current: int, suggested: int) -> str:
-    """The "minimum X → Y" fragment shared by the single and combined comments."""
-    if field == "min":
-        return _("minimum %(current)s → %(suggested)s", current=current, suggested=suggested)
-    return _("maximum %(current)s → %(suggested)s", current=current, suggested=suggested)
-
-
-def _suggestion_annotations(check: DetailedCheckResult, category_name: str, value_name: str) -> list:
-    """The applicable min/max suggestions the check holds for one value."""
-    return [
-        annotation
-        for annotation in check.annotations.get(category_name, {}).get(value_name, [])
-        if annotation.is_applicable
-    ]
-
-
-def _apply_value_suggestions(
-    uow: Any,
-    assembly_id: uuid.UUID,
-    category: Any,
-    value: Any,
-    annotations: list,
-    comment: str,
-) -> None:
-    """Apply every min/max suggestion for one value in a single update.
-
-    Passing only the fields that change leaves the other bound (see
-    `_apply_value_numbers`); accepting a suggestion is a manual override, so this
-    breaks the percentage link and records why in the comment.
-    """
-    min_count = next((a.suggested_value for a in annotations if a.field == "min"), None)
-    max_count = next((a.suggested_value for a in annotations if a.field == "max"), None)
-    update_target_value(
-        uow,
-        current_user.id,
-        assembly_id,
-        category.id,
-        value.value_id,
-        value.value,
-        min_count=min_count,
-        max_count=max_count,
-        comment=comment,
-    )
-
-
-def _accept_one(
-    uow: Any,
-    assembly_id: uuid.UUID,
-    categories: list,
-    check: DetailedCheckResult,
-    form: Any,
-) -> bool:
-    """Apply the single suggestion the form names, with the organiser's comment."""
+def _accept_from_form(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, form: Any) -> bool:
+    """Accept what the form asks for - every suggestion, or the one it names."""
+    if form.get("scope") == "all":
+        return accept_all_suggestions(uow, current_user.id, assembly_id)
     try:
         category_id = uuid.UUID(form.get("category_id", ""))
         value_id = uuid.UUID(form.get("value_id", ""))
     except ValueError:
         return False
-    field = form.get("field", "")
-    category = next((c for c in categories if c.id == category_id), None)
-    value = next((v for v in (category.values or []) if v.value_id == value_id), None) if category else None
-    if category is None or value is None:
-        return False
-
-    annotations = [a for a in _suggestion_annotations(check, category.name, value.value) if a.field == field]
-    if not annotations:
-        return False
-
-    suggested = annotations[0].suggested_value
-    current = value.min if field == "min" else value.max
-    comment = form.get("comment", "").strip() or _(
-        "Accepted algorithm suggestion — %(change)s",
-        change=_suggestion_change_phrase(field, current, suggested),
+    return accept_suggestion(
+        uow,
+        current_user.id,
+        assembly_id,
+        category_id,
+        value_id,
+        form.get("field", ""),
+        comment=form.get("comment", ""),
     )
-    _apply_value_suggestions(uow, assembly_id, category, value, annotations, comment)
-    return True
 
 
-def _accept_all(
-    uow: Any,
-    assembly_id: uuid.UUID,
-    categories: list,
-    check: DetailedCheckResult,
-) -> bool:
-    """Apply every outstanding suggestion, each with an auto-written comment."""
-    applied = False
-    for category in categories:
-        for value in category.values or []:
-            annotations = _suggestion_annotations(check, category.name, value.value)
-            if not annotations:
-                continue
-            changes = ", ".join(
-                _suggestion_change_phrase(a.field, value.min if a.field == "min" else value.max, a.suggested_value)
-                for a in sorted(annotations, key=lambda a: a.field)
-            )
-            comment = _("Accepted algorithm suggestion — %(changes)s", changes=changes)
-            _apply_value_suggestions(uow, assembly_id, category, value, annotations, comment)
-            applied = True
-    return applied
-
-
-def _start_rerun(uow: Any, assembly_id: uuid.UUID, provenance: dict[str, Any]) -> uuid.UUID | None:
+def _start_rerun(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, provenance: dict[str, Any]) -> uuid.UUID | None:
     """Re-run the kind of selection that failed, unless its settings still need confirming.
 
     A failed test selection is re-run as a test selection, never as the real one.
@@ -581,8 +501,9 @@ def _selection_provenance(params: Any) -> dict[str, Any]:
 def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Apply one or all of the algorithm's recommended target changes.
 
-    The suggestions are re-derived here rather than trusted from the form, so a
-    stale page cannot apply a number the check no longer recommends. Each applied
+    The suggestions are re-derived from a fresh check rather than trusted from
+    the form, so a stale page cannot apply a number the check no longer
+    recommends (see `target_suggestions`). Each applied
     value gets a comment recording where the change came from; for a single
     accept the organiser may have edited that comment before saving.
 
@@ -599,15 +520,7 @@ def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
         task_id = None
         with uow:
             get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            check = check_targets_detailed(uow, current_user.id, assembly_id)
-            categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-
-            if request.form.get("scope") == "all":
-                applied = _accept_all(uow, assembly_id, categories, check)
-            else:
-                applied = _accept_one(uow, assembly_id, categories, check, request.form)
-
-            if not applied:
+            if not _accept_from_form(uow, assembly_id, request.form):
                 flash(_("That suggestion is no longer available. The targets have been re-checked."), "warning")
                 return redirect_preserving_scroll(recheck_url)
 

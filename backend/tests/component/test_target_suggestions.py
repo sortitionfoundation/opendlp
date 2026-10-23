@@ -17,6 +17,7 @@ from opendlp.service_layer.target_service import get_targets_for_assembly
 from tests.fakes import FakeUnitOfWork
 
 CHECK = "opendlp.entrypoints.blueprints.targets.check_targets_detailed"
+ACCEPT_CHECK = "opendlp.service_layer.target_suggestions.check_targets_detailed"
 START = "opendlp.entrypoints.blueprints.targets.start_db_select_task"
 
 # Gender Male starts manual [5, 7]; the stubbed check suggests lowering the minimum to 3.
@@ -84,7 +85,7 @@ class TestAcceptOne:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check):
+        with patch(ACCEPT_CHECK, return_value=check):
             response = logged_in_admin.post(
                 _accept_url(assembly_id),
                 data={
@@ -119,7 +120,7 @@ class TestAcceptOne:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check):
+        with patch(ACCEPT_CHECK, return_value=check):
             logged_in_admin.post(
                 _accept_url(assembly_id),
                 data={
@@ -144,7 +145,7 @@ class TestAcceptOne:
         category_id, value = _ids(fake_store, admin_user, assembly_id, "Gender", "Male")
         empty = DetailedCheckResult(success=True, global_errors=[], annotations={})
 
-        with patch(CHECK, return_value=empty):
+        with patch(ACCEPT_CHECK, return_value=empty):
             response = logged_in_admin.post(
                 _accept_url(assembly_id),
                 data={
@@ -184,7 +185,7 @@ class TestAcceptAll:
             },
         )
 
-        with patch(CHECK, return_value=check):
+        with patch(ACCEPT_CHECK, return_value=check):
             response = logged_in_admin.post(
                 _accept_url(assembly_id),
                 data={"scope": "all", "then": "recheck"},
@@ -210,7 +211,7 @@ class TestReRunGating:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check), patch(START, return_value=task_id) as start:
+        with patch(ACCEPT_CHECK, return_value=check), patch(START, return_value=task_id) as start:
             response = logged_in_admin.post(
                 _accept_url(assembly_id),
                 data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
@@ -228,7 +229,7 @@ class TestReRunGating:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check), patch(START, return_value=uuid.uuid4()) as start:
+        with patch(ACCEPT_CHECK, return_value=check), patch(START, return_value=uuid.uuid4()) as start:
             logged_in_admin.post(
                 _accept_url(assembly_with_targets),
                 data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
@@ -243,7 +244,7 @@ class TestReRunGating:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check), patch(START, return_value=uuid.uuid4()) as start:
+        with patch(ACCEPT_CHECK, return_value=check), patch(START, return_value=uuid.uuid4()) as start:
             logged_in_admin.post(
                 _accept_url(assembly_with_targets),
                 data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4()), "test": "1"},
@@ -258,7 +259,7 @@ class TestReRunGating:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check):
+        with patch(ACCEPT_CHECK, return_value=check):
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
                 data={"scope": "all", "then": "recheck", "from": "selection", "run_id": str(uuid.uuid4()), "test": "1"},
@@ -274,7 +275,7 @@ class TestReRunGating:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check), patch(START) as start:
+        with patch(ACCEPT_CHECK, return_value=check), patch(START) as start:
             response = logged_in_admin.post(
                 _accept_url(assembly_id),
                 data={"scope": "all", "then": "run"},  # no from=selection
@@ -308,7 +309,7 @@ class TestAcceptFailures:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check):
+        with patch(ACCEPT_CHECK, return_value=check):
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
                 data={"scope": "one", "field": "min", "then": "recheck", **form},
@@ -329,7 +330,7 @@ class TestAcceptFailures:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check), patch(START) as start:
+        with patch(ACCEPT_CHECK, return_value=check), patch(START) as start:
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
                 data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
@@ -349,7 +350,7 @@ class TestAcceptFailures:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
 
-        with patch(CHECK, return_value=check):
+        with patch(ACCEPT_CHECK, return_value=check):
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
                 data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
@@ -368,7 +369,7 @@ class TestAcceptFailures:
     def test_someone_who_may_not_manage_the_assembly_is_turned_away(
         self, logged_in_user, admin_user, fake_store, assembly_with_targets
     ):
-        with patch(CHECK) as check:
+        with patch(ACCEPT_CHECK) as check:
             response = logged_in_user.post(_accept_url(assembly_with_targets), data={"scope": "all", "then": "recheck"})
 
         assert not check.called
@@ -377,7 +378,7 @@ class TestAcceptFailures:
         assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 5
 
     def test_an_unexpected_error_goes_back_to_the_targets_page(self, logged_in_admin, assembly_with_targets):
-        with patch(CHECK, side_effect=RuntimeError("boom")):
+        with patch(ACCEPT_CHECK, side_effect=RuntimeError("boom")):
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets), data={"scope": "all", "then": "recheck"}
             )
