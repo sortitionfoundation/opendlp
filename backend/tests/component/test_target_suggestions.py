@@ -360,11 +360,10 @@ class TestAcceptFailures:
         assert any("Could not start selection task" in msg for msg in _flashes(logged_in_admin))
         assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 3
 
-    def test_an_unknown_assembly_goes_back_to_the_dashboard(self, logged_in_admin):
+    def test_an_unknown_assembly_is_not_found(self, logged_in_admin):
         response = logged_in_admin.post(_accept_url(uuid.uuid4()), data={"scope": "all", "then": "recheck"})
 
-        assert response.headers["Location"].endswith("/dashboard")
-        assert "Assembly not found" in _flashes(logged_in_admin)
+        assert response.status_code == 404
 
     def test_someone_who_may_not_manage_the_assembly_is_turned_away(
         self, logged_in_user, admin_user, fake_store, assembly_with_targets
@@ -373,8 +372,7 @@ class TestAcceptFailures:
             response = logged_in_user.post(_accept_url(assembly_with_targets), data={"scope": "all", "then": "recheck"})
 
         assert not check.called
-        assert response.headers["Location"].endswith("/dashboard")
-        assert any("permission" in msg for msg in _flashes(logged_in_user))
+        assert response.status_code == 403
         assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 5
 
     def test_an_unexpected_error_goes_back_to_the_targets_page(self, logged_in_admin, assembly_with_targets):

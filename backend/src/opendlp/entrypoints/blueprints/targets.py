@@ -12,6 +12,7 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.entrypoints.blueprints.backoffice import render_assembly_data_page
+from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.save_all_parser import errors_by_field, parse_save_all_targets, pending_categories
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
@@ -498,6 +499,7 @@ def _selection_provenance(params: Any) -> dict[str, Any]:
 
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
 @login_required
+@require_assembly_management
 def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Apply one or all of the algorithm's recommended target changes.
 
@@ -519,7 +521,6 @@ def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         task_id = None
         with uow:
-            get_assembly_with_permissions(uow, assembly_id, current_user.id)
             if not _accept_from_form(uow, assembly_id, request.form):
                 flash(_("That suggestion is no longer available. The targets have been re-checked."), "warning")
                 return redirect_preserving_scroll(recheck_url)
