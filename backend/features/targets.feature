@@ -212,8 +212,9 @@ Feature: Target percentages, notes and ordering
   Scenario: Accepting a suggestion in the editor fills its row in, ready to save
     Given there is an assembly whose targets cannot all be met called "Accept Suggestion Demo"
     And I am signed in as an admin user
-    When I adjust the targets for "Accept Suggestion Demo" after a failed selection
+    When I adjust the targets for "Accept Suggestion Demo" after a failed test selection
     Then I should see the bulk edit form
+    And I should see the "Save and re-run test selection" button
     When I accept the suggestion "Suggested minimum: 5 (currently 6)"
     Then the "Young" edit row should show min "5" and max "7"
     And the "Young" edit row comment should be "From the census; Accepted algorithm suggestion — minimum 6 → 5"
@@ -225,7 +226,7 @@ Feature: Target percentages, notes and ordering
   Scenario: Undo puts back what accepting a suggestion changed
     Given there is an assembly whose targets cannot all be met called "Undo Suggestion Demo"
     And I am signed in as an admin user
-    When I adjust the targets for "Undo Suggestion Demo" after a failed selection
+    When I adjust the targets for "Undo Suggestion Demo" after a failed test selection
     And I accept the suggestion "Suggested minimum: 5 (currently 6)"
     And I undo the accepted suggestion
     Then the "Young" edit row should show min "6" and max "7"
@@ -235,7 +236,7 @@ Feature: Target percentages, notes and ordering
   Scenario: Accepting every suggestion in the editor makes the targets feasible
     Given there is an assembly whose targets cannot all be met called "Accept All Demo"
     And I am signed in as an admin user
-    When I adjust the targets for "Accept All Demo" after a failed selection
+    When I adjust the targets for "Accept All Demo" after a failed test selection
     And I accept all the suggestions
     Then the "Young" edit row should show min "5" and max "7"
     And the "Old" edit row should show min "3" and max "5"

@@ -7,9 +7,11 @@ import uuid
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
+from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_service import (
     add_target_value,
@@ -180,12 +182,22 @@ def open_targets_page(admin_logged_in_page: Page, title: str) -> None:
     admin_logged_in_page.goto(_targets_url(_target_assembly_ids[title]))
 
 
-@when(parsers.parse('I adjust the targets for "{title}" after a failed selection'))
-def adjust_targets_after_failed_selection(admin_logged_in_page: Page, title: str) -> None:
-    """Where "Adjust targets" on a failed selection run leads: the check, open in the editor."""
-    admin_logged_in_page.goto(
-        f"{_targets_url(_target_assembly_ids[title])}/check?from=selection&run_id={uuid.uuid4()}&edit=1"
-    )
+@when(parsers.parse('I adjust the targets for "{title}" after a failed test selection'))
+def adjust_targets_after_failed_selection(admin_logged_in_page: Page, title: str, test_database) -> None:
+    """Where "Adjust targets" on a failed test selection leads: the check, open in the editor."""
+    assembly_id = uuid.UUID(_target_assembly_ids[title])
+    run_id = uuid.uuid4()
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=run_id,
+                status=SelectionRunStatus.FAILED,
+                task_type=SelectionTaskType.TEST_SELECT_FROM_DB,
+            )
+        )
+        uow.commit()
+    admin_logged_in_page.goto(f"{_targets_url(str(assembly_id))}/check?from=selection&run_id={run_id}&edit=1")
 
 
 @when(parsers.parse('I accept the suggestion "{message}"'))

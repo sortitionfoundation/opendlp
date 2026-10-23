@@ -99,7 +99,7 @@ class TestAcceptOne:
                     "comment": "Accepted algorithm suggestion — minimum 5 → 3 — checked with team",
                     "then": "recheck",
                     "from": "selection",
-                    "run_id": str(uuid.uuid4()),
+                    "run_id": _run(fake_store, assembly_id),
                 },
                 follow_redirects=False,
             )
@@ -238,7 +238,7 @@ class TestReRunGating:
         with patch(ACCEPT_CHECK, return_value=check), patch(START, return_value=task_id) as start:
             response = logged_in_admin.post(
                 _accept_url(assembly_id),
-                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
+                data={"scope": "all", "then": "run", "from": "selection", "run_id": _run(fake_store, assembly_id)},
                 follow_redirects=False,
             )
 
@@ -256,7 +256,12 @@ class TestReRunGating:
         with patch(ACCEPT_CHECK, return_value=check), patch(START, return_value=uuid.uuid4()) as start:
             logged_in_admin.post(
                 _accept_url(assembly_with_targets),
-                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
+                data={
+                    "scope": "all",
+                    "then": "run",
+                    "from": "selection",
+                    "run_id": _run(fake_store, assembly_with_targets),
+                },
             )
 
         assert start.call_args.kwargs["test_selection"] is False
@@ -271,25 +276,32 @@ class TestReRunGating:
         with patch(ACCEPT_CHECK, return_value=check), patch(START, return_value=uuid.uuid4()) as start:
             logged_in_admin.post(
                 _accept_url(assembly_with_targets),
-                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4()), "test": "1"},
+                data={
+                    "scope": "all",
+                    "then": "run",
+                    "from": "selection",
+                    "run_id": _run(fake_store, assembly_with_targets, test=True),
+                },
             )
 
         assert start.call_args.kwargs["test_selection"] is True
 
-    def test_recheck_after_accepting_keeps_the_test_flag(
+    def test_recheck_after_accepting_keeps_the_run(
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
     ):
         check = DetailedCheckResult(
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
+        run_id = _run(fake_store, assembly_with_targets, test=True)
 
         with patch(ACCEPT_CHECK, return_value=check):
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
-                data={"scope": "all", "then": "recheck", "from": "selection", "run_id": str(uuid.uuid4()), "test": "1"},
+                data={"scope": "all", "then": "recheck", "from": "selection", "run_id": run_id},
             )
 
-        assert "test=1" in response.headers["Location"]
+        assert f"run_id={run_id}" in response.headers["Location"]
+        assert "test=" not in response.headers["Location"]
 
     def test_run_is_ignored_without_the_selection_provenance(
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
@@ -357,7 +369,12 @@ class TestAcceptFailures:
         with patch(ACCEPT_CHECK, return_value=check), patch(START) as start:
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
-                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
+                data={
+                    "scope": "all",
+                    "then": "run",
+                    "from": "selection",
+                    "run_id": _run(fake_store, assembly_with_targets),
+                },
             )
 
         assert not start.called
@@ -377,7 +394,12 @@ class TestAcceptFailures:
         with patch(ACCEPT_CHECK, return_value=check):
             response = logged_in_admin.post(
                 _accept_url(assembly_with_targets),
-                data={"scope": "all", "then": "run", "from": "selection", "run_id": str(uuid.uuid4())},
+                data={
+                    "scope": "all",
+                    "then": "run",
+                    "from": "selection",
+                    "run_id": _run(fake_store, assembly_with_targets),
+                },
             )
 
         assert "/targets/check" in response.headers["Location"]
@@ -421,7 +443,9 @@ class TestCheckPageControls:
         )
         with patch(CHECK, return_value=check):
             response = logged_in_admin.get(
-                self._check_url(assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}")
+                self._check_url(
+                    assembly_with_targets, f"?from=selection&run_id={_run(fake_store, assembly_with_targets)}"
+                )
             )
 
         assert response.status_code == 200
@@ -472,7 +496,11 @@ class TestEditModeEntry:
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
     ):
         category_id, male = _ids(fake_store, admin_user, assembly_with_targets, "Gender", "Male")
-        response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}&edit=1")
+        response = self._get(
+            logged_in_admin,
+            assembly_with_targets,
+            f"?from=selection&run_id={_run(fake_store, assembly_with_targets)}&edit=1",
+        )
 
         html = response.data.decode()
         assert response.status_code == 200
@@ -497,21 +525,51 @@ class TestEditModeEntry:
         assert 'role="status"' in html
 
     def test_without_the_edit_flag_the_page_opens_read_only(self, logged_in_admin, fake_store, assembly_with_targets):
-        response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}")
+        response = self._get(
+            logged_in_admin, assembly_with_targets, f"?from=selection&run_id={_run(fake_store, assembly_with_targets)}"
+        )
 
         assert "editingAll: false" in response.data.decode()
 
-    def test_a_test_run_is_offered_a_test_rerun_and_carries_the_flag(
-        self, logged_in_admin, fake_store, assembly_with_targets
-    ):
-        response = self._get(
-            logged_in_admin, assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}&test=1&edit=1"
-        )
+    def test_a_test_run_is_offered_a_test_rerun(self, logged_in_admin, fake_store, assembly_with_targets):
+        run_id = _run(fake_store, assembly_with_targets, test=True)
+        response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={run_id}&edit=1")
 
         html = response.data.decode()
         assert "Save and re-run test selection" in html
         assert "Accept all and re-run test selection" in html
-        assert '<input type="hidden" name="test" value="1" />' in html
+        assert f'<input type="hidden" name="run_id" value="{run_id}" />' in html
+
+    @pytest.mark.parametrize(
+        "run",
+        ["unknown", "another assembly", "completed", "replacement"],
+    )
+    def test_a_run_the_targets_page_may_not_rerun_offers_no_rerun(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets, run
+    ):
+        if run == "unknown":
+            run_id = str(uuid.uuid4())
+        elif run == "another assembly":
+            run_id = _run(fake_store, _another_assembly(fake_store, admin_user))
+        elif run == "completed":
+            run_id = str(
+                _add_failed_run(
+                    fake_store,
+                    assembly_with_targets,
+                    SelectionTaskType.SELECT_FROM_DB,
+                    status=SelectionRunStatus.COMPLETED,
+                )
+            )
+        else:
+            run_id = str(
+                _add_failed_run(fake_store, assembly_with_targets, SelectionTaskType.SELECT_REPLACEMENT_FROM_DB)
+            )
+
+        response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={run_id}&edit=1")
+
+        assert response.status_code == 200
+        assert b"re-run" not in response.data
+        assert run_id.encode() not in response.data
 
     def test_save_and_rerun_is_only_offered_from_a_run(self, logged_in_admin, fake_store, assembly_with_targets):
         response = self._get(logged_in_admin, assembly_with_targets, "?edit=1")
@@ -613,7 +671,7 @@ class TestSaveAllFromSelection:
                 fake_store,
                 admin_user,
                 assembly_with_targets,
-                {"from": "selection", "run_id": str(uuid.uuid4()), "then": "run"},
+                {"from": "selection", "run_id": _run(fake_store, assembly_with_targets), "then": "run"},
             )
 
         assert start.called
@@ -629,7 +687,7 @@ class TestSaveAllFromSelection:
                 fake_store,
                 admin_user,
                 assembly_with_targets,
-                {"from": "selection", "run_id": str(uuid.uuid4()), "then": "run", "test": "1"},
+                {"from": "selection", "run_id": _run(fake_store, assembly_with_targets, test=True), "then": "run"},
             )
 
         assert start.call_args.kwargs["test_selection"] is True
@@ -637,7 +695,7 @@ class TestSaveAllFromSelection:
     def test_plain_save_from_a_run_keeps_the_provenance(
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
     ):
-        run_id = str(uuid.uuid4())
+        run_id = _run(fake_store, assembly_with_targets)
         with patch(START) as start:
             response = self._post(
                 logged_in_admin, fake_store, admin_user, assembly_with_targets, {"from": "selection", "run_id": run_id}
@@ -659,12 +717,26 @@ class TestSaveAllFromSelection:
             fake_store,
             admin_user,
             assembly_with_targets,
-            {"from": "selection", "run_id": str(uuid.uuid4()), "then": "run"},
+            {"from": "selection", "run_id": _run(fake_store, assembly_with_targets), "then": "run"},
         )
 
         assert "/targets/check" in response.headers["Location"]
         assert any("Could not start selection task" in msg for msg in _flashes(logged_in_admin))
         assert _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male").min == 3
+
+    def test_a_forged_test_flag_does_not_make_a_real_run_a_test(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        with patch(START, return_value=uuid.uuid4()) as start:
+            self._post(
+                logged_in_admin,
+                fake_store,
+                admin_user,
+                assembly_with_targets,
+                {"from": "selection", "run_id": _run(fake_store, assembly_with_targets), "then": "run", "test": "1"},
+            )
+
+        assert start.call_args.kwargs["test_selection"] is False
 
     def test_run_is_ignored_without_the_selection_provenance(
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
@@ -674,6 +746,12 @@ class TestSaveAllFromSelection:
 
         assert not start.called
         assert "/targets/check" in response.headers["Location"]
+
+
+def _run(fake_store, assembly_id, test=False):
+    """The run id of a failed selection on the assembly that the targets page may re-run."""
+    task_type = SelectionTaskType.TEST_SELECT_FROM_DB if test else SelectionTaskType.SELECT_FROM_DB
+    return str(_add_failed_run(fake_store, assembly_id, task_type))
 
 
 def _add_running_run(fake_store, assembly_id):
@@ -698,13 +776,25 @@ def _infeasible_report():
     return report
 
 
-def _add_failed_run(fake_store, assembly_id, task_type, run_report=None):
+def _another_assembly(fake_store, admin_user):
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return create_assembly(
+            uow=uow,
+            title="Another Assembly",
+            created_by_user_id=admin_user.id,
+            question="Another question?",
+            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+            number_to_select=10,
+        ).id
+
+
+def _add_failed_run(fake_store, assembly_id, task_type, run_report=None, status=SelectionRunStatus.FAILED):
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.selection_run_records.add(
             SelectionRunRecord(
                 assembly_id=assembly_id,
                 task_id=uuid.uuid4(),
-                status=SelectionRunStatus.FAILED,
+                status=status,
                 task_type=task_type,
                 log_messages=["Task failed"],
                 error_message="The targets cannot all be met from the pool.",
@@ -729,7 +819,7 @@ class TestFailureViewLink:
         assert b"from=selection" in response.data
         assert b"edit=1" in response.data
 
-    def test_failed_test_selection_offers_adjust_targets_marked_as_a_test(
+    def test_failed_test_selection_offers_adjust_targets_for_that_run(
         self, logged_in_admin, fake_store, assembly_with_targets
     ):
         run_id = _add_failed_run(fake_store, assembly_with_targets, SelectionTaskType.TEST_SELECT_FROM_DB)
@@ -737,14 +827,8 @@ class TestFailureViewLink:
 
         assert response.status_code == 200
         assert b"Adjust targets" in response.data
-        assert b"test=1" in response.data
-
-    def test_failed_initial_selection_link_is_not_marked_as_a_test(
-        self, logged_in_admin, fake_store, assembly_with_targets
-    ):
-        run_id = _add_failed_run(fake_store, assembly_with_targets, SelectionTaskType.SELECT_FROM_DB)
-        response = self._modal(logged_in_admin, assembly_with_targets, run_id)
-
+        # The targets page looks the run up to tell a test run; the link says only which run.
+        assert f"run_id={run_id}".encode() in response.data
         assert b"test=1" not in response.data
 
     def test_failed_replacement_run_has_no_adjust_targets_link(
