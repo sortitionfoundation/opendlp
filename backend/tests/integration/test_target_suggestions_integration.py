@@ -122,7 +122,18 @@ class TestAcceptSuggestion:
         _age, young = _age_value(uow, admin_user.id, infeasible_assembly.id, "Young")
         assert (young.min, young.max) == (5, 7)
         assert young.minmax_manual is True
-        assert "Agreed" in young.comment
+        # Added to the comment the value already had, not put in its place.
+        assert young.comment == "From the census; Agreed"
+
+    def test_an_empty_comment_records_the_suggestion(self, uow, admin_user, infeasible_assembly):
+        age, young = _age_value(uow, admin_user.id, infeasible_assembly.id, "Young")
+
+        with _fresh(uow) as accept_uow:
+            accept_suggestion(accept_uow, admin_user.id, infeasible_assembly.id, age.id, young.value_id, "min")
+            accept_uow.commit()
+
+        _age, young = _age_value(uow, admin_user.id, infeasible_assembly.id, "Young")
+        assert young.comment == "From the census; Accepted algorithm suggestion — minimum 6 → 5"
 
     def test_a_field_with_no_suggestion_changes_nothing(self, uow, admin_user, infeasible_assembly):
         age, young = _age_value(uow, admin_user.id, infeasible_assembly.id, "Young")
@@ -149,6 +160,8 @@ class TestAcceptAllSuggestions:
         _age, old = _age_value(uow, admin_user.id, infeasible_assembly.id, "Old")
         assert young.min == 5
         assert old.max == 5
+        assert young.comment == "From the census; Accepted algorithm suggestion — minimum 6 → 5"
+        assert old.comment == "Accepted algorithm suggestion — maximum 4 → 5"
         with _fresh(uow) as check_uow:
             assert check_targets_detailed(check_uow, admin_user.id, infeasible_assembly.id).success is True
 

@@ -11,9 +11,10 @@
  * a category's totals, the page's unsaved-changes guard - hears of it as if it
  * had been typed. Nothing is sent anywhere; the page's own Save does that.
  *
- * Two suggestions can share a comment input - a minimum and a maximum on one
- * value. The second one accepted adds its comment to the first rather than
- * replacing it, so neither reason is lost.
+ * The comment is added after whatever the comment input already holds, never
+ * put in place of it - so neither what the organiser wrote there nor the
+ * comment of another suggestion accepted on the same value is lost. The server
+ * joins comments the same way when it accepts a suggestion itself.
  *
  * @returns {Object} Alpine component state
  */
@@ -22,7 +23,6 @@ export function suggestionRow() {
     accepted: false,
     previous: {},
     written: {},
-    commentWasSuggested: false,
 
     accept: function () {
       if (this.accepted) return;
@@ -43,11 +43,8 @@ export function suggestionRow() {
       var comment = this.$refs.comment ? this.$refs.comment.value.trim() : "";
       if (commentField && comment) {
         previous[commentId] = commentField.value;
-        this.commentWasSuggested =
-          commentField.getAttribute("data-suggestion-comment") === "true";
-        written[commentId] = combineComment(commentField, comment);
+        written[commentId] = appendComment(commentField.value, comment);
         setValue(commentField, written[commentId]);
-        commentField.setAttribute("data-suggestion-comment", "true");
       }
 
       this.previous = previous;
@@ -62,15 +59,10 @@ export function suggestionRow() {
     undo: function () {
       var previous = this.previous;
       var written = this.written;
-      var commentId = this.$root.getAttribute("data-comment-target");
-      var commentWasSuggested = this.commentWasSuggested;
       Object.keys(previous).forEach(function (id) {
         var field = document.getElementById(id);
         if (!field || field.value !== written[id]) return;
         setValue(field, previous[id]);
-        if (id === commentId && !commentWasSuggested) {
-          field.removeAttribute("data-suggestion-comment");
-        }
       });
       this.previous = {};
       this.written = {};
@@ -89,12 +81,12 @@ function parseApply(raw) {
   }
 }
 
-function combineComment(field, comment) {
-  var current = field.value.trim();
-  if (current && field.getAttribute("data-suggestion-comment") === "true") {
-    return current + "; " + comment;
-  }
-  return comment;
+// The same separator as COMMENT_SEPARATOR in service_layer/target_suggestions.py.
+var COMMENT_SEPARATOR = "; ";
+
+function appendComment(existing, addition) {
+  var current = existing.trim();
+  return current ? current + COMMENT_SEPARATOR + addition : addition;
 }
 
 function setValue(field, value) {

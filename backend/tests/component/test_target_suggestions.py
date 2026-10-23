@@ -200,6 +200,27 @@ class TestAcceptAll:
         assert "Accepted algorithm suggestion" in male.comment
         assert "Accepted algorithm suggestion" in female.comment
 
+    def test_a_min_and_a_max_on_one_value_get_a_comment_each(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        max_suggestion = TargetAnnotation(
+            level="suggestion", field="max", message="Suggested maximum: 9", suggested_value=9
+        )
+        check = DetailedCheckResult(
+            success=False,
+            global_errors=[],
+            annotations={"Gender": {"Male": [max_suggestion, _min_suggestion(3)]}},
+        )
+
+        with patch(ACCEPT_CHECK, return_value=check):
+            logged_in_admin.post(_accept_url(assembly_with_targets), data={"scope": "all", "then": "recheck"})
+
+        male = _value(fake_store, admin_user, assembly_with_targets, "Gender", "Male")
+        assert (male.min, male.max) == (3, 9)
+        assert male.comment == (
+            "Accepted algorithm suggestion — minimum 5 → 3; Accepted algorithm suggestion — maximum 7 → 9"
+        )
+
 
 class TestReRunGating:
     def test_accept_all_and_rerun_starts_a_selection_when_from_a_run(

@@ -9,12 +9,35 @@ from opendlp.service_layer.target_service import get_targets_for_assembly, updat
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
+# What separates one comment from the next when a suggestion's comment is added
+# to a value that already has one. The editor's Accept button uses the same.
+COMMENT_SEPARATOR = "; "
 
-def _suggestion_change_phrase(field: str, current: int, suggested: int) -> str:
-    """The "minimum X → Y" fragment shared by the single and combined comments."""
+
+def suggestion_comment(field: str, current: int, suggested: int) -> str:
+    """The comment recording that a suggestion for `field` ("min" or "max") was accepted."""
     if field == "min":
-        return _("minimum %(current)s → %(suggested)s", current=current, suggested=suggested)
-    return _("maximum %(current)s → %(suggested)s", current=current, suggested=suggested)
+        return _(
+            "Accepted algorithm suggestion — minimum %(current)s → %(suggested)s",
+            current=current,
+            suggested=suggested,
+        )
+    return _(
+        "Accepted algorithm suggestion — maximum %(current)s → %(suggested)s",
+        current=current,
+        suggested=suggested,
+    )
+
+
+def append_comment(existing: str, addition: str) -> str:
+    """Add `addition` after whatever comment the value already has, rather than replacing it."""
+    existing = existing.strip()
+    addition = addition.strip()
+    if not existing:
+        return addition
+    if not addition:
+        return existing
+    return existing + COMMENT_SEPARATOR + addition
 
 
 def _applicable_annotations(check: DetailedCheckResult, category_name: str, value_name: str) -> list[TargetAnnotation]:
@@ -72,7 +95,8 @@ def accept_suggestion(
     caller, so a stale page cannot apply a number the check no longer
     recommends. Returns False, changing nothing, when there is no such
     suggestion any more. An empty `comment` is replaced by one saying where the
-    change came from.
+    change came from. Either way it is added to the value's comment, never put
+    in place of it: what the organiser wrote there before still holds.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -90,16 +114,18 @@ def accept_suggestion(
     suggested = annotations[0].suggested_value
     assert suggested is not None
     current = value.min if field == "min" else value.max
-    comment = comment.strip() or _(
-        "Accepted algorithm suggestion — %(change)s",
-        change=_suggestion_change_phrase(field, current, suggested),
+    comment = comment.strip() or suggestion_comment(field, current, suggested)
+    _apply_value_suggestions(
+        uow, user_id, assembly_id, category, value, annotations, append_comment(value.comment, comment)
     )
-    _apply_value_suggestions(uow, user_id, assembly_id, category, value, annotations, comment)
     return True
 
 
 def accept_all_suggestions(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
     """Apply every outstanding suggestion from a fresh check, each with a comment saying so.
+
+    A value with a minimum and a maximum suggestion gets a comment for each,
+    minimum first, added after whatever comment it already had.
 
     Returns False when the check has nothing to accept.
 
@@ -113,13 +139,14 @@ def accept_all_suggestions(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
             annotations = _applicable_annotations(check, category.name, value.value)
             if not annotations:
                 continue
-            changes = ", ".join(
-                _suggestion_change_phrase(
-                    a.field or "", value.min if a.field == "min" else value.max, a.suggested_value or 0
-                )
-                for a in sorted(annotations, key=lambda a: a.field or "")
-            )
-            comment = _("Accepted algorithm suggestion — %(changes)s", changes=changes)
+            comment = value.comment
+            for field in ("min", "max"):
+                for annotation in annotations:
+                    if annotation.field == field and annotation.suggested_value is not None:
+                        current = value.min if field == "min" else value.max
+                        comment = append_comment(
+                            comment, suggestion_comment(field, current, annotation.suggested_value)
+                        )
             _apply_value_suggestions(uow, user_id, assembly_id, category, value, annotations, comment)
             applied = True
     return applied

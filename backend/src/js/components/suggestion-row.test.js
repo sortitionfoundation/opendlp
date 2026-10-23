@@ -61,10 +61,10 @@ describe("suggestionRow", () => {
     );
   });
 
-  it("replaces a comment the organiser wrote earlier", () => {
+  it("adds to a comment the organiser wrote earlier rather than replacing it", () => {
     document.getElementById("comment").value = "An older reason";
     rowState("min-row", "min-comment").accept();
-    expect(value("comment")).toBe("Accepted minimum 5 → 3");
+    expect(value("comment")).toBe("An older reason; Accepted minimum 5 → 3");
   });
 
   it("puts everything back on undo", () => {
