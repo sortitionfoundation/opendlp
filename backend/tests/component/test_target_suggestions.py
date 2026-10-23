@@ -483,6 +483,19 @@ class TestEditModeEntry:
         assert f'data-comment-target="{prefix}-comment"' in html
         assert "Save and re-run selection" in html
 
+    def test_each_accept_is_described_by_its_suggestion_and_announced(
+        self, logged_in_admin, admin_user, fake_store, assembly_with_targets
+    ):
+        _cid, male = _ids(fake_store, admin_user, assembly_with_targets, "Gender", "Male")
+        response = self._get(logged_in_admin, assembly_with_targets, "?edit=1")
+
+        html = response.data.decode()
+        message_id = f"accept-comment-{male.value_id}-min-edit-message"
+        assert f'id="{message_id}"' in html
+        # The comment input, Accept and Undo all say which suggestion they are about.
+        assert html.count(f'aria-describedby="{message_id}"') == 3
+        assert 'role="status"' in html
+
     def test_without_the_edit_flag_the_page_opens_read_only(self, logged_in_admin, fake_store, assembly_with_targets):
         response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}")
 

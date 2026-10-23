@@ -53,6 +53,28 @@ export function suggestionRow() {
     },
 
     /**
+     * Accept from the row's own button. The button is hidden once accepted, so
+     * focus moves to Undo rather than falling back to the page. Accepting every
+     * row at once leaves focus alone - it is not this row's button that was used.
+     */
+    acceptFromButton: function () {
+      var self = this;
+      self.accept();
+      self.$nextTick(function () {
+        if (self.$refs.undoBtn) self.$refs.undoBtn.focus();
+      });
+    },
+
+    /** Undo from the row's own button, handing focus back to Accept. */
+    undoFromButton: function () {
+      var self = this;
+      self.undo();
+      self.$nextTick(function () {
+        if (self.$refs.acceptBtn) self.$refs.acceptBtn.focus();
+      });
+    },
+
+    /**
      * Put back what Accept replaced - but only in an input still holding what
      * Accept wrote. One the user has typed over since is theirs, not ours.
      */

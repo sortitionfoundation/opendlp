@@ -92,4 +92,23 @@ describe("suggestionRow", () => {
     state.accept();
     expect(value("min")).toBe("4");
   });
+
+  it("moves focus to Undo when accepted from its button", () => {
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      '<button id="accept-btn"></button><button id="undo-btn"></button>',
+    );
+    const state = rowState("min-row", "min-comment");
+    state.$refs.acceptBtn = document.getElementById("accept-btn");
+    state.$refs.undoBtn = document.getElementById("undo-btn");
+    state.$nextTick = (fn) => fn();
+
+    state.acceptFromButton();
+    expect(value("min")).toBe("3");
+    expect(document.activeElement.id).toBe("undo-btn");
+
+    state.undoFromButton();
+    expect(value("min")).toBe("5");
+    expect(document.activeElement.id).toBe("accept-btn");
+  });
 });

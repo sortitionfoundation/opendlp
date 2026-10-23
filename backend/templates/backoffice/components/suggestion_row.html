@@ -54,6 +54,9 @@ ABOUTME: Accept either posts to the server or writes the change into inputs else
     {% set actionable = action or applies %}
     {% set accept_text = accept_label or _("Accept") %}
     {% set comment_label = _("Comment saved with this change") %}
+    {# Every row's buttons say only "Accept" and "Undo", so each one, and the
+       comment input, is described by the message saying what it accepts. #}
+    {% set message_id = (comment_id ~ "-message") if comment_id else "" %}
     {# tojson escapes quotes and angle brackets, so the map is safe inside a
        single-quoted attribute - and Alpine never has to parse it. #}
     <tr data-suggestion-row="true"
@@ -68,7 +71,7 @@ ABOUTME: Accept either posts to the server or writes the change into inputs else
                     <span class="font-bold px-1.5 py-0.5 rounded text-body-sm"
                           style="background-color: var(--color-warning-400);
                                  color: white">{{ _("Suggestion") }}</span>
-                    <span>{{ message }}</span>
+                    <span {% if message_id %}id="{{ message_id }}"{% endif %}>{{ message }}</span>
                 </p>
                 {% if actionable %}
                     {% set controls %}
@@ -78,15 +81,16 @@ ABOUTME: Accept either posts to the server or writes the change into inputs else
                         <div class="flex-1" style="min-width: 16rem;">
                             {# Unnamed in apply mode: it is copied into the row, and must not
                                be submitted with whatever form the row sits in. #}
+                            {% set describedby = ('aria-describedby="' ~ message_id ~ '"') if message_id else "" %}
                             {{ input(name="comment" if action else "",
                             id=comment_id,
                             value=comment,
-                            attrs='x-ref="comment"' if applies else "") }}
+                            attrs=(describedby ~ ' x-ref="comment"') if applies else describedby) }}
                         </div>
                         {% if action %}
-                            {{ button(accept_text, type="submit", variant="secondary") }}
+                            {{ button(accept_text, type="submit", variant="secondary", aria_describedby=message_id) }}
                         {% else %}
-                            {{ button(accept_text, variant="secondary", attrs='@click="accept()"') }}
+                            {{ button(accept_text, variant="secondary", aria_describedby=message_id, attrs='x-ref="acceptBtn" @click="acceptFromButton()"') }}
                         {% endif %}
                     {% endset %}
                     {% if action %}
@@ -102,9 +106,16 @@ ABOUTME: Accept either posts to the server or writes the change into inputs else
                         </form>
                     {% else %}
                         <div class="flex flex-wrap items-center gap-2" x-show="!accepted">{{ controls }}</div>
+                        {% set accepted_text = _("Accepted. Save to keep the change.") %}
+                        {# The status region is always in the page, so a screen reader
+                           announces the text when it appears in it. The visible copy
+                           is hidden from them, or it would be read twice. #}
+                        <span class="sr-only" role="status"><span x-show="accepted" x-cloak>{{ accepted_text }}</span></span>
                         <div class="flex flex-wrap items-center gap-2" x-show="accepted" x-cloak>
-                            <span class="text-body-sm" style="color: var(--color-body-text)">{{ _("Accepted. Save to keep the change.") }}</span>
-                            {{ button(_("Undo"), variant="tertiary", attrs='@click="undo()"') }}
+                            <span class="text-body-sm"
+                                  aria-hidden="true"
+                                  style="color: var(--color-body-text)">{{ accepted_text }}</span>
+                            {{ button(_("Undo"), variant="tertiary", aria_describedby=message_id, attrs='x-ref="undoBtn" @click="undoFromButton()"') }}
                         </div>
                     {% endif %}
                 {% endif %}
