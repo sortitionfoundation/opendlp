@@ -193,7 +193,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                                     <input type="hidden" name="scope" value="all" />
                                     <input type="hidden" name="then" value="run" />
                                     {% for name, value in provenance.items() %}<input type="hidden" name="{{ name }}" value="{{ value }}" />{% endfor %}
-                                    {{ button(_("Accept all & re-run test selection") if rerun_is_test else _("Accept all & re-run selection"), type="submit", variant="primary") }}
+                                    {{ button(_("Accept all and re-run test selection") if rerun_is_test else _("Accept all and re-run selection"), type="submit", variant="primary") }}
                                 </form>
                             {% endif %}
                         </span>
@@ -238,7 +238,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                     <div class="wizard-footer-box">
                         {{ button(_("Discard changes"), variant="tertiary", attrs='@click="discardEdits()"') }}
                         {% if provenance %}
-                            {{ button(_("Save & re-run test selection") if rerun_is_test else _("Save & re-run selection"), variant="secondary", type="submit", attrs='form="save-all-form" name="then" value="run"') }}
+                            {{ button(_("Save and re-run test selection") if rerun_is_test else _("Save and re-run selection"), variant="secondary", type="submit", attrs='form="save-all-form" name="then" value="run"') }}
                         {% endif %}
                         {{ button(_("Save"), variant="primary", type="submit", attrs='form="save-all-form"') }}
                     </div>

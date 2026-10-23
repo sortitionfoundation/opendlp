@@ -478,7 +478,7 @@ class TestEditModeEntry:
         prefix = f"bulk-{category_id}-{male.value_id}"
         assert f"&#34;{prefix}-min&#34;: 3" in html or f'"{prefix}-min": 3' in html
         assert f'data-comment-target="{prefix}-comment"' in html
-        assert "Save & re-run selection" in html
+        assert "Save and re-run selection" in html
 
     def test_without_the_edit_flag_the_page_opens_read_only(self, logged_in_admin, fake_store, assembly_with_targets):
         response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={uuid.uuid4()}")
@@ -493,14 +493,14 @@ class TestEditModeEntry:
         )
 
         html = response.data.decode()
-        assert "Save & re-run test selection" in html
-        assert "Accept all & re-run test selection" in html
+        assert "Save and re-run test selection" in html
+        assert "Accept all and re-run test selection" in html
         assert '<input type="hidden" name="test" value="1" />' in html
 
     def test_save_and_rerun_is_only_offered_from_a_run(self, logged_in_admin, fake_store, assembly_with_targets):
         response = self._get(logged_in_admin, assembly_with_targets, "?edit=1")
 
-        assert b"Save & re-run selection" not in response.data
+        assert b"Save and re-run selection" not in response.data
 
 
 class TestSuggestionLayout:

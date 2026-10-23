@@ -405,7 +405,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
       @submit="allowLeave()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     {# Arriving from a failed selection run is carried through the save, so the
-       page it lands on can still offer to re-run - and "Save & re-run" can. #}
+       page it lands on can still offer to re-run - and "Save and re-run" can. #}
     {% for name, value in (selection_provenance|default({})).items() %}
         <input type="hidden" name="{{ name }}" value="{{ value }}" />
     {% endfor %}
