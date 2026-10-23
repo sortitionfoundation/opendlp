@@ -1,6 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Tailwind v4 no longer auto-loads tailwind.config.js. Load it explicitly so
+   the `content` globs (which deliberately scan only the design-system
+   templates, not the GOV.UK ones) and theme/plugins still apply. */
+@config "../../../tailwind.config.js";
+
+/* Class names built by string concat in Jinja macros never appear as literals
+   in the scanned templates, so Tailwind's content-scanner purges their
+   @layer components rules. v4 dropped the JS `safelist` key, so these are the
+   @source inline(...) replacement that keeps them in the output.
+   (btn--primary … btn--icon = button macro variants;
+   ProseMirror-selectednode / selectedCell = added at runtime by the visual
+   editor, never present in a template.) */
+@source inline("btn--primary btn--secondary btn--tertiary btn--danger btn--icon ProseMirror-selectednode selectedCell");
 
 /* ========================================
    Alpine.js Utilities
@@ -12,6 +24,26 @@
  */
 [x-cloak] {
     display: none !important;
+}
+
+/* ========================================
+   BASE - defaults Tailwind v4's preflight no longer sets
+   ======================================== */
+
+@layer base {
+    /* v3's preflight gave buttons a pointer cursor; v4 leaves the browser
+       default, so buttons styled only with utilities showed an arrow. */
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+
+    /* v4's preflight colours placeholders as the text colour at 50%; keep
+       them on the design-system token instead. */
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-placeholder-text);
+    }
 }
 
 /*
@@ -27,127 +59,131 @@
    TYPOGRAPHY - Semantic Utility Classes
    ======================================== */
 
+/* @utility rather than @layer components, so that variants such as
+   file:text-button-md and hover:/md: prefixes apply to them - Tailwind v4
+   only generates variants for utilities. */
+
+/* Display (Lato) - Page/section titles */
+@utility text-display-lg {
+    font: 700 1.875rem/2.5rem var(--font-display);
+    letter-spacing: 0;
+}
+
+@utility text-display-md {
+    font: 600 1.625rem/2.25rem var(--font-display);
+    letter-spacing: 0;
+}
+
+@utility text-display-sm {
+    font: 600 1.375rem/2rem var(--font-display);
+    letter-spacing: 0;
+}
+
+/* Heading (Lato) - Card/panel/group headers */
+@utility text-heading-lg {
+    font: 600 1.125rem/1.75rem var(--font-heading);
+    letter-spacing: 0.1px;
+}
+
+@utility text-heading-md {
+    font: 500 1rem/1.5rem var(--font-heading);
+    letter-spacing: 0.2px;
+}
+
+@utility text-heading-sm {
+    font: 500 0.9375rem/1.375rem var(--font-heading);
+    letter-spacing: 0.2px;
+}
+
+/* Body (Lato) - Content text */
+@utility text-body-lg {
+    font: 400 1rem/1.5rem var(--font-body);
+    letter-spacing: 0;
+}
+
+@utility text-body-md {
+    font: 400 0.875rem/1.25rem var(--font-body);
+    letter-spacing: 0;
+}
+
+@utility text-body-sm {
+    font: 400 0.8125rem/1.125rem var(--font-body);
+    letter-spacing: 0.1px;
+}
+
+/* Caption (Lato) - Metadata / dense secondary text */
+@utility text-caption {
+    font: 400 0.75rem/1rem var(--font-caption);
+    letter-spacing: 0.2px;
+}
+
+/* Overline (Lato) - Uppercase micro-labels */
+@utility text-overline {
+    font: 500 0.6875rem/0.875rem var(--font-overline);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+/* Label (Lato) - Form labels */
+@utility text-label-lg {
+    font: 500 0.875rem/1.25rem var(--font-label);
+    letter-spacing: 0.3px;
+}
+
+@utility text-label-md {
+    font: 500 0.8125rem/1.125rem var(--font-label);
+    letter-spacing: 0.3px;
+}
+
+/* Button (Lato) - Action text. Figma specs only button-lg; md/sm
+   follow the same weight/tracking policy so the ramp is coherent. */
+@utility text-button-lg {
+    font: 600 0.875rem/1rem var(--font-button);
+    letter-spacing: 0.4px;
+}
+
+@utility text-button-md {
+    font: 600 0.8125rem/1rem var(--font-button);
+    letter-spacing: 0.4px;
+}
+
+@utility text-button-sm {
+    font: 600 0.75rem/0.875rem var(--font-button);
+    letter-spacing: 0.4px;
+}
+
+/* Input (Lato) - Form input values. Same metrics as placeholder;
+   colour differs at the semantic-token layer (input=body-text,
+   placeholder=placeholder-text). */
+@utility text-input-text {
+    font: 400 0.875rem/1.25rem var(--font-body);
+    letter-spacing: 0;
+}
+
+/* Table (Lato) - Column headers, cells, numeric cells */
+@utility text-table-header {
+    font: 600 0.75rem/1rem var(--font-label);
+    letter-spacing: 0.4px;
+}
+
+@utility text-table-cell {
+    font: 400 0.8125rem/1.125rem var(--font-body);
+    letter-spacing: 0;
+}
+
+@utility text-numeric {
+    font: 500 0.8125rem/1.125rem var(--font-body);
+    letter-spacing: 0.1px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Code (monospace) - inline code chips and code blocks */
+@utility text-code {
+    font: 400 0.8125rem/1.125rem var(--font-mono);
+    letter-spacing: 0;
+}
+
 @layer components {
-    /* Display (Lato) - Page/section titles */
-    .text-display-lg {
-        font: 700 1.875rem/2.5rem var(--font-display);
-        letter-spacing: 0;
-    }
-
-    .text-display-md {
-        font: 600 1.625rem/2.25rem var(--font-display);
-        letter-spacing: 0;
-    }
-
-    .text-display-sm {
-        font: 600 1.375rem/2rem var(--font-display);
-        letter-spacing: 0;
-    }
-
-    /* Heading (Lato) - Card/panel/group headers */
-    .text-heading-lg {
-        font: 600 1.125rem/1.75rem var(--font-heading);
-        letter-spacing: 0.1px;
-    }
-
-    .text-heading-md {
-        font: 500 1rem/1.5rem var(--font-heading);
-        letter-spacing: 0.2px;
-    }
-
-    .text-heading-sm {
-        font: 500 0.9375rem/1.375rem var(--font-heading);
-        letter-spacing: 0.2px;
-    }
-
-    /* Body (Lato) - Content text */
-    .text-body-lg {
-        font: 400 1rem/1.5rem var(--font-body);
-        letter-spacing: 0;
-    }
-
-    .text-body-md {
-        font: 400 0.875rem/1.25rem var(--font-body);
-        letter-spacing: 0;
-    }
-
-    .text-body-sm {
-        font: 400 0.8125rem/1.125rem var(--font-body);
-        letter-spacing: 0.1px;
-    }
-
-    /* Caption (Lato) - Metadata / dense secondary text */
-    .text-caption {
-        font: 400 0.75rem/1rem var(--font-caption);
-        letter-spacing: 0.2px;
-    }
-
-    /* Overline (Lato) - Uppercase micro-labels */
-    .text-overline {
-        font: 500 0.6875rem/0.875rem var(--font-overline);
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-    }
-
-    /* Label (Lato) - Form labels */
-    .text-label-lg {
-        font: 500 0.875rem/1.25rem var(--font-label);
-        letter-spacing: 0.3px;
-    }
-
-    .text-label-md {
-        font: 500 0.8125rem/1.125rem var(--font-label);
-        letter-spacing: 0.3px;
-    }
-
-    /* Button (Lato) - Action text. Figma specs only button-lg; md/sm
-       follow the same weight/tracking policy so the ramp is coherent. */
-    .text-button-lg {
-        font: 600 0.875rem/1rem var(--font-button);
-        letter-spacing: 0.4px;
-    }
-
-    .text-button-md {
-        font: 600 0.8125rem/1rem var(--font-button);
-        letter-spacing: 0.4px;
-    }
-
-    .text-button-sm {
-        font: 600 0.75rem/0.875rem var(--font-button);
-        letter-spacing: 0.4px;
-    }
-
-    /* Input (Lato) - Form input values. Same metrics as placeholder;
-       colour differs at the semantic-token layer (input=body-text,
-       placeholder=placeholder-text). */
-    .text-input-text {
-        font: 400 0.875rem/1.25rem var(--font-body);
-        letter-spacing: 0;
-    }
-
-    /* Table (Lato) - Column headers, cells, numeric cells */
-    .text-table-header {
-        font: 600 0.75rem/1rem var(--font-label);
-        letter-spacing: 0.4px;
-    }
-
-    .text-table-cell {
-        font: 400 0.8125rem/1.125rem var(--font-body);
-        letter-spacing: 0;
-    }
-
-    .text-numeric {
-        font: 500 0.8125rem/1.125rem var(--font-body);
-        letter-spacing: 0.1px;
-        font-variant-numeric: tabular-nums;
-    }
-
-    /* Code (monospace) - inline code chips and code blocks */
-    .text-code {
-        font: 400 0.8125rem/1.125rem var(--font-mono);
-        letter-spacing: 0;
-    }
-
     /* Inline code chip - text-code + subtle panel background + tight padding.
        Used to render class names / identifiers in prose. */
     .code-inline {

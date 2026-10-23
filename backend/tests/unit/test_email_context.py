@@ -2,7 +2,11 @@
 ABOUTME: Covers best-effort name derivation and raw attribute passthrough"""
 
 import uuid
+from datetime import date
 
+import pytest
+
+from opendlp.domain import email_context as email_context_module
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_context import (
     AssemblyContext,
@@ -44,11 +48,36 @@ def test_name_key_supported() -> None:
     assert ctx.full_name == "Sam Sample"
 
 
+def test_first_name_falls_back_to_the_whole_name() -> None:
+    ctx = RespondentContext(email="a@b.com", attributes={"Name": "Kovács Anna"})
+    assert ctx.first_name == "Kovács Anna"
+    assert ctx.first_name_or_friend == "Kovács Anna"
+    assert ctx.last_name == ""
+
+
+def test_first_name_field_wins_over_name() -> None:
+    ctx = RespondentContext(email="a@b.com", attributes={"name": "Sam Sample", "first_name": "Sammy"})
+    assert ctx.first_name == "Sammy"
+    assert ctx.full_name == "Sam Sample"
+
+
+def test_last_name_alone_is_not_a_first_name() -> None:
+    ctx = RespondentContext(email="a@b.com", attributes={"surname": "Sample"})
+    assert ctx.first_name == ""
+    assert ctx.full_name == "Sample"
+
+
 def test_first_name_or_friend_fallback() -> None:
     with_name = RespondentContext(email="a@b.com", attributes={"firstname": "Sam"})
     without_name = RespondentContext(email="a@b.com", attributes={"age": "40"})
     assert with_name.first_name_or_friend == "Sam"
     assert without_name.first_name_or_friend == "Friend"
+
+
+def test_first_name_or_friend_fallback_is_translated(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(email_context_module, "_", lambda message: {"Friend": "Résztvevő"}.get(message, message))
+    without_name = RespondentContext(email="a@b.com", attributes={"age": "40"})
+    assert without_name.first_name_or_friend == "Résztvevő"
 
 
 def test_raw_attributes_passthrough() -> None:
@@ -63,6 +92,18 @@ def test_assembly_context_from_assembly() -> None:
     assert ctx.question == "Should we?"
     assert ctx.number_to_select == 50
     assert ctx.first_assembly_date == ""
+    assert ctx.first_assembly_date_text == ""
+
+
+@pytest.mark.parametrize(
+    ("locale", "expected"),
+    [("en", "November 14, 2026"), ("en_GB", "14 November 2026"), ("hu", "2026. november 14.")],
+)
+def test_first_assembly_date_is_written_out_in_the_readers_language(locale: str, expected: str) -> None:
+    assembly = Assembly(title="A", first_assembly_date=date(2026, 11, 14))
+    ctx = AssemblyContext.from_assembly(assembly, locale=locale)
+    assert ctx.first_assembly_date == "2026-11-14"
+    assert ctx.first_assembly_date_text == expected
 
 
 def test_respondent_context_from_respondent() -> None:

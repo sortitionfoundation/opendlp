@@ -15,7 +15,7 @@ from opendlp.domain.email_context import (
     sample_respondent_context,
 )
 from opendlp.domain.email_send_record import EmailSendOutcome, RespondentEmailSendRecord
-from opendlp.domain.email_template import EmailTemplate
+from opendlp.domain.email_template import EmailTemplate, ReplyTo
 from opendlp.domain.respondents import Respondent
 
 from .exceptions import (
@@ -29,16 +29,27 @@ from .unit_of_work import AbstractUnitOfWork
 logger = structlog.get_logger(__name__)
 
 
-def build_email_context(assembly: Assembly, respondent: Respondent) -> dict:
-    return build_context(AssemblyContext.from_assembly(assembly), RespondentContext.from_respondent(respondent))
+def build_email_context(assembly: Assembly, respondent: Respondent, locale: str = "en") -> dict:
+    """The template variables for an email read in ``locale``, such as "hu" or "en_GB"."""
+    return build_context(
+        AssemblyContext.from_assembly(assembly, locale=locale), RespondentContext.from_respondent(respondent)
+    )
 
 
-def _reply_to(assembly: Assembly) -> str | tuple[str, str] | None:
-    if not assembly.reply_to_email:
-        return None
-    if assembly.reply_to_name:
-        return (assembly.reply_to_name, assembly.reply_to_email)
-    return assembly.reply_to_email
+def resolve_reply_to(template: EmailTemplate, assembly: Assembly) -> ReplyTo:
+    """The template's reply-to if it has an address, else the assembly's, else None.
+
+    Name and address come from the same source, never one from each.
+    """
+    return template.reply_to() or assembly.reply_to()
+
+
+def _reply_to_email(reply_to: ReplyTo) -> str:
+    if reply_to is None:
+        return ""
+    if isinstance(reply_to, tuple):
+        return reply_to[1]
+    return reply_to
 
 
 def _build_and_send(
@@ -47,8 +58,10 @@ def _build_and_send(
     template: EmailTemplate,
     assembly: Assembly,
     respondent: Respondent,
+    locale: str = "en",
 ) -> RespondentEmailSendRecord:
-    rendered = template.render(build_email_context(assembly, respondent))
+    rendered = template.render(build_email_context(assembly, respondent, locale))
+    reply_to = resolve_reply_to(template, assembly)
     if rendered.missing_variables:
         logger.warning("Email template %s rendered with missing variables: %s", template.id, rendered.missing_variables)
     try:
@@ -57,7 +70,7 @@ def _build_and_send(
             subject=rendered.subject,
             text_body=rendered.text_body,
             html_body=rendered.html_body,
-            reply_to=_reply_to(assembly),
+            reply_to=reply_to,
         )
     except Exception:
         logger.exception("Failed to send templated email for template %s", template.id)
@@ -66,7 +79,7 @@ def _build_and_send(
         respondent_id=respondent.id,
         email_template_id=template.id,
         to_email=respondent.email,
-        from_email=assembly.reply_to_email,
+        reply_to_email=_reply_to_email(reply_to),
         subject=rendered.subject,
         outcome=EmailSendOutcome.SENT if ok else EmailSendOutcome.FAILED,
         missing_variables=rendered.missing_variables,
@@ -82,12 +95,15 @@ def send_templated_email(
     template: EmailTemplate,
     assembly: Assembly,
     respondent: Respondent,
+    locale: str = "en",
 ) -> RespondentEmailSendRecord:
     """Render and send a template to a respondent, recording the outcome. Never raises on send failure.
 
+    ``locale`` is the language the email is read in, which sets how dates are written.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    record = _build_and_send(uow, email_adapter, template, assembly, respondent)
+    record = _build_and_send(uow, email_adapter, template, assembly, respondent, locale)
     return record.create_detached_copy()
 
 
@@ -117,7 +133,7 @@ class PreparedTestAutoReply:
     subject: str
     text_body: str
     html_body: str
-    reply_to: str | tuple[str, str] | None
+    reply_to: ReplyTo
     missing_variables: list[str]
 
 
@@ -127,6 +143,7 @@ def prepare_test_auto_reply(
     user_id: uuid.UUID,
     page_id: uuid.UUID,
     to_email: str,
+    locale: str = "en",
 ) -> PreparedTestAutoReply:
     """Load and render a page's auto-reply for a test send, using a made-up respondent.
 
@@ -152,7 +169,7 @@ def prepare_test_auto_reply(
 
     field_definitions = uow.respondent_field_definitions.list_by_assembly(page.assembly_id)
     respondent_ctx = sample_respondent_context(field_definitions, to_email)
-    rendered = template.render(build_context(AssemblyContext.from_assembly(assembly), respondent_ctx))
+    rendered = template.render(build_context(AssemblyContext.from_assembly(assembly, locale=locale), respondent_ctx))
     return PreparedTestAutoReply(
         user_id=user_id,
         page_id=page.id,
@@ -161,7 +178,7 @@ def prepare_test_auto_reply(
         subject=rendered.subject,
         text_body=rendered.text_body,
         html_body=rendered.html_body,
-        reply_to=_reply_to(assembly),
+        reply_to=resolve_reply_to(template, assembly),
         missing_variables=rendered.missing_variables,
     )
 
@@ -201,6 +218,7 @@ def send_test_auto_reply(
     user_id: uuid.UUID,
     page_id: uuid.UUID,
     to_email: str,
+    locale: str = "en",
 ) -> TestAutoReplySend:
     """Render and send a page's auto-reply to a manager-chosen address in one call.
 
@@ -211,7 +229,7 @@ def send_test_auto_reply(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    prepared = prepare_test_auto_reply(uow, user_id=user_id, page_id=page_id, to_email=to_email)
+    prepared = prepare_test_auto_reply(uow, user_id=user_id, page_id=page_id, to_email=to_email, locale=locale)
     return deliver_test_auto_reply(email_adapter, prepared)
 
 
@@ -220,6 +238,7 @@ def send_registration_auto_reply(
     email_adapter: EmailAdapter,
     *,
     respondent: Respondent,
+    locale: str = "en",
 ) -> RespondentEmailSendRecord | None:
     """Send the auto-reply of the page the respondent registered through.
 
@@ -229,7 +248,8 @@ def send_registration_auto_reply(
     a respondent that came from anywhere but a registration page has no
     auto-reply to send. When an auto-reply *is* configured but the respondent
     has no email address, logs a warning (a likely page misconfiguration) and
-    writes no record.
+    writes no record. ``locale`` is the language the respondent registered in,
+    which sets how dates in the email are written.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -249,5 +269,5 @@ def send_registration_auto_reply(
     assembly = uow.assemblies.get(page.assembly_id)
     if template is None or assembly is None:
         return None
-    record = _build_and_send(uow, email_adapter, template, assembly, respondent)
+    record = _build_and_send(uow, email_adapter, template, assembly, respondent, locale)
     return record.create_detached_copy()

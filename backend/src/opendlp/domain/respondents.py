@@ -120,6 +120,7 @@ INTERNAL_IMPORT_SKIP_COLUMNS = (
     "selection_status",
     "selection_run_id",
     "source_type",
+    "registration_page",
     "created_at",
     "updated_at",
     "view_url",

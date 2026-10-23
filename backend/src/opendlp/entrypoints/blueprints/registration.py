@@ -11,13 +11,14 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user
 from flask_wtf.csrf import generate_csrf, validate_csrf
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
+from jinja2 import TemplateError
 from wtforms import ValidationError
 
 from opendlp import bootstrap
 from opendlp.domain.registration_document import PDF_CONTENT_TYPE, PDF_FILE_EXTENSION, RegistrationDocument
 from opendlp.domain.registration_image import IMAGE_CONTENT_TYPE
 from opendlp.entrypoints.decorators import require_feature
-from opendlp.entrypoints.extensions import csrf
+from opendlp.entrypoints.extensions import csrf, get_locale
 from opendlp.service_layer.email_send_service import send_registration_auto_reply
 from opendlp.service_layer.exceptions import RateLimitExceeded
 from opendlp.service_layer.registration_bot_protection_service import (
@@ -343,7 +344,9 @@ def _send_registration_auto_reply(respondent) -> None:  # type: ignore[no-untype
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            send_registration_auto_reply(uow, bootstrap.get_email_adapter(), respondent=respondent)
+            # Sent while the respondent's own request is open, so its locale is the
+            # language they registered in.
+            send_registration_auto_reply(uow, bootstrap.get_email_adapter(), respondent=respondent, locale=get_locale())
     except Exception:
         logger.exception("Failed to send registration auto-reply")
 
@@ -420,15 +423,29 @@ def serve_registration_document(url_slug: str, document_name: str) -> ResponseRe
 @registration_bp.route("/register/<url_slug>/thank-you", methods=["GET"])
 @require_feature("registration_page")
 def thank_you(url_slug: str) -> ResponseReturnValue:
-    """Display the thank-you page after successful registration submission."""
+    """Display the thank-you page after successful registration submission.
+
+    The registration is already saved by now, so a page whose own HTML fails to
+    render gets the standard page rather than an error.
+
+    `?show=standard` or `?show=own` shows that page whichever is chosen, for the
+    registration editor's links to each. It is ignored unless the visitor is signed
+    in and can view the assembly.
+    """
     uow = bootstrap.get_flask_uow()
+    use_default = {"standard": True, "own": False}.get(request.args.get("show", ""))
+    viewer_id = current_user.id if current_user.is_authenticated else None
 
     with uow:
         page = find_registration_page_by_url_slug(uow, url_slug)
-    if page is None:
-        abort(404)
-
-    custom_html = render_thank_you_html(page)
+        if page is None:
+            abort(404)
+        restart_url = registration_url(page.url_slug)
+        try:
+            custom_html = render_thank_you_html(uow, page, restart_url, use_default=use_default, viewer_id=viewer_id)
+        except TemplateError as e:
+            logger.exception("Thank-you page failed to render", registration_page_id=str(page.id), error=str(e))
+            custom_html = ""
 
     if custom_html.strip():
         return render_template(
@@ -436,7 +453,7 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
             custom_html=custom_html,
         )
 
-    return render_template("register/thank_you_default.html", referer=request.referrer or "")
+    return render_template("register/thank_you_default.html", restart_url=restart_url)
 
 
 @registration_bp.route("/r/<short_url_slug>", methods=["GET"])

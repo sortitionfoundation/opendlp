@@ -1,8 +1,29 @@
 // ABOUTME: Wires the server-rendered visual editor toolbar to a Tiptap editor.
 // ABOUTME: Runs each button's command, keeps aria-pressed in step, moves focus with the arrows, opens the table menu.
 
+import { Selection } from "@tiptap/pm/state";
+
 export const TOOLTIPS_DISMISSED_CLASS =
   "rich-editor__toolbar--tooltips-dismissed";
+
+/**
+ * Move a selection that holds something - an image, some text - to just after
+ * it, so what is inserted next goes beside it. Inserting a table replaces the
+ * selection, which would otherwise delete a clicked image. A selection with no
+ * text position after it, nor before, is left as it is.
+ */
+function collapseToEnd({ tr }) {
+  if (tr.selection.empty) {
+    return true;
+  }
+  const after = tr.doc.resolve(tr.selection.to);
+  const cursor =
+    Selection.findFrom(after, 1, true) || Selection.findFrom(after, -1, true);
+  if (cursor) {
+    tr.setSelection(cursor);
+  }
+  return true;
+}
 
 /**
  * What each `data-command` button does. `active` marks a toggle, whose
@@ -42,6 +63,22 @@ export const COMMANDS = {
     run: (chain) => chain.toggleStrike(),
     active: (editor) => editor.isActive("strike"),
   },
+  // Left is the default, so choosing it removes any alignment rather than
+  // writing text-align: left into the HTML.
+  alignLeft: {
+    run: (chain) => chain.unsetTextAlign(),
+    active: (editor) =>
+      !editor.isActive({ textAlign: "center" }) &&
+      !editor.isActive({ textAlign: "right" }),
+  },
+  alignCenter: {
+    run: (chain) => chain.toggleTextAlign("center"),
+    active: (editor) => editor.isActive({ textAlign: "center" }),
+  },
+  alignRight: {
+    run: (chain) => chain.toggleTextAlign("right"),
+    active: (editor) => editor.isActive({ textAlign: "right" }),
+  },
   bulletList: {
     run: (chain) => chain.toggleBulletList(),
     active: (editor) => editor.isActive("bulletList"),
@@ -76,7 +113,9 @@ export const COMMANDS = {
   // tables are for layout or data (Q6 in the plan).
   insertTable: {
     run: (chain) =>
-      chain.insertTable({ rows: 2, cols: 2, withHeaderRow: false }),
+      chain
+        .command(collapseToEnd)
+        .insertTable({ rows: 2, cols: 2, withHeaderRow: false }),
     enabled: (editor) => !editor.isActive("table"),
   },
   addRowAfter: {

@@ -29,7 +29,7 @@ export function registrationEditGuard(options) {
   return Object.assign({}, editGuard(), {
     editMode: Boolean(options.editMode),
     listUrl: options.listUrl || "",
-    // Closing a registration is terminal - there is no reopen.
+    // Closing a registration turns visitors away at once, so it is confirmed first.
     confirmCloseOpen: false,
 
     init: function () {

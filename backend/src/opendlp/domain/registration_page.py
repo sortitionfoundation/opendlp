@@ -30,17 +30,20 @@ _SANDBOX_ENV = SandboxedEnvironment(autoescape=True, undefined=StrictUndefined)
 
 REQUIRED_TOKENS = ("csrf_form_element", "form_action")
 
-DEFAULT_THANK_YOU_HTML = """\
+STARTER_THANK_YOU_HTML = """\
 <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds" style="float: none; margin: 0 auto;">
         <div class="govuk-panel govuk-panel--confirmation">
             <h1 class="govuk-panel__title">Thank you for registering</h1>
-            <div class="govuk-panel__body">Your registration has been received</div>
+            <p class="govuk-panel__body">Your registration has been received</p>
         </div>
         <p class="govuk-body">We'll be in touch.</p>
+        <p class="govuk-body"><a class="govuk-link" href="{{ restart_url }}">Start a new registration</a></p>
     </div>
 </div>
 """
+
+THANK_YOU_VARIABLES = ("assembly_title", "assembly_question", "restart_url")
 
 
 class RegistrationPageSource(Enum):
@@ -120,6 +123,39 @@ class RegistrationPageActivity:
         )
 
 
+def find_thank_you_problems(thank_you_html: str) -> list[str]:
+    """Why this thank-you HTML cannot be shown: a syntax error, or a variable other
+    than THANK_YOU_VARIABLES."""
+    try:
+        parsed = _SANDBOX_ENV.parse(thank_you_html)
+    except TemplateSyntaxError as e:
+        return [
+            _(
+                "The thank-you page has a template syntax error on line %(line)s: %(detail)s",
+                line=e.lineno,
+                detail=e.message or "",
+            )
+        ]
+    unknown = sorted(meta.find_undeclared_variables(parsed) - set(THANK_YOU_VARIABLES))
+    return [
+        _("The thank-you page uses %(variable)s, which it does not offer", variable=f"{{{{ {name} }}}}")
+        for name in unknown
+    ]
+
+
+@dataclass(frozen=True)
+class ThankYouContext:
+    """Values substituted into a page's own thank-you HTML - one per THANK_YOU_VARIABLES.
+
+    Nothing about the respondent: the thank-you page is a plain GET after a
+    redirect, and does not know who just registered.
+    """
+
+    assembly_title: str = ""
+    assembly_question: str = ""
+    restart_url: str = ""
+
+
 @dataclass(frozen=True)
 class RenderContext:
     """Values substituted into the intro and form HTML at render time.
@@ -181,6 +217,7 @@ class RegistrationPage:
         status: RegistrationPageStatus = RegistrationPageStatus.TEST,
         source_type: RegistrationPageSource = RegistrationPageSource.HTML,
         thank_you_html: str = "",
+        thank_you_use_default: bool = True,
         activity: list[RegistrationPageActivity] | None = None,
         registration_page_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
@@ -199,6 +236,9 @@ class RegistrationPage:
         self.status = status
         self.source_type = source_type
         self.thank_you_html = thank_you_html
+        # True shows the standard, translated thank-you page. The page's own
+        # HTML is kept while it is, so the author can switch back to it.
+        self.thank_you_use_default = thank_you_use_default
         self.auto_reply_email_template_id = auto_reply_email_template_id
         self.activity: list[RegistrationPageActivity] = list(activity) if activity else []
         self.created_at = created_at or now
@@ -255,6 +295,37 @@ class RegistrationPage:
         self.thank_you_html = thank_you_html
         self.updated_at = datetime.now(UTC)
 
+    def set_thank_you_use_default(self, use_default: bool) -> None:
+        self.thank_you_use_default = use_default
+        self.updated_at = datetime.now(UTC)
+
+    def thank_you_problems(self) -> list[str]:
+        """Why the page's own thank-you HTML cannot be shown. None while the standard page is used."""
+        if self.thank_you_use_default:
+            return []
+        return find_thank_you_problems(self.thank_you_html)
+
+    def render_thank_you(
+        self, ctx: ThankYouContext, content_style: ContentStyle, *, use_default: bool | None = None
+    ) -> str:
+        """The page's own thank-you HTML with its variables filled in, or "" when the
+        standard page should be shown instead. Takes the intro's content style.
+
+        `use_default` overrides the page's choice, so an author can look at either
+        page; None follows the choice."""
+        if self.thank_you_use_default if use_default is None else use_default:
+            return ""
+        if not self.thank_you_html.strip():
+            return ""
+        rendered = _SANDBOX_ENV.from_string(self.thank_you_html).render(
+            assembly_title=ctx.assembly_title,
+            assembly_question=ctx.assembly_question,
+            restart_url=ctx.restart_url,
+        )
+        if content_style == ContentStyle.GOVUK:
+            rendered = apply_default_govuk_classes(rendered)
+        return rendered
+
     def set_auto_reply_template(self, template_id: uuid.UUID | None) -> None:
         self.auto_reply_email_template_id = template_id
         self.updated_at = datetime.now(UTC)
@@ -265,6 +336,7 @@ class RegistrationPage:
         if not self.url_slug:
             problems.append("The registration page needs a URL slug before it can be published")
         problems.extend(source.readiness_problems())
+        problems.extend(self.thank_you_problems())
         return problems
 
     def _append_activity(self, action: RegistrationPageAction, author_id: uuid.UUID, text: str) -> None:
@@ -329,6 +401,7 @@ class RegistrationPage:
             status=self.status,
             source_type=self.source_type,
             thank_you_html=self.thank_you_html,
+            thank_you_use_default=self.thank_you_use_default,
             activity=list(self.activity),
             registration_page_id=self.id,
             created_at=self.created_at,

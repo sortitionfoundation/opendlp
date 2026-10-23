@@ -40,6 +40,7 @@ from opendlp.entrypoints.blueprints.registration import (
     short_url,
     short_url_prefix,
 )
+from opendlp.entrypoints.extensions import get_locale
 from opendlp.entrypoints.registration_hub import editor_url, registration_hub_context, registration_page_rows
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
@@ -83,6 +84,7 @@ from opendlp.service_layer.registration_page_service import (
     deletable_registration_page_ids,
     delete_registration_page,
     fill_empty_registration_form_html,
+    fill_empty_thank_you_html,
     generate_starter_form_html_variants,
     get_registration_page_by_slug,
     get_registration_page_with_source,
@@ -95,6 +97,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page,
     update_registration_page_html,
     update_registration_page_intro_html,
+    update_thank_you_html,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
@@ -264,6 +267,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             intro_content = html.intro_html
             content_style = html.content_style
             thank_you_html = registration_page.thank_you_html
+            thank_you_use_default = registration_page.thank_you_use_default
             registration_status = registration_page.status.value  # "TEST", "PUBLISHED", or "CLOSED"
 
             # Build registration URLs and a QR code for the short URL, when configured
@@ -329,6 +333,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             intro_content=intro_content,
             content_style=content_style,
             thank_you_html=thank_you_html,
+            thank_you_use_default=thank_you_use_default,
             has_registration_page=True,
             images=images,
             documents=documents,
@@ -411,7 +416,7 @@ def _handle_registration_action(
 IMAGE_WIDTH_MIN = 20
 IMAGE_WIDTH_MAX = 2000
 
-_SECTIONS = ("page", "intro", "form", "email", "preview")
+_SECTIONS = ("page", "intro", "form", "thank-you", "email", "preview")
 _SAVE_ACTIONS = frozenset({"save", "save_and_next"})
 _LIFECYCLE_ACTIONS = frozenset({"publish", "unpublish", "close", "reopen"})
 
@@ -427,7 +432,7 @@ def _save_origin() -> str:
 
 def _post_action_section(action: str, origin: str) -> str:
     """Where to land after a successful action that stays in the editor:
-    save_and_next advances to the next step (page → intro → form → email),
+    save_and_next advances to the next step (page → intro → form → thank-you → email),
     unpublish/reopen return to the preview step (where their buttons live), and
     plain save returns to the step it came from, as does save_and_next from the
     last step, which has nowhere to advance to. Publish and close never reach
@@ -448,7 +453,8 @@ def _posted_content_style() -> ContentStyle | None:
 
 
 def _apply_posted_html(uow: AbstractUnitOfWork, page: RegistrationPage) -> None:
-    """Persist whichever HTML the post carries: the intro step's or the form step's.
+    """Persist whichever HTML the post carries: the intro step's, the form step's or
+    the thank-you step's.
 
     Only save-family actions carry HTML content. Publish/close/etc post from
     buttons that don't render the editor, so guard against blanking the HTML.
@@ -464,6 +470,16 @@ def _apply_posted_html(uow: AbstractUnitOfWork, page: RegistrationPage) -> None:
         fill_empty_registration_form_html(uow, current_user.id, page.id, fill_style)
     elif "html_content" in request.form:
         update_registration_page_html(uow, current_user.id, page.id, request.form["html_content"])
+    if request.form.get("fill_thank_you"):
+        fill_empty_thank_you_html(uow, current_user.id, page.id)
+    elif "thank_you_page" in request.form:
+        update_thank_you_html(
+            uow,
+            current_user.id,
+            page.id,
+            request.form.get("thank_you_html", page.thank_you_html),
+            use_default=request.form["thank_you_page"] == "standard",
+        )
 
 
 def _apply_page_settings(uow: AbstractUnitOfWork, page: RegistrationPage) -> RegistrationPage:
@@ -516,18 +532,18 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
     """Save the registration HTML and/or trigger a lifecycle transition.
 
     Actions:
-      - save            → update the name and URLs, the intro or the form HTML;
+      - save            → update the name and URLs, the intro, the form HTML or
+                          the thank-you page;
                           land back in read-only on the step it was posted from.
       - save_and_next   → as save, then advance to the next step (page → intro
-                          → form → auto-reply email).
+                          → form → thank-you page → auto-reply email).
       - publish         → transition TEST → PUBLISHED. No HTML update. Lands on
                           the pages list — the editor modal is done.
       - unpublish       → transition PUBLISHED → TEST (back to test mode); stays
                           in the editor on the preview step.
-      - close           → transition to CLOSED; lands on the pages list. Terminal
-                          from the UI's point of view: reopen exists only for
-                          backwards compatibility with older POSTs and is not
-                          offered anywhere.
+      - close           → transition PUBLISHED → CLOSED; lands on the pages list.
+      - reopen          → transition CLOSED → PUBLISHED, offered on the preview
+                          step; stays in the editor on the preview step.
 
     A ``return_to=list`` form field sends the user back to the page list after a
     successful lifecycle action — the list's row menu posts it.
@@ -656,7 +672,7 @@ def _load_auto_reply_context(
             )
             email_template = None
 
-    problems = auto_reply_readiness_problems(uow, assembly_id)
+    problems = auto_reply_readiness_problems(uow, assembly_id, registration_page.id)
     email_readiness_problems = [{"severity": p.severity.value, "message": p.message} for p in problems]
     return email_template, email_readiness_problems
 
@@ -672,11 +688,32 @@ def _default_email_template_content() -> dict[str, str]:
     return {
         "name": _("Registration auto-reply"),
         "subject": _("Thanks for registering for {{ assembly.title }}"),
+        # Follows the team's own auto-reply. What OpenDLP knows is a dynamic field;
+        # what it doesn't, such as the session dates, is a [placeholder] to replace.
         "body_html": _(
-            "<p>Hi {{ respondent.first_name_or_friend }},</p>\n"
-            "<p>Thanks for registering for <strong>{{ assembly.title }}</strong>.</p>\n"
-            "<p>We'll be in touch about the assembly on {{ assembly.first_assembly_date }}.</p>\n"
-            "<p>Best wishes,<br>The team</p>"
+            "<p>Dear {{ respondent.first_name_or_friend }},</p>\n"
+            "<p>Thank you for registering your interest in <strong>{{ assembly.title }}</strong>, "
+            "which will look at the question:</p>\n"
+            "<p><strong>{{ assembly.question }}</strong></p>\n"
+            "<p>The assembly will meet on these dates:</p>\n"
+            "<ul>\n"
+            "    <li>[Date, time and place of each session]</li>\n"
+            "</ul>\n"
+            "<p><strong>What happens next</strong></p>\n"
+            "<p>When registration closes, we will choose the members of the assembly by lottery from "
+            "everyone who registered. Depending on how many people register, you will usually have "
+            "around a [10 to 20] in 100 chance of being selected.</p>\n"
+            "<ul>\n"
+            "    <li><strong>[Date]:</strong> if you have been selected, we will tell you by email or phone, "
+            "and arrange a short call to answer any questions you have.</li>\n"
+            "    <li><strong>[Date]:</strong> if you have not been selected, we will tell you by email.</li>\n"
+            "    <li><strong>{{ assembly.first_assembly_date_text }}:</strong> the first session of the assembly.</li>\n"
+            "</ul>\n"
+            "<p>You can read how we look after your details in our privacy policy: "
+            "[link to your privacy policy].</p>\n"
+            "<p>If you have any questions, or your plans change and you can no longer take part, "
+            "please reply to this email as soon as you can.</p>\n"
+            "<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>"
         ),
     }
 
@@ -736,6 +773,8 @@ def _handle_email_action_save(
             template_id,
             subject=request.form.get("template_subject", "").strip(),
             body_html=request.form.get("template_body_html", ""),
+            reply_to_name=request.form.get("template_reply_to_name", "").strip(),
+            reply_to_email=request.form.get("template_reply_to_email", "").strip(),
         )
     flash(_("Auto-reply email saved"), "success")
     if advance:
@@ -778,7 +817,7 @@ def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> R
 
     - create   → create a template with default copy and assign it as the auto-reply.
                  Lands the user in edit mode so they can immediately customise it.
-    - save     → update subject / body_html on the page's assigned template.
+    - save     → update subject / body_html / reply-to on the page's assigned template.
 
     There is deliberately no enable/disable: the product currently always sends the
     auto-reply. If a real need to switch it off emerges, that gets a first-class
@@ -843,6 +882,7 @@ def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str)
                 user_id=current_user.id,
                 page_id=page.id,
                 to_email=to_email,
+                locale=get_locale(),
             )
         result = deliver_test_auto_reply(bootstrap.get_email_adapter(), prepared)
         if result.sent:

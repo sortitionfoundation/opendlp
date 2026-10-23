@@ -29,9 +29,16 @@ The export is the richer inverse of CSV import:
 2. every field in the assembly's field schema, in schema order (fixed fields,
    attributes and derived fields);
 3. any leftover attribute keys not in the schema, sorted;
-4. internal columns: `selection_status`, `source_type`, `selection_run_id`,
-   `created_at`, `updated_at`;
+4. internal columns: `selection_status`, `source_type`, `registration_page`,
+   `selection_run_id`, `created_at`, `updated_at`;
 5. `view_url`, the absolute URL of the respondent's page in OpenDLP.
+
+`registration_page` is the current `url_slug` of the registration page the
+respondent signed up through, so an organiser can match it to a page in
+OpenDLP. It is the slug the page has now, not the one it had at sign-up; that
+is deliberate, as the column is for finding the page. It is blank for
+respondents who did not come from a registration page (CSV import, manual
+entry).
 
 `view_url` is built from the `APPLICATION_URL` setting, not with `url_for`,
 because the automatic export runs in a Celery worker with no Flask app or

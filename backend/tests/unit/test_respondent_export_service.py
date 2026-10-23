@@ -11,6 +11,7 @@ import pytest
 from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.respondent_field_schema import DerivationType, RespondentFieldDefinition, RespondentFieldGroup
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
@@ -138,16 +139,18 @@ class TestBuildRespondentTable:
 
         table = build_respondent_table([respondent], [], id_column_header="external_id")
 
-        assert table.headers[-6:-1] == [
+        assert table.headers[-7:-1] == [
             "selection_status",
             "source_type",
+            "registration_page",
             "selection_run_id",
             "created_at",
             "updated_at",
         ]
-        assert table.rows[0][-6:-1] == [
+        assert table.rows[0][-7:-1] == [
             "SELECTED",
             "CSV_IMPORT",
+            "",
             str(run_id),
             created.isoformat(),
             updated.isoformat(),
@@ -187,6 +190,32 @@ class TestBuildRespondentTable:
         table = build_respondent_table([respondent], [], id_column_header="external_id")
         run_id_index = table.headers.index("selection_run_id")
         assert table.rows[0][run_id_index] == ""
+
+    def test_registration_page_is_the_page_slug(self):
+        page_id = uuid.uuid4()
+        respondent = Respondent(assembly_id=uuid.uuid4(), external_id="R1", registration_page_id=page_id)
+
+        table = build_respondent_table(
+            [respondent], [], id_column_header="external_id", page_slugs={page_id: "spring-sign-up"}
+        )
+
+        assert table.rows[0][table.headers.index("registration_page")] == "spring-sign-up"
+
+    def test_registration_page_is_blank_without_a_page(self):
+        respondent = Respondent(assembly_id=uuid.uuid4(), external_id="R1", registration_page_id=None)
+
+        table = build_respondent_table(
+            [respondent], [], id_column_header="external_id", page_slugs={uuid.uuid4(): "spring-sign-up"}
+        )
+
+        assert table.rows[0][table.headers.index("registration_page")] == ""
+
+    def test_registration_page_is_blank_for_an_unknown_page(self):
+        respondent = Respondent(assembly_id=uuid.uuid4(), external_id="R1", registration_page_id=uuid.uuid4())
+
+        table = build_respondent_table([respondent], [], id_column_header="external_id")
+
+        assert table.rows[0][table.headers.index("registration_page")] == ""
 
     def test_row_length_matches_headers(self):
         schema = [_field("email", is_fixed=True), _field("age_range")]
@@ -271,6 +300,21 @@ class TestExportRespondents:
         export_respondents(uow, user.id, assembly.id, status_filter=None, target=target)
 
         assert [row["external_id"] for row in _parse_export(target)] == ["R-old", "R-mid", "R-new"]
+
+    def test_registration_page_column_has_the_current_slug(self, uow):
+        user, assembly = _seed(uow)
+        page = RegistrationPage(assembly_id=assembly.id, url_slug="first-slug")
+        uow.registration_pages.add(page)
+        page.update_slugs(url_slug="renamed-slug")
+        uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="R-page", registration_page_id=page.id))
+        uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="R-csv"))
+
+        target = CsvExportTarget()
+        export_respondents(uow, user.id, assembly.id, status_filter=None, target=target)
+
+        by_id = {row["external_id"]: row for row in _parse_export(target)}
+        assert by_id["R-page"]["registration_page"] == "renamed-slug"
+        assert by_id["R-csv"]["registration_page"] == ""
 
     def test_raises_when_user_missing(self, uow):
         _, assembly = _seed(uow)

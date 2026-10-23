@@ -1,5 +1,5 @@
 {#
-ABOUTME: Step 5 of the registration editor - form preview, sharing links and QR code
+ABOUTME: Step 6 of the registration editor - form preview, sharing links and QR code
 ABOUTME: Included by assembly_registration.html when ?section=preview
 #}
 {% from "backoffice/components/button.html" import button %}
@@ -94,8 +94,8 @@ ABOUTME: Included by assembly_registration.html when ?section=preview
     </div>
                     {# Bottom CTAs — Back on the left is always available. TEST offers Publish;
                        PUBLISHED offers Unpublish (tertiary, reversible — back to test mode) and
-                       Close registration (secondary, terminal — goes through a confirmation
-                       dialog because there is no reopen). CLOSED offers nothing. #}
+                       Close registration (secondary — goes through a confirmation dialog, as it
+                       turns visitors away at once). CLOSED offers Re-open, back to PUBLISHED. #}
     {% set registration_save_url = url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id, url_slug=registration_page.url_slug) %}
     {% set back_to_email_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email') %}
     <div class="wizard-footer" x-scroll-preserve-links>
@@ -120,6 +120,15 @@ ABOUTME: Included by assembly_registration.html when ?section=preview
                     {{ button(_("Unpublish"), type="submit", variant="tertiary") }}
                 </form>
                 {{ button(_("Close registration"), variant="secondary", attrs='type="button" @click="openConfirmClose()"') }}
+            {% elif registration_status == "CLOSED" and registration_page %}
+                <form method="post"
+                      action="{{ registration_save_url }}"
+                      x-data
+                      x-preserve-scroll-on-submit>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="action" value="reopen" />
+                    {{ button(_("Re-open registration"), type="submit", variant="primary") }}
+                </form>
             {% endif %}
         </div>
     </div>

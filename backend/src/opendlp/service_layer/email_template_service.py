@@ -10,9 +10,10 @@ import structlog
 from opendlp.config import get_email_template_body_max_bytes
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.registration_page import RegistrationPage
-from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
+from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage, registration_email_field
 from opendlp.translations import gettext as _
 
+from .email_send_service import resolve_reply_to
 from .exceptions import (
     EmailTemplateInvalid,
     EmailTemplateNotFoundError,
@@ -26,7 +27,6 @@ from .unit_of_work import AbstractUnitOfWork
 logger = structlog.get_logger(__name__)
 
 _VIEW_ROLE = "assembly role or admin"
-_EMAIL_FIELD_KEY = "email"
 
 
 class AutoReplyReadinessSeverity(Enum):
@@ -44,9 +44,9 @@ class AutoReplyReadinessProblem:
     message: str
 
 
-def _auto_reply_readiness_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> list[AutoReplyReadinessProblem]:
-    email_field = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, _EMAIL_FIELD_KEY)
-    if email_field is None or email_field.on_registration_page == FieldOnRegistrationPage.NO:
+def _email_field_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> list[AutoReplyReadinessProblem]:
+    email_field = registration_email_field(uow.respondent_field_definitions.list_by_assembly(assembly_id))
+    if email_field is None:
         return [
             AutoReplyReadinessProblem(
                 AutoReplyReadinessSeverity.ERROR,
@@ -69,22 +69,85 @@ def _auto_reply_readiness_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UU
     return []
 
 
-def auto_reply_readiness_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> list[AutoReplyReadinessProblem]:
-    """Readiness problems for sending an auto-reply, based on how the page collects email.
+def _template_problems(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, page_id: uuid.UUID
+) -> list[AutoReplyReadinessProblem]:
+    """What is missing from the page's auto-reply itself: where replies go, the
+    [placeholders] left to replace, and a first assembly date it shows but the
+    assembly doesn't have."""
+    page = uow.registration_pages.get(page_id)
+    if page is None or page.auto_reply_email_template_id is None:
+        return []
+    template = uow.email_templates.get(page.auto_reply_email_template_id)
+    assembly = uow.assemblies.get(assembly_id)
+    if template is None or assembly is None:
+        return []
+    problems: list[AutoReplyReadinessProblem] = []
+    if resolve_reply_to(template, assembly) is None:
+        problems.append(
+            AutoReplyReadinessProblem(
+                AutoReplyReadinessSeverity.WARNING,
+                _(
+                    "Replies to the auto-reply will go to the address it is sent from, which may not be "
+                    "monitored. Set where replies go so they reach your team."
+                ),
+            )
+        )
+    placeholders = template.unfilled_placeholders()
+    if placeholders:
+        problems.append(
+            AutoReplyReadinessProblem(
+                AutoReplyReadinessSeverity.WARNING,
+                _(
+                    "The auto-reply still has text in square brackets for you to replace: %(placeholders)s.",
+                    placeholders=", ".join(placeholders),
+                ),
+            )
+        )
+    if template.uses_first_assembly_date() and assembly.first_assembly_date is None:
+        problems.append(
+            AutoReplyReadinessProblem(
+                AutoReplyReadinessSeverity.WARNING,
+                _(
+                    "The auto-reply shows the first assembly date, but the assembly does not have one yet, "
+                    "so it will be blank. Set it in the assembly's details."
+                ),
+            )
+        )
+    return problems
 
-    Returns an ERROR when no email is collected (the auto-reply can never send), a
-    WARNING when email is optional, and an empty list when email is required.
+
+def _auto_reply_readiness_problems(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, page_id: uuid.UUID | None = None
+) -> list[AutoReplyReadinessProblem]:
+    problems = _email_field_problems(uow, assembly_id)
+    if page_id is not None:
+        problems.extend(_template_problems(uow, assembly_id, page_id))
+    return problems
+
+
+def auto_reply_readiness_problems(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, page_id: uuid.UUID | None = None
+) -> list[AutoReplyReadinessProblem]:
+    """Readiness problems for sending an auto-reply.
+
+    Checks how the page collects email: an ERROR when no email is collected (the
+    auto-reply can never send), a WARNING when email is optional. Given a page_id,
+    also warns when the page's auto-reply has nowhere for replies to go - no
+    reply-to on its template or on the assembly - when it still has [placeholders]
+    to replace, and when it shows a first assembly date the assembly doesn't have.
+    Returns every problem found.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    return _auto_reply_readiness_problems(uow, assembly_id)
+    return _auto_reply_readiness_problems(uow, assembly_id, page_id)
 
 
 def _validate(template: EmailTemplate) -> None:
     problems = template.validation_problems()
     max_bytes = get_email_template_body_max_bytes()
     if len(template.body_html.encode("utf-8")) > max_bytes:
-        problems.append(f"The email body must be at most {max_bytes} bytes")
+        problems.append(_("The email body must be at most %(max_bytes)s bytes", max_bytes=max_bytes))
     if problems:
         raise EmailTemplateInvalid(problems)
 
@@ -104,6 +167,8 @@ def create_email_template(
     name: str,
     subject: str,
     body_html: str,
+    reply_to_name: str = "",
+    reply_to_email: str = "",
 ) -> EmailTemplate:
     """Create an email template for an assembly. Raises EmailTemplateInvalid on bad input.
 
@@ -112,7 +177,14 @@ def create_email_template(
     user, assembly = load_user_and_assembly(uow, user_id, assembly_id)
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(action="create email template", required_role=MANAGE_ROLE)
-    template = EmailTemplate(assembly_id=assembly_id, name=name, subject=subject, body_html=body_html)
+    template = EmailTemplate(
+        assembly_id=assembly_id,
+        name=name,
+        subject=subject,
+        body_html=body_html,
+        reply_to_name=reply_to_name,
+        reply_to_email=reply_to_email,
+    )
     _validate(template)
     uow.email_templates.add(template)
     return template.create_detached_copy()
@@ -126,6 +198,8 @@ def update_email_template(
     name: str | None = None,
     subject: str | None = None,
     body_html: str | None = None,
+    reply_to_name: str | None = None,
+    reply_to_email: str | None = None,
 ) -> EmailTemplate:
     """Update an email template. Raises EmailTemplateInvalid on bad input.
 
@@ -135,7 +209,13 @@ def update_email_template(
     user, assembly = load_user_and_assembly(uow, user_id, template.assembly_id)
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(action="update email template", required_role=MANAGE_ROLE)
-    template.update(name=name, subject=subject, body_html=body_html)
+    template.update(
+        name=name,
+        subject=subject,
+        body_html=body_html,
+        reply_to_name=reply_to_name,
+        reply_to_email=reply_to_email,
+    )
     _validate(template)
     return template.create_detached_copy()
 
@@ -205,14 +285,15 @@ def assign_auto_reply_template(
         template = uow.email_templates.get(template_id)
         if template is None or template.assembly_id != assembly_id:
             raise EmailTemplateNotFoundError(f"Email template {template_id} not found for this assembly")
-        # Advisory only - never block configuring the auto-reply. The eventual
-        # config UI surfaces these via auto_reply_readiness_problems().
-        for problem in _auto_reply_readiness_problems(uow, assembly_id):
+    page.set_auto_reply_template(template_id)
+    if template_id is not None:
+        # Advisory only - never block configuring the auto-reply. The config UI
+        # surfaces these via auto_reply_readiness_problems().
+        for problem in _auto_reply_readiness_problems(uow, assembly_id, page.id):
             logger.warning(
                 "Auto-reply readiness (%s) for assembly %s: %s",
                 problem.severity.value,
                 assembly_id,
                 problem.message,
             )
-    page.set_auto_reply_template(template_id)
     return page.create_detached_copy()

@@ -21,7 +21,7 @@ class RespondentEmailSendRecord:
         respondent_id: uuid.UUID,
         email_template_id: uuid.UUID | None = None,
         to_email: str = "",
-        from_email: str = "",
+        reply_to_email: str = "",
         subject: str = "",
         outcome: EmailSendOutcome = EmailSendOutcome.SENT,
         missing_variables: list[str] | None = None,
@@ -32,7 +32,7 @@ class RespondentEmailSendRecord:
         self.respondent_id = respondent_id
         self.email_template_id = email_template_id
         self.to_email = to_email
-        self.from_email = from_email
+        self.reply_to_email = reply_to_email
         self.subject = subject
         self.outcome = outcome
         self.missing_variables = list(missing_variables) if missing_variables else []
@@ -44,7 +44,7 @@ class RespondentEmailSendRecord:
             respondent_id=self.respondent_id,
             email_template_id=self.email_template_id,
             to_email=self.to_email,
-            from_email=self.from_email,
+            reply_to_email=self.reply_to_email,
             subject=self.subject,
             outcome=self.outcome,
             missing_variables=list(self.missing_variables),

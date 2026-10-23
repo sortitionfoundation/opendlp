@@ -18,11 +18,13 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.email_template_service import assign_auto_reply_template, create_email_template
 from opendlp.service_layer.registration_page_service import (
+    close_registration_page,
     create_registration_page_with_slugs,
     page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
     update_registration_page_intro_html,
+    update_thank_you_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
@@ -38,6 +40,7 @@ scenarios("../../features/backoffice-assembly-gsheet.feature")
 scenarios("../../features/backoffice-csv-upload.feature")
 scenarios("../../features/backoffice-registration-editor.feature")
 scenarios("../../features/backoffice-registration-visual-editor.feature")
+scenarios("../../features/backoffice-registration-thank-you.feature")
 scenarios("../../features/backoffice-registration-email-editor.feature")
 scenarios("../../features/organiser-assemblies.feature")
 
@@ -652,6 +655,26 @@ def create_test_assembly_with_published_form(title: str, admin_user, test_databa
         publish_registration_page(uow=uow, user_id=admin_user.id, page_id=registration_page.id)
 
 
+@given(parsers.parse('there is an assembly called "{title}" with a closed registration form'))
+def create_test_assembly_with_closed_form(title: str, admin_user, test_database):
+    """Create an assembly whose saved registration form was published, then closed."""
+    registration_page = _create_assembly_with_saved_form(title, admin_user, test_database)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        publish_registration_page(uow=uow, user_id=admin_user.id, page_id=registration_page.id)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        close_registration_page(uow=uow, user_id=admin_user.id, page_id=registration_page.id)
+
+
+@when("I click the Re-open registration button")
+def click_reopen_registration(page: Page):
+    page.get_by_role("button", name="Re-open registration", exact=True).click()
+
+
+@then("the registration should be shown as published")
+def registration_shown_as_published(page: Page):
+    expect(page.locator(".dialog-header").get_by_text("Published")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when("I click the Unpublish button")
 def click_unpublish(page: Page):
     page.get_by_role("button", name="Unpublish", exact=True).click()
@@ -696,7 +719,7 @@ def registration_shown_as_closed(page: Page):
 
 @then("the registration should be shown as in test mode")
 def registration_shown_as_test_mode(page: Page):
-    expect(page.get_by_role("alert").filter(has_text="Test mode")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator(".dialog-header").get_by_text("Test mode")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I visit the registration preview step for "{title}"'))
@@ -794,7 +817,7 @@ def wizard_next_button_disabled(page: Page):
 def stepper_navigation_disabled(page: Page):
     """While editing, the stepper renders aria-disabled spans instead of links."""
     expect(page.locator("a.stepper-link")).to_have_count(0)
-    expect(page.locator('span.stepper-link[aria-disabled="true"]')).to_have_count(5)
+    expect(page.locator('span.stepper-link[aria-disabled="true"]')).to_have_count(6)
 
 
 @when("I click the Cancel button in the editor header")
@@ -2231,6 +2254,21 @@ def upload_file_field_holds(page: Page, name: str):
     assert field.evaluate("(input) => Array.from(input.files, (file) => file.name)") == [name]
 
 
+@when(parsers.parse('I copy the image "{alt}" from the assets panel'))
+def copy_image_from_assets(page: Page, alt: str):
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    page.get_by_role("button", name=f"Copy <img> snippet for {alt}").click()
+    expect(page.get_by_role("status").filter(has_text="Snippet copied to clipboard")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I paste into the visual intro editor")
+def paste_into_visual_intro(page: Page):
+    page.locator(VISUAL_INTRO).click()
+    page.keyboard.press("ControlOrMeta+V")
+
+
 @when(parsers.parse('I give the image the alt text "{alt}" and upload it'))
 def give_image_alt_text_and_upload(page: Page, alt: str):
     dialog = page.get_by_role("dialog", name="Upload image")
@@ -2268,6 +2306,12 @@ def _preview_frame(page: Page):
 @then(parsers.parse('the registration preview should show a level 2 heading "{text}"'))
 def preview_shows_h2(page: Page, text: str):
     expect(_preview_frame(page).get_by_role("heading", level=2, name=text)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the registration preview should show the paragraph "{text}" centred'))
+def preview_shows_centred_paragraph(page: Page, text: str):
+    paragraph = _preview_frame(page).get_by_text(text, exact=True)
+    expect(paragraph).to_have_css("text-align", "center", timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the registration preview should show the image "{alt}"'))
@@ -2516,6 +2560,21 @@ def email_html_view_contains(page: Page, html: str):
     expect(page.locator(f"{EMAIL_EDITOR} .cm-content")).to_contain_text(html, timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I set replies to go to "{name}" at "{email}"'))
+def set_replies_go_to(page: Page, name: str, email: str):
+    replies = page.get_by_role("group", name="Reply-to")
+    replies.get_by_label("Name", exact=True).fill(name)
+    replies.get_by_label("Email address", exact=True).fill(email)
+
+
+@then(parsers.parse('replies should go to "{name}" at "{email}"'))
+def replies_go_to(page: Page, name: str, email: str):
+    replies = page.get_by_role("group", name="Reply-to")
+    expect(replies.get_by_label("Name", exact=True)).to_have_value(name, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(replies.get_by_label("Email address", exact=True)).to_have_value(email)
+    expect(replies.get_by_label("Email address", exact=True)).to_have_attribute("readonly", "")
+
+
 @then(parsers.parse('the formatting toolbar should offer "{name}"'))
 def toolbar_offers(page: Page, name: str):
     toolbar = page.get_by_role("toolbar", name="Formatting")
@@ -2591,3 +2650,130 @@ def spreadsheet_access_check_finishes(page: Page):
     expect(panel).to_be_visible()
     expect(panel.locator(".gsheet-access__pending")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT * 6)
     expect(panel).not_to_have_text("")
+
+
+# Thank-you step (features/backoffice-registration-thank-you.feature)
+
+THANK_YOU_EDITOR = "[data-rich-editor-for='thank_you_html']"
+VISUAL_THANK_YOU = f"{THANK_YOU_EDITOR} .ProseMirror"
+
+
+def _thank_you_step_url(title: str, test_database, edit: bool = False) -> str:
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    url = f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=thank-you"
+    return url + "&edit=1" if edit else url
+
+
+@given(parsers.parse('there is an assembly called "{title}" with its own thank-you page "{html}"'))
+def create_assembly_with_own_thank_you(title: str, html: str, admin_user, test_database):
+    create_test_assembly_with_registration_page(title, admin_user, test_database)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        registration_page = page_for_assembly(uow, assembly_id)
+        assert registration_page is not None
+        update_thank_you_html(uow, admin_user.id, registration_page.id, html)
+
+
+@when(parsers.parse('I visit the thank-you step for "{title}"'))
+def visit_thank_you_step(page: Page, title: str, test_database):
+    page.goto(_thank_you_step_url(title, test_database))
+
+
+@when(parsers.parse('I visit the thank-you step for "{title}" in edit mode'))
+def visit_thank_you_step_editing(page: Page, title: str, test_database):
+    page.goto(_thank_you_step_url(title, test_database, edit=True))
+
+
+@when("I fill the thank-you page with starter content")
+def fill_thank_you_starter(page: Page):
+    page.get_by_role("button", name="Fill with starter content", exact=True).click()
+    expect(page.locator("#reg-steps-panel-thank-you")).to_contain_text(
+        "Thank you for registering", timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I click Edit on the thank-you step")
+def click_edit_on_thank_you_step(page: Page):
+    page.locator("#reg-steps-panel-thank-you").get_by_role("button", name="Edit", exact=True).click()
+    page.wait_for_url(lambda url: "edit=1" in url, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the thank-you editor should be in its Visual view")
+def thank_you_editor_in_visual_view(page: Page):
+    editor = page.locator(THANK_YOU_EDITOR)
+    expect(editor.get_by_role("button", name="Visual", exact=True)).to_have_attribute(
+        "aria-pressed", "true", timeout=PLAYWRIGHT_TIMEOUT
+    )
+    expect(page.locator(VISUAL_THANK_YOU)).to_be_visible()
+    expect(editor.locator("[data-rich-editor-notice]")).to_be_hidden()
+
+
+@when(parsers.parse('I type "{text}" at the start of the visual thank-you editor'))
+def type_at_start_of_visual_thank_you(page: Page, text: str):
+    editor = page.locator(VISUAL_THANK_YOU)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.locator("p.govuk-body").first.click()
+    page.keyboard.press("Home")
+    page.keyboard.type(text)
+
+
+@when(parsers.parse('I open the public thank-you page for "{title}"'))
+def open_public_thank_you_page(page: Page, title: str, test_database):
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/register/{_page_slug(assembly_id, test_database)}/thank-you")
+
+
+@then(parsers.parse('the public page should show "{text}"'))
+def public_page_shows(page: Page, text: str):
+    expect(page.locator("main")).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I follow the "{name}" link'))
+def follow_link(page: Page, name: str):
+    page.get_by_role("link", name=name, exact=True).click()
+
+
+@then(parsers.parse('I should be on the public registration form for "{title}"'))
+def on_public_registration_form(page: Page, title: str, test_database):
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    slug = _page_slug(assembly_id, test_database)
+    page.wait_for_url(f"{Urls.base}/register/{slug}", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the thank-you editor should be shown")
+def thank_you_editor_shown(page: Page):
+    expect(page.locator(THANK_YOU_EDITOR)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the thank-you editor should be hidden")
+def thank_you_editor_hidden(page: Page):
+    expect(page.locator(THANK_YOU_EDITOR)).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the Assets panel should be shown")
+def assets_panel_shown(page: Page):
+    expect(page.get_by_role("heading", name="Assets", exact=True)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the Assets panel should be hidden")
+def assets_panel_hidden(page: Page):
+    expect(page.get_by_role("heading", name="Assets", exact=True)).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I choose the "{label}" option'))
+def choose_option(page: Page, label: str):
+    page.get_by_role("radio", name=label).check()
+
+
+@then(parsers.parse('the visual thank-you editor should show "{text}"'))
+def visual_thank_you_shows(page: Page, text: str):
+    expect(page.locator(VISUAL_THANK_YOU)).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I type "{text}" into the visual thank-you editor'))
+def type_into_visual_thank_you(page: Page, text: str):
+    editor = page.locator(VISUAL_THANK_YOU)
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    editor.click()
+    page.keyboard.type(text)

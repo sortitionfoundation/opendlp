@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
   "alembic>=1.18.5",
   "authlib>=1.6.6",
+  "babel>=2.18.0",
   "cachelib>=0.13.0",
   "celery>=5.5.3",
   "click>=8.2.1",
@@ -43,7 +44,7 @@ opendlp = "opendlp.entrypoints.cli:cli"
 production = ["gunicorn>=23.0.0"]
 
 [build-system]
-requires = ["uv_build>=0.12.23,<1.0"]
+requires = ["uv_build>=0.13.0,<1.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
@@ -79,8 +80,10 @@ exclude-newer = "1 week"
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
 # made shorter to get security fixes
+certifi = "0 days"
 cryptography = "0 days"
-oauthlib = "0 days"
+oauthlib = "3 days"
+pillow = "3 days"
 
 [tool.mypy]
 files = ["src"]

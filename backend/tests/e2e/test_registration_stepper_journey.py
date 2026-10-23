@@ -1,5 +1,5 @@
 """ABOUTME: E2E smoke test for the Registration stepper's happy-path journey
-ABOUTME: Walks admin through: create page → name and URLs → intro → form → email → publish, over PostgreSQL"""
+ABOUTME: Walks admin through: create page → name and URLs → intro → form → thank-you → email → publish"""
 
 from datetime import UTC, datetime, timedelta
 
@@ -78,8 +78,9 @@ READY_FORM_HTML = (
 def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postgres_session_factory):
     """A single happy-path smoke: admin creates a registration page (which auto-seeds a
     default email template), names it and sets its URLs on step 1, saves the intro on
-    step 2, the form HTML on step 3, updates the email template on step 4, then hits
-    Publish from step 5. The page ends up PUBLISHED with the manager's edits persisted."""
+    step 2, the form HTML on step 3, its own thank-you page on step 4, updates the email
+    template on step 5, then hits Publish from step 6. The page ends up PUBLISHED with
+    the manager's edits persisted, and its thank-you page fills in the assembly title."""
     assembly_id = _seed_assembly_with_required_email(postgres_session_factory, admin_user.id)
 
     # Step 0: create the registration page. Route seeds a default email template
@@ -128,10 +129,23 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     assert response.status_code == 302
     assert "section=form" in response.location
 
-    # Step 3: save the form HTML with save_and_next. Redirects to the email section.
+    # Step 3: save the form HTML with save_and_next. Redirects to the thank-you section.
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
         data={"action": "save_and_next", "step": "form", "html_content": READY_FORM_HTML},
+    )
+    assert response.status_code == 302
+    assert "section=thank-you" in response.location
+
+    # Step 4: switch to its own thank-you page with save_and_next. Redirects to the email section.
+    response = logged_in_admin.post(
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
+        data={
+            "action": "save_and_next",
+            "step": "thank-you",
+            "thank_you_page": "own",
+            "thank_you_html": "<p>Thanks for joining {{ assembly_title }}</p>",
+        },
     )
     assert response.status_code == 302
     assert "section=email" in response.location
@@ -142,7 +156,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     assert "Email" in html.form_html
     assert "assembly_title" in html.intro_html
 
-    # Step 4: save updated auto-reply copy with save_and_next (it is already
+    # Step 5: save updated auto-reply copy with save_and_next (it is already
     # assigned and always-on — there is no enable step).
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/save",
@@ -168,7 +182,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     ).get_data(as_text=True)
     assert "Send a test email" in page_text
 
-    # Step 4b: send a test of the saved auto-reply. The console email adapter is
+    # Step 5b: send a test of the saved auto-reply. The console email adapter is
     # active in tests, so the send itself succeeds and the success flash shows.
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/send-test",
@@ -186,7 +200,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     )
     assert "Enter a valid email address" in response.get_data(as_text=True)
 
-    # Step 5: publish. Same save endpoint, no html_content payload (guard skips update).
+    # Step 6: publish. Same save endpoint, no html_content payload (guard skips update).
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
         data={"action": "publish"},
@@ -196,6 +210,12 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         page = page_for_assembly(uow, assembly_id).create_detached_copy()
     assert page.status == RegistrationPageStatus.PUBLISHED
+
+    # The public thank-you page is the page's own, with the assembly title filled in.
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        assembly_title = uow.assemblies.get(assembly_id).title
+    body = logged_in_admin.get(f"/register/{slug}/thank-you").get_data(as_text=True)
+    assert f"Thanks for joining {assembly_title}" in body
 
 
 def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_session_factory, monkeypatch):

@@ -165,6 +165,20 @@ def test_test_send_uses_sample_respondent_and_writes_no_record(uow) -> None:
     assert uow.respondent_email_send_records._items == []
 
 
+def test_test_send_uses_template_reply_to(uow) -> None:
+    _build(uow, RegistrationPageStatus.TEST)
+    admin = _admin(uow)
+    page = _page(uow)
+    template = uow.email_templates.get(page.auto_reply_email_template_id)
+    template.update(reply_to_name="Page Team", reply_to_email="page@example.com")
+    adapter = MagicMock()
+    adapter.send_email.return_value = True
+
+    send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=page.id, to_email="manager@example.com")
+
+    assert adapter.send_email.call_args.kwargs["reply_to"] == ("Page Team", "page@example.com")
+
+
 def test_test_send_reports_missing_variables(uow) -> None:
     _build(uow, RegistrationPageStatus.TEST)
     admin = _admin(uow)

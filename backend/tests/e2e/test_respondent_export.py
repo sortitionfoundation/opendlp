@@ -6,7 +6,9 @@ from io import StringIO
 
 import pytest
 
-from opendlp.domain.value_objects import GSheetExportKind
+from opendlp.domain.registration_page import RegistrationPage
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.value_objects import GSheetExportKind, RespondentSourceType
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.fakes import FakeGSheetExportTarget
@@ -72,6 +74,34 @@ class TestRespondentExportSmoke:
             page = logged_in_admin.get(row["view_url"].removeprefix(prefix[:-1]))
             assert page.status_code == 200
             assert row["external_id"] in page.get_data(as_text=True)
+
+    def test_registration_page_column_has_the_page_slug(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=existing_assembly.id,
+                csv_content=_CSV,
+            )
+            page = RegistrationPage(assembly_id=existing_assembly.id, url_slug="spring-sign-up")
+            uow.registration_pages.add(page)
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=existing_assembly.id,
+                    external_id="R-form",
+                    source_type=RespondentSourceType.REGISTRATION_FORM,
+                    registration_page_id=page.id,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export")
+
+        by_id = {row["external_id"]: row for row in _parse(response)}
+        assert by_id["R-form"]["registration_page"] == "spring-sign-up"
+        assert by_id["R001"]["registration_page"] == ""
 
 
 class TestGSheetExportSmoke:

@@ -3,8 +3,9 @@
 The intro is the HTML shown above a registration page's form. Authors edit it
 in a **visual editor**, with a switch to the **HTML** view. This page says what
 the visual editor keeps, what makes it fall back to HTML, what an edit in it
-changes, and how the **intro style** works. The auto-reply email's body uses
-the same editor, with less in it; see [The auto-reply email](#the-auto-reply-email).
+changes, and how the **intro style** works. The thank-you page uses the same
+editor; see [The thank-you page](#the-thank-you-page). The auto-reply email's
+body uses it too, with less in it; see [The auto-reply email](#the-auto-reply-email).
 It is for developers, and for anyone supporting an author who asks why their
 intro "opens as HTML".
 
@@ -29,8 +30,9 @@ intro to follow a later change to the assembly.
 
 - **Visual** is a [Tiptap](https://tiptap.dev/) editor
   (`src/js/backoffice/rich-editor.js`). Its toolbar offers text, headings 1–3,
-  bold, italic, underline, strikethrough, bulleted and numbered lists, quotes,
-  links, images, horizontal lines, tables, undo and redo.
+  bold, italic, underline, strikethrough, left, centre and right alignment,
+  bulleted and numbered lists, quotes, links, images, horizontal lines,
+  tables, undo and redo.
 - **HTML** is the CodeMirror editor that every other HTML box uses
   (`src/js/backoffice/code-editor.js`).
 
@@ -56,6 +58,11 @@ to HTML can always happen.
 - **Attributes:** `class`, `style` and `dir` on all of those; `href`, `target`
   and `rel` on links; `src`, `alt`, `title`, `width` and `height` on images;
   `border` and `role` on tables; `colspan` and `rowspan` on cells.
+- **Alignment:** the toolbar centres or right-aligns a paragraph or heading
+  with `style="text-align: …"`, from `@tiptap/extension-text-align`. Left is
+  the default, so aligning left removes the style rather than writing
+  `text-align: left`. Any other alignment, such as `justify`, is kept as part
+  of the style but the toolbar does not show it.
 - **Template variables** like `{{ assembly_title }}`, which are highlighted in
   text. A variable in an attribute, such as `href="{{ url }}"`, survives too,
   but the visual editor cannot show it or offer a way to change it: edit it in
@@ -209,6 +216,53 @@ The visual editor previews the chosen style as you switch between the options.
 The form below the intro is never given default classes; it carries its own.
 The code is `src/opendlp/domain/html_default_classes.py`.
 
+## The thank-you page
+
+The **Thank-you page** step chooses what a respondent sees after sending the
+form:
+
+- **Standard thank-you page** (`thank_you_use_default`, on for a new page):
+  `templates/register/thank_you_default.html`, a short confirmation in the
+  language the respondent is viewing the page in, with a link back to the
+  form.
+- **Your own thank-you page**: the page's `thank_you_html`, in the same
+  visual editor as the intro, images and tables included. It is shown in the
+  intro's style, so under the GOV.UK style a plain paragraph gets
+  `govuk-body` as it would in the intro. A page has one style, so the step
+  names it and links to the intro step to change it, rather than offering
+  radios of its own.
+
+Switching to the standard page keeps the page's own HTML, so an author can
+try the standard page and switch back. Own HTML that is blank shows the
+standard page too.
+
+The step links to both pages, whichever is chosen: the public thank-you URL
+takes `?show=own` or `?show=standard` to show that page instead of the chosen
+one. The links show what is saved, not edits still in the editor. `?show=` is
+honoured only for a signed-in user who can view the assembly, because own HTML
+kept behind the standard page may be an unfinished draft, and is not checked
+when it is saved. Anyone else gets the chosen page.
+
+While the saved HTML is blank, the read-only step offers **Fill with starter
+content**, as the form step offers its fills. It writes
+`STARTER_THANK_YOU_HTML` (`src/opendlp/domain/registration_page.py`) and
+switches to it. The starter is in English, whatever the page's language.
+
+Own HTML can use three variables, and no others:
+
+- `{{ assembly_title }}` and `{{ assembly_question }}`, as in the intro;
+- `{{ restart_url }}`, the page's registration form, for a link to register
+  someone else.
+
+Nothing about the respondent is on offer: the thank-you page is a plain GET
+after a redirect, and does not know who registered.
+
+A broken thank-you page would show *after* the registration has been saved,
+so its HTML is checked harder than the intro's. Saving own HTML with a
+template syntax error or an unknown variable is refused, and so is
+publishing a page that holds one. If it still fails when shown, the error is
+logged and the respondent gets the standard page.
+
 ## The auto-reply email
 
 The auto-reply email's body uses the same visual editor, offering only what
@@ -223,7 +277,9 @@ works in an email. Everything above applies, except:
   an address starting with `https://`, `http://`, `mailto:` or `tel:`, or
   one starting with a `{{ variable }}` that fills in such an address. Links
   already in the HTML are left alone, and the HTML view can still write
-  anything.
+  anything. The page editors turn a pasted link or image on this site into a
+  path, so it isn't tied to the host it was edited on; the email's editor
+  doesn't, so a pasted link keeps its full address.
 - **No content style.** The email is plain HTML, and no GOV.UK classes are
   added when it is sent; email clients don't have the GOV.UK stylesheet.
 
@@ -238,9 +294,59 @@ names, such as `{{ recipient.first_name_or_friend }}` and
 `{{ site.full_url }}`. Rename them: a variable OpenDLP doesn't know renders
 as an empty string, and nothing warns while editing.
 
+`assembly.first_assembly_date` is the date as `2026-11-14`.
+`assembly.first_assembly_date_text` is the same date written out in the
+language the respondent registered in, such as "14 November 2026" or
+"2026. november 14.". The auto-reply is sent while their request is still
+open, so that request's language is the one used; a test send uses the
+organiser's.
+
+`respondent.first_name` comes from a question keyed like "first name". When
+there is none, it is the whole answer to a question keyed "name" or "full
+name", not split into parts: splitting would guess wrong for names written
+family name first, as in Hungarian. `respondent.first_name_or_friend` falls
+back to the word "Friend" when there is no first name, translated into the
+language the email is read in.
+
+The auto-reply goes to the address given in the fixed email field. When that
+field is not on the page, a question of type Email stands in for it, but only
+if it is the page's only one: with two, there is no telling which address to
+use. The answer is copied to the respondent's email address and also kept
+under its own question. Respondents imported from a file are not affected.
+
 Every email is sent with a plain-text version made from the HTML
 (`src/opendlp/domain/html_to_text.py`), which reads lists, quotes and
 horizontal lines as plain text would.
 
+### Where replies go
+
+The email is sent from the deployment's mail settings (`SMTP_FROM_EMAIL`,
+`SMTP_FROM_NAME`), the same for every assembly. The step doesn't show that
+address and it can't be changed per page, because the mail relay and the
+sending domain's SPF, DKIM and DMARC records only vouch for that one address.
+It is often a no-reply address that nobody reads.
+
+**Reply-to** sets the email's Reply-To: a name and an email address,
+both optional, stored on the page's auto-reply template. When someone replies,
+their mail client uses this address instead of the sending one. A copied
+page keeps it.
+
+If the template has no reply-to address, the assembly's reply-to is used.
+Nothing in the interface sets that yet; it is there for a future default for
+each assembly. If neither is set, the email has no Reply-To, and the step
+shows a warning. Every send records the reply-to address it used.
+
+The step warns about two more things in the email itself. Text in square
+brackets with a letter in it, such as `[Your name]`, is a placeholder the
+default auto-reply leaves for the organiser to replace; the warning lists the
+ones still there. And an email that shows the first assembly date, in either
+form, warns while the assembly has no date, as it would send a blank. Like
+the reply-to warning, neither stops the page being published.
+
+The name may not contain line breaks or other control characters: a line
+break in an email header makes the send fail.
+
 The design and its decisions are in
-[docs/agent/767-registration-intro/auto-reply-plan.md](agent/767-registration-intro/auto-reply-plan.md).
+[docs/agent/767-registration-intro/auto-reply-plan.md](agent/767-registration-intro/auto-reply-plan.md)
+and, for the reply-to,
+[docs/agent/1220-reply-to/plan.md](agent/1220-reply-to/plan.md).

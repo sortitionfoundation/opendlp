@@ -32,7 +32,14 @@ STATUS_FILTER_SELECTED_OR_CONFIRMED = "selected_or_confirmed"
 _TOP_LEVEL_FIELD_KEYS = frozenset({"email", "eligible", "can_attend", "consent", "stay_on_db"})
 
 # Internal-only columns appended after the schema and attribute columns.
-_INTERNAL_COLUMNS = ("selection_status", "source_type", "selection_run_id", "created_at", "updated_at")
+_INTERNAL_COLUMNS = (
+    "selection_status",
+    "source_type",
+    "registration_page",
+    "selection_run_id",
+    "created_at",
+    "updated_at",
+)
 
 # The final column: a link to the respondent's page in OpenDLP.
 VIEW_URL_COLUMN = "view_url"
@@ -73,11 +80,15 @@ def _serialise_field(respondent: Respondent, field_key: str) -> str:
     return "" if value is None else str(value)
 
 
-def _serialise_internal(respondent: Respondent, column: str) -> str:
+def _serialise_internal(respondent: Respondent, column: str, page_slugs: dict[uuid.UUID, str]) -> str:
     if column == "selection_status":
         return respondent.selection_status.value
     if column == "source_type":
         return respondent.source_type.value
+    if column == "registration_page":
+        if respondent.registration_page_id is None:
+            return ""
+        return page_slugs.get(respondent.registration_page_id, "")
     if column == "selection_run_id":
         return str(respondent.selection_run_id) if respondent.selection_run_id else ""
     if column == "created_at":
@@ -102,15 +113,19 @@ def build_respondent_table(
     schema: list[RespondentFieldDefinition],
     id_column_header: str,
     application_url: str = "",
+    page_slugs: dict[uuid.UUID, str] | None = None,
 ) -> TabularData:
     """Turn respondents into a table: id column, schema fields, leftover
     attributes (sorted), internal columns, then the respondent's view URL.
 
     The view URL column is always present, but blank when ``application_url`` is empty.
+    ``page_slugs`` maps a registration page id to its current URL slug, for the
+    ``registration_page`` column; a respondent with no page gets a blank.
 
     Pure: takes already-fetched domain objects and the resolved id-column
     header, so it can be unit-tested without a UnitOfWork.
     """
+    page_slugs = page_slugs or {}
     schema_keys = [f.field_key for f in schema]
     schema_key_set = set(schema_keys)
 
@@ -126,7 +141,7 @@ def build_respondent_table(
         row = [respondent.external_id]
         row.extend(_serialise_field(respondent, key) for key in schema_keys)
         row.extend(_serialise_field(respondent, key) for key in leftover)
-        row.extend(_serialise_internal(respondent, column) for column in _INTERNAL_COLUMNS)
+        row.extend(_serialise_internal(respondent, column, page_slugs) for column in _INTERNAL_COLUMNS)
         row.append(respondent_view_url(application_url, respondent.assembly_id, respondent.id))
         rows.append(row)
 
@@ -183,7 +198,10 @@ def _write_export(
     respondents = _fetch_respondents(uow, assembly_id, status_filter)
     schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
     id_column_header = resolve_id_column_header(assembly)
-    table = build_respondent_table(respondents, schema, id_column_header, application_url=config.get_application_url())
+    page_slugs = {page.id: page.url_slug for page in uow.registration_pages.list_by_assembly_id(assembly_id)}
+    table = build_respondent_table(
+        respondents, schema, id_column_header, application_url=config.get_application_url(), page_slugs=page_slugs
+    )
     target.write_sheet(sheet_title, table)
 
 

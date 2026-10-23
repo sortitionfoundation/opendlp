@@ -3,6 +3,7 @@ ABOUTME: Covers the page aggregate, its HTML source, rendering and readiness"""
 
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 from jinja2 import TemplateSyntaxError, UndefinedError
@@ -10,8 +11,9 @@ from jinja2.exceptions import SecurityError
 
 from opendlp.domain import registration_page as registration_page_module
 from opendlp.domain.registration_page import (
-    DEFAULT_THANK_YOU_HTML,
     REQUIRED_TOKENS,
+    STARTER_THANK_YOU_HTML,
+    THANK_YOU_VARIABLES,
     HtmlSource,
     RegistrationPage,
     RegistrationPageAction,
@@ -21,6 +23,8 @@ from opendlp.domain.registration_page import (
     RegistrationPageSource,
     RegistrationPageStatus,
     RenderContext,
+    ThankYouContext,
+    find_thank_you_problems,
     generate_initial_intro_html,
     generate_starter_form_html,
     generate_starter_form_html_govuk,
@@ -151,13 +155,29 @@ class TestRegistrationPageActivity:
         assert entry.action is RegistrationPageAction.EDIT
 
 
-class TestDefaultThankYouHtml:
-    def test_default_thank_you_html_has_h1_and_p(self):
-        assert DEFAULT_THANK_YOU_HTML
-        # Element start tags only — they may carry GOV.UK class attributes.
-        assert "<h1" in DEFAULT_THANK_YOU_HTML
-        assert "<p" in DEFAULT_THANK_YOU_HTML
-        assert "Thank you for registering" in DEFAULT_THANK_YOU_HTML
+class TestStarterThankYouHtml:
+    def test_starter_has_the_confirmation_panel(self):
+        assert '<h1 class="govuk-panel__title">Thank you for registering</h1>' in STARTER_THANK_YOU_HTML
+        assert "govuk-panel--confirmation" in STARTER_THANK_YOU_HTML
+
+    def test_panel_body_is_a_paragraph_so_the_visual_editor_can_hold_it(self):
+        """A bare-text div makes the visual editor open the HTML view instead."""
+        assert '<p class="govuk-panel__body">' in STARTER_THANK_YOU_HTML
+        assert '<div class="govuk-panel__body">' not in STARTER_THANK_YOU_HTML
+
+    def test_starter_links_back_to_the_form(self):
+        assert 'href="{{ restart_url }}"' in STARTER_THANK_YOU_HTML
+
+    def test_starter_passes_the_thank_you_check(self):
+        page = RegistrationPage(
+            assembly_id=uuid.uuid4(), thank_you_html=STARTER_THANK_YOU_HTML, thank_you_use_default=False
+        )
+        assert page.thank_you_problems() == []
+
+    def test_starter_matches_the_js_fixture(self):
+        """The JS round-trip test reads the fixture, so it must match the constant."""
+        fixture = Path(__file__).parents[2] / "fixtures" / "registration_thank_you" / "starter.html"
+        assert fixture.read_text() == STARTER_THANK_YOU_HTML
 
 
 class TestRenderContext:
@@ -719,6 +739,7 @@ class TestRegistrationPageInit:
         assert page.url_slug == ""
         assert page.short_url_slug == ""
         assert page.thank_you_html == ""
+        assert page.thank_you_use_default is True
 
     def test_init_sets_created_and_updated_at(self):
         page = RegistrationPage(assembly_id=uuid.uuid4())
@@ -818,6 +839,111 @@ class TestUpdateThankYouHtml:
         page.update_thank_you_html("<p>thanks</p>")
         assert page.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
 
+    def test_set_thank_you_use_default_sets_value_and_bumps_updated_at(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        page.set_thank_you_use_default(False)
+        assert page.thank_you_use_default is False
+        assert page.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+
+    def test_switching_to_the_standard_page_keeps_the_html(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), thank_you_html="<p>mine</p>", thank_you_use_default=False)
+        page.set_thank_you_use_default(True)
+        assert page.thank_you_html == "<p>mine</p>"
+
+
+def _own_thank_you(html: str) -> RegistrationPage:
+    return RegistrationPage(
+        assembly_id=uuid.uuid4(), url_slug="a-page", thank_you_html=html, thank_you_use_default=False
+    )
+
+
+class TestThankYouProblems:
+    def test_html_can_be_checked_without_a_page(self):
+        """The service checks HTML before it changes the page."""
+        assert find_thank_you_problems("<p>{{ assembly_title }}</p>") == []
+        assert "{{ name }}" in find_thank_you_problems("<p>{{ name }}</p>")[0]
+
+    def test_variables_on_offer(self):
+        assert THANK_YOU_VARIABLES == ("assembly_title", "assembly_question", "restart_url")
+
+    def test_no_problems_with_the_offered_variables(self):
+        page = _own_thank_you("<p>{{ assembly_title }} {{ assembly_question }} {{ restart_url }}</p>")
+        assert page.thank_you_problems() == []
+
+    def test_reports_a_syntax_error_with_its_line(self):
+        page = _own_thank_you("<p>ok</p>\n<p>{{ broken </p>")
+        problems = page.thank_you_problems()
+        assert len(problems) == 1
+        assert "line 2" in problems[0]
+        assert "thank-you page" in problems[0]
+
+    def test_reports_an_unknown_variable_by_name(self):
+        page = _own_thank_you("<p>{{ name }}</p>")
+        problems = page.thank_you_problems()
+        assert len(problems) == 1
+        assert "{{ name }}" in problems[0]
+
+    def test_form_helpers_are_not_offered(self):
+        page = _own_thank_you("{{ csrf_form_element }}")
+        assert page.thank_you_problems() != []
+
+    def test_blank_own_html_is_fine(self):
+        assert _own_thank_you("  ").thank_you_problems() == []
+
+    def test_broken_html_is_ignored_while_the_standard_page_is_used(self):
+        page = _own_thank_you("{{ broken")
+        page.set_thank_you_use_default(True)
+        assert page.thank_you_problems() == []
+
+
+class TestRenderThankYou:
+    CTX = ThankYouContext(assembly_title="Climate <Assembly>", assembly_question="What now?", restart_url="https://x/r")
+
+    def test_fills_the_variables(self):
+        page = _own_thank_you('<p>{{ assembly_title }}: {{ assembly_question }}</p><a href="{{ restart_url }}">x</a>')
+        rendered = page.render_thank_you(self.CTX, ContentStyle.PLAIN)
+        assert "Climate &lt;Assembly&gt;: What now?" in rendered
+        assert 'href="https://x/r"' in rendered
+
+    def test_govuk_style_adds_default_classes(self):
+        page = _own_thank_you("<p>hello</p>")
+        assert page.render_thank_you(self.CTX, ContentStyle.GOVUK) == '<p class="govuk-body">hello</p>'
+
+    def test_plain_style_leaves_elements_alone(self):
+        page = _own_thank_you("<p>hello</p>")
+        assert page.render_thank_you(self.CTX, ContentStyle.PLAIN) == "<p>hello</p>"
+
+    def test_standard_page_renders_nothing(self):
+        """An empty result tells the caller to show the standard page."""
+        page = _own_thank_you("<p>mine</p>")
+        page.set_thank_you_use_default(True)
+        assert page.render_thank_you(self.CTX, ContentStyle.GOVUK) == ""
+
+    def test_blank_own_html_renders_nothing(self):
+        assert _own_thank_you(" \n").render_thank_you(self.CTX, ContentStyle.GOVUK) == ""
+
+    def test_unknown_variable_raises(self):
+        with pytest.raises(UndefinedError):
+            _own_thank_you("{{ name }}").render_thank_you(self.CTX, ContentStyle.PLAIN)
+
+    def test_runs_in_the_sandbox(self):
+        with pytest.raises(SecurityError):
+            _own_thank_you("{{ assembly_title.__class__.__mro__ }}").render_thank_you(self.CTX, ContentStyle.PLAIN)
+
+    def test_own_html_can_be_rendered_while_the_standard_page_is_chosen(self):
+        """So an author can look at the HTML they keep while showing the standard page."""
+        page = _own_thank_you("<p>mine</p>")
+        page.set_thank_you_use_default(True)
+        assert page.render_thank_you(self.CTX, ContentStyle.PLAIN, use_default=False) == "<p>mine</p>"
+
+    def test_the_standard_page_can_be_asked_for_while_own_html_is_chosen(self):
+        page = _own_thank_you("<p>mine</p>")
+        assert page.render_thank_you(self.CTX, ContentStyle.PLAIN, use_default=True) == ""
+
+    def test_blank_own_html_renders_nothing_even_when_asked_for(self):
+        assert _own_thank_you(" \n").render_thank_you(self.CTX, ContentStyle.GOVUK, use_default=False) == ""
+
 
 class TestPublishAndReadiness:
     def test_readiness_problems_empty_when_ready(self):
@@ -833,6 +959,16 @@ class TestPublishAndReadiness:
         page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page")
         problems = page.readiness_problems(_StubSource(["bad html"]))
         assert "bad html" in problems
+
+    def test_readiness_problems_includes_a_broken_own_thank_you(self):
+        page = _own_thank_you("{{ name }}")
+        problems = page.readiness_problems(_StubSource())
+        assert any("{{ name }}" in p for p in problems)
+
+    def test_publish_refuses_a_broken_own_thank_you(self):
+        page = _own_thank_you("{{ broken")
+        with pytest.raises(RegistrationPageNotReady):
+            page.publish(_StubSource(), author_id=uuid.uuid4())
 
     def test_publish_sets_status_published(self):
         page = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="a-page")
@@ -1164,6 +1300,7 @@ class TestCreateDetachedCopyAndIdentity:
             url_slug="a-page",
             short_url_slug="ap",
             thank_you_html="<p>thanks</p>",
+            thank_you_use_default=False,
             name="Cymraeg",
             language="cy",
         )
@@ -1178,6 +1315,7 @@ class TestCreateDetachedCopyAndIdentity:
         assert copy.short_url_slug == page.short_url_slug
         assert copy.source_type == page.source_type
         assert copy.thank_you_html == page.thank_you_html
+        assert copy.thank_you_use_default is False
         assert copy.status == page.status
         assert copy.activity == page.activity
         assert copy.activity is not page.activity

@@ -10,6 +10,24 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% from "backoffice/components/modal.html" import dialog_close_icon %}
 {% from "backoffice/components/stepper.html" import stepper %}
 {% from "backoffice/components/registration_page_list.html" import registration_page_list %}
+{% from "backoffice/components/url_display.html" import copy_button %}
+{% macro status_pill(label, tone) %}
+    {# The page's status, in the same pill the pages list uses. tone is success, warning or error.
+       The tokens are spelt out in full so the design-token check can find them. #}
+    {% set tones = {
+    "success": ["var(--color-success-100)", "var(--color-success-600)", "var(--color-success-400)"],
+    "warning": ["var(--color-warning-100)", "var(--color-warning-600)", "var(--color-warning-400)"],
+    "error": ["var(--color-error-100)", "var(--color-error-600)", "var(--color-error-400)"]
+    } %}
+    {% set background, text, accent = tones[tone] %}
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-body-sm whitespace-nowrap"
+          style="background-color: {{ background }};
+                 color: {{ text }};
+                 border: 1px solid {{ accent }}">
+        <span class="w-2 h-2 rounded-full" style="background-color: {{ accent }}"></span>
+        {{ label }}
+    </span>
+{% endmacro %}
 {% block title %}{{ assembly.title }} - {{ _("Registration") }}{% endblock %}
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
@@ -70,8 +88,27 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                  aria-modal="true"
                  aria-labelledby="registration-editor-title">
                 <div class="dialog-panel dialog-panel--takeover">
-                    <div class="dialog-header">
-                        <h2 class="dialog-title" id="registration-editor-title">{{ registration_page.name }}</h2>
+                    <div class="dialog-header gap-4">
+                        {# The page's name, its registration URL and its status, which hold for all
+                           six steps, so they sit in the header rather than in any one step. #}
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 min-w-0">
+                            <h2 class="dialog-title" id="registration-editor-title">{{ registration_page.name }}</h2>
+                            <span class="flex items-center gap-1 min-w-0">
+                                <a href="{{ registration_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-body-sm underline break-all"
+                                   style="color: var(--color-link-text);">{{ registration_url }}</a>
+                                {{ copy_button(registration_url, _("Copy URL to clipboard"), classes="flex-shrink-0 p-1 rounded transition-colors duration-150 hover:opacity-70") }}
+                            </span>
+                            {% if registration_status == "PUBLISHED" %}
+                                {{ status_pill(_("Published"), "success") }}
+                            {% elif registration_status == "CLOSED" %}
+                                {{ status_pill(_("Closed"), "error") }}
+                            {% else %}
+                                {{ status_pill(_("Test mode"), "warning") }}
+                            {% endif %}
+                        </div>
                         {# Closing the editor is "back to the pages list". A real link — middle-click
                            and copy-link keep working — but guarded like Cancel while edits are unsaved. #}
                         <a href="{{ list_url }}"
@@ -92,6 +129,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {"key": "page", "label": _("Name and URLs"), "href": section_base ~ "?section=page", "active": active_section == "page"},
                         {"key": "intro", "label": _("Intro"), "href": section_base ~ "?section=intro", "active": active_section == "intro"},
                         {"key": "form", "label": _("Form"), "href": section_base ~ "?section=form", "active": active_section == "form"},
+                        {"key": "thank-you", "label": _("Thank-you page"), "href": section_base ~ "?section=thank-you", "active": active_section == "thank-you"},
                         {"key": "email", "label": _("Auto-reply email"), "href": section_base ~ "?section=email", "active": active_section == "email"},
                         {"key": "preview", "label": _("Preview and publish"), "href": section_base ~ "?section=preview", "active": active_section == "preview"}
                         ],
@@ -99,20 +137,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         mode="tabs",
                         preserve_scroll=true,
                         disabled=edit_mode) }}
-            {# Whole-artifact status. Sits below the stepper so it applies to all five steps —
-               the name and URLs, the intro, the form HTML, the auto-reply email, and the preview all
-               share this state. #}
-                        {% if registration_status == "TEST" %}
-                            <div class="rounded-lg p-4 mb-6"
-                                 role="alert"
-                                 style="background-color: var(--color-warning-100);
-                                        border: 1px solid var(--color-warning-400)">
-                                <p class="text-body-md" style="color: var(--color-warning-600);">
-                                    <span class="font-semibold">⚠️ {{ _("Test mode") }}:</span>
-                                    {{ _("Submissions are recorded as test entries and don't enter the selection pool. Publish the registration when you're ready to go live.") }}
-                                </p>
-                            </div>
-                        {% elif registration_status == "CLOSED" %}
+            {# A closed page can't be edited, so every step says so and where to re-open it.
+               The preview step holds the re-open button, so it doesn't point to itself. #}
+                        {% if registration_status == "CLOSED" %}
                             <div class="rounded-lg p-4 mb-6"
                                  role="alert"
                                  style="background-color: var(--color-error-100);
@@ -120,17 +147,12 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 <p class="text-body-md" style="color: var(--color-error-600);">
                                     <span class="font-semibold">⛔ {{ _("Registration closed") }}:</span>
                                     {{ _("Visitors who follow the form URL are redirected to the closed page.") }}
+                                    {% if active_section != "preview" %}
+                                        <a href="{{ section_base }}?section=preview"
+                                           class="underline"
+                                           style="color: var(--color-error-600);">{{ _("Go to Preview and publish to re-open it.") }}</a>
+                                    {% endif %}
                                 </p>
-                            </div>
-                        {% elif registration_status == "PUBLISHED" %}
-                            <div class="mb-6">
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-md"
-                                      style="background-color: var(--color-success-100);
-                                             color: var(--color-success-600)">
-                                    <span class="w-2 h-2 rounded-full"
-                                          style="background-color: var(--color-success-400)"></span>
-                                    {{ _("Published") }}
-                                </span>
                             </div>
                         {% endif %}
                         {% if active_section == "page" %}
@@ -141,6 +163,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {% endif %}
                         {% if active_section == "form" %}
                             {% include "backoffice/registration/_step_form.html" %}
+                        {% endif %}
+                        {% if active_section == "thank-you" %}
+                            {% include "backoffice/registration/_step_thank_you.html" %}
                         {% endif %}
                         {% if active_section == "email" %}
                             {% include "backoffice/registration/_step_email.html" %}

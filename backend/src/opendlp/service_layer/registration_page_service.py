@@ -15,13 +15,15 @@ from opendlp.config import (
 )
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.registration_page import (
-    DEFAULT_THANK_YOU_HTML,
+    STARTER_THANK_YOU_HTML,
     HtmlSource,
     RegistrationPage,
     RegistrationPageHtml,
     RegistrationPageSource,
     RegistrationPageStatus,
     RenderContext,
+    ThankYouContext,
+    find_thank_you_problems,
     generate_initial_intro_html,
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
@@ -261,7 +263,6 @@ def create_registration_page(
     page = RegistrationPage(
         assembly_id=assembly_id,
         source_type=source_type,
-        thank_you_html=DEFAULT_THANK_YOU_HTML,
         name=_validated_name(uow, assembly_id, name),
         language=language,
     )
@@ -327,7 +328,6 @@ def create_registration_page_with_slugs(
     page = RegistrationPage(
         assembly_id=assembly_id,
         source_type=RegistrationPageSource.HTML,
-        thank_you_html=DEFAULT_THANK_YOU_HTML,
         url_slug=url_slug,
         short_url_slug=short_url_slug,
         name=validated_name,
@@ -369,6 +369,7 @@ def duplicate_registration_page(
         assembly_id=source.assembly_id,
         source_type=source.source_type,
         thank_you_html=source.thank_you_html,
+        thank_you_use_default=source.thank_you_use_default,
         url_slug=_generated_url_slug(uow, assembly.id, assembly.title, validated_name, language),
         short_url_slug=generate_unique_short_url_slug(uow),
         name=validated_name,
@@ -405,6 +406,8 @@ def _copy_auto_reply_template(uow: AbstractUnitOfWork, source: RegistrationPage,
         name=f"{original.name} ({page_name})",
         subject=original.subject,
         body_html=original.body_html,
+        reply_to_name=original.reply_to_name,
+        reply_to_email=original.reply_to_email,
     )
     uow.email_templates.add(copy)
     return copy.id
@@ -636,19 +639,53 @@ def set_auto_reply_template(
 
 
 def update_thank_you_html(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, thank_you_html: str
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    page_id: uuid.UUID,
+    thank_you_html: str,
+    *,
+    use_default: bool = False,
 ) -> RegistrationPage:
-    """Update the page's thank-you HTML. Raises ValueError if it exceeds the size limit.
+    """Update the page's thank-you HTML, and whether the standard page is shown instead.
+
+    Raises ValueError if the HTML exceeds the size limit, or - when the page is to
+    show it - has a template syntax error or a variable it does not offer. HTML
+    kept behind the standard page is not checked, so an author can always switch
+    to a working thank-you page.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     user, page = _load_manageable_page(uow, user_id, page_id)
 
     _check_size(thank_you_html, get_registration_thank_you_html_max_bytes(), _("thank-you HTML"))
+    problems = [] if use_default else find_thank_you_problems(thank_you_html)
+    if problems:
+        raise ValueError("; ".join(problems))
     if page.thank_you_html != thank_you_html:
         page.update_thank_you_html(thank_you_html)
         page.record_edit(user.id, "Updated thank-you HTML")
+    if page.thank_you_use_default != use_default:
+        page.set_thank_you_use_default(use_default)
+        page.record_edit(
+            user.id,
+            "Switched to the standard thank-you page" if use_default else "Switched to its own thank-you page",
+        )
     return page.create_detached_copy()
+
+
+def fill_empty_thank_you_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID) -> RegistrationPage:
+    """Write the starter thank-you HTML into a page whose thank-you HTML is blank, and show it.
+
+    A page that has HTML is left alone: the button that asks for this only shows
+    while the HTML is blank, so HTML here means the request is stale and a fill
+    would lose someone's work.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _user, page = _load_manageable_page(uow, user_id, page_id)
+    if page.thank_you_html.strip():
+        raise ValueError(_("The thank-you page already has HTML, so it was left as it is"))
+    return update_thank_you_html(uow, user_id, page_id, STARTER_THANK_YOU_HTML, use_default=False)
 
 
 def update_registration_page_html(
@@ -974,9 +1011,40 @@ def render_registration_form(
     return source.render(ctx)
 
 
-def render_thank_you_html(page: RegistrationPage) -> str:
-    """Return the thank-you HTML. Verbatim in v1 - a seam for later substitution."""
-    return page.thank_you_html
+def render_thank_you_html(
+    uow: AbstractUnitOfWork,
+    page: RegistrationPage,
+    restart_url: str,
+    *,
+    use_default: bool | None = None,
+    viewer_id: uuid.UUID | None = None,
+) -> str:
+    """The page's own thank-you HTML, rendered in its intro's style, or "" when the
+    standard page should be shown. Raises what the template raises - a page saved
+    before its HTML was checked can still be broken.
+
+    `use_default` overrides the page's choice, so an author can look at either page.
+    It counts only when `viewer_id` is someone who can view the assembly: own HTML
+    kept behind the standard page may be an unfinished draft, and it is not checked
+    when saved. Otherwise the page's choice stands.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    assembly = uow.assemblies.get(page.assembly_id)
+    viewer = uow.users.get(viewer_id) if viewer_id else None
+    if not (viewer and assembly and can_view_assembly(viewer, assembly)):
+        use_default = None
+    if page.thank_you_use_default if use_default is None else use_default:
+        return ""
+    if not page.thank_you_html.strip():
+        return ""
+    source = _load_html_source(uow, page)
+    ctx = ThankYouContext(
+        assembly_title=assembly.title if assembly else "",
+        assembly_question=assembly.question if assembly else "",
+        restart_url=restart_url,
+    )
+    return page.render_thank_you(ctx, source.content_style, use_default=use_default)
 
 
 def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:

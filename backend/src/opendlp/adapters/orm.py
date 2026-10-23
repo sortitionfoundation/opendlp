@@ -714,6 +714,7 @@ registration_pages = Table(
     ),
     Column("source_type", EnumAsString(RegistrationPageSource, 32), nullable=False),
     Column("thank_you_html", Text, nullable=False, default=""),
+    Column("thank_you_use_default", Boolean, nullable=False, default=True, server_default=text("true")),
     Column("activity", RegistrationPageActivityListJSON, nullable=False, default=list),
     Column(
         "auto_reply_email_template_id",
@@ -834,6 +835,8 @@ email_templates = Table(
     Column("name", String(255), nullable=False, default=""),
     Column("subject", Text, nullable=False, default=""),
     Column("body_html", Text, nullable=False, default=""),
+    Column("reply_to_name", String(255), nullable=False, server_default=""),
+    Column("reply_to_email", String(255), nullable=False, server_default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )
@@ -857,7 +860,7 @@ respondent_email_send_records = Table(
         nullable=True,
     ),
     Column("to_email", String(255), nullable=False, default=""),
-    Column("from_email", String(255), nullable=False, default=""),
+    Column("reply_to_email", String(255), nullable=False, default=""),
     Column("subject", Text, nullable=False, default=""),
     Column("outcome", EnumAsString(EmailSendOutcome, 16), nullable=False),
     Column("missing_variables", JSON, nullable=False, default=list),

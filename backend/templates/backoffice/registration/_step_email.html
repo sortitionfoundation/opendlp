@@ -1,5 +1,5 @@
 {#
-ABOUTME: Step 4 of the registration editor - the auto-reply email template
+ABOUTME: Step 5 of the registration editor - the auto-reply email template
 ABOUTME: Included by assembly_registration.html when ?section=email
 #}
 {% from "backoffice/components/button.html" import button %}
@@ -15,7 +15,7 @@ ABOUTME: Included by assembly_registration.html when ?section=email
     {% set email_edit_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email', edit='1') %}
     {% set email_view_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email') %}
     {% set preview_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='preview') %}
-    {% set back_to_form_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='form') %}
+    {% set back_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='thank-you') %}
                     {# Readiness banner — surfaces problems that would stop the auto-reply from actually being delivered #}
     {% for problem in email_readiness_problems %}
         {% set is_error = problem.severity == "error" %}
@@ -52,7 +52,7 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                            available even before a template exists. #}
         <div class="wizard-footer" x-scroll-preserve-links>
             <div class="wizard-footer-box">
-                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
+                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_url) }}</span>
                 {{ button(_("Next →"), variant="primary", href=preview_url) }}
             </div>
         </div>
@@ -100,12 +100,29 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                         </div>
                         <div class="space-y-4">
                             {% set common_input_attrs %}{% if not edit_mode %}readonly aria-readonly="true" style="background-color: var(--color-subtle-background-panels); cursor: default;"{% endif %}{% endset %}
+                            <fieldset class="flex flex-col gap-4" aria-describedby="reply-to-hint">
+                                <legend class="text-heading-sm mb-1" style="color: var(--color-headings);">{{ _("Reply-to") }}</legend>
+                                <p id="reply-to-hint" class="text-body-sm" style="color: var(--color-secondary-text);">
+                                    {{ _("When someone replies to the auto-reply, their email goes here.") }}
+                                </p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {{ input(name="template_reply_to_name",
+                                    label=_("Name"),
+                                    value=email_template.reply_to_name,
+                                    attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                    {{ input(name="template_reply_to_email",
+                                    label=_("Email address"),
+                                    type="email",
+                                    value=email_template.reply_to_email,
+                                    attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                </div>
+                            </fieldset>
                                             {# Template name is not exposed yet — one template per page, always called "Registration
 auto-reply". When multi-template support ships this becomes a visible input. #}
                             {{ input(name="template_subject",
                             label=_("Email subject"),
                             value=email_template.subject,
-                            hint=_("Jinja variables allowed, e.g. {{ assembly.title }}."),
+                            hint=_("Dynamic fields allowed, e.g. {{ assembly.title }}."),
                             required=true,
                             attrs=common_input_attrs|trim) }}
                             {% set body_attrs %}
@@ -146,6 +163,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             {"expr": "{{ assembly.title }}", "label": _("Assembly title")},
                             {"expr": "{{ assembly.question }}", "label": _("Assembly question")},
                             {"expr": "{{ assembly.first_assembly_date }}", "label": _("First assembly date (ISO)")},
+                            {"expr": "{{ assembly.first_assembly_date_text }}", "label": _("First assembly date, written out in the reader's language")},
                             {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
                             {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
                             {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},
@@ -244,7 +262,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                     </span>
                     {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
                 {% else %}
-                    <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
+                    <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_url) }}</span>
                     {{ button(_("Next →"), variant="primary", href=preview_url) }}
                 {% endif %}
             </div>
