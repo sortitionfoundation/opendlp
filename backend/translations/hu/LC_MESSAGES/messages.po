@@ -87,12 +87,10 @@ msgid "Results"
 msgstr "Eredmények"
 
 #: src/opendlp/domain/email_context.py:125
-#, fuzzy
 msgid "Friend"
 msgstr "Résztvevő"
 
 #: src/opendlp/domain/email_template.py:55
-#, fuzzy
 msgid ""
 "The name for replies cannot contain line breaks or other control "
 "characters"
@@ -101,54 +99,50 @@ msgstr ""
 "vezérlőkaraktert"
 
 #: src/opendlp/domain/email_template.py:57
-#, fuzzy, python-format
+#, python-format
 msgid "The name for replies must be at most %(max)s characters"
 msgstr "A válaszokhoz megadott név legfeljebb %(max)s karakter lehet"
 
 #: src/opendlp/domain/email_template.py:59
-#, fuzzy, python-format
+#, python-format
 msgid "The email address for replies must be at most %(max)s characters"
 msgstr "A válaszokhoz megadott e-mail cím legfeljebb %(max)s karakter lehet"
 
 #: src/opendlp/domain/email_template.py:64
-#, fuzzy
 msgid "The email address for replies is not valid"
 msgstr "A válaszokhoz megadott e-mail cím érvénytelen"
 
 #: src/opendlp/domain/email_template.py:116
-#, fuzzy
 msgid "The email template needs a name"
 msgstr "Az e-mail sablonnak nevet kell adni"
 
 #: src/opendlp/domain/email_template.py:118
-#, fuzzy
 msgid "The email template needs a subject"
 msgstr "Az e-mail sablonnak tárgyat kell adni"
 
 #: src/opendlp/domain/email_template.py:120
-#, fuzzy
 msgid "The email template body is empty"
 msgstr "Az e-mail sablon törzse üres"
 
 #: src/opendlp/domain/email_template_render.py:70
-#, fuzzy, python-format
+#, python-format
 msgid "The email subject has a template syntax error on line %(line)s: %(error)s"
 msgstr "Az e-mail tárgyában sablonszintaxis-hiba van, %(line)s. sor: %(error)s"
 
 #: src/opendlp/domain/email_template_render.py:78
-#, fuzzy, python-format
+#, python-format
 msgid "The email body has a template syntax error on line %(line)s: %(error)s"
 msgstr "Az e-mail törzsében sablonszintaxis-hiba van, %(line)s. sor: %(error)s"
 
 #: src/opendlp/domain/registration_page.py:136
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "The thank-you page has a template syntax error on line %(line)s: "
 "%(detail)s"
 msgstr "A köszönőoldalon sablonszintaxis-hiba van, %(line)s. sor: %(detail)s"
 
 #: src/opendlp/domain/registration_page.py:143
-#, fuzzy, python-format
+#, python-format
 msgid "The thank-you page uses %(variable)s, which it does not offer"
 msgstr ""
 "A köszönőoldal olyan változót használ, amely itt nem érhető el: "
@@ -479,12 +473,10 @@ msgid "The year must be between %(earliest)s and %(latest)s"
 msgstr "Az évnek %(earliest)s és %(latest)s között kell lennie"
 
 #: src/opendlp/domain/value_objects.py:18
-#, fuzzy
 msgid "User — Access to the projects they are added to"
 msgstr "Felhasználó – Hozzáférés azokhoz a projektekhez, amelyekhez hozzáadták"
 
 #: src/opendlp/domain/value_objects.py:19
-#, fuzzy
 msgid "Organiser — Can create projects, and manage the ones they belong to"
 msgstr ""
 "Főszervező – Létrehozhat projekteket, és kezelheti azokat, amelyekhez "
@@ -512,7 +504,6 @@ msgid "Admin"
 msgstr "Adminisztrátor"
 
 #: src/opendlp/domain/value_objects.py:34
-#, fuzzy
 msgid ""
 "You can see the projects you have been added to. A Project Manager can "
 "add you to one."
@@ -521,7 +512,6 @@ msgstr ""
 "hozzáadni egy projekthez."
 
 #: src/opendlp/domain/value_objects.py:36
-#, fuzzy
 msgid ""
 "You can create projects. You can see the projects you have been added to,"
 " and the ones you create."
@@ -530,14 +520,12 @@ msgstr ""
 "hozzáadtak, és amelyeket te hozol létre."
 
 #: src/opendlp/domain/value_objects.py:38
-#, fuzzy
 msgid "You can see and manage every project, and manage users and invites."
 msgstr ""
 "Minden projektet látsz és kezelhetsz, valamint kezelheted a "
 "felhasználókat és a meghívókat."
 
 #: src/opendlp/domain/value_objects.py:60
-#, fuzzy
 msgid "Project Manager — Can manage the project and add other users"
 msgstr ""
 "Projektvezető – Kezelheti a projektet és további felhasználókat adhat "
@@ -548,7 +536,6 @@ msgid "Confirmation Caller — Can call confirmations for selected participants"
 msgstr "Visszaigazoló – Felhívhatja a kiválasztott résztvevőket visszaigazolásért"
 
 #: src/opendlp/domain/value_objects.py:62
-#, fuzzy
 msgid "Read Only — Can view the project but cannot make changes"
 msgstr "Megtekintő – Megtekintheti a projektet, de nem módosíthat"
 
@@ -885,35 +872,29 @@ msgstr "Új jelszó megerősítése"
 
 #: src/opendlp/entrypoints/forms.py:338
 #: templates/backoffice/registration/_step_email.html:164
-#, fuzzy
 msgid "Project title"
 msgstr "Projekt címe"
 
 #: src/opendlp/entrypoints/forms.py:340
-#, fuzzy
 msgid "Enter the title for this project"
 msgstr "Add meg a projekt címét"
 
 #: src/opendlp/entrypoints/forms.py:344
 #: templates/backoffice/assembly_details.html:40
 #: templates/backoffice/registration/_step_email.html:165
-#, fuzzy
 msgid "Framing question"
 msgstr "A projekt témája"
 
 #: src/opendlp/entrypoints/forms.py:346
-#, fuzzy
 msgid "Optional — the question the event is convened to answer"
 msgstr "Nem kötelező – a téma, amelynek megvitatására az esemény összeül"
 
 #: src/opendlp/entrypoints/forms.py:351
 #: templates/backoffice/assembly_details.html:64
-#, fuzzy
 msgid "First event date"
 msgstr "Az első esemény időpontja"
 
 #: src/opendlp/entrypoints/forms.py:353
-#, fuzzy
 msgid "Optional — when the event first meets"
 msgstr "Nem kötelező – az esemény első ülésének időpontja"
 
@@ -924,7 +905,6 @@ msgid "Number to Select"
 msgstr "Kiválasztandó emberek száma"
 
 #: src/opendlp/entrypoints/forms.py:359
-#, fuzzy
 msgid "The number of participants to select for this event"
 msgstr "Az eseményre kiválasztandó résztvevők száma"
 
@@ -1152,17 +1132,14 @@ msgid "User Email"
 msgstr "Hiba részletei"
 
 #: src/opendlp/entrypoints/forms.py:571
-#, fuzzy
 msgid "Select a user to add to this project"
 msgstr "Válaszd ki a projekthez hozzáadni kívánt felhasználót"
 
 #: src/opendlp/entrypoints/forms.py:575
-#, fuzzy
 msgid "Project role"
 msgstr "Szerepkör a projektben"
 
 #: src/opendlp/entrypoints/forms.py:579
-#, fuzzy
 msgid "Select the role this user will have on the project"
 msgstr "Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a projektben"
 
@@ -1285,7 +1262,6 @@ msgid "Replace all existing respondents"
 msgstr "Az összes meglévő jelentkező cseréje"
 
 #: src/opendlp/entrypoints/forms.py:738
-#, fuzzy
 msgid ""
 "Warning: this will delete all existing respondents for this project "
 "before importing. Uncheck to add to existing respondents."
@@ -1742,18 +1718,16 @@ msgstr ""
 "próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:126
-#, fuzzy, python-format
+#, python-format
 msgid "Project '%(title)s' created successfully"
 msgstr "A '%(title)s' projekt sikeresen létrehozva"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:130
-#, fuzzy
 msgid "You don't have permission to create projects"
 msgstr "Nincs jogosultságod projekt létrehozására"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:134
 #: src/opendlp/entrypoints/blueprints/backoffice.py:138
-#, fuzzy
 msgid "An error occurred while creating the project"
 msgstr "Hiba történt a projekt létrehozásakor"
 
@@ -1778,7 +1752,6 @@ msgstr "Hiba történt a projekt létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/target_sources.py:870
 #: src/opendlp/entrypoints/blueprints/targets.py:161
 #: src/opendlp/entrypoints/blueprints/targets.py:420
-#, fuzzy
 msgid "You don't have permission to view this project"
 msgstr "Nincs jogosultságod a projekt megtekintéséhez"
 
@@ -1853,12 +1826,10 @@ msgstr "Nincs jogosultságod a projekt megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/targets.py:281
 #: src/opendlp/entrypoints/blueprints/targets.py:417
 #: src/opendlp/entrypoints/blueprints/targets.py:545
-#, fuzzy
 msgid "Project not found"
 msgstr "A projekt nem található"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:215
-#, fuzzy
 msgid "An error occurred while loading the project"
 msgstr "Hiba történt a projekt betöltése közben"
 
@@ -1915,7 +1886,7 @@ msgid "Dashboard exported to Google Sheets."
 msgstr "A statisztikák exportálva a Google Táblázatba."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:542
-#, fuzzy, python-format
+#, python-format
 msgid "Project '%(title)s' updated successfully"
 msgstr "A '%(title)s' projekt sikeresen frissült"
 
@@ -1929,13 +1900,11 @@ msgstr "A '%(title)s' projekt sikeresen frissült"
 #: src/opendlp/entrypoints/blueprints/target_sources.py:922
 #: src/opendlp/entrypoints/blueprints/target_sources.py:986
 #: src/opendlp/entrypoints/blueprints/target_sources.py:1002
-#, fuzzy
 msgid "You don't have permission to edit this project"
 msgstr "Nincs jogosultságod a projekt szerkesztéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:560
 #: src/opendlp/entrypoints/blueprints/backoffice.py:566
-#, fuzzy
 msgid "An error occurred while updating the project"
 msgstr "Hiba történt a projekt frissítése közben"
 
@@ -1949,7 +1918,6 @@ msgid "Number to select updated to %(number)s"
 msgstr "A kiválasztandók száma %(number)s értékre módosult"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:789
-#, fuzzy
 msgid "An error occurred while loading project data"
 msgstr "Hiba történt a projekt adatainak betöltése közben"
 
@@ -1958,7 +1926,7 @@ msgid "An error occurred while loading team members"
 msgstr "Hiba történt a csapattagok betöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:889
-#, fuzzy, python-format
+#, python-format
 msgid "%(user)s added to project with role %(role)s"
 msgstr "%(user)s hozzáadva a projekthez %(role)s szerepkörrel"
 
@@ -1967,37 +1935,33 @@ msgid "Please select a user and role"
 msgstr "Válassz ki egy felhasználót és egy szerepkört"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:902
-#, fuzzy, python-format
+#, python-format
 msgid "Could not add user to project: %(error)s"
 msgstr "Nem sikerült hozzáadni a felhasználót a projekthez: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:911
-#, fuzzy
 msgid "You don't have permission to add users to this project"
 msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a projekthez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:920
-#, fuzzy
 msgid "An error occurred while adding the user to the project"
 msgstr "Hiba történt a felhasználó projekthez adása közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:940
-#, fuzzy, python-format
+#, python-format
 msgid "%(user)s removed from project"
 msgstr "%(user)s eltávolítva a projektből"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:956
-#, fuzzy, python-format
+#, python-format
 msgid "Could not remove user from project: %(error)s"
 msgstr "Nem sikerült eltávolítani a felhasználót a projektből: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:965
-#, fuzzy
 msgid "You don't have permission to remove users from this project"
 msgstr "Nincs jogosultságod felhasználókat eltávolítani ebből a projektből"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:974
-#, fuzzy
 msgid "An error occurred while removing the user from the project"
 msgstr "Hiba történt a felhasználó projektből való eltávolítása közben"
 
@@ -2080,7 +2044,6 @@ msgstr "A regisztrációs oldal mentve"
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1308
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1338
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1365
-#, fuzzy
 msgid "You don't have permission to modify this project"
 msgstr "Nincs jogosultságod a projekt módosításához"
 
@@ -2093,12 +2056,10 @@ msgid "Registration auto-reply"
 msgstr "Regisztrációs automatikus válasz"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:690
-#, fuzzy
 msgid "Thanks for registering for {{ project.title }}"
 msgstr "Köszönjük, hogy jelentkezett: {{ project.title }}"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:694
-#, fuzzy
 msgid ""
 "<p>Dear {{ respondent.first_name_or_friend }},</p>\n"
 "<p>Thank you for registering your interest in <strong>{{ assembly.title "
@@ -2246,7 +2207,6 @@ msgstr "Hiba történt a regisztrációs oldal törlése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1048
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1142
-#, fuzzy
 msgid "You don't have permission to access this project"
 msgstr "Nincs jogosultságod hozzáférni ehhez a projekthez"
 
@@ -2374,7 +2334,6 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/gsheets.py:936
 #: src/opendlp/entrypoints/blueprints/gsheets.py:998
 #: src/opendlp/entrypoints/blueprints/targets.py:548
-#, fuzzy
 msgid "You don't have permission to manage this project"
 msgstr "Nincs jogosultságod a projekt kezeléséhez"
 
@@ -2603,7 +2562,7 @@ msgid "An error occurred while starting the validation task"
 msgstr "Hiba történt az ellenőrzési feladat indítása közben"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:603
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Another task is already running on this project: %(task)s. You can wait "
 "for it to finish, or cancel it here."
@@ -2633,7 +2592,6 @@ msgid "Selection run not found"
 msgstr "A kiválasztási futtatás nem található"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:856
-#, fuzzy
 msgid "Selection run does not belong to this project"
 msgstr "A kiválasztási futtatás nem ehhez a projekthez tartozik"
 
@@ -2708,7 +2666,6 @@ msgstr ""
 "adatoszlopokat fogja tartalmazni. Ez szándékos?"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1122
-#, fuzzy
 msgid "This project has no Google Sheets configuration."
 msgstr "Ehhez a projekthez nincs Google Táblázat beállítva."
 
@@ -2720,7 +2677,6 @@ msgstr "A táblázat nem ellenőrizhető: nincs beállítva Google szolgáltatá
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1180
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1246
-#, fuzzy
 msgid "You don't have permission to manage Google Sheets for this project"
 msgstr "Nincs jogosultságod a projekthez tartozó Google Táblázat kezeléséhez"
 
@@ -3305,7 +3261,6 @@ msgid "All statuses"
 msgstr "Minden állapot"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:797
-#, fuzzy
 msgid "An error occurred while loading project respondents"
 msgstr "Hiba történt a projekt jelentkezőinek betöltése közben"
 
@@ -3582,7 +3537,6 @@ msgid "Question unlinked from its target"
 msgstr "A kérdés leválasztva a kiválasztási szempontról"
 
 #: src/opendlp/entrypoints/blueprints/targets.py:167
-#, fuzzy
 msgid "An error occurred while loading project targets"
 msgstr "Hiba történt a projekt célszámainak betöltése közben"
 
@@ -3640,17 +3594,14 @@ msgid "An unexpected error occurred while checking targets"
 msgstr "Váratlan hiba történt a célszámok ellenőrzése közben"
 
 #: src/opendlp/entrypoints/blueprints/targets.py:535
-#, fuzzy
 msgid "That suggestion is no longer available. The targets have been re-checked."
 msgstr "Ez a javaslat már nem érhető el. A célszámok újraellenőrizve."
 
 #: src/opendlp/entrypoints/blueprints/targets.py:541
-#, fuzzy
 msgid "Recommended changes applied."
 msgstr "A javasolt módosítások alkalmazva."
 
 #: src/opendlp/entrypoints/blueprints/targets.py:552
-#, fuzzy
 msgid "An unexpected error occurred while applying the recommended changes"
 msgstr "Váratlan hiba történt a javasolt módosítások alkalmazása közben"
 
@@ -3754,7 +3705,7 @@ msgid "This task was cancelled or failed before it started"
 msgstr "Ez a feladat még az indulása előtt megszakadt vagy meghiúsult"
 
 #: src/opendlp/entrypoints/celery/tasks.py:226
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Another task was already writing to this project when this one started: "
 "%(task)s"
@@ -4038,7 +3989,7 @@ msgid "Field '%(key)s' is not a derived field"
 msgstr "\"%(key)s\" mező nem származtatott mező"
 
 #: src/opendlp/service_layer/derivation_service.py:143
-#, fuzzy, python-format
+#, python-format
 msgid "Source field '%(key)s' does not exist in this project"
 msgstr "\"%(key)s\" forrásmező nem létezik ebben a projektben"
 
@@ -4072,7 +4023,7 @@ msgstr "A mezőkulcs nem lehet üres"
 
 #: src/opendlp/service_layer/derivation_service.py:376
 #: src/opendlp/service_layer/respondent_field_schema_service.py:289
-#, fuzzy, python-format
+#, python-format
 msgid "Field '%(key)s' already exists in this project"
 msgstr "'%(key)s' mező már létezik ebben a projektben"
 
@@ -4128,7 +4079,6 @@ msgstr ""
 "jelentkezők, akik üresen hagyják, nem kapják meg az automatikus választ."
 
 #: src/opendlp/service_layer/email_template_service.py:91
-#, fuzzy
 msgid ""
 "Replies to the auto-reply will go to the address it is sent from, which "
 "may not be monitored. Set where replies go so they reach your team."
@@ -4138,7 +4088,7 @@ msgstr ""
 "menjenek a válaszok, hogy eljussanak a csapatodhoz."
 
 #: src/opendlp/service_layer/email_template_service.py:102
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "The auto-reply still has text in square brackets for you to replace: "
 "%(placeholders)s."
@@ -4147,7 +4097,6 @@ msgstr ""
 " ki kell cserélned: %(placeholders)s."
 
 #: src/opendlp/service_layer/email_template_service.py:112
-#, fuzzy
 msgid ""
 "The auto-reply shows the first event date, but the project does not have "
 "one yet, so it will be blank. Set it in the project's details."
@@ -4157,7 +4106,7 @@ msgstr ""
 "adatainál."
 
 #: src/opendlp/service_layer/email_template_service.py:150
-#, fuzzy, python-format
+#, python-format
 msgid "The email body must be at most %(max_bytes)s bytes"
 msgstr "Az e-mail törzse legfeljebb %(max_bytes)s bájt lehet"
 
@@ -4311,7 +4260,6 @@ msgid "You cannot disable your own account"
 msgstr "A saját fiókodat nem tilthatod le"
 
 #: src/opendlp/service_layer/exceptions.py:338
-#, fuzzy
 msgid ""
 "A project must keep at least one Project Manager. Add another one before "
 "removing this one."
@@ -4361,7 +4309,7 @@ msgstr "A regisztrációs oldal nevét meg kell adni"
 
 #: src/opendlp/service_layer/registration_page_service.py:242
 #: src/opendlp/service_layer/registration_page_service.py:618
-#, fuzzy, python-format
+#, python-format
 msgid "This project already has a registration page named '%(name)s'"
 msgstr "Ennek a projektnek már van '%(name)s' nevű regisztrációs oldala"
 
@@ -4386,7 +4334,6 @@ msgid "thank-you HTML"
 msgstr "köszönőoldal HTML"
 
 #: src/opendlp/service_layer/registration_page_service.py:687
-#, fuzzy
 msgid "The thank-you page already has HTML, so it was left as it is"
 msgstr "A köszönőoldal már tartalmaz HTML-t, ezért változatlan maradt"
 
@@ -4675,7 +4622,6 @@ msgid "%(name)s (previous)"
 msgstr "%(name)s (korábbi)"
 
 #: src/opendlp/service_layer/selection_report.py:194
-#, fuzzy
 msgid "Project"
 msgstr "Projekt"
 
@@ -4721,7 +4667,6 @@ msgstr "regisztráció"
 
 #: src/opendlp/service_layer/sortition.py:158
 #: src/opendlp/service_layer/sortition.py:511
-#, fuzzy
 msgid ""
 "The project needs to have a non-zero number to select before a selection "
 "can run"
@@ -4973,7 +4918,7 @@ msgstr "\"%(key)s\" mező nem táplálhat ilyen típusú számítást"
 
 #: src/opendlp/service_layer/target_source_service.py:292
 #: src/opendlp/service_layer/target_source_service.py:347
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Field '%(key)s' already exists in this project — choose it instead of "
 "creating a new one"
@@ -5032,13 +4977,13 @@ msgstr ""
 
 #: src/opendlp/service_layer/target_suggestions.py:21
 #: templates/backoffice/targets/value_suggestions.html:25
-#, fuzzy, python-format
+#, python-format
 msgid "Accepted algorithm suggestion — minimum %(current)s → %(suggested)s"
 msgstr "Elfogadott algoritmusjavaslat – minimum %(current)s → %(suggested)s"
 
 #: src/opendlp/service_layer/target_suggestions.py:26
 #: templates/backoffice/targets/value_suggestions.html:27
-#, fuzzy, python-format
+#, python-format
 msgid "Accepted algorithm suggestion — maximum %(current)s → %(suggested)s"
 msgstr "Elfogadott algoritmusjavaslat – maximum %(current)s → %(suggested)s"
 
@@ -5075,7 +5020,7 @@ msgstr ""
 "használnak ilyet)"
 
 #: src/opendlp/service_layer/writing_guard.py:29
-#, fuzzy, python-format
+#, python-format
 msgid "Another task is already writing to this project: %(task)s"
 msgstr "Ebbe a projektbe már ír egy másik feladat: %(task)s"
 
@@ -5105,7 +5050,6 @@ msgstr "Menü bezárása"
 #: templates/base.html:57 templates/errors/400.html:25
 #: templates/errors/403.html:23 templates/errors/404.html:24
 #: templates/errors/413.html:20 templates/errors/500.html:24
-#, fuzzy
 msgid "Your projects"
 msgstr "Projektjeid"
 
@@ -5248,7 +5192,6 @@ msgstr "Meghívók kezelése"
 #: templates/backoffice/respondent_field_schema/view.html:17
 #: templates/backoffice/target_sources/view.html:16
 #: templates/profile/view.html:206
-#, fuzzy
 msgid "Back to Your projects"
 msgstr "Vissza a projektjeidhez"
 
@@ -6140,7 +6083,6 @@ msgstr ""
 "módosításához távolítsd el a beállítást."
 
 #: templates/backoffice/assembly_data.html:46
-#, fuzzy
 msgid "Choose how you want to import respondent data for this project."
 msgstr "Válaszd ki, hogyan szeretnéd importálni a projekt jelentkezői adatait."
 
@@ -6174,7 +6116,6 @@ msgid "Remove"
 msgstr "Eltávolítás"
 
 #: templates/backoffice/assembly_data.html:85
-#, fuzzy
 msgid ""
 "Configure a Google Sheets spreadsheet to import and manage respondent "
 "data for this project."
@@ -6448,7 +6389,6 @@ msgid "Selection Settings"
 msgstr "Kiválasztási beállítások"
 
 #: templates/backoffice/assembly_data.html:464
-#, fuzzy
 msgid "Configure how the selection algorithm runs for this project."
 msgstr "Állítsd be, hogyan fusson a kiválasztási algoritmus ennél a projektnél."
 
@@ -6536,7 +6476,6 @@ msgid "A shorter URL for QR codes and paper invitations"
 msgstr "Rövidebb URL QR-kódokhoz és nyomtatott meghívókhoz"
 
 #: templates/backoffice/assembly_details.html:140
-#, fuzzy
 msgid "No registration page has been created for this project."
 msgstr "Ehhez a projekthez nem készült regisztrációs oldal."
 
@@ -6554,7 +6493,6 @@ msgstr ""
 #: templates/backoffice/assembly_details.html:155
 #: templates/backoffice/edit_assembly.html:8
 #: templates/backoffice/edit_assembly.html:12
-#, fuzzy
 msgid "Edit project"
 msgstr "Projekt szerkesztése"
 
@@ -6567,7 +6505,6 @@ msgid "Back to respondent"
 msgstr "Vissza a jelentkezőhöz"
 
 #: templates/backoffice/assembly_edit_respondent.html:31
-#, fuzzy
 msgid "This project has no respondent fields configured yet."
 msgstr "Ehhez a projekthez még nincsenek beállítva jelentkezői mezők."
 
@@ -6612,7 +6549,7 @@ msgid "Team Members"
 msgstr "Csapattagok"
 
 #: templates/backoffice/assembly_members.html:77
-#, fuzzy, python-format
+#, python-format
 msgid "Are you sure you want to remove %(user)s from this project?"
 msgstr "Biztosan eltávolítod %(user)s felhasználót ebből a projektből?"
 
@@ -6621,18 +6558,15 @@ msgid "Last manager"
 msgstr "Utolsó gyűlésszervező"
 
 #: templates/backoffice/assembly_members.html:100
-#, fuzzy
 msgid "No team members have been added to this project yet."
 msgstr "Ehhez a projekthez még nem adtak hozzá csapattagokat."
 
 #: templates/backoffice/assembly_members.html:101
-#, fuzzy
 msgid "Admin users can still manage this project."
 msgstr "Az adminisztrátorok továbbra is kezelhetik ezt a projektet."
 
 #: templates/backoffice/assembly_members.html:109
 #: templates/backoffice/assembly_members.html:144
-#, fuzzy
 msgid "Add user to project"
 msgstr "Felhasználó hozzáadása a projekthez"
 
@@ -6702,7 +6636,6 @@ msgstr "Űrlap"
 
 #: templates/backoffice/assembly_registration.html:132
 #: templates/backoffice/registration/_step_thank_you.html:36
-#, fuzzy
 msgid "Thank-you page"
 msgstr "Köszönőoldal"
 
@@ -6728,7 +6661,6 @@ msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek át."
 
 #: templates/backoffice/assembly_registration.html:153
-#, fuzzy
 msgid "Go to Preview and publish to re-open it."
 msgstr "Az újranyitáshoz lépj az „Előnézet és közzététel” lépésre."
 
@@ -7021,7 +6953,6 @@ msgstr ""
 "érintett célszámok mellett találod."
 
 #: templates/backoffice/assembly_targets.html:173
-#, fuzzy
 msgid ""
 "The algorithm has recommended target changes. Accept them individually "
 "below, or all at once here."
@@ -7031,17 +6962,14 @@ msgstr ""
 
 #: templates/backoffice/assembly_targets.html:176
 #: templates/backoffice/assembly_targets.html:187
-#, fuzzy
 msgid "Accept all suggestions"
 msgstr "Minden javaslat elfogadása"
 
 #: templates/backoffice/assembly_targets.html:196
-#, fuzzy
 msgid "Accept all and re-run test selection"
 msgstr "Minden elfogadása és a tesztkiválasztás újrafuttatása"
 
 #: templates/backoffice/assembly_targets.html:196
-#, fuzzy
 msgid "Accept all and re-run selection"
 msgstr "Minden elfogadása és a kiválasztás újrafuttatása"
 
@@ -7051,12 +6979,10 @@ msgid "Discard changes"
 msgstr "Módosítások elvetése"
 
 #: templates/backoffice/assembly_targets.html:241
-#, fuzzy
 msgid "Save and re-run test selection"
 msgstr "Mentés és a tesztkiválasztás újrafuttatása"
 
 #: templates/backoffice/assembly_targets.html:241
-#, fuzzy
 msgid "Save and re-run selection"
 msgstr "Mentés és a kiválasztás újrafuttatása"
 
@@ -7217,12 +7143,10 @@ msgstr "Váltás az oldal adminisztrációra"
 #: templates/backoffice/create_assembly.html:12
 #: templates/backoffice/create_assembly.html:19
 #: templates/backoffice/dashboard.html:15
-#, fuzzy
 msgid "Create project"
 msgstr "Projekt létrehozása"
 
 #: templates/backoffice/create_assembly.html:14
-#, fuzzy
 msgid "Set up a new project."
 msgstr "Hozz létre egy új projektet."
 
@@ -7242,22 +7166,18 @@ msgid "Starts: %(date)s"
 msgstr "Kezdés: %(date)s"
 
 #: templates/backoffice/dashboard.html:42
-#, fuzzy
 msgid "No projects yet"
 msgstr "Még nincsenek projektek"
 
 #: templates/backoffice/dashboard.html:44
-#, fuzzy
 msgid "Create your first project to get started."
 msgstr "Hozd létre az első projektedet a kezdéshez."
 
 #: templates/backoffice/dashboard.html:45
-#, fuzzy
 msgid "Create your first project"
 msgstr "Első projekt létrehozása"
 
 #: templates/backoffice/dashboard.html:47
-#, fuzzy
 msgid ""
 "You have not been added to any projects yet — ask a Project Manager to "
 "add you."
@@ -7287,7 +7207,6 @@ msgid "Available when a Google service account is configured."
 msgstr "Akkor érhető el, ha be van állítva Google szolgáltatásfiók."
 
 #: templates/backoffice/edit_assembly.html:14
-#, fuzzy
 msgid "Update the details for this project."
 msgstr "Frissítsd a projekt adatait."
 
@@ -7384,7 +7303,6 @@ msgid "Select and Replace"
 msgstr "Kiválasztás és pótlás"
 
 #: templates/backoffice/components/assembly_tabs.html:87
-#, fuzzy
 msgid "Project sections"
 msgstr "A projekt szakaszai"
 
@@ -7730,7 +7648,6 @@ msgid "Put Task in Background"
 msgstr "Feladat háttérbe helyezése"
 
 #: templates/backoffice/components/db_selection_progress_modal.html:197
-#, fuzzy
 msgid "Adjust targets"
 msgstr "Célszámok módosítása"
 
@@ -8182,17 +8099,14 @@ msgid "Strikethrough"
 msgstr "Áthúzott"
 
 #: templates/backoffice/components/rich_editor.html:102
-#, fuzzy
 msgid "Align left"
 msgstr "Balra igazítás"
 
 #: templates/backoffice/components/rich_editor.html:103
-#, fuzzy
 msgid "Align centre"
 msgstr "Középre igazítás"
 
 #: templates/backoffice/components/rich_editor.html:104
-#, fuzzy
 msgid "Align right"
 msgstr "Jobbra igazítás"
 
@@ -8376,7 +8290,6 @@ msgid "has errors"
 msgstr "hibás"
 
 #: templates/backoffice/components/suggestion_row.html:56
-#, fuzzy
 msgid "Comment saved with this change"
 msgstr "A módosítással együtt mentett megjegyzés"
 
@@ -8388,7 +8301,6 @@ msgid "Suggestion"
 msgstr "Javaslat"
 
 #: templates/backoffice/components/suggestion_row.html:109
-#, fuzzy
 msgid "Accepted. Save to keep the change."
 msgstr "Elfogadva. A módosítás megtartásához mentsd el."
 
@@ -8512,7 +8424,6 @@ msgid "Form Skeleton"
 msgstr "Űrlapsablon"
 
 #: templates/backoffice/registration/_modals.html:16
-#, fuzzy
 msgid ""
 "This skeleton is generated from your project's field definitions. Use it "
 "as the form, then edit to add extra HTML as required."
@@ -8693,7 +8604,6 @@ msgid "Close registration?"
 msgstr "Lezárod a regisztrációt?"
 
 #: templates/backoffice/registration/_modals.html:231
-#, fuzzy
 msgid ""
 "This stops new registrations. Visitors who follow the form link will see "
 "the 'registration closed' page until you re-open it from Preview and "
@@ -8883,7 +8793,6 @@ msgid "Heads up"
 msgstr "Figyelem"
 
 #: templates/backoffice/registration/_step_email.html:40
-#, fuzzy
 msgid ""
 "Automatically send a confirmation email to people after they register. "
 "Templates support variables like the respondent's first name and the "
@@ -8933,17 +8842,14 @@ msgid "Send auto-reply email"
 msgstr "Automatikus válasz e-mail küldése"
 
 #: templates/backoffice/registration/_step_email.html:104
-#, fuzzy
 msgid "Reply-to"
 msgstr "Válaszcím"
 
 #: templates/backoffice/registration/_step_email.html:106
-#, fuzzy
 msgid "When someone replies to the auto-reply, their email goes here."
 msgstr "Ha valaki válaszol az automatikus válaszra, az e-mailje ide érkezik."
 
 #: templates/backoffice/registration/_step_email.html:111
-#, fuzzy
 msgid "Also shown as who the email is from."
 msgstr "Ez jelenik meg az e-mail feladójaként is."
 
@@ -8952,7 +8858,6 @@ msgid "Email subject"
 msgstr "E-mail tárgya"
 
 #: templates/backoffice/registration/_step_email.html:126
-#, fuzzy
 msgid "Dynamic fields allowed, e.g. {{ project.title }}."
 msgstr "Dinamikus mezők használhatók, például: {{ project.title }}."
 
@@ -8982,12 +8887,10 @@ msgstr ""
 "vagy a törzsbe. A hiányzó értékek üres szövegként jelennek meg."
 
 #: templates/backoffice/registration/_step_email.html:166
-#, fuzzy
 msgid "First event date (ISO)"
 msgstr "Az első esemény időpontja (ISO)"
 
 #: templates/backoffice/registration/_step_email.html:167
-#, fuzzy
 msgid "First event date, written out in the reader's language"
 msgstr "Az első esemény időpontja, az olvasó nyelvén kiírva"
 
@@ -9021,7 +8924,6 @@ msgid "Send a test email"
 msgstr "Teszt e-mail küldése"
 
 #: templates/backoffice/registration/_step_email.html:225
-#, fuzzy
 msgid ""
 "Check how the auto-reply looks in a real inbox. The email is filled in "
 "with sample respondent data and this project's real details, then sent to"
@@ -9251,68 +9153,57 @@ msgid "Unpublish"
 msgstr "Közzététel visszavonása"
 
 #: templates/backoffice/registration/_step_preview.html:130
-#, fuzzy
 msgid "Re-open registration"
 msgstr "Regisztráció újranyitása"
 
 #: templates/backoffice/registration/_step_thank_you.html:48
-#, fuzzy
 msgid "Choose what respondents see after they send the form."
 msgstr "Válaszd ki, mit lássanak a jelentkezők az űrlap elküldése után."
 
 #: templates/backoffice/registration/_step_thank_you.html:51
-#, fuzzy
 msgid "Which thank-you page to show"
 msgstr "Melyik köszönőoldal jelenjen meg"
 
 #: templates/backoffice/registration/_step_thank_you.html:52
-#, fuzzy
 msgid "Standard thank-you page"
 msgstr "Alapértelmezett köszönőoldal"
 
 #: templates/backoffice/registration/_step_thank_you.html:52
-#, fuzzy
 msgid "Your own thank-you page"
 msgstr "Saját köszönőoldal"
 
 #: templates/backoffice/registration/_step_thank_you.html:54
-#, fuzzy
 msgid "A short thank-you, in the language the respondent is viewing the page in."
 msgstr "Rövid köszönet azon a nyelven, amelyen a jelentkező az oldalt nézi."
 
 #: templates/backoffice/registration/_step_thank_you.html:61
-#, fuzzy
 msgid "Fill with starter content"
 msgstr "Kitöltés kezdő tartalommal"
 
 #: templates/backoffice/registration/_step_thank_you.html:72
-#, fuzzy, python-format
+#, python-format
 msgid "Style: %(style)s, the same as the intro."
 msgstr "Stílus: %(style)s, ugyanaz, mint a bevezetőé."
 
 #: templates/backoffice/registration/_step_thank_you.html:76
-#, fuzzy
 msgid "Change it on the Intro step"
 msgstr "Módosítás a Bevezető lépésnél"
 
 #: templates/backoffice/registration/_step_thank_you.html:83
 #: templates/backoffice/registration/_step_thank_you.html:88
-#, fuzzy
 msgid "Content of your thank-you page"
 msgstr "A köszönőoldalad tartalma"
 
 #: templates/backoffice/registration/_step_thank_you.html:105
-#, fuzzy
 msgid "your thank-you page"
 msgstr "a saját köszönőoldaladat"
 
 #: templates/backoffice/registration/_step_thank_you.html:112
-#, fuzzy
 msgid "standard thank-you page"
 msgstr "az alapértelmezett köszönőoldalt"
 
 #: templates/backoffice/registration/_step_thank_you.html:115
-#, fuzzy, python-format
+#, python-format
 msgid "View %(own_link)s or the %(standard_link)s (opens in a new tab)."
 msgstr "Nézd meg %(own_link)s vagy %(standard_link)s (új lapon nyílnak meg)."
 
@@ -9532,7 +9423,6 @@ msgid "Fields are defined by your Google Sheets spreadsheet"
 msgstr "A mezőket a Google Táblázatod határozza meg"
 
 #: templates/backoffice/respondent_field_schema/view.html:40
-#, fuzzy
 msgid ""
 "The fields for this project are the columns in the respondent tabs of "
 "your Google Sheets spreadsheet. Edit the spreadsheet to add, remove, or "
@@ -9543,7 +9433,6 @@ msgstr ""
 "szerkeszd a táblázatot."
 
 #: templates/backoffice/respondent_field_schema/view.html:65
-#, fuzzy
 msgid ""
 "No schema has been set up for this project yet. Upload a CSV of "
 "respondents to seed one automatically from the CSV headers, or click "
@@ -9639,7 +9528,6 @@ msgid "Destructive action"
 msgstr "Visszafordíthatatlan művelet"
 
 #: templates/backoffice/respondents/confirm_upload_diff.html:92
-#, fuzzy
 msgid ""
 "Confirming will replace all existing respondents for this project with "
 "the contents of the new CSV. This cannot be undone."
@@ -9678,7 +9566,6 @@ msgstr ""
 "minden adat elvész, ezért a jegyzeteket egy másik munkalapon tartsd."
 
 #: templates/backoffice/target_sources/_checklist.html:14
-#, fuzzy
 msgid ""
 "No targets have been set up for this project yet. Add your targets first "
 "— each one then gets a row here to say where its data comes from."
@@ -9904,7 +9791,6 @@ msgstr ""
 "forrás."
 
 #: templates/backoffice/target_sources/_setup_modal.html:177
-#, fuzzy
 msgid ""
 "Usually the first event date. Ages are worked out on this one date, so "
 "they don't change while registration is open."
@@ -10660,17 +10546,14 @@ msgstr ""
 "href=\"mailto:%(email)s\">%(email)s</a>"
 
 #: templates/emails/assembly_role_assigned.html:6
-#, fuzzy
 msgid "Added to project - OpenDLP"
 msgstr "Hozzáadtak egy projekthez – OpenDLP"
 
 #: templates/emails/assembly_role_assigned.html:72
-#, fuzzy
 msgid "You've been added to a project"
 msgstr "Hozzáadtak egy projekthez"
 
 #: templates/emails/assembly_role_assigned.html:83
-#, fuzzy
 msgid "Project:"
 msgstr "Projekt:"
 
@@ -10679,27 +10562,22 @@ msgid "Your role:"
 msgstr "Az Ön szerepköre:"
 
 #: templates/emails/assembly_role_assigned.html:90
-#, fuzzy
 msgid "Framing question:"
 msgstr "A projekt témája:"
 
 #: templates/emails/assembly_role_assigned.html:94
-#, fuzzy
 msgid "You now have access to this project and can collaborate with your team."
 msgstr "Mostantól hozzáfér ehhez a projekthez, és együtt dolgozhat a csapatával."
 
 #: templates/emails/assembly_role_assigned.html:96
-#, fuzzy
 msgid "View project"
 msgstr "Projekt megtekintése"
 
 #: templates/emails/assembly_role_assigned.html:103
-#, fuzzy
 msgid "Project Manager permissions:"
 msgstr "Projektvezetői jogosultságok:"
 
 #: templates/emails/assembly_role_assigned.html:105
-#, fuzzy
 msgid ""
 "As a Project Manager, you can change the project's settings, add other "
 "team members, and run every part of the project."
@@ -10724,7 +10602,6 @@ msgid "Read Only Permissions:"
 msgstr "Megtekintői jogosultságok:"
 
 #: templates/emails/assembly_role_assigned.html:123
-#, fuzzy
 msgid "As a Read Only member, you can view the project but cannot make changes."
 msgstr "Megtekintőként megtekintheti a projektet, de nem módosíthat."
 
@@ -10883,7 +10760,6 @@ msgstr ""
 "közösségi gyűléshez."
 
 #: templates/errors/403.html:33
-#, fuzzy
 msgid "If you believe this is an error, please contact an administrator."
 msgstr "Ha úgy gondolod, hogy ez hiba, lépj kapcsolatba egy adminisztrátorral."
 
