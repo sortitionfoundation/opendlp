@@ -10,6 +10,7 @@ from flask.testing import FlaskClient
 PUBLIC_AUTH_PAGES = [
     "/auth/login",
     "/auth/forgot-password",
+    "/auth/resend-confirmation",
 ]
 
 

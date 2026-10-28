@@ -1,0 +1,21 @@
+{#
+ABOUTME: Public email confirmation landing page on the OpenDLP design system
+ABOUTME: Shows a confirmation button so that GET requests from email scanners do not auto-confirm accounts
+#}
+{% extends "public/base.html" %}
+{% from "backoffice/components/button.html" import button %}
+{% from "public/_page_heading.html" import page_heading %}
+{% block title %}{{ _("Confirm your email") }}{% endblock %}
+{% block content %}
+    <div class="flex flex-col gap-10">
+        {% call page_heading(_("Confirm your email")) %}
+            <p class="text-body-md" style="color: var(--color-body-text);">
+                {{ _("Click the button below to confirm your email address and activate your account.") }}
+            </p>
+        {% endcall %}
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            {{ button(_("Confirm email address"), variant="primary", type="submit", full_width=true) }}
+        </form>
+    </div>
+{% endblock %}

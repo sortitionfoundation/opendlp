@@ -524,7 +524,7 @@ def confirm_email(token: str) -> ResponseReturnValue:
         if request.method == "GET":
             try:
                 validate_confirmation_token(uow, token)
-                return render_template("auth/confirm_email.html", token=token)
+                return render_template("public/confirm_email.html", token=token)
             except InvalidConfirmationToken as e:
                 flash(str(e), "error")
                 return redirect(url_for("auth.login"))
@@ -579,7 +579,7 @@ def resend_confirmation() -> ResponseReturnValue:
             logger.exception("Resend confirmation error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
 
-    return render_template("auth/resend_confirmation.html", form=form)
+    return render_template("public/resend_confirmation.html", form=form)
 
 
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
