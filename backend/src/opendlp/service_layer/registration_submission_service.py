@@ -341,7 +341,7 @@ def submit_registration_by_assembly_id(
             respondent=None,
             values=submitted_values,
             field_errors={},
-            form_errors=["Assembly not found"],
+            form_errors=["Project not found"],
             is_test=is_test,
         )
 

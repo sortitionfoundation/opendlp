@@ -50,7 +50,7 @@ MINIMAL_FORM_HTML = """
 </form>
 """
 
-AUTO_REPLY_SUBJECT = "Thanks for registering for {{ assembly.title }}"
+AUTO_REPLY_SUBJECT = "Thanks for registering for {{ project.title }}"
 AUTO_REPLY_BODY = "<p>Hi {{ respondent.first_name_or_friend }}, we got your registration for {{ assembly.title }}.</p>"
 
 

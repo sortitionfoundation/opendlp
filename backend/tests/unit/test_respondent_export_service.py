@@ -246,7 +246,7 @@ class TestBuildRespondentTable:
 
         assert table.headers[-1] == "view_url"
         assert table.rows[0][-1] == (
-            f"https://opendlp.example.org/backoffice/assembly/{respondent.assembly_id}/respondents/{respondent.id}"
+            f"https://opendlp.example.org/backoffice/project/{respondent.assembly_id}/respondents/{respondent.id}"
         )
 
     def test_view_url_is_blank_without_an_application_url(self):
@@ -265,7 +265,7 @@ class TestRespondentViewUrl:
 
         url = respondent_view_url("https://opendlp.example.org", assembly_id, respondent_id)
 
-        assert url == f"https://opendlp.example.org/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+        assert url == f"https://opendlp.example.org/backoffice/project/{assembly_id}/respondents/{respondent_id}"
 
     def test_empty_application_url_gives_empty_string(self):
         assert respondent_view_url("", uuid.uuid4(), uuid.uuid4()) == ""

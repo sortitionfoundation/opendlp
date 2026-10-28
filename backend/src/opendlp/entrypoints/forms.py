@@ -335,28 +335,28 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Assembly creation and editing form."""
 
     title = StringField(
-        _l("Assembly Title"),
+        _l("Project title"),
         validators=[DataRequired(), Length(min=3, max=200)],
-        description=_l("Enter the title for this assembly"),
+        description=_l("Enter the title for this project"),
     )
 
     question = TextAreaField(
-        _l("Assembly Question"),
+        _l("Framing question"),
         validators=[Optional(), Length(max=1000)],
-        description=_l("Optional — the key question this assembly will address"),
+        description=_l("Optional — the question the event is convened to answer"),
         render_kw={"rows": 3},
     )
 
     first_assembly_date = DateField(
-        _l("First Assembly Date"),
+        _l("First event date"),
         validators=[Optional()],
-        description=_l("Optional — when the first assembly meeting will take place"),
+        description=_l("Optional — when the event first meets"),
     )
 
     number_to_select = IntegerField(
         _l("Number to Select"),
         validators=[InputRequired(), NonNegativeValidator()],
-        description=_l("The number of participants to select for this assembly"),
+        description=_l("The number of participants to select for this event"),
         default=0,
     )
 
@@ -568,15 +568,15 @@ class AddUserToAssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     user_id = StringField(
         _l("User Email"),
         validators=[DataRequired()],
-        description=_l("Select a user to add to this assembly"),
+        description=_l("Select a user to add to this project"),
     )
 
     role = RadioField(
-        _l("Assembly Role"),
+        _l("Project role"),
         choices=[(k, v) for k, v in assembly_role_options.items()],
         coerce=coerce_for_enum(AssemblyRole),
         validators=[DataRequired()],
-        description=_l("Select the role this user will have on the assembly"),
+        description=_l("Select the role this user will have on the project"),
         default=AssemblyRole.CONFIRMATION_CALLER.name,
     )
 
@@ -735,7 +735,7 @@ class UploadRespondentsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
     replace_existing = BooleanField(
         _l("Replace all existing respondents"),
         description=_l(
-            "Warning: this will delete all existing respondents for this assembly before importing. "
+            "Warning: this will delete all existing respondents for this project before importing. "
             "Uncheck to add to existing respondents."
         ),
         default=True,

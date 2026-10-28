@@ -140,7 +140,7 @@ def _get_derived_field(
 def _validate_source(source: RespondentFieldDefinition | None, source_field_key: str, rule: DerivationRule) -> None:
     if source is None:
         raise FieldDefinitionConflictError(
-            _l("Source field '%(key)s' does not exist in this assembly", key=source_field_key)
+            _l("Source field '%(key)s' does not exist in this project", key=source_field_key)
         )
     if source.is_derived:
         raise FieldDefinitionConflictError(
@@ -373,7 +373,7 @@ def create_derived_field(
     if not field_key:
         raise FieldDefinitionConflictError(_l("Field key cannot be empty"))
     if uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, field_key) is not None:
-        raise FieldDefinitionConflictError(_l("Field '%(key)s' already exists in this assembly", key=field_key))
+        raise FieldDefinitionConflictError(_l("Field '%(key)s' already exists in this project", key=field_key))
 
     source = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, source_field_key)
     _validate_source(source, source_field_key, rule)

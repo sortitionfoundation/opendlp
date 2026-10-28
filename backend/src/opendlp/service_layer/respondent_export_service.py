@@ -105,7 +105,7 @@ def respondent_view_url(application_url: str, assembly_id: uuid.UUID, respondent
     """
     if not application_url:
         return ""
-    return f"{application_url}/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+    return f"{application_url}/backoffice/project/{assembly_id}/respondents/{respondent_id}"
 
 
 def build_respondent_table(

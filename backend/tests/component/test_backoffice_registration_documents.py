@@ -99,7 +99,7 @@ class TestDocumentToDict:
 class TestDocumentRoutesRequireLogin:
     def test_upload_redirects_anonymous_to_login(self, client):
         assembly_id = uuid.uuid4()
-        response = client.post(f"/backoffice/assembly/{assembly_id}/registration/documents")
+        response = client.post(f"/backoffice/project/{assembly_id}/registration/documents")
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
@@ -107,7 +107,7 @@ class TestDocumentRoutesRequireLogin:
         assembly_id = uuid.uuid4()
         document_id = uuid.uuid4()
         response = client.patch(
-            f"/backoffice/assembly/{assembly_id}/registration/documents/{document_id}",
+            f"/backoffice/project/{assembly_id}/registration/documents/{document_id}",
             json={"label": "x"},
         )
         assert response.status_code == 302
@@ -116,7 +116,7 @@ class TestDocumentRoutesRequireLogin:
     def test_delete_redirects_anonymous_to_login(self, client):
         assembly_id = uuid.uuid4()
         document_id = uuid.uuid4()
-        response = client.delete(f"/backoffice/assembly/{assembly_id}/registration/documents/{document_id}")
+        response = client.delete(f"/backoffice/project/{assembly_id}/registration/documents/{document_id}")
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
@@ -126,7 +126,7 @@ class TestUploadRoute:
         self, logged_in_admin, fake_store, existing_assembly, registration_page
     ):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={
                 "document": (BytesIO(_pdf()), "info-pack.pdf"),
                 "label": "Assembly info pack",
@@ -150,7 +150,7 @@ class TestUploadRoute:
         self, logged_in_admin, fake_store, existing_assembly, registration_page
     ):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
@@ -165,7 +165,7 @@ class TestUploadRoute:
 
     def test_upload_rejects_non_pdf_bytes(self, logged_in_admin, existing_assembly, registration_page):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(b"not a pdf"), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
@@ -174,7 +174,7 @@ class TestUploadRoute:
 
     def test_upload_rejects_missing_file(self, logged_in_admin, existing_assembly, registration_page):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"label": "Info pack"},
             content_type="multipart/form-data",
         )
@@ -194,7 +194,7 @@ class TestUploadErrorBranches:
         # __getattr__), so create one — instance lookup finds it before __getattr__.
         monkeypatch.setattr(FileStorage, "read", _read, raising=False)
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
@@ -209,7 +209,7 @@ class TestUploadErrorBranches:
             lambda: 0,
         )
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
@@ -219,7 +219,7 @@ class TestUploadErrorBranches:
     def test_upload_without_registration_page_succeeds(self, logged_in_admin, existing_assembly):
         """Assets belong to the assembly, so they can be uploaded before any page exists."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
@@ -227,7 +227,7 @@ class TestUploadErrorBranches:
 
     def test_upload_forbidden_for_regular_user_returns_403(self, logged_in_user, existing_assembly, registration_page):
         response = logged_in_user.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
@@ -235,7 +235,7 @@ class TestUploadErrorBranches:
 
     def test_upload_unknown_assembly_returns_404(self, logged_in_admin):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{uuid.uuid4()}/registration/documents",
+            f"/backoffice/project/{uuid.uuid4()}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
@@ -249,7 +249,7 @@ class TestUploadErrorBranches:
 
         monkeypatch.setattr("opendlp.entrypoints.blueprints.backoffice_registration.add_registration_document", _raise)
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
@@ -263,7 +263,7 @@ class TestPatchRoute:
         document = _seed_document(fake_store, registration_page, label="Original")
 
         response = logged_in_admin.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{document.id}",
             json={"label": "Renamed"},
         )
 
@@ -279,7 +279,7 @@ class TestPatchRoute:
         document = _seed_document(fake_store, registration_page, label="Original")
 
         response = logged_in_admin.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{document.id}",
             json={"label": "  "},
         )
         assert response.status_code == 400
@@ -289,7 +289,7 @@ class TestPatchRoute:
 
     def test_patch_unknown_document_returns_404(self, logged_in_admin, existing_assembly, registration_page):
         response = logged_in_admin.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
             json={"label": "Renamed"},
         )
         assert response.status_code == 404
@@ -300,7 +300,7 @@ class TestPatchRoute:
     ):
         document = _seed_document(fake_store, registration_page, label="Original")
         response = logged_in_user.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{document.id}",
             json={"label": "Renamed"},
         )
         assert response.status_code == 403
@@ -310,7 +310,7 @@ class TestPatchRoute:
 
     def test_patch_unknown_assembly_returns_404(self, logged_in_admin):
         response = logged_in_admin.patch(
-            f"/backoffice/assembly/{uuid.uuid4()}/registration/documents/{uuid.uuid4()}",
+            f"/backoffice/project/{uuid.uuid4()}/registration/documents/{uuid.uuid4()}",
             json={"label": "Renamed"},
         )
         assert response.status_code == 404
@@ -327,7 +327,7 @@ class TestPatchRoute:
             "opendlp.entrypoints.blueprints.backoffice_registration.set_registration_document_label", _raise
         )
         response = logged_in_admin.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{document.id}",
             json={"label": "Renamed"},
         )
         assert response.status_code == 500
@@ -340,7 +340,7 @@ class TestDeleteRoute:
         document = _seed_document(fake_store, registration_page)
 
         response = logged_in_admin.delete(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{document.id}",
         )
 
         assert response.status_code == 204
@@ -349,7 +349,7 @@ class TestDeleteRoute:
 
     def test_delete_unknown_document_returns_404(self, logged_in_admin, existing_assembly, registration_page):
         response = logged_in_admin.delete(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
         )
         assert response.status_code == 404
 
@@ -358,14 +358,14 @@ class TestDeleteRoute:
     ):
         document = _seed_document(fake_store, registration_page)
         response = logged_in_user.delete(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{document.id}",
         )
         assert response.status_code == 403
         assert len(_stored_documents(fake_store, registration_page)) == 1
 
     def test_delete_unknown_assembly_returns_404(self, logged_in_admin):
         response = logged_in_admin.delete(
-            f"/backoffice/assembly/{uuid.uuid4()}/registration/documents/{uuid.uuid4()}",
+            f"/backoffice/project/{uuid.uuid4()}/registration/documents/{uuid.uuid4()}",
         )
         assert response.status_code == 404
 
@@ -381,6 +381,6 @@ class TestDeleteRoute:
             "opendlp.entrypoints.blueprints.backoffice_registration.delete_registration_document", _raise
         )
         response = logged_in_admin.delete(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents/{document.id}",
         )
         assert response.status_code == 500

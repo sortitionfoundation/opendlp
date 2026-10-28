@@ -432,7 +432,7 @@ def _page_slug(assembly_id, test_database) -> str:
 def visit_registration_tab(page: Page, title: str, test_database):
     """Open the registration tab — the list of the assembly's registration pages."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration")
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/registration")
 
 
 @then("I should see the registration page list")
@@ -504,7 +504,7 @@ def visit_registration_form_editor(page: Page, title: str, test_database):
     """Open the registration form step in edit mode."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=form&edit=1")
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}?section=form&edit=1")
 
 
 @when(parsers.parse('I visit the registration intro editor for "{title}"'))
@@ -512,7 +512,7 @@ def visit_registration_intro_editor(page: Page, title: str, test_database):
     """Open the registration intro step in edit mode."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=intro&edit=1")
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}?section=intro&edit=1")
 
 
 @when(parsers.parse('I visit the name and URLs step for "{title}"'))
@@ -520,7 +520,7 @@ def visit_name_and_urls_step(page: Page, title: str, test_database):
     """Open the editor's first step, the page name and URLs, read-only."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=page")
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}?section=page")
 
 
 @when("I click Edit on the name and URLs step")
@@ -727,7 +727,7 @@ def visit_registration_preview_step(page: Page, title: str, test_database):
     """Open the preview-and-publish step of the registration wizard."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=preview")
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}?section=preview")
 
 
 @then("I should see the embedded registration form preview")
@@ -778,7 +778,7 @@ def visit_registration_form_view_with_scroll(page: Page, title: str, pos: int, t
     x-preserve-scroll-on-submit / x-scroll-preserve-links append on navigation)."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=form&scroll={pos}")
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}?section=form&scroll={pos}")
 
 
 @then("the page should be scrolled down")
@@ -972,11 +972,11 @@ def redirected_to_login(page: Page):
     expect(page).to_have_url(re.compile(r".*/auth/login.*"), timeout=PLAYWRIGHT_TIMEOUT)
 
 
-@then('I should see "Dashboard"')
-def see_dashboard_text(page: Page):
-    """Verify Dashboard heading is visible."""
+@then('I should see "Your projects"')
+def see_your_projects_heading(page: Page):
+    """Verify the Your projects heading is visible."""
     heading = page.locator("h1")
-    expect(heading).to_contain_text("Dashboard")
+    expect(heading).to_contain_text("Your projects")
 
 
 @then('I should see "Welcome back"')
@@ -1070,7 +1070,7 @@ def visit_assembly_details_page(page: Page, title: str, admin_user, test_databas
 @then("I should see the assembly details page")
 def see_assembly_details_page(page: Page):
     """Verify we're on the assembly details page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*"))
+    expect(page).to_have_url(re.compile(r".*/backoffice/project/.*"))
 
 
 @then(parsers.parse('I should see "{title}" as the page heading'))
@@ -1084,8 +1084,8 @@ def see_page_heading(page: Page, title: str):
 def see_assembly_question_section(page: Page):
     """Verify the assembly question section is visible."""
     # The section() macro renders a div, not a section element
-    # Look for h2 heading containing "Assembly Question"
-    heading = page.locator("h2", has_text="Assembly Question")
+    # Look for h2 heading containing "Framing question"
+    heading = page.locator("h2", has_text="Framing question")
     expect(heading).to_be_visible()
 
 
@@ -1111,7 +1111,7 @@ def see_text_on_page(page: Page, text: str):
 @then(parsers.parse('I should see the "{button_text}" button'))
 def see_button_with_text(page: Page, button_text: str):
     """Verify a button with specific text is visible."""
-    # Use exact match to avoid matching similar text (e.g., "Edit Assembly" vs "Edit assembly to add URLs")
+    # Use exact match to avoid matching similar text (e.g., "Edit project" vs "Edit project to add URLs")
     button = page.get_by_role("link", name=button_text, exact=True).or_(
         page.get_by_role("button", name=button_text, exact=True)
     )
@@ -1124,7 +1124,7 @@ def see_button_with_text(page: Page, button_text: str):
 @when(parsers.parse('I click the "{button_text}" button'))
 def click_button_with_text(page: Page, button_text: str):
     """Click a button with specific text."""
-    # Use exact match to avoid matching similar text (e.g., "Edit Assembly" vs "Edit assembly to add URLs")
+    # Use exact match to avoid matching similar text (e.g., "Edit project" vs "Edit project to add URLs")
     button = page.get_by_role("link", name=button_text, exact=True).or_(
         page.get_by_role("button", name=button_text, exact=True)
     )
@@ -1154,7 +1154,7 @@ def visit_edit_assembly_page(page: Page, title: str, admin_user, test_database):
 @then("I should see the edit assembly page")
 def see_edit_assembly_page(page: Page):
     """Verify we're on the edit assembly page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/edit"))
+    expect(page).to_have_url(re.compile(r".*/backoffice/project/.*/edit"))
 
 
 @then("I should see the title input field")
@@ -1171,9 +1171,9 @@ def see_question_textarea_field(page: Page):
     expect(question_textarea).to_be_visible()
 
 
-@then("I should see the first assembly date field")
-def see_first_assembly_date_field(page: Page):
-    """Verify the first assembly date field is visible."""
+@then("I should see the first event date field")
+def see_first_event_date_field(page: Page):
+    """Verify the first event date field is visible."""
     date_input = page.locator("input[name='first_assembly_date']")
     expect(date_input).to_be_visible()
 
@@ -1218,7 +1218,7 @@ def visit_create_assembly_page(page: Page):
 @then("I should see the create assembly page")
 def see_create_assembly_page(page: Page):
     """Verify we're on the create assembly page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/new"))
+    expect(page).to_have_url(re.compile(r".*/backoffice/project/new"))
 
 
 @when(parsers.parse('I fill in the question with "{question}"'))
@@ -1335,7 +1335,7 @@ def assign_user_to_assembly(email: str, title: str, role: str, admin_user, norma
 @when(parsers.parse('I click the "{tab_name}" tab'))
 def click_tab(page: Page, tab_name: str):
     """Click a tab in the tab navigation."""
-    tab = page.locator("nav[aria-label='Assembly sections'] a", has_text=tab_name)
+    tab = page.locator("nav[aria-label='Project sections'] a", has_text=tab_name)
     tab.click()
     page.wait_for_load_state("networkidle")
 
@@ -1360,7 +1360,7 @@ def type_into_search_dropdown(page: Page, text: str):
 @then("I should see the assembly members page")
 def see_assembly_members_page(page: Page):
     """Verify we're on the assembly members page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/members"))
+    expect(page).to_have_url(re.compile(r".*/backoffice/project/.*/members"))
 
 
 @then(parsers.parse('I should see "{text}" as a section heading'))
@@ -1584,7 +1584,7 @@ def click_gsheet_cancel_link(page: Page):
 @then("I should see the assembly data page")
 def see_assembly_data_page(page: Page):
     """Verify we're on the assembly data page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/data"))
+    expect(page).to_have_url(re.compile(r".*/backoffice/project/.*/data"))
 
 
 @then("I should see the data source selector")
@@ -1688,7 +1688,7 @@ def try_access_assembly_selection_page(page: Page, title: str, test_database):
 @then("I should see the assembly selection page")
 def see_assembly_selection_page(page: Page):
     """Verify we're on the assembly selection page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/assembly/.*/selection"))
+    expect(page).to_have_url(re.compile(r".*/backoffice/project/.*/selection"))
 
 
 # Update Number to Select Tests
@@ -1763,7 +1763,7 @@ def should_be_on_selection_page(page: Page, title: str, test_database):
     """Verify we're on the selection page for the specified assembly."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
-        expect(page).to_have_url(re.compile(rf".*/backoffice/assembly/{assembly_id}/selection"))
+        expect(page).to_have_url(re.compile(rf".*/backoffice/project/{assembly_id}/selection"))
 
 
 @then(parsers.parse('the number to select should be "{number}"'))
@@ -1780,8 +1780,8 @@ def number_to_select_should_be(page: Page, number: str):
 @then(parsers.parse('I should see a "{tab_name}" tab in the assembly navigation'))
 def see_tab_in_navigation(page: Page, tab_name: str):
     """Verify a specific tab is visible in the assembly navigation."""
-    # Use the Assembly sections nav specifically to avoid matching breadcrumbs
-    tab = page.locator("nav[aria-label='Assembly sections'] a, nav[aria-label='Assembly sections'] span").filter(
+    # Use the Project sections nav specifically to avoid matching breadcrumbs
+    tab = page.locator("nav[aria-label='Project sections'] a, nav[aria-label='Project sections'] span").filter(
         has_text=tab_name
     )
     expect(tab).to_be_visible()
@@ -1791,7 +1791,7 @@ def see_tab_in_navigation(page: Page, tab_name: str):
 def tab_should_be_disabled(page: Page, tab_name: str):
     """Verify a specific tab is disabled (shown as span, not a link)."""
     # Disabled tabs are rendered as spans with aria-disabled attribute, not links
-    disabled_tab = page.locator("nav[aria-label='Assembly sections'] span[aria-disabled='true']").filter(
+    disabled_tab = page.locator("nav[aria-label='Project sections'] span[aria-disabled='true']").filter(
         has_text=tab_name
     )
     expect(disabled_tab).to_be_visible()
@@ -1801,14 +1801,14 @@ def tab_should_be_disabled(page: Page, tab_name: str):
 def tab_should_be_enabled(page: Page, tab_name: str):
     """Verify a specific tab is enabled (shown as a clickable link)."""
     # Enabled tabs are rendered as anchor tags, not spans
-    enabled_tab = page.locator("nav[aria-label='Assembly sections'] a").filter(has_text=tab_name)
+    enabled_tab = page.locator("nav[aria-label='Project sections'] a").filter(has_text=tab_name)
     expect(enabled_tab).to_be_visible()
 
 
 @then(parsers.parse('I should not see a "{tab_name}" tab in the assembly navigation'))
 def should_not_see_tab_in_navigation(page: Page, tab_name: str):
     """Verify a specific tab is not visible in the assembly navigation."""
-    tab = page.locator("nav[aria-label='Assembly sections'] a, nav[aria-label='Assembly sections'] span").filter(
+    tab = page.locator("nav[aria-label='Project sections'] a, nav[aria-label='Project sections'] span").filter(
         has_text=tab_name
     )
     expect(tab).to_have_count(0)
@@ -2006,7 +2006,7 @@ def create_assembly_with_empty_intro(title: str, admin_user, test_database):
 def visit_read_only_registration_intro(page: Page, title: str, test_database):
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=intro")
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}?section=intro")
 
 
 @when(parsers.parse('I type "{text}" into the visual intro editor'))
@@ -2456,7 +2456,7 @@ def view_form_preview_on_phone(page: Page, title: str, test_database):
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
     page.set_viewport_size({"width": 375, "height": 800})
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}/form-preview")
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}/form-preview")
 
 
 @then(parsers.parse('the image "{alt}" should fit the page and keep its shape'))
@@ -2499,7 +2499,7 @@ def _email_section_url(title: str, test_database, edit: bool) -> str:
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
     suffix = "&edit=1" if edit else ""
-    return f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=email{suffix}"
+    return f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}?section=email{suffix}"
 
 
 @given(parsers.parse('there is an assembly called "{title}" with the auto-reply body "{body}"'))
@@ -2661,7 +2661,7 @@ VISUAL_THANK_YOU = f"{THANK_YOU_EDITOR} .ProseMirror"
 def _thank_you_step_url(title: str, test_database, edit: bool = False) -> str:
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     slug = _page_slug(assembly_id, test_database)
-    url = f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=thank-you"
+    url = f"{Urls.base}/backoffice/project/{assembly_id}/registration/{slug}?section=thank-you"
     return url + "&edit=1" if edit else url
 
 

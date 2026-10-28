@@ -23,7 +23,7 @@ scenarios("../../features/accessibility.feature")
 def page_with_tabs(logged_in_page: Page, existing_assembly) -> Page:
     """Navigate to a page with tabs component."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
     return page
 
@@ -32,7 +32,7 @@ def page_with_tabs(logged_in_page: Page, existing_assembly) -> Page:
 def page_with_user_search(admin_logged_in_page: Page, existing_assembly) -> Page:
     """Navigate to assembly members page which has user search autocomplete."""
     page = admin_logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}/members")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}/members")
     page.wait_for_load_state("networkidle")
     return page
 
@@ -56,7 +56,7 @@ def user_logged_in_as_admin(admin_logged_in_page: Page):
 def page_with_alpine_focus(logged_in_page: Page, existing_assembly):
     """Navigate to backoffice page with Alpine.js and focus preservation."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
 
 
@@ -256,7 +256,7 @@ def inactive_tabs_tabindex(page_with_tabs: Page):
 def user_on_page_with_icon_buttons(admin_logged_in_page: Page, existing_assembly):
     """Navigate to page with icon buttons."""
     page = admin_logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
 
 
@@ -290,7 +290,7 @@ def icon_buttons_have_aria_label(admin_logged_in_page: Page):
 def user_on_page_with_toggle_buttons(admin_logged_in_page: Page, existing_assembly):
     """Navigate to page with toggle buttons (if any exist)."""
     page = admin_logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
 
 
@@ -359,7 +359,7 @@ def has_live_region(page_with_user_search: Page):
 def page_with_required_select(logged_in_page: Page, existing_assembly):
     """Navigate to page and inject required select dropdown."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
     # Inject a required select for testing
     page.evaluate(
@@ -385,7 +385,7 @@ def select_has_aria_required(logged_in_page: Page):
 def page_with_error_select(logged_in_page: Page, existing_assembly):
     """Navigate to page and inject select with error state."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
     # Inject a select in error state
     page.evaluate(
@@ -435,7 +435,7 @@ def select_has_aria_describedby(logged_in_page: Page):
 def page_with_labeled_select(logged_in_page: Page, existing_assembly):
     """Navigate to page and inject labeled select."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
     # Inject a labeled select
     page.evaluate(

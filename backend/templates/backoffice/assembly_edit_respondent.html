@@ -28,7 +28,7 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
 
     {% if not ordered_sections %}
         {% call alert(variant="warning", use_caller=true) %}
-            {{ _("This assembly has no respondent fields configured yet.") }}
+            {{ _("This project has no respondent fields configured yet.") }}
             <a href="{{ url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) }}"
                class="underline font-medium">{{ _("Initialise the field schema first") }}</a>
         {% endcall %}

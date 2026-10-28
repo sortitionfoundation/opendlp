@@ -239,7 +239,7 @@ def _validated_name(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, name: str) 
         raise ValueError(_("The registration page name is required"))
     for existing in uow.registration_pages.list_by_assembly_id(assembly_id):
         if existing.name == cleaned:
-            raise ValueError(_("This assembly already has a registration page named '%(name)s'", name=cleaned))
+            raise ValueError(_("This project already has a registration page named '%(name)s'", name=cleaned))
     return cleaned
 
 
@@ -615,7 +615,7 @@ def rename_registration_page(
             raise ValueError(_("The registration page name is required"))
         for existing in uow.registration_pages.list_by_assembly_id(page.assembly_id):
             if existing.id != page.id and existing.name == cleaned:
-                raise ValueError(_("This assembly already has a registration page named '%(name)s'", name=cleaned))
+                raise ValueError(_("This project already has a registration page named '%(name)s'", name=cleaned))
         changes.append(f"Renamed from '{page.name}' to '{cleaned}'")
         page.rename(cleaned)
     if language is not None and language.strip() != page.language:

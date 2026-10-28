@@ -75,7 +75,7 @@ def _min_suggestion(suggested):
 
 
 def _accept_url(assembly_id):
-    return f"/backoffice/assembly/{assembly_id}/targets/accept-suggestions"
+    return f"/backoffice/project/{assembly_id}/targets/accept-suggestions"
 
 
 class TestAcceptOne:
@@ -427,13 +427,13 @@ class TestAcceptFailures:
                 _accept_url(assembly_with_targets), data={"scope": "all", "then": "recheck"}
             )
 
-        assert response.headers["Location"].endswith(f"/backoffice/assembly/{assembly_with_targets}/targets")
+        assert response.headers["Location"].endswith(f"/backoffice/project/{assembly_with_targets}/targets")
         assert any("unexpected error" in msg for msg in _flashes(logged_in_admin))
 
 
 class TestCheckPageControls:
     def _check_url(self, assembly_id, query=""):
-        return f"/backoffice/assembly/{assembly_id}/targets/check{query}"
+        return f"/backoffice/project/{assembly_id}/targets/check{query}"
 
     def test_renders_inline_accept_editor_and_rerun_when_from_a_run(
         self, logged_in_admin, fake_store, assembly_with_targets
@@ -483,7 +483,7 @@ class TestEditModeEntry:
     """ "Adjust targets" opens the editor, each suggestion under the row it would change."""
 
     def _check_url(self, assembly_id, query=""):
-        return f"/backoffice/assembly/{assembly_id}/targets/check{query}"
+        return f"/backoffice/project/{assembly_id}/targets/check{query}"
 
     def _get(self, client, assembly_id, query):
         check = DetailedCheckResult(
@@ -585,7 +585,7 @@ class TestSuggestionLayout:
             success=False, global_errors=[], annotations={"Gender": {"Male": [_min_suggestion(3)]}}
         )
         with patch(CHECK, return_value=check):
-            response = client.get(f"/backoffice/assembly/{assembly_id}/targets/check?edit=1")
+            response = client.get(f"/backoffice/project/{assembly_id}/targets/check?edit=1")
         assert response.status_code == 200
         return response.data.decode()
 
@@ -659,7 +659,7 @@ class TestSaveAllFromSelection:
             f"{prefix}[values][{male.value_id}][comment]": "Accepted algorithm suggestion — minimum 5 → 3",
             **extra,
         }
-        return client.post(f"/backoffice/assembly/{assembly_id}/targets/save-all", data=data)
+        return client.post(f"/backoffice/project/{assembly_id}/targets/save-all", data=data)
 
     def test_save_and_rerun_saves_then_starts_a_selection(
         self, logged_in_admin, admin_user, fake_store, assembly_with_targets
@@ -808,7 +808,7 @@ def _add_failed_run(fake_store, assembly_id, task_type, run_report=None, status=
 
 class TestFailureViewLink:
     def _modal(self, client, assembly_id, run_id):
-        return client.get(f"/backoffice/assembly/{assembly_id}/selection/db/modal-progress/{run_id}")
+        return client.get(f"/backoffice/project/{assembly_id}/selection/db/modal-progress/{run_id}")
 
     def test_failed_initial_selection_offers_adjust_targets(self, logged_in_admin, fake_store, assembly_with_targets):
         run_id = _add_failed_run(fake_store, assembly_with_targets, SelectionTaskType.SELECT_FROM_DB)

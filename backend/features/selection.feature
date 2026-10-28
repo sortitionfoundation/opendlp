@@ -1,5 +1,5 @@
 Feature: Democratic Lottery part 2
-As an Assembly Manager
+As a Project Manager
 I want to be able to configure the system
 So that I can do the selection.
 

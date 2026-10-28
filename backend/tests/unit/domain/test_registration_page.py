@@ -358,6 +358,24 @@ class TestRegistrationPageHtml:
         )
         assert rendered.startswith('<h1 class="govuk-heading-xl">Town Hall</h1><p class="govuk-body"></p>\n')
 
+    def test_project_variables_mean_the_same_as_the_assembly_ones(self):
+        """The interface says project; intros written before the rename say assembly."""
+        html = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            intro_html="<h1>{{ project_title }}</h1><p>{{ project_question }}</p><p>{{ assembly_title }}</p>",
+            form_html=READY_HTML,
+            content_style=ContentStyle.PLAIN,
+        )
+        rendered = html.render(
+            RenderContext(
+                csrf_form_element="<csrf>",
+                form_action="/r/submit",
+                assembly_title="Town Hall",
+                assembly_question="How?",
+            )
+        )
+        assert rendered.startswith("<h1>Town Hall</h1><p>How?</p><p>Town Hall</p>")
+
     def test_govuk_style_leaves_the_form_alone(self):
         form = '<form>{{ csrf_form_element }}<p>Question</p><a href="{{ form_action }}">x</a></form>'
         html = RegistrationPageHtml(
@@ -865,10 +883,18 @@ class TestThankYouProblems:
         assert "{{ name }}" in find_thank_you_problems("<p>{{ name }}</p>")[0]
 
     def test_variables_on_offer(self):
-        assert THANK_YOU_VARIABLES == ("assembly_title", "assembly_question", "restart_url")
+        assert THANK_YOU_VARIABLES == (
+            "project_title",
+            "project_question",
+            "assembly_title",
+            "assembly_question",
+            "restart_url",
+        )
 
     def test_no_problems_with_the_offered_variables(self):
         page = _own_thank_you("<p>{{ assembly_title }} {{ assembly_question }} {{ restart_url }}</p>")
+        assert page.thank_you_problems() == []
+        page = _own_thank_you("<p>{{ project_title }} {{ project_question }} {{ restart_url }}</p>")
         assert page.thank_you_problems() == []
 
     def test_reports_a_syntax_error_with_its_line(self):
@@ -905,6 +931,10 @@ class TestRenderThankYou:
         rendered = page.render_thank_you(self.CTX, ContentStyle.PLAIN)
         assert "Climate &lt;Assembly&gt;: What now?" in rendered
         assert 'href="https://x/r"' in rendered
+
+    def test_project_variables_fill_in_the_same_values(self):
+        page = _own_thank_you("<p>{{ project_title }}: {{ project_question }}</p>")
+        assert "Climate &lt;Assembly&gt;: What now?" in page.render_thank_you(self.CTX, ContentStyle.PLAIN)
 
     def test_govuk_style_adds_default_classes(self):
         page = _own_thank_you("<p>hello</p>")

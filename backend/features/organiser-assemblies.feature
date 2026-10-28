@@ -18,7 +18,7 @@ Feature: Organiser assemblies
     Given I am logged in as an organiser
     And there is an assembly called "Lilliput Housing Assembly" created by the organiser
     When I visit the assembly members page for "Lilliput Housing Assembly"
-    Then I should see "Add User to Assembly"
+    Then I should see "Add user to project"
     When I type "normal@opendlp.example" into the user search dropdown
     Then I should see "normal@opendlp.example" in the search results
 
@@ -36,9 +36,9 @@ Feature: Organiser assemblies
     Then I should not see "Someone Else's Assembly"
     When I try to access the assembly details page for "Someone Else's Assembly"
     Then I should be redirected to the dashboard
-    And I should see "You don't have permission to view this assembly"
+    And I should see "You don't have permission to view this project"
 
   Scenario: A plain user is not offered the create button
     Given I am logged in as a normal user
     When I visit the backoffice dashboard
-    Then I should not see "Create New Assembly"
+    Then I should not see "Create project"

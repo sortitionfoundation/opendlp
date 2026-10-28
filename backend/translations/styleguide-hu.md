@@ -74,6 +74,10 @@ they are the same thing.
 | replacement (the person) | pótszemély | *(B9)* |
 | invite | meghívó | |
 | assembly question | a közösségi gyűlés témája | *(F28)* |
+| project | projekt | *(unreviewed)* |
+| event | esemény | *(unreviewed)* |
+| framing question | a projekt témája | *(unreviewed)* |
+| first event date | az első esemény időpontja | *(unreviewed)* |
 
 **assembly** is *közösségi gyűlés* in full. Bare *gyűlés* is too vague — it is any
 old meeting. Where the full term repeats several times in one short block of text
@@ -100,6 +104,17 @@ lines the short form **szempont** is fine where the context is clear. *(F34)*
 **target** stays *célszám* — it really is a target number. But a *target
 category* is not a number, so it takes the *kiválasztási szempont* above:
 `Target Name` is "Kiválasztási szempont neve", not "Célszám neve". *(B7)*
+
+**project**, **event** and **framing question** came in when the interface
+stopped calling the top-level thing an assembly (see the *Project* entry in
+[`docs/language.md`](../docs/language.md)); no native speaker has checked them
+yet. **project** is the loanword *projekt*, which every Hungarian office uses and
+which, usefully, always takes *a*, so the no-article rule (D16) bites less. **event**
+is *esemény*, as generic as the English — the event may be a forum, a jury or a
+panel, so neither *gyűlés* nor *rendezvény* fits. **framing question** keeps the
+F28 decision below and is *a projekt témája*, the topic, with its help text "a
+téma, amelynek megvitatására az esemény összeül". The default auto-reply body
+still says *közösségi gyűlés*, because its English still does.
 
 **assembly question** is *a közösségi gyűlés **témája*** — the topic, not the
 question. `Assembly Question` names the field where an organiser writes what the
@@ -189,9 +204,15 @@ roles and must not read as synonyms. *(C14)*
 | admin | adminisztrátor | |
 | organiser (global role) | főszervező | *(C14)* |
 | assembly manager (per-assembly) | gyűlésszervező | *(C12, C14)* |
+| project manager (per-project; the same role, renamed) | projektvezető | *(unreviewed)* |
 | confirmation caller | visszaigazoló | *(C13)* |
 | read only | megtekintő | *(C15)* |
 | role | szerepkör | |
+
+The interface now calls the per-assembly manager a **Project Manager**, so new
+strings say *projektvezető*; *gyűlésszervező* survives only in strings whose
+English still says assembly (the legacy pages). It must still not read as a
+synonym of *főszervező*, and it does not. *(unreviewed)*
 
 *megerősítő hívó* was a calque and is gone; *csak olvasó* is gone too — a
 *megtekintő* is a person who looks, which is what the role is.

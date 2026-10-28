@@ -10,7 +10,7 @@ from tests.e2e.helpers import get_csrf_token
 
 
 def _registration_url(assembly_id, suffix=""):
-    return f"/backoffice/assembly/{assembly_id}/registration{suffix}"
+    return f"/backoffice/project/{assembly_id}/registration{suffix}"
 
 
 def test_create_assembly_registration_page_success(
@@ -24,7 +24,7 @@ def test_create_assembly_registration_page_success(
     )
 
     assert response.status_code == 302
-    assert f"/backoffice/assembly/{existing_assembly.id}" in response.location
+    assert f"/backoffice/project/{existing_assembly.id}" in response.location
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         page = page_for_assembly(uow, existing_assembly.id)
         assert page is not None

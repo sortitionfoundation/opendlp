@@ -86,7 +86,7 @@ class TestCreateAction:
         _seed_page(fake_store, assembly_id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={"action": "create"},
         )
 
@@ -99,7 +99,7 @@ class TestCreateAction:
         assert len(templates) == 1
         template = templates[0]
         assert template.name  # non-empty default name
-        assert "{{ assembly.title }}" in template.subject
+        assert "{{ project.title }}" in template.subject
         assert "{{ respondent.first_name_or_friend }}" in template.body_html
 
         page = _get_page(fake_store, assembly_id)
@@ -120,7 +120,7 @@ class TestEditFormMarkup:
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=email&edit=1")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration/my-slug?section=email&edit=1")
         assert response.status_code == 200
         html = response.get_data(as_text=True)
         # The Save and Save-and-next submit buttons render as <button name="action" value="…">.
@@ -142,7 +142,7 @@ class TestSaveAction:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={
                 "action": "save",
                 "template_subject": "New subject",
@@ -165,7 +165,7 @@ class TestSaveAction:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={
                 "action": "save_and_next",
                 "template_subject": "Updated subject",
@@ -188,7 +188,7 @@ class TestSaveAction:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=assigned.id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={
                 "action": "save",
                 "template_id": str(other.id),
@@ -206,7 +206,7 @@ class TestSaveAction:
         _seed_page(fake_store, assembly_id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={
                 "action": "save",
                 "template_subject": "Nope",
@@ -231,7 +231,7 @@ class TestAlwaysOnAutoReply:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=None)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={
                 "action": "save",
                 "template_subject": "Should not be saved",
@@ -252,7 +252,7 @@ class TestAlwaysOnAutoReply:
 
         for action in ("disable", "enable"):
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+                f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
                 data={"action": action, "template_id": str(template.id)},
             )
 
@@ -267,7 +267,7 @@ class TestAlwaysOnAutoReply:
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=email")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration/my-slug?section=email")
 
         assert response.status_code == 200
         html = response.get_data(as_text=True)
@@ -289,7 +289,7 @@ class TestErrorHandling:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={"action": "save", "template_subject": "", "template_body_html": "<p>Body</p>"},
         )
 
@@ -305,7 +305,7 @@ class TestErrorHandling:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=stray_id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={
                 "action": "save",
                 "template_id": str(stray_id),
@@ -322,12 +322,12 @@ class TestErrorHandling:
         # No page seeded — dispatch raises RegistrationPageNotFoundError, caller falls
         # back to the Details tab.
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={"action": "create"},
         )
 
         assert response.status_code == 302
-        assert f"/backoffice/assembly/{assembly_id}" in response.location
+        assert f"/backoffice/project/{assembly_id}" in response.location
         assert "/registration/email" not in response.location
 
     def test_non_admin_is_redirected_to_dashboard(self, logged_in_user, fake_store, assembly_id):
@@ -335,7 +335,7 @@ class TestErrorHandling:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         response = logged_in_user.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={"action": "save", "template_subject": "x", "template_body_html": "<p>x</p>"},
         )
 
@@ -415,7 +415,7 @@ class TestCreateDefaultAutoReplyTemplate:
             "opendlp.entrypoints.blueprints.backoffice_registration.create_email_template",
             side_effect=RuntimeError("db down"),
         ):
-            response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/create")
+            response = logged_in_admin.post(f"/backoffice/project/{assembly_id}/registration/create")
 
         assert response.status_code == 302
         # The page still gets created even though seeding the template failed.
@@ -430,7 +430,7 @@ class TestPageCreationSeedsDefaultTemplate:
     """POST to /registration/create seeds a default email template as a side effect."""
 
     def test_create_page_route_seeds_default_template(self, logged_in_admin, fake_store, assembly_id):
-        response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/create")
+        response = logged_in_admin.post(f"/backoffice/project/{assembly_id}/registration/create")
 
         assert response.status_code == 302
         templates = _list_templates(fake_store, assembly_id)
@@ -442,7 +442,7 @@ class TestPageCreationSeedsDefaultTemplate:
 
 def _email_step(client, assembly_id, edit: bool) -> str:
     suffix = "&edit=1" if edit else ""
-    response = client.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=email{suffix}")
+    response = client.get(f"/backoffice/project/{assembly_id}/registration/my-slug?section=email{suffix}")
     assert response.status_code == 200
     return response.get_data(as_text=True)
 
@@ -497,7 +497,7 @@ class TestVisualEditor:
         assert "Email body" in body
         assert "HTML body" not in body
         assert "Jinja + HTML" not in body
-        assert "highlights variables like {{ assembly.title }} in text" in body
+        assert "highlights variables like {{ project.title }} in text" in body
 
     def test_the_variables_panel_speaks_of_dynamic_fields(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
@@ -508,7 +508,7 @@ class TestVisualEditor:
         assert ">Dynamic fields</h2>" in body
         assert "Available variables" not in body
         assert "Click a dynamic field to select it" in body
-        assert 'value="{{ assembly.first_assembly_date_text }}"' in body
+        assert 'value="{{ project.first_event_date_text }}"' in body
 
     def test_view_mode_shows_the_editor_read_only_without_a_toolbar(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
@@ -534,7 +534,7 @@ class TestVisualEditor:
         monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/send-test",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/send-test",
             data={"test_email_to": "manager@example.com"},
         )
 
@@ -551,7 +551,7 @@ class TestReplyTo:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={
                 "action": "save",
                 "template_subject": "Subject",
@@ -580,7 +580,7 @@ class TestReplyTo:
         monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/send-test",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/send-test",
             data={"test_email_to": "manager@example.com"},
         )
 
@@ -593,7 +593,7 @@ class TestReplyTo:
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/my-slug/email/save",
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
             data={
                 "action": "save",
                 "template_subject": "Subject",

@@ -1,5 +1,5 @@
 """ABOUTME: Backoffice routes for CRUD operations on assembly targets
-ABOUTME: Provides target viewing, editing, CSV upload, and deletion under /backoffice/assembly/*/targets"""
+ABOUTME: Provides target viewing, editing, CSV upload, and deletion under /backoffice/project/*/targets"""
 
 import contextlib
 import uuid
@@ -115,7 +115,7 @@ def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
     }
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets")
+@targets_bp.route("/project/<uuid:assembly_id>/targets")
 @login_required
 def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly targets page."""
@@ -149,7 +149,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         ), 200
     except NotFoundError as e:
         logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -158,13 +158,13 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
             "View assembly targets error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("An error occurred while loading assembly targets"), "error")
+        flash(_("An error occurred while loading project targets"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -178,7 +178,7 @@ def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvFo
     return render_assembly_data_page(assembly_id, targets_upload_form=form, preferred_source="csv"), 200
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/upload", methods=["POST"])
+@targets_bp.route("/project/<uuid:assembly_id>/targets/upload", methods=["POST"])
 @login_required
 def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Upload targets CSV file for an assembly."""
@@ -223,7 +223,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         form.csv_file.errors.append(_("CSV import failed: %(error)s", error=str(e)))
         return _render_targets_upload_page(assembly_id, form)
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
         flash(_("You don't have permission to import targets"), "error")
@@ -237,7 +237,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return _render_targets_upload_page(assembly_id, form)
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
+@targets_bp.route("/project/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
 @login_required
 def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete all targets for an assembly, asking first when questions are linked to them."""
@@ -278,7 +278,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
     except NotFoundError as e:
         logger.warning("Assembly not found for targets deletion", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -291,7 +291,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 @targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/add-from-columns",
+    "/project/<uuid:assembly_id>/targets/categories/add-from-columns",
     methods=["POST"],
 )
 @login_required
@@ -370,7 +370,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/check", methods=["GET"])
+@targets_bp.route("/project/<uuid:assembly_id>/targets/check", methods=["GET"])
 @login_required
 def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run detailed target validation and display results."""
@@ -414,10 +414,10 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         ), 200
 
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Error checking targets", assembly_id=str(assembly_id), error=str(e))
@@ -509,7 +509,7 @@ def _is_test_run(run: SelectionRunRecord | None) -> bool:
     return run is not None and run.task_type == SelectionTaskType.TEST_SELECT_FROM_DB
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
+@targets_bp.route("/project/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
 @login_required
 @require_assembly_management
 def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -542,10 +542,10 @@ def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return _redirect_after_save(assembly_id, task_id, recheck_url)
 
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
-        flash(_("You don't have permission to manage this assembly"), "error")
+        flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Error accepting target suggestions", assembly_id=str(assembly_id), error=str(e))
@@ -624,7 +624,7 @@ def _render_force_unlink_confirm(
     ), 200
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/save-all", methods=["POST"])
+@targets_bp.route("/project/<uuid:assembly_id>/targets/save-all", methods=["POST"])
 @login_required
 def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Apply every edit on the targets page in one operation."""

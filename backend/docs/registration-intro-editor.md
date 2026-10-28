@@ -21,10 +21,12 @@ wrapper that lines the intro up with a GOV.UK styled form
 The author edits the words directly. The editor shows whatever was saved
 after that, and an empty intro is allowed: it adds nothing to the page.
 
-The intro also understands `{{ assembly_title }}` and `{{ assembly_question }}`,
-which fill in the assembly's current title and question when the page is
-shown. The editor doesn't mention them; they are for authors who want the
-intro to follow a later change to the assembly.
+The intro also understands `{{ project_title }}` and `{{ project_question }}`,
+which fill in the project's current title and framing question when the page
+is shown. The editor doesn't mention them; they are for authors who want the
+intro to follow a later change to the project. `{{ assembly_title }}` and
+`{{ assembly_question }}` mean the same, and keep intros written before the
+interface said project working.
 
 ## The two views
 
@@ -63,7 +65,7 @@ to HTML can always happen.
   the default, so aligning left removes the style rather than writing
   `text-align: left`. Any other alignment, such as `justify`, is kept as part
   of the style but the toolbar does not show it.
-- **Template variables** like `{{ assembly_title }}`, which are highlighted in
+- **Template variables** like `{{ project_title }}`, which are highlighted in
   text. A variable in an attribute, such as `href="{{ url }}"`, survives too,
   but the visual editor cannot show it or offer a way to change it: edit it in
   the HTML view.
@@ -250,7 +252,8 @@ switches to it. The starter is in English, whatever the page's language.
 
 Own HTML can use three variables, and no others:
 
-- `{{ assembly_title }}` and `{{ assembly_question }}`, as in the intro;
+- `{{ project_title }}` and `{{ project_question }}`, as in the intro (or
+  their older spellings `{{ assembly_title }}` and `{{ assembly_question }}`);
 - `{{ restart_url }}`, the page's registration form, for a link to register
   someone else.
 
@@ -287,15 +290,19 @@ A body containing a table or an image opens in HTML mode, with the usual
 notice, and loses nothing.
 
 The editor lists the email's variables in a **Dynamic fields** panel beside
-the body. They are spelt with dots, like `{{ assembly.title }}` and
+the body. They are spelt with dots, like `{{ project.title }}` and
 `{{ respondent.first_name_or_friend }}`, and are highlighted the same way.
+Emails written when the interface still said assembly use `{{ assembly.title }}`,
+`{{ assembly.question }}`, `{{ assembly.first_assembly_date }}` and
+`{{ assembly.first_assembly_date_text }}`; those keep working, and mean the
+same as the `project` spellings below.
 An email copied from the team's previous platform uses that platform's
 names, such as `{{ recipient.first_name_or_friend }}` and
 `{{ site.full_url }}`. Rename them: a variable OpenDLP doesn't know renders
 as an empty string, and nothing warns while editing.
 
-`assembly.first_assembly_date` is the date as `2026-11-14`.
-`assembly.first_assembly_date_text` is the same date written out in the
+`project.first_event_date` is the date as `2026-11-14`.
+`project.first_event_date_text` is the same date written out in the
 language the respondent registered in, such as "14 November 2026" or
 "2026. november 14.". The auto-reply is sent while their request is still
 open, so that request's language is the one used; a test send uses the

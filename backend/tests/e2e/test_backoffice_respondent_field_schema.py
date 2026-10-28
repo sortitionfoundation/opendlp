@@ -34,7 +34,7 @@ class TestViewSchemaPage:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             _seed_schema(uow, admin_user, existing_assembly)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
         # Group headings surface.
@@ -53,11 +53,11 @@ class TestInitialiseSchema:
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/initialise",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/initialise",
             data={
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                    f"/backoffice/project/{existing_assembly.id}/respondent-schema",
                 ),
             },
             follow_redirects=False,
@@ -78,13 +78,13 @@ class TestUpdateField:
             custom_field = next(f for f in schema if f.field_key == "custom_notes")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/update",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/update",
             data={
                 "label": "Notes from organiser",
                 "group": RespondentFieldGroup.ABOUT_YOU.value,
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                    f"/backoffice/project/{existing_assembly.id}/respondent-schema",
                 ),
             },
             follow_redirects=False,
@@ -117,12 +117,12 @@ class TestMoveField:
             field_b_id = others[1].id
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{field_b_id}/move",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{field_b_id}/move",
             data={
                 "direction": "up",
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                    f"/backoffice/project/{existing_assembly.id}/respondent-schema",
                 ),
             },
             follow_redirects=False,
@@ -140,7 +140,7 @@ class TestAddField:
             _seed_schema(uow, admin_user, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/add",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/add",
             data={
                 "field_key": "Age Range",
                 "label": "Age range",
@@ -149,7 +149,7 @@ class TestAddField:
                 "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                    f"/backoffice/project/{existing_assembly.id}/respondent-schema",
                 ),
             },
             follow_redirects=False,
@@ -174,7 +174,7 @@ class TestFieldModal:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             _seed_schema(uow, admin_user, existing_assembly)
 
-        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        base = f"/backoffice/project/{existing_assembly.id}/respondent-schema"
         modal = logged_in_admin.get(f"{base}/fields/new-modal", headers={"HX-Request": "true"})
         assert modal.status_code == 200
         assert b'role="dialog"' in modal.data
@@ -213,7 +213,7 @@ class TestFieldModal:
             schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
             custom_field = next(f for f in schema if f.field_key == "custom_notes")
 
-        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        base = f"/backoffice/project/{existing_assembly.id}/respondent-schema"
         modal = logged_in_admin.get(f"{base}/fields/{custom_field.id}/edit-modal", headers={"HX-Request": "true"})
         assert modal.status_code == 200
         assert b"custom_notes" in modal.data
@@ -249,11 +249,11 @@ class TestDeleteField:
             custom_field = next(f for f in schema if f.field_key == "custom_notes")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/delete",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/delete",
             data={
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                    f"/backoffice/project/{existing_assembly.id}/respondent-schema",
                 ),
             },
             follow_redirects=False,
@@ -283,13 +283,13 @@ class TestFieldTypeAndOptions:
             )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/options/add",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/options/add",
             data={
                 "value": "second",
                 "help_text": "second option",
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                    f"/backoffice/project/{existing_assembly.id}/respondent-schema",
                 ),
             },
             follow_redirects=False,
@@ -316,11 +316,11 @@ class TestFieldTypeAndOptions:
             )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/guess-types",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/guess-types",
             data={
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+                    f"/backoffice/project/{existing_assembly.id}/respondent-schema",
                 ),
             },
             follow_redirects=True,
@@ -348,7 +348,7 @@ class TestFieldSpecJson:
             )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema.json")
 
         assert response.status_code == 200
         body = response.get_json()

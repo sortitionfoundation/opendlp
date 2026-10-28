@@ -20,7 +20,7 @@
                         </a>
                         <a href="{{ url_for('main.dashboard') }}"
                            class="btn btn-outline-primary">
-                            <i class="bi bi-speedometer2"></i> {{ _("Your Assemblies") }}
+                            <i class="bi bi-speedometer2"></i> {{ _("Your projects") }}
                         </a>
                     {% else %}
                         <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
@@ -30,7 +30,7 @@
                 </div>
                 <div class="mt-4">
                     <small class="text-muted">
-                        {{ _("If you believe this is an error, please contact your assembly administrator.") }}
+                        {{ _("If you believe this is an error, please contact an administrator.") }}
                     </small>
                 </div>
             </div>

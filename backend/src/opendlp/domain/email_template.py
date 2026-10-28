@@ -29,7 +29,11 @@ _LINE_SEPARATORS = ("\u2028", "\u2029")
 # number such as a footnote "[1]" is not one.
 _PLACEHOLDER = re.compile(r"\[[^\[\]<>]*?[^\W\d_][^\[\]<>]*?\]")
 _TAG = re.compile(r"<[^>]*>")
-_FIRST_ASSEMBLY_DATE = re.compile(r"\{\{\s*assembly\.first_assembly_date(?:_text)?\s*\}\}")
+# Either spelling of the date variable: the editor offers project.first_event_date,
+# and emails saved before the rename say assembly.first_assembly_date.
+_FIRST_ASSEMBLY_DATE = re.compile(
+    r"\{\{\s*(?:project\.first_event_date|assembly\.first_assembly_date)(?:_text)?\s*\}\}"
+)
 
 
 def reply_to_address(name: str, email: str) -> ReplyTo:

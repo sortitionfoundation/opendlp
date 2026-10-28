@@ -25,7 +25,7 @@ class TestMonitorRunSelectionCli:
             task_id=uuid.uuid4(),
             duration_seconds=12.3,
             message="ok",
-            run_url="https://example.org/assembly/abc/selection/def",
+            run_url="https://example.org/project/abc/selection/def",
         )
         with patch(
             "opendlp.entrypoints.cli.monitor.run_monitoring_selection",
@@ -35,7 +35,7 @@ class TestMonitorRunSelectionCli:
 
         assert result.exit_code == 0, result.output
         assert "✓" in result.output
-        assert "View: https://example.org/assembly/abc/selection/def" in result.output
+        assert "View: https://example.org/project/abc/selection/def" in result.output
 
     def test_failure_default_strict_exits_one(self, cli_with_session_factory):
         result_obj = MonitorResult(

@@ -100,12 +100,12 @@ def _field_by_key(fake_store, assembly, field_key):
 
 class TestChecklistPage:
     def test_redirects_when_not_logged_in(self, client, existing_assembly):
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources", follow_redirects=False)
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/target-sources", follow_redirects=False)
         assert response.status_code == 302
         assert "login" in response.location
 
     def test_shows_empty_state_without_targets(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources")
         assert response.status_code == 200
         assert b"No targets have been set up" in response.data
 
@@ -121,7 +121,7 @@ class TestChecklistPage:
         )
         _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources")
 
         assert response.status_code == 200
         assert b"Asked on the registration page" in response.data
@@ -133,9 +133,9 @@ class TestChecklistPage:
         """A screen reader reads a bare tick or cross aloud, as "check mark" or "ballot x"."""
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
 
-        checklist = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        checklist = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources")
         modal = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
         )
 
         for body in (checklist.get_data(as_text=True), modal.get_data(as_text=True)):
@@ -152,7 +152,7 @@ class TestChecklistPage:
             target_category_id=category.id,
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources")
 
         assert b"The target's values have changed" in response.data
 
@@ -178,7 +178,7 @@ class TestChecklistPage:
         )
         unset = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources").get_data(as_text=True)
 
         row_status = {
             category_id: status
@@ -191,7 +191,7 @@ class TestChecklistPage:
     def test_an_unlinked_rows_sentence_is_emphasised(self, logged_in_admin, existing_assembly, fake_store):
         _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources").get_data(as_text=True)
 
         assert re.search(
             r'<span class="target-source-row__unlinked">\s*<svg[^>]*>.*?</svg>\s*No question linked yet\.</span>',
@@ -210,7 +210,7 @@ class TestChecklistPage:
             target_category_id=category.id,
         )
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources").get_data(as_text=True)
 
         edit = re.search(r'<a href="[^"]*/setup-modal"\s+role="button"[^>]*>(.*?)</a>', body, re.DOTALL)
         assert edit is not None
@@ -232,7 +232,7 @@ class TestChecklistPage:
         )
         unset = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources")
         body = response.get_data(as_text=True)
 
         rows = re.findall(r'<li class="target-source-row[^"]*"[^>]*>(.*?)</li>', body, re.DOTALL)
@@ -242,7 +242,7 @@ class TestChecklistPage:
             assert "row-link" not in row
             open_links = re.findall(r'<a href="([^"]*/setup-modal)"\s+role="button"', row)
             assert open_links == [
-                f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
+                f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
             ]
 
     def test_each_row_says_where_keyboard_focus_returns_when_its_dialog_closes(
@@ -251,7 +251,7 @@ class TestChecklistPage:
         """fragment-dialog-focus.js finds the opener again by these, after the checklist has been re-rendered."""
         category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources").get_data(as_text=True)
 
         assert 'id="ts-modal-container" data-fragment-dialog-host' in body
         assert f'data-focus-row="ts-{category.id}"' in body
@@ -264,7 +264,7 @@ class TestChecklistPage:
         category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
 
         body = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
         ).get_data(as_text=True)
 
         backdrop = re.search(r'<a [^>]*class="dialog-backdrop dialog-backdrop--clickable block"[^>]*>', body)
@@ -274,7 +274,7 @@ class TestChecklistPage:
         assert "aria-label" not in backdrop.group(0)
 
     def test_opens_as_a_takeover_dialog_over_the_registration_hub(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources")
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
@@ -284,7 +284,7 @@ class TestChecklistPage:
         assert "No registration page created yet" in body
         assert re.search(r"<main [^>]*\binert\b", body)
         # Closing the dialog goes back to the hub
-        assert f'href="/backoffice/assembly/{existing_assembly.id}/registration"' in body
+        assert f'href="/backoffice/project/{existing_assembly.id}/registration"' in body
         # Fragment dialogs open after the takeover, so Escape closes them first
         assert body.index("dialog-panel--takeover") < body.index('id="ts-modal-container"')
 
@@ -292,7 +292,7 @@ class TestChecklistPage:
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
         )
 
         assert 'class="setup-step"' not in response.get_data(as_text=True)
@@ -321,7 +321,7 @@ class TestRoutesTurnAwayThoseWithoutAccess:
     """No route may answer a refusal with a server error, whatever order it checks things in."""
 
     def _call(self, client, method, path, assembly_id, category_id):
-        url = f"/backoffice/assembly/{assembly_id}/target-sources" + path.format(category_id=category_id)
+        url = f"/backoffice/project/{assembly_id}/target-sources" + path.format(category_id=category_id)
         if method == "get":
             return client.get(url, follow_redirects=False)
         # A well-formed field_id, so the adopt route gets as far as asking the service.
@@ -346,7 +346,7 @@ class TestRoutesTurnAwayThoseWithoutAccess:
 
         assert response.status_code == 302
         assert response.location.endswith("/backoffice/dashboard")
-        assert _flashes(logged_in_admin) == ["Assembly not found"]
+        assert _flashes(logged_in_admin) == ["Project not found"]
 
     def test_an_invalid_set_up_form_from_a_user_with_no_role_is_still_turned_away(
         self, logged_in_user, existing_assembly, fake_store
@@ -355,7 +355,7 @@ class TestRoutesTurnAwayThoseWithoutAccess:
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
 
         response = logged_in_user.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={"method": ""},
             follow_redirects=False,
         )
@@ -372,7 +372,7 @@ class TestRoutesTurnAwayThoseWithoutAccess:
         foreign = _seed_category(fake_store, other_assembly, "Gender", ["Male", "Female"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{foreign.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{foreign.id}/configure",
             data={"method": "exact", "source_mode": "create"},
             follow_redirects=False,
         )
@@ -384,7 +384,7 @@ class TestRoutesTurnAwayThoseWithoutAccess:
 
 class TestSetupModal:
     def _setup_url(self, assembly, category, query=""):
-        return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal{query}"
+        return f"/backoffice/project/{assembly.id}/target-sources/{category.id}/setup-modal{query}"
 
     def test_starts_with_only_the_method_question(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
@@ -486,7 +486,7 @@ class TestSetupModal:
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={"modal": "1", "method": ""},
             headers=HTMX,
         )
@@ -498,7 +498,7 @@ class TestSetupModal:
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
         )
 
         assert response.status_code == 200
@@ -511,7 +511,7 @@ class TestConfigureExactCopy:
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={"modal": "1", "method": "exact", "source_mode": "create"},
             headers=HTMX,
         )
@@ -536,7 +536,7 @@ class TestConfigureExactCopy:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={"modal": "1", "method": "exact", "source_mode": "reuse", "reuse_field_id": str(field.id)},
             headers=HTMX,
         )
@@ -550,7 +550,7 @@ class TestConfigureExactCopy:
         _seed_field(fake_store, existing_assembly, "Gender", field_type=FieldType.TEXT)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={"modal": "1", "method": "exact", "source_mode": "create"},
             headers=HTMX,
         )
@@ -571,7 +571,7 @@ class TestErrorsShownToTheOrganiser:
         missing = uuid.uuid4()
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={"modal": "1", "method": "exact", "source_mode": "reuse", "reuse_field_id": str(missing)},
             headers=HTMX,
         )
@@ -586,7 +586,7 @@ class TestErrorsShownToTheOrganiser:
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={"modal": "1", "method": "exact", "source_mode": "reuse", "reuse_field_id": "not-an-id"},
             headers=HTMX,
         )
@@ -603,7 +603,7 @@ class TestErrorsShownToTheOrganiser:
         missing = uuid.uuid4()
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/adopt",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/adopt",
             data={"field_id": str(missing)},
         )
 
@@ -614,7 +614,7 @@ class TestErrorsShownToTheOrganiser:
 
         for action in ("resync", "recompute"):
             logged_in_admin.post(
-                f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/{action}",
+                f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/{action}",
             )
 
         assert _flashes(logged_in_admin) == ["No question is linked to this target"] * 2
@@ -642,7 +642,7 @@ class TestConfigureAgeBrackets:
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=self._age_form(),
             headers=HTMX,
         )
@@ -663,7 +663,7 @@ class TestConfigureAgeBrackets:
         _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1990"}, {"year_of_birth": "2005"}])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=self._age_form(),
             headers=HTMX,
         )
@@ -685,7 +685,7 @@ class TestConfigureAgeBrackets:
         _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1990"}, {"year_of_birth": "soon"}])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=self._age_form(),
             headers=HTMX,
         )
@@ -700,7 +700,7 @@ class TestConfigureAgeBrackets:
         _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1990"}])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=self._age_form(),
             follow_redirects=True,
         )
@@ -714,7 +714,7 @@ class TestConfigureAgeBrackets:
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={
                 "modal": "1",
                 "method": "age_bracket",
@@ -737,7 +737,7 @@ class TestConfigureAgeBrackets:
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=self._age_form(as_of_day="", as_of_month="", as_of_year=""),
             headers=HTMX,
         )
@@ -749,7 +749,7 @@ class TestConfigureAgeBrackets:
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=self._age_form(bracket_from=["30", "30"]),
             headers=HTMX,
         )
@@ -763,7 +763,7 @@ class TestConfigureAgeBrackets:
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=self._age_form(bracket_from=["16", ""]),
             headers=HTMX,
         )
@@ -778,7 +778,7 @@ class TestConfigureAgeBrackets:
         _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1950"}])
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=self._age_form(bracket_label=["16 to 59", "60 or over"], bracket_from=["16", "60"]),
             headers=HTMX,
         )
@@ -795,7 +795,7 @@ class TestAgeRangesDialog:
 
     def _open(self, client, assembly, category, **params):
         return client.get(
-            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal",
+            f"/backoffice/project/{assembly.id}/target-sources/{category.id}/setup-modal",
             query_string={"modal": "1", "method": "age_bracket", "source_mode": "create", **params},
             headers=HTMX,
         ).get_data(as_text=True)
@@ -870,7 +870,7 @@ class TestAgeRangesDialog:
         category = TestRowActions()._linked_age_bracket(fake_store, existing_assembly)
 
         body = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
         ).get_data(as_text=True)
 
         assert "16-29 18 to 29" in self._section(body, "ts-age-summary")
@@ -902,13 +902,13 @@ class TestAgeRangesDialog:
         assert 'placeholder="DD"' in body
         assert 'placeholder="MM"' in body
         assert 'placeholder="YYYY"' in body
-        assert "Usually the first assembly date." in self._section(body, "ts-as-of-inputs")
+        assert "Usually the first event date." in self._section(body, "ts-as-of-inputs")
 
     def test_a_failed_save_over_the_date_reopens_the_inputs(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data=TestConfigureAgeBrackets()._age_form(as_of_year="1999"),
             headers=HTMX,
         )
@@ -963,7 +963,7 @@ class TestDialogGroups:
         category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
 
         body = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
             query_string={"modal": "1", "method": method, "source_mode": "create"},
             headers=HTMX,
         ).get_data(as_text=True)
@@ -975,7 +975,7 @@ class TestDialogGroups:
         category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
 
         body = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
             headers=HTMX,
         ).get_data(as_text=True)
 
@@ -987,7 +987,7 @@ class TestConfigureLargeMapping:
         category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={"modal": "1", "method": "large_mapping", "source_mode": "create", "new_field_key": "Postcode"},
             headers=HTMX,
         )
@@ -1000,7 +1000,7 @@ class TestConfigureLargeMapping:
 
     def _configure(self, logged_in_admin, assembly, category, data, headers=HTMX, **kwargs):
         return logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{assembly.id}/target-sources/{category.id}/configure",
             data={"modal": "1", "method": "large_mapping", **data},
             headers=headers,
             **kwargs,
@@ -1094,7 +1094,7 @@ class TestConfigureLargeMapping:
         category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
             query_string={"modal": "1", "method": "large_mapping", "source_mode": "create"},
             headers=HTMX,
         )
@@ -1108,7 +1108,7 @@ class TestConfigureLargeMapping:
         TestMappingUpload()._upload(logged_in_admin, existing_assembly, category)
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
@@ -1129,7 +1129,7 @@ class TestConfigureSmallMapping:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/configure",
             data={
                 "modal": "1",
                 "method": "small_mapping",
@@ -1147,10 +1147,10 @@ class TestConfigureSmallMapping:
         assert derived.derivation_config["mapping"] == {"16-29": "Younger", "30-99": "Older"}
 
     def _configure_url(self, assembly, category):
-        return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/configure"
+        return f"/backoffice/project/{assembly.id}/target-sources/{category.id}/configure"
 
     def _setup_url(self, assembly, category, query=""):
-        return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal{query}"
+        return f"/backoffice/project/{assembly.id}/target-sources/{category.id}/setup-modal{query}"
 
     def _create_form(self, **overrides):
         return {
@@ -1409,7 +1409,7 @@ class TestRowActions:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/adopt",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/adopt",
             data={"field_id": str(field.id)},
             headers=HTMX,
         )
@@ -1424,7 +1424,7 @@ class TestRowActions:
             stored.add_value(TargetValue(value="Other", min=0, max=5))
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/resync",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/resync",
             headers=HTMX,
         )
 
@@ -1453,7 +1453,7 @@ class TestRowActions:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/resync",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/resync",
             follow_redirects=False,
         )
 
@@ -1465,7 +1465,7 @@ class TestRowActions:
         category, _field = self._linked_exact(fake_store, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/unlink",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/unlink",
             headers=HTMX,
         )
 
@@ -1502,7 +1502,7 @@ class TestRowActions:
         category = self._linked_age_bracket(fake_store, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/recompute",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/recompute",
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
@@ -1516,7 +1516,7 @@ class TestRowActions:
         _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1990"}, {"year_of_birth": "2001"}])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/recompute",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/recompute",
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
@@ -1527,7 +1527,7 @@ class TestRowActions:
 
     def _row_actions(self, logged_in_admin, assembly):
         """Each row's (buttons outside the menu, items inside it), as text; items is None with no menu."""
-        body = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/target-sources").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{assembly.id}/target-sources").get_data(as_text=True)
         rows = re.findall(r'<li class="target-source-row[^"]*"[^>]*>(.*?)</li>', body, re.DOTALL)
         actions = []
         for row in rows:
@@ -1553,7 +1553,7 @@ class TestRowActions:
         """role="menu" promises arrow keys; every item is out of the Tab order so the menu is one stop."""
         self._linked_exact(fake_store, existing_assembly)
 
-        actions = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(
+        actions = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources").get_data(
             as_text=True
         )
 
@@ -1587,7 +1587,7 @@ class TestRowActions:
     def test_replacing_an_uploaded_lookup_table_is_in_the_menu(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = TestMappingUpload()._linked_large_mapping(fake_store, existing_assembly)
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload",
             data={"mapping_file": (io.BytesIO(b"Postcode,Region\nSW1A 1AA,North\n"), "mapping.csv")},
             content_type="multipart/form-data",
             headers=HTMX,
@@ -1618,7 +1618,7 @@ class TestRowActions:
 
     def test_unknown_category_404s_politely(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{uuid.uuid4()}/unlink",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{uuid.uuid4()}/unlink",
             follow_redirects=False,
         )
         assert response.status_code == 302
@@ -1645,7 +1645,7 @@ class TestMappingUpload:
 
     def _upload(self, logged_in_admin, assembly, category, data=None):
         return logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{assembly.id}/target-sources/{category.id}/upload",
             data={"mapping_file": (io.BytesIO(b"Postcode,Region\nSW1A 1AA,North\n"), "mapping.csv"), **(data or {})},
             content_type="multipart/form-data",
             headers=HTMX,
@@ -1659,7 +1659,7 @@ class TestMappingUpload:
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload-modal",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload-modal",
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
@@ -1673,7 +1673,7 @@ class TestMappingUpload:
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload-modal?step=setup",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload-modal?step=setup",
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
@@ -1688,7 +1688,7 @@ class TestMappingUpload:
         category, field = self._linked_large_mapping(fake_store, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload",
             data={"setup_step": "1", "defer_upload": "1", "form_action": "defer"},
             headers=HTMX,
         )
@@ -1709,7 +1709,7 @@ class TestMappingUpload:
         category, field = self._linked_large_mapping(fake_store, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload",
             data={"setup_step": "1", "form_action": "defer"},
             headers=HTMX,
         )
@@ -1724,7 +1724,7 @@ class TestMappingUpload:
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload",
             data={"setup_step": "1"},
             headers=HTMX,
         )
@@ -1738,7 +1738,7 @@ class TestMappingUpload:
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload",
             data={"setup_step": "1", "mapping_file": (io.BytesIO(b"\xff\xfe\xfa"), "mapping.csv")},
             content_type="multipart/form-data",
             headers=HTMX,
@@ -1761,7 +1761,7 @@ class TestMappingUpload:
     def test_an_empty_table_is_flagged_on_its_row(self, logged_in_admin, existing_assembly, fake_store):
         self._linked_large_mapping(fake_store, existing_assembly)
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources").get_data(as_text=True)
 
         assert "Until the lookup table is uploaded, everyone's Region is UNKNOWN." in body
 
@@ -1770,7 +1770,7 @@ class TestMappingUpload:
         if allow_new_outputs:
             data["allow_new_outputs"] = "1"
         return logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{assembly.id}/target-sources/{category.id}/upload",
             data=data,
             content_type="multipart/form-data",
             headers=HTMX,
@@ -1857,7 +1857,7 @@ class TestMappingUpload:
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload-modal",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload-modal",
             headers=HTMX,
         )
 
@@ -1869,7 +1869,7 @@ class TestMappingUpload:
         csv_bytes = io.BytesIO(b"Postcode,Region\nSW1A 1AA,North\nEH1 1AA,South\n")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload",
             data={"mapping_file": (csv_bytes, "mapping.csv")},
             content_type="multipart/form-data",
             headers=HTMX,
@@ -1903,13 +1903,13 @@ class TestMappingUpload:
     ):
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload",
             data={"mapping_file": (io.BytesIO(b"Postcode,Region\n" + rows), "mapping.csv")},
             content_type="multipart/form-data",
             headers=HTMX,
         )
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/target-sources").get_data(as_text=True)
 
         assert re.search(rf"{expected}\b(?!s)", body)
 
@@ -1917,7 +1917,7 @@ class TestMappingUpload:
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            f"/backoffice/project/{existing_assembly.id}/target-sources/{category.id}/upload",
             data={},
             headers=HTMX,
         )

@@ -87,7 +87,7 @@ def _refusals_go_to_the_dashboard(view: Callable[..., ResponseReturnValue]) -> C
             flash(_("You don't have permission to edit the schema"), "error")
             return redirect(url_for("backoffice.dashboard"))
         except NotFoundError:
-            flash(_("Assembly not found"), "error")
+            flash(_("Project not found"), "error")
             return redirect(url_for("backoffice.dashboard"))
 
     return guarded
@@ -632,7 +632,7 @@ def _load_field(
 # ---------------------------------------------------------------------------
 
 
-@respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema")
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema")
 @login_required
 def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Display the respondent field schema for an assembly."""
@@ -644,16 +644,16 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _render_schema_page(page_ctx)
 
 
-@respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema.json")
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema.json")
 @login_required
 def field_spec_json(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Return the assembly's full respondent field spec as JSON.
@@ -674,14 +674,14 @@ def field_spec_json(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        return jsonify({"error": _("Assembly not found")}), 404
+        return jsonify({"error": _("Project not found")}), 404
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for field spec", assembly_id=str(assembly_id), error=str(e))
-        return jsonify({"error": _("You don't have permission to view this assembly")}), 403
+        return jsonify({"error": _("You don't have permission to view this project")}), 403
     return jsonify(spec), 200
 
 
-@respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema/initialise", methods=["POST"])
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema/initialise", methods=["POST"])
 @login_required
 def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Seed an empty schema (fixed-field rows only) for registration-first assemblies."""
@@ -696,12 +696,12 @@ def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions:
         flash(_("You don't have permission to initialise the schema"), "error")
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
 
 
-@respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema/fields/new-modal")
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema/fields/new-modal")
 @login_required
 @_refusals_go_to_the_dashboard
 def new_field_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -722,7 +722,7 @@ def new_field_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     return _modal_response(assembly_id, lambda uow: _new_modal_ctx(uow, assembly_id, values))
 
 
-@respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/edit-modal")
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/edit-modal")
 @login_required
 @_refusals_go_to_the_dashboard
 def edit_field_modal(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
@@ -837,12 +837,12 @@ def _try_add_field(assembly_id: uuid.UUID, add_kwargs: dict[str, Any]) -> tuple[
     except InsufficientPermissions:
         return {}, _("You don't have permission to edit the schema")
     except NotFoundError:
-        return {}, _("Assembly not found")
+        return {}, _("Project not found")
     return page_ctx, ""
 
 
 @respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/add",
+    "/project/<uuid:assembly_id>/respondent-schema/fields/add",
     methods=["POST"],
 )
 @login_required
@@ -902,7 +902,7 @@ def _edit_dialog(
 
 
 @respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/update",
+    "/project/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/update",
     methods=["POST"],
 )
 @login_required
@@ -1042,12 +1042,12 @@ def _try_update_field(
     except InsufficientPermissions:
         attempt.error = _("You don't have permission to edit the schema")
     except NotFoundError:
-        attempt.error = _("Assembly not found")
+        attempt.error = _("Project not found")
     return attempt
 
 
 @respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/guess-types",
+    "/project/<uuid:assembly_id>/respondent-schema/guess-types",
     methods=["POST"],
 )
 @login_required
@@ -1064,13 +1064,13 @@ def guess_types_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
 
 
 @respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/add",
+    "/project/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/add",
     methods=["POST"],
 )
 @login_required
@@ -1093,13 +1093,13 @@ def add_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetu
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
 
 
 @respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/update",
+    "/project/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/update",
     methods=["POST"],
 )
 @login_required
@@ -1134,13 +1134,13 @@ def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
 
 
 @respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/remove",
+    "/project/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/options/remove",
     methods=["POST"],
 )
 @login_required
@@ -1162,13 +1162,13 @@ def remove_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
 
 
 @respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/move",
+    "/project/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/move",
     methods=["POST"],
 )
 @login_required
@@ -1211,13 +1211,13 @@ def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnVal
     except InsufficientPermissions:
         flash(_("You don't have permission to reorder fields"), "error")
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
 
 
 @respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/delete",
+    "/project/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/delete",
     methods=["POST"],
 )
 @login_required
@@ -1235,6 +1235,6 @@ def delete_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)

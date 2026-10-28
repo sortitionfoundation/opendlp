@@ -192,7 +192,7 @@ def _document_to_dict(document: RegistrationDocument, url_slug: str) -> dict[str
     }
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration")
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration")
 @login_required
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """List the assembly's registration pages with per-page status and actions."""
@@ -226,13 +226,13 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -242,7 +242,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>")
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/<url_slug>")
 @login_required
 def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Backoffice registration form configuration page for one registration page."""
@@ -364,13 +364,13 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -526,7 +526,7 @@ def _post_save_redirect(assembly_id: uuid.UUID, url_slug: str, action: str, orig
     return editor_url(assembly_id, url_slug, section=_post_action_section(action, origin))
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/save", methods=["POST"])
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/<url_slug>/save", methods=["POST"])
 @login_required
 def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Save the registration HTML and/or trigger a lifecycle transition.
@@ -599,13 +599,13 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to modify this assembly"), "error")
+        flash(_("You don't have permission to modify this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except ValueError as e:
         logger.warning("Validation error for assembly", assembly_id=str(assembly_id), error=str(e))
@@ -687,7 +687,7 @@ def _default_email_template_content() -> dict[str, str]:
     """
     return {
         "name": _("Registration auto-reply"),
-        "subject": _("Thanks for registering for {{ assembly.title }}"),
+        "subject": _("Thanks for registering for {{ project.title }}"),
         # Follows the team's own auto-reply. What OpenDLP knows is a dynamic field;
         # what it doesn't, such as the session dates, is a [placeholder] to replace.
         "body_html": _(
@@ -808,7 +808,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID, url_slug: str) -
     )
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/email/save", methods=["POST"])
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/<url_slug>/email/save", methods=["POST"])
 @login_required
 def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Create or update the auto-reply email template.
@@ -837,10 +837,10 @@ def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> R
         flash(_("That registration page could not be found"), "warning")
         return redirect(_list_url(assembly_id))
     except InsufficientPermissions:
-        flash(_("You don't have permission to modify this assembly"), "error")
+        flash(_("You don't have permission to modify this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -854,7 +854,7 @@ def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> R
 
 
 @backoffice_registration_bp.route(
-    "/assembly/<uuid:assembly_id>/registration/<url_slug>/email/send-test", methods=["POST"]
+    "/project/<uuid:assembly_id>/registration/<url_slug>/email/send-test", methods=["POST"]
 )
 @login_required
 def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
@@ -905,10 +905,10 @@ def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str)
         flash(_("That registration page could not be found"), "warning")
         return redirect(_list_url(assembly_id))
     except InsufficientPermissions:
-        flash(_("You don't have permission to modify this assembly"), "error")
+        flash(_("You don't have permission to modify this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -951,7 +951,7 @@ def _default_page_name(existing_names: set[str]) -> str:
     return f"{base} {counter}"
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/create", methods=["POST"])
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/create", methods=["POST"])
 @login_required
 def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Create a registration page with auto-generated slugs from the assembly name."""
@@ -971,10 +971,10 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
         )
         return redirect(editor_url(assembly_id, page.url_slug))
     except InsufficientPermissions:
-        flash(_("You don't have permission to modify this assembly"), "error")
+        flash(_("You don't have permission to modify this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except ValueError as e:
         logger.warning("Cannot create registration page for assembly", assembly_id=str(assembly_id), error=str(e))
@@ -986,7 +986,7 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
         return redirect(_list_url(assembly_id))
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/delete", methods=["POST"])
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/<url_slug>/delete", methods=["POST"])
 @login_required
 def delete_assembly_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Delete a registration page outright — no archive, no undo.
@@ -1012,13 +1012,13 @@ def delete_assembly_registration_page(assembly_id: uuid.UUID, url_slug: str) -> 
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to modify this assembly"), "error")
+        flash(_("You don't have permission to modify this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except ValueError as e:
         # The service's refusals are written for an organiser to read.
@@ -1035,7 +1035,7 @@ def delete_assembly_registration_page(assembly_id: uuid.UUID, url_slug: str) -> 
     return redirect(_list_url(assembly_id))
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton")
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/skeleton")
 @login_required
 def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Generate starter HTML form skeleton based on assembly's field definitions."""
@@ -1045,15 +1045,15 @@ def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
             variants = generate_starter_form_html_variants(uow, current_user.id, assembly_id)
         return jsonify({"html": variants.plain, "html_govuk": variants.govuk})
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to access this assembly")}), 403
+        return jsonify({"error": _("You don't have permission to access this project")}), 403
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        return jsonify({"error": _("Project not found")}), 404
     except Exception as e:
         logger.error("Generate skeleton error for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify({"error": _("An error occurred while generating the form skeleton")}), 500
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/form-preview")
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/<url_slug>/form-preview")
 @login_required
 def preview_registration_form(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Read-only render of the saved registration form, embedded in the preview step.
@@ -1094,7 +1094,7 @@ def preview_registration_form(assembly_id: uuid.UUID, url_slug: str) -> Response
         abort(500)
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/qr-code.png")
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/<url_slug>/qr-code.png")
 @login_required
 def download_registration_qr_code(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Download registration QR code as PNG image."""
@@ -1139,13 +1139,13 @@ def download_registration_qr_code(assembly_id: uuid.UUID, url_slug: str) -> Resp
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to access this assembly"), "error")
+        flash(_("You don't have permission to access this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error("Download QR code error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
@@ -1166,7 +1166,7 @@ def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
     return page.url_slug if page else ""
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images", methods=["POST"])
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/images", methods=["POST"])
 @login_required
 def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Accept a multipart image upload and return the stored image metadata as JSON.
@@ -1206,9 +1206,9 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except RegistrationPageNotFoundError:
         return jsonify({"error": _("Please create a registration page first from the Details tab.")}), 400
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+        return jsonify({"error": _("You don't have permission to modify this project")}), 403
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        return jsonify({"error": _("Project not found")}), 404
     except Exception as e:
         logger.exception("Image upload error for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify({"error": _("An error occurred while uploading the image")}), 500
@@ -1216,7 +1216,7 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
     return jsonify({"image": _image_to_dict(image)}), 201
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["PATCH"])
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["PATCH"])
 @login_required
 def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UUID) -> ResponseReturnValue:
     """Update an image's alt text. Returns the updated image metadata as JSON."""
@@ -1234,9 +1234,9 @@ def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
     except RegistrationPageNotFoundError:
         return jsonify({"error": _("Registration page not found")}), 404
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+        return jsonify({"error": _("You don't have permission to modify this project")}), 403
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        return jsonify({"error": _("Project not found")}), 404
     except Exception as e:
         logger.error("Update image alt error", assembly_id=str(assembly_id), image_id=str(image_id), error=str(e))
         return jsonify({"error": _("An error occurred while updating the image")}), 500
@@ -1244,9 +1244,7 @@ def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
     return jsonify({"image": _image_to_dict(image)}), 200
 
 
-@backoffice_registration_bp.route(
-    "/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["DELETE"]
-)
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["DELETE"])
 @login_required
 def delete_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UUID) -> ResponseReturnValue:
     """Delete a registration image. Returns 204 on success."""
@@ -1259,9 +1257,9 @@ def delete_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
     except RegistrationPageNotFoundError:
         return jsonify({"error": _("Registration page not found")}), 404
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+        return jsonify({"error": _("You don't have permission to modify this project")}), 403
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        return jsonify({"error": _("Project not found")}), 404
     except Exception as e:
         logger.error("Delete image error", assembly_id=str(assembly_id), image_id=str(image_id), error=str(e))
         return jsonify({"error": _("An error occurred while deleting the image")}), 500
@@ -1269,7 +1267,7 @@ def delete_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
     return "", 204
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/documents", methods=["POST"])
+@backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/documents", methods=["POST"])
 @login_required
 def upload_registration_document(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Accept a multipart PDF upload and return the stored document metadata as JSON.
@@ -1307,9 +1305,9 @@ def upload_registration_document(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except RegistrationPageNotFoundError:
         return jsonify({"error": _("Please create a registration page first from the Details tab.")}), 400
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+        return jsonify({"error": _("You don't have permission to modify this project")}), 403
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        return jsonify({"error": _("Project not found")}), 404
     except Exception as e:
         logger.exception("Document upload error for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify({"error": _("An error occurred while uploading the document")}), 500
@@ -1318,7 +1316,7 @@ def upload_registration_document(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 @backoffice_registration_bp.route(
-    "/assembly/<uuid:assembly_id>/registration/documents/<uuid:document_id>", methods=["PATCH"]
+    "/project/<uuid:assembly_id>/registration/documents/<uuid:document_id>", methods=["PATCH"]
 )
 @login_required
 def update_assembly_registration_document(assembly_id: uuid.UUID, document_id: uuid.UUID) -> ResponseReturnValue:
@@ -1337,9 +1335,9 @@ def update_assembly_registration_document(assembly_id: uuid.UUID, document_id: u
     except RegistrationPageNotFoundError:
         return jsonify({"error": _("Registration page not found")}), 404
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+        return jsonify({"error": _("You don't have permission to modify this project")}), 403
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        return jsonify({"error": _("Project not found")}), 404
     except Exception as e:
         logger.error(
             "Update document label error", assembly_id=str(assembly_id), document_id=str(document_id), error=str(e)
@@ -1350,7 +1348,7 @@ def update_assembly_registration_document(assembly_id: uuid.UUID, document_id: u
 
 
 @backoffice_registration_bp.route(
-    "/assembly/<uuid:assembly_id>/registration/documents/<uuid:document_id>", methods=["DELETE"]
+    "/project/<uuid:assembly_id>/registration/documents/<uuid:document_id>", methods=["DELETE"]
 )
 @login_required
 def delete_assembly_registration_document(assembly_id: uuid.UUID, document_id: uuid.UUID) -> ResponseReturnValue:
@@ -1364,9 +1362,9 @@ def delete_assembly_registration_document(assembly_id: uuid.UUID, document_id: u
     except RegistrationPageNotFoundError:
         return jsonify({"error": _("Registration page not found")}), 404
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+        return jsonify({"error": _("You don't have permission to modify this project")}), 403
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        return jsonify({"error": _("Project not found")}), 404
     except Exception as e:
         logger.error("Delete document error", assembly_id=str(assembly_id), document_id=str(document_id), error=str(e))
         return jsonify({"error": _("An error occurred while deleting the document")}), 500

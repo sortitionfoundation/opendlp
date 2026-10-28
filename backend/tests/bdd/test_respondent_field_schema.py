@@ -24,11 +24,11 @@ _schema_assembly_ids: dict[str, str] = {}
 
 
 def _url_for_schema_page(assembly_id: str) -> str:
-    return f"{Urls.base}/backoffice/assembly/{assembly_id}/respondent-schema"
+    return f"{Urls.base}/backoffice/project/{assembly_id}/respondent-schema"
 
 
 def _url_for_respondent_page(assembly_id: str, respondent_id: str) -> str:
-    return f"{Urls.base}/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+    return f"{Urls.base}/backoffice/project/{assembly_id}/respondents/{respondent_id}"
 
 
 # ---------------------------------------------------------------------------

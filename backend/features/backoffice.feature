@@ -11,7 +11,7 @@ Feature: Backoffice Dashboard
   Scenario: Authenticated user can view backoffice dashboard
     Given I am logged in as an admin user
     When I visit the backoffice dashboard
-    Then I should see "Dashboard"
+    Then I should see "Your projects"
     And I should see "Welcome back"
 
   Scenario: Dashboard displays assemblies using card components
@@ -84,4 +84,4 @@ Feature: Backoffice Dashboard
     And there is an assembly called "Selection Unauthorized Assembly" created by admin
     When I try to access the assembly selection page for "Selection Unauthorized Assembly"
     Then I should be redirected to the dashboard
-    And I should see "You don't have permission to view this assembly"
+    And I should see "You don't have permission to view this project"

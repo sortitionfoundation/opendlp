@@ -20,7 +20,7 @@ from tests.e2e.helpers import get_csrf_token
 VALID_TARGETS_CSV = b"feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\n"
 
 # Base URL prefix for backoffice targets
-PREFIX = "/backoffice/assembly"
+PREFIX = "/backoffice/project"
 
 
 def _targets_url(assembly_id, suffix=""):
@@ -72,7 +72,7 @@ class TestUploadTargetsCsv:
             follow_redirects=False,
         )
         assert response.status_code == 302
-        assert f"/backoffice/assembly/{existing_assembly.id}/targets" in response.location
+        assert f"/backoffice/project/{existing_assembly.id}/targets" in response.location
 
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]

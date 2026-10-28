@@ -630,7 +630,7 @@ def _linked_field_id(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, category_i
 # ---------------------------------------------------------------------------
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources")
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources")
 @login_required
 def view_sources(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """The per-target data sources checklist."""
@@ -639,13 +639,13 @@ def view_sources(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             page_ctx = _page_context(uow, assembly_id, with_hub=True)
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+        return _dashboard_redirect(_("You don't have permission to view this project"))
     return _render_page(page_ctx)
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/setup-modal")
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/setup-modal")
 @login_required
 def setup_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Serve the set-up modal — fragment for HTMX, full page with the modal open otherwise."""
@@ -662,9 +662,9 @@ def setup_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
                 values = _default_setup_values(status)
             modal_ctx = _setup_modal_ctx(uow, assembly_id, category_id, values)
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+        return _dashboard_redirect(_("You don't have permission to view this project"))
     return _render_setup_modal(page_ctx, modal_ctx)
 
 
@@ -684,9 +684,9 @@ def _setup_modal_response(
             page_ctx = _page_context(uow, assembly_id)
             modal_ctx = _setup_modal_ctx(uow, assembly_id, category_id, values, error=error)
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+        return _dashboard_redirect(_("You don't have permission to view this project"))
     return _render_setup_modal(page_ctx, modal_ctx, status)
 
 
@@ -697,7 +697,7 @@ def _setup_error_response(
     return _setup_modal_response(assembly_id, category_id, values, error=error, status=422)
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/configure", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/configure", methods=["POST"])
 @login_required
 def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Save the set-up modal: wire the target to its source in one transaction.
@@ -731,9 +731,9 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         # The message names internal ids - show a generic one.
         return _setup_error_response(assembly_id, category_id, values, _("Question not found"))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
 
     source_status = _status_for(page_ctx["statuses"], category_id)
     # The row count is None unless the target is fed by a lookup table.
@@ -756,7 +756,7 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     )
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/adopt", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/adopt", methods=["POST"])
 @login_required
 def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Link the name-matched existing field the row offered."""
@@ -775,13 +775,13 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
         flash(_("Question not found"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     return _close_modal_response(assembly_id, page_ctx, _("Question linked to its target"))
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/resync", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/resync", methods=["POST"])
 @login_required
 def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Regenerate the linked field's options from the target's current values."""
@@ -802,9 +802,9 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         flash(_("This question could not be re-synced — set it up again"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     return _saved_response(
         assembly_id,
         page_ctx,
@@ -814,7 +814,7 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     )
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/recompute", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/recompute", methods=["POST"])
 @login_required
 def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Recompute the linked derived field across the pool."""
@@ -836,15 +836,15 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         flash(_("No question is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     if report.total == 0:
         return _toast_response(assembly_id, page_ctx, _("There are no respondents to recompute yet"), "info")
     return _toast_response(assembly_id, page_ctx, *_recompute_toast(report, _("Recompute finished")))
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload-modal")
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload-modal")
 @login_required
 def upload_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Serve the lookup-table upload dialog for the target's linked mapping field.
@@ -867,9 +867,9 @@ def _upload_modal_response(
         with uow:
             page_ctx = _page_context(uow, assembly_id)
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+        return _dashboard_redirect(_("You don't have permission to view this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     return _render_upload_modal(page_ctx, assembly_id, category_id, error=error, status=status, setup_step=setup_step)
 
 
@@ -919,9 +919,9 @@ def _defer_upload_response(assembly_id: uuid.UUID, category_id: uuid.UUID, setup
         with uow:
             page_ctx = _page_context(uow, assembly_id)
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     source_status = _status_for(page_ctx["statuses"], category_id)
     if source_status is None or source_status.field is None:
         flash(_("No question is linked to this target"), "error")
@@ -935,7 +935,7 @@ def _defer_upload_response(assembly_id: uuid.UUID, category_id: uuid.UUID, setup
     return _toast_response(assembly_id, page_ctx, message, "warning")
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload", methods=["POST"])
 @login_required
 def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Replace the linked mapping field's lookup table from an uploaded CSV, then recompute."""
@@ -983,13 +983,13 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
             assembly_id, category_id, error=_("Question not found"), status=422, setup_step=setup_step
         )
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     return _report_response(assembly_id, page_ctx, report, _("Lookup table uploaded"), upload_report=upload_report)
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/unlink", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/unlink", methods=["POST"])
 @login_required
 def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Break the link: a question stays behind, a computed question is deleted."""
@@ -999,9 +999,9 @@ def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
             _unlinked, deleted = unlink(uow, current_user.id, assembly_id, category_id)
             page_ctx = _page_context(uow, assembly_id)
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except AssemblyNotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     except NotFoundError:
         flash(_("Target not found"), "error")
         return redirect(_sources_url(assembly_id))

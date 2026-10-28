@@ -85,7 +85,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
 
     # Step 0: create the registration page. Route seeds a default email template
     # as a side effect and assigns it — the auto-reply is always-on.
-    response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/create")
+    response = logged_in_admin.post(f"/backoffice/project/{assembly_id}/registration/create")
     assert response.status_code == 302
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -104,7 +104,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     # Step 1: rename the page and change its URLs with save_and_next. Redirects to
     # the intro section, at the new slug.
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/save",
         data={
             "action": "save_and_next",
             "step": "page",
@@ -123,7 +123,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
 
     # Step 2: save the intro with save_and_next. Redirects to the form section.
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/save",
         data={"action": "save_and_next", "step": "intro", "intro_content": "<h1>{{ assembly_title }}</h1>"},
     )
     assert response.status_code == 302
@@ -131,7 +131,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
 
     # Step 3: save the form HTML with save_and_next. Redirects to the thank-you section.
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/save",
         data={"action": "save_and_next", "step": "form", "html_content": READY_FORM_HTML},
     )
     assert response.status_code == 302
@@ -139,7 +139,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
 
     # Step 4: switch to its own thank-you page with save_and_next. Redirects to the email section.
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/save",
         data={
             "action": "save_and_next",
             "step": "thank-you",
@@ -159,7 +159,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     # Step 5: save updated auto-reply copy with save_and_next (it is already
     # assigned and always-on — there is no enable step).
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/save",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/email/save",
         data={
             "action": "save_and_next",
             "template_subject": "Thanks {{ respondent.first_name_or_friend }}!",
@@ -178,14 +178,14 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
 
     # The manager sees the test-send card on the (non-closed) email section.
     page_text = logged_in_admin.get(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}?section=email",
+        f"/backoffice/project/{assembly_id}/registration/{slug}?section=email",
     ).get_data(as_text=True)
     assert "Send a test email" in page_text
 
     # Step 5b: send a test of the saved auto-reply. The console email adapter is
     # active in tests, so the send itself succeeds and the success flash shows.
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/send-test",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/email/send-test",
         data={"test_email_to": "manager@example.com"},
         follow_redirects=True,
     )
@@ -194,7 +194,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
 
     # An invalid recipient is rejected with a flash, not a send.
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/send-test",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/email/send-test",
         data={"test_email_to": "not-an-email"},
         follow_redirects=True,
     )
@@ -202,7 +202,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
 
     # Step 6: publish. Same save endpoint, no html_content payload (guard skips update).
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/save",
         data={"action": "publish"},
     )
     assert response.status_code == 302
@@ -221,17 +221,17 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
 def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_session_factory, monkeypatch):
     """Each failure mode of the test-send route surfaces as the right flash message."""
     assembly_id = _seed_assembly_with_required_email(postgres_session_factory, admin_user.id)
-    response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/create")
+    response = logged_in_admin.post(f"/backoffice/project/{assembly_id}/registration/create")
     assert response.status_code == 302
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         slug = page_for_assembly(uow, assembly_id).url_slug
-    send_test_url = f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/send-test"
+    send_test_url = f"/backoffice/project/{assembly_id}/registration/{slug}/email/send-test"
     data = {"test_email_to": "manager@example.com"}
 
     # A template variable with no value is flashed back as a warning beside the success flash.
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/save",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/email/save",
         data={"action": "save", "template_subject": "Hi {{ bogus_name }}", "template_body_html": "<p>Hi</p>"},
     )
     assert response.status_code == 302
@@ -263,12 +263,12 @@ def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_sessi
 
     monkeypatch.setattr(route_module, "prepare_test_auto_reply", gone)
     text = logged_in_admin.post(send_test_url, data=data, follow_redirects=True).get_data(as_text=True)
-    assert "Assembly not found" in text
+    assert "Project not found" in text
     monkeypatch.undo()
 
     # An unknown slug is reported and redirects to the page list.
     text = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/no-such-slug/email/send-test",
+        f"/backoffice/project/{assembly_id}/registration/no-such-slug/email/send-test",
         data=data,
         follow_redirects=True,
     ).get_data(as_text=True)
@@ -300,16 +300,16 @@ def test_send_test_email_requires_manage_permission(logged_in_user, regular_user
         uow.commit()
 
     text = logged_in_user.post(
-        f"/backoffice/assembly/{assembly_id}/registration/perm-check-test-send/email/send-test",
+        f"/backoffice/project/{assembly_id}/registration/perm-check-test-send/email/send-test",
         data={"test_email_to": "someone@example.com"},
         follow_redirects=True,
     ).get_data(as_text=True)
-    assert "permission to modify this assembly" in text
+    assert "permission to modify this project" in text
 
     # The view-only member can still open the page, but the manage-only test-send
     # card is not rendered for them.
     page_text = logged_in_user.get(
-        f"/backoffice/assembly/{assembly_id}/registration/perm-check-test-send?section=email",
+        f"/backoffice/project/{assembly_id}/registration/perm-check-test-send?section=email",
     ).get_data(as_text=True)
     assert "Send a test email" not in page_text
 
@@ -317,7 +317,7 @@ def test_send_test_email_requires_manage_permission(logged_in_user, regular_user
 def test_closed_page_hides_and_refuses_test_send(logged_in_admin, admin_user, postgres_session_factory):
     """A CLOSED page goes read-only everywhere: no test-send card, and a posted send is refused."""
     assembly_id = _seed_assembly_with_required_email(postgres_session_factory, admin_user.id)
-    logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/create")
+    logged_in_admin.post(f"/backoffice/project/{assembly_id}/registration/create")
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         page = page_for_assembly(uow, assembly_id)
         page.status = RegistrationPageStatus.CLOSED
@@ -326,13 +326,13 @@ def test_closed_page_hides_and_refuses_test_send(logged_in_admin, admin_user, po
 
     # The card is gone from the (read-only) CLOSED page.
     page_text = logged_in_admin.get(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}?section=email",
+        f"/backoffice/project/{assembly_id}/registration/{slug}?section=email",
     ).get_data(as_text=True)
     assert "Send a test email" not in page_text
 
     # A posted send is refused even though the admin can manage the assembly.
     text = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/send-test",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/email/send-test",
         data={"test_email_to": "manager@example.com"},
         follow_redirects=True,
     ).get_data(as_text=True)

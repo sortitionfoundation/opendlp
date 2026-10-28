@@ -37,42 +37,77 @@ about are listed under [Still open](#still-open) at the foot, each with a
 recommendation. Until one is settled, match the part of the app you are working
 in, and don't add a third variant.
 
+**Settled is not the same as swept.** A term is settled here first and the
+source follows, one screen at a time, so a screen may still say the old word
+while this guide says the new one. Write to the guide, not to the screen next
+door. The move from "assembly" to "project" is the current example.
+
 ## Glossary
 
 ### Domain
 
 | Say                   | Meaning                                                                       | Not                                |
 | --------------------- | ----------------------------------------------------------------------------- | ---------------------------------- |
-| assembly              | A citizens' assembly: the thing an organiser sets up and runs a selection for |                                    |
-| citizens' assembly    | The same, in introductory or public-facing prose                              |                                    |
-| respondent            | Anyone in an assembly's data, whatever their status                           | registrant, applicant, member      |
-| participant           | A respondent who has been selected for the assembly                           | member                             |
+| project               | What an organiser sets up in OpenDLP to find the people for one event         | assembly                           |
+| event                 | The gathering a project finds people for: an assembly, jury, panel or forum   | assembly, mini-public              |
+| citizens' assembly    | One kind of event; in the brand prose only                                    |                                    |
+| framing question      | The question the event is convened to answer                                  | assembly question, question        |
+| first event date      | The day the event first meets                                                 | first assembly date                |
+| respondent            | Anyone in a project's data, whatever their status                             | registrant, applicant, member      |
+| participant           | A respondent who has been selected for the event                              | member                             |
 | pool                  | The respondents who have not been selected                                    |                                    |
 | remaining respondents | The pool, once a selection has run                                            | unselected                         |
 | target                | One thing the selection balances on, such as Gender or Age                    | category, target category, feature |
 | value                 | One option within a target, such as Woman or 18-24                            | category value                     |
 | min, max              | The fewest and most people with a value that a selection may pick             | quota                              |
-| targets               | All of an assembly's targets together: "Edit targets", "Targets saved"        |                                    |
+| targets               | All of a project's targets together: "Edit targets", "Targets saved"          |                                    |
 | selection             | Choosing people from the pool by stratified random lottery                    | draw, lottery, sortition           |
 | selection run         | One run of the selection, recorded in the run history                         |                                    |
-| panel                 | One possible line-up of the whole assembly; a selection picks one             | committee, line-up                 |
-| initial selection     | The selection run that picks the assembly, before any replacements            | first selection, main selection    |
+| panel                 | One possible line-up of the whole event; a selection picks one                | committee, line-up                 |
+| initial selection     | The selection run that picks the participants, before any replacements        | first selection, main selection    |
 | test selection        | A selection run that is not for real                                          |                                    |
 | replacement selection | A selection run to fill places left by people who withdrew                    | replacements, substitute, reserve  |
 | replacements          | The people a replacement selection selects                                    | replacement participants, members  |
-| team member           | A user with a role on an assembly                                             | member (for a respondent)          |
-| registration page     | The public page where people put themselves forward for an assembly           | registration form                  |
+| team member           | A user with a role on a project                                               | member (for a respondent)          |
+| registration page     | The public page where people put themselves forward for an event              | registration form                  |
 | registration question | One thing the registration page asks, such as date of birth                   | registration field                 |
 | intro                 | What a registration page shows above the form, such as a heading and welcome  | introduction, header, preamble     |
 | invite                | What an admin sends so that someone can create an account                     |                                    |
 | invite code           | The code in an invite                                                         | invitation code                    |
-| assembly question     | What the assembly is convened to decide                                       |                                    |
 | reply-to              | Where replies to an email the app sends are delivered (its Reply-To header)   | replies go to, reply address       |
 
-**assembly** is lowercase in running text: "Run the replacement selection for
-this assembly". Use "citizens' assembly" where the reader might not know what an
-assembly is — the home page, the invite email, "Set up a new citizens'
-assembly." Straight apostrophe.
+**project** is the thing an organiser creates and works in: its data, targets,
+registration page, team and selections. It is lowercase in running text: "Run
+the replacement selection for this project", "Your projects", "Create project".
+It used to be called an assembly, and the code still calls it one everywhere
+(`Assembly`, `assembly_id`, the `assembly_id` in every URL); see
+[Code names are not interface words](#code-names-are-not-interface-words). The
+interface changed because "assembly" is the wrong word for many of the people
+who use it. Not everyone runs a citizens' assembly: the gathering may be a
+people's assembly, a citizens' jury, a panel, a forum or, generically, a
+mini-public, and some organisers avoid both "citizens'" and "assembly" on
+purpose. What OpenDLP hosts is the project to find the people for that
+gathering, whatever it is called.
+
+**event** is the gathering itself, where the interface has to name it: "First
+event date", "the number of participants to select for this event". Never
+"assembly", for the reason above, and not "mini-public", which is the
+practitioners' word and not the organisers'. The event is not a thing in
+OpenDLP; a project has one.
+
+**citizens' assembly** survives in the brand prose only — the home page, the
+footer and the invite email, which describe what OpenDLP is for. That prose is
+settled as written, capitals included: "Open Democratic Lottery Platform for
+Citizens' Assemblies". Do not spread the phrase from there into the backoffice.
+Straight apostrophe.
+
+**framing question** is the question the event is convened to answer: "How
+should the city reach net zero by 2040?" Not "assembly question", and not a
+bare "question", which collides with registration question. The code calls it
+`question` on the project.
+
+**first event date** is the day the event first meets. The code calls it
+`first_assembly_date`.
 
 **target** is the standard word for Gender, Age and the like, replacing
 "category": "Add target", "Target name", "Delete target". It is what the
@@ -102,7 +137,7 @@ button is "Run Replacement Selection", and the people are just "replacements",
 not "replacement participants" or "replacement members". Whether the
 per-person status should also say "Pool" is [still open](#still-open).
 
-**team member** is a user with a role on an assembly: "Team Members". "Member"
+**team member** is a user with a role on a project: "Team members". "Member"
 never means a respondent, whatever state they are in.
 
 **registration page** is the thing an organiser creates, publishes and closes —
@@ -129,7 +164,7 @@ calls it target sources (`target_sources`). Do not call it a "data source" in
 the interface: organisers read that as where a target's population figures come
 from, such as the census.
 
-**data source** is where an assembly's respondents come from: Google Sheets or
+**data source** is where a project's respondents come from: Google Sheets or
 a CSV upload, as chosen on the Data tab. It never means the question behind a
 target, nor where a target's percentages come from.
 
@@ -138,7 +173,7 @@ its percentages come from: census tables from the ONS, or an opinion poll for an
 attitudinal target. The code calls it `source_url`. Not "data source", for the
 reasons above, and not "Population % source", which needs its `%` escaped.
 
-**built-in question** is a registration question every assembly has, such as
+**built-in question** is a registration question every project has, such as
 email or consent, whose type can't be changed. The code calls these fixed fields
 (`is_fixed`); "fixed" never appears in the interface.
 
@@ -163,31 +198,34 @@ algorithm". Neither is the everyday name of the operation.
 
 | Label               | What it is                                                      |
 | ------------------- | --------------------------------------------------------------- |
-| Admin               | Global role: sees and manages every assembly, users and invites |
-| Organiser           | Global role: can create assemblies                              |
-| User                | Global role: sees only the assemblies they have a role on       |
-| Assembly Manager    | Per-assembly role: manages that assembly and its team           |
-| Confirmation Caller | Per-assembly role: calls selected respondents to confirm        |
-| Read Only           | Per-assembly role: can look but not change                      |
+| Admin               | Global role: sees and manages every project, users and invites  |
+| Organiser           | Global role: can create projects                                |
+| User                | Global role: sees only the projects they have a role on         |
+| Project Manager     | Per-project role: manages that project and its team             |
+| Confirmation Caller | Per-project role: calls selected respondents to confirm         |
+| Read Only           | Per-project role: can look but not change                       |
 
-These are the role names as the interface shows them, capitalised as names.
-"Organiser" is always spelled with an _s_. Keep "administrator" for the "contact
-an administrator" messages, where it means a person rather than the role. See
+These are the role names as the interface shows them, capitalised as names — the
+one place Title Case is right, see [Case](#case). "Organiser" is always spelled
+with an _s_. Keep "administrator" for the "contact an administrator" messages,
+where it means a person rather than the role. "Project Manager" was "Assembly
+Manager"; the enum value is still `assembly-manager`. See
 [roles-and-permissions.md](roles-and-permissions.md) for what each role can do.
 
 ### Pages
 
 | Say             | Meaning                                         | Not                            |
 | --------------- | ----------------------------------------------- | ------------------------------ |
-| Your Assemblies | The list of assemblies you see after signing in | dashboard, backoffice homepage |
-| Dashboard       | An assembly's statistics tab                    |                                |
+| Your projects   | The list of projects you see after signing in   | dashboard, backoffice homepage |
+| Dashboard       | A project's statistics tab                      |                                |
 | Site Admin      | The admin area                                  | Site Administration            |
 
-**Your Assemblies** is the page heading the list already has. The team calls it
-the "backoffice homepage", which is fine between ourselves and wrong on the page.
-**Dashboard** is only the per-assembly statistics tab. Every link to the list —
-the header, the error pages, "Back to Your Assemblies" — says so. The list page's
-own heading still says "Dashboard"; that is [still open](#still-open).
+**Your projects** is the list page's `<h1>` and page title, and the name of every
+link to it — the header, the error pages, "Back to Your projects". The "Create
+project" button sits beside the heading; there is no second heading under it.
+The team calls the page the "backoffice homepage", which is fine between
+ourselves and wrong on the page. **Dashboard** is only the per-project statistics
+tab. The legacy list page keeps its old pair of headings until it is retired.
 
 ### Google Sheets
 
@@ -224,10 +262,14 @@ put the code's word on the page.
 
 | In the code                                   | In the interface                               |
 | --------------------------------------------- | ---------------------------------------------- |
+| `Assembly`, `assembly_id`, `assemblies`       | project                                        |
+| `assembly-manager`, `ASSEMBLY_MANAGER`        | Project Manager                                |
+| `Assembly.question`                           | framing question                               |
+| `first_assembly_date`                         | first event date                               |
 | `gsheet`, `GSheet`                            | Google Sheets, spreadsheet                     |
 | `registrant` (`select_registrants_tab`, …)    | respondent                                     |
 | `db`, `DB`                                    | database                                       |
-| `backoffice.dashboard`, "backoffice homepage" | Your Assemblies                                |
+| `backoffice.dashboard`, "backoffice homepage" | Your projects                                  |
 | `TargetCategory`, `category`                  | target                                         |
 | `TargetValue`                                 | value                                          |
 | `feature` (sortition-algorithms)              | target                                         |
@@ -241,6 +283,18 @@ The sortition-algorithms library writes its own run reports in optimisation
 jargon, and its messages are extracted into our catalogue. We cannot reword those
 here, only translate them. The last row is also a translation bug, not only a
 wording one: see "Never render an `Enum` member's `.value`" in `AGENTS.md`.
+
+The first four rows are the biggest gap, and a deliberate one. Renaming the
+project in the code would touch every table, route, task and test, and the
+word leaks out of the repo in a few places that are harder to change than a
+label: the `MAX_IMAGES_PER_ASSEMBLY` environment variables, the `"assembly"` key
+in the respondent field spec JSON, and the `{{ assembly.title }}` variables
+organisers have typed into saved emails. Those keep working. Where the code's
+word is itself on the page — the email step's variable picker, the intro's
+variables, the project's URL — the interface offers the `project` spelling and
+the `assembly` spelling goes on being accepted: `/backoffice/assembly/…`
+redirects to `/backoffice/project/…`, and `{{ assembly.title }}` renders the
+same as `{{ project.title }}`.
 
 ## Writing
 
@@ -267,9 +321,22 @@ wording one: see "Never render an `Enum` member's `.value`" in `AGENTS.md`.
 - **Cancel** is the button that backs out of a dialog or form without doing
   anything. **Back to …** is navigation.
 - **Delete** destroys data: a respondent, a target, a tab. **Remove** undoes a
-  relationship and leaves the thing itself: a user from an assembly, a sign-in
+  relationship and leaves the thing itself: a user from a project, a sign-in
   method, a Google Sheets configuration. "Respondents deleted: %(count)d removed"
   is the kind of string this rules out.
+
+### Case
+
+- **Sentence case** for every string: headings, buttons, labels, tab names.
+  "Create project", "Project title", "Save changes", "Your projects". It is what
+  GOV.UK prescribes, and it is where the redesigned backoffice already was.
+- **Role names are capitalised as names**: Admin, Organiser, Project Manager,
+  Confirmation Caller, Read Only.
+- **Proper nouns keep their capitals**: Google Sheets, OpenDLP, Site Admin.
+- **Reuse an existing sentence-case msgid** rather than adding a Title Case
+  twin. Where a Title Case string is reworded for another reason, it changes
+  case at the same time; do not reword a string only to change its case,
+  because the rewording costs its translation.
 
 ### Punctuation
 
@@ -293,15 +360,7 @@ Each of these is a place where the English calls one thing by two names or one
 name means two things. Recommendations are recommendations; settle them here
 before sweeping the source.
 
-1. **Title Case or sentence case.** The redesigned backoffice templates are about
-   70% sentence case; the Title Case is concentrated in the legacy screens and
-   the older admin pages. At least 44 msgids exist twice differing only in case
-   — "Save Changes" / "Save changes", "Target Name" / "Target name" — and each
-   pair is two entries for a translator. _Recommend sentence case_ for every new
-   string, which is what GOV.UK prescribes and where the redesign is already
-   heading, reusing the existing sentence-case msgid where there is one. With the
-   legacy screens out of scope, the remaining Title Case is small enough to sweep.
-2. **What the pool status is called.** "pool" as the name of the group is
+1. **What the pool status is called.** "pool" as the name of the group is
    settled — see the glossary — and so is writing it lowercase in running text:
    "Reset %(count)s respondents to the pool", not "…to Pool status" _(F35 in the
    Hungarian guide)_. What is open is the status tag on one person, which today
@@ -319,7 +378,7 @@ before sweeping the source.
    | Pool (as now)             | fine                       | fine                                                               | a noun among adjectives                                                                                                         |
    | In pool                   | fine                       | fine                                                               | a phrase where the others are single words                                                                                      |
    | Remaining                 | odd: remaining after what? | exact, and matches "remaining respondents" and the Remaining tab   | only half the life of the status                                                                                                |
-   | Available                 | fine                       | fine                                                               | assembly registration forms often ask whether someone is available for the dates, and it will be read as that                   |
+   | Available                 | fine                       | fine                                                               | registration pages often ask whether someone is available for the dates, and it will be read as that                            |
    | Eligible                  | fine                       | fine                                                               | eligibility is a separate test (lives in the area, old enough) that selected people pass too                                    |
    | Unselected / Not selected | fine                       | reads as rejected, though they can still be drawn as a replacement |                                                                                                                                 |
    | Waiting                   | fine                       | promises a turn that may never come                                |                                                                                                                                 |
@@ -334,24 +393,10 @@ before sweeping the source.
    change only: the enum value stays `POOL`, so one msgid changes and nothing in
    the database does.
 
-3. **Columns, fields and attributes in the selection settings.** The Google
+2. **Columns, fields and attributes in the selection settings.** The Google
    Sheets form says "Address Columns", "Columns to Keep" and "ID Column", which is
    right: they are columns in the spreadsheet. The database settings form has the
    same settings as "Address Attributes" and "Attributes to Keep". "Fields" is
    the word the rest of the interface uses for these ("Fields are defined by
    your Google Sheets spreadsheet"), so "Address Fields" and "Fields to Keep" are
    the likely answer, but this is waiting on a team discussion.
-4. **The Your Assemblies page's own heading.** Every link to the list now says
-   "Your Assemblies", but the backoffice page itself has an `<h1>` and page title
-   of "Dashboard", with "Your Assemblies" as the `<h2>` beneath it. Renaming the
-   `<h1>` alone would stack two identical headings. _Recommend_ an `<h1>` of
-   "Your Assemblies", dropping the `<h2>` but keeping the "Create New Assembly"
-   button beside it. The legacy list page has the same pair of headings, and can
-   stay as it is until it is retired.
-5. **Capitalising "Citizens' Assembly".** The glossary writes "citizens'
-   assembly" in lowercase, but the home page, the footer and the invite email
-   capitalise it in running prose — "a platform for supporting Citizens'
-   Assemblies", "Democratic Lottery and Citizens' Assembly management" — where it
-   reads as a term of art. _Recommend_ lowercase in running text, capitals in
-   headings and the brand, but this touches how the Sortition Foundation writes
-   about itself, so it wants a decision rather than a sweep.
