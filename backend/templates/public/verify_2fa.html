@@ -1,0 +1,45 @@
+{#
+ABOUTME: Public two-factor sign-in step on the OpenDLP design system
+ABOUTME: Takes an authenticator code or a backup code to finish a sign-in that passed the password check
+#}
+{% extends "public/base.html" %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input %}
+{% from "public/_page_heading.html" import page_heading %}
+{% block title %}{{ _("Two-Factor Authentication") }}{% endblock %}
+{% block content %}
+    <div class="flex flex-col gap-10">
+        {% call page_heading(_("Two-Factor Authentication")) %}
+            <p class="text-body-md" style="color: var(--color-body-text);">
+                {{ _("Enter the 6-digit code from your authenticator app to complete sign in.") }}
+            </p>
+        {% endcall %}
+        {# No novalidate: the browser's pattern check catches a mistyped code
+           before it costs one of the rate-limited attempts. #}
+        <form method="POST" class="flex flex-col gap-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            {{ input("verification_code",
+            label=_("Verification code"),
+            hint=_("Six digits or a backup code in the format XXXX-XXXX"),
+            attrs='inputmode="numeric" pattern="[0-9]{6}|[0-9A-F]{4}-[0-9A-F]{4}" maxlength="9" autocomplete="one-time-code" autofocus required')
+            }}
+            {{ button(_("Verify"), variant="primary", type="submit", full_width=true) }}
+        </form>
+        <details>
+            <summary class="text-body-md font-semibold underline cursor-pointer"
+                     style="color: var(--color-links);">{{ _("Use a backup code instead") }}</summary>
+            <div class="flex flex-col gap-2 mt-2 text-body-md"
+                 style="color: var(--color-body-text);">
+                <p>
+                    {{ _("If you've lost access to your authenticator app, you can use one of your backup codes. Each backup code can only be used once.") }}
+                </p>
+                <p>{{ _("Enter your backup code in the format XXXX-XXXX in the verification code field above.") }}</p>
+            </div>
+        </details>
+        <p class="text-body-md text-center">
+            <a href="{{ url_for('auth.login') }}"
+               class="underline font-semibold"
+               style="color: var(--color-links);">{{ _("Back to sign in") }}</a>
+        </p>
+    </div>
+{% endblock %}

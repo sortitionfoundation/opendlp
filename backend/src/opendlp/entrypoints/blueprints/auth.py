@@ -272,7 +272,7 @@ def verify_2fa() -> ResponseReturnValue:
 
         if not verification_code:
             flash(_("Please enter a verification code"), "error")
-            return render_template("auth/verify_2fa.html")
+            return render_template("public/verify_2fa.html")
 
         try:
             uow = bootstrap.get_flask_uow()
@@ -287,7 +287,7 @@ def verify_2fa() -> ResponseReturnValue:
                         _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
                         "error",
                     )
-                    return render_template("auth/verify_2fa.html", rate_limited=True)
+                    return render_template("public/verify_2fa.html", rate_limited=True)
 
                 user = uow.users.get(pending_user_id)
                 if not user or not user.totp_enabled:
@@ -314,21 +314,21 @@ def verify_2fa() -> ResponseReturnValue:
                             _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
                             "error",
                         )
-                    return render_template("auth/verify_2fa.html")
+                    return render_template("public/verify_2fa.html")
 
                 # Success! Complete login
                 return _complete_2fa_login(uow, pending_user_id, is_backup_code)
 
         except TwoFactorVerificationError as e:
             flash(str(e), "error")
-            return render_template("auth/verify_2fa.html")
+            return render_template("public/verify_2fa.html")
         except Exception as e:
             logger.exception("2FA verification error", error=str(e))
             flash(_("An error occurred during verification. Please try again."), "error")
-            return render_template("auth/verify_2fa.html")
+            return render_template("public/verify_2fa.html")
 
     # GET request - show 2FA form
-    return render_template("auth/verify_2fa.html")
+    return render_template("public/verify_2fa.html")
 
 
 @auth_bp.route("/logout")

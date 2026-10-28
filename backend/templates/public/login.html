@@ -6,27 +6,20 @@ ABOUTME: Email and password sign-in, then Google/Microsoft - Figma node 5570-632
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, checkbox %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
+{% from "public/_page_heading.html" import page_heading %}
 {% block title %}{{ _("Sign in") }}{% endblock %}
 {% block content %}
     {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
     {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
     <div class="flex flex-col gap-10">
-        <div class="flex flex-col items-center gap-6 text-center">
-            <img src="{{ url_for('static', filename='img/join-arch.svg') }}"
-                 alt=""
-                 width="322"
-                 height="161">
-            <div class="flex flex-col gap-1">
-                <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ _("Sign in to OpenDLP") }}</h1>
-                <p class="text-heading-lg" style="color: var(--color-headings);">{{ _("Open Democratic Lottery Platform") }}</p>
-            </div>
+        {% call page_heading(_("Sign in to OpenDLP"), subtitle=_("Open Democratic Lottery Platform")) %}
             <p class="text-body-md" style="color: var(--color-body-text);">
                 {{ _("Don't have an account?") }}
                 <a href="{{ url_for('auth.register') }}"
                    class="underline font-semibold"
                    style="color: var(--color-links);">{{ _("Create an account") }}</a>
             </p>
-        </div>
+        {% endcall %}
         <form method="POST" class="flex flex-col gap-4" novalidate>
             {{ form.hidden_tag() }}
             {{ input(form.email.name,
