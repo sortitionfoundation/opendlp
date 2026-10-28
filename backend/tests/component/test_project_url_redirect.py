@@ -3,6 +3,7 @@ ABOUTME: Bookmarks, emails and spreadsheets still carry them; they must land on 
 
 import uuid
 
+import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
@@ -48,3 +49,33 @@ class TestOldAssemblyUrlsRedirect:
         response = client.get("/backoffice/assembly/new")
         assert response.status_code == 301
         assert response.location == "/backoffice/project/new"
+
+
+class TestTheRedirectCannotLeaveTheSite:
+    """The target is built onto a literal /backoffice/project/ prefix, so no path or
+    query an attacker chooses can turn it into an open redirect or inject a header."""
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "/backoffice/assembly//evil.example/x",
+            "/backoffice/assembly/%2F%2Fevil.example/x",
+            "/backoffice/assembly/\\evil.example",
+            "/backoffice/assembly/https://evil.example",
+            "/backoffice/assembly/../../admin",
+            "/backoffice/assembly/x?next=https://evil.example&a=%0d%0aSet-Cookie:%20x=y",
+            "/backoffice/assembly/x?q=%ff%fe",
+            "/backoffice/assembly/x?q=<script>alert(1)</script>",
+        ],
+    )
+    def test_the_location_stays_on_our_origin(self, client: FlaskClient, url: str) -> None:
+        response = client.get(url)
+        assert response.status_code in (301, 308)
+        location = response.headers["Location"]
+        # Werkzeug makes some of these absolute while collapsing doubled slashes;
+        # either way the only host that can appear is our own, and the path is ours.
+        assert location.startswith(("/", "http://localhost/"))
+        path = location.removeprefix("http://localhost")
+        assert path.startswith("/backoffice/")
+        assert not path.startswith("//")
+        assert "\r" not in location and "\n" not in location
