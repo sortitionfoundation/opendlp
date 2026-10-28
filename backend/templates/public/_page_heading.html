@@ -1,0 +1,32 @@
+{#
+ABOUTME: Heading block shared by the public account pages - dot-arch illustration, title, optional subtitle
+ABOUTME: Anything passed with {% call %} renders beneath the title, e.g. an explanation or a "Sign in" link
+#}
+{% macro page_heading(title, subtitle="") %}
+    {#
+    The centred page heading from the Figma sign-in and sign-up frames.
+
+    Args:
+        title: the page's h1
+        subtitle: a second line under the h1 in heading type (optional)
+
+    Usage:
+        {{ page_heading(_("Sign in to OpenDLP"), subtitle=_("Open Democratic Lottery Platform")) }}
+        {% call page_heading(_("Reset your password")) %}
+            <p class="text-body-md" style="color: var(--color-body-text);">...</p>
+        {% endcall %}
+    #}
+    <div class="flex flex-col items-center gap-6 text-center">
+        <img src="{{ url_for('static', filename='img/join-arch.svg') }}"
+             alt=""
+             width="322"
+             height="161">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ title }}</h1>
+            {% if subtitle %}
+                <p class="text-heading-lg" style="color: var(--color-headings);">{{ subtitle }}</p>
+            {% endif %}
+        </div>
+        {% if caller %}{{ caller() }}{% endif %}
+    </div>
+{% endmacro %}
