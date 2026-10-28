@@ -735,7 +735,7 @@ class UploadRespondentsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
     replace_existing = BooleanField(
         _l("Replace all existing respondents"),
         description=_l(
-            "Warning: this will delete all existing respondents for this assembly before importing. "
+            "Warning: this will delete all existing respondents for this project before importing. "
             "Uncheck to add to existing respondents."
         ),
         default=True,

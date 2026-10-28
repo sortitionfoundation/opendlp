@@ -260,7 +260,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
     except NotFoundError as e:
         logger.warning("Assembly not found for respondents upload", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -310,7 +310,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
     except NotFoundError as e:
         logger.warning("Assembly not found confirming respondents upload", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
@@ -395,7 +395,7 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
     except NotFoundError as e:
         logger.warning("Assembly not found applying respondents upload", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -442,7 +442,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
     except NotFoundError as e:
         logger.warning("Assembly not found for respondents deletion", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -494,7 +494,7 @@ def export_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(respondents_url)
     except NotFoundError as e:
         logger.warning("Assembly not found for respondents export", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     return _csv_download_response(assembly_id, target)
@@ -535,7 +535,7 @@ def export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to export respondents"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     # While auto-export is on, its saved filter is what the next export would
@@ -591,7 +591,7 @@ def run_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to export respondents"), "error")
         return redirect(respondents_url)
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -650,7 +650,7 @@ def stop_auto_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to change the export settings"), "error")
         return redirect(respondents_url)
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     flash(_("Automatic export stopped"), "success")
@@ -776,7 +776,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         ), 200
     except NotFoundError as e:
         logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -785,7 +785,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -794,7 +794,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("An error occurred while loading assembly respondents"), "error")
+        flash(_("An error occurred while loading project respondents"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -842,7 +842,7 @@ def delete_respondent_route(assembly_id: uuid.UUID, respondent_id: uuid.UUID) ->
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning("Assembly not found for respondent deletion", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -907,7 +907,7 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -916,7 +916,7 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -1071,10 +1071,10 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         flash(_("Respondent not found"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -1118,6 +1118,6 @@ def transition_status(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respo
         flash(_("Respondent not found"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return redirect(view_url)

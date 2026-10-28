@@ -1218,7 +1218,7 @@ class TestEditRespondentPage:
 
         response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
         assert response.status_code == 200
-        assert b"This assembly has no respondent fields configured yet." in response.data
+        assert b"This project has no respondent fields configured yet." in response.data
         assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
         assert b"Save changes" not in response.data
         assert b"Change note" not in response.data

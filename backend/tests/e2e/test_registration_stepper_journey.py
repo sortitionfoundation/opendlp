@@ -263,7 +263,7 @@ def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_sessi
 
     monkeypatch.setattr(route_module, "prepare_test_auto_reply", gone)
     text = logged_in_admin.post(send_test_url, data=data, follow_redirects=True).get_data(as_text=True)
-    assert "Assembly not found" in text
+    assert "Project not found" in text
     monkeypatch.undo()
 
     # An unknown slug is reported and redirects to the page list.
@@ -304,7 +304,7 @@ def test_send_test_email_requires_manage_permission(logged_in_user, regular_user
         data={"test_email_to": "someone@example.com"},
         follow_redirects=True,
     ).get_data(as_text=True)
-    assert "permission to modify this assembly" in text
+    assert "permission to modify this project" in text
 
     # The view-only member can still open the page, but the manage-only test-send
     # card is not rendered for them.

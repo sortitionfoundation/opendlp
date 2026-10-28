@@ -1111,7 +1111,7 @@ class TestCsvSelectionHistory:
 class TestWritingRoutesLandInTheRunningTasksModal:
     """A run or reset submitted while a writing task is unfinished opens that task's modal instead."""
 
-    FLASH = "Another task is already running on this assembly"
+    FLASH = "Another task is already running on this project"
 
     def _running_selection(self, fake_store, assembly_id) -> uuid.UUID:
         run_id = uuid.uuid4()

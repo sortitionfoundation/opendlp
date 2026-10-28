@@ -37,7 +37,7 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                         border: 1px solid var(--color-borders-dividers)">
             <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Auto-reply email") }}</h2>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Automatically send a confirmation email to people after they register. Templates support variables like the respondent's first name and the assembly title.") }}
+                {{ _("Automatically send a confirmation email to people after they register. Templates support variables like the respondent's first name and the project title.") }}
             </p>
             <form method="post"
                   action="{{ email_save_url }}"
@@ -160,10 +160,10 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                                 {{ _("Click a dynamic field to select it, then copy and paste into the subject or body. Missing values render as an empty string.") }}
                             </p>
                             {% set variables = [
-                            {"expr": "{{ assembly.title }}", "label": _("Assembly title")},
-                            {"expr": "{{ assembly.question }}", "label": _("Assembly question")},
-                            {"expr": "{{ assembly.first_assembly_date }}", "label": _("First assembly date (ISO)")},
-                            {"expr": "{{ assembly.first_assembly_date_text }}", "label": _("First assembly date, written out in the reader's language")},
+                            {"expr": "{{ assembly.title }}", "label": _("Project title")},
+                            {"expr": "{{ assembly.question }}", "label": _("Framing question")},
+                            {"expr": "{{ assembly.first_assembly_date }}", "label": _("First event date (ISO)")},
+                            {"expr": "{{ assembly.first_assembly_date_text }}", "label": _("First event date, written out in the reader's language")},
                             {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
                             {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
                             {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},
@@ -221,7 +221,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             border: 1px solid var(--color-borders-dividers)">
                 <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Send a test email") }}</h2>
                 <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                    {{ _("Check how the auto-reply looks in a real inbox. The email is filled in with sample respondent data and this assembly's real details, then sent to the address below.") }}
+                    {{ _("Check how the auto-reply looks in a real inbox. The email is filled in with sample respondent data and this project's real details, then sent to the address below.") }}
                 </p>
                 {% if has_readiness_error %}
                                         {# The page collects no email, so registrants can't receive the auto-reply —

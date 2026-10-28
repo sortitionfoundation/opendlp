@@ -486,7 +486,7 @@ class TestBackofficeSelectionTab:
 class TestGsheetWritingRoutesLandInTheRunningTasksModal:
     """Select, replace and delete-tabs refuse while a writing task is unfinished and open its modal."""
 
-    FLASH = "Another task is already running on this assembly"
+    FLASH = "Another task is already running on this project"
 
     def _add_running(self, fake_store, assembly_id, task_type) -> uuid.UUID:
         run_id = uuid.uuid4()

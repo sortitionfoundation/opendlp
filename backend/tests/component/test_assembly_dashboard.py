@@ -360,7 +360,7 @@ class TestTheExportButton:
             follow_redirects=True,
         )
 
-        assert b"Assembly not found" in response.data
+        assert b"Project not found" in response.data
 
     def test_export_requires_manage_permission(self, logged_in_user, existing_assembly):
         response = logged_in_user.post(
@@ -378,4 +378,4 @@ class TestTheExportButton:
             follow_redirects=True,
         )
 
-        assert b"Assembly not found" in response.data
+        assert b"Project not found" in response.data

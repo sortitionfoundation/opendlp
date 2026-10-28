@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-28 15:10+0000\n"
+"POT-Creation-Date: 2026-10-28 15:23+0000\n"
 "PO-Revision-Date: 2026-10-22 16:33+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -867,6 +867,7 @@ msgid "Confirm New Password"
 msgstr "Új jelszó megerősítése"
 
 #: src/opendlp/entrypoints/forms.py:338
+#: templates/backoffice/registration/_step_email.html:163
 msgid "Project title"
 msgstr ""
 
@@ -876,6 +877,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:344
 #: templates/backoffice/assembly_details.html:40
+#: templates/backoffice/registration/_step_email.html:164
 msgid "Framing question"
 msgstr ""
 
@@ -1257,12 +1259,9 @@ msgstr "Az összes meglévő jelentkező cseréje"
 
 #: src/opendlp/entrypoints/forms.py:738
 msgid ""
-"Warning: this will delete all existing respondents for this assembly "
+"Warning: this will delete all existing respondents for this project "
 "before importing. Uncheck to add to existing respondents."
 msgstr ""
-"Figyelem: ez az importálás előtt törli a közösségi gyűlés összes meglévő "
-"jelentkezőjét. Vedd ki a pipát, ha a meglévő jelentkezőkhöz szeretnéd "
-"hozzáadni az újakat."
 
 #: src/opendlp/entrypoints/forms.py:748
 #: templates/backoffice/assembly_data.html:439
@@ -1717,9 +1716,8 @@ msgid "Project '%(title)s' created successfully"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:130
-#: src/opendlp/entrypoints/blueprints/main.py:234
-msgid "You don't have permission to create assemblies"
-msgstr "Nincs jogosultságod közösségi gyűlés létrehozására"
+msgid "You don't have permission to create projects"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:134
 #: src/opendlp/entrypoints/blueprints/backoffice.py:138
@@ -1733,42 +1731,22 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:229
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:367
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:93
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:94
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:129
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:164
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:361
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:434
 #: src/opendlp/entrypoints/blueprints/gsheets.py:440
 #: src/opendlp/entrypoints/blueprints/gsheets.py:872
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1218
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:187
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:273
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:337
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:628
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:728
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1052
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1122
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1447
-#: src/opendlp/entrypoints/blueprints/main.py:100
-#: src/opendlp/entrypoints/blueprints/main.py:155
-#: src/opendlp/entrypoints/blueprints/main.py:200
-#: src/opendlp/entrypoints/blueprints/main.py:317
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:651
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:680
 #: src/opendlp/entrypoints/blueprints/respondents.py:788
 #: src/opendlp/entrypoints/blueprints/respondents.py:919
 #: src/opendlp/entrypoints/blueprints/respondents.py:1077
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/target_sources.py:644
 #: src/opendlp/entrypoints/blueprints/target_sources.py:667
 #: src/opendlp/entrypoints/blueprints/target_sources.py:689
 #: src/opendlp/entrypoints/blueprints/target_sources.py:870
 #: src/opendlp/entrypoints/blueprints/targets.py:161
 #: src/opendlp/entrypoints/blueprints/targets.py:420
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:115
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:791
-msgid "You don't have permission to view this assembly"
-msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
+msgid "You don't have permission to view this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:198
 #: src/opendlp/entrypoints/blueprints/backoffice.py:376
@@ -1797,28 +1775,9 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:197
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:476
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:505
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:91
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:126
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:161
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:358
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:410
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:431
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:449
 #: src/opendlp/entrypoints/blueprints/gsheets.py:436
 #: src/opendlp/entrypoints/blueprints/gsheets.py:868
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1212
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:178
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:264
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:328
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:619
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:719
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1043
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1113
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1438
-#: src/opendlp/entrypoints/blueprints/main.py:90
-#: src/opendlp/entrypoints/blueprints/main.py:146
-#: src/opendlp/entrypoints/blueprints/main.py:191
-#: src/opendlp/entrypoints/blueprints/main.py:308
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:90
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:647
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:677
@@ -1844,9 +1803,6 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondents.py:910
 #: src/opendlp/entrypoints/blueprints/respondents.py:1074
 #: src/opendlp/entrypoints/blueprints/respondents.py:1121
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
 #: src/opendlp/entrypoints/blueprints/target_sources.py:642
 #: src/opendlp/entrypoints/blueprints/target_sources.py:665
 #: src/opendlp/entrypoints/blueprints/target_sources.py:687
@@ -1863,15 +1819,12 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/targets.py:281
 #: src/opendlp/entrypoints/blueprints/targets.py:417
 #: src/opendlp/entrypoints/blueprints/targets.py:545
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:112
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:182
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:788
-msgid "Assembly not found"
-msgstr "A közösségi gyűlés nem található"
+msgid "Project not found"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:202
-msgid "An error occurred while loading the assembly"
-msgstr "Hiba történt a közösségi gyűlés betöltése közben"
+msgid "An error occurred while loading the project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:259
 #: templates/backoffice/assembly_dashboard.html:109
@@ -1933,7 +1886,6 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/backoffice.py:538
 #: src/opendlp/entrypoints/blueprints/backoffice.py:574
 #: src/opendlp/entrypoints/blueprints/backoffice.py:606
-#: src/opendlp/entrypoints/blueprints/main.py:279
 #: src/opendlp/entrypoints/blueprints/target_sources.py:734
 #: src/opendlp/entrypoints/blueprints/target_sources.py:778
 #: src/opendlp/entrypoints/blueprints/target_sources.py:805
@@ -1941,8 +1893,8 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/target_sources.py:922
 #: src/opendlp/entrypoints/blueprints/target_sources.py:986
 #: src/opendlp/entrypoints/blueprints/target_sources.py:1002
-msgid "You don't have permission to edit this assembly"
-msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
+msgid "You don't have permission to edit this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:547
 #: src/opendlp/entrypoints/blueprints/backoffice.py:553
@@ -1959,8 +1911,8 @@ msgid "Number to select updated to %(number)s"
 msgstr "A kiválasztandók száma %(number)s értékre módosult"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:776
-msgid "An error occurred while loading assembly data"
-msgstr "Hiba történt a közösségi gyűlés adatainak betöltése közben"
+msgid "An error occurred while loading project data"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:837
 msgid "An error occurred while loading team members"
@@ -2085,8 +2037,8 @@ msgstr "A regisztrációs oldal mentve"
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1310
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1340
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1367
-msgid "You don't have permission to modify this assembly"
-msgstr "Nincs jogosultságod a közösségi gyűlés módosításához"
+msgid "You don't have permission to modify this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:618
 msgid "An error occurred while saving registration settings"
@@ -2249,8 +2201,8 @@ msgstr "Hiba történt a regisztrációs oldal törlése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1048
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1142
-msgid "You don't have permission to access this assembly"
-msgstr "Nincs jogosultságod hozzáférni ehhez a közösségi gyűléshez"
+msgid "You don't have permission to access this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1053
 msgid "An error occurred while generating the form skeleton"
@@ -2373,19 +2325,11 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:136
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:200
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:479
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:197
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:413
 #: src/opendlp/entrypoints/blueprints/gsheets.py:936
 #: src/opendlp/entrypoints/blueprints/gsheets.py:998
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:470
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:522
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:877
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:945
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1252
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1295
 #: src/opendlp/entrypoints/blueprints/targets.py:548
-msgid "You don't have permission to manage this assembly"
-msgstr "Nincs jogosultságod a közösségi gyűlés kezeléséhez"
+msgid "You don't have permission to manage this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:140
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:201
@@ -2488,6 +2432,57 @@ msgstr "Nincs jogosultságod a kiválasztási állapot visszaállításához"
 msgid "An error occurred while resetting respondent status"
 msgstr "Hiba történt a jelentkezői állapot visszaállítása közben"
 
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:91
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:126
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:161
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:358
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:410
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:431
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:449
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:178
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:264
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:328
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:619
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:719
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1043
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1113
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1438
+#: src/opendlp/entrypoints/blueprints/main.py:90
+#: src/opendlp/entrypoints/blueprints/main.py:146
+#: src/opendlp/entrypoints/blueprints/main.py:191
+#: src/opendlp/entrypoints/blueprints/main.py:308
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:112
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:182
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:788
+msgid "Assembly not found"
+msgstr "A közösségi gyűlés nem található"
+
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:94
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:129
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:164
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:361
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:434
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:187
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:273
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:337
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:628
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:728
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1052
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1122
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1447
+#: src/opendlp/entrypoints/blueprints/main.py:100
+#: src/opendlp/entrypoints/blueprints/main.py:155
+#: src/opendlp/entrypoints/blueprints/main.py:200
+#: src/opendlp/entrypoints/blueprints/main.py:317
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:115
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:791
+msgid "You don't have permission to view this assembly"
+msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
+
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:111
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:306
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:661
@@ -2509,6 +2504,17 @@ msgid "Please review and save the selection settings before running selection."
 msgstr ""
 "A kiválasztás futtatása előtt nézd át és mentsd el a kiválasztási "
 "beállításokat."
+
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:197
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:413
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:470
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:522
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:877
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:945
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1252
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1295
+msgid "You don't have permission to manage this assembly"
+msgstr "Nincs jogosultságod a közösségi gyűlés kezeléséhez"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:252
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1016
@@ -2552,11 +2558,9 @@ msgstr "Hiba történt az ellenőrzési feladat indítása közben"
 #: src/opendlp/entrypoints/blueprints/gsheets.py:603
 #, python-format
 msgid ""
-"Another task is already running on this assembly: %(task)s. You can wait "
+"Another task is already running on this project: %(task)s. You can wait "
 "for it to finish, or cancel it here."
 msgstr ""
-"Ezen a közösségi gyűlésen már fut egy másik feladat: %(task)s. "
-"Megvárhatod, amíg befejeződik, vagy itt megszakíthatod."
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:644
 msgid "An error occurred while starting the selection task"
@@ -2580,8 +2584,8 @@ msgid "Selection run not found"
 msgstr "A kiválasztási futtatás nem található"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:856
-msgid "Selection run does not belong to this assembly"
-msgstr "A kiválasztási futtatás nem ehhez a közösségi gyűléshez tartozik"
+msgid "Selection run does not belong to this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:876
 msgid "An error occurred while loading the run details"
@@ -2654,8 +2658,8 @@ msgstr ""
 "adatoszlopokat fogja tartalmazni. Ez szándékos?"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1122
-msgid "This assembly has no Google Sheets configuration."
-msgstr "Ehhez a közösségi gyűléshez nincs Google Táblázat beállítva."
+msgid "This project has no Google Sheets configuration."
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1130
 msgid ""
@@ -2665,12 +2669,8 @@ msgstr "A táblázat nem ellenőrizhető: nincs beállítva Google szolgáltatá
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1180
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1246
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:149
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:225
-msgid "You don't have permission to manage Google Sheets for this assembly"
+msgid "You don't have permission to manage Google Sheets for this project"
 msgstr ""
-"Nincs jogosultságod a közösségi gyűléshez tartozó Google Táblázat "
-"kezeléséhez"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1184
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:159
@@ -2697,6 +2697,13 @@ msgstr "Google Táblázat beállításai nem találhatóak"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:234
 msgid "An error occurred while removing the Google Sheets configuration"
 msgstr "Hiba történt a Google Táblázat beállításainak eltávolításakor"
+
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:149
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:225
+msgid "You don't have permission to manage Google Sheets for this assembly"
+msgstr ""
+"Nincs jogosultságod a közösségi gyűléshez tartozó Google Táblázat "
+"kezeléséhez"
 
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:503
 #, python-format
@@ -2734,6 +2741,10 @@ msgstr "Ismeretlen feladattípus"
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen létrehozva"
 
+#: src/opendlp/entrypoints/blueprints/main.py:234
+msgid "You don't have permission to create assemblies"
+msgstr "Nincs jogosultságod közösségi gyűlés létrehozására"
+
 #: src/opendlp/entrypoints/blueprints/main.py:238
 #: src/opendlp/entrypoints/blueprints/main.py:241
 msgid "An error occurred while creating the assembly"
@@ -2743,6 +2754,10 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
+
+#: src/opendlp/entrypoints/blueprints/main.py:279
+msgid "You don't have permission to edit this assembly"
+msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
 #: src/opendlp/entrypoints/blueprints/main.py:288
 #: src/opendlp/entrypoints/blueprints/main.py:296
@@ -3238,8 +3253,8 @@ msgid "All statuses"
 msgstr "Minden állapot"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:797
-msgid "An error occurred while loading assembly respondents"
-msgstr "Hiba történt a közösségi gyűlés jelentkezőinek betöltése közben"
+msgid "An error occurred while loading project respondents"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:810
 msgid "A comment is required when deleting a respondent"
@@ -3514,8 +3529,8 @@ msgid "Question unlinked from its target"
 msgstr "A kérdés leválasztva a kiválasztási szempontról"
 
 #: src/opendlp/entrypoints/blueprints/targets.py:167
-msgid "An error occurred while loading assembly targets"
-msgstr "Hiba történt a közösségi gyűlés célszámainak betöltése közben"
+msgid "An error occurred while loading project targets"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/targets.py:209
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:167
@@ -3684,11 +3699,9 @@ msgstr "Ez a feladat még az indulása előtt megszakadt vagy meghiúsult"
 #: src/opendlp/entrypoints/celery/tasks.py:226
 #, python-format
 msgid ""
-"Another task was already writing to this assembly when this one started: "
+"Another task was already writing to this project when this one started: "
 "%(task)s"
 msgstr ""
-"Amikor ez a feladat elindult, már egy másik feladat írt ebbe a közösségi "
-"gyűlésbe: %(task)s"
 
 #: src/opendlp/entrypoints/celery/tasks.py:260
 #, python-format
@@ -3967,8 +3980,8 @@ msgstr "\"%(key)s\" mező nem származtatott mező"
 
 #: src/opendlp/service_layer/derivation_service.py:143
 #, python-format
-msgid "Source field '%(key)s' does not exist in this assembly"
-msgstr "\"%(key)s\" forrásmező nem létezik ebben a közösségi gyűlésben"
+msgid "Source field '%(key)s' does not exist in this project"
+msgstr ""
 
 #: src/opendlp/service_layer/derivation_service.py:147
 #, python-format
@@ -4001,8 +4014,8 @@ msgstr "A mezőkulcs nem lehet üres"
 #: src/opendlp/service_layer/derivation_service.py:376
 #: src/opendlp/service_layer/respondent_field_schema_service.py:289
 #, python-format
-msgid "Field '%(key)s' already exists in this assembly"
-msgstr "'%(key)s' mező már létezik ebben a közösségi gyűlésben"
+msgid "Field '%(key)s' already exists in this project"
+msgstr ""
 
 #: src/opendlp/service_layer/derivation_service.py:534
 #, python-format
@@ -4075,14 +4088,10 @@ msgstr ""
 " ki kell cserélned: %(placeholders)s."
 
 #: src/opendlp/service_layer/email_template_service.py:112
-#, fuzzy
 msgid ""
-"The auto-reply shows the first assembly date, but the assembly does not "
-"have one yet, so it will be blank. Set it in the assembly's details."
+"The auto-reply shows the first event date, but the project does not have "
+"one yet, so it will be blank. Set it in the project's details."
 msgstr ""
-"Az automatikus válasz megjeleníti az első közösségi gyűlés időpontját, de"
-" ez még nincs megadva, ezért üres lesz. Add meg a közösségi gyűlés "
-"adatainál."
 
 #: src/opendlp/service_layer/email_template_service.py:150
 #, fuzzy, python-format
@@ -4287,8 +4296,8 @@ msgstr "A regisztrációs oldal nevét meg kell adni"
 #: src/opendlp/service_layer/registration_page_service.py:242
 #: src/opendlp/service_layer/registration_page_service.py:618
 #, python-format
-msgid "This assembly already has a registration page named '%(name)s'"
-msgstr "Ennek a közösségi gyűlésnek már van '%(name)s' nevű regisztrációs oldala"
+msgid "This project already has a registration page named '%(name)s'"
+msgstr ""
 
 #: src/opendlp/service_layer/registration_page_service.py:424
 msgid ""
@@ -4600,10 +4609,8 @@ msgid "%(name)s (previous)"
 msgstr "%(name)s (korábbi)"
 
 #: src/opendlp/service_layer/selection_report.py:194
-#: templates/main/view_assembly_base.html:11
-#: templates/main/view_assembly_base.html:15
-msgid "Assembly"
-msgstr "Közösségi gyűlés"
+msgid "Project"
+msgstr ""
 
 #: src/opendlp/service_layer/selection_report.py:195
 msgid "Selection URL"
@@ -4648,11 +4655,9 @@ msgstr "regisztráció"
 #: src/opendlp/service_layer/sortition.py:158
 #: src/opendlp/service_layer/sortition.py:511
 msgid ""
-"The assembly needs to have a non-zero number to select before a selection"
-" can run"
+"The project needs to have a non-zero number to select before a selection "
+"can run"
 msgstr ""
-"A kiválasztáshoz a közösségi gyűlésnél a kiválasztandók számának nullától"
-" eltérőnek kell lennie"
 
 #: src/opendlp/service_layer/sortition.py:585
 msgid "The number of replacements to select must be at least one"
@@ -4900,11 +4905,9 @@ msgstr "\"%(key)s\" mező nem táplálhat ilyen típusú számítást"
 #: src/opendlp/service_layer/target_source_service.py:347
 #, python-format
 msgid ""
-"Field '%(key)s' already exists in this assembly — choose it instead of "
+"Field '%(key)s' already exists in this project — choose it instead of "
 "creating a new one"
 msgstr ""
-"\"%(key)s\" mező már létezik ebben a közösségi gyűlésben – válaszd azt új"
-" létrehozása helyett"
 
 #: src/opendlp/service_layer/target_source_service.py:311
 #, python-format
@@ -5001,8 +5004,8 @@ msgstr ""
 
 #: src/opendlp/service_layer/writing_guard.py:29
 #, python-format
-msgid "Another task is already writing to this assembly: %(task)s"
-msgstr "Ebbe a közösségi gyűlésbe már ír egy másik feladat: %(task)s"
+msgid "Another task is already writing to this project: %(task)s"
+msgstr ""
 
 #: templates/base.html:5 templates/public/base.html:19
 #: templates/public/register.html:23
@@ -6063,10 +6066,8 @@ msgstr ""
 "módosításához távolítsd el a beállítást."
 
 #: templates/backoffice/assembly_data.html:46
-msgid "Choose how you want to import respondent data for this assembly."
+msgid "Choose how you want to import respondent data for this project."
 msgstr ""
-"Válaszd ki, hogyan szeretnéd importálni a közösségi gyűlés jelentkezői "
-"adatait."
 
 #: templates/backoffice/assembly_data.html:66
 #: templates/gsheets/components/view_config_collapsed.html:4
@@ -6100,10 +6101,8 @@ msgstr "Eltávolítás"
 #: templates/backoffice/assembly_data.html:85
 msgid ""
 "Configure a Google Sheets spreadsheet to import and manage respondent "
-"data for this assembly."
+"data for this project."
 msgstr ""
-"Állíts be egy Google Táblázatot a közösségi gyűlés jelentkezői adatainak "
-"importálásához és kezeléséhez."
 
 #: templates/backoffice/assembly_data.html:106
 #: templates/backoffice/components/gsheet_export_fields.html:21
@@ -6371,10 +6370,8 @@ msgid "Selection Settings"
 msgstr "Kiválasztási beállítások"
 
 #: templates/backoffice/assembly_data.html:464
-msgid "Configure how the selection algorithm runs for this assembly."
+msgid "Configure how the selection algorithm runs for this project."
 msgstr ""
-"Állítsd be, hogyan fusson a kiválasztási algoritmus ennél a közösségi "
-"gyűlésnél."
 
 #: templates/backoffice/assembly_data.html:488
 #: templates/db_selection/settings.html:33
@@ -6489,8 +6486,8 @@ msgid "Back to respondent"
 msgstr "Vissza a jelentkezőhöz"
 
 #: templates/backoffice/assembly_edit_respondent.html:31
-msgid "This assembly has no respondent fields configured yet."
-msgstr "Ehhez a közösségi gyűléshez még nincsenek beállítva jelentkezői mezők."
+msgid "This project has no respondent fields configured yet."
+msgstr ""
 
 #: templates/backoffice/assembly_edit_respondent.html:33
 msgid "Initialise the field schema first"
@@ -8410,11 +8407,9 @@ msgstr "Űrlapsablon"
 
 #: templates/backoffice/registration/_modals.html:16
 msgid ""
-"This skeleton is generated from your assembly's field definitions. Use it"
-" as the form, then edit to add extra HTML as required."
+"This skeleton is generated from your project's field definitions. Use it "
+"as the form, then edit to add extra HTML as required."
 msgstr ""
-"Ez a sablon a közösségi gyűlés meződefinícióiból készült. Használd "
-"űrlapként, majd szerkeszd, ha további HTML-re van szükség."
 
 #: templates/backoffice/registration/_modals.html:19
 #, python-format
@@ -8782,11 +8777,8 @@ msgstr "Figyelem"
 msgid ""
 "Automatically send a confirmation email to people after they register. "
 "Templates support variables like the respondent's first name and the "
-"assembly title."
+"project title."
 msgstr ""
-"Automatikusan küldj visszaigazoló e-mailt az embereknek a regisztrációjuk"
-" után. A sablonok támogatják az olyan változókat, mint a jelentkező "
-"keresztneve vagy a közösségi gyűlés címe."
 
 #: templates/backoffice/registration/_step_email.html:48
 msgid "Set up auto-reply email"
@@ -8871,22 +8863,13 @@ msgstr ""
 "Kattints egy dinamikus mezőre a kijelöléséhez, majd másold be a tárgyba "
 "vagy a törzsbe. A hiányzó értékek üres szövegként jelennek meg."
 
-#: templates/backoffice/registration/_step_email.html:163
-msgid "Assembly title"
-msgstr "A közösségi gyűlés címe"
-
-#: templates/backoffice/registration/_step_email.html:164
-msgid "Assembly question"
-msgstr "A közösségi gyűlés témája"
-
 #: templates/backoffice/registration/_step_email.html:165
-msgid "First assembly date (ISO)"
-msgstr "Az első közösségi gyűlés időpontja (ISO)"
+msgid "First event date (ISO)"
+msgstr ""
 
 #: templates/backoffice/registration/_step_email.html:166
-#, fuzzy
-msgid "First assembly date, written out in the reader's language"
-msgstr "Az első közösségi gyűlés időpontja, az olvasó nyelvén kiírva"
+msgid "First event date, written out in the reader's language"
+msgstr ""
 
 #: templates/backoffice/registration/_step_email.html:167
 msgid "Respondent first name"
@@ -8920,12 +8903,9 @@ msgstr "Teszt e-mail küldése"
 #: templates/backoffice/registration/_step_email.html:224
 msgid ""
 "Check how the auto-reply looks in a real inbox. The email is filled in "
-"with sample respondent data and this assembly's real details, then sent "
-"to the address below."
+"with sample respondent data and this project's real details, then sent to"
+" the address below."
 msgstr ""
-"Nézd meg, hogyan jelenik meg az automatikus válasz egy valódi "
-"postafiókban. Az e-mail minta jelentkezőadatokkal és a közösségi gyűlés "
-"valódi adataival töltődik ki, majd az alábbi címre megy."
 
 #: templates/backoffice/registration/_step_email.html:230
 msgid ""
@@ -9429,25 +9409,18 @@ msgstr "A mezőket a Google Táblázatod határozza meg"
 
 #: templates/backoffice/respondent_field_schema/view.html:40
 msgid ""
-"The fields for this assembly are the columns in the respondent tabs of "
+"The fields for this project are the columns in the respondent tabs of "
 "your Google Sheets spreadsheet. Edit the spreadsheet to add, remove, or "
 "rename fields."
 msgstr ""
-"Ennek a közösségi gyűlésnek a mezői a Google Táblázatod jelentkezői "
-"munkalapjain lévő oszlopok. Mezők hozzáadásához, eltávolításához vagy "
-"átnevezéséhez szerkeszd a táblázatot."
 
 #: templates/backoffice/respondent_field_schema/view.html:65
 msgid ""
-"No schema has been set up for this assembly yet. Upload a CSV of "
+"No schema has been set up for this project yet. Upload a CSV of "
 "respondents to seed one automatically from the CSV headers, or click "
 "Initialise below to start from the built-in questions only (email, "
 "consent, eligibility, etc)."
 msgstr ""
-"Ehhez a közösségi gyűléshez még nincs séma beállítva. Tölts fel egy "
-"jelentkezőket tartalmazó CSV-fájlt, hogy a CSV fejléceiből automatikusan "
-"létrejöjjön, vagy kattints alább az Inicializálás gombra, hogy csak a "
-"beépített kérdésekből indulj (e-mail, hozzájárulás, jogosultság stb.)."
 
 #: templates/backoffice/respondent_field_schema/view.html:70
 msgid "Initialise empty schema"
@@ -9534,11 +9507,9 @@ msgstr "Visszafordíthatatlan művelet"
 
 #: templates/backoffice/respondents/confirm_upload_diff.html:92
 msgid ""
-"Confirming will replace all existing respondents for this assembly with "
+"Confirming will replace all existing respondents for this project with "
 "the contents of the new CSV. This cannot be undone."
 msgstr ""
-"A megerősítéssel a közösségi gyűlés összes meglévő jelentkezője "
-"lecserélődik az új CSV tartalmára. Ez nem vonható vissza."
 
 #: templates/backoffice/respondents/confirm_upload_diff.html:98
 msgid "Confirm and import"
@@ -9572,12 +9543,9 @@ msgstr ""
 
 #: templates/backoffice/target_sources/_checklist.html:14
 msgid ""
-"No targets have been set up for this assembly yet. Add your targets first"
-" — each one then gets a row here to say where its data comes from."
+"No targets have been set up for this project yet. Add your targets first "
+"— each one then gets a row here to say where its data comes from."
 msgstr ""
-"Ehhez a közösségi gyűléshez még nincsenek kiválasztási szempontok "
-"beállítva. Előbb add meg a szempontokat – ezután mindegyik kap itt egy "
-"sort, amely megmondja, honnan származnak az adatai."
 
 #: templates/backoffice/target_sources/_checklist.html:16
 msgid "Go to Targets"
@@ -9797,11 +9765,9 @@ msgstr ""
 
 #: templates/backoffice/target_sources/_setup_modal.html:177
 msgid ""
-"Usually the first assembly date. Ages are worked out on this one date, so"
-" they don't change while registration is open."
+"Usually the first event date. Ages are worked out on this one date, so "
+"they don't change while registration is open."
 msgstr ""
-"Általában a közösségi gyűlés első napja. Az életkorok erre az egy dátumra"
-" számítódnak, így nem változnak, amíg a regisztráció nyitva van."
 
 #: templates/backoffice/target_sources/_setup_modal.html:191
 msgid "Each target value is matched to these ages:"
@@ -10763,12 +10729,8 @@ msgstr ""
 "közösségi gyűléshez."
 
 #: templates/errors/403.html:33
-msgid ""
-"If you believe this is an error, please contact your assembly "
-"administrator."
+msgid "If you believe this is an error, please contact an administrator."
 msgstr ""
-"Ha úgy gondolod, hogy ez hiba, lépj kapcsolatba a közösségi gyűlés "
-"adminisztrátorával."
 
 #: templates/errors/404.html:2 templates/errors/404.html:12
 msgid "Page Not Found"
@@ -11145,6 +11107,11 @@ msgstr "E-mailt is írhatsz nekünk ide:"
 #: templates/main/search_user_results.html:31
 msgid "No users match your search"
 msgstr "Nincs a keresésnek megfelelő felhasználó"
+
+#: templates/main/view_assembly_base.html:11
+#: templates/main/view_assembly_base.html:15
+msgid "Assembly"
+msgstr "Közösségi gyűlés"
 
 #: templates/main/view_assembly_base.html:26
 msgid "Assembly sections"

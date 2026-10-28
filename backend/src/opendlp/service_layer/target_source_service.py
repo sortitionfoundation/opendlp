@@ -289,7 +289,7 @@ def _resolve_source_field(
     if uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, field_key) is not None:
         raise FieldDefinitionConflictError(
             _l(
-                "Field '%(key)s' already exists in this assembly — choose it instead of creating a new one",
+                "Field '%(key)s' already exists in this project — choose it instead of creating a new one",
                 key=field_key,
             )
         )
@@ -344,7 +344,7 @@ def _configure_exact_copy(
     if uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, category.name) is not None:
         raise FieldDefinitionConflictError(
             _l(
-                "Field '%(key)s' already exists in this assembly — choose it instead of creating a new one",
+                "Field '%(key)s' already exists in this project — choose it instead of creating a new one",
                 key=category.name,
             )
         )

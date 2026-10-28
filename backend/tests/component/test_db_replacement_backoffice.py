@@ -657,6 +657,6 @@ class TestReplacementRefusedWhileAnotherTaskWrites:
         assert response.headers["Location"].endswith(f"/selection?current_selection={running_id}")
         page = logged_in_admin.get(response.headers["Location"])
         html = page.data.decode()
-        assert "Another task is already running on this assembly" in html
+        assert "Another task is already running on this project" in html
         assert "Cancel Task" in html
         assert [r.task_id for r, _user in _run_records(fake_store, assembly_after_withdrawal.id)] == [running_id]

@@ -223,7 +223,7 @@ def _claim_assembly_for_writing(
         blocking = unfinished_writing_runs(uow, record.assembly_id, exclude_task_id=task_id)
         if blocking:
             error_msg = _(
-                "Another task was already writing to this assembly when this one started: %(task)s",
+                "Another task was already writing to this project when this one started: %(task)s",
                 task=blocking[0].task_type_verbose,
             )
             logger.warning(

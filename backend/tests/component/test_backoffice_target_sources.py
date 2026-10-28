@@ -346,7 +346,7 @@ class TestRoutesTurnAwayThoseWithoutAccess:
 
         assert response.status_code == 302
         assert response.location.endswith("/backoffice/dashboard")
-        assert _flashes(logged_in_admin) == ["Assembly not found"]
+        assert _flashes(logged_in_admin) == ["Project not found"]
 
     def test_an_invalid_set_up_form_from_a_user_with_no_role_is_still_turned_away(
         self, logged_in_user, existing_assembly, fake_store
@@ -902,7 +902,7 @@ class TestAgeRangesDialog:
         assert 'placeholder="DD"' in body
         assert 'placeholder="MM"' in body
         assert 'placeholder="YYYY"' in body
-        assert "Usually the first assembly date." in self._section(body, "ts-as-of-inputs")
+        assert "Usually the first event date." in self._section(body, "ts-as-of-inputs")
 
     def test_a_failed_save_over_the_date_reopens_the_inputs(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])

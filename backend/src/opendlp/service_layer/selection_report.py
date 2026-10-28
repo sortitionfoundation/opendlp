@@ -191,7 +191,7 @@ def selection_report_to_csv(report: SelectionReport) -> str:
     output = StringIO()
     writer = csv.writer(output, lineterminator="\n")
 
-    writer.writerow([_("Assembly"), report.assembly_title])
+    writer.writerow([_("Project"), report.assembly_title])
     writer.writerow([_("Selection URL"), report.selection_url])
     writer.writerow([_("Number selected"), report.number_selected])
     writer.writerow([_("Number of people available to select from"), report.pool_size])

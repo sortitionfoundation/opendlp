@@ -127,7 +127,7 @@ def new_assembly() -> ResponseReturnValue:
             return redirect(url_for("backoffice.view_assembly", assembly_id=assembly.id))
         except InsufficientPermissions as e:
             logger.warning("Insufficient permissions to create assembly", user_id=str(current_user.id), error=str(e))
-            flash(_("You don't have permission to create assemblies"), "error")
+            flash(_("You don't have permission to create projects"), "error")
             return redirect(url_for("backoffice.dashboard"))
         except NotFoundError as e:
             logger.error("User not found during assembly creation", user_id=str(current_user.id), error=str(e))
@@ -189,17 +189,17 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         # TODO: consider change to "Assembly not found" so as not to leak info
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Backoffice assembly error", user_id=str(current_user.id), error=str(e))
-        flash(_("An error occurred while loading the assembly"), "error")
+        flash(_("An error occurred while loading the project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -373,7 +373,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -382,7 +382,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -411,7 +411,7 @@ def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to export the dashboard"), "error")
         return redirect(dashboard_url)
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     worksheet_name = (
@@ -457,7 +457,7 @@ def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(dashboard_url)
     except NotFoundError as e:
         logger.warning("Assembly not found for dashboard export", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     filename = f"dashboard-{str(assembly_id)[:8]}.csv"
@@ -535,7 +535,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     user_id=str(current_user.id),
                     error=str(e),
                 )
-                flash(_("You don't have permission to edit this assembly"), "error")
+                flash(_("You don't have permission to edit this project"), "error")
                 return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
             except NotFoundError as e:
                 logger.error(
@@ -562,7 +562,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for edit", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -571,7 +571,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to edit this assembly"), "error")
+        flash(_("You don't have permission to edit this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -603,13 +603,13 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to edit this assembly"), "error")
+        flash(_("You don't have permission to edit this project"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for update", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -758,7 +758,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -767,13 +767,13 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
             "View assembly data error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("An error occurred while loading assembly data"), "error")
+        flash(_("An error occurred while loading project data"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -819,7 +819,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -828,7 +828,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(

@@ -149,7 +149,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         ), 200
     except NotFoundError as e:
         logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -158,13 +158,13 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
             "View assembly targets error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("An error occurred while loading assembly targets"), "error")
+        flash(_("An error occurred while loading project targets"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -223,7 +223,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         form.csv_file.errors.append(_("CSV import failed: %(error)s", error=str(e)))
         return _render_targets_upload_page(assembly_id, form)
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
         flash(_("You don't have permission to import targets"), "error")
@@ -278,7 +278,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
     except NotFoundError as e:
         logger.warning("Assembly not found for targets deletion", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -414,10 +414,10 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         ), 200
 
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Error checking targets", assembly_id=str(assembly_id), error=str(e))
@@ -542,10 +542,10 @@ def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return _redirect_after_save(assembly_id, task_id, recheck_url)
 
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
-        flash(_("You don't have permission to manage this assembly"), "error")
+        flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Error accepting target suggestions", assembly_id=str(assembly_id), error=str(e))

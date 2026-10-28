@@ -43,7 +43,7 @@ ABOUTME: Displays data source selection and data management for assemblies
             ],
             value=data_source,
             placeholder=_("Select Data Source"),
-            hint=_("Data source is locked because a configuration already exists. Remove the configuration to change the data source.") if data_source_locked else _("Choose how you want to import respondent data for this assembly."),
+            hint=_("Data source is locked because a configuration already exists. Remove the configuration to change the data source.") if data_source_locked else _("Choose how you want to import respondent data for this project."),
             disabled=data_source_locked,
             attrs='x-model="selected" @change="navigate($event)" data-focus-id="data-source"' if not data_source_locked else 'data-focus-id="data-source"'
             ) }}
@@ -82,7 +82,7 @@ ABOUTME: Displays data source selection and data management for assemblies
         </div>
         {% if is_new %}
             <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
-                {{ _("Configure a Google Sheets spreadsheet to import and manage respondent data for this assembly.") }}
+                {{ _("Configure a Google Sheets spreadsheet to import and manage respondent data for this project.") }}
             </p>
         {% endif %}
         {# Outside the configuration form, because a form cannot sit inside another #}
@@ -461,7 +461,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     style="color: var(--color-headings)">{{ _("Selection Settings") }}</h2>
             </div>
             <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
-                {{ _("Configure how the selection algorithm runs for this assembly.") }}
+                {{ _("Configure how the selection algorithm runs for this project.") }}
             </p>
             <div class="rounded-lg p-6"
                  style="background-color: var(--color-tables-cards);

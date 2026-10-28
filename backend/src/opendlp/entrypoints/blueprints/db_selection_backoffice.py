@@ -87,10 +87,10 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Check DB data error", assembly_id=str(assembly_id), error=str(e))
@@ -133,7 +133,7 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Failed to start selection task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions:
-        flash(_("You don't have permission to manage this assembly"), "error")
+        flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Error starting DB selection", assembly_id=str(assembly_id), error=str(e))
@@ -194,10 +194,10 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Could not start replacement selection: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
-        flash(_("You don't have permission to manage this assembly"), "error")
+        flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Error starting DB replacement selection", assembly_id=str(assembly_id), error=str(e))
@@ -473,10 +473,10 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
-        flash(_("You don't have permission to manage this assembly"), "error")
+        flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Save DB settings error", assembly_id=str(assembly_id), error=str(e))
@@ -502,7 +502,7 @@ def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except SelectionAlreadyRunning as e:
         return redirect_to_running_task(assembly_id, e)
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
         flash(_("You don't have permission to reset selection status"), "error")

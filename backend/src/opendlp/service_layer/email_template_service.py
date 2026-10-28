@@ -109,8 +109,8 @@ def _template_problems(
             AutoReplyReadinessProblem(
                 AutoReplyReadinessSeverity.WARNING,
                 _(
-                    "The auto-reply shows the first assembly date, but the assembly does not have one yet, "
-                    "so it will be blank. Set it in the assembly's details."
+                    "The auto-reply shows the first event date, but the project does not have one yet, "
+                    "so it will be blank. Set it in the project's details."
                 ),
             )
         )

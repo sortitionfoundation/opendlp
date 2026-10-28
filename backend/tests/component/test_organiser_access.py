@@ -84,7 +84,7 @@ class TestOrganiserCannotReachSomeoneElsesAssembly:
         )
 
         assert response.status_code == 200
-        assert b"You don&#39;t have permission to view this assembly" in response.data
+        assert b"You don&#39;t have permission to view this project" in response.data
         assert existing_assembly.title.encode() not in response.data
 
     def test_a_second_organiser_cannot_reach_the_first_organisers_assembly(
@@ -101,7 +101,7 @@ class TestOrganiserCannotReachSomeoneElsesAssembly:
         )
 
         assert response.status_code == 200
-        assert b"You don&#39;t have permission to view this assembly" in response.data
+        assert b"You don&#39;t have permission to view this project" in response.data
         assert b"Not yours" not in response.data
 
 

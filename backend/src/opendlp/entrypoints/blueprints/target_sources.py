@@ -639,9 +639,9 @@ def view_sources(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             page_ctx = _page_context(uow, assembly_id, with_hub=True)
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+        return _dashboard_redirect(_("You don't have permission to view this project"))
     return _render_page(page_ctx)
 
 
@@ -662,9 +662,9 @@ def setup_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
                 values = _default_setup_values(status)
             modal_ctx = _setup_modal_ctx(uow, assembly_id, category_id, values)
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+        return _dashboard_redirect(_("You don't have permission to view this project"))
     return _render_setup_modal(page_ctx, modal_ctx)
 
 
@@ -684,9 +684,9 @@ def _setup_modal_response(
             page_ctx = _page_context(uow, assembly_id)
             modal_ctx = _setup_modal_ctx(uow, assembly_id, category_id, values, error=error)
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+        return _dashboard_redirect(_("You don't have permission to view this project"))
     return _render_setup_modal(page_ctx, modal_ctx, status)
 
 
@@ -731,9 +731,9 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         # The message names internal ids - show a generic one.
         return _setup_error_response(assembly_id, category_id, values, _("Question not found"))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
 
     source_status = _status_for(page_ctx["statuses"], category_id)
     # The row count is None unless the target is fed by a lookup table.
@@ -775,9 +775,9 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
         flash(_("Question not found"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     return _close_modal_response(assembly_id, page_ctx, _("Question linked to its target"))
 
 
@@ -802,9 +802,9 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         flash(_("This question could not be re-synced — set it up again"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     return _saved_response(
         assembly_id,
         page_ctx,
@@ -836,9 +836,9 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         flash(_("No question is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     if report.total == 0:
         return _toast_response(assembly_id, page_ctx, _("There are no respondents to recompute yet"), "info")
     return _toast_response(assembly_id, page_ctx, *_recompute_toast(report, _("Recompute finished")))
@@ -867,9 +867,9 @@ def _upload_modal_response(
         with uow:
             page_ctx = _page_context(uow, assembly_id)
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+        return _dashboard_redirect(_("You don't have permission to view this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     return _render_upload_modal(page_ctx, assembly_id, category_id, error=error, status=status, setup_step=setup_step)
 
 
@@ -919,9 +919,9 @@ def _defer_upload_response(assembly_id: uuid.UUID, category_id: uuid.UUID, setup
         with uow:
             page_ctx = _page_context(uow, assembly_id)
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     source_status = _status_for(page_ctx["statuses"], category_id)
     if source_status is None or source_status.field is None:
         flash(_("No question is linked to this target"), "error")
@@ -983,9 +983,9 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
             assembly_id, category_id, error=_("Question not found"), status=422, setup_step=setup_step
         )
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     return _report_response(assembly_id, page_ctx, report, _("Lookup table uploaded"), upload_report=upload_report)
 
 
@@ -999,9 +999,9 @@ def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
             _unlinked, deleted = unlink(uow, current_user.id, assembly_id, category_id)
             page_ctx = _page_context(uow, assembly_id)
     except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+        return _dashboard_redirect(_("You don't have permission to edit this project"))
     except AssemblyNotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
+        return _dashboard_redirect(_("Project not found"))
     except NotFoundError:
         flash(_("Target not found"), "error")
         return redirect(_sources_url(assembly_id))

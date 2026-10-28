@@ -36,7 +36,7 @@ Feature: Organiser assemblies
     Then I should not see "Someone Else's Assembly"
     When I try to access the assembly details page for "Someone Else's Assembly"
     Then I should be redirected to the dashboard
-    And I should see "You don't have permission to view this assembly"
+    And I should see "You don't have permission to view this project"
 
   Scenario: A plain user is not offered the create button
     Given I am logged in as a normal user
