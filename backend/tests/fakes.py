@@ -1455,6 +1455,7 @@ class FakeEmailAdapter(EmailAdapter):
         html_body: str | None = None,
         from_email: str | tuple[str, str] | None = None,
         reply_to: str | tuple[str, str] | None = None,
+        on_behalf_of: str = "",
     ) -> bool:
         if not self.succeed:
             return False
@@ -1466,6 +1467,7 @@ class FakeEmailAdapter(EmailAdapter):
             "html_body": html_body,
             "from_email": from_email,
             "reply_to": reply_to,
+            "on_behalf_of": on_behalf_of,
         })
         return True
 

@@ -567,6 +567,27 @@ class TestReplyTo:
         assert saved.reply_to_name == "The Team"
         assert saved.reply_to_email == "team@example.com"
 
+    def test_test_send_is_sent_on_behalf_of_the_reply_to_name(
+        self, logged_in_admin, fake_store, assembly_id, monkeypatch
+    ):
+        """The reply-to name is passed on as the sender's name, beside the Reply-To itself."""
+        template = _seed_template(fake_store, assembly_id)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.email_templates.get(template.id).update(reply_to_name="The Team", reply_to_email="team@example.com")
+            uow.commit()
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+        adapter = FakeEmailAdapter()
+        monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
+
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/send-test",
+            data={"test_email_to": "manager@example.com"},
+        )
+
+        assert response.status_code == 302
+        assert adapter.sent[0]["reply_to"] == ("The Team", "team@example.com")
+        assert adapter.sent[0]["on_behalf_of"] == "The Team"
+
     def test_invalid_reply_to_email_is_flashed_and_not_saved(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
@@ -598,6 +619,7 @@ class TestReplyTo:
         assert "Reply-to</legend>" in body
         assert 'name="template_reply_to_name"' in body
         assert 'name="template_reply_to_email"' in body
+        assert "Also shown as who the email is from." in body
         assert 'type="email"' in body
 
     def test_view_mode_shows_reply_to_read_only(self, logged_in_admin, fake_store, assembly_id):

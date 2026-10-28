@@ -49,6 +49,7 @@ class TestSendTemplatedEmail:
         assert kwargs["to"] == [respondent.email]
         assert kwargs["subject"] == "Thanks Sam"
         assert kwargs["reply_to"] == ("The Team", "team@example.com")
+        assert kwargs["on_behalf_of"] == "The Team"
         assert record.outcome is EmailSendOutcome.SENT
         assert uow.respondent_email_send_records.get(record.id) is not None
 
@@ -63,6 +64,7 @@ class TestSendTemplatedEmail:
         )
 
         assert adapter.send_email.call_args.kwargs["reply_to"] == "team@example.com"
+        assert adapter.send_email.call_args.kwargs["on_behalf_of"] == ""
 
     def test_reply_to_none_when_unset(self, uow):
         adapter = MagicMock()
@@ -75,6 +77,7 @@ class TestSendTemplatedEmail:
         )
 
         assert adapter.send_email.call_args.kwargs["reply_to"] is None
+        assert adapter.send_email.call_args.kwargs["on_behalf_of"] == ""
 
     def test_template_reply_to_wins_over_assembly(self, uow):
         adapter = MagicMock()
@@ -87,6 +90,7 @@ class TestSendTemplatedEmail:
         )
 
         assert adapter.send_email.call_args.kwargs["reply_to"] == ("Page Team", "page@example.com")
+        assert adapter.send_email.call_args.kwargs["on_behalf_of"] == "Page Team"
         assert record.reply_to_email == "page@example.com"
 
     def test_name_and_email_resolve_together(self, uow):
@@ -101,6 +105,8 @@ class TestSendTemplatedEmail:
         )
 
         assert adapter.send_email.call_args.kwargs["reply_to"] == "page@example.com"
+        # The name comes from the same source as the address, so not the assembly's.
+        assert adapter.send_email.call_args.kwargs["on_behalf_of"] == ""
 
     def test_falls_back_to_assembly_reply_to_when_template_has_none(self, uow):
         adapter = MagicMock()
@@ -113,6 +119,7 @@ class TestSendTemplatedEmail:
         )
 
         assert adapter.send_email.call_args.kwargs["reply_to"] == ("Assembly Team", "assembly@example.com")
+        assert adapter.send_email.call_args.kwargs["on_behalf_of"] == "Assembly Team"
         assert record.reply_to_email == "assembly@example.com"
 
     def test_record_reply_to_is_empty_when_none_used(self, uow):

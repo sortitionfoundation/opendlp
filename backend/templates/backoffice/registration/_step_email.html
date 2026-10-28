@@ -108,6 +108,7 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {{ input(name="template_reply_to_name",
                                     label=_("Name"),
+                                    hint=_("Also shown as who the email is from."),
                                     value=email_template.reply_to_name,
                                     attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
                                     {{ input(name="template_reply_to_email",

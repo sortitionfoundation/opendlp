@@ -343,6 +343,14 @@ Nothing in the interface sets that yet; it is there for a future default for
 each assembly. If neither is set, the email has no Reply-To, and the step
 shows a warning. Every send records the reply-to address it used.
 
+The reply-to's name is also put in the From name, as "The Team via OpenDLP"
+(the second part is `SMTP_FROM_NAME`), so the inbox shows who the email is
+from. The From address doesn't change. "via" is the convention mailing lists
+such as Google Groups use for mail sent on someone's behalf, and it stops a
+name that looks like an email address from passing as the real sender. It is
+not translated: the email adapter that builds it doesn't know the reader's
+language. With no reply-to name, the From name is `SMTP_FROM_NAME` alone.
+
 The step warns about two more things in the email itself. Text in square
 brackets with a letter in it, such as `[Your name]`, is a placeholder the
 default auto-reply leaves for the organiser to replace; the warning lists the
