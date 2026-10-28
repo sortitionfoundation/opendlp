@@ -320,8 +320,8 @@ phase 3; not used on the redesigned page.
     signup.
   - **Heading block promoted** to `public/_page_heading.html`
     (`page_heading(title, subtitle)` + optional `{% call %}` body) once the
-    second page needed it; every migrated auth page uses it. `register.html`
-    still inlines its own copy — switching it over is a mechanical follow-up.
+    second page needed it; every migrated auth page uses it, `register.html`
+    included (its rendered HTML is unchanged by the switch).
   - **Pages without a Figma frame** (2FA, forgot/reset, confirm/resend) are
     extrapolated from the sign-in frame: same illustration and heading, a
     body-md explanation, design-system inputs and a full-width primary submit,

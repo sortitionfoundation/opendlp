@@ -7,28 +7,21 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
 {% from "backoffice/components/input.html" import input, checkbox %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
 {% from "public/_survey_fields.html" import signup_survey_fields %}
+{% from "public/_page_heading.html" import page_heading %}
 {% block title %}{{ _("Create an Account") }}{% endblock %}
 {% block content %}
     {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
     {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
     {% set sso_enabled = google_enabled or microsoft_enabled %}
     <div class="flex flex-col gap-8">
-        <div class="flex flex-col items-center gap-6 text-center">
-            <img src="{{ url_for('static', filename='img/join-arch.svg') }}"
-                 alt=""
-                 width="322"
-                 height="161">
-            <div class="flex flex-col gap-1">
-                <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ _("Create an account") }}</h1>
-                <p class="text-heading-lg" style="color: var(--color-headings);">{{ _("Open Democratic Lottery Platform") }}</p>
-            </div>
+        {% call page_heading(_("Create an account"), subtitle=_("Open Democratic Lottery Platform")) %}
             <p class="text-body-md" style="color: var(--color-body-text);">
                 {{ _("Already have an account?") }}
                 <a href="{{ url_for('auth.login') }}"
                    class="underline font-semibold"
                    style="color: var(--color-links);">{{ _("Sign in") }}</a>
             </p>
-        </div>
+        {% endcall %}
         {% if not feature('open_signup') %}
             <p class="text-body-md px-4 py-3 rounded-lg"
                style="background-color: var(--color-subtle-background-panels);
