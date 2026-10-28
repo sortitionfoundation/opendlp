@@ -161,7 +161,7 @@ def login() -> ResponseReturnValue:
             logger.exception("Login error", error=str(e))
             flash(_("An error occurred while signing in. Please try again."), "error")
 
-    return render_template("auth/login.html", form=form, show_resend_confirmation=show_resend_confirmation)
+    return render_template("public/login.html", form=form, show_resend_confirmation=show_resend_confirmation)
 
 
 def _validate_2fa_session() -> tuple[bool, str | None]:

@@ -196,6 +196,26 @@ class TestOAuthRegistrationForms:
             assert b"Invalid" in response.data or b"error" in response.data.lower()
 
 
+class TestOAuthLoginPage:
+    """The sign-in page's Google and Microsoft buttons."""
+
+    def test_login_page_links_to_both_providers(self, client: FlaskClient):
+        """The SSO buttons are links to the OAuth start routes, not form submits."""
+        body = client.get("/auth/login").data
+        assert b'href="/auth/login/google"' in body
+        assert b'href="/auth/login/microsoft"' in body
+        assert b"Sign in with Google" in body
+        assert b"Sign in with Microsoft" in body
+
+    def test_login_page_puts_the_email_form_before_sso(self, client: FlaskClient):
+        """The email sign-in submit is the page's first submit and comes before the SSO links."""
+        body = client.get("/auth/login").data
+        first_submit = body.find(b'type="submit"')
+        assert first_submit != -1
+        assert first_submit < body.find(b'href="/auth/login/google"')
+        assert body.count(b'type="submit"') == 1
+
+
 class TestOAuthLoginRequired:
     """Login-required redirects for OAuth/profile auth routes."""
 
