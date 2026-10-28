@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-28 14:50+0000\n"
+"POT-Creation-Date: 2026-10-28 15:03+0000\n"
 "PO-Revision-Date: 2026-10-22 16:33+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -879,32 +879,30 @@ msgid "Confirm New Password"
 msgstr "Új jelszó megerősítése"
 
 #: src/opendlp/entrypoints/forms.py:338
-msgid "Assembly Title"
-msgstr "Közösségi gyűlés címe"
+msgid "Project title"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:340
-msgid "Enter the title for this assembly"
-msgstr "Adja meg a közösségi gyűlés címét"
+msgid "Enter the title for this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:344
 #: templates/backoffice/assembly_details.html:40
-#: templates/main/view_assembly_details.html:6
-msgid "Assembly Question"
-msgstr "A közösségi gyűlés témája"
+msgid "Framing question"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:346
-msgid "Optional — the key question this assembly will address"
-msgstr "Nem kötelező – a fő téma, amellyel ez a közösségi gyűlés foglalkozni fog"
+msgid "Optional — the question the event is convened to answer"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:351
 #: templates/backoffice/assembly_details.html:64
-#: templates/main/view_assembly_details.html:20
-msgid "First Assembly Date"
-msgstr "Első közösségi gyűlés időpontja"
+msgid "First event date"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:353
-msgid "Optional — when the first assembly meeting will take place"
-msgstr "Nem kötelező – az első közösségi gyűlés időpontja"
+msgid "Optional — when the event first meets"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:357
 #: templates/backoffice/assembly_details.html:73
@@ -913,8 +911,8 @@ msgid "Number to Select"
 msgstr "Kiválasztandó emberek száma"
 
 #: src/opendlp/entrypoints/forms.py:359
-msgid "The number of participants to select for this assembly"
-msgstr "A közösségi gyűlésre kiválasztandó résztvevők száma"
+msgid "The number of participants to select for this event"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:376
 msgid "Google Sheets URL"
@@ -1728,10 +1726,9 @@ msgstr ""
 "próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:126
-#: src/opendlp/entrypoints/blueprints/main.py:230
 #, python-format
-msgid "Assembly '%(title)s' created successfully"
-msgstr "A '%(title)s' közösségi gyűlés sikeresen létrehozva"
+msgid "Project '%(title)s' created successfully"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:130
 #: src/opendlp/entrypoints/blueprints/main.py:234
@@ -1740,10 +1737,8 @@ msgstr "Nincs jogosultságod közösségi gyűlés létrehozására"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:134
 #: src/opendlp/entrypoints/blueprints/backoffice.py:138
-#: src/opendlp/entrypoints/blueprints/main.py:238
-#: src/opendlp/entrypoints/blueprints/main.py:241
-msgid "An error occurred while creating the assembly"
-msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
+msgid "An error occurred while creating the project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:192
 #: src/opendlp/entrypoints/blueprints/backoffice.py:385
@@ -1945,10 +1940,9 @@ msgid "Dashboard exported to Google Sheets."
 msgstr "A statisztikák exportálva a Google Táblázatba."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:529
-#: src/opendlp/entrypoints/blueprints/main.py:270
 #, python-format
-msgid "Assembly '%(title)s' updated successfully"
-msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
+msgid "Project '%(title)s' updated successfully"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:538
 #: src/opendlp/entrypoints/blueprints/backoffice.py:574
@@ -1966,10 +1960,8 @@ msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:547
 #: src/opendlp/entrypoints/blueprints/backoffice.py:553
-#: src/opendlp/entrypoints/blueprints/main.py:288
-#: src/opendlp/entrypoints/blueprints/main.py:296
-msgid "An error occurred while updating the assembly"
-msgstr "Hiba történt a közösségi gyűlés frissítése közben"
+msgid "An error occurred while updating the project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:585
 msgid "Please enter a valid positive number"
@@ -2759,6 +2751,26 @@ msgstr "A feladatfuttatás nem található"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1428
 msgid "Unknown task type"
 msgstr "Ismeretlen feladattípus"
+
+#: src/opendlp/entrypoints/blueprints/main.py:230
+#, python-format
+msgid "Assembly '%(title)s' created successfully"
+msgstr "A '%(title)s' közösségi gyűlés sikeresen létrehozva"
+
+#: src/opendlp/entrypoints/blueprints/main.py:238
+#: src/opendlp/entrypoints/blueprints/main.py:241
+msgid "An error occurred while creating the assembly"
+msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
+
+#: src/opendlp/entrypoints/blueprints/main.py:270
+#, python-format
+msgid "Assembly '%(title)s' updated successfully"
+msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
+
+#: src/opendlp/entrypoints/blueprints/main.py:288
+#: src/opendlp/entrypoints/blueprints/main.py:296
+msgid "An error occurred while updating the assembly"
+msgstr "Hiba történt a közösségi gyűlés frissítése közben"
 
 #: src/opendlp/entrypoints/blueprints/main.py:368
 msgid "Please check the form and try again"
@@ -6440,8 +6452,8 @@ msgid "A shorter URL for QR codes and paper invitations"
 msgstr "Rövidebb URL QR-kódokhoz és nyomtatott meghívókhoz"
 
 #: templates/backoffice/assembly_details.html:140
-msgid "No registration page has been created for this assembly."
-msgstr "Ehhez a közösségi gyűléshez nem készült regisztrációs oldal."
+msgid "No registration page has been created for this project."
+msgstr ""
 
 #: templates/backoffice/assembly_details.html:146
 #, python-format
@@ -6457,10 +6469,8 @@ msgstr ""
 #: templates/backoffice/assembly_details.html:155
 #: templates/backoffice/edit_assembly.html:8
 #: templates/backoffice/edit_assembly.html:12
-#: templates/main/edit_assembly.html:2 templates/main/edit_assembly.html:23
-#: templates/main/view_assembly_details.html:52
-msgid "Edit Assembly"
-msgstr "Közösségi gyűlés szerkesztése"
+msgid "Edit project"
+msgstr ""
 
 #: templates/backoffice/assembly_edit_respondent.html:13
 msgid "Edit respondent"
@@ -7111,18 +7121,12 @@ msgstr "Váltás az oldal adminisztrációra"
 #: templates/backoffice/create_assembly.html:8
 #: templates/backoffice/create_assembly.html:12
 #: templates/backoffice/create_assembly.html:19
-#: templates/main/create_assembly.html:2 templates/main/create_assembly.html:13
-#: templates/main/create_assembly.html:34
-#: templates/main/create_assembly.html:95 templates/main/dashboard.html:24
-msgid "Create Assembly"
-msgstr "Közösségi gyűlés létrehozása"
-
-#: templates/backoffice/create_assembly.html:14
-msgid "Set up a new citizens' assembly."
-msgstr "Hozz létre egy új közösségi gyűlést."
-
 #: templates/backoffice/dashboard.html:15
 msgid "Create project"
+msgstr ""
+
+#: templates/backoffice/create_assembly.html:14
+msgid "Set up a new project."
 msgstr ""
 
 #: templates/backoffice/dashboard.html:18
@@ -7180,9 +7184,8 @@ msgid "Available when a Google service account is configured."
 msgstr "Akkor érhető el, ha be van állítva Google szolgáltatásfiók."
 
 #: templates/backoffice/edit_assembly.html:14
-#: templates/main/edit_assembly.html:24
-msgid "Update the details for this citizens' assembly."
-msgstr "Frissítsd a közösségi gyűlés adatait."
+msgid "Update the details for this project."
+msgstr ""
 
 #: templates/backoffice/targets_force_unlink_confirm.html:8
 msgid "Confirm target changes"
@@ -7277,9 +7280,8 @@ msgid "Select and Replace"
 msgstr "Kiválasztás és pótlás"
 
 #: templates/backoffice/components/assembly_tabs.html:87
-#: templates/main/view_assembly_base.html:26
-msgid "Assembly sections"
-msgstr "A közösségi gyűlés szakaszai"
+msgid "Project sections"
+msgstr ""
 
 #: templates/backoffice/components/breadcrumbs.html:27
 msgid "Breadcrumb"
@@ -10987,6 +10989,12 @@ msgstr "További beállítások"
 msgid "Change Configuration"
 msgstr "Beállítások megváltoztatása"
 
+#: templates/main/create_assembly.html:2 templates/main/create_assembly.html:13
+#: templates/main/create_assembly.html:34
+#: templates/main/create_assembly.html:95 templates/main/dashboard.html:24
+msgid "Create Assembly"
+msgstr "Közösségi gyűlés létrehozása"
+
 #: templates/main/create_assembly.html:11 templates/main/dashboard.html:17
 #: templates/main/view_assembly_base.html:8
 msgid "Your Assemblies"
@@ -11025,6 +11033,15 @@ msgid ""
 msgstr ""
 "Még egyetlen közösségi gyűléshez sem adtak hozzá – kérj meg egy "
 "gyűlésszervezőt, hogy hozzáadjon."
+
+#: templates/main/edit_assembly.html:2 templates/main/edit_assembly.html:23
+#: templates/main/view_assembly_details.html:52
+msgid "Edit Assembly"
+msgstr "Közösségi gyűlés szerkesztése"
+
+#: templates/main/edit_assembly.html:24
+msgid "Update the details for this citizens' assembly."
+msgstr "Frissítsd a közösségi gyűlés adatait."
 
 #: templates/main/index.html:2
 msgid "Welcome"
@@ -11129,6 +11146,10 @@ msgstr "E-mailt is írhatsz nekünk ide:"
 msgid "No users match your search"
 msgstr "Nincs a keresésnek megfelelő felhasználó"
 
+#: templates/main/view_assembly_base.html:26
+msgid "Assembly sections"
+msgstr "A közösségi gyűlés szakaszai"
+
 #: templates/main/view_assembly_base.html:48
 msgid "Selection (Google Sheets)"
 msgstr "Kiválasztás (Google Táblázat)"
@@ -11191,6 +11212,14 @@ msgstr "—"
 #: templates/main/view_assembly_data.html:169
 msgid "No selection runs have been performed yet."
 msgstr "Még nem futott kiválasztás."
+
+#: templates/main/view_assembly_details.html:6
+msgid "Assembly Question"
+msgstr "A közösségi gyűlés témája"
+
+#: templates/main/view_assembly_details.html:20
+msgid "First Assembly Date"
+msgstr "Első közösségi gyűlés időpontja"
 
 #: templates/main/view_assembly_members.html:42
 msgid ""

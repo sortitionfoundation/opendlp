@@ -49,9 +49,9 @@ class TestAssemblyCreateView:
         response = logged_in_admin.get("/assemblies/new")
         assert response.status_code == 200
         assert b"Create Assembly" in response.data
-        assert b"Assembly Title" in response.data
-        assert b"Assembly Question" in response.data
-        assert b"First Assembly Date" in response.data
+        assert b"Project title" in response.data
+        assert b"Framing question" in response.data
+        assert b"First event date" in response.data
 
     def test_create_assembly_minimal_data(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
         """Test assembly creation with minimal required data persists to the store."""

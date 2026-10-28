@@ -123,7 +123,7 @@ def new_assembly() -> ResponseReturnValue:
                     number_to_select=form.number_to_select.data or 0,
                 )
 
-            flash(_("Assembly '%(title)s' created successfully", title=assembly.title), "success")
+            flash(_("Project '%(title)s' created successfully", title=assembly.title), "success")
             return redirect(url_for("backoffice.view_assembly", assembly_id=assembly.id))
         except InsufficientPermissions as e:
             logger.warning("Insufficient permissions to create assembly", user_id=str(current_user.id), error=str(e))
@@ -131,11 +131,11 @@ def new_assembly() -> ResponseReturnValue:
             return redirect(url_for("backoffice.dashboard"))
         except NotFoundError as e:
             logger.error("User not found during assembly creation", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while creating the assembly"), "error")
+            flash(_("An error occurred while creating the project"), "error")
             return redirect(url_for("backoffice.dashboard"))
         except Exception as e:
             logger.exception("Create assembly error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while creating the assembly"), "error")
+            flash(_("An error occurred while creating the project"), "error")
             return redirect(url_for("backoffice.dashboard"))
 
     return render_template("backoffice/create_assembly.html", form=form), 200
@@ -526,7 +526,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         number_to_select=form.number_to_select.data,
                     )
 
-                flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")
+                flash(_("Project '%(title)s' updated successfully", title=updated_assembly.title), "success")
                 return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
             except InsufficientPermissions as e:
                 logger.warning(
@@ -544,13 +544,13 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     user_id=str(current_user.id),
                     error=str(e),
                 )
-                flash(_("An error occurred while updating the assembly"), "error")
+                flash(_("An error occurred while updating the project"), "error")
                 return redirect(url_for("backoffice.dashboard"))
             except Exception as e:
                 logger.exception(
                     "Edit assembly error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
                 )
-                flash(_("An error occurred while updating the assembly"), "error")
+                flash(_("An error occurred while updating the project"), "error")
                 return redirect(url_for("backoffice.dashboard"))
 
         return render_template(

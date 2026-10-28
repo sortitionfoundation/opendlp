@@ -1084,8 +1084,8 @@ def see_page_heading(page: Page, title: str):
 def see_assembly_question_section(page: Page):
     """Verify the assembly question section is visible."""
     # The section() macro renders a div, not a section element
-    # Look for h2 heading containing "Assembly Question"
-    heading = page.locator("h2", has_text="Assembly Question")
+    # Look for h2 heading containing "Framing question"
+    heading = page.locator("h2", has_text="Framing question")
     expect(heading).to_be_visible()
 
 
@@ -1111,7 +1111,7 @@ def see_text_on_page(page: Page, text: str):
 @then(parsers.parse('I should see the "{button_text}" button'))
 def see_button_with_text(page: Page, button_text: str):
     """Verify a button with specific text is visible."""
-    # Use exact match to avoid matching similar text (e.g., "Edit Assembly" vs "Edit assembly to add URLs")
+    # Use exact match to avoid matching similar text (e.g., "Edit project" vs "Edit project to add URLs")
     button = page.get_by_role("link", name=button_text, exact=True).or_(
         page.get_by_role("button", name=button_text, exact=True)
     )
@@ -1124,7 +1124,7 @@ def see_button_with_text(page: Page, button_text: str):
 @when(parsers.parse('I click the "{button_text}" button'))
 def click_button_with_text(page: Page, button_text: str):
     """Click a button with specific text."""
-    # Use exact match to avoid matching similar text (e.g., "Edit Assembly" vs "Edit assembly to add URLs")
+    # Use exact match to avoid matching similar text (e.g., "Edit project" vs "Edit project to add URLs")
     button = page.get_by_role("link", name=button_text, exact=True).or_(
         page.get_by_role("button", name=button_text, exact=True)
     )
@@ -1171,9 +1171,9 @@ def see_question_textarea_field(page: Page):
     expect(question_textarea).to_be_visible()
 
 
-@then("I should see the first assembly date field")
-def see_first_assembly_date_field(page: Page):
-    """Verify the first assembly date field is visible."""
+@then("I should see the first event date field")
+def see_first_event_date_field(page: Page):
+    """Verify the first event date field is visible."""
     date_input = page.locator("input[name='first_assembly_date']")
     expect(date_input).to_be_visible()
 
@@ -1335,7 +1335,7 @@ def assign_user_to_assembly(email: str, title: str, role: str, admin_user, norma
 @when(parsers.parse('I click the "{tab_name}" tab'))
 def click_tab(page: Page, tab_name: str):
     """Click a tab in the tab navigation."""
-    tab = page.locator("nav[aria-label='Assembly sections'] a", has_text=tab_name)
+    tab = page.locator("nav[aria-label='Project sections'] a", has_text=tab_name)
     tab.click()
     page.wait_for_load_state("networkidle")
 
@@ -1780,8 +1780,8 @@ def number_to_select_should_be(page: Page, number: str):
 @then(parsers.parse('I should see a "{tab_name}" tab in the assembly navigation'))
 def see_tab_in_navigation(page: Page, tab_name: str):
     """Verify a specific tab is visible in the assembly navigation."""
-    # Use the Assembly sections nav specifically to avoid matching breadcrumbs
-    tab = page.locator("nav[aria-label='Assembly sections'] a, nav[aria-label='Assembly sections'] span").filter(
+    # Use the Project sections nav specifically to avoid matching breadcrumbs
+    tab = page.locator("nav[aria-label='Project sections'] a, nav[aria-label='Project sections'] span").filter(
         has_text=tab_name
     )
     expect(tab).to_be_visible()
@@ -1791,7 +1791,7 @@ def see_tab_in_navigation(page: Page, tab_name: str):
 def tab_should_be_disabled(page: Page, tab_name: str):
     """Verify a specific tab is disabled (shown as span, not a link)."""
     # Disabled tabs are rendered as spans with aria-disabled attribute, not links
-    disabled_tab = page.locator("nav[aria-label='Assembly sections'] span[aria-disabled='true']").filter(
+    disabled_tab = page.locator("nav[aria-label='Project sections'] span[aria-disabled='true']").filter(
         has_text=tab_name
     )
     expect(disabled_tab).to_be_visible()
@@ -1801,14 +1801,14 @@ def tab_should_be_disabled(page: Page, tab_name: str):
 def tab_should_be_enabled(page: Page, tab_name: str):
     """Verify a specific tab is enabled (shown as a clickable link)."""
     # Enabled tabs are rendered as anchor tags, not spans
-    enabled_tab = page.locator("nav[aria-label='Assembly sections'] a").filter(has_text=tab_name)
+    enabled_tab = page.locator("nav[aria-label='Project sections'] a").filter(has_text=tab_name)
     expect(enabled_tab).to_be_visible()
 
 
 @then(parsers.parse('I should not see a "{tab_name}" tab in the assembly navigation'))
 def should_not_see_tab_in_navigation(page: Page, tab_name: str):
     """Verify a specific tab is not visible in the assembly navigation."""
-    tab = page.locator("nav[aria-label='Assembly sections'] a, nav[aria-label='Assembly sections'] span").filter(
+    tab = page.locator("nav[aria-label='Project sections'] a, nav[aria-label='Project sections'] span").filter(
         has_text=tab_name
     )
     expect(tab).to_have_count(0)

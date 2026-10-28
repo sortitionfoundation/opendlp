@@ -335,28 +335,28 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Assembly creation and editing form."""
 
     title = StringField(
-        _l("Assembly Title"),
+        _l("Project title"),
         validators=[DataRequired(), Length(min=3, max=200)],
-        description=_l("Enter the title for this assembly"),
+        description=_l("Enter the title for this project"),
     )
 
     question = TextAreaField(
-        _l("Assembly Question"),
+        _l("Framing question"),
         validators=[Optional(), Length(max=1000)],
-        description=_l("Optional — the key question this assembly will address"),
+        description=_l("Optional — the question the event is convened to answer"),
         render_kw={"rows": 3},
     )
 
     first_assembly_date = DateField(
-        _l("First Assembly Date"),
+        _l("First event date"),
         validators=[Optional()],
-        description=_l("Optional — when the first assembly meeting will take place"),
+        description=_l("Optional — when the event first meets"),
     )
 
     number_to_select = IntegerField(
         _l("Number to Select"),
         validators=[InputRequired(), NonNegativeValidator()],
-        description=_l("The number of participants to select for this assembly"),
+        description=_l("The number of participants to select for this event"),
         default=0,
     )
 
