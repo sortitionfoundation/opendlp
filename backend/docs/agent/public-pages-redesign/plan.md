@@ -73,11 +73,11 @@ Templates still extending a GOV.UK base, grouped by journey:
 
 **Public account journey (`base.html`)** — the subject of this plan:
 
-- `auth/register.html` ← phase 1 (ticket 1053)
-- `auth/login.html`, `auth/verify_2fa.html`
-- `auth/forgot_password.html`, `auth/reset_password.html`
-- `auth/confirm_email.html`, `auth/resend_confirmation.html`
-- `main/index.html` (public landing)
+- `auth/register.html` ← phase 1 (ticket 1053) — **migrated** to `public/register.html`
+- `auth/login.html`, `auth/verify_2fa.html` — **migrated** (phase 2)
+- `auth/forgot_password.html`, `auth/reset_password.html` — **migrated** (phase 3)
+- `auth/confirm_email.html`, `auth/resend_confirmation.html` — **migrated** (phase 3)
+- `main/index.html` (public landing) — still GOV.UK
 
 (The error pages `errors/400|403|404|413|500.html` are seen by both audiences and
 **stay GOV.UK** with the respondent journey — decided 2026-10-08.)
@@ -103,8 +103,9 @@ restyled (`main/dashboard.html` + old dashboard behind `FF_OLD_DEFAULT_DASHBOARD
    `templates/public/base.html` + migrate `auth/register.html`. Details below.
 2. **Login + 2FA verify** — same layout; shares the SSO-buttons molecule with signup.
 3. **Password flows** (forgot/reset) and **email confirmation pages** — small forms,
-   mostly `input()` + primary button; retire `govuk_password_input.html` when the
-   last user goes.
+   mostly `input()` + primary button. `govuk_password_input.html` cannot be retired
+   with them: `profile/change_password.html` and `profile/set_password.html` still
+   use it, and they leave GOV.UK with the legacy authenticated pages.
 4. **Public landing** (`main/index.html`).
 5. ~~Error pages~~ — **stay GOV.UK** (decided 2026-10-08): respondents see them,
    so the same widest-audience argument applies as for the registration forms.
@@ -300,6 +301,42 @@ phase 3; not used on the redesigned page.
 - `process_plan` field type: radio (current form) vs select (Figma).
 
 ## Session log
+
+- **2026-10-28 (phases 2 and 3 — every auth blueprint page)** — On branch
+  `public-auth-pages-redesign`, one commit per group: login, verify-2FA, the
+  password reset pair, the email confirmation pair, then catalogues.
+  `templates/auth/` is now empty and gone; every auth route renders from
+  `templates/public/`. Decisions:
+  - **Login follows Figma node 5570-6325**: email + password, remember-me,
+    "Forgot your password?" right-aligned, full-width primary submit, then "Or
+    sign in with" and the Google/Microsoft buttons side by side. The SSO
+    buttons are `button(href=...)` links, not form submits — their routes are
+    plain GETs — so the email submit stays the page's only submit and the BDD
+    `button[type="submit"]` login helpers keep working. Copy kept from the
+    existing msgids where the Figma differs ("Forgot your password?" not
+    "Forget password?", the remember-me label keeps its cookie consequence
+    per `docs/personal-data.md`); h1 "Sign in to OpenDLP" is the one new
+    msgid, with the same "Open Democratic Lottery Platform" subtitle as
+    signup.
+  - **Heading block promoted** to `public/_page_heading.html`
+    (`page_heading(title, subtitle)` + optional `{% call %}` body) once the
+    second page needed it; every migrated auth page uses it. `register.html`
+    still inlines its own copy — switching it over is a mechanical follow-up.
+  - **Pages without a Figma frame** (2FA, forgot/reset, confirm/resend) are
+    extrapolated from the sign-in frame: same illustration and heading, a
+    body-md explanation, design-system inputs and a full-width primary submit,
+    the secondary link centred beneath.
+  - **2FA**: the backup-code note stays a native `<details>` styled with tokens
+    (no disclosure component exists); the form keeps browser validation of the
+    code pattern (no `novalidate`).
+  - **Reset password**: the requirements list sits under the new-password
+    field, as on signup, replacing the GOV.UK warning + inset.
+  - Flash messages now show in `floating_alerts()`; the two BDD
+    disabled-account checks read `#floating-alerts` instead of
+    `.govuk-error-summary`.
+  - New `tests/component/test_public_auth_pages.py` pins the migrated pages as
+    GOV.UK-free and on the public layout (token pages are pinned in their own
+    route tests).
 
 - **2026-10-08 (judgment calls + fixes)** — Gergő decided: error pages **stay
   GOV.UK** (respondents see them); the Figma's beta-notice checkbox is **dropped
