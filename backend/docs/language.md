@@ -67,7 +67,7 @@ in, and don't add a third variant.
 | invite                | What an admin sends so that someone can create an account                     |                                    |
 | invite code           | The code in an invite                                                         | invitation code                    |
 | assembly question     | What the assembly is convened to decide                                       |                                    |
-| replies go to         | Where replies to an email the app sends are delivered (its Reply-To)          | reply-to, reply address            |
+| reply-to              | Where replies to an email the app sends are delivered (its Reply-To header)   | replies go to, reply address       |
 
 **assembly** is lowercase in running text: "Run the replacement selection for
 this assembly". Use "citizens' assembly" where the reader might not know what an
@@ -147,6 +147,12 @@ question's type. The code has two (`BOOL` and `BOOL_OR_NONE`, the second allowin
 no answer), and the backoffice form for editing a respondent offers Yes / No
 radios — but a question that asks for a checkbox is a checkbox either way, and the
 Required tag already says whether it may be left unanswered.
+
+**reply-to** is the word for where replies to an email go, as in the
+"Reply-to" fieldset on the auto-reply email step. It is the email header's own
+name, but user testing showed it is common language, and that avoiding it for a
+plainer phrase such as "replies go to" was more confusing, not less. Hyphenated,
+with a capital R only where it starts a label or sentence.
 
 **selection** is the backoffice word. "Democratic lottery" belongs to the brand
 and to introductory text ("Open Democratic Lottery Platform", "Run the democratic
