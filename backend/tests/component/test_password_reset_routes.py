@@ -124,6 +124,17 @@ class TestResetPassword:
         assert response.status_code == 200
         assert b"Set new password" in response.data
 
+    def test_get_renders_on_the_design_system(self, client: FlaskClient, fake_store: FakeStore) -> None:
+        """The reset form is on the public layout, with the requirements under the new password."""
+        user = _make_password_user(fake_store)
+        token = _seed_token(fake_store, user.id)
+        body = client.get(f"/auth/reset-password/{token}").data
+        assert b"govuk-" not in body
+        assert b'id="main-content"' in body
+        assert (
+            body.find(b'name="password"') < body.find(b"Password requirements") < body.find(b'name="password_confirm"')
+        )
+
     def test_get_with_unknown_token_redirects(self, client: FlaskClient) -> None:
         response = client.get("/auth/reset-password/does-not-exist")
         assert response.status_code == 302
