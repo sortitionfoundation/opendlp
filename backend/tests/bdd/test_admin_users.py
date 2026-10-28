@@ -129,7 +129,7 @@ def _(admin_logged_in_page: Page, disposable_user: User):
 def _(page: Page, disposable_user: User):
     """the disposable user cannot sign in."""
     _sign_in_attempt(page, disposable_user.email, DISPOSABLE_PASSWORD)
-    expect(page.locator(".govuk-error-summary")).to_contain_text("Invalid email or password")
+    expect(page.locator("#floating-alerts")).to_contain_text("Invalid email or password")
 
 
 @when("the admin enables their account")
@@ -146,4 +146,4 @@ def _(admin_logged_in_page: Page, disposable_user: User):
 def _(page: Page, disposable_user: User):
     """the disposable user still cannot sign in with their old password."""
     _sign_in_attempt(page, disposable_user.email, DISPOSABLE_PASSWORD)
-    expect(page.locator(".govuk-error-summary")).to_contain_text("Invalid email or password")
+    expect(page.locator("#floating-alerts")).to_contain_text("Invalid email or password")

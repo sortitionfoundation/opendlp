@@ -1,0 +1,90 @@
+{#
+ABOUTME: Public sign-in page on the OpenDLP design system
+ABOUTME: Email and password sign-in, then Google/Microsoft - Figma node 5570-6325 in the OpenDLP UI file
+#}
+{% extends "public/base.html" %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, checkbox %}
+{% from "components/brand_marks.html" import brand_google, brand_microsoft %}
+{% block title %}{{ _("Sign in") }}{% endblock %}
+{% block content %}
+    {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
+    {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
+    <div class="flex flex-col gap-10">
+        <div class="flex flex-col items-center gap-6 text-center">
+            <img src="{{ url_for('static', filename='img/join-arch.svg') }}"
+                 alt=""
+                 width="322"
+                 height="161">
+            <div class="flex flex-col gap-1">
+                <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ _("Sign in to OpenDLP") }}</h1>
+                <p class="text-heading-lg" style="color: var(--color-headings);">{{ _("Open Democratic Lottery Platform") }}</p>
+            </div>
+            <p class="text-body-md" style="color: var(--color-body-text);">
+                {{ _("Don't have an account?") }}
+                <a href="{{ url_for('auth.register') }}"
+                   class="underline font-semibold"
+                   style="color: var(--color-links);">{{ _("Create an account") }}</a>
+            </p>
+        </div>
+        <form method="POST" class="flex flex-col gap-4" novalidate>
+            {{ form.hidden_tag() }}
+            {{ input(form.email.name,
+            label=form.email.label.text,
+            type="email",
+            value=form.email.data or "",
+            error=form.email.errors | join("\n"),
+            attrs='autocomplete="email"')
+            }}
+            {{ input(form.password.name,
+            label=form.password.label.text,
+            type="password",
+            error=form.password.errors | join("\n"),
+            attrs='autocomplete="current-password"')
+            }}
+            {{ checkbox(form.remember_me.name,
+            label=form.remember_me.label.text,
+            checked=form.remember_me.data)
+            }}
+            <p class="text-body-md self-end">
+                <a href="{{ url_for('auth.forgot_password') }}"
+                   class="underline font-semibold"
+                   style="color: var(--color-links);">{{ _("Forgot your password?") }}</a>
+            </p>
+            {{ button(_("Sign in"), variant="primary", type="submit", full_width=true) }}
+            {% if show_resend_confirmation %}
+                <p class="text-body-md" style="color: var(--color-body-text);">
+                    {{ _("Didn't receive the email?") }}
+                    <a href="{{ url_for('auth.resend_confirmation') }}"
+                       class="underline font-semibold"
+                       style="color: var(--color-links);">{{ _("Resend confirmation") }}</a>
+                </p>
+            {% endif %}
+        </form>
+        {% if google_enabled or microsoft_enabled %}
+            {# The OAuth routes are plain GETs that redirect to the provider, so
+               these are links styled as buttons rather than form submits. #}
+            <div class="flex flex-col items-center gap-4">
+                <h2 class="text-body-lg" style="color: var(--color-headings);">{{ _("Or sign in with") }}</h2>
+                <div class="grid grid-cols-1 {{ 'sm:grid-cols-2' if (google_enabled and microsoft_enabled) else '' }} gap-3 w-full">
+                    {% if google_enabled %}
+                        {{ button(_("Sign in with Google"),
+                        variant="secondary",
+                        href=url_for('auth.login_google'),
+                        full_width=true,
+                        leading_icon=brand_google())
+                        }}
+                    {% endif %}
+                    {% if microsoft_enabled %}
+                        {{ button(_("Sign in with Microsoft"),
+                        variant="secondary",
+                        href=url_for('auth.login_microsoft'),
+                        full_width=true,
+                        leading_icon=brand_microsoft())
+                        }}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
