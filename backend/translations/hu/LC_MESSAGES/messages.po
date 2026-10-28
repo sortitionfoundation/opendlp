@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-28 16:48+0000\n"
+"POT-Creation-Date: 2026-10-28 21:55+0000\n"
 "PO-Revision-Date: 2026-10-28 21:04+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -5025,7 +5025,7 @@ msgid "Another task is already writing to this project: %(task)s"
 msgstr "Ebbe a projektbe már ír egy másik feladat: %(task)s"
 
 #: templates/base.html:5 templates/public/base.html:19
-#: templates/public/register.html:23
+#: templates/public/login.html:15 templates/public/register.html:23
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
 
@@ -5079,13 +5079,13 @@ msgstr "Fiókom"
 msgid "Sign out"
 msgstr "Kilépés"
 
-#: templates/auth/forgot_password.html:41 templates/auth/login.html:3
-#: templates/auth/login.html:7 templates/auth/login.html:31
-#: templates/auth/resend_confirmation.html:41 templates/base.html:102
-#: templates/errors/400.html:29 templates/errors/403.html:27
-#: templates/errors/404.html:28 templates/errors/413.html:24
-#: templates/errors/500.html:28 templates/main/index.html:17
+#: templates/base.html:102 templates/errors/400.html:29
+#: templates/errors/403.html:27 templates/errors/404.html:28
+#: templates/errors/413.html:24 templates/errors/500.html:28
+#: templates/main/index.html:17 templates/public/forgot_password.html:33
+#: templates/public/login.html:10 templates/public/login.html:47
 #: templates/public/register.html:29
+#: templates/public/resend_confirmation.html:33
 msgid "Sign in"
 msgstr "Bejelentkezés"
 
@@ -5628,10 +5628,10 @@ msgstr "Bejelentkezési mód"
 msgid "OAuth"
 msgstr "OAuth"
 
-#: templates/admin/user_view.html:75 templates/auth/verify_2fa.html:2
-#: templates/auth/verify_2fa.html:6 templates/profile/2fa_settings.html:2
+#: templates/admin/user_view.html:75 templates/profile/2fa_settings.html:2
 #: templates/profile/2fa_settings.html:6 templates/profile/2fa_settings.html:22
-#: templates/profile/view.html:178
+#: templates/profile/view.html:178 templates/public/verify_2fa.html:9
+#: templates/public/verify_2fa.html:12
 msgid "Two-Factor Authentication"
 msgstr "Kétlépcsős azonosítás"
 
@@ -5846,162 +5846,6 @@ msgstr "hozz létre és küldj neki egy meghívókódot"
 #: templates/admin/users.html:242
 msgid "Export users as CSV"
 msgstr "Felhasználók exportálása CSV-be"
-
-#: templates/auth/confirm_email.html:5 templates/auth/confirm_email.html:10
-msgid "Confirm your email"
-msgstr "Erősítsd meg az e-mail címed"
-
-#: templates/auth/confirm_email.html:13
-msgid ""
-"Click the button below to confirm your email address and activate your "
-"account."
-msgstr ""
-"Kattints az alábbi gombra az e-mail címed megerősítéséhez és a fiókod "
-"aktiválásához."
-
-#: templates/auth/confirm_email.html:19
-msgid "Confirm email address"
-msgstr "E-mail cím megerősítése"
-
-#: templates/auth/forgot_password.html:3
-msgid "Forgot Password"
-msgstr "Elfelejtett jelszó"
-
-#: templates/auth/forgot_password.html:8
-msgid "Reset your password"
-msgstr "Állítsd vissza a jelszavad"
-
-#: templates/auth/forgot_password.html:11
-msgid ""
-"Enter your email address and we will send you a link to reset your "
-"password."
-msgstr ""
-"Add meg az e-mail címed, és küldünk egy linket a jelszavad "
-"visszaállításához."
-
-#: templates/auth/forgot_password.html:34
-msgid "Send reset link"
-msgstr "Visszaállító link küldése"
-
-#: templates/auth/forgot_password.html:40
-msgid "Remember your password?"
-msgstr "Eszedbe jutott a jelszavad?"
-
-#: templates/auth/login.html:34
-msgid "Or sign in with"
-msgstr "Vagy jelentkezz be ezzel"
-
-#: templates/auth/login.html:46 templates/auth/login.html:47
-msgid "Sign in with Google"
-msgstr "Bejelentkezés Google-fiókkal"
-
-#: templates/auth/login.html:64 templates/auth/login.html:65
-msgid "Sign in with Microsoft"
-msgstr "Bejelentkezés Microsoft-fiókkal"
-
-#: templates/auth/login.html:74
-msgid "Didn't receive the email?"
-msgstr "Nem kaptad meg az e-mailt?"
-
-#: templates/auth/login.html:75
-msgid "Resend confirmation"
-msgstr "Megerősítés újraküldése"
-
-#: templates/auth/login.html:79
-msgid "Forgot your password?"
-msgstr "Elfelejtetted a jelszavad?"
-
-#: templates/auth/login.html:82
-msgid "Don't have an account?"
-msgstr "Még nincs fiókod?"
-
-#: templates/auth/login.html:83
-msgid "Create an account here"
-msgstr "Hozz létre itt egy fiókot"
-
-#: templates/auth/resend_confirmation.html:3
-msgid "Resend Confirmation Email"
-msgstr "Megerősítő e-mail újraküldése"
-
-#: templates/auth/resend_confirmation.html:8
-msgid "Resend confirmation email"
-msgstr "Megerősítő e-mail újraküldése"
-
-#: templates/auth/resend_confirmation.html:11
-msgid "Enter your email address and we will send you a new confirmation link."
-msgstr "Add meg az e-mail címed, és küldünk egy új megerősítő linket."
-
-#: templates/auth/resend_confirmation.html:34
-msgid "Send confirmation link"
-msgstr "Megerősítő link küldése"
-
-#: templates/auth/resend_confirmation.html:40
-msgid "Already confirmed your email?"
-msgstr "Már megerősítetted az e-mail címed?"
-
-#: templates/auth/reset_password.html:3 templates/emails/password_reset.html:86
-msgid "Reset Password"
-msgstr "Jelszó visszaállítása"
-
-#: templates/auth/reset_password.html:8
-msgid "Set new password"
-msgstr "Új jelszó beállítása"
-
-#: templates/auth/reset_password.html:11
-msgid "Enter your new password below."
-msgstr "Add meg alább az új jelszavad."
-
-#: templates/auth/reset_password.html:19
-msgid "Password requirements"
-msgstr "Jelszókövetelmények"
-
-#: templates/auth/reset_password.html:36
-msgid "Reset password"
-msgstr "Jelszó visszaállítása"
-
-#: templates/auth/verify_2fa.html:7
-msgid "Enter the 6-digit code from your authenticator app to complete sign in."
-msgstr ""
-"A bejelentkezés befejezéséhez add meg a hitelesítő alkalmazásod 6 jegyű "
-"kódját."
-
-#: templates/auth/verify_2fa.html:11 templates/profile/2fa_settings.html:75
-#: templates/profile/2fa_settings.html:105 templates/profile/2fa_setup.html:71
-msgid "Verification code"
-msgstr "Ellenőrző kód"
-
-#: templates/auth/verify_2fa.html:12
-msgid "Six digits or a backup code in the format XXXX-XXXX"
-msgstr "Hat számjegy, vagy egy tartalék kód XXXX-XXXX formában"
-
-#: templates/auth/verify_2fa.html:24
-msgid "Verify"
-msgstr "Ellenőrzés"
-
-#: templates/auth/verify_2fa.html:28
-msgid "Use a backup code instead"
-msgstr "Használj inkább tartalék kódot"
-
-#: templates/auth/verify_2fa.html:32
-msgid ""
-"If you've lost access to your authenticator app, you can use one of your "
-"backup codes. Each backup code can only be used once."
-msgstr ""
-"Ha elvesztetted a hozzáférést a hitelesítő alkalmazásodhoz, használhatod "
-"valamelyik tartalék kódodat. Minden tartalék kód csak egyszer használható"
-" fel."
-
-#: templates/auth/verify_2fa.html:35
-msgid ""
-"Enter your backup code in the format XXXX-XXXX in the verification code "
-"field above."
-msgstr ""
-"Add meg a tartalék kódodat XXXX-XXXX formában a fenti ellenőrző kód "
-"mezőben."
-
-#: templates/auth/verify_2fa.html:40
-msgid "Back to sign in"
-msgstr "Vissza a bejelentkezéshez"
 
 #: templates/backoffice/assembly_dashboard.html:13
 #: templates/backoffice/assembly_dashboard.html:40
@@ -10664,6 +10508,11 @@ msgstr "Állítsa vissza a jelszavát"
 msgid "You recently requested to reset your password for your OpenDLP account."
 msgstr "Nemrég jelszó-visszaállítást kért az OpenDLP-fiókjához."
 
+#: templates/emails/password_reset.html:86
+#: templates/public/reset_password.html:9
+msgid "Reset Password"
+msgstr "Jelszó visszaállítása"
+
 #: templates/emails/password_reset.html:100
 msgid ""
 "If you didn't request a password reset, you can safely ignore this email."
@@ -11350,6 +11199,12 @@ msgstr ""
 "Ha már felhasználtál néhányat a tartalék kódjaidból, generálhatsz egy új "
 "készletet. Ezzel az összes meglévő tartalék kód érvénytelenné válik."
 
+#: templates/profile/2fa_settings.html:75
+#: templates/profile/2fa_settings.html:105 templates/profile/2fa_setup.html:71
+#: templates/public/verify_2fa.html:22
+msgid "Verification code"
+msgstr "Ellenőrző kód"
+
 #: templates/profile/2fa_settings.html:76
 #: templates/profile/2fa_settings.html:106
 msgid "Enter the 6-digit code from your authenticator app"
@@ -11559,12 +11414,84 @@ msgstr "Profil szerkesztése"
 msgid "characters"
 msgstr "karakter"
 
-#: templates/public/register.html:10
-msgid "Create an Account"
+#: templates/public/confirm_email.html:8 templates/public/confirm_email.html:11
+msgid "Confirm your email"
+msgstr "Erősítsd meg az e-mail címed"
+
+#: templates/public/confirm_email.html:13
+msgid ""
+"Click the button below to confirm your email address and activate your "
+"account."
+msgstr ""
+"Kattints az alábbi gombra az e-mail címed megerősítéséhez és a fiókod "
+"aktiválásához."
+
+#: templates/public/confirm_email.html:18
+msgid "Confirm email address"
+msgstr "E-mail cím megerősítése"
+
+#: templates/public/forgot_password.html:9
+msgid "Forgot Password"
+msgstr "Elfelejtett jelszó"
+
+#: templates/public/forgot_password.html:12
+msgid "Reset your password"
+msgstr "Állítsd vissza a jelszavad"
+
+#: templates/public/forgot_password.html:14
+msgid ""
+"Enter your email address and we will send you a link to reset your "
+"password."
+msgstr ""
+"Add meg az e-mail címed, és küldünk egy linket a jelszavad "
+"visszaállításához."
+
+#: templates/public/forgot_password.html:27
+msgid "Send reset link"
+msgstr "Visszaállító link küldése"
+
+#: templates/public/forgot_password.html:30
+msgid "Remember your password?"
+msgstr "Eszedbe jutott a jelszavad?"
+
+#: templates/public/login.html:15
+msgid "Sign in to OpenDLP"
+msgstr ""
+
+#: templates/public/login.html:17
+msgid "Don't have an account?"
+msgstr "Még nincs fiókod?"
+
+#: templates/public/login.html:20 templates/public/register.html:22
+msgid "Create an account"
 msgstr "Fiók létrehozása"
 
-#: templates/public/register.html:22
-msgid "Create an account"
+#: templates/public/login.html:45
+msgid "Forgot your password?"
+msgstr "Elfelejtetted a jelszavad?"
+
+#: templates/public/login.html:50
+msgid "Didn't receive the email?"
+msgstr "Nem kaptad meg az e-mailt?"
+
+#: templates/public/login.html:53
+msgid "Resend confirmation"
+msgstr "Megerősítés újraküldése"
+
+#: templates/public/login.html:61
+msgid "Or sign in with"
+msgstr "Vagy jelentkezz be ezzel"
+
+#: templates/public/login.html:64
+msgid "Sign in with Google"
+msgstr "Bejelentkezés Google-fiókkal"
+
+#: templates/public/login.html:72
+msgid "Sign in with Microsoft"
+msgstr "Bejelentkezés Microsoft-fiókkal"
+
+#: templates/public/register.html:10
+msgid "Create an Account"
 msgstr "Fiók létrehozása"
 
 #: templates/public/register.html:26
@@ -11632,6 +11559,81 @@ msgstr "Fiók létrehozása Google-fiókkal"
 #: templates/public/register.html:216
 msgid "Create an Account with Microsoft"
 msgstr "Fiók létrehozása Microsoft-fiókkal"
+
+#: templates/public/resend_confirmation.html:9
+msgid "Resend Confirmation Email"
+msgstr "Megerősítő e-mail újraküldése"
+
+#: templates/public/resend_confirmation.html:12
+msgid "Resend confirmation email"
+msgstr "Megerősítő e-mail újraküldése"
+
+#: templates/public/resend_confirmation.html:14
+msgid "Enter your email address and we will send you a new confirmation link."
+msgstr "Add meg az e-mail címed, és küldünk egy új megerősítő linket."
+
+#: templates/public/resend_confirmation.html:27
+msgid "Send confirmation link"
+msgstr "Megerősítő link küldése"
+
+#: templates/public/resend_confirmation.html:30
+msgid "Already confirmed your email?"
+msgstr "Már megerősítetted az e-mail címed?"
+
+#: templates/public/reset_password.html:12
+msgid "Set new password"
+msgstr "Új jelszó beállítása"
+
+#: templates/public/reset_password.html:13
+msgid "Enter your new password below."
+msgstr "Add meg alább az új jelszavad."
+
+#: templates/public/reset_password.html:28
+msgid "Password requirements"
+msgstr "Jelszókövetelmények"
+
+#: templates/public/reset_password.html:40
+msgid "Reset password"
+msgstr "Jelszó visszaállítása"
+
+#: templates/public/verify_2fa.html:14
+msgid "Enter the 6-digit code from your authenticator app to complete sign in."
+msgstr ""
+"A bejelentkezés befejezéséhez add meg a hitelesítő alkalmazásod 6 jegyű "
+"kódját."
+
+#: templates/public/verify_2fa.html:23
+msgid "Six digits or a backup code in the format XXXX-XXXX"
+msgstr "Hat számjegy, vagy egy tartalék kód XXXX-XXXX formában"
+
+#: templates/public/verify_2fa.html:26
+msgid "Verify"
+msgstr "Ellenőrzés"
+
+#: templates/public/verify_2fa.html:30
+msgid "Use a backup code instead"
+msgstr "Használj inkább tartalék kódot"
+
+#: templates/public/verify_2fa.html:34
+msgid ""
+"If you've lost access to your authenticator app, you can use one of your "
+"backup codes. Each backup code can only be used once."
+msgstr ""
+"Ha elvesztetted a hozzáférést a hitelesítő alkalmazásodhoz, használhatod "
+"valamelyik tartalék kódodat. Minden tartalék kód csak egyszer használható"
+" fel."
+
+#: templates/public/verify_2fa.html:36
+msgid ""
+"Enter your backup code in the format XXXX-XXXX in the verification code "
+"field above."
+msgstr ""
+"Add meg a tartalék kódodat XXXX-XXXX formában a fenti ellenőrző kód "
+"mezőben."
+
+#: templates/public/verify_2fa.html:42
+msgid "Back to sign in"
+msgstr "Vissza a bejelentkezéshez"
 
 #: templates/register/closed.html:3 templates/register/closed.html:7
 msgid "Registration Closed"
