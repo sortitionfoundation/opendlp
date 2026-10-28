@@ -184,7 +184,7 @@ class TestAssemblyManagerManagesMembers:
         response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members")
 
         assert response.status_code == 200
-        assert b"Add User to Assembly" in response.data
+        assert b"Add user to project" in response.data
 
     def test_an_exact_email_finds_the_colleague(
         self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
@@ -291,7 +291,7 @@ class TestTheAssemblyKeepsAManager:
         )
 
         assert response.status_code == 200
-        assert b"must keep at least one Assembly Manager" in response.data
+        assert b"must keep at least one Project Manager" in response.data
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.users.get(organiser_user.id).get_assembly_role(assembly.id) == AssemblyRole.ASSEMBLY_MANAGER
 

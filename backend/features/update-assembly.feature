@@ -1,5 +1,5 @@
 Feature: Update Assembly.
-  As an Assembly Manager
+  As a Project Manager
   I want to be able to update an Assembly
   So that I can see update the details for others to see and to allow actions that need data.
 

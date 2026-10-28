@@ -568,15 +568,15 @@ class AddUserToAssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     user_id = StringField(
         _l("User Email"),
         validators=[DataRequired()],
-        description=_l("Select a user to add to this assembly"),
+        description=_l("Select a user to add to this project"),
     )
 
     role = RadioField(
-        _l("Assembly Role"),
+        _l("Project role"),
         choices=[(k, v) for k, v in assembly_role_options.items()],
         coerce=coerce_for_enum(AssemblyRole),
         validators=[DataRequired()],
-        description=_l("Select the role this user will have on the assembly"),
+        description=_l("Select the role this user will have on the project"),
         default=AssemblyRole.CONFIRMATION_CALLER.name,
     )
 

@@ -456,7 +456,7 @@ class TestBackofficeRemoveUserFromAssembly:
             follow_redirects=True,
         )
         assert response.status_code == 200
-        assert b"removed from assembly" in response.data or b"success" in response.data.lower()
+        assert b"removed from project" in response.data or b"success" in response.data.lower()
 
     def test_remove_user_not_accessible_to_regular_user(
         self,

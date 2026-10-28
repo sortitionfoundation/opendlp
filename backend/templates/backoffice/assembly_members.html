@@ -74,7 +74,7 @@ ABOUTME: Displays team members table, with add/remove for anyone who can manage 
                                                   action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
                                                   class="inline"
                                                   x-data
-                                                  @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}', $el)">
+                                                  @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this project?', user=user.display_name) }}', $el)">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                                 {# TODO: Add danger variant and size parameter to button component in design system #}
                                                 <button type="submit"
@@ -97,8 +97,8 @@ ABOUTME: Displays team members table, with add/remove for anyone who can manage 
             </div>
         {% else %}
             {% call card(id="no-members-card") %}
-                <p class="text-body-md mb-2" style="color: var(--color-body-text);">{{ _("No team members have been added to this assembly yet.") }}</p>
-                <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Admin users can still manage this assembly.") }}</p>
+                <p class="text-body-md mb-2" style="color: var(--color-body-text);">{{ _("No team members have been added to this project yet.") }}</p>
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Admin users can still manage this project.") }}</p>
             {% endcall %}
         {% endif %}
     </section>
@@ -106,7 +106,7 @@ ABOUTME: Displays team members table, with add/remove for anyone who can manage 
     {# Add User Form - Only shown to admins #}
     {% if can_manage_assembly_users %}
         <section class="mb-8">
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Add User to Assembly") }}</h2>
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Add user to project") }}</h2>
 
             {% call card(id="add-user-card") %}
                 <form method="post" action="{{ url_for('backoffice.add_user_to_assembly', assembly_id=assembly.id) }}">
@@ -141,7 +141,7 @@ ABOUTME: Displays team members table, with add/remove for anyone who can manage 
                         ) }}
                     </div>
 
-                    {{ button(_("Add User to Assembly"), type="submit", variant="primary") }}
+                    {{ button(_("Add user to project"), type="submit", variant="primary") }}
                 </form>
             {% endcall %}
         </section>

@@ -18,7 +18,10 @@ system.
 
 ## The three assembly roles
 
-Held per assembly, in `user_assembly_roles`:
+Held per assembly, in `user_assembly_roles`. The code values below are what the
+database stores; the interface shows the labels in
+[language.md](language.md#roles), so `assembly-manager` appears on the page as
+"Project Manager":
 
 - **assembly-manager** — full control of that assembly, including adding and
   removing its members

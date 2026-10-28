@@ -873,7 +873,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
                 flash(
                     _(
-                        "%(user)s added to assembly with role %(role)s",
+                        "%(user)s added to project with role %(role)s",
                         user=target_user.display_name,
                         role=role.value,
                     ),
@@ -886,7 +886,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except NotFoundError as e:
         logger.error("Error adding user to assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Could not add user to assembly: %(error)s", error=str(e)), "error")
+        flash(_("Could not add user to project: %(error)s", error=str(e)), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
@@ -895,7 +895,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to add users to this assembly"), "error")
+        flash(_("You don't have permission to add users to this project"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except Exception as e:
         logger.exception(
@@ -904,7 +904,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("An error occurred while adding the user to the assembly"), "error")
+        flash(_("An error occurred while adding the user to the project"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
 
@@ -924,7 +924,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             )
 
             flash(
-                _("%(user)s removed from assembly", user=target_user.display_name),
+                _("%(user)s removed from project", user=target_user.display_name),
                 "success",
             )
 
@@ -940,7 +940,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")
+        flash(_("Could not remove user from project: %(error)s", error=str(e)), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
@@ -949,7 +949,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to remove users from this assembly"), "error")
+        flash(_("You don't have permission to remove users from this project"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except Exception as e:
         logger.exception(
@@ -958,7 +958,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("An error occurred while removing the user from the assembly"), "error")
+        flash(_("An error occurred while removing the user from the project"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
 

@@ -1,5 +1,5 @@
 Feature: View Assembly List.
-  As an Assembly Manager
+  As a Project Manager
   I want to be able to see all assemblies I have access to
   So that I can see statuses, and interact with the one I want.
 

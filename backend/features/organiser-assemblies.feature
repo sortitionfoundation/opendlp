@@ -18,7 +18,7 @@ Feature: Organiser assemblies
     Given I am logged in as an organiser
     And there is an assembly called "Lilliput Housing Assembly" created by the organiser
     When I visit the assembly members page for "Lilliput Housing Assembly"
-    Then I should see "Add User to Assembly"
+    Then I should see "Add user to project"
     When I type "normal@opendlp.example" into the user search dropdown
     Then I should see "normal@opendlp.example" in the search results
 

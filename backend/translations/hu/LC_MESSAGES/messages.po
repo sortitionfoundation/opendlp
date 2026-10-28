@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-28 15:03+0000\n"
+"POT-Creation-Date: 2026-10-28 15:10+0000\n"
 "PO-Revision-Date: 2026-10-22 16:33+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -479,16 +479,12 @@ msgid "The year must be between %(earliest)s and %(latest)s"
 msgstr "Az évnek %(earliest)s és %(latest)s között kell lennie"
 
 #: src/opendlp/domain/value_objects.py:18
-msgid "User — Access to the assemblies they are added to"
+msgid "User — Access to the projects they are added to"
 msgstr ""
-"Felhasználó – Hozzáférés azokhoz a közösségi gyűlésekhez, amelyekhez "
-"hozzáadták"
 
 #: src/opendlp/domain/value_objects.py:19
-msgid "Organiser — Can create assemblies, and manage the ones they belong to"
+msgid "Organiser — Can create projects, and manage the ones they belong to"
 msgstr ""
-"Főszervező – Létrehozhat közösségi gyűléseket, és kezelheti azokat, "
-"amelyekhez tartozik"
 
 #: src/opendlp/domain/value_objects.py:20
 msgid "Admin — Full system access including user management"
@@ -513,39 +509,31 @@ msgstr "Adminisztrátor"
 
 #: src/opendlp/domain/value_objects.py:34
 msgid ""
-"You can see the assemblies you have been added to. An Assembly Manager "
-"can add you to one."
+"You can see the projects you have been added to. A Project Manager can "
+"add you to one."
 msgstr ""
-"Azokat a közösségi gyűléseket látod, amelyekhez hozzáadtak. Egy "
-"gyűlésszervező tud hozzáadni egy közösségi gyűléshez."
 
 #: src/opendlp/domain/value_objects.py:36
 msgid ""
-"You can create assemblies. You can see the assemblies you have been added"
-" to, and the ones you create."
+"You can create projects. You can see the projects you have been added to,"
+" and the ones you create."
 msgstr ""
-"Létrehozhatsz közösségi gyűléseket. Azokat a közösségi gyűléseket látod, "
-"amelyekhez hozzáadtak, és amelyeket te hozol létre."
 
 #: src/opendlp/domain/value_objects.py:38
-msgid "You can see and manage every assembly, and manage users and invites."
+msgid "You can see and manage every project, and manage users and invites."
 msgstr ""
-"Minden közösségi gyűlést látsz és kezelhetsz, valamint kezelheted a "
-"felhasználókat és a meghívókat."
 
 #: src/opendlp/domain/value_objects.py:60
-msgid "Assembly Manager — Can manage the assembly and add other users"
+msgid "Project Manager — Can manage the project and add other users"
 msgstr ""
-"Gyűlésszervező – Kezelheti a közösségi gyűlést és további felhasználókat "
-"adhat hozzá"
 
 #: src/opendlp/domain/value_objects.py:61
 msgid "Confirmation Caller — Can call confirmations for selected participants"
 msgstr "Visszaigazoló – Felhívhatja a kiválasztott résztvevőket visszaigazolásért"
 
 #: src/opendlp/domain/value_objects.py:62
-msgid "Read Only — Can view the assembly but cannot make changes"
-msgstr "Megtekintő – Megtekintheti a közösségi gyűlést, de nem módosíthat"
+msgid "Read Only — Can view the project but cannot make changes"
+msgstr ""
 
 #: src/opendlp/domain/value_objects.py:74 templates/admin/invite_view.html:64
 #: templates/admin/invites.html:89 templates/admin/user_view.html:58
@@ -1138,18 +1126,16 @@ msgid "User Email"
 msgstr "Hiba részletei"
 
 #: src/opendlp/entrypoints/forms.py:571
-msgid "Select a user to add to this assembly"
-msgstr "Adja meg a közösségi gyűlés címét"
+msgid "Select a user to add to this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:575
-msgid "Assembly Role"
-msgstr "Szerepkör a közösségi gyűlésben"
+msgid "Project role"
+msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:579
-msgid "Select the role this user will have on the assembly"
+msgid "Select the role this user will have on the project"
 msgstr ""
-"Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a közösségi "
-"gyűlésen"
 
 #: src/opendlp/entrypoints/forms.py:590
 msgid "Your first name"
@@ -1981,10 +1967,9 @@ msgid "An error occurred while loading team members"
 msgstr "Hiba történt a csapattagok betöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:876
-#: src/opendlp/entrypoints/blueprints/main.py:361
 #, python-format
-msgid "%(user)s added to assembly with role %(role)s"
-msgstr "%(user)s hozzáadva a közösségi gyűléshez %(role)s szerepkörrel"
+msgid "%(user)s added to project with role %(role)s"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:883
 msgid "Please select a user and role"
@@ -1992,42 +1977,34 @@ msgstr "Válassz ki egy felhasználót és egy szerepkört"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:889
 #, python-format
-msgid "Could not add user to assembly: %(error)s"
-msgstr "Nem sikerült hozzáadni a felhasználót a közösségi gyűléshez: %(error)s"
+msgid "Could not add user to project: %(error)s"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:898
-#: src/opendlp/entrypoints/blueprints/main.py:383
-msgid "You don't have permission to add users to this assembly"
-msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a közösségi gyűléshez"
+msgid "You don't have permission to add users to this project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:907
-#: src/opendlp/entrypoints/blueprints/main.py:392
-msgid "An error occurred while adding the user to the assembly"
-msgstr "Hiba történt a felhasználó közösségi gyűléshez adása közben"
+msgid "An error occurred while adding the user to the project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:927
-#: src/opendlp/entrypoints/blueprints/main.py:412
 #, python-format
-msgid "%(user)s removed from assembly"
-msgstr "%(user)s eltávolítva a közösségi gyűlésből"
+msgid "%(user)s removed from project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:943
-#: src/opendlp/entrypoints/blueprints/main.py:428
 #, python-format
-msgid "Could not remove user from assembly: %(error)s"
-msgstr "Nem sikerült eltávolítani a felhasználót a közösségi gyűlésből: %(error)s"
+msgid "Could not remove user from project: %(error)s"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:952
-#: src/opendlp/entrypoints/blueprints/main.py:437
-msgid "You don't have permission to remove users from this assembly"
+msgid "You don't have permission to remove users from this project"
 msgstr ""
-"Nincs jogosultságod felhasználókat eltávolítani ebből a közösségi "
-"gyűlésből"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:961
-#: src/opendlp/entrypoints/blueprints/main.py:446
-msgid "An error occurred while removing the user from the assembly"
-msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
+msgid "An error occurred while removing the user from the project"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:153
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:189
@@ -2772,6 +2749,11 @@ msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a közösségi gyűlés frissítése közben"
 
+#: src/opendlp/entrypoints/blueprints/main.py:361
+#, python-format
+msgid "%(user)s added to assembly with role %(role)s"
+msgstr "%(user)s hozzáadva a közösségi gyűléshez %(role)s szerepkörrel"
+
 #: src/opendlp/entrypoints/blueprints/main.py:368
 msgid "Please check the form and try again"
 msgstr "Ellenőrizd az űrlapot, és próbáld újra"
@@ -2779,6 +2761,34 @@ msgstr "Ellenőrizd az űrlapot, és próbáld újra"
 #: src/opendlp/entrypoints/blueprints/main.py:374
 msgid "Invalid user selection"
 msgstr "Érvénytelen felhasználóválasztás"
+
+#: src/opendlp/entrypoints/blueprints/main.py:383
+msgid "You don't have permission to add users to this assembly"
+msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a közösségi gyűléshez"
+
+#: src/opendlp/entrypoints/blueprints/main.py:392
+msgid "An error occurred while adding the user to the assembly"
+msgstr "Hiba történt a felhasználó közösségi gyűléshez adása közben"
+
+#: src/opendlp/entrypoints/blueprints/main.py:412
+#, python-format
+msgid "%(user)s removed from assembly"
+msgstr "%(user)s eltávolítva a közösségi gyűlésből"
+
+#: src/opendlp/entrypoints/blueprints/main.py:428
+#, python-format
+msgid "Could not remove user from assembly: %(error)s"
+msgstr "Nem sikerült eltávolítani a felhasználót a közösségi gyűlésből: %(error)s"
+
+#: src/opendlp/entrypoints/blueprints/main.py:437
+msgid "You don't have permission to remove users from this assembly"
+msgstr ""
+"Nincs jogosultságod felhasználókat eltávolítani ebből a közösségi "
+"gyűlésből"
+
+#: src/opendlp/entrypoints/blueprints/main.py:446
+msgid "An error occurred while removing the user from the assembly"
+msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
 
 #: src/opendlp/entrypoints/blueprints/profile.py:65
 msgid "Profile updated successfully"
@@ -4230,11 +4240,9 @@ msgstr "A saját fiókodat nem tilthatod le"
 
 #: src/opendlp/service_layer/exceptions.py:338
 msgid ""
-"An assembly must keep at least one Assembly Manager. Add another one "
-"before removing this one."
+"A project must keep at least one Project Manager. Add another one before "
+"removing this one."
 msgstr ""
-"Egy közösségi gyűlésnek legalább egy gyűlésszervezővel kell rendelkeznie."
-" Ennek eltávolítása előtt adj hozzá egy másikat."
 
 #: src/opendlp/service_layer/image_processing.py:16
 msgid "The image file is too large"
@@ -6525,29 +6533,26 @@ msgid "Team Members"
 msgstr "Csapattagok"
 
 #: templates/backoffice/assembly_members.html:77
-#: templates/main/view_assembly_members.html:30
 #, python-format
-msgid "Are you sure you want to remove %(user)s from this assembly?"
-msgstr "Biztosan eltávolítod %(user)s felhasználót erről a közösségi gyűlésről?"
+msgid "Are you sure you want to remove %(user)s from this project?"
+msgstr ""
 
 #: templates/backoffice/assembly_members.html:88
 msgid "Last manager"
 msgstr "Utolsó gyűlésszervező"
 
 #: templates/backoffice/assembly_members.html:100
-msgid "No team members have been added to this assembly yet."
-msgstr "Ehhez a közösségi gyűléshez még nem adtak hozzá csapattagokat."
+msgid "No team members have been added to this project yet."
+msgstr ""
 
 #: templates/backoffice/assembly_members.html:101
-msgid "Admin users can still manage this assembly."
-msgstr "Az adminisztrátorok továbbra is kezelhetik ezt a közösségi gyűlést."
+msgid "Admin users can still manage this project."
+msgstr ""
 
 #: templates/backoffice/assembly_members.html:109
 #: templates/backoffice/assembly_members.html:144
-#: templates/main/view_assembly_members.html:48
-#: templates/main/view_assembly_members.html:95
-msgid "Add User to Assembly"
-msgstr "Felhasználó hozzáadása a közösségi gyűléshez"
+msgid "Add user to project"
+msgstr ""
 
 #: templates/backoffice/assembly_members.html:121
 #: templates/main/view_assembly_members.html:61
@@ -10546,47 +10551,42 @@ msgstr ""
 "href=\"mailto:%(email)s\">%(email)s</a>"
 
 #: templates/emails/assembly_role_assigned.html:6
-msgid "Added to Assembly - OpenDLP"
-msgstr "Hozzáadtak egy közösségi gyűléshez – OpenDLP"
+msgid "Added to project - OpenDLP"
+msgstr ""
 
 #: templates/emails/assembly_role_assigned.html:72
-msgid "You've Been Added to an Assembly!"
-msgstr "Hozzáadtak egy közösségi gyűléshez!"
+msgid "You've been added to a project"
+msgstr ""
 
 #: templates/emails/assembly_role_assigned.html:83
-msgid "Assembly:"
-msgstr "Közösségi gyűlés:"
+msgid "Project:"
+msgstr ""
 
 #: templates/emails/assembly_role_assigned.html:86
 msgid "Your role:"
 msgstr "Az Ön szerepköre:"
 
 #: templates/emails/assembly_role_assigned.html:90
-msgid "Assembly question:"
-msgstr "A közösségi gyűlés témája:"
+msgid "Framing question:"
+msgstr ""
 
 #: templates/emails/assembly_role_assigned.html:94
-msgid "You now have access to this assembly and can collaborate with your team."
+msgid "You now have access to this project and can collaborate with your team."
 msgstr ""
-"Mostantól hozzáfér ehhez a közösségi gyűléshez, és együtt dolgozhat a "
-"csapatával."
 
 #: templates/emails/assembly_role_assigned.html:96
-msgid "View Assembly"
-msgstr "Közösségi gyűlés megtekintése"
+msgid "View project"
+msgstr ""
 
 #: templates/emails/assembly_role_assigned.html:103
-msgid "Assembly Manager Permissions:"
-msgstr "Gyűlésszervezői jogosultságok:"
+msgid "Project Manager permissions:"
+msgstr ""
 
 #: templates/emails/assembly_role_assigned.html:105
 msgid ""
-"As an Assembly Manager, you can manage the assembly configuration, add "
-"other team members, and perform all assembly operations."
+"As a Project Manager, you can change the project's settings, add other "
+"team members, and run every part of the project."
 msgstr ""
-"Gyűlésszervezőként kezelheti a közösségi gyűlés beállításait, további "
-"csapattagokat adhat hozzá, és minden közösségi gyűléssel kapcsolatos "
-"műveletet elvégezhet."
 
 #: templates/emails/assembly_role_assigned.html:112
 msgid "Confirmation Caller Permissions:"
@@ -10605,8 +10605,8 @@ msgid "Read Only Permissions:"
 msgstr "Megtekintői jogosultságok:"
 
 #: templates/emails/assembly_role_assigned.html:123
-msgid "As a Read Only member, you can view the assembly but cannot make changes."
-msgstr "Megtekintőként megtekintheti a közösségi gyűlést, de nem módosíthat."
+msgid "As a Read Only member, you can view the project but cannot make changes."
+msgstr ""
 
 #: templates/emails/email_confirmation.html:6
 msgid "Confirm Your Email - OpenDLP"
@@ -11221,6 +11221,11 @@ msgstr "A közösségi gyűlés témája"
 msgid "First Assembly Date"
 msgstr "Első közösségi gyűlés időpontja"
 
+#: templates/main/view_assembly_members.html:30
+#, python-format
+msgid "Are you sure you want to remove %(user)s from this assembly?"
+msgstr "Biztosan eltávolítod %(user)s felhasználót erről a közösségi gyűlésről?"
+
 #: templates/main/view_assembly_members.html:42
 msgid ""
 "No team members have been added to this assembly yet. Admin users can "
@@ -11228,6 +11233,11 @@ msgid ""
 msgstr ""
 "Ehhez a közösségi gyűléshez még nem adtak hozzá csapattagokat. Az "
 "adminisztrátorok továbbra is kezelhetik ezt a közösségi gyűlést."
+
+#: templates/main/view_assembly_members.html:48
+#: templates/main/view_assembly_members.html:95
+msgid "Add User to Assembly"
+msgstr "Felhasználó hozzáadása a közösségi gyűléshez"
 
 #: templates/profile/2fa_backup_codes.html:2
 #: templates/profile/2fa_backup_codes.html:6
