@@ -633,7 +633,7 @@ def forgot_password() -> ResponseReturnValue:
             logger.exception("Password reset request error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
 
-    return render_template("auth/forgot_password.html", form=form)
+    return render_template("public/forgot_password.html", form=form)
 
 
 @auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
@@ -676,7 +676,7 @@ def reset_password(token: str) -> ResponseReturnValue:
             flash(_("An error occurred. Please try again."), "error")
 
     return render_template(
-        "auth/reset_password.html", form=form, token=token, password_help=password_validators_help_text_html()
+        "public/reset_password.html", form=form, token=token, password_help=password_validators_help_text_html()
     )
 
 
