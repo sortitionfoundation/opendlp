@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-28 21:55+0000\n"
+"POT-Creation-Date: 2026-10-28 22:07+0000\n"
 "PO-Revision-Date: 2026-10-28 21:04+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -785,7 +785,7 @@ msgstr "Adj meg egy teljes http:// vagy https:// című webcímet"
 #: src/opendlp/entrypoints/forms.py:132 src/opendlp/entrypoints/forms.py:261
 #: src/opendlp/entrypoints/forms.py:302 src/opendlp/entrypoints/forms.py:313
 #: templates/backoffice/registration/_step_email.html:115
-#: templates/profile/view.html:11 templates/public/register.html:86
+#: templates/profile/view.html:11 templates/public/register.html:79
 msgid "Email address"
 msgstr "E-mail cím"
 
@@ -5025,7 +5025,7 @@ msgid "Another task is already writing to this project: %(task)s"
 msgstr "Ebbe a projektbe már ír egy másik feladat: %(task)s"
 
 #: templates/base.html:5 templates/public/base.html:19
-#: templates/public/login.html:15 templates/public/register.html:23
+#: templates/public/login.html:15 templates/public/register.html:17
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
 
@@ -5084,13 +5084,13 @@ msgstr "Kilépés"
 #: templates/errors/413.html:24 templates/errors/500.html:28
 #: templates/main/index.html:17 templates/public/forgot_password.html:33
 #: templates/public/login.html:10 templates/public/login.html:47
-#: templates/public/register.html:29
+#: templates/public/register.html:22
 #: templates/public/resend_confirmation.html:33
 msgid "Sign in"
 msgstr "Bejelentkezés"
 
 #: templates/base.html:106 templates/main/index.html:31
-#: templates/public/register.html:195
+#: templates/public/register.html:188
 msgid "Create Account"
 msgstr "Fiók létrehozása"
 
@@ -5647,7 +5647,7 @@ msgstr "Bekapcsolva ekkor"
 msgid "View 2FA audit log"
 msgstr "Kétlépcsős azonosítás eseménynaplójának megtekintése"
 
-#: templates/admin/user_view.html:99 templates/public/register.html:170
+#: templates/admin/user_view.html:99 templates/public/register.html:163
 msgid "Data Agreement"
 msgstr "Adatkezelési Megállapodás"
 
@@ -11462,7 +11462,7 @@ msgstr ""
 msgid "Don't have an account?"
 msgstr "Még nincs fiókod?"
 
-#: templates/public/login.html:20 templates/public/register.html:22
+#: templates/public/login.html:20 templates/public/register.html:17
 msgid "Create an account"
 msgstr "Fiók létrehozása"
 
@@ -11490,15 +11490,15 @@ msgstr "Bejelentkezés Google-fiókkal"
 msgid "Sign in with Microsoft"
 msgstr "Bejelentkezés Microsoft-fiókkal"
 
-#: templates/public/register.html:10
+#: templates/public/register.html:11
 msgid "Create an Account"
 msgstr "Fiók létrehozása"
 
-#: templates/public/register.html:26
+#: templates/public/register.html:19
 msgid "Already have an account?"
 msgstr "Már van fiókod?"
 
-#: templates/public/register.html:37
+#: templates/public/register.html:30
 #, python-format
 msgid ""
 "You need an invite code to create an account. If you do not have one, "
@@ -11508,55 +11508,55 @@ msgstr ""
 "kapcsolatba az <a href=\"mailto:%(email)s\">OpenDLP "
 "ügyfélszolgálatával</a>."
 
-#: templates/public/register.html:55 templates/public/register.html:199
+#: templates/public/register.html:48 templates/public/register.html:192
 msgid "Create Account with email"
 msgstr "Fiók létrehozása e-mail címmel"
 
-#: templates/public/register.html:64
+#: templates/public/register.html:57
 msgid "Choose how to sign up"
 msgstr "Válaszd ki, hogyan regisztrálsz"
 
-#: templates/public/register.html:65
+#: templates/public/register.html:58
 msgid "How would you like to sign up?"
 msgstr "Hogyan szeretnél regisztrálni?"
 
-#: templates/public/register.html:69
+#: templates/public/register.html:62
 msgid "Google"
 msgstr "Google"
 
-#: templates/public/register.html:78
+#: templates/public/register.html:71
 msgid "Microsoft"
 msgstr "Microsoft"
 
-#: templates/public/register.html:104
+#: templates/public/register.html:97
 msgid "Optional — if you were given an invite code, enter it here."
 msgstr "Nem kötelező – ha kaptál meghívókódot, add meg itt."
 
-#: templates/public/register.html:162
+#: templates/public/register.html:155
 msgid "Tell us a little about yourself"
 msgstr "Mesélj egy kicsit magadról"
 
-#: templates/public/register.html:163
+#: templates/public/register.html:156
 msgid "These questions are optional, but your answers help us help you."
 msgstr ""
 "Ezek a kérdések nem kötelezőek, de a válaszaid segítenek, hogy jobban "
 "segíthessünk neked."
 
-#: templates/public/register.html:173
+#: templates/public/register.html:166
 msgid "Please read and accept our data agreement to proceed."
 msgstr ""
 "A folytatáshoz kérjük, olvasd el és fogadd el az adatkezelési "
 "megállapodásunkat."
 
-#: templates/public/register.html:178
+#: templates/public/register.html:171
 msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: templates/public/register.html:205
+#: templates/public/register.html:198
 msgid "Create an Account with Google"
 msgstr "Fiók létrehozása Google-fiókkal"
 
-#: templates/public/register.html:216
+#: templates/public/register.html:209
 msgid "Create an Account with Microsoft"
 msgstr "Fiók létrehozása Microsoft-fiókkal"
 

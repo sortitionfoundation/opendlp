@@ -9,6 +9,7 @@ from flask.testing import FlaskClient
 # Pages a signed-out visitor can GET without a token or a half-finished login.
 PUBLIC_AUTH_PAGES = [
     "/auth/login",
+    "/auth/register",
     "/auth/forgot-password",
     "/auth/resend-confirmation",
 ]
