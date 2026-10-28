@@ -192,6 +192,7 @@ def test_template_reply_to_is_used_for_the_send(client: FlaskClient, admin_user,
         _submit(client, page, "ada-page-reply@example.com")
 
     assert adapter.sent[0]["reply_to"] == ("Page Team", "page-team@example.com")
+    assert adapter.sent[0]["on_behalf_of"] == "Page Team"
     record = _only_record(postgres_session_factory, page.assembly_id)
     assert record.reply_to_email == "page-team@example.com"
 
@@ -204,6 +205,7 @@ def test_assembly_reply_to_is_the_fallback(client: FlaskClient, admin_user, post
         _submit(client, page, "ada-assembly-reply@example.com")
 
     assert adapter.sent[0]["reply_to"] == ("The Team", "team@example.com")
+    assert adapter.sent[0]["on_behalf_of"] == "The Team"
     record = _only_record(postgres_session_factory, page.assembly_id)
     assert record.reply_to_email == "team@example.com"
 

@@ -30,6 +30,7 @@ class EmailAdapter(ABC):
         html_body: str | None = None,
         from_email: str | tuple[str, str] | None = None,
         reply_to: str | tuple[str, str] | None = None,
+        on_behalf_of: str = "",
     ) -> bool:
         """Send an email to one or more recipients.
 
@@ -41,6 +42,9 @@ class EmailAdapter(ABC):
             html_body: Optional HTML version of the email body
             from_email: Optional override for the sender address. Uses default if None.
             reply_to: Optional Reply-To address (string or (name, email) tuple).
+            on_behalf_of: Optional name of who the email is sent for. The From
+                display name becomes "<on_behalf_of> via <sender name>"; the
+                From address does not change.
 
         Returns:
             True if email sent successfully, False otherwise
@@ -60,6 +64,17 @@ class EmailAdapter(ABC):
         if isinstance(addr, tuple):
             return addr
         return ("", addr)
+
+    @staticmethod
+    def _sender_name(default_name: str, on_behalf_of: str) -> str:
+        """The From display name: "<on_behalf_of> via <default_name>", or whichever one is set.
+
+        The "via" is not translated: the adapter does not know the reader's locale,
+        and it is the convention mailing lists use for mail sent on someone's behalf.
+        """
+        if on_behalf_of and default_name:
+            return f"{on_behalf_of} via {default_name}"
+        return on_behalf_of or default_name
 
     @staticmethod
     def _format_address(addr: str | tuple[str, str]) -> str:
@@ -100,6 +115,7 @@ class ConsoleEmailAdapter(EmailAdapter):
         html_body: str | None = None,
         from_email: str | tuple[str, str] | None = None,
         reply_to: str | tuple[str, str] | None = None,
+        on_behalf_of: str = "",
     ) -> bool:
         """Log email details to console.
 
@@ -110,11 +126,13 @@ class ConsoleEmailAdapter(EmailAdapter):
             html_body: Optional HTML version of the email body
             from_email: Optional override for the sender address
             reply_to: Optional Reply-To address
+            on_behalf_of: Optional name of who the email is sent for
 
         Returns:
             Always returns True
         """
-        from_addr = self._format_address(from_email) if from_email else "noreply@opendlp.local"
+        from_name, from_email_addr = self._parse_address(from_email) if from_email else ("", "noreply@opendlp.local")
+        from_addr = self._format_address((self._sender_name(from_name, on_behalf_of), from_email_addr))
         to_addrs = [self._format_address(addr) for addr in to]
         reply_to_line = f"\n  Reply-To: {self._format_address(reply_to)}" if reply_to else ""
 
@@ -180,6 +198,7 @@ class SMTPEmailAdapter(EmailAdapter):
         html_body: str | None = None,
         from_email: str | tuple[str, str] | None = None,
         reply_to: str | tuple[str, str] | None = None,
+        on_behalf_of: str = "",
     ) -> bool:
         """Send an email via SMTP.
 
@@ -190,6 +209,7 @@ class SMTPEmailAdapter(EmailAdapter):
             html_body: Optional HTML version of the email body
             from_email: Optional override for the sender address
             reply_to: Optional Reply-To address
+            on_behalf_of: Optional name of who the email is sent for
 
         Returns:
             True if email sent successfully, False if an error occurred
@@ -205,7 +225,7 @@ class SMTPEmailAdapter(EmailAdapter):
             # Create message
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = self._format_address((from_name, from_addr))
+            msg["From"] = self._format_address((self._sender_name(from_name, on_behalf_of), from_addr))
             msg["To"] = ", ".join([self._format_address(addr) for addr in to])
             if reply_to:
                 msg["Reply-To"] = self._format_address(reply_to)

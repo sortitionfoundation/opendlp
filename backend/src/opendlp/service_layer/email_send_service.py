@@ -44,6 +44,13 @@ def resolve_reply_to(template: EmailTemplate, assembly: Assembly) -> ReplyTo:
     return template.reply_to() or assembly.reply_to()
 
 
+def _reply_to_name(reply_to: ReplyTo) -> str:
+    """The reply-to's name, which the email is sent on behalf of; empty when it has none."""
+    if isinstance(reply_to, tuple):
+        return reply_to[0]
+    return ""
+
+
 def _reply_to_email(reply_to: ReplyTo) -> str:
     if reply_to is None:
         return ""
@@ -71,6 +78,7 @@ def _build_and_send(
             text_body=rendered.text_body,
             html_body=rendered.html_body,
             reply_to=reply_to,
+            on_behalf_of=_reply_to_name(reply_to),
         )
     except Exception:
         logger.exception("Failed to send templated email for template %s", template.id)
@@ -196,6 +204,7 @@ def deliver_test_auto_reply(email_adapter: EmailAdapter, prepared: PreparedTestA
             text_body=prepared.text_body,
             html_body=prepared.html_body,
             reply_to=prepared.reply_to,
+            on_behalf_of=_reply_to_name(prepared.reply_to),
         )
     except Exception:
         logger.exception("Failed to send test auto-reply for template %s", prepared.template_id)

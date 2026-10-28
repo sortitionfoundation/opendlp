@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 14:36+0000\n"
+"POT-Creation-Date: 2026-10-28 14:55+0000\n"
 "PO-Revision-Date: 2026-10-22 16:33+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -792,7 +792,7 @@ msgstr "Adj meg egy teljes http:// vagy https:// című webcímet"
 
 #: src/opendlp/entrypoints/forms.py:132 src/opendlp/entrypoints/forms.py:261
 #: src/opendlp/entrypoints/forms.py:302 src/opendlp/entrypoints/forms.py:313
-#: templates/backoffice/registration/_step_email.html:114
+#: templates/backoffice/registration/_step_email.html:115
 #: templates/profile/view.html:11 templates/public/register.html:86
 msgid "Email address"
 msgstr "E-mail cím"
@@ -8790,8 +8790,8 @@ msgid "Set up auto-reply email"
 msgstr "Automatikus válasz e-mail beállítása"
 
 #: templates/backoffice/registration/_step_email.html:55
-#: templates/backoffice/registration/_step_email.html:256
-#: templates/backoffice/registration/_step_email.html:265
+#: templates/backoffice/registration/_step_email.html:257
+#: templates/backoffice/registration/_step_email.html:266
 #: templates/backoffice/registration/_step_form.html:161
 #: templates/backoffice/registration/_step_form.html:170
 #: templates/backoffice/registration/_step_intro.html:131
@@ -8803,8 +8803,8 @@ msgid "← Back"
 msgstr "← Vissza"
 
 #: templates/backoffice/registration/_step_email.html:56
-#: templates/backoffice/registration/_step_email.html:263
-#: templates/backoffice/registration/_step_email.html:266
+#: templates/backoffice/registration/_step_email.html:264
+#: templates/backoffice/registration/_step_email.html:267
 #: templates/backoffice/registration/_step_form.html:168
 #: templates/backoffice/registration/_step_form.html:171
 #: templates/backoffice/registration/_step_intro.html:138
@@ -8834,21 +8834,25 @@ msgstr "Válaszcím"
 msgid "When someone replies to the auto-reply, their email goes here."
 msgstr "Ha valaki válaszol az automatikus válaszra, az e-mailje ide érkezik."
 
-#: templates/backoffice/registration/_step_email.html:123
+#: templates/backoffice/registration/_step_email.html:111
+msgid "Also shown as who the email is from."
+msgstr ""
+
+#: templates/backoffice/registration/_step_email.html:124
 msgid "Email subject"
 msgstr "E-mail tárgya"
 
-#: templates/backoffice/registration/_step_email.html:125
+#: templates/backoffice/registration/_step_email.html:126
 #, fuzzy
 msgid "Dynamic fields allowed, e.g. {{ assembly.title }}."
 msgstr "Dinamikus mezők használhatók, például: {{ assembly.title }}."
 
-#: templates/backoffice/registration/_step_email.html:134
-#: templates/backoffice/registration/_step_email.html:140
+#: templates/backoffice/registration/_step_email.html:135
+#: templates/backoffice/registration/_step_email.html:141
 msgid "Email body"
 msgstr "E-mail törzse"
 
-#: templates/backoffice/registration/_step_email.html:136
+#: templates/backoffice/registration/_step_email.html:137
 msgid ""
 "A plain-text version is generated automatically for email clients that "
 "need it."
@@ -8856,11 +8860,11 @@ msgstr ""
 "Az ezt igénylő levelezőprogramok számára automatikusan készül egy "
 "egyszerű szöveges változat."
 
-#: templates/backoffice/registration/_step_email.html:158
+#: templates/backoffice/registration/_step_email.html:159
 msgid "Dynamic fields"
 msgstr "Dinamikus mezők"
 
-#: templates/backoffice/registration/_step_email.html:160
+#: templates/backoffice/registration/_step_email.html:161
 msgid ""
 "Click a dynamic field to select it, then copy and paste into the subject "
 "or body. Missing values render as an empty string."
@@ -8868,53 +8872,53 @@ msgstr ""
 "Kattints egy dinamikus mezőre a kijelöléséhez, majd másold be a tárgyba "
 "vagy a törzsbe. A hiányzó értékek üres szövegként jelennek meg."
 
-#: templates/backoffice/registration/_step_email.html:163
+#: templates/backoffice/registration/_step_email.html:164
 msgid "Assembly title"
 msgstr "A közösségi gyűlés címe"
 
-#: templates/backoffice/registration/_step_email.html:164
+#: templates/backoffice/registration/_step_email.html:165
 msgid "Assembly question"
 msgstr "A közösségi gyűlés témája"
 
-#: templates/backoffice/registration/_step_email.html:165
+#: templates/backoffice/registration/_step_email.html:166
 msgid "First assembly date (ISO)"
 msgstr "Az első közösségi gyűlés időpontja (ISO)"
 
-#: templates/backoffice/registration/_step_email.html:166
+#: templates/backoffice/registration/_step_email.html:167
 #, fuzzy
 msgid "First assembly date, written out in the reader's language"
 msgstr "Az első közösségi gyűlés időpontja, az olvasó nyelvén kiírva"
 
-#: templates/backoffice/registration/_step_email.html:167
+#: templates/backoffice/registration/_step_email.html:168
 msgid "Respondent first name"
 msgstr "A jelentkező keresztneve"
 
-#: templates/backoffice/registration/_step_email.html:168
+#: templates/backoffice/registration/_step_email.html:169
 msgid "First name, or 'Friend' as a fallback"
 msgstr "Keresztnév, vagy „Résztvevő” tartaléknak"
 
-#: templates/backoffice/registration/_step_email.html:169
+#: templates/backoffice/registration/_step_email.html:170
 msgid "Respondent full name"
 msgstr "A jelentkező teljes neve"
 
-#: templates/backoffice/registration/_step_email.html:170
+#: templates/backoffice/registration/_step_email.html:171
 msgid "Respondent email address"
 msgstr "A jelentkező e-mail címe"
 
-#: templates/backoffice/registration/_step_email.html:194
+#: templates/backoffice/registration/_step_email.html:195
 msgid "Variable copied to clipboard"
 msgstr "A változó a vágólapra másolva"
 
-#: templates/backoffice/registration/_step_email.html:199
+#: templates/backoffice/registration/_step_email.html:200
 #, python-format
 msgid "Copy %(label)s variable"
 msgstr "%(label)s változó másolása"
 
-#: templates/backoffice/registration/_step_email.html:222
+#: templates/backoffice/registration/_step_email.html:223
 msgid "Send a test email"
 msgstr "Teszt e-mail küldése"
 
-#: templates/backoffice/registration/_step_email.html:224
+#: templates/backoffice/registration/_step_email.html:225
 msgid ""
 "Check how the auto-reply looks in a real inbox. The email is filled in "
 "with sample respondent data and this assembly's real details, then sent "
@@ -8924,7 +8928,7 @@ msgstr ""
 "postafiókban. Az e-mail minta jelentkezőadatokkal és a közösségi gyűlés "
 "valódi adataival töltődik ki, majd az alábbi címre megy."
 
-#: templates/backoffice/registration/_step_email.html:230
+#: templates/backoffice/registration/_step_email.html:231
 msgid ""
 "This only tests the email to the address below. Registrants still won't "
 "receive the auto-reply until the problem above is fixed."
@@ -8933,15 +8937,15 @@ msgstr ""
 "nem kapják meg az automatikus választ, amíg a fenti probléma nincs "
 "megoldva."
 
-#: templates/backoffice/registration/_step_email.html:241
+#: templates/backoffice/registration/_step_email.html:242
 msgid "Send to"
 msgstr "Címzett"
 
-#: templates/backoffice/registration/_step_email.html:246
+#: templates/backoffice/registration/_step_email.html:247
 msgid "Send test email"
 msgstr "Teszt e-mail küldése"
 
-#: templates/backoffice/registration/_step_email.html:260
+#: templates/backoffice/registration/_step_email.html:261
 #: templates/backoffice/registration/_step_form.html:165
 #: templates/backoffice/registration/_step_intro.html:135
 #: templates/backoffice/registration/_step_page.html:93
