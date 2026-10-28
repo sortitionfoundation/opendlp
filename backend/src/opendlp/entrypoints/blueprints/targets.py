@@ -11,7 +11,10 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.blueprints.backoffice import render_assembly_data_page
+from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.save_all_parser import errors_by_field, parse_save_all_targets, pending_categories
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
@@ -20,6 +23,7 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_or_create_csv_config,
     get_tab_enabled_states,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
@@ -32,6 +36,7 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
+from opendlp.service_layer.sortition import get_selection_to_rerun, start_db_select_task
 from opendlp.service_layer.target_checking import check_targets_detailed
 from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_respondent_helpers import (
@@ -50,6 +55,8 @@ from opendlp.service_layer.target_service import (
     get_targets_for_assembly,
     save_all_targets,
 )
+from opendlp.service_layer.target_suggestions import accept_all_suggestions, accept_suggestion
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
 from ..forms import (
@@ -373,6 +380,7 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             check_result = check_targets_detailed(uow, current_user.id, assembly_id)
             target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            rerun = _selection_to_rerun(uow, assembly_id, request.args)
 
         value_form = TargetValueForm()
         can_manage = _can_manage(assembly_id)
@@ -395,6 +403,13 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             all_selected_counts=selected_counts,
             has_selected=has_selected,
             check_result=check_result,
+            # Carried through from a failed selection run (see accept_suggestions),
+            # so the page offers to re-run and keeps the link alive across rechecks.
+            selection_provenance=_provenance_params(rerun),
+            rerun_is_test=_is_test_run(rerun),
+            # "Adjust targets" on a failed run opens straight into the editor,
+            # with each suggestion under the row it would change.
+            editing_all=can_manage and request.args.get("edit") == "1",
             **context,
         ), 200
 
@@ -407,6 +422,134 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Error checking targets", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while checking targets"), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+
+def _accept_from_form(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, form: Any) -> bool:
+    """Accept what the form asks for - every suggestion, or the one it names."""
+    if form.get("scope") == "all":
+        return accept_all_suggestions(uow, current_user.id, assembly_id)
+    try:
+        category_id = uuid.UUID(form.get("category_id", ""))
+        value_id = uuid.UUID(form.get("value_id", ""))
+    except ValueError:
+        return False
+    return accept_suggestion(
+        uow,
+        current_user.id,
+        assembly_id,
+        category_id,
+        value_id,
+        form.get("field", ""),
+        comment=form.get("comment", ""),
+    )
+
+
+def _start_rerun(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, run: SelectionRunRecord) -> uuid.UUID | None:
+    """Re-run the kind of selection that failed, unless its settings still need confirming.
+
+    A failed test selection is re-run as a test selection, never as the real one.
+
+    A refused start - another task writing to the assembly, or settings the
+    selection cannot use - is reported and swallowed rather than raised: the
+    target changes are in the same unit of work, and raising would roll them back.
+    """
+    csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+    if not csv_config.settings_confirmed:
+        flash(_("Please review and save the selection settings before running selection"), "warning")
+        return None
+    try:
+        task_id: uuid.UUID = start_db_select_task(uow, current_user.id, assembly_id, test_selection=_is_test_run(run))
+    except InvalidSelection as e:
+        # SelectionAlreadyRunning is an InvalidSelection too. Both are raised before
+        # the run record is written, so the session is clean and the targets commit.
+        flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
+        return None
+    return task_id
+
+
+def _redirect_after_save(assembly_id: uuid.UUID, task_id: uuid.UUID | None, recheck_url: str) -> ResponseReturnValue:
+    """To the new selection run if one was started, otherwise back to the check."""
+    if task_id is not None:
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=task_id))
+    return redirect_preserving_scroll(recheck_url)
+
+
+def _selection_to_rerun(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, params: Any) -> SelectionRunRecord | None:
+    """The failed selection run a visit came from, if the targets page may re-run it.
+
+    ``from=selection`` and a ``run_id``, as url or form params, mark a visit that
+    "Adjust targets" on a failed run sent here. The run is looked up, so what
+    matters about it - whether it was a test selection - comes from the run
+    itself rather than the request. None for any other visit, and for a
+    ``run_id`` naming no such run: which also keeps anything but a UUID out of
+    the Alpine expression the targets page puts the url in.
+    """
+    if params.get("from") != "selection":
+        return None
+    try:
+        run_id = uuid.UUID(params.get("run_id", ""))
+    except ValueError:
+        return None
+    return get_selection_to_rerun(uow, assembly_id, run_id)
+
+
+def _provenance_params(run: SelectionRunRecord | None) -> dict[str, Any]:
+    """The params that carry a failed run through every form and link back here.
+
+    Empty without one, so it can be splatted into ``url_for`` or rendered as
+    hidden fields either way.
+    """
+    if run is None:
+        return {}
+    return {"from": "selection", "run_id": str(run.task_id)}
+
+
+def _is_test_run(run: SelectionRunRecord | None) -> bool:
+    return run is not None and run.task_type == SelectionTaskType.TEST_SELECT_FROM_DB
+
+
+@targets_bp.route("/assembly/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
+@login_required
+@require_assembly_management
+def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Apply one or all of the algorithm's recommended target changes.
+
+    The suggestions are re-derived from a fresh check rather than trusted from
+    the form, so a stale page cannot apply a number the check no longer
+    recommends (see `target_suggestions`). Each applied
+    value gets a comment recording where the change came from; for a single
+    accept the organiser may have edited that comment before saving.
+
+    ``then=run`` re-runs the failed selection after saving - a test run as a test
+    run - and is only honoured when the organiser arrived from one
+    (``from=selection`` and the ``run_id`` of a run that may be re-run).
+    """
+    try:
+        uow = bootstrap.get_flask_uow()
+        task_id = None
+        with uow:
+            run = _selection_to_rerun(uow, assembly_id, request.form)
+            recheck_url = url_for("targets.check_targets", assembly_id=assembly_id, **_provenance_params(run))
+            if not _accept_from_form(uow, assembly_id, request.form):
+                flash(_("That suggestion is no longer available. The targets have been re-checked."), "warning")
+                return redirect_preserving_scroll(recheck_url)
+
+            if run is not None and request.form.get("then") == "run":
+                task_id = _start_rerun(uow, assembly_id, run)
+
+        flash(_("Recommended changes applied."), "success")
+        return _redirect_after_save(assembly_id, task_id, recheck_url)
+
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        logger.exception("Error accepting target suggestions", assembly_id=str(assembly_id), error=str(e))
+        flash(_("An unexpected error occurred while applying the recommended changes"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 
@@ -425,6 +568,7 @@ def _render_targets_edit_errors(
     with uow:
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
         target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+        rerun = _selection_to_rerun(uow, assembly_id, form_data)
 
     attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
     selected_counts = build_selected_counts(assembly_id, target_categories, attribute_columns)
@@ -439,6 +583,8 @@ def _render_targets_edit_errors(
         pending_categories=pending_categories(form_data),
         field_errors=errors_by_field(errors),
         editing_all=True,
+        selection_provenance=_provenance_params(rerun),
+        rerun_is_test=_is_test_run(rerun),
         value_form=TargetValueForm(),
         can_manage=_can_manage(assembly_id),
         all_respondent_counts=build_respondent_counts(assembly_id, target_categories, attribute_columns),
@@ -492,8 +638,10 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if errors:
             return _render_targets_edit_errors(assembly_id, request.form, errors)
 
+        task_id = None
         uow = bootstrap.get_flask_uow()
         with uow:
+            run = _selection_to_rerun(uow, assembly_id, request.form)
             save_all_targets(
                 uow,
                 current_user.id,
@@ -501,11 +649,15 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 edits,
                 force_unlink=request.form.get("force_unlink") == "1",
             )
+            if run is not None and request.form.get("then") == "run":
+                task_id = _start_rerun(uow, assembly_id, run)
 
         flash(_("Targets saved"), "success")
         # The detailed check is the whole point of saving: land on the page that
         # runs it, so its annotations arrive without anyone asking for them.
-        return redirect(url_for("targets.check_targets", assembly_id=assembly_id))
+        return _redirect_after_save(
+            assembly_id, task_id, url_for("targets.check_targets", assembly_id=assembly_id, **_provenance_params(run))
+        )
 
     except TargetLinkedError as e:
         return _render_force_unlink_confirm(assembly_id, request.form, e.blocks)

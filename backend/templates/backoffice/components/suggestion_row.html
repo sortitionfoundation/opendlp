@@ -1,0 +1,125 @@
+{#
+ABOUTME: A table row offering one suggested change, accepted with a single click
+ABOUTME: Accept either posts to the server or writes the change into inputs elsewhere on the page
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input %}
+{#
+    One suggestion - "set the minimum to 3" - as a full-width row under the table
+    row it is about.
+
+    The comment that will be saved with the change is on show and editable from
+    the start, so accepting is one click: there is no step that opens an editor
+    and a second one that saves it.
+
+    What Accept does depends on what is passed:
+
+      action  - the row is a form; Accept posts the comment, the csrf token and
+                `hidden_fields` there. For a page that saves each change as it
+                is made.
+      apply   - {input id: value}. Accept writes each value into that input on
+                the page, and the comment into the input `comment_target` names,
+                firing `input` on each so totals and dirty-tracking hear of it.
+                Nothing is saved; the page's own Save does that. Accepted rows
+                can be undone, and all of them accept at once on a
+                `suggestions-accept-all` window event.
+      neither - the suggestion is shown with nothing to accept, as for someone
+                who may not change what it is about.
+
+    Args:
+        message: what is suggested, in words
+        colspan: how many columns of the surrounding table the row spans
+        comment: the comment saved with the change, pre-filled and editable
+        comment_id: id of the comment input (needed when it is shown)
+        action: url Accept posts to
+        hidden_fields: {name: value} posted with the comment
+        form_attrs: extra attributes for the form, in action mode
+        apply: {input id: value} written in on Accept, in apply mode
+        comment_target: id of the input the comment is written into
+        accept_label: the Accept button's text
+        divider: draw the table's dividing line under this row - for the last
+                 suggestion under a row whose own line has been left off, so
+                 the line closes the group rather than splitting it
+
+    Usage:
+        {{ suggestion_row(_("Suggested minimum: 3"), colspan=6,
+                          comment="Accepted algorithm suggestion", comment_id="c-1",
+                          action=url_for(...), hidden_fields={"field": "min"}) }}
+        {{ suggestion_row(_("Suggested minimum: 3"), colspan=6,
+                          comment="Accepted algorithm suggestion", comment_id="c-1",
+                          apply={"row-1-min": 3}, comment_target="row-1-comment") }}
+#}
+{% macro suggestion_row(message, colspan=1, comment="", comment_id="", action="", hidden_fields={}, form_attrs="", apply={}, comment_target="", accept_label="", divider=false) %}
+    {% set applies = apply | length > 0 %}
+    {% set actionable = action or applies %}
+    {% set accept_text = accept_label or _("Accept") %}
+    {% set comment_label = _("Comment saved with this change") %}
+    {# Every row's buttons say only "Accept" and "Undo", so each one, and the
+       comment input, is described by the message saying what it accepts. #}
+    {% set message_id = (comment_id ~ "-message") if comment_id else "" %}
+    {# tojson escapes quotes and angle brackets, so the map is safe inside a
+       single-quoted attribute - and Alpine never has to parse it. #}
+    <tr data-suggestion-row="true"
+        {% if divider %}style="border-bottom: 1px solid var(--color-borders-dividers)"{% endif %}
+        {% if applies %}x-data="suggestionRow" data-apply='{{ apply | tojson }}' data-comment-target="{{ comment_target }}" @suggestions-accept-all.window="accept()"{% endif %}>
+        <td colspan="{{ colspan }}" class="px-0 py-1" style="border: none;">
+            <div class="rounded-lg p-3 flex flex-col gap-2"
+                 style="background-color: var(--color-warning-100);
+                        border: 1px solid var(--color-warning-400)">
+                <p class="text-body-sm flex flex-wrap items-center gap-2"
+                   style="color: var(--color-warning-600)">
+                    <span class="font-bold px-1.5 py-0.5 rounded text-body-sm"
+                          style="background-color: var(--color-warning-400);
+                                 color: white">{{ _("Suggestion") }}</span>
+                    <span {% if message_id %}id="{{ message_id }}"{% endif %}>{{ message }}</span>
+                </p>
+                {% if actionable %}
+                    {% set controls %}
+                        <label class="text-body-sm w-full"
+                               for="{{ comment_id }}"
+                               style="color: var(--color-secondary-text)">{{ comment_label }}</label>
+                        <div class="flex-1" style="min-width: 16rem;">
+                            {# Unnamed in apply mode: it is copied into the row, and must not
+                               be submitted with whatever form the row sits in. #}
+                            {% set describedby = ('aria-describedby="' ~ message_id ~ '"') if message_id else "" %}
+                            {{ input(name="comment" if action else "",
+                            id=comment_id,
+                            value=comment,
+                            attrs=(describedby ~ ' x-ref="comment"') if applies else describedby) }}
+                        </div>
+                        {% if action %}
+                            {{ button(accept_text, type="submit", variant="secondary", aria_describedby=message_id) }}
+                        {% else %}
+                            {{ button(accept_text, variant="secondary", aria_describedby=message_id, attrs='x-ref="acceptBtn" @click="acceptFromButton()"') }}
+                        {% endif %}
+                    {% endset %}
+                    {% if action %}
+                        <form method="post"
+                              action="{{ action }}"
+                              class="flex flex-wrap items-center gap-2"
+                              {% if form_attrs %}{{ form_attrs | safe }}{% endif %}>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            {% for name, value in hidden_fields.items() %}
+                                <input type="hidden" name="{{ name }}" value="{{ value }}" />
+                            {% endfor %}
+                            {{ controls }}
+                        </form>
+                    {% else %}
+                        <div class="flex flex-wrap items-center gap-2" x-show="!accepted">{{ controls }}</div>
+                        {% set accepted_text = _("Accepted. Save to keep the change.") %}
+                        {# The status region is always in the page, so a screen reader
+                           announces the text when it appears in it. The visible copy
+                           is hidden from them, or it would be read twice. #}
+                        <span class="sr-only" role="status"><span x-show="accepted" x-cloak>{{ accepted_text }}</span></span>
+                        <div class="flex flex-wrap items-center gap-2" x-show="accepted" x-cloak>
+                            <span class="text-body-sm"
+                                  aria-hidden="true"
+                                  style="color: var(--color-body-text)">{{ accepted_text }}</span>
+                            {{ button(_("Undo"), variant="tertiary", aria_describedby=message_id, attrs='x-ref="undoBtn" @click="undoFromButton()"') }}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </td>
+    </tr>
+{% endmacro %}

@@ -7,7 +7,12 @@ import uuid
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.selection_settings import SelectionSettings
+from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_service import (
     add_target_value,
     create_target_category,
@@ -89,6 +94,50 @@ def assembly_with_two_categories(title: str, assembly_creator, admin_user, test_
         create_target_category(uow, admin_user.id, assembly.id, name="Age")
 
 
+@given(parsers.parse('there is an assembly whose targets cannot all be met called "{title}"'))
+def assembly_with_infeasible_targets(title: str, assembly_creator, admin_user, test_database) -> None:
+    """Ten to select from ten older men and ten younger women.
+
+    At least six young people are wanted, but every young person is a woman and
+    at most five women may be chosen. The check suggests a young minimum of 5
+    and an old maximum of 5.
+    """
+    assembly = assembly_creator(title, number_to_select=10)
+    _target_assembly_ids[title] = str(assembly.id)
+    _current_assembly_id[:] = [str(assembly.id)]
+
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        import_targets_from_csv(
+            uow,
+            admin_user.id,
+            assembly.id,
+            "feature,value,min,max\nGender,Male,5,6\nGender,Female,4,5\nAge,Young,6,7\nAge,Old,3,4\n",
+        )
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        age = next(c for c in get_targets_for_assembly(uow, admin_user.id, assembly.id) if c.name == "Age")
+        young = age.get_value("Young")
+        update_target_value(
+            uow, admin_user.id, assembly.id, age.id, young.value_id, value="Young", comment="From the census"
+        )
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        stored = uow.assemblies.get(assembly.id)
+        stored.csv = AssemblyCSV(assembly_id=assembly.id)
+        stored.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
+        uow.respondents.bulk_add(
+            [
+                Respondent(assembly_id=assembly.id, external_id=f"m{i}", attributes={"Gender": "Male", "Age": "Old"})
+                for i in range(10)
+            ]
+            + [
+                Respondent(
+                    assembly_id=assembly.id, external_id=f"f{i}", attributes={"Gender": "Female", "Age": "Young"}
+                )
+                for i in range(10)
+            ]
+        )
+        uow.commit()
+
+
 @given("the respondent data holds nine ages, one of them targeted")
 def respondents_with_untargeted_ages(admin_user, test_database) -> None:
     """An Age category naming one band, against respondents spread over nine."""
@@ -131,6 +180,40 @@ def target_set_by_hand(value: str, note: str, admin_user, test_database) -> None
 @when(parsers.parse('I open the targets page for "{title}"'))
 def open_targets_page(admin_logged_in_page: Page, title: str) -> None:
     admin_logged_in_page.goto(_targets_url(_target_assembly_ids[title]))
+
+
+@when(parsers.parse('I adjust the targets for "{title}" after a failed test selection'))
+def adjust_targets_after_failed_selection(admin_logged_in_page: Page, title: str, test_database) -> None:
+    """Where "Adjust targets" on a failed test selection leads: the check, open in the editor."""
+    assembly_id = uuid.UUID(_target_assembly_ids[title])
+    run_id = uuid.uuid4()
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly_id,
+                task_id=run_id,
+                status=SelectionRunStatus.FAILED,
+                task_type=SelectionTaskType.TEST_SELECT_FROM_DB,
+            )
+        )
+        uow.commit()
+    admin_logged_in_page.goto(f"{_targets_url(str(assembly_id))}/check?from=selection&run_id={run_id}&edit=1")
+
+
+@when(parsers.parse('I accept the suggestion "{message}"'))
+def accept_suggestion(admin_logged_in_page: Page, message: str) -> None:
+    row = admin_logged_in_page.locator("tr[data-suggestion-row]").filter(has_text=message).filter(visible=True)
+    row.get_by_role("button", name="Accept").click()
+
+
+@when("I undo the accepted suggestion")
+def undo_accepted_suggestion(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Undo").click()
+
+
+@when("I accept all the suggestions")
+def accept_all_suggestions(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Accept all suggestions").click()
 
 
 @when("I choose to edit all targets")
@@ -263,6 +346,20 @@ def edit_row_shows_min_max(admin_logged_in_page: Page, value: str, minimum: str,
     row = _edit_row_for(admin_logged_in_page, value)
     expect(row.locator('[data-field="min"]')).to_have_value(minimum, timeout=PLAYWRIGHT_TIMEOUT)
     expect(row.locator('[data-field="max"]')).to_have_value(maximum, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{value}" edit row comment should be "{comment}"'))
+def edit_row_comment(admin_logged_in_page: Page, value: str, comment: str) -> None:
+    row = _edit_row_for(admin_logged_in_page, value)
+    expect(row.locator('input[name$="[comment]"]')).to_have_value(comment, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the focus should be on "{label}" for "{message}"'))
+def focus_on_button_for(admin_logged_in_page: Page, label: str, message: str) -> None:
+    """Every suggestion's buttons share a name; the suggestion describing them tells them apart."""
+    focused = admin_logged_in_page.locator(":focus")
+    expect(focused).to_have_accessible_name(label, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(focused).to_have_accessible_description(message, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the "{value}" edit row should show the error "{message}"'))

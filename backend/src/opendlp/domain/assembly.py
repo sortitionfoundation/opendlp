@@ -8,6 +8,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from sortition_algorithms import adapters
+from sortition_algorithms.errors import InfeasibleQuotasError
 from sortition_algorithms.utils import RunReport
 
 from opendlp import config
@@ -331,6 +332,15 @@ class SelectionRunRecord:
     @property
     def is_cancelled(self) -> bool:
         return self.status == SelectionRunStatus.CANCELLED
+
+    @property
+    def failed_on_infeasible_targets(self) -> bool:
+        """True when the run failed because no panel can meet all the targets.
+
+        That is the one failure the targets page can do something about: the
+        check there suggests the changes that would make the targets feasible.
+        """
+        return self.is_failed and isinstance(self.run_report.last_error(), InfeasibleQuotasError)
 
     @property
     def has_finished(self) -> bool:
