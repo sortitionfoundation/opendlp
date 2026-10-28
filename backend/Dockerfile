@@ -169,6 +169,12 @@ apt-get install -qyy \
 
 /usr/bin/unattended-upgrade
 
+# some packages do not get picked up by unattended-upgrade for some reason
+apt-get upgrade -qyy \
+  -o APT::Install-Recommends=false \
+  -o APT::Install-Suggests=false \
+  coreutils
+
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
