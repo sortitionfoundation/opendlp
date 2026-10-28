@@ -111,23 +111,23 @@ class TestDashboardGating:
     def test_backoffice_dashboard_offers_create_to_an_admin(self, logged_in_admin: FlaskClient) -> None:
         response = logged_in_admin.get("/backoffice/dashboard")
         assert response.status_code == 200
-        assert b"Create New Assembly" in response.data
+        assert b"Create project" in response.data
 
     def test_backoffice_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/backoffice/dashboard")
         assert response.status_code == 200
-        assert b"Create New Assembly" in response.data
+        assert b"Create project" in response.data
 
     def test_backoffice_dashboard_hides_create_from_a_user(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/backoffice/dashboard")
         assert response.status_code == 200
-        assert b"Create New Assembly" not in response.data
-        assert b"Create Your First Assembly" not in response.data
+        assert b"Create project" not in response.data
+        assert b"Create your first project" not in response.data
 
     def test_a_user_with_nothing_is_told_what_to_do(self, logged_in_user: FlaskClient) -> None:
-        """The empty state must not tell someone to create an assembly they cannot create."""
+        """The empty state must not tell someone to create a project they cannot create."""
         response = logged_in_user.get("/backoffice/dashboard")
-        assert b"ask an Assembly Manager to add you" in response.data
+        assert b"ask a Project Manager to add you" in response.data
 
     def test_legacy_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/dashboard")

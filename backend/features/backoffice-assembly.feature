@@ -73,12 +73,12 @@ Feature: Backoffice Assembly Management
   Scenario: Dashboard displays create assembly button
     Given I am logged in as an admin user
     When I visit the backoffice dashboard
-    Then I should see the "Create New Assembly" button
+    Then I should see the "Create project" button
 
   Scenario: User can navigate to create assembly page from dashboard
     Given I am logged in as an admin user
     When I visit the backoffice dashboard
-    And I click the "Create New Assembly" button
+    And I click the "Create project" button
     Then I should see the create assembly page
     And I should see "Create Assembly" as the page heading
 
@@ -111,8 +111,8 @@ Feature: Backoffice Assembly Management
     Given I am logged in as an admin user
     And there are no assemblies
     When I visit the backoffice dashboard
-    Then I should see "No assemblies yet"
-    And I should see the "Create Your First Assembly" button
+    Then I should see "No projects yet"
+    And I should see the "Create your first project" button
 
   # Update Number to Select (from Selection Page)
 

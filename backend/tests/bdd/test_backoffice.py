@@ -972,11 +972,11 @@ def redirected_to_login(page: Page):
     expect(page).to_have_url(re.compile(r".*/auth/login.*"), timeout=PLAYWRIGHT_TIMEOUT)
 
 
-@then('I should see "Dashboard"')
-def see_dashboard_text(page: Page):
-    """Verify Dashboard heading is visible."""
+@then('I should see "Your projects"')
+def see_your_projects_heading(page: Page):
+    """Verify the Your projects heading is visible."""
     heading = page.locator("h1")
-    expect(heading).to_contain_text("Dashboard")
+    expect(heading).to_contain_text("Your projects")
 
 
 @then('I should see "Welcome back"')

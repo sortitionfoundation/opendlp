@@ -1,6 +1,7 @@
 """ABOUTME: pytest-bdd step definitions for email confirmation flows.
 ABOUTME: Covers password registration, login blocking, email verification, OAuth auto-confirmation, resend, and rate limiting."""
 
+import re
 import time
 from datetime import UTC, datetime, timedelta
 
@@ -158,8 +159,10 @@ def _(page: Page):
     # (We can't simulate full OAuth login flow in BDD tests)
     if not page.url.endswith("/auth/register"):
         expect(page).to_have_url(Urls.any_dashboard)
-        # The header link says "Your Assemblies" too, so wait for the heading
-        expect(page.get_by_role("heading", name="Your Assemblies")).to_be_visible()
+        # The header link says "Your projects" too, so wait for the heading. The
+        # legacy list page, still the landing page when FF_OLD_DEFAULT_DASHBOARD is
+        # set, keeps its old heading.
+        expect(page.get_by_role("heading", name=re.compile(r"^Your (projects|Assemblies)$"))).to_be_visible()
 
 
 @given("the user has registered and confirmed their email")

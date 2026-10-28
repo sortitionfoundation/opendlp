@@ -41,4 +41,4 @@ Feature: Organiser assemblies
   Scenario: A plain user is not offered the create button
     Given I am logged in as a normal user
     When I visit the backoffice dashboard
-    Then I should not see "Create New Assembly"
+    Then I should not see "Create project"

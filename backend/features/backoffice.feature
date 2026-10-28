@@ -11,7 +11,7 @@ Feature: Backoffice Dashboard
   Scenario: Authenticated user can view backoffice dashboard
     Given I am logged in as an admin user
     When I visit the backoffice dashboard
-    Then I should see "Dashboard"
+    Then I should see "Your projects"
     And I should see "Welcome back"
 
   Scenario: Dashboard displays assemblies using card components

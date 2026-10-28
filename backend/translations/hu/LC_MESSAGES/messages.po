@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 14:36+0000\n"
+"POT-Creation-Date: 2026-10-28 14:50+0000\n"
 "PO-Revision-Date: 2026-10-22 16:33+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -5006,13 +5006,12 @@ msgstr "Menü"
 msgid "Close menu"
 msgstr "Menü bezárása"
 
-#: templates/backoffice/dashboard.html:18 templates/base.html:57
-#: templates/errors/400.html:25 templates/errors/403.html:23
-#: templates/errors/404.html:24 templates/errors/413.html:20
-#: templates/errors/500.html:24 templates/main/create_assembly.html:11
-#: templates/main/dashboard.html:17 templates/main/view_assembly_base.html:8
-msgid "Your Assemblies"
-msgstr "Közösségi gyűléseid"
+#: templates/backoffice/dashboard.html:9 templates/backoffice/dashboard.html:13
+#: templates/base.html:57 templates/errors/400.html:25
+#: templates/errors/403.html:23 templates/errors/404.html:24
+#: templates/errors/413.html:20 templates/errors/500.html:24
+msgid "Your projects"
+msgstr ""
 
 #: templates/admin/index.html:2 templates/admin/index.html:4
 #: templates/admin/invite_create.html:10 templates/admin/invite_view.html:11
@@ -5152,9 +5151,9 @@ msgstr "Meghívók kezelése"
 #: templates/backoffice/assembly_targets.html:20
 #: templates/backoffice/respondent_field_schema/view.html:17
 #: templates/backoffice/target_sources/view.html:16
-#: templates/main/view_assembly_base.html:79 templates/profile/view.html:206
-msgid "Back to Your Assemblies"
-msgstr "Vissza a közösségi gyűléseidhez"
+#: templates/profile/view.html:206
+msgid "Back to Your projects"
+msgstr ""
 
 #: templates/admin/invite_create.html:2 templates/admin/invite_create.html:16
 #: templates/admin/invite_create.html:95
@@ -5967,7 +5966,6 @@ msgstr "Vissza a bejelentkezéshez"
 #: templates/backoffice/assembly_dashboard.html:13
 #: templates/backoffice/assembly_dashboard.html:40
 #: templates/backoffice/components/assembly_tabs.html:74
-#: templates/backoffice/dashboard.html:9 templates/backoffice/dashboard.html:12
 #: templates/main/dashboard.html:2 templates/main/dashboard.html:7
 msgid "Dashboard"
 msgstr "Vezérlőpult"
@@ -7123,44 +7121,42 @@ msgstr "Közösségi gyűlés létrehozása"
 msgid "Set up a new citizens' assembly."
 msgstr "Hozz létre egy új közösségi gyűlést."
 
-#: templates/backoffice/dashboard.html:13
+#: templates/backoffice/dashboard.html:15
+msgid "Create project"
+msgstr ""
+
+#: templates/backoffice/dashboard.html:18
 #, python-format
 msgid "Welcome back, %(name)s!"
 msgstr "Üdvözlünk újra, %(name)s!"
 
-#: templates/backoffice/dashboard.html:20
-msgid "Create New Assembly"
-msgstr "Új közösségi gyűlés létrehozása"
-
-#: templates/backoffice/dashboard.html:27
+#: templates/backoffice/dashboard.html:26
 #, python-format
 msgid "Created: %(date)s"
 msgstr "Létrehozva: %(date)s"
 
-#: templates/backoffice/dashboard.html:35
+#: templates/backoffice/dashboard.html:34
 #, python-format
 msgid "Starts: %(date)s"
 msgstr "Kezdés: %(date)s"
 
-#: templates/backoffice/dashboard.html:43 templates/main/dashboard.html:67
-msgid "No assemblies yet"
-msgstr "Még nincsenek közösségi gyűlések"
+#: templates/backoffice/dashboard.html:42
+msgid "No projects yet"
+msgstr ""
+
+#: templates/backoffice/dashboard.html:44
+msgid "Create your first project to get started."
+msgstr ""
 
 #: templates/backoffice/dashboard.html:45
-msgid "Create your first citizens' assembly to get started."
-msgstr "Hozd létre az első közösségi gyűlésedet a kezdéshez."
-
-#: templates/backoffice/dashboard.html:46
-msgid "Create Your First Assembly"
-msgstr "Hozd létre az első közösségi gyűlésedet"
-
-#: templates/backoffice/dashboard.html:48 templates/main/dashboard.html:72
-msgid ""
-"You have not been added to any assemblies yet — ask an Assembly Manager "
-"to add you."
+msgid "Create your first project"
 msgstr ""
-"Még egyetlen közösségi gyűléshez sem adtak hozzá – kérj meg egy "
-"gyűlésszervezőt, hogy hozzáadjon."
+
+#: templates/backoffice/dashboard.html:47
+msgid ""
+"You have not been added to any projects yet — ask a Project Manager to "
+"add you."
+msgstr ""
 
 #: templates/backoffice/dashboard_export_modal.html:22
 msgid "Export includes only the data currently displayed in the table view."
@@ -10991,6 +10987,11 @@ msgstr "További beállítások"
 msgid "Change Configuration"
 msgstr "Beállítások megváltoztatása"
 
+#: templates/main/create_assembly.html:11 templates/main/dashboard.html:17
+#: templates/main/view_assembly_base.html:8
+msgid "Your Assemblies"
+msgstr "Közösségi gyűléseid"
+
 #: templates/main/create_assembly.html:35
 msgid "Create a new citizens' assembly to begin the democratic lottery process."
 msgstr ""
@@ -11005,6 +11006,10 @@ msgstr "Üdvözlünk újra az OpenDLP-ben"
 msgid "Starts"
 msgstr "Kezdés dátuma"
 
+#: templates/main/dashboard.html:67
+msgid "No assemblies yet"
+msgstr "Még nincsenek közösségi gyűlések"
+
 #: templates/main/dashboard.html:68
 msgid "You don't have access to any assemblies at the moment."
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
@@ -11012,6 +11017,14 @@ msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
 #: templates/main/dashboard.html:70
 msgid "You can create a new assembly."
 msgstr "Létrehozhatsz új közösségi gyűlést."
+
+#: templates/main/dashboard.html:72
+msgid ""
+"You have not been added to any assemblies yet — ask an Assembly Manager "
+"to add you."
+msgstr ""
+"Még egyetlen közösségi gyűléshez sem adtak hozzá – kérj meg egy "
+"gyűlésszervezőt, hogy hozzáadjon."
 
 #: templates/main/index.html:2
 msgid "Welcome"
@@ -11123,6 +11136,10 @@ msgstr "Kiválasztás (Google Táblázat)"
 #: templates/main/view_assembly_base.html:61
 msgid "Data &amp; Selection"
 msgstr "Adatok és kiválasztás"
+
+#: templates/main/view_assembly_base.html:79
+msgid "Back to Your Assemblies"
+msgstr "Vissza a közösségi gyűléseidhez"
 
 #: templates/main/view_assembly_data.html:31
 msgid "To enable selection and replacement:"

@@ -214,7 +214,7 @@ class TestProtectedPagesAndSession:
         assert response.status_code == 302
         assert "dashboard" in response.location
         response = logged_in_user.get("/", follow_redirects=True)
-        assert "Your Assemblies" in response.text
+        assert "Your projects" in response.text
 
     def test_protected_page_redirects_when_not_logged_in(self, client: FlaskClient) -> None:
         response = client.get("/dashboard")

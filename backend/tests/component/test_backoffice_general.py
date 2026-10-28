@@ -113,13 +113,14 @@ class TestBackofficeDashboard:
         response = logged_in_user.get("/backoffice/dashboard")
         assert response.status_code == 200
 
-    def test_english_wording_is_unchanged(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
-        """Wrapping the text for translation leaves the English exactly as it was."""
+    def test_english_wording(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
+        """The list page is headed Your projects, once, with no second heading under it."""
         response = logged_in_admin.get("/backoffice/dashboard")
         assert response.status_code == 200
         body = response.get_data(as_text=True)
-        assert re.search(r"<title>\s*Dashboard\s*- OpenDLP</title>", body)
-        assert re.search(r"<h1[^>]*>Dashboard</h1>", body)
+        assert re.search(r"<title>\s*Your projects\s*- OpenDLP</title>", body)
+        assert re.search(r"<h1[^>]*>Your projects</h1>", body)
+        assert "<h2" not in body
         assert "Welcome back, Test Admin!" in body
         assert "Created: " in body
         assert "Starts: " in body
