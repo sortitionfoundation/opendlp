@@ -25,7 +25,7 @@ class TestBackofficeAssemblyDetails:
 
     def test_view_assembly_details_page_loads(self, logged_in_admin, existing_assembly):
         """Test that assembly details page loads successfully."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code == 200
         assert existing_assembly.title.encode() in response.data
 
@@ -38,7 +38,7 @@ class TestBackofficeAssemblyDetails:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code == 200
         assert b"Registration Pages" in response.data
         assert b"data-copy-text=" in response.data
@@ -56,7 +56,7 @@ class TestBackofficeAssemblyDetails:
             )
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/{page.url_slug}/qr-code.png"
+            f"/backoffice/project/{existing_assembly.id}/registration/{page.url_slug}/qr-code.png"
         )
         assert response.status_code == 200
         assert response.mimetype == "image/png"
@@ -72,20 +72,20 @@ class TestBackofficeAssemblyCreate:
         """Test successful assembly creation."""
         future_date = (datetime.now(UTC) + timedelta(days=30)).date()
         response = logged_in_admin.post(
-            "/backoffice/assembly/new",
+            "/backoffice/project/new",
             data={
                 "title": "New Backoffice Assembly",
                 "question": "What should we discuss in this assembly?",
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "number_to_select": "50",
-                "csrf_token": get_csrf_token(logged_in_admin, "/backoffice/assembly/new"),
+                "csrf_token": get_csrf_token(logged_in_admin, "/backoffice/project/new"),
             },
             follow_redirects=False,
         )
 
         # Should redirect to view assembly page
         assert response.status_code == 302
-        assert "/backoffice/assembly/" in response.location
+        assert "/backoffice/project/" in response.location
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
@@ -103,20 +103,20 @@ class TestBackofficeAssemblyEdit:
         future_date = (datetime.now(UTC) + timedelta(days=45)).date()
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/edit",
+            f"/backoffice/project/{existing_assembly.id}/edit",
             data={
                 "title": updated_title,
                 "question": updated_question,
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "number_to_select": "100",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/edit"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}/edit"),
             },
             follow_redirects=False,
         )
 
         # Should redirect to view assembly page
         assert response.status_code == 302
-        assert f"/backoffice/assembly/{existing_assembly.id}" in response.location
+        assert f"/backoffice/project/{existing_assembly.id}" in response.location
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
@@ -128,13 +128,13 @@ class TestBackofficeAssemblyEdit:
         # Step 1: Create assembly
         future_date = (datetime.now(UTC) + timedelta(days=60)).date()
         create_response = logged_in_admin.post(
-            "/backoffice/assembly/new",
+            "/backoffice/project/new",
             data={
                 "title": "Workflow Test Assembly",
                 "question": "What should we test?",
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "number_to_select": "30",
-                "csrf_token": get_csrf_token(logged_in_admin, "/backoffice/assembly/new"),
+                "csrf_token": get_csrf_token(logged_in_admin, "/backoffice/project/new"),
             },
             follow_redirects=False,
         )
@@ -151,22 +151,22 @@ class TestBackofficeAssemblyEdit:
         assembly_id = assembly_url.rstrip("/").split("/")[-1]
         updated_date = (datetime.now(UTC) + timedelta(days=90)).date()
         edit_response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/edit",
+            f"/backoffice/project/{assembly_id}/edit",
             data={
                 "title": "Updated Workflow Test Assembly",
                 "question": "What should we test after update?",
                 "first_assembly_date": updated_date.strftime("%Y-%m-%d"),
                 "number_to_select": "40",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly_id}/edit"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly_id}/edit"),
             },
             follow_redirects=False,
         )
 
         assert edit_response.status_code == 302
-        assert f"/backoffice/assembly/{assembly_id}" in edit_response.location
+        assert f"/backoffice/project/{assembly_id}" in edit_response.location
 
         # Step 4: Verify the update
-        final_view = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}")
+        final_view = logged_in_admin.get(f"/backoffice/project/{assembly_id}")
         assert final_view.status_code == 200
         assert b"Updated Workflow Test Assembly" in final_view.data
 
@@ -236,17 +236,17 @@ class TestBackofficeAddUserToAssembly:
         login_as_admin(client, admin_user)
 
         response = client.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/members/add",
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.CONFIRMATION_CALLER.name,
-                "csrf_token": get_csrf_token(client, f"/backoffice/assembly/{existing_assembly.id}/members"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}/members"),
             },
             follow_redirects=False,
         )
 
         assert response.status_code == 302  # Redirect after success
-        assert f"/backoffice/assembly/{existing_assembly.id}/members" in response.location
+        assert f"/backoffice/project/{existing_assembly.id}/members" in response.location
 
         # Reload user from database to get updated assembly_roles
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -267,11 +267,11 @@ class TestBackofficeAddUserToAssembly:
         login_as_admin(client, admin_user)
 
         response = client.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/members/add",
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.ASSEMBLY_MANAGER.name,
-                "csrf_token": get_csrf_token(client, f"/backoffice/assembly/{existing_assembly.id}/members"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}/members"),
             },
             follow_redirects=True,
         )
@@ -310,15 +310,15 @@ class TestBackofficeRemoveUserFromAssembly:
             )
 
         response = client.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/{regular_user.id}/remove",
+            f"/backoffice/project/{existing_assembly.id}/members/{regular_user.id}/remove",
             data={
-                "csrf_token": get_csrf_token(client, f"/backoffice/assembly/{existing_assembly.id}/members"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}/members"),
             },
             follow_redirects=False,
         )
 
         assert response.status_code == 302  # Redirect after success
-        assert f"/backoffice/assembly/{existing_assembly.id}/members" in response.location
+        assert f"/backoffice/project/{existing_assembly.id}/members" in response.location
 
         # Reload user from database to verify removal
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -337,7 +337,7 @@ class TestBackofficeSearchUsers:
         """Test that search returns users matching the search term."""
         login_as_admin(client, admin_user)
 
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=Alice")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=Alice")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -370,7 +370,7 @@ class TestBackofficeSearchUsers:
             )
 
         # Search for Alice - should not appear
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=Alice")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=Alice")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -385,7 +385,7 @@ class TestBackofficeSearchUsers:
         """Test that search is case-insensitive."""
         login_as_admin(client, admin_user)
 
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=alice")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=alice")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -397,7 +397,7 @@ class TestBackofficeSearchUsers:
         """Test searching users by email address."""
         login_as_admin(client, admin_user)
 
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=bob@example")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=bob@example")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -410,7 +410,7 @@ class TestBackofficeSearchUsers:
         """Test searching users by last name."""
         login_as_admin(client, admin_user)
 
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=Chaplin")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=Chaplin")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -431,11 +431,11 @@ class TestBackofficeCsvUpload:
         csv_content = "feature,value,min,max\nGender,Male,10,20\nGender,Female,10,20\nAge,18-30,5,15\nAge,31-50,5,15"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            f"/backoffice/project/{existing_assembly.id}/targets/upload",
             data={
                 "csv_file": (BytesIO(csv_content.encode()), "targets.csv"),
                 "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
+                    logged_in_admin, f"/backoffice/project/{existing_assembly.id}/data?source=csv"
                 ),
             },
             content_type="multipart/form-data",
@@ -443,7 +443,7 @@ class TestBackofficeCsvUpload:
         )
 
         assert response.status_code == 302
-        assert f"/backoffice/assembly/{existing_assembly.id}/targets" in response.location
+        assert f"/backoffice/project/{existing_assembly.id}/targets" in response.location
 
         # Verify targets were created
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -501,10 +501,10 @@ class TestBackofficeCsvDelete:
             assert len(categories) > 0
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets",
+            f"/backoffice/project/{assembly_with_targets.id}/data/delete-targets",
             data={
                 "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{assembly_with_targets.id}/data?source=csv"
+                    logged_in_admin, f"/backoffice/project/{assembly_with_targets.id}/data?source=csv"
                 ),
             },
             follow_redirects=False,
@@ -538,7 +538,7 @@ class TestDataTabCreateTargetsFromRespondents:
             [("1", {"Gender": "Male", "Region": "North"}), ("2", {"Gender": "Female", "Region": "South"})],
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
 
         assert response.status_code == 200
         html = response.data.decode()
@@ -558,13 +558,13 @@ class TestDataTabCreateTargetsFromRespondents:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/targets/categories/add-from-columns",
+            f"/backoffice/project/{existing_assembly.id}/targets/categories/add-from-columns",
             data={"columns": ["Gender"]},
             follow_redirects=False,
         )
 
         assert response.status_code == 302
-        assert response.location.endswith(f"/backoffice/assembly/{existing_assembly.id}/targets")
+        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}/targets")
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             categories = uow.target_categories.get_by_assembly_id(existing_assembly.id)
@@ -579,10 +579,10 @@ class TestDataTabCreateTargetsFromRespondents:
         self._add_respondents(postgres_session_factory, existing_assembly.id, [("1", {"Gender": "Male"})])
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/targets/categories/add-from-columns",
+            f"/backoffice/project/{existing_assembly.id}/targets/categories/add-from-columns",
             data={},
             follow_redirects=False,
         )
 
         assert response.status_code == 302
-        assert f"/backoffice/assembly/{existing_assembly.id}/data" in response.location
+        assert f"/backoffice/project/{existing_assembly.id}/data" in response.location

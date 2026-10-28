@@ -630,7 +630,7 @@ def _linked_field_id(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, category_i
 # ---------------------------------------------------------------------------
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources")
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources")
 @login_required
 def view_sources(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """The per-target data sources checklist."""
@@ -645,7 +645,7 @@ def view_sources(assembly_id: uuid.UUID) -> ResponseReturnValue:
     return _render_page(page_ctx)
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/setup-modal")
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/setup-modal")
 @login_required
 def setup_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Serve the set-up modal — fragment for HTMX, full page with the modal open otherwise."""
@@ -697,7 +697,7 @@ def _setup_error_response(
     return _setup_modal_response(assembly_id, category_id, values, error=error, status=422)
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/configure", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/configure", methods=["POST"])
 @login_required
 def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Save the set-up modal: wire the target to its source in one transaction.
@@ -756,7 +756,7 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     )
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/adopt", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/adopt", methods=["POST"])
 @login_required
 def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Link the name-matched existing field the row offered."""
@@ -781,7 +781,7 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
     return _close_modal_response(assembly_id, page_ctx, _("Question linked to its target"))
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/resync", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/resync", methods=["POST"])
 @login_required
 def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Regenerate the linked field's options from the target's current values."""
@@ -814,7 +814,7 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     )
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/recompute", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/recompute", methods=["POST"])
 @login_required
 def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Recompute the linked derived field across the pool."""
@@ -844,7 +844,7 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     return _toast_response(assembly_id, page_ctx, *_recompute_toast(report, _("Recompute finished")))
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload-modal")
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload-modal")
 @login_required
 def upload_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Serve the lookup-table upload dialog for the target's linked mapping field.
@@ -935,7 +935,7 @@ def _defer_upload_response(assembly_id: uuid.UUID, category_id: uuid.UUID, setup
     return _toast_response(assembly_id, page_ctx, message, "warning")
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload", methods=["POST"])
 @login_required
 def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Replace the linked mapping field's lookup table from an uploaded CSV, then recompute."""
@@ -989,7 +989,7 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     return _report_response(assembly_id, page_ctx, report, _("Lookup table uploaded"), upload_report=upload_report)
 
 
-@target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/unlink", methods=["POST"])
+@target_sources_bp.route("/project/<uuid:assembly_id>/target-sources/<uuid:category_id>/unlink", methods=["POST"])
 @login_required
 def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Break the link: a question stays behind, a computed question is deleted."""

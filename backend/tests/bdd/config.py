@@ -40,14 +40,14 @@ class Urls:
     backoffice_showcase = f"{base}/backoffice/showcase"
     backoffice_patterns = f"{base}/backoffice/dev/patterns"
     backoffice_dashboard = f"{base}/backoffice/dashboard"
-    backoffice_create_assembly = f"{base}/backoffice/assembly/new"
-    backoffice_assembly = "{base}/backoffice/assembly/{assembly_id}"
-    backoffice_edit_assembly = "{base}/backoffice/assembly/{assembly_id}/edit"
-    backoffice_members_assembly = "{base}/backoffice/assembly/{assembly_id}/members"
-    backoffice_data_assembly = "{base}/backoffice/assembly/{assembly_id}/data"
-    backoffice_targets_assembly = "{base}/backoffice/assembly/{assembly_id}/targets"
-    backoffice_respondents_assembly = "{base}/backoffice/assembly/{assembly_id}/respondents"
-    backoffice_selection_assembly = "{base}/backoffice/assembly/{assembly_id}/selection"
+    backoffice_create_assembly = f"{base}/backoffice/project/new"
+    backoffice_assembly = "{base}/backoffice/project/{assembly_id}"
+    backoffice_edit_assembly = "{base}/backoffice/project/{assembly_id}/edit"
+    backoffice_members_assembly = "{base}/backoffice/project/{assembly_id}/members"
+    backoffice_data_assembly = "{base}/backoffice/project/{assembly_id}/data"
+    backoffice_targets_assembly = "{base}/backoffice/project/{assembly_id}/targets"
+    backoffice_respondents_assembly = "{base}/backoffice/project/{assembly_id}/respondents"
+    backoffice_selection_assembly = "{base}/backoffice/project/{assembly_id}/selection"
 
     # Where a login lands depends on FF_OLD_DEFAULT_DASHBOARD, and the BDD server
     # can be started either way - by the test_server fixture, which inherits the

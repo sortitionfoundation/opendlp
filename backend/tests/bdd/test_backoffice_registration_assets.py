@@ -92,7 +92,7 @@ def assembly_with_registration_page(title: str, admin_user, test_database):
 def visit_registration_form_editor(page: Page, title: str):
     """Edit mode, because the assets panel is only rendered while editing."""
     page.goto(
-        f"{Urls.base}/backoffice/assembly/{_assembly_ids[title]}/registration/{_page_slugs[title]}?section=form&edit=1"
+        f"{Urls.base}/backoffice/project/{_assembly_ids[title]}/registration/{_page_slugs[title]}?section=form&edit=1"
     )
 
 

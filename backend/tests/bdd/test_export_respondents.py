@@ -58,7 +58,7 @@ def admin_signed_in(admin_logged_in_page: Page) -> None:
 
 @when(parsers.parse('I open the respondents page for "{title}"'))
 def open_respondents_page(admin_logged_in_page: Page, title: str, export_assembly_id: str) -> None:
-    admin_logged_in_page.goto(f"{Urls.base}/backoffice/assembly/{export_assembly_id}/respondents?source=csv")
+    admin_logged_in_page.goto(f"{Urls.base}/backoffice/project/{export_assembly_id}/respondents?source=csv")
     admin_logged_in_page.wait_for_load_state("networkidle")
 
 

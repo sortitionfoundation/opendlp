@@ -55,7 +55,7 @@ class TestReplacementLegacyRoutes:
         """Test that /replacement redirects to selection page with replacement_modal=open."""
         assembly, _gsheet = assembly_with_gsheet
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/replacement",
+            f"/backoffice/project/{assembly.id}/replacement",
             follow_redirects=False,
         )
         assert response.status_code == 302
@@ -66,7 +66,7 @@ class TestReplacementLegacyRoutes:
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/replacement/{run_id}",
+            f"/backoffice/project/{assembly.id}/replacement/{run_id}",
             follow_redirects=False,
         )
         assert response.status_code == 302
@@ -77,7 +77,7 @@ class TestReplacementLegacyRoutes:
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/replacement/{run_id}?min_select=5&max_select=20",
+            f"/backoffice/project/{assembly.id}/replacement/{run_id}?min_select=5&max_select=20",
             follow_redirects=False,
         )
         assert response.status_code == 302
@@ -93,7 +93,7 @@ class TestStartReplacementRunValidation:
         assembly, _gsheet = assembly_with_gsheet
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/replacement/run",
+            f"/backoffice/project/{assembly.id}/replacement/run",
             follow_redirects=False,
         )
 
@@ -105,7 +105,7 @@ class TestStartReplacementRunValidation:
         assembly, _gsheet = assembly_with_gsheet
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/replacement/run",
+            f"/backoffice/project/{assembly.id}/replacement/run",
             data={"number_to_select": "0"},
             follow_redirects=False,
         )
@@ -118,7 +118,7 @@ class TestStartReplacementRunValidation:
         assembly, _gsheet = assembly_with_gsheet
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/replacement/run",
+            f"/backoffice/project/{assembly.id}/replacement/run",
             data={"number_to_select": "abc"},
             follow_redirects=False,
         )
@@ -131,7 +131,7 @@ class TestStartReplacementRunValidation:
         assembly, _gsheet = assembly_with_gsheet
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/replacement/run",
+            f"/backoffice/project/{assembly.id}/replacement/run",
             data={"number_to_select": "-3"},
             follow_redirects=False,
         )
@@ -147,7 +147,7 @@ class TestSelectionPageInvalidParams:
         """Test that invalid manage_tabs param is ignored and page loads normally."""
         assembly, _gsheet = assembly_with_gsheet
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_manage_tabs=not-a-uuid")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_manage_tabs=not-a-uuid")
         assert response.status_code == 200
         assert b"manage-tabs-progress-modal" not in response.data
 
@@ -155,7 +155,7 @@ class TestSelectionPageInvalidParams:
         """Test that invalid replacement param is ignored and page loads normally."""
         assembly, _gsheet = assembly_with_gsheet
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_replacement=not-a-uuid")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_replacement=not-a-uuid")
         assert response.status_code == 200
         assert b"replacement-modal" not in response.data
 
@@ -167,7 +167,7 @@ class TestSelectionPageViewRunningButton:
         """Test that the run buttons render when there is no active task."""
         assembly, _gsheet = assembly_with_gsheet
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"Check Spreadsheet" in response.data

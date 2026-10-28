@@ -226,32 +226,32 @@ class TestBackofficeAssemblyDataPage:
 
     def test_view_assembly_data_page_with_gsheet_source(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
         """Assembly data page loads with gsheet source parameter."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
         assert response.status_code == 200
         # Should show the gsheet configuration form
         assert b"Spreadsheet URL" in response.data or b"Google" in response.data
 
     def test_view_assembly_data_page_with_csv_source(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
         """Assembly data page loads with csv source parameter."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
         assert response.status_code == 200
 
     def test_view_assembly_data_page_invalid_source_ignored(
         self, logged_in_admin: FlaskClient, existing_assembly
     ) -> None:
         """Invalid source parameter is ignored."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=invalid")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=invalid")
         assert response.status_code == 200
 
     def test_view_assembly_data_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly) -> None:
         """Unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/data")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/data")
         assert response.status_code == 302
         assert "login" in response.location
 
     def test_view_assembly_data_nonexistent_assembly(self, logged_in_admin: FlaskClient) -> None:
         """Accessing data page for non-existent assembly redirects with error."""
-        response = logged_in_admin.get("/backoffice/assembly/00000000-0000-0000-0000-000000000000/data")
+        response = logged_in_admin.get("/backoffice/project/00000000-0000-0000-0000-000000000000/data")
         assert response.status_code == 302
 
 
@@ -264,7 +264,7 @@ class TestBackofficeDataSourceLocking:
         """Data source selector is disabled when gsheet config exists."""
         assembly, _ = assembly_with_gsheet
         # Access data page without source param - should auto-select gsheet and lock
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data")
         assert response.status_code == 200
         # Selector should be disabled
         assert b"disabled" in response.data
@@ -279,7 +279,7 @@ class TestBackofficeDataSourceLocking:
         """Data source auto-selects gsheet when config exists, ignoring source param."""
         assembly, _ = assembly_with_gsheet
         # Try to access with csv source - should still show gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=csv")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=csv")
         assert response.status_code == 200
         # Should show gsheet content, not csv
         assert b"Google Sheets Configuration" in response.data
@@ -288,7 +288,7 @@ class TestBackofficeDataSourceLocking:
 
     def test_data_source_unlocked_when_no_config_exists(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
         """Data source selector is enabled when no config exists."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data")
         assert response.status_code == 200
         # Selector should NOT be disabled (no config exists)
         # Check that the x-data urlSelect attribute is present (indicates interactivity)
@@ -302,7 +302,7 @@ class TestBackofficeDataSourceLocking:
 
         # Delete the config
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/delete",
+            f"/backoffice/project/{assembly.id}/gsheet/delete",
             follow_redirects=True,
         )
         assert response.status_code == 200
@@ -319,7 +319,7 @@ class TestBackofficeDataSourceLocking:
     ) -> None:
         """Gsheet option is selected in dropdown when config exists."""
         assembly, _ = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data")
         assert response.status_code == 200
         # The gsheet option should be selected
         assert b'value="gsheet" selected' in response.data or b'value="gsheet"' in response.data

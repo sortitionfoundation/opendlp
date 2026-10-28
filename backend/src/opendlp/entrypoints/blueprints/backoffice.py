@@ -103,7 +103,7 @@ def dashboard() -> ResponseReturnValue:
         return render_template("backoffice/dashboard.html", assemblies=[]), 500
 
 
-@backoffice_bp.route("/assembly/new", methods=["GET", "POST"])
+@backoffice_bp.route("/project/new", methods=["GET", "POST"])
 @login_required
 @require_create_assembly
 def new_assembly() -> ResponseReturnValue:
@@ -141,7 +141,20 @@ def new_assembly() -> ResponseReturnValue:
     return render_template("backoffice/create_assembly.html", form=form), 200
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>")
+@backoffice_bp.route("/assembly/<path:rest>")
+def redirect_old_assembly_url(rest: str) -> ResponseReturnValue:
+    """Send a bookmarked /backoffice/assembly/… URL to its /backoffice/project/… twin.
+
+    The interface calls the thing a project, and so do its URLs; the old paths
+    live on in bookmarks, emails and spreadsheets. The query string comes too.
+    """
+    target = f"/backoffice/project/{rest}"
+    if request.query_string:
+        target = f"{target}?{request.query_string.decode()}"
+    return redirect(target, code=301)
+
+
+@backoffice_bp.route("/project/<uuid:assembly_id>")
 @login_required
 def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly details page."""
@@ -327,7 +340,7 @@ def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
     return tables
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard")
+@backoffice_bp.route("/project/<uuid:assembly_id>/dashboard")
 @login_required
 def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly results dashboard (ticket 886).
@@ -392,7 +405,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/modal")
+@backoffice_bp.route("/project/<uuid:assembly_id>/dashboard/export/modal")
 @login_required
 def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the dashboard export modal fragment (HTMX-loaded).
@@ -426,7 +439,7 @@ def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     ), 200
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/run", methods=["POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/dashboard/export/run", methods=["POST"])
 @login_required
 def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run a dashboard export from the modal: CSV download or Google Sheets write."""
@@ -500,7 +513,7 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
     )
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/edit", methods=["GET", "POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice edit assembly page."""
@@ -575,7 +588,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/update-number-to-select", methods=["POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/update-number-to-select", methods=["POST"])
 @login_required
 def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Update just the number_to_select field for an assembly."""
@@ -748,7 +761,7 @@ def render_assembly_data_page(
     )
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
+@backoffice_bp.route("/project/<uuid:assembly_id>/data")
 @login_required
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly data page."""
@@ -777,7 +790,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/members")
+@backoffice_bp.route("/project/<uuid:assembly_id>/members")
 @login_required
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly team members page."""
@@ -838,7 +851,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/members/add", methods=["POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/members/add", methods=["POST"])
 @login_required
 def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Add a user to an assembly with a specific role."""
@@ -908,7 +921,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/members/<uuid:user_id>/remove", methods=["POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/members/<uuid:user_id>/remove", methods=["POST"])
 @login_required
 def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> ResponseReturnValue:
     """Remove a user from an assembly."""
@@ -962,7 +975,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/members/search")
+@backoffice_bp.route("/project/<uuid:assembly_id>/members/search")
 @login_required
 def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Search for users not yet added to the assembly.

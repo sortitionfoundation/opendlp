@@ -31,7 +31,7 @@ from tests.fakes import FakeStore, FakeUnitOfWork
 def _upload(client, assembly_id, csv_text, id_column="", filename="respondents.csv"):
     """POST a CSV upload to the respondents upload route."""
     return client.post(
-        f"/backoffice/assembly/{assembly_id}/data/upload-respondents",
+        f"/backoffice/project/{assembly_id}/data/upload-respondents",
         data={
             "file": (BytesIO(csv_text.encode()), filename),
             "id_column": id_column,
@@ -154,7 +154,7 @@ class TestBackofficeUploadRespondents:
     def test_upload_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Unauthenticated users are redirected to login."""
         response = client.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents",
+            f"/backoffice/project/{existing_assembly.id}/data/upload-respondents",
             data={"file": (BytesIO(b"id,name\n1,Test"), "respondents.csv")},
             content_type="multipart/form-data",
         )
@@ -167,7 +167,7 @@ class TestUploadCsvCleaning:
 
     def _upload(self, client: FlaskClient, assembly_id: uuid.UUID, content: bytes, id_column: str = ""):
         return client.post(
-            f"/backoffice/assembly/{assembly_id}/data/upload-respondents",
+            f"/backoffice/project/{assembly_id}/data/upload-respondents",
             data={"file": (BytesIO(content), "respondents.csv"), "id_column": id_column},
             content_type="multipart/form-data",
             follow_redirects=False,
@@ -227,7 +227,7 @@ class TestUploadCsvCleaning:
         )
 
     def _confirm_url(self, assembly_id: uuid.UUID) -> str:
-        return f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff"
+        return f"/backoffice/project/{assembly_id}/data/upload-respondents/confirm-diff"
 
     def _apply(self, client: FlaskClient, assembly_id: uuid.UUID):
         return client.post(self._confirm_url(assembly_id), data={"action": "confirm"}, follow_redirects=False)
@@ -311,7 +311,7 @@ class TestBackofficeDeleteRespondents:
             uow.commit()
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/delete-respondents",
+            f"/backoffice/project/{existing_assembly.id}/data/delete-respondents",
             follow_redirects=False,
         )
         with logged_in_admin.session_transaction() as session:
@@ -328,7 +328,7 @@ class TestUploadFormIdColumnHint:
     organiser typed."""
 
     def _data_page(self, client, assembly_id):
-        response = client.get(f"/backoffice/assembly/{assembly_id}/data?source=csv")
+        response = client.get(f"/backoffice/project/{assembly_id}/data?source=csv")
         assert response.status_code == 200
         return response.data.decode()
 
@@ -348,7 +348,7 @@ class TestUploadFormIdColumnHint:
         """Upload then delete: the form comes back with the remembered column."""
         _upload(logged_in_admin, existing_assembly.id, "nationbuilder_id,first_name\nR001,Alice\n")
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/delete-respondents",
+            f"/backoffice/project/{existing_assembly.id}/data/delete-respondents",
             follow_redirects=False,
         )
 
@@ -366,7 +366,7 @@ class TestUploadFormIdColumnHint:
         """
         _upload(logged_in_admin, existing_assembly.id, "<script>x</script>,first_name\nR001,Alice\n")
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/delete-respondents",
+            f"/backoffice/project/{existing_assembly.id}/data/delete-respondents",
             follow_redirects=False,
         )
 
@@ -424,7 +424,7 @@ class TestUploadDiffConfirmation:
         assert any("pre-filled from your last upload" in m for m in messages)
 
     def _confirm_diff_page(self, client: FlaskClient, assembly_id: uuid.UUID) -> str:
-        response = client.get(f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff")
+        response = client.get(f"/backoffice/project/{assembly_id}/data/upload-respondents/confirm-diff")
         assert response.status_code == 200
         return response.data.decode()
 
@@ -482,7 +482,7 @@ class TestBackofficeViewRespondentsPage:
         self, client: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/respondents")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -504,7 +504,7 @@ class TestBackofficeViewRespondentsPage:
             uow.assemblies.get(existing_assembly.id).respondents = respondents
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents")
         assert response.status_code == 200
         body = response.data
         for i in range(3):
@@ -530,10 +530,10 @@ class TestBackofficeViewRespondentsPage:
             uow.commit()
             respondent_ids = [r.id for r in respondents]
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents")
         assert response.status_code == 200
         for respondent_id in respondent_ids:
-            expected = f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent_id}"
+            expected = f"/backoffice/project/{existing_assembly.id}/respondents/{respondent_id}"
             assert expected.encode() in response.data
 
     def test_view_respondents_page_falls_back_to_email_local_part_when_no_name_fields(
@@ -551,7 +551,7 @@ class TestBackofficeViewRespondentsPage:
             ])
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents")
         assert response.status_code == 200
         assert b"jane.doe" in response.data
 
@@ -593,7 +593,7 @@ class TestRespondentsStatusFilter:
             ],
         )
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents").get_data(as_text=True)
 
         assert _status_options(body) == {
             "": "All statuses (5)",
@@ -612,7 +612,7 @@ class TestRespondentsStatusFilter:
     ) -> None:
         _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL])
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents").get_data(as_text=True)
 
         assert set(_status_options(body)) == {"", "POOL", "SELECTED", "CONFIRMED", "WITHDRAWN"}
 
@@ -621,7 +621,7 @@ class TestRespondentsStatusFilter:
     ) -> None:
         _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL])
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents?status=DELETED").get_data(
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents?status=DELETED").get_data(
             as_text=True
         )
 
@@ -634,7 +634,7 @@ class TestRespondentsStatusFilter:
         _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.TEST_SUBMISSION])
 
         body = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents?status=TEST_SUBMISSION"
+            f"/backoffice/project/{existing_assembly.id}/respondents?status=TEST_SUBMISSION"
         ).get_data(as_text=True)
 
         assert "Test_submission" not in body
@@ -645,7 +645,7 @@ class TestRespondentsStatusFilter:
     ) -> None:
         _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL, RespondentStatus.DELETED])
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents").get_data(as_text=True)
 
         assert "R-000" in body
         assert "R-001" not in body
@@ -655,7 +655,7 @@ class TestRespondentsStatusFilter:
     ) -> None:
         _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL, RespondentStatus.DELETED])
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents?status=DELETED").get_data(
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents?status=DELETED").get_data(
             as_text=True
         )
 
@@ -675,14 +675,14 @@ class TestBackofficeViewSingleRespondent:
                 uow, admin_user.id, existing_assembly.id, external_id="R001", attributes={}, email="alice@example.com"
             )
 
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
         assert response.status_code == 302
         assert "login" in response.location
 
     def test_view_respondent_not_found(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """An unknown respondent flashes not-found and redirects."""
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/{uuid.uuid4()}",
+            f"/backoffice/project/{existing_assembly.id}/respondents/{uuid.uuid4()}",
             follow_redirects=False,
         )
         assert response.status_code == 302
@@ -706,7 +706,7 @@ class TestBackofficeViewSingleRespondent:
             uow.assemblies.get(existing_assembly.id).respondents = [respondent]
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
         assert response.status_code == 200
         assert b"Sarah Jones" in response.data
         assert b"R001" in response.data
@@ -725,7 +725,7 @@ class TestBackofficeViewSingleRespondent:
                 email="sarah.jones@example.com",
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
         assert response.status_code == 200
         assert b"sarah.jones" in response.data
 
@@ -743,7 +743,7 @@ class TestBackofficeViewSingleRespondent:
             assert respondent is not None
             respondent_id = respondent.id
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent_id}")
         assert response.status_code == 200
         body = response.data
         assert b"R001" in body
@@ -789,7 +789,7 @@ class TestBackofficeViewSingleRespondent:
             )
             respondent = uow.respondents.get_by_assembly_id(existing_assembly.id)[0]
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
         assert response.status_code == 200
         body = response.data
         assert b"Age bracket" in body
@@ -812,7 +812,7 @@ class TestBackofficeViewSingleRespondent:
             update_field(uow, admin_user.id, existing_assembly.id, source.id, field_type=FieldType.DATE)
             respondent = uow.respondents.get_by_assembly_id(existing_assembly.id)[0]
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         # Formatted for the locale ("July 3, 1985" in en), never the stored ISO string.
@@ -836,7 +836,7 @@ class TestBackofficeViewSingleRespondent:
             respondent = create_respondent(uow, admin_user.id, other_id, external_id="R-OTHER", attributes={})
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}",
+            f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}",
             follow_redirects=False,
         )
         assert response.status_code == 302
@@ -857,7 +857,7 @@ class TestViewRespondentDeletionUI:
                 uow, admin_user.id, existing_assembly.id, external_id="R-DEL", attributes={}, email="x@example.com"
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
         assert response.status_code == 200
         assert b"Delete personal data" in response.data
 
@@ -877,7 +877,7 @@ class TestViewRespondentDeletionUI:
         with FakeUnitOfWork(store=fake_store) as uow:
             delete_respondent(uow, admin_user.id, existing_assembly.id, respondent.id, comment="gdpr")
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
         assert response.status_code == 200
         assert b"Personal data deleted" in response.data
         assert b"gdpr" in response.data
@@ -885,10 +885,10 @@ class TestViewRespondentDeletionUI:
 
 
 class TestDeleteRespondentRoute:
-    """POST /backoffice/assembly/<id>/respondents/<id>/delete branches."""
+    """POST /backoffice/project/<id>/respondents/<id>/delete branches."""
 
     def _delete_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/delete"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}/delete"
 
     def test_missing_comment_rejected(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
@@ -965,10 +965,10 @@ class TestSelectionStatusTransition:
     """Transition button render + POST validation branches."""
 
     def _transition_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/transition-status"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}/transition-status"
 
     def _view_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}"
 
     def test_view_page_shows_buttons_for_each_allowed_transition(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
@@ -1058,10 +1058,10 @@ class TestEditRespondentPage:
     """GET/POST edit form and validation branches."""
 
     def _edit_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/edit"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}/edit"
 
     def _view_url(self, assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> str:
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}"
 
     def _make_respondent(self, uow, admin_user_id, assembly_id, **kwargs):
         initialise_empty_schema(uow, admin_user_id, assembly_id)
@@ -1219,7 +1219,7 @@ class TestEditRespondentPage:
         response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
         assert response.status_code == 200
         assert b"This project has no respondent fields configured yet." in response.data
-        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
+        assert f"/project/{existing_assembly.id}/respondent-schema".encode() in response.data
         assert b"Save changes" not in response.data
         assert b"Change note" not in response.data
 
@@ -1273,6 +1273,6 @@ class TestEditRespondentPage:
         with FakeUnitOfWork(store=fake_store) as uow:
             self._make_respondent(uow, admin_user.id, existing_assembly.id)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents")
         assert response.status_code == 200
         assert b"Edit" in response.data

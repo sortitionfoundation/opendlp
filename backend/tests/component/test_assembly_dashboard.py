@@ -16,11 +16,11 @@ from tests.fakes import FakeUnitOfWork
 
 
 def _dashboard_url(assembly) -> str:
-    return f"/backoffice/assembly/{assembly.id}/dashboard"
+    return f"/backoffice/project/{assembly.id}/dashboard"
 
 
 def _members_url(assembly) -> str:
-    return f"/backoffice/assembly/{assembly.id}/members"
+    return f"/backoffice/project/{assembly.id}/members"
 
 
 def _indicator_values(html: str) -> list[str]:
@@ -356,7 +356,7 @@ class TestTheExportButton:
 
     def test_modal_of_a_missing_assembly_redirects_to_the_dashboard(self, logged_in_admin):
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{uuid.uuid4()}/dashboard/export/modal",
+            f"/backoffice/project/{uuid.uuid4()}/dashboard/export/modal",
             follow_redirects=True,
         )
 
@@ -373,7 +373,7 @@ class TestTheExportButton:
 
     def test_export_of_a_missing_assembly_redirects_to_the_dashboard(self, logged_in_admin):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{uuid.uuid4()}/dashboard/export/run",
+            f"/backoffice/project/{uuid.uuid4()}/dashboard/export/run",
             data={"file_type": "csv"},
             follow_redirects=True,
         )

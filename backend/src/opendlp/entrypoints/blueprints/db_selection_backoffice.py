@@ -1,5 +1,5 @@
 """ABOUTME: Backoffice DB selection routes for running sortition on database-stored data
-ABOUTME: Provides /backoffice/assembly/*/selection/db/* routes for selection, progress, and downloads"""
+ABOUTME: Provides /backoffice/project/*/selection/db/* routes for selection, progress, and downloads"""
 
 import uuid
 
@@ -54,7 +54,7 @@ db_selection_backoffice_bp = Blueprint("db_selection_backoffice", __name__)
 logger = structlog.get_logger(__name__)
 
 
-@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/check", methods=["POST"])
+@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/check", methods=["POST"])
 @login_required
 @require_assembly_management
 def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -98,7 +98,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/run", methods=["POST"])
+@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/run", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -141,7 +141,7 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/replacement/run", methods=["POST"])
+@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/replacement/run", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -205,7 +205,7 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/modal-progress/<uuid:run_id>")
+@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/modal-progress/<uuid:run_id>")
 @login_required
 def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return modal progress HTML fragment for HTMX polling of DB selection task status."""
@@ -259,7 +259,7 @@ def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
         return "", 500
 
 
-@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/<uuid:run_id>/cancel", methods=["POST"])
+@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -296,7 +296,7 @@ def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRe
 
 
 @db_selection_backoffice_bp.route(
-    "/assembly/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/selected", methods=["GET"]
+    "/project/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/selected", methods=["GET"]
 )
 @login_required
 @require_assembly_management
@@ -329,7 +329,7 @@ def download_db_selected(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
 
 
 @db_selection_backoffice_bp.route(
-    "/assembly/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/remaining", methods=["GET"]
+    "/project/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/remaining", methods=["GET"]
 )
 @login_required
 @require_assembly_management
@@ -362,7 +362,7 @@ def download_db_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
 
 
 @db_selection_backoffice_bp.route(
-    "/assembly/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/report",
+    "/project/<uuid:assembly_id>/selection/db/<uuid:run_id>/download/report",
     methods=["GET"],
 )
 @login_required
@@ -397,7 +397,7 @@ def download_db_selection_report(assembly_id: uuid.UUID, run_id: uuid.UUID) -> R
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/data/csv/settings", methods=["POST"])
+@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/data/csv/settings", methods=["POST"])
 @login_required
 @require_assembly_management
 def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -486,7 +486,7 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
 
-@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/reset", methods=["POST"])
+@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/reset", methods=["POST"])
 @login_required
 @require_assembly_management
 def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:

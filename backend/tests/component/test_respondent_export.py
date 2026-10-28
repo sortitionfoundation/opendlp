@@ -34,7 +34,7 @@ def _add_respondent(fake_store: FakeStore, assembly_id, external_id: str, status
 
 
 def _export(client: FlaskClient, assembly_id, status: str = ""):
-    return client.get(f"/backoffice/assembly/{assembly_id}/respondents/export?status={status}")
+    return client.get(f"/backoffice/project/{assembly_id}/respondents/export?status={status}")
 
 
 def _parse(response) -> list[dict[str, str]]:
@@ -119,7 +119,7 @@ class TestExportModal:
     ) -> None:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export/modal")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
@@ -132,7 +132,7 @@ class TestExportModal:
     ) -> None:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export/modal")
 
         body = response.get_data(as_text=True)
         assert "overwrite" in body.lower()
@@ -144,7 +144,7 @@ class TestExportModal:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.SELECTED)
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal?status=SELECTED"
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/modal?status=SELECTED"
         )
 
         body = response.get_data(as_text=True)
@@ -156,7 +156,7 @@ class TestExportModal:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.DELETED)
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal?status=DELETED"
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/modal?status=DELETED"
         )
 
         body = response.get_data(as_text=True)
@@ -176,7 +176,7 @@ class TestExportModal:
             )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export/modal")
         body = response.get_data(as_text=True)
         assert _SHEET_URL in body
         assert "Saved Tab" in body
@@ -202,7 +202,7 @@ class TestRespondentsPageGSheetLink:
             )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
@@ -215,7 +215,7 @@ class TestRespondentsPageGSheetLink:
     ) -> None:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents")
 
         assert "Exported to Google Sheets" not in response.get_data(as_text=True)
 
@@ -236,7 +236,7 @@ class TestRunExport:
         _add_respondent(fake_store, existing_assembly.id, "R-deleted", RespondentStatus.DELETED)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "DELETED",
@@ -257,7 +257,7 @@ class TestRunExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.SELECTED)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={"destination": "csv", "status": "SELECTED"},
         )
 
@@ -278,7 +278,7 @@ class TestRunExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "",
@@ -308,7 +308,7 @@ class TestRunExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "",
@@ -331,7 +331,7 @@ class TestRunExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={"destination": "gsheet", "status": "", "spreadsheet_url": "", "worksheet_name": "T"},
         )
 
@@ -354,7 +354,7 @@ class TestRunExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "",
@@ -381,7 +381,7 @@ class TestRunExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "",
@@ -446,7 +446,7 @@ class _FormControls(HTMLParser):
 
 
 def _modal_controls(client: FlaskClient, assembly_id) -> _FormControls:
-    response = client.get(f"/backoffice/assembly/{assembly_id}/respondents/export/modal")
+    response = client.get(f"/backoffice/project/{assembly_id}/respondents/export/modal")
     controls = _FormControls()
     controls.feed(response.get_data(as_text=True))
     return controls
@@ -478,7 +478,7 @@ class TestAutoExportInModal:
         )
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal?status=WITHDRAWN"
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/modal?status=WITHDRAWN"
         )
         controls = _FormControls()
         controls.feed(response.get_data(as_text=True))
@@ -491,7 +491,7 @@ class TestAutoExportInModal:
         _save_config(fake_store, existing_assembly.id, auto_export=False, auto_export_status_filter="POOL")
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal?status=WITHDRAWN"
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/modal?status=WITHDRAWN"
         )
         controls = _FormControls()
         controls.feed(response.get_data(as_text=True))
@@ -508,7 +508,7 @@ class TestRunExportWithAutoExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "selected_or_confirmed",
@@ -535,7 +535,7 @@ class TestRunExportWithAutoExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "",
@@ -554,7 +554,7 @@ class TestRunExportWithAutoExport:
         _save_config(fake_store, existing_assembly.id, auto_export=True, auto_export_status_filter="POOL")
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "",
@@ -574,7 +574,7 @@ class TestRunExportWithAutoExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={"destination": "csv", "status": ""},
         )
 
@@ -592,7 +592,7 @@ class TestStopAutoExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
         _save_config(fake_store, existing_assembly.id, auto_export=True)
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents").get_data(as_text=True)
 
         assert "Automatically exported to Google Sheets" in body
         assert "Stop automatic export" in body
@@ -603,7 +603,7 @@ class TestStopAutoExport:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
         _save_config(fake_store, existing_assembly.id)
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents").get_data(as_text=True)
 
         assert "Automatically exported" not in body
         assert "Stop automatic export" not in body
@@ -620,7 +620,7 @@ class TestStopAutoExport:
         _save_config(fake_store, existing_assembly.id, auto_export=True)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/auto/stop", follow_redirects=True
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/auto/stop", follow_redirects=True
         )
 
         assert "Automatic export stopped" in response.get_data(as_text=True)
@@ -634,7 +634,7 @@ class TestStopAutoExport:
     ) -> None:
         _save_config(fake_store, existing_assembly.id, auto_export=True)
 
-        response = logged_in_user.post(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/auto/stop")
+        response = logged_in_user.post(f"/backoffice/project/{existing_assembly.id}/respondents/export/auto/stop")
 
         assert response.status_code == 302
         config = _saved_config(fake_store, existing_assembly.id)

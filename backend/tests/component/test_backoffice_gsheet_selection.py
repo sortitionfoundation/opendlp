@@ -59,7 +59,7 @@ class TestBackofficeGSheetConfigForm:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test that new gsheet form is shown when no config exists."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
         assert response.status_code == 200
         assert b'name="url"' in response.data
         assert b"Save" in response.data or b"submit" in response.data.lower()
@@ -68,7 +68,7 @@ class TestBackofficeGSheetConfigForm:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test that gsheet form contains all required fields."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
         assert response.status_code == 200
 
         assert b'name="url"' in response.data
@@ -81,7 +81,7 @@ class TestBackofficeGSheetConfigForm:
     ) -> None:
         """Test that readonly view mode is shown when gsheet config exists (no mode param)."""
         assembly, _ = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet")
         assert response.status_code == 200
         assert b"Edit" in response.data or b"edit" in response.data.lower()
         assert b"docs.google.com/spreadsheets" in response.data
@@ -91,7 +91,7 @@ class TestBackofficeGSheetConfigForm:
     ) -> None:
         """Test that editable form is shown when mode=edit param is present."""
         assembly, _ = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet&mode=edit")
         assert response.status_code == 200
         assert b'name="url"' in response.data
         assert b"Save" in response.data or b"submit" in response.data.lower()
@@ -101,7 +101,7 @@ class TestBackofficeGSheetConfigForm:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test that form defaults are shown when creating new gsheet config."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
         assert response.status_code == 200
         assert b"Respondents" in response.data
         assert b"Categories" in response.data
@@ -109,7 +109,7 @@ class TestBackofficeGSheetConfigForm:
 
     def test_gsheet_form_contains_all_fields(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that gsheet form contains all key configuration fields."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
         assert response.status_code == 200
 
         assert b'name="url"' in response.data
@@ -131,7 +131,7 @@ class TestBackofficeGSheetFormSubmission:
     ) -> None:
         """Test validation error when creating gsheet config without URL."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
             data={
                 "url": "",
                 "team": "other",
@@ -152,7 +152,7 @@ class TestBackofficeGSheetFormSubmission:
     ) -> None:
         """Test validation error when creating gsheet config with invalid URL."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
             data={
                 "url": "https://example.com/not-a-google-sheet",
                 "team": "other",
@@ -173,7 +173,7 @@ class TestBackofficeGSheetFormSubmission:
         """Test validation error when updating gsheet config with invalid data."""
         assembly, _ = assembly_with_gsheet
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/gsheet/save",
             data={
                 "url": "",
                 "team": "other",
@@ -194,7 +194,7 @@ class TestBackofficeGSheetFormSubmission:
     ) -> None:
         """Test that warning is shown when columns_to_keep is empty."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
             data={
                 "url": "https://docs.google.com/spreadsheets/d/1warningtest/edit",
                 "team": "other",
@@ -217,7 +217,7 @@ class TestBackofficeGSheetFormSubmission:
     ) -> None:
         """Test that team-based defaults prevent columns_to_keep warning."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
             data={
                 "url": "https://docs.google.com/spreadsheets/d/1nowarningtest/edit",
                 "team": "uk",
@@ -241,12 +241,12 @@ class TestBackofficeGSheetFormSubmission:
         self, logged_in_user: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test regular users cannot access or submit gsheet configuration."""
-        get_response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        get_response = logged_in_user.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
         assert get_response.status_code in [302, 403]
 
     def test_gsheet_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Test gsheet page redirects to login when not authenticated."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -259,7 +259,7 @@ class TestBackofficeGSheetValidation:
     ) -> None:
         """Test hard validation: check_same_address=True requires address columns."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
             data={
                 "url": "https://docs.google.com/spreadsheets/d/validation123/edit",
                 "team": "other",
@@ -282,7 +282,7 @@ class TestBackofficeGSheetValidation:
     ) -> None:
         """Test hard validation passes when team auto-generates address columns."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
             data={
                 "url": "https://docs.google.com/spreadsheets/d/validation_team_123/edit",
                 "team": "uk",
@@ -305,7 +305,7 @@ class TestBackofficeGSheetValidation:
     ) -> None:
         """Test hard validation: check_same_address=False allows empty address columns."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
             data={
                 "url": "https://docs.google.com/spreadsheets/d/validation_pass_123/edit",
                 "team": "other",
@@ -328,7 +328,7 @@ class TestBackofficeGSheetValidation:
         """Test hard validation on edit: check_same_address=True requires address columns."""
         assembly, _gsheet = assembly_with_gsheet
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/gsheet/save",
             data={
                 "url": "https://docs.google.com/spreadsheets/d/edit_validation_123/edit",
                 "team": "other",
@@ -357,7 +357,7 @@ class TestBackofficeGSheetValidation:
 
         for invalid_url in invalid_urls:
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+                f"/backoffice/project/{existing_assembly.id}/gsheet/save",
                 data={
                     "url": invalid_url,
                     "team": "uk",
@@ -378,7 +378,7 @@ class TestBackofficeGSheetDelete:
     def test_delete_gsheet_config_not_found(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test deleting a non-existent gsheet configuration."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/delete",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/delete",
             data={},
             follow_redirects=False,
         )
@@ -394,7 +394,7 @@ class TestBackofficeGSheetDelete:
     ) -> None:
         """Test that delete button is shown in VIEW mode when config exists."""
         assembly, _ = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet")
         assert response.status_code == 200
         assert b"Remove" in response.data
         assert b"gsheet/delete" in response.data
@@ -404,7 +404,7 @@ class TestBackofficeGSheetDelete:
     ) -> None:
         """Test that delete button is shown in EDIT mode when config exists."""
         assembly, _ = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet&mode=edit")
         assert response.status_code == 200
         assert b"Remove" in response.data
         assert b"gsheet/delete" in response.data
@@ -413,7 +413,7 @@ class TestBackofficeGSheetDelete:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test that delete button is NOT shown in NEW mode when no config exists."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
         assert response.status_code == 200
         assert b"gsheet/delete" not in response.data
 
@@ -422,7 +422,7 @@ class TestBackofficeGSheetDelete:
     ) -> None:
         """Test regular users cannot delete gsheet configurations."""
         assembly, _gsheet = assembly_with_gsheet
-        response = logged_in_user.post(f"/backoffice/assembly/{assembly.id}/gsheet/delete", data={})
+        response = logged_in_user.post(f"/backoffice/project/{assembly.id}/gsheet/delete", data={})
         assert response.status_code in [302, 403]
 
     def test_delete_gsheet_redirects_when_not_logged_in(
@@ -430,7 +430,7 @@ class TestBackofficeGSheetDelete:
     ) -> None:
         """Test delete gsheet redirects to login when not authenticated."""
         assembly, _gsheet = assembly_with_gsheet
-        response = client.post(f"/backoffice/assembly/{assembly.id}/gsheet/delete")
+        response = client.post(f"/backoffice/project/{assembly.id}/gsheet/delete")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -442,7 +442,7 @@ class TestBackofficeSelectionTab:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test that selection page loads and shows configure message when no gsheet config."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/selection")
         assert response.status_code == 200
         assert b"configure" in response.data.lower() or b"Google Sheets" in response.data
 
@@ -451,7 +451,7 @@ class TestBackofficeSelectionTab:
     ) -> None:
         """Test that selection page loads when gsheet is configured."""
         assembly, _gsheet = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
         assert response.status_code == 200
         assert b"Selection" in response.data
 
@@ -459,7 +459,7 @@ class TestBackofficeSelectionTab:
         self, client: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test that unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/selection")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/selection")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -468,7 +468,7 @@ class TestBackofficeSelectionTab:
     ) -> None:
         """Test that selection page contains Selection History section."""
         assembly, _gsheet = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
         assert response.status_code == 200
         assert b"Selection History" in response.data
 
@@ -478,7 +478,7 @@ class TestBackofficeSelectionTab:
         """Test that legacy /selection/<run_id> URL redirects to query param version."""
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/{run_id}")
         assert response.status_code == 302
         assert f"current_selection={run_id}" in response.location
 
@@ -514,7 +514,7 @@ class TestGsheetWritingRoutesLandInTheRunningTasksModal:
         run_id = self._add_running(fake_store, assembly.id, SelectionTaskType.SELECT_GSHEET)
 
         with patch("opendlp.service_layer.sortition.tasks.run_select.apply_async") as mock_apply:
-            response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/run")
+            response = logged_in_admin.post(f"/backoffice/project/{assembly.id}/selection/run")
 
         mock_apply.assert_not_called()
         assert response.status_code == 302
@@ -527,7 +527,7 @@ class TestGsheetWritingRoutesLandInTheRunningTasksModal:
         run_id = self._add_running(fake_store, assembly.id, SelectionTaskType.DELETE_OLD_TABS)
 
         with patch("opendlp.service_layer.sortition.tasks.manage_old_tabs.delay") as mock_delay:
-            response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/manage-tabs/start-delete")
+            response = logged_in_admin.post(f"/backoffice/project/{assembly.id}/manage-tabs/start-delete")
 
         mock_delay.assert_not_called()
         assert response.status_code == 302
@@ -541,7 +541,7 @@ class TestGsheetWritingRoutesLandInTheRunningTasksModal:
 
         with patch("opendlp.service_layer.sortition.tasks.manage_old_tabs.delay") as mock_delay:
             mock_delay.return_value = Mock(id="celery-id")
-            response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/manage-tabs/start-list")
+            response = logged_in_admin.post(f"/backoffice/project/{assembly.id}/manage-tabs/start-list")
 
         mock_delay.assert_called_once()
         assert response.status_code == 302
@@ -554,7 +554,7 @@ class TestGsheetWritingRoutesLandInTheRunningTasksModal:
 
         with patch("opendlp.service_layer.sortition.tasks.run_select.delay") as mock_delay:
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/replacement/run", data={"number_to_select": "3"}
+                f"/backoffice/project/{assembly.id}/replacement/run", data={"number_to_select": "3"}
             )
 
         mock_delay.assert_not_called()

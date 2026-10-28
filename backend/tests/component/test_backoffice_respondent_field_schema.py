@@ -51,14 +51,14 @@ def _get_schema(fake_store, admin_user, assembly):
 class TestViewSchemaPage:
     def test_redirects_when_not_logged_in(self, client, existing_assembly):
         response = client.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema",
             follow_redirects=False,
         )
         assert response.status_code == 302
         assert "login" in response.location
 
     def test_renders_initialise_button_when_no_schema(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         assert b"Initialise empty schema" in response.data
 
@@ -72,7 +72,7 @@ class TestBuiltInQuestions:
         with FakeUnitOfWork(store=fake_store) as uow:
             respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, existing_assembly.id)
 
-        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema").get_data(
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema").get_data(
             as_text=True
         )
 
@@ -88,7 +88,7 @@ class TestBuiltInQuestions:
             email_id = email.id
 
         body = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{email_id}/edit-modal",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{email_id}/edit-modal",
             headers={"HX-Request": "true"},
         ).get_data(as_text=True)
 
@@ -100,7 +100,7 @@ class TestQuestionsList:
     """A card per section and a row per question, each with its own Edit button."""
 
     def _page(self, logged_in_admin, assembly):
-        return logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/respondent-schema").get_data(as_text=True)
+        return logged_in_admin.get(f"/backoffice/project/{assembly.id}/respondent-schema").get_data(as_text=True)
 
     def _rows(self, body):
         return {
@@ -123,7 +123,7 @@ class TestQuestionsList:
             assert "row-link" not in row
             links = re.findall(r'<a href="([^"]*/edit-modal)"\s+role="button"', row)
             assert links == [
-                f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{field.id}/edit-modal"
+                f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{field.id}/edit-modal"
             ]
 
     def test_each_rows_edit_button_is_labelled_with_an_icon(
@@ -259,7 +259,7 @@ class TestOnRegistrationPage:
         """The row shows the registration state as a read-only chip, not an inline select."""
         _seed_schema(fake_store, admin_user, existing_assembly)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         assert "Required" in body
@@ -272,7 +272,7 @@ class TestOnRegistrationPage:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/update",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/update",
             data={
                 "label": "Custom notes",
                 "on_registration_page": FieldOnRegistrationPage.NO.value,
@@ -298,7 +298,7 @@ class TestMoveField:
         top = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "a")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{top.id}/move",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{top.id}/move",
             data={"direction": "up"},
             follow_redirects=False,
         )
@@ -320,7 +320,7 @@ class TestAddField:
         _seed_schema(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/add",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/add",
             data={
                 "field_key": "preferred_contact",
                 "field_type": FieldType.CHOICE_RADIO.value,
@@ -339,7 +339,7 @@ class TestAddField:
         before = len(_get_schema(fake_store, admin_user, existing_assembly))
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/add",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/add",
             data={"field_key": "custom_notes"},
             follow_redirects=True,
         )
@@ -354,7 +354,7 @@ class TestAddField:
         before = len(_get_schema(fake_store, admin_user, existing_assembly))
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/add",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/add",
             data={"field_key": "!!!"},
             follow_redirects=True,
         )
@@ -368,14 +368,14 @@ class TestAddField:
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         assert b"Add a question" in response.data
-        assert f"/assembly/{existing_assembly.id}/respondent-schema/fields/new-modal".encode() in response.data
+        assert f"/project/{existing_assembly.id}/respondent-schema/fields/new-modal".encode() in response.data
 
     def test_add_form_absent_without_schema(self, logged_in_admin, existing_assembly):
         # No schema yet: the Initialise prompt shows instead of the add form.
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         assert b"Add a question" not in response.data
 
@@ -386,7 +386,7 @@ class TestDeleteField:
         fixed_field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.is_fixed)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{fixed_field.id}/delete",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{fixed_field.id}/delete",
             data={},
             follow_redirects=True,
         )
@@ -399,13 +399,13 @@ class TestDeleteField:
 class TestFieldsTab:
     def test_the_tab_bar_carries_no_fields_entry(self, logged_in_admin, existing_assembly):
         """The fields editor is reached through the Registration workflow, not its own tab."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
         assert response.status_code == 200
-        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() not in response.data
+        assert f"/project/{existing_assembly.id}/respondent-schema".encode() not in response.data
 
     def test_the_old_route_still_serves_the_fields_editor(self, logged_in_admin, existing_assembly):
         # Bookmarks and in-flight links keep working; the page is step 2 now.
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         assert b"Registration questions" in response.data
 
@@ -414,14 +414,14 @@ class TestFieldsTab:
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
         assert "dialog-panel--takeover" in body
         assert 'class="setup-step"' in body
         assert re.search(r"<main [^>]*\binert\b", body)
-        assert f'href="/backoffice/assembly/{existing_assembly.id}/registration"' in body
+        assert f'href="/backoffice/project/{existing_assembly.id}/registration"' in body
         assert body.index("dialog-panel--takeover") < body.index('id="field-modal-container"')
 
 
@@ -429,7 +429,7 @@ class TestFieldTypeAndOptions:
     def test_schema_page_renders_type_summary(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
         assert b"Question type" in body
@@ -445,7 +445,7 @@ class TestFieldTypeAndOptions:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
             data={
                 "label": custom.label,
                 "group": custom.group.value,
@@ -468,7 +468,7 @@ class TestFieldTypeAndOptions:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
             data={
                 "label": custom.label,
                 "group": custom.group.value,
@@ -498,7 +498,7 @@ class TestFieldTypeAndOptions:
             )
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/options/remove",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/options/remove",
             data={"value": "a"},
             follow_redirects=False,
         )
@@ -528,7 +528,7 @@ class TestFieldTypeAndOptions:
             )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/options/update",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/options/update",
             data={
                 "old_value": "old",
                 "value": "renamed",
@@ -559,7 +559,7 @@ class TestFieldTypeAndOptions:
                 options=[ChoiceOption(value="one", help_text="first option"), ChoiceOption(value="two")],
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
         assert b"one, two" in body
@@ -581,7 +581,7 @@ class TestFieldTypeAndOptions:
                 options=[ChoiceOption(value=f"opt_{i}") for i in range(9)],
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         assert "opt_5" in body
@@ -591,7 +591,7 @@ class TestFieldTypeAndOptions:
     def test_guess_button_shown_when_conditions_met(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         assert b"Guess question types from data" in response.data
 
@@ -599,7 +599,7 @@ class TestFieldTypeAndOptions:
         with FakeUnitOfWork(store=fake_store) as uow:
             respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, existing_assembly.id)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         assert b"Guess question types from data" not in response.data
 
@@ -618,7 +618,7 @@ class TestFieldTypeAndOptions:
                         field_type=FieldType.LONGTEXT,
                     )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         assert b"Guess question types from data" not in response.data
 
@@ -640,7 +640,7 @@ class TestFieldTypeAndOptions:
             )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
             data={
                 "label": custom.label,
                 "group": custom.group.value,
@@ -659,7 +659,7 @@ class TestFieldTypeAndOptions:
         email_field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "email")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{email_field.id}/update",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{email_field.id}/update",
             data={
                 "label": email_field.label,
                 "group": email_field.group.value,
@@ -679,7 +679,7 @@ class TestFieldModal:
     """The HTMX add/edit field modal: fragments, full-page fallback, and saves."""
 
     def _base(self, existing_assembly):
-        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        return f"/backoffice/project/{existing_assembly.id}/respondent-schema"
 
     def test_new_modal_htmx_returns_a_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """With HX-Request the route serves just the dialog, not a whole page."""
@@ -1607,28 +1607,28 @@ class TestFieldSpecJson:
 
     def test_redirects_when_not_logged_in(self, client, existing_assembly):
         response = client.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json",
+            f"/backoffice/project/{existing_assembly.id}/respondent-schema.json",
             follow_redirects=False,
         )
         assert response.status_code == 302
         assert "login" in response.location
 
     def test_user_without_access_gets_403_and_no_schema(self, logged_in_user, existing_assembly):
-        response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+        response = logged_in_user.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema.json")
         assert response.status_code == 403
         body = response.get_json()
         assert "fields" not in body
         assert body["error"]
 
     def test_unknown_assembly_gets_404(self, logged_in_admin):
-        response = logged_in_admin.get(f"/backoffice/assembly/{uuid.uuid4()}/respondent-schema.json")
+        response = logged_in_admin.get(f"/backoffice/project/{uuid.uuid4()}/respondent-schema.json")
         assert response.status_code == 404
         assert response.get_json()["error"]
 
     def test_returns_the_columns_of_the_imported_csv(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema.json")
 
         assert response.status_code == 200
         assert response.mimetype == "application/json"
@@ -1670,7 +1670,7 @@ class TestFieldSpecJson:
                 )
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema.json")
 
         assert response.status_code == 200
         body = response.get_json()
@@ -1686,7 +1686,7 @@ class TestDerivedFieldsLiveOnTargetSources:
     """Computed questions are set up on the target data sources step; this editor never shows or edits them."""
 
     def _base(self, existing_assembly):
-        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        return f"/backoffice/project/{existing_assembly.id}/respondent-schema"
 
     def _create_derived(self, fake_store, admin_user, existing_assembly):
         """An age bracket computed from a year_of_birth question, created the way the target step does."""
@@ -1760,7 +1760,7 @@ class TestDerivedFieldsLiveOnTargetSources:
 
         response = logged_in_admin.get(f"{self._base(existing_assembly)}/fields/{derived.id}/edit-modal")
         assert response.status_code == 302
-        assert response.location.endswith(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}/target-sources")
 
         page = logged_in_admin.get(response.location).get_data(as_text=True)
         assert "Computed questions are set up on the &#39;Link targets to questions&#39; step" in page
@@ -1774,7 +1774,7 @@ class TestDerivedFieldsLiveOnTargetSources:
             f"{self._base(existing_assembly)}/fields/{derived.id}/edit-modal", headers={"HX-Request": "true"}
         )
         assert response.status_code == 200
-        assert response.headers["HX-Redirect"].endswith(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        assert response.headers["HX-Redirect"].endswith(f"/backoffice/project/{existing_assembly.id}/target-sources")
 
     def test_the_derived_field_routes_are_gone(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         derived = self._create_derived(fake_store, admin_user, existing_assembly)
@@ -1820,7 +1820,7 @@ class TestTargetLinkedFieldUI:
     """A field that feeds a target renders a chip, and its edit modal locks type and answer values."""
 
     def _base(self, existing_assembly):
-        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        return f"/backoffice/project/{existing_assembly.id}/respondent-schema"
 
     def _seed_linked_field(self, fake_store, admin_user, assembly):
         _seed_schema(fake_store, admin_user, assembly)
@@ -1994,7 +1994,7 @@ class TestRoutesTurnAwayThoseWithoutAccess:
     """
 
     def _call(self, client, method, path, assembly_id, field_id):
-        url = f"/backoffice/assembly/{assembly_id}/respondent-schema" + path.format(field_id=field_id)
+        url = f"/backoffice/project/{assembly_id}/respondent-schema" + path.format(field_id=field_id)
         if method == "get":
             return client.get(url, headers={"HX-Request": "true"})
         data = {"modal": "1", "field_key": "shoe_size", "type_choice": "text", "direction": "up", "value": "x"}
@@ -2059,7 +2059,7 @@ class TestOneUnitOfWorkPerRequest:
         self, logged_in_admin, existing_assembly, admin_user, fake_store, blocks_opened
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
-        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        base = f"/backoffice/project/{existing_assembly.id}/respondent-schema"
         notes_id = self._field_id(fake_store, existing_assembly, "custom_notes")
         htmx = {"HX-Request": "true"}
         baseline = self._baseline(blocks_opened, logged_in_admin)

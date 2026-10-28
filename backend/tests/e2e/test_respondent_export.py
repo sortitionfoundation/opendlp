@@ -42,7 +42,7 @@ class TestRespondentExportSmoke:
                 csv_content=_CSV,
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export")
 
         assert response.status_code == 200
         assert response.mimetype == "text/csv"
@@ -64,7 +64,7 @@ class TestRespondentExportSmoke:
                 csv_content=_CSV,
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export")
 
         rows = _parse(response)
         prefix = "https://opendlp.example.org/"
@@ -97,7 +97,7 @@ class TestRespondentExportSmoke:
             )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export")
 
         by_id = {row["external_id"]: row for row in _parse(response)}
         assert by_id["R-form"]["registration_page"] == "spring-sign-up"
@@ -130,7 +130,7 @@ class TestGSheetExportSmoke:
         sheet_url = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "",
@@ -162,7 +162,7 @@ class TestGSheetExportSmoke:
         sheet_url = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "selected_or_confirmed",
@@ -180,7 +180,7 @@ class TestGSheetExportSmoke:
             assert config.auto_export is True
             assert config.auto_export_status_filter == "selected_or_confirmed"
 
-        response = logged_in_admin.post(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/auto/stop")
+        response = logged_in_admin.post(f"/backoffice/project/{existing_assembly.id}/respondents/export/auto/stop")
         assert response.status_code == 302
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:

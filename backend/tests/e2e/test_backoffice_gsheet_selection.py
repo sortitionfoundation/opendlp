@@ -18,10 +18,10 @@ class TestBackofficeGSheetFormSubmission:
 
     def test_create_gsheet_config_success(self, logged_in_admin, existing_assembly):
         """Test successfully creating a new gsheet configuration."""
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=gsheet")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
             data={
                 "csrf_token": csrf_token,
                 "url": "https://docs.google.com/spreadsheets/d/1abc123/edit",
@@ -52,10 +52,10 @@ class TestBackofficeGSheetFormSubmission:
     def test_update_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
         """Test successfully updating an existing gsheet configuration."""
         assembly, _ = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet&mode=edit")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/gsheet/save",
             data={
                 "csrf_token": csrf_token,
                 "url": "https://docs.google.com/spreadsheets/d/updated123/edit",
@@ -86,7 +86,7 @@ class TestBackofficeGSheetFormSubmission:
         updated_url = "https://docs.google.com/spreadsheets/d/updated_eu_123/edit"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/gsheet/save",
             data={
                 "url": updated_url,
                 "team": "eu",
@@ -97,7 +97,7 @@ class TestBackofficeGSheetFormSubmission:
                 "already_selected_tab": "Selected",
                 "generate_remaining_tab": "y",
                 "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit"
+                    logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet&mode=edit"
                 ),
             },
             follow_redirects=False,
@@ -122,7 +122,7 @@ class TestBackofficeGSheetFormSubmission:
         updated_url = "https://docs.google.com/spreadsheets/d/updated_custom_123/edit"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/gsheet/save",
             data={
                 "url": updated_url,
                 "team": "other",
@@ -136,7 +136,7 @@ class TestBackofficeGSheetFormSubmission:
                 "columns_to_keep_string": "first_name, last_name, email, phone",
                 "generate_remaining_tab": "y",
                 "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit"
+                    logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet&mode=edit"
                 ),
             },
             follow_redirects=False,
@@ -163,10 +163,10 @@ class TestBackofficeGSheetDelete:
     def test_delete_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
         """Test successfully deleting a gsheet configuration."""
         assembly, _ = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/delete",
+            f"/backoffice/project/{assembly.id}/gsheet/delete",
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
@@ -187,13 +187,13 @@ class TestBackofficeGSheetDelete:
         assembly = existing_assembly
 
         # Initially no gsheet - should show new form
-        initial_response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        initial_response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet")
         assert initial_response.status_code == 200
         assert b'name="url"' in initial_response.data
 
         # Create gsheet
         logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/gsheet/save",
             data={
                 "url": "https://docs.google.com/spreadsheets/d/state_transition_123/edit",
                 "team": "uk",
@@ -203,25 +203,25 @@ class TestBackofficeGSheetDelete:
                 "replace_targets_tab": "Replacement",
                 "already_selected_tab": "Selected",
                 "id_column": "state_id",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet"),
             },
         )
 
         # Now has gsheet - should show view mode
-        view_response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        view_response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet")
         assert view_response.status_code == 200
         assert b"state_transition_123" in view_response.data
 
         # Delete gsheet
         logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/delete",
+            f"/backoffice/project/{assembly.id}/gsheet/delete",
             data={
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet"),
             },
         )
 
         # Back to no gsheet - should show new form again
-        final_response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
+        final_response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet")
         assert final_response.status_code == 200
         assert b'name="url"' in final_response.data
 
@@ -239,9 +239,9 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_load_task",
             return_value=mock_task_id,
         ) as mock_start_load:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/load",
+                f"/backoffice/project/{assembly.id}/selection/load",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -255,7 +255,7 @@ class TestBackofficeSelectionTab:
     def test_selection_load_redirects_when_not_logged_in(self, client, assembly_with_gsheet):
         """Test that load endpoint redirects to login when not authenticated."""
         assembly, _ = assembly_with_gsheet
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/load")
+        response = client.post(f"/backoffice/project/{assembly.id}/selection/load")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -269,9 +269,9 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_select_task",
             return_value=mock_task_id,
         ) as mock_start_select:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/run",
+                f"/backoffice/project/{assembly.id}/selection/run",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -285,7 +285,7 @@ class TestBackofficeSelectionTab:
     def test_selection_run_redirects_when_not_logged_in(self, client, assembly_with_gsheet):
         """Test that run endpoint redirects to login when not authenticated."""
         assembly, _ = assembly_with_gsheet
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/run")
+        response = client.post(f"/backoffice/project/{assembly.id}/selection/run")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -299,9 +299,9 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_select_task",
             return_value=mock_task_id,
         ) as mock_start_select:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/run?test=1",
+                f"/backoffice/project/{assembly.id}/selection/run?test=1",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -320,9 +320,9 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_select_task",
             side_effect=NotFoundError("Gsheet config not found"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/run",
+                f"/backoffice/project/{assembly.id}/selection/run",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -338,9 +338,9 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_select_task",
             side_effect=InvalidSelection("Cannot run selection"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/run",
+                f"/backoffice/project/{assembly.id}/selection/run",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -379,7 +379,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/modal-progress/{run_id}")
 
             assert response.status_code == 200
             assert b"hx-get" in response.data
@@ -394,9 +394,9 @@ class TestBackofficeSelectionTab:
         run_id = uuid.uuid4()
 
         with patch("opendlp.entrypoints.blueprints.gsheets.cancel_task") as mock_cancel:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/{run_id}/cancel",
+                f"/backoffice/project/{assembly.id}/selection/{run_id}/cancel",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -415,9 +415,9 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_load_task",
             side_effect=NotFoundError("Gsheet config not found"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/load",
+                f"/backoffice/project/{assembly.id}/selection/load",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -435,9 +435,9 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_load_task",
             side_effect=InsufficientPermissions(action="load_gsheet", required_role="admin"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/load",
+                f"/backoffice/project/{assembly.id}/selection/load",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -470,7 +470,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_selection={run_id}")
             assert response.status_code == 200
             assert b"Selection" in response.data
 
@@ -485,7 +485,7 @@ class TestBackofficeSelectionTab:
             side_effect=NotFoundError("Task not found"),
         ):
             response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection/{run_id}",
+                f"/backoffice/project/{assembly.id}/selection/{run_id}",
                 follow_redirects=True,
             )
             # Should redirect to dashboard with error
@@ -500,7 +500,7 @@ class TestBackofficeSelectionTab:
         # Even without mocking, the endpoint should respond with redirect
         # (either success redirect or error redirect)
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/history/{run_id}",
+            f"/backoffice/project/{assembly.id}/selection/history/{run_id}",
             follow_redirects=False,
         )
 
@@ -523,7 +523,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/modal-progress/{run_id}")
             assert response.status_code == 404
             assert response.data == b""
 
@@ -537,7 +537,7 @@ class TestBackofficeSelectionTab:
             side_effect=InsufficientPermissions("No access"),
         ):
             response = logged_in_admin.get(
-                f"/backoffice/assembly/{existing_assembly.id}/selection/modal-progress/{run_id}"
+                f"/backoffice/project/{existing_assembly.id}/selection/modal-progress/{run_id}"
             )
             assert response.status_code == 403
             assert response.data == b""
@@ -574,7 +574,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/modal-progress/{run_id}")
 
             assert response.status_code == 200
             # Modal stops polling by not including hx-get when finished
@@ -612,7 +612,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/modal-progress/{run_id}")
 
             assert response.status_code == 200
             # Modal stops polling by not including hx-get when finished
@@ -641,7 +641,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/modal-progress/{run_id}")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/modal-progress/{run_id}")
             assert response.status_code == 404
 
     def test_selection_with_current_selection_renders_modal(self, logged_in_admin, assembly_with_gsheet):
@@ -675,7 +675,7 @@ class TestBackofficeSelectionTab:
                 return_value=mock_result,
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_selection={run_id}")
 
             assert response.status_code == 200
             assert b"selection-progress-modal" in response.data
@@ -692,9 +692,9 @@ class TestBackofficeSelectionTab:
             "opendlp.entrypoints.blueprints.gsheets.cancel_task",
             side_effect=InvalidSelection("Cannot cancel completed task"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/selection/{run_id}/cancel",
+                f"/backoffice/project/{assembly.id}/selection/{run_id}/cancel",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )

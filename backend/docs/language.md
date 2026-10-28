@@ -80,7 +80,7 @@ door. The move from "assembly" to "project" is the current example.
 registration page, team and selections. It is lowercase in running text: "Run
 the replacement selection for this project", "Your projects", "Create project".
 It used to be called an assembly, and the code still calls it one everywhere
-(`Assembly`, `assembly_id`, `/backoffice/assembly/…`); see
+(`Assembly`, `assembly_id`, the `assembly_id` in every URL); see
 [Code names are not interface words](#code-names-are-not-interface-words). The
 interface changed because "assembly" is the wrong word for many of the people
 who use it. Not everyone runs a citizens' assembly: the gathering may be a
@@ -284,9 +284,11 @@ word leaks out of the repo in a few places that are harder to change than a
 label: the `MAX_IMAGES_PER_ASSEMBLY` environment variables, the `"assembly"` key
 in the respondent field spec JSON, and the `{{ assembly.title }}` variables
 organisers have typed into saved emails. Those keep working. Where the code's
-word is itself on the page — the email step's variable picker, the project's
-URL — the interface offers the `project` spelling and the `assembly` spelling
-goes on being accepted.
+word is itself on the page — the email step's variable picker, the intro's
+variables, the project's URL — the interface offers the `project` spelling and
+the `assembly` spelling goes on being accepted: `/backoffice/assembly/…`
+redirects to `/backoffice/project/…`, and `{{ assembly.title }}` renders the
+same as `{{ project.title }}`.
 
 ## Writing
 

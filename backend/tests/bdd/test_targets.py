@@ -38,12 +38,12 @@ _current_assembly_id: list[str] = []
 
 
 def _targets_url(assembly_id: str) -> str:
-    return f"{Urls.base}/backoffice/assembly/{assembly_id}/targets"
+    return f"{Urls.base}/backoffice/project/{assembly_id}/targets"
 
 
 def _details_url_pattern(assembly_id: str) -> re.Pattern[str]:
     """The details tab, with or without the ?source= the tabs carry."""
-    return re.compile(re.escape(f"{Urls.base}/backoffice/assembly/{assembly_id}") + r"(\?.*)?$")
+    return re.compile(re.escape(f"{Urls.base}/backoffice/project/{assembly_id}") + r"(\?.*)?$")
 
 
 def _row_for(page: Page, value: str):

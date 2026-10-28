@@ -1,5 +1,5 @@
 """ABOUTME: Backoffice routes for CRUD operations on assembly respondents
-ABOUTME: Provides respondent viewing, CSV upload, and deletion under /backoffice/assembly/*/respondents"""
+ABOUTME: Provides respondent viewing, CSV upload, and deletion under /backoffice/project/*/respondents"""
 
 import contextlib
 import uuid
@@ -159,7 +159,7 @@ def _run_csv_import(
     return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/data/upload-respondents", methods=["POST"])
+@respondents_bp.route("/project/<uuid:assembly_id>/data/upload-respondents", methods=["POST"])
 @login_required
 def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Receive a CSV upload, then either import directly or surface a diff."""
@@ -275,7 +275,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/data/upload-respondents/confirm-diff", methods=["GET"])
+@respondents_bp.route("/project/<uuid:assembly_id>/data/upload-respondents/confirm-diff", methods=["GET"])
 @login_required
 def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the schema-diff confirmation page for a pending CSV upload."""
@@ -354,7 +354,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     ), 200
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/data/upload-respondents/confirm-diff", methods=["POST"])
+@respondents_bp.route("/project/<uuid:assembly_id>/data/upload-respondents/confirm-diff", methods=["POST"])
 @login_required
 def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Apply a previously-stashed CSV upload, or cancel it."""
@@ -411,7 +411,7 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     return response
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/data/delete-respondents", methods=["POST"])
+@respondents_bp.route("/project/<uuid:assembly_id>/data/delete-respondents", methods=["POST"])
 @login_required
 def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete all respondents for an assembly."""
@@ -457,7 +457,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/export")
+@respondents_bp.route("/project/<uuid:assembly_id>/respondents/export")
 @login_required
 def export_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Export respondents as a CSV download, filtered by selection status."""
@@ -523,7 +523,7 @@ def _export_status_options() -> list[dict[str, str]]:
     ]
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/export/modal")
+@respondents_bp.route("/project/<uuid:assembly_id>/respondents/export/modal")
 @login_required
 def export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the export modal fragment (HTMX-loaded)."""
@@ -555,7 +555,7 @@ def export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     ), 200
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/export/run", methods=["POST"])
+@respondents_bp.route("/project/<uuid:assembly_id>/respondents/export/run", methods=["POST"])
 @login_required
 def run_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run an export from the modal: CSV download or Google Sheets write."""
@@ -637,7 +637,7 @@ def _run_gsheet_export(
     )
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/export/auto/stop", methods=["POST"])
+@respondents_bp.route("/project/<uuid:assembly_id>/respondents/export/auto/stop", methods=["POST"])
 @login_required
 def stop_auto_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Switch off the automatic Google Sheets export without touching the sheet."""
@@ -685,7 +685,7 @@ def _status_filter_options(status_counts: dict[RespondentStatus, int], status_fi
     return options
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents")
+@respondents_bp.route("/project/<uuid:assembly_id>/respondents")
 @login_required
 def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly respondents page."""
@@ -799,7 +799,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 @respondents_bp.route(
-    "/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>/delete",
+    "/project/<uuid:assembly_id>/respondents/<uuid:respondent_id>/delete",
     methods=["POST"],
 )
 @login_required
@@ -855,7 +855,7 @@ def delete_respondent_route(assembly_id: uuid.UUID, respondent_id: uuid.UUID) ->
         return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
 
 
-@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>")
+@respondents_bp.route("/project/<uuid:assembly_id>/respondents/<uuid:respondent_id>")
 @login_required
 def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:
     """View one respondent"""
@@ -1008,7 +1008,7 @@ def _edit_respondent_post(
 
 
 @respondents_bp.route(
-    "/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>/edit",
+    "/project/<uuid:assembly_id>/respondents/<uuid:respondent_id>/edit",
     methods=["GET", "POST"],
 )
 @login_required
@@ -1079,7 +1079,7 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
 
 
 @respondents_bp.route(
-    "/assembly/<uuid:assembly_id>/respondents/<uuid:respondent_id>/transition-status",
+    "/project/<uuid:assembly_id>/respondents/<uuid:respondent_id>/transition-status",
     methods=["POST"],
 )
 @login_required

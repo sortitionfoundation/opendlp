@@ -60,12 +60,12 @@ class TestBackofficeUploadRespondents:
         csv_content = "name,person_id,age\nAlice,P001,30\nBob,P002,25"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents",
+            f"/backoffice/project/{existing_assembly.id}/data/upload-respondents",
             data={
                 "file": (BytesIO(csv_content.encode()), "respondents.csv"),
                 "id_column": "person_id",
                 "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{existing_assembly.id}/data?source=csv"
+                    logged_in_admin, f"/backoffice/project/{existing_assembly.id}/data?source=csv"
                 ),
             },
             content_type="multipart/form-data",
@@ -104,10 +104,10 @@ class TestBackofficeDeleteRespondents:
             assert len(respondents) > 0
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_respondents.id}/data/delete-respondents",
+            f"/backoffice/project/{assembly_with_respondents.id}/data/delete-respondents",
             data={
                 "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/assembly/{assembly_with_respondents.id}/data?source=csv"
+                    logged_in_admin, f"/backoffice/project/{assembly_with_respondents.id}/data?source=csv"
                 ),
             },
             follow_redirects=False,
@@ -127,11 +127,11 @@ class TestUploadDiffConfirmation:
 
     def _upload(self, client, assembly_id, csv_text, filename="respondents.csv", id_column=""):
         return client.post(
-            f"/backoffice/assembly/{assembly_id}/data/upload-respondents",
+            f"/backoffice/project/{assembly_id}/data/upload-respondents",
             data={
                 "file": (BytesIO(csv_text.encode()), filename),
                 "id_column": id_column,
-                "csrf_token": get_csrf_token(client, f"/backoffice/assembly/{assembly_id}/data?source=csv"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{assembly_id}/data?source=csv"),
             },
             content_type="multipart/form-data",
             follow_redirects=False,
@@ -139,11 +139,11 @@ class TestUploadDiffConfirmation:
 
     def _confirm(self, client, assembly_id, action="confirm"):
         return client.post(
-            f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff",
+            f"/backoffice/project/{assembly_id}/data/upload-respondents/confirm-diff",
             data={
                 "csrf_token": get_csrf_token(
                     client,
-                    f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff",
+                    f"/backoffice/project/{assembly_id}/data/upload-respondents/confirm-diff",
                 ),
                 "action": action,
             },
@@ -181,7 +181,7 @@ class TestUploadDiffConfirmation:
             "external_id,first_name,postcode\nR002,Bob,SW1\n",
         )
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff"
+            f"/backoffice/project/{existing_assembly.id}/data/upload-respondents/confirm-diff"
         )
         assert response.status_code == 200
         body = response.data
@@ -201,11 +201,11 @@ class TestUploadDiffConfirmation:
         )
 
         confirm_response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+            f"/backoffice/project/{existing_assembly.id}/data/upload-respondents/confirm-diff",
             data={
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+                    f"/backoffice/project/{existing_assembly.id}/data/upload-respondents/confirm-diff",
                 ),
                 "action": "confirm",
             },
@@ -235,11 +235,11 @@ class TestUploadDiffConfirmation:
         )
 
         cancel_response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+            f"/backoffice/project/{existing_assembly.id}/data/upload-respondents/confirm-diff",
             data={
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
-                    f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+                    f"/backoffice/project/{existing_assembly.id}/data/upload-respondents/confirm-diff",
                 ),
                 "action": "cancel",
             },
@@ -257,7 +257,7 @@ class TestUploadDiffConfirmation:
     ):
         # No prior upload — visiting the confirm page should redirect.
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/data/upload-respondents/confirm-diff",
+            f"/backoffice/project/{existing_assembly.id}/data/upload-respondents/confirm-diff",
             follow_redirects=False,
         )
         assert response.status_code == 302
@@ -385,7 +385,7 @@ class TestBackofficeViewRespondentsPage:
         assembly_with_respondents: Assembly,
     ):
         """Test that respondents page loads successfully for CSV data source."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_with_respondents.id}/respondents")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_with_respondents.id}/respondents")
 
         assert response.status_code == 200
         # Should see the page content
@@ -408,7 +408,7 @@ class TestBackofficeViewSingleRespondent:
                 email="alice@example.com",
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
         assert response.status_code == 200
         assert b"R001" in response.data
         assert b"alice@example.com" in response.data
@@ -416,13 +416,13 @@ class TestBackofficeViewSingleRespondent:
 
 
 class TestDeleteRespondentRoute:
-    """POST /backoffice/assembly/<id>/respondents/<id>/delete smoke."""
+    """POST /backoffice/project/<id>/respondents/<id>/delete smoke."""
 
     def _delete_url(self, assembly_id, respondent_id) -> str:
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/delete"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}/delete"
 
     def _view_url(self, assembly_id, respondent_id) -> str:
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}"
 
     def test_admin_can_delete_with_comment(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
@@ -446,7 +446,7 @@ class TestDeleteRespondentRoute:
             follow_redirects=False,
         )
         assert response.status_code == 302
-        assert f"/backoffice/assembly/{existing_assembly.id}/respondents" in response.location
+        assert f"/backoffice/project/{existing_assembly.id}/respondents" in response.location
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             reloaded = uow.respondents.get(respondent.id)
@@ -462,10 +462,10 @@ class TestSelectionStatusTransition:
     """POST /.../transition-status smoke."""
 
     def _transition_url(self, assembly_id, respondent_id):
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/transition-status"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}/transition-status"
 
     def _view_url(self, assembly_id, respondent_id):
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}"
 
     def test_post_valid_transition_updates_and_flashes(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
@@ -496,10 +496,10 @@ class TestSelectionStatusTransition:
 
 
 class TestEditRespondentPage:
-    """POST /backoffice/assembly/<id>/respondents/<id>/edit smoke."""
+    """POST /backoffice/project/<id>/respondents/<id>/edit smoke."""
 
     def _edit_url(self, assembly_id, respondent_id) -> str:
-        return f"/backoffice/assembly/{assembly_id}/respondents/{respondent_id}/edit"
+        return f"/backoffice/project/{assembly_id}/respondents/{respondent_id}/edit"
 
     def _make_respondent(self, uow, admin_user_id, assembly_id, **kwargs):
         initialise_empty_schema(uow, admin_user_id, assembly_id)
@@ -542,11 +542,11 @@ class TestUploadCsvCleaning:
 
     def _upload(self, client, assembly_id, content: bytes, id_column=""):
         return client.post(
-            f"/backoffice/assembly/{assembly_id}/data/upload-respondents",
+            f"/backoffice/project/{assembly_id}/data/upload-respondents",
             data={
                 "file": (BytesIO(content), "respondents.csv"),
                 "id_column": id_column,
-                "csrf_token": get_csrf_token(client, f"/backoffice/assembly/{assembly_id}/data?source=csv"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{assembly_id}/data?source=csv"),
             },
             content_type="multipart/form-data",
             follow_redirects=False,

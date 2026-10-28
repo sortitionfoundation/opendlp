@@ -119,7 +119,7 @@ The `*_legacy` blueprints will be retired: first their links are removed from th
 Notes:
 
 - The `dev` blueprint is only registered when `config.is_production()` is false.
-- Legacy URLs use `/assemblies/<id>/...`; newer backoffice URLs use `/backoffice/assembly/<id>/...` (note the singular `assembly`).
+- Legacy URLs use `/assemblies/<id>/...`; newer backoffice URLs use `/backoffice/project/<id>/...` (note the singular `project`; the older `/backoffice/assembly/<id>/...` redirects there).
 - `auth_bp` previously mounted at `/`; it now mounts at `/auth`.
 
 ---
@@ -501,7 +501,7 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 2. **Split out respondents backoffice blueprint** from `backoffice.py`.
 3. **Consider splitting `assembly_service` further** — target management has been split out into `target_service`; CSV config is still a distinct concern sitting alongside assembly CRUD.
 4. **Consider splitting `sortition`** — GSheet and DB selection workflows share only status helpers.
-5. **Standardise URL patterns:** legacy uses `/assemblies/<id>/…`, backoffice uses `/backoffice/assembly/<id>/…`. Legacy retirement will remove this inconsistency.
+5. **Standardise URL patterns:** legacy uses `/assemblies/<id>/…`, backoffice uses `/backoffice/project/<id>/…`. Legacy retirement will remove this inconsistency.
 
 ### Addressed since the previous version of this doc
 

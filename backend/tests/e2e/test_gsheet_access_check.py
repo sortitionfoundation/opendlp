@@ -33,7 +33,7 @@ class TestGSheetAccessCheckEndToEnd:
         )
 
         saved = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/gsheet/save",
             data={
                 "url": _SHEET_URL,
                 "team": "uk",
@@ -51,11 +51,11 @@ class TestGSheetAccessCheckEndToEnd:
         assert 'hx-trigger="load"' in page
 
         checked = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/gsheet/check", headers={"HX-Request": "true"}
+            f"/backoffice/project/{assembly.id}/gsheet/check", headers={"HX-Request": "true"}
         )
 
         assert checked.status_code == 200
         assert "Leeds Assembly Respondents" in checked.get_data(as_text=True)
         assert fetch_cached_result(assembly.id, _SHEET_URL) is not None
-        later = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet").get_data(as_text=True)
+        later = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet").get_data(as_text=True)
         assert "Leeds Assembly Respondents" in later

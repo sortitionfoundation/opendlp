@@ -1,5 +1,5 @@
 """ABOUTME: Backoffice routes for CRUD operations on assembly targets
-ABOUTME: Provides target viewing, editing, CSV upload, and deletion under /backoffice/assembly/*/targets"""
+ABOUTME: Provides target viewing, editing, CSV upload, and deletion under /backoffice/project/*/targets"""
 
 import contextlib
 import uuid
@@ -115,7 +115,7 @@ def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
     }
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets")
+@targets_bp.route("/project/<uuid:assembly_id>/targets")
 @login_required
 def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly targets page."""
@@ -178,7 +178,7 @@ def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvFo
     return render_assembly_data_page(assembly_id, targets_upload_form=form, preferred_source="csv"), 200
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/upload", methods=["POST"])
+@targets_bp.route("/project/<uuid:assembly_id>/targets/upload", methods=["POST"])
 @login_required
 def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Upload targets CSV file for an assembly."""
@@ -237,7 +237,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return _render_targets_upload_page(assembly_id, form)
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
+@targets_bp.route("/project/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
 @login_required
 def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete all targets for an assembly, asking first when questions are linked to them."""
@@ -291,7 +291,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 @targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/add-from-columns",
+    "/project/<uuid:assembly_id>/targets/categories/add-from-columns",
     methods=["POST"],
 )
 @login_required
@@ -370,7 +370,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/check", methods=["GET"])
+@targets_bp.route("/project/<uuid:assembly_id>/targets/check", methods=["GET"])
 @login_required
 def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run detailed target validation and display results."""
@@ -509,7 +509,7 @@ def _is_test_run(run: SelectionRunRecord | None) -> bool:
     return run is not None and run.task_type == SelectionTaskType.TEST_SELECT_FROM_DB
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
+@targets_bp.route("/project/<uuid:assembly_id>/targets/accept-suggestions", methods=["POST"])
 @login_required
 @require_assembly_management
 def accept_suggestions(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -624,7 +624,7 @@ def _render_force_unlink_confirm(
     ), 200
 
 
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/save-all", methods=["POST"])
+@targets_bp.route("/project/<uuid:assembly_id>/targets/save-all", methods=["POST"])
 @login_required
 def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Apply every edit on the targets page in one operation."""

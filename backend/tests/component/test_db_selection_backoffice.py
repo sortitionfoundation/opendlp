@@ -168,7 +168,7 @@ class TestCsvSelectionCheckData:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/check",
+            f"/backoffice/project/{assembly.id}/selection/db/check",
             follow_redirects=True,
         )
 
@@ -196,7 +196,7 @@ class TestCsvSelectionCheckData:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/check",
+            f"/backoffice/project/{assembly.id}/selection/db/check",
             follow_redirects=True,
         )
 
@@ -211,7 +211,7 @@ class TestCsvSelectionCheckData:
         assembly = assembly_with_csv_config_unconfirmed
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/check",
+            f"/backoffice/project/{assembly.id}/selection/db/check",
             follow_redirects=True,
         )
 
@@ -221,7 +221,7 @@ class TestCsvSelectionCheckData:
     def test_check_csv_data_requires_auth(self, client, assembly_with_csv_config):
         """Check endpoint requires authentication."""
         assembly = assembly_with_csv_config
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/db/check")
+        response = client.post(f"/backoffice/project/{assembly.id}/selection/db/check")
 
         assert response.status_code == 302
         assert "login" in response.location
@@ -237,7 +237,7 @@ class TestCsvSelectionRun:
         assembly = assembly_with_csv_config_unconfirmed
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/run",
+            f"/backoffice/project/{assembly.id}/selection/db/run",
             follow_redirects=True,
         )
 
@@ -247,7 +247,7 @@ class TestCsvSelectionRun:
     def test_start_csv_selection_requires_auth(self, client, assembly_with_csv_config):
         """Run endpoint requires authentication."""
         assembly = assembly_with_csv_config
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/db/run")
+        response = client.post(f"/backoffice/project/{assembly.id}/selection/db/run")
 
         assert response.status_code == 302
         assert "login" in response.location
@@ -269,7 +269,7 @@ class TestCsvSelectionProgressModal:
             log_messages=["Processing data..."],
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 200
         assert b"db-selection-progress-modal" in response.data
@@ -289,7 +289,7 @@ class TestCsvSelectionProgressModal:
             completed_at=datetime.now(UTC),
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 200
         assert b"hx-get" not in response.data
@@ -317,7 +317,7 @@ class TestCsvSelectionProgressModal:
             uow.commit()
             ids = {ext: by_ext[ext].id for ext in ("1", "2", "3")}
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 200
         html = response.data.decode()
@@ -354,7 +354,7 @@ class TestCsvSelectionProgressModal:
             completed_at=datetime.now(UTC),
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 200
         html = response.data.decode()
@@ -370,7 +370,7 @@ class TestCsvSelectionProgressModal:
         assembly = assembly_with_csv_config
         run_id = uuid.uuid4()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 404
 
@@ -388,7 +388,7 @@ class TestCsvSelectionProgressModal:
             task_type=SelectionTaskType.SELECT_FROM_DB,
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert response.status_code == 404
 
@@ -400,7 +400,7 @@ class TestCsvSelectionCancel:
         """Cancel endpoint requires authentication."""
         assembly = assembly_with_csv_config
         run_id = uuid.uuid4()
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/cancel")
+        response = client.post(f"/backoffice/project/{assembly.id}/selection/db/{run_id}/cancel")
 
         assert response.status_code == 302
         assert "login" in response.location
@@ -417,7 +417,7 @@ class TestCsvSelectionDownload:
         mock_generate.side_effect = NotFoundError("Run not found")
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/selected",
+            f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/selected",
             follow_redirects=True,
         )
 
@@ -432,7 +432,7 @@ class TestCsvSelectionDownload:
         mock_generate.side_effect = InvalidSelection("Selection not completed")
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/selected",
+            f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/selected",
             follow_redirects=True,
         )
 
@@ -444,11 +444,11 @@ class TestCsvSelectionDownload:
         assembly = assembly_with_csv_config
         run_id = uuid.uuid4()
 
-        response = client.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/selected")
+        response = client.get(f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/selected")
         assert response.status_code == 302
         assert "login" in response.location
 
-        response = client.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/remaining")
+        response = client.get(f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/remaining")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -473,7 +473,7 @@ class TestSelectionReportDownload:
         )
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/report",
+            f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/report",
             follow_redirects=True,
         )
 
@@ -486,7 +486,7 @@ class TestSelectionReportDownload:
         run_id = uuid.uuid4()
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/report",
+            f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/report",
             follow_redirects=True,
         )
 
@@ -498,7 +498,7 @@ class TestSelectionReportDownload:
         assembly = assembly_with_csv_config
         run_id = uuid.uuid4()
 
-        response = client.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/report")
+        response = client.get(f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/report")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -510,7 +510,7 @@ class TestCsvSelectionPageIntegration:
         """Selection page shows CSV selection UI when CSV is configured."""
         assembly = assembly_with_csv_config
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"Initial Selection" in response.data
@@ -519,7 +519,7 @@ class TestCsvSelectionPageIntegration:
         assert b"Check Spreadsheet" not in response.data
         # The database check runs implicitly; there is no button for it
         assert b"Check Data" not in response.data
-        assert f"/backoffice/assembly/{assembly.id}/selection/db/check".encode() not in response.data
+        assert f"/backoffice/project/{assembly.id}/selection/db/check".encode() not in response.data
 
     def test_selection_page_shows_view_running_button_when_db_task_running(
         self, logged_in_admin, assembly_with_csv_config, fake_store
@@ -536,13 +536,13 @@ class TestCsvSelectionPageIntegration:
             task_type=SelectionTaskType.SELECT_FROM_DB,
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"View Running Selection" in response.data
         assert f"current_selection={run_id}".encode() in response.data
-        assert f"/backoffice/assembly/{assembly.id}/selection/db/check".encode() not in response.data
-        assert f"/backoffice/assembly/{assembly.id}/selection/db/start".encode() not in response.data
+        assert f"/backoffice/project/{assembly.id}/selection/db/check".encode() not in response.data
+        assert f"/backoffice/project/{assembly.id}/selection/db/start".encode() not in response.data
 
     def test_selection_page_shows_csv_progress_modal_when_running(
         self, logged_in_admin, assembly_with_csv_config, fake_store
@@ -559,7 +559,7 @@ class TestCsvSelectionPageIntegration:
             log_messages=["Running..."],
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_selection={run_id}")
 
         assert response.status_code == 200
         assert b"db-selection-progress-modal" in response.data
@@ -584,7 +584,7 @@ class TestCsvSelectionPageIntegration:
         with FakeUnitOfWork(store=fake_store) as uow:
             ids = {r.external_id: r.id for r in uow.respondents.get_by_assembly_id(assembly.id)}
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_selection={run_id}")
 
         assert response.status_code == 200
         html = response.data.decode()
@@ -630,7 +630,7 @@ class TestSelectionHistoryNaming:
         assembly = assembly_with_csv_config
         records = self._seed_two_eras(fake_store, assembly.id)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         html = response.data.decode()
@@ -651,7 +651,7 @@ class TestSelectionHistoryNaming:
         assembly = assembly_with_csv_config
         records = self._seed_two_eras(fake_store, assembly.id)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?history=all")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?history=all")
 
         assert response.status_code == 200
         html = response.data.decode()
@@ -676,7 +676,7 @@ class TestSelectionHistoryNaming:
             completed_at=datetime.now(UTC),
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"Show all runs" not in response.data
@@ -688,8 +688,8 @@ class TestSelectionHistoryNaming:
         records = self._seed_two_eras(fake_store, assembly.id)
         run_id = records[1].task_id
 
-        page = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
-        fragment = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+        page = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_selection={run_id}")
+        fragment = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/modal-progress/{run_id}")
 
         assert page.status_code == 200
         assert fragment.status_code == 200
@@ -712,7 +712,7 @@ class TestCsvSelectionReset:
             uow.commit()
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/reset",
+            f"/backoffice/project/{assembly.id}/selection/db/reset",
             follow_redirects=True,
         )
 
@@ -729,7 +729,7 @@ class TestCsvSelectionReset:
         """Resetting writes a completed history row that the selection page lists."""
         assembly = assembly_with_csv_config
 
-        logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/db/reset", follow_redirects=True)
+        logged_in_admin.post(f"/backoffice/project/{assembly.id}/selection/db/reset", follow_redirects=True)
 
         with FakeUnitOfWork(store=fake_store) as uow:
             records = list(uow.selection_run_records.get_by_assembly_id(assembly.id))
@@ -737,7 +737,7 @@ class TestCsvSelectionReset:
         assert records[0].task_type == SelectionTaskType.RESET_TO_POOL
         assert records[0].user_id == admin_user.id
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
         assert response.status_code == 200
         assert b"Reset all to pool" in response.data
 
@@ -748,7 +748,7 @@ class TestCsvSelectionReset:
         mock_reset.side_effect = NotFoundError("Assembly not found")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/reset",
+            f"/backoffice/project/{assembly.id}/selection/db/reset",
             follow_redirects=True,
         )
 
@@ -758,7 +758,7 @@ class TestCsvSelectionReset:
     def test_reset_csv_selection_requires_auth(self, client, assembly_with_csv_config):
         """Reset endpoint requires authentication."""
         assembly = assembly_with_csv_config
-        response = client.post(f"/backoffice/assembly/{assembly.id}/selection/db/reset")
+        response = client.post(f"/backoffice/project/{assembly.id}/selection/db/reset")
 
         assert response.status_code == 302
         assert "login" in response.location
@@ -779,7 +779,7 @@ class TestCsvSelectionSelectedCount:
                 respondent.selection_status = RespondentStatus.SELECTED
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert _held_count(response.data.decode()) == 5
@@ -800,7 +800,7 @@ class TestCsvSelectionSelectedCount:
             respondents[4].selection_status = RespondentStatus.WITHDRAWN
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert _held_count(response.data.decode()) == 4
@@ -810,7 +810,7 @@ class TestCsvSelectionSelectedCount:
         """Selection page shows normal UI when no selection has been run."""
         assembly = assembly_with_csv_config
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"Reset Selected People" not in response.data
@@ -824,7 +824,7 @@ class TestSelectionSteps:
     def test_nobody_held_offers_a_run_and_no_replacements(self, logged_in_admin, assembly_with_csv_config):
         assembly = assembly_with_csv_config
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         html = response.data.decode()
         initial = _step(html, "initial-selection-step")
@@ -842,7 +842,7 @@ class TestSelectionSteps:
         assembly = assembly_with_csv_config
         _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 6 + [RespondentStatus.CONFIRMED] * 2)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         html = response.data.decode()
         initial = _step(html, "initial-selection-step")
@@ -851,7 +851,7 @@ class TestSelectionSteps:
         assert _held_count(html) == 8
         assert "var(--color-warning-background)" in initial
         replacement = _step(html, "replacement-selection-step")
-        assert f'href="/backoffice/assembly/{assembly.id}/selection?replacement_modal=open"' in replacement
+        assert f'href="/backoffice/project/{assembly.id}/selection?replacement_modal=open"' in replacement
         assert "aria-disabled" not in replacement
         assert "replacement-step-hint" not in replacement
 
@@ -859,7 +859,7 @@ class TestSelectionSteps:
         assembly = assembly_with_csv_config
         _set_statuses(fake_store, assembly.id, [RespondentStatus.SELECTED] * 10)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         html = response.data.decode()
         initial = _step(html, "initial-selection-step")
@@ -879,7 +879,7 @@ class TestSelectionSteps:
             uow.assemblies.get(assembly.id).number_to_select = 8
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         html = response.data.decode()
         initial = _step(html, "initial-selection-step")
@@ -898,7 +898,7 @@ class TestSelectionSteps:
         assembly = assembly_with_csv_config
         _set_statuses(fake_store, assembly.id, [RespondentStatus.WITHDRAWN, RespondentStatus.TEST_SUBMISSION])
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         html = response.data.decode()
         initial = _step(html, "initial-selection-step")
@@ -919,7 +919,7 @@ class TestSelectionSteps:
             task_type=SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         html = response.data.decode()
         initial = _step(html, "initial-selection-step")
@@ -933,7 +933,7 @@ class TestSelectionSteps:
     def test_settings_not_confirmed_disables_every_action(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
         assembly = assembly_with_csv_config_unconfirmed
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         html = response.data.decode()
         initial = _step(html, "initial-selection-step")
@@ -950,7 +950,7 @@ class TestSaveCsvSettings:
         assembly = assembly_with_csv_config_unconfirmed
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            f"/backoffice/project/{assembly.id}/data/csv/settings",
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "Gender",
@@ -967,7 +967,7 @@ class TestSaveCsvSettings:
         assembly = assembly_with_csv_config_unconfirmed
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            f"/backoffice/project/{assembly.id}/data/csv/settings",
             data={
                 "check_same_address_cols_string": "",
                 "columns_to_keep_string": "",
@@ -985,7 +985,7 @@ class TestSaveCsvSettings:
         assembly = assembly_with_csv_config_unconfirmed
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            f"/backoffice/project/{assembly.id}/data/csv/settings",
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "blabla",
@@ -1012,7 +1012,7 @@ class TestSaveCsvSettings:
         assembly = assembly_with_csv_config_unconfirmed
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            f"/backoffice/project/{assembly.id}/data/csv/settings",
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "",
@@ -1027,7 +1027,7 @@ class TestSaveCsvSettings:
     def test_save_csv_settings_requires_auth(self, client, assembly_with_csv_config_unconfirmed):
         """Save settings endpoint requires authentication."""
         assembly = assembly_with_csv_config_unconfirmed
-        response = client.post(f"/backoffice/assembly/{assembly.id}/data/csv/settings")
+        response = client.post(f"/backoffice/project/{assembly.id}/data/csv/settings")
 
         assert response.status_code == 302
         assert "login" in response.location
@@ -1042,7 +1042,7 @@ class TestCsvSelectionSettingsWarning:
         """Selection page shows warning when settings are not confirmed."""
         assembly = assembly_with_csv_config_unconfirmed
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"review and save the selection settings" in response.data
@@ -1057,7 +1057,7 @@ class TestCsvSelectionSettingsWarning:
         """Selection buttons are disabled when settings are not confirmed."""
         assembly = assembly_with_csv_config_unconfirmed
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"disabled" in response.data
@@ -1066,7 +1066,7 @@ class TestCsvSelectionSettingsWarning:
         """Selection page does not show warning when settings are confirmed."""
         assembly = assembly_with_csv_config
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"review and save the selection settings" not in response.data
@@ -1079,7 +1079,7 @@ class TestCsvSelectionHistory:
         """CSV selection page shows the Selection History section."""
         assembly = assembly_with_csv_config
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"Selection History" in response.data
@@ -1100,7 +1100,7 @@ class TestCsvSelectionHistory:
             completed_at=datetime.now(UTC),
         )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"Selection History" in response.data
@@ -1133,7 +1133,7 @@ class TestWritingRoutesLandInTheRunningTasksModal:
         run_id = self._running_selection(fake_store, assembly.id)
 
         with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
-            response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/db/run")
+            response = logged_in_admin.post(f"/backoffice/project/{assembly.id}/selection/db/run")
 
         mock_delay.assert_not_called()
         assert response.status_code == 302
@@ -1158,7 +1158,7 @@ class TestWritingRoutesLandInTheRunningTasksModal:
                 respondent.selection_status = RespondentStatus.SELECTED
             uow.commit()
 
-        response = logged_in_admin.post(f"/backoffice/assembly/{assembly.id}/selection/db/reset")
+        response = logged_in_admin.post(f"/backoffice/project/{assembly.id}/selection/db/reset")
 
         assert response.status_code == 302
         assert response.location.endswith(f"/selection?current_selection={run_id}")
