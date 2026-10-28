@@ -43,7 +43,9 @@ STARTER_THANK_YOU_HTML = """\
 </div>
 """
 
-THANK_YOU_VARIABLES = ("assembly_title", "assembly_question", "restart_url")
+# project_title and project_question are the names the interface uses; the
+# assembly_ spellings keep pages written before the rename working.
+THANK_YOU_VARIABLES = ("project_title", "project_question", "assembly_title", "assembly_question", "restart_url")
 
 
 class RegistrationPageSource(Enum):
@@ -318,6 +320,8 @@ class RegistrationPage:
         if not self.thank_you_html.strip():
             return ""
         rendered = _SANDBOX_ENV.from_string(self.thank_you_html).render(
+            project_title=ctx.assembly_title,
+            project_question=ctx.assembly_question,
             assembly_title=ctx.assembly_title,
             assembly_question=ctx.assembly_question,
             restart_url=ctx.restart_url,
@@ -534,6 +538,8 @@ def _render_kwargs(ctx: RenderContext) -> dict[str, Any]:
     return {
         "csrf_form_element": Markup(ctx.csrf_form_element),  # noqa: S704
         "form_action": ctx.form_action,
+        "project_title": ctx.assembly_title,
+        "project_question": ctx.assembly_question,
         "assembly_title": ctx.assembly_title,
         "assembly_question": ctx.assembly_question,
         "value": lambda k: ctx.values.get(k, ""),

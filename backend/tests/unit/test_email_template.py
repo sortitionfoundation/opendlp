@@ -225,7 +225,10 @@ def test_the_default_auto_reply_has_placeholders_to_fill() -> None:
     [
         ("Hi", "<p>{{ assembly.first_assembly_date_text }}</p>", True),
         ("Starts {{assembly.first_assembly_date}}", "<p>x</p>", True),
+        ("Hi", "<p>{{ project.first_event_date_text }}</p>", True),
+        ("Starts {{project.first_event_date}}", "<p>x</p>", True),
         ("Hi", "<p>{{ assembly.title }}</p>", False),
+        ("Hi", "<p>{{ project.title }}</p>", False),
     ],
 )
 def test_uses_first_assembly_date(subject: str, body: str, uses: bool) -> None:

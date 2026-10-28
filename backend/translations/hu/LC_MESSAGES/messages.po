@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-28 15:23+0000\n"
+"POT-Creation-Date: 2026-10-28 15:31+0000\n"
 "PO-Revision-Date: 2026-10-22 16:33+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -86,12 +86,12 @@ msgstr "Jelentkezők"
 msgid "Results"
 msgstr "Eredmények"
 
-#: src/opendlp/domain/email_context.py:112
+#: src/opendlp/domain/email_context.py:125
 #, fuzzy
 msgid "Friend"
 msgstr "Résztvevő"
 
-#: src/opendlp/domain/email_template.py:51
+#: src/opendlp/domain/email_template.py:55
 #, fuzzy
 msgid ""
 "The name for replies cannot contain line breaks or other control "
@@ -100,32 +100,32 @@ msgstr ""
 "A válaszokhoz megadott név nem tartalmazhat sortörést vagy más "
 "vezérlőkaraktert"
 
-#: src/opendlp/domain/email_template.py:53
+#: src/opendlp/domain/email_template.py:57
 #, fuzzy, python-format
 msgid "The name for replies must be at most %(max)s characters"
 msgstr "A válaszokhoz megadott név legfeljebb %(max)s karakter lehet"
 
-#: src/opendlp/domain/email_template.py:55
+#: src/opendlp/domain/email_template.py:59
 #, fuzzy, python-format
 msgid "The email address for replies must be at most %(max)s characters"
 msgstr "A válaszokhoz megadott e-mail cím legfeljebb %(max)s karakter lehet"
 
-#: src/opendlp/domain/email_template.py:60
+#: src/opendlp/domain/email_template.py:64
 #, fuzzy
 msgid "The email address for replies is not valid"
 msgstr "A válaszokhoz megadott e-mail cím érvénytelen"
 
-#: src/opendlp/domain/email_template.py:112
+#: src/opendlp/domain/email_template.py:116
 #, fuzzy
 msgid "The email template needs a name"
 msgstr "Az e-mail sablonnak nevet kell adni"
 
-#: src/opendlp/domain/email_template.py:114
+#: src/opendlp/domain/email_template.py:118
 #, fuzzy
 msgid "The email template needs a subject"
 msgstr "Az e-mail sablonnak tárgyat kell adni"
 
-#: src/opendlp/domain/email_template.py:116
+#: src/opendlp/domain/email_template.py:120
 #, fuzzy
 msgid "The email template body is empty"
 msgstr "Az e-mail sablon törzse üres"
@@ -140,47 +140,47 @@ msgstr "Az e-mail tárgyában sablonszintaxis-hiba van, %(line)s. sor: %(error)s
 msgid "The email body has a template syntax error on line %(line)s: %(error)s"
 msgstr "Az e-mail törzsében sablonszintaxis-hiba van, %(line)s. sor: %(error)s"
 
-#: src/opendlp/domain/registration_page.py:134
+#: src/opendlp/domain/registration_page.py:136
 #, fuzzy, python-format
 msgid ""
 "The thank-you page has a template syntax error on line %(line)s: "
 "%(detail)s"
 msgstr "A köszönőoldalon sablonszintaxis-hiba van, %(line)s. sor: %(detail)s"
 
-#: src/opendlp/domain/registration_page.py:141
+#: src/opendlp/domain/registration_page.py:143
 #, fuzzy, python-format
 msgid "The thank-you page uses %(variable)s, which it does not offer"
 msgstr ""
 "A köszönőoldal olyan változót használ, amely itt nem érhető el: "
 "%(variable)s"
 
-#: src/opendlp/domain/registration_page.py:639
+#: src/opendlp/domain/registration_page.py:645
 #: templates/backoffice/assembly_edit_respondent.html:128
 #: templates/backoffice/target_sources/_setup_modal.html:263
 msgid "Day"
 msgstr "Nap"
 
-#: src/opendlp/domain/registration_page.py:639
+#: src/opendlp/domain/registration_page.py:645
 msgid "DD"
 msgstr "NN"
 
-#: src/opendlp/domain/registration_page.py:640
+#: src/opendlp/domain/registration_page.py:646
 #: templates/backoffice/assembly_edit_respondent.html:131
 #: templates/backoffice/target_sources/_setup_modal.html:266
 msgid "Month"
 msgstr "Hónap"
 
-#: src/opendlp/domain/registration_page.py:640
+#: src/opendlp/domain/registration_page.py:646
 msgid "MM"
 msgstr "HH"
 
-#: src/opendlp/domain/registration_page.py:641
+#: src/opendlp/domain/registration_page.py:647
 #: templates/backoffice/assembly_edit_respondent.html:134
 #: templates/backoffice/target_sources/_setup_modal.html:269
 msgid "Year"
 msgstr "Év"
 
-#: src/opendlp/domain/registration_page.py:641
+#: src/opendlp/domain/registration_page.py:647
 msgid "YYYY"
 msgstr "ÉÉÉÉ"
 
@@ -2049,8 +2049,8 @@ msgid "Registration auto-reply"
 msgstr "Regisztrációs automatikus válasz"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:690
-msgid "Thanks for registering for {{ assembly.title }}"
-msgstr "Köszönjük, hogy regisztráltál a következőre: {{ assembly.title }}"
+msgid "Thanks for registering for {{ project.title }}"
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:694
 #, fuzzy
@@ -8834,9 +8834,8 @@ msgid "Email subject"
 msgstr "E-mail tárgya"
 
 #: templates/backoffice/registration/_step_email.html:125
-#, fuzzy
-msgid "Dynamic fields allowed, e.g. {{ assembly.title }}."
-msgstr "Dinamikus mezők használhatók, például: {{ assembly.title }}."
+msgid "Dynamic fields allowed, e.g. {{ project.title }}."
+msgstr ""
 
 #: templates/backoffice/registration/_step_email.html:134
 #: templates/backoffice/registration/_step_email.html:140

@@ -687,7 +687,7 @@ def _default_email_template_content() -> dict[str, str]:
     """
     return {
         "name": _("Registration auto-reply"),
-        "subject": _("Thanks for registering for {{ assembly.title }}"),
+        "subject": _("Thanks for registering for {{ project.title }}"),
         # Follows the team's own auto-reply. What OpenDLP knows is a dynamic field;
         # what it doesn't, such as the session dates, is a [placeholder] to replace.
         "body_html": _(

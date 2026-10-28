@@ -122,7 +122,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             {{ input(name="template_subject",
                             label=_("Email subject"),
                             value=email_template.subject,
-                            hint=_("Dynamic fields allowed, e.g. {{ assembly.title }}."),
+                            hint=_("Dynamic fields allowed, e.g. {{ project.title }}."),
                             required=true,
                             attrs=common_input_attrs|trim) }}
                             {% set body_attrs %}
@@ -140,7 +140,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             rich_editor_label=_("Email body"),
                             rich_editor_absolute_links=true,
                             rich_editor_editable=edit_mode,
-                            rich_editor_variable_example="{{ assembly.title }}",
+                            rich_editor_variable_example="{{ project.title }}",
                             attrs=body_attrs|trim) }}
                         </div>
                     </section>
@@ -160,10 +160,10 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                                 {{ _("Click a dynamic field to select it, then copy and paste into the subject or body. Missing values render as an empty string.") }}
                             </p>
                             {% set variables = [
-                            {"expr": "{{ assembly.title }}", "label": _("Project title")},
-                            {"expr": "{{ assembly.question }}", "label": _("Framing question")},
-                            {"expr": "{{ assembly.first_assembly_date }}", "label": _("First event date (ISO)")},
-                            {"expr": "{{ assembly.first_assembly_date_text }}", "label": _("First event date, written out in the reader's language")},
+                            {"expr": "{{ project.title }}", "label": _("Project title")},
+                            {"expr": "{{ project.question }}", "label": _("Framing question")},
+                            {"expr": "{{ project.first_event_date }}", "label": _("First event date (ISO)")},
+                            {"expr": "{{ project.first_event_date_text }}", "label": _("First event date, written out in the reader's language")},
                             {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
                             {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
                             {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},

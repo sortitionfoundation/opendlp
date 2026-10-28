@@ -24,7 +24,12 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class AssemblyContext:
-    """Assembly fields exposed to email template authors."""
+    """Project fields exposed to email template authors.
+
+    Templates reach this object as ``project`` and, for emails written before
+    the interface called it a project, as ``assembly``. The date is likewise
+    readable as ``first_event_date`` or ``first_assembly_date``.
+    """
 
     title: str = ""
     question: str = ""
@@ -32,6 +37,14 @@ class AssemblyContext:
     # The same date written out for the reader, such as "14 November 2026".
     first_assembly_date_text: str = ""
     number_to_select: int = 0
+
+    @property
+    def first_event_date(self) -> str:
+        return self.first_assembly_date
+
+    @property
+    def first_event_date_text(self) -> str:
+        return self.first_assembly_date_text
 
     @classmethod
     def from_assembly(cls, assembly: "Assembly", locale: str = "en") -> "AssemblyContext":
@@ -113,7 +126,8 @@ class RespondentContext:
 
 
 def build_context(assembly: AssemblyContext, respondent: RespondentContext) -> dict[str, Any]:
-    return {"assembly": assembly, "respondent": respondent}
+    # "project" is the name the editor offers; "assembly" keeps saved emails working.
+    return {"assembly": assembly, "project": assembly, "respondent": respondent}
 
 
 _SAMPLE_FIRST_NAME = "Alex"

@@ -126,6 +126,20 @@ def test_build_context_shape() -> None:
     assert context["respondent"] is respondent
 
 
+def test_project_is_the_same_object_as_assembly() -> None:
+    """Saved emails say assembly; the editor now offers project. Both must work."""
+    assembly = AssemblyContext(title="A")
+    context = build_context(assembly, RespondentContext(email="a@b.com", attributes={}))
+    assert context["project"] is context["assembly"]
+
+
+def test_first_event_date_reads_the_same_as_first_assembly_date() -> None:
+    assembly = Assembly(title="My Project", number_to_select=5, first_assembly_date=date(2026, 11, 14))
+    ctx = AssemblyContext.from_assembly(assembly)
+    assert ctx.first_event_date == ctx.first_assembly_date == "2026-11-14"
+    assert ctx.first_event_date_text == ctx.first_assembly_date_text
+
+
 _ASSEMBLY_ID = uuid.uuid4()
 
 

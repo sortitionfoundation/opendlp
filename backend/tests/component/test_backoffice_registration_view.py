@@ -880,7 +880,7 @@ class TestThankYouStep:
 
         assert "readonly" not in _extract_textarea(body, "thank_you_html")
         assert 'data-rich-editor-for="thank_you_html"' in body
-        assert "{{ assembly_title }}" in body
+        assert "{{ project_title }}" in body
         assert 'data-command="image"' in body
 
     def test_closed_page_stays_read_only(self, logged_in_admin, fake_store, assembly_id):

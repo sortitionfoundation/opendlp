@@ -99,7 +99,7 @@ class TestCreateAction:
         assert len(templates) == 1
         template = templates[0]
         assert template.name  # non-empty default name
-        assert "{{ assembly.title }}" in template.subject
+        assert "{{ project.title }}" in template.subject
         assert "{{ respondent.first_name_or_friend }}" in template.body_html
 
         page = _get_page(fake_store, assembly_id)
@@ -497,7 +497,7 @@ class TestVisualEditor:
         assert "Email body" in body
         assert "HTML body" not in body
         assert "Jinja + HTML" not in body
-        assert "highlights variables like {{ assembly.title }} in text" in body
+        assert "highlights variables like {{ project.title }} in text" in body
 
     def test_the_variables_panel_speaks_of_dynamic_fields(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
@@ -508,7 +508,7 @@ class TestVisualEditor:
         assert ">Dynamic fields</h2>" in body
         assert "Available variables" not in body
         assert "Click a dynamic field to select it" in body
-        assert 'value="{{ assembly.first_assembly_date_text }}"' in body
+        assert 'value="{{ project.first_event_date_text }}"' in body
 
     def test_view_mode_shows_the_editor_read_only_without_a_toolbar(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
