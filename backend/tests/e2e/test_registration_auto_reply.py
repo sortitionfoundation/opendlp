@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from babel.dates import format_date
+from flask import Flask
 from flask.testing import FlaskClient
 
 from opendlp.domain.email_send_record import EmailSendOutcome
@@ -235,10 +236,14 @@ def test_a_sole_email_question_receives_the_auto_reply(
 
 
 def test_first_assembly_date_is_written_in_the_respondents_language(
-    client: FlaskClient, admin_user, postgres_session_factory
+    app: Flask, client: FlaskClient, admin_user, postgres_session_factory
 ) -> None:
     """The auto-reply is sent while the respondent's request is open, so a date in it
     follows the language they registered in."""
+    # The shared app is built before the per-test env scrub, so its LANGUAGES can
+    # come from a developer's SUPPORTED_LANGUAGES. The autouse
+    # _restore_shared_app_state fixture puts the config back.
+    app.config["LANGUAGES"] = ["en", "de"]
     page = _build_published_page_with_auto_reply(
         postgres_session_factory,
         admin_user.id,
