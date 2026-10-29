@@ -16,6 +16,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.registration_content_block import FormItemKind, FormItemRef
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     CHOICE_TYPES,
@@ -40,6 +41,7 @@ from opendlp.service_layer.assembly_service import (
     get_tab_enabled_states,
 )
 from opendlp.service_layer.exceptions import (
+    ContentBlockNotFoundError,
     InsufficientPermissions,
     NotFoundError,
     ServiceLayerError,
@@ -50,12 +52,11 @@ from opendlp.service_layer.respondent_field_schema_service import (
     add_choice_option,
     add_field,
     delete_field,
-    get_schema,
     get_schema_grouped,
     guess_field_types,
     initialise_empty_schema,
+    move_form_item,
     remove_choice_option,
-    reorder_group,
     update_choice_option,
     update_field,
 )
@@ -65,6 +66,8 @@ from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
 
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
+
+_MOVE_DIRECTIONS = frozenset({"up", "down", "top", "bottom"})
 
 logger = structlog.get_logger(__name__)
 
@@ -1173,41 +1176,23 @@ def remove_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
 )
 @login_required
 def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
-    """Shift a field up or down one slot within its group.
+    """Move a question up or down one place, or to the top or bottom of the list."""
+    return _move_item(assembly_id, FormItemRef(FormItemKind.QUESTION, field_id))
 
-    Accepts a ``direction`` form field of ``"up"`` or ``"down"``. Reuses the
-    service-layer ``reorder_group`` to re-issue sort_orders atomically.
-    """
+
+def _move_item(assembly_id: uuid.UUID, ref: FormItemRef) -> ResponseReturnValue:
+    """Accepts a ``direction`` form field of up, down, top or bottom."""
     direction = request.form.get("direction", "")
-    if direction not in {"up", "down"}:
+    if direction not in _MOVE_DIRECTIONS:
         flash(_("Invalid move direction"), "error")
         return _schema_page_redirect(assembly_id)
 
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            fields = get_schema(uow, current_user.id, assembly_id)
-            target = next((f for f in fields if f.id == field_id), None)
-            if target is None:
-                flash(_("Field not found"), "error")
-                return _schema_page_redirect(assembly_id)
-
-            same_group = [f for f in fields if f.group == target.group]
-            index = next(i for i, f in enumerate(same_group) if f.id == field_id)
-            swap_with = index - 1 if direction == "up" else index + 1
-            if swap_with < 0 or swap_with >= len(same_group):
-                # Already at the top/bottom — silent no-op rather than a flash.
-                return _schema_page_redirect(assembly_id)
-
-            new_order = same_group[:]
-            new_order[index], new_order[swap_with] = new_order[swap_with], new_order[index]
-            reorder_group(
-                uow,
-                current_user.id,
-                assembly_id,
-                target.group,
-                [f.id for f in new_order],
-            )
+            move_form_item(uow, current_user.id, assembly_id, ref, direction)
+    except (FieldDefinitionNotFoundError, ContentBlockNotFoundError):
+        flash(_("That question or heading is no longer on the list"), "error")
     except InsufficientPermissions:
         flash(_("You don't have permission to reorder fields"), "error")
     except NotFoundError:

@@ -11,8 +11,8 @@
       "can_attend",
       "email",
       "first_name",
-      "postcode",
       "gender",
+      "postcode",
       "date_of_birth",
       "consent",
       "stay_on_db"
@@ -80,7 +80,7 @@
       "label": "Email",
       "on_registration_page": "yes_required",
       "options": null,
-      "sort_order": 10,
+      "sort_order": 30,
       "target_values": null
     },
     {
@@ -98,25 +98,7 @@
       "label": "First name",
       "on_registration_page": "yes_required",
       "options": null,
-      "sort_order": 20,
-      "target_values": null
-    },
-    {
-      "derivation_config": null,
-      "derivation_type": null,
-      "derived_from": null,
-      "feeds_target": null,
-      "field_key": "postcode",
-      "field_type": "text",
-      "group": "address",
-      "help_text": "Your home postcode, including the space",
-      "id": "00000000-0000-4000-8000-000000000000",
-      "is_derived": false,
-      "is_fixed": false,
-      "label": "Postcode",
-      "on_registration_page": "yes_required",
-      "options": null,
-      "sort_order": 10,
+      "sort_order": 40,
       "target_values": null
     },
     {
@@ -143,7 +125,7 @@
           "value": "Female"
         }
       ],
-      "sort_order": 10,
+      "sort_order": 50,
       "target_values": [
         {
           "comment": "",
@@ -172,6 +154,24 @@
       "derivation_type": null,
       "derived_from": null,
       "feeds_target": null,
+      "field_key": "postcode",
+      "field_type": "text",
+      "group": "address",
+      "help_text": "Your home postcode, including the space",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": false,
+      "label": "Postcode",
+      "on_registration_page": "yes_required",
+      "options": null,
+      "sort_order": 60,
+      "target_values": null
+    },
+    {
+      "derivation_config": null,
+      "derivation_type": null,
+      "derived_from": null,
+      "feeds_target": null,
       "field_key": "date_of_birth",
       "field_type": "date",
       "group": "about_you",
@@ -182,7 +182,7 @@
       "label": "Date of birth",
       "on_registration_page": "yes_required",
       "options": null,
-      "sort_order": 20,
+      "sort_order": 70,
       "target_values": null
     },
     {
@@ -200,7 +200,7 @@
       "label": "Consent",
       "on_registration_page": "yes_required",
       "options": null,
-      "sort_order": 10,
+      "sort_order": 80,
       "target_values": null
     },
     {
@@ -218,7 +218,7 @@
       "label": "Stay on database",
       "on_registration_page": "yes_optional",
       "options": null,
-      "sort_order": 20,
+      "sort_order": 90,
       "target_values": null
     },
     {

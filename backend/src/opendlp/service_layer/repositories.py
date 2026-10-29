@@ -688,7 +688,7 @@ class RespondentFieldDefinitionRepository(AbstractRepository):
 
     @abc.abstractmethod
     def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]:
-        """Return all field definitions for an assembly, ordered by GROUP_DISPLAY_ORDER then sort_order."""
+        """Return all field definitions for an assembly in list order: by sort_order, derived fields last."""
         raise NotImplementedError
 
     @abc.abstractmethod

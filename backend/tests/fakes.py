@@ -21,9 +21,9 @@ from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
-    GROUP_DISPLAY_ORDER,
     RespondentFieldDefinition,
     RespondentFieldMappingEntry,
+    field_list_order,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
@@ -1063,12 +1063,8 @@ class FakeRespondentFieldDefinitionRepository(FakeRepository, RespondentFieldDef
         return None
 
     def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]:
-        group_index = {group: i for i, group in enumerate(GROUP_DISPLAY_ORDER)}
         fields = [f for f in self._items if f.assembly_id == assembly_id]
-        return sorted(
-            fields,
-            key=lambda f: (group_index.get(f.group, len(GROUP_DISPLAY_ORDER)), f.sort_order, f.field_key),
-        )
+        return sorted(fields, key=field_list_order)
 
     def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         return sum(1 for f in self._items if f.assembly_id == assembly_id)

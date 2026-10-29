@@ -476,6 +476,16 @@ IN_SCHEMA_FIXED_FIELDS: list[tuple[str, RespondentFieldGroup, str]] = [
 ]
 
 
+def field_list_order(field: RespondentFieldDefinition) -> tuple[bool, int, str]:
+    """Sort key for an assembly's fields: by sort_order, with derived fields after the rest.
+
+    Derived fields are never on the questions list, so their sort_order only
+    orders them among themselves; keeping them last keeps computed columns at
+    the end of the export.
+    """
+    return field.is_derived, field.sort_order, field.field_key
+
+
 def normalise_field_key(raw: str) -> str:
     """Normalise a user-entered field key for use as a registration-form name attribute.
 

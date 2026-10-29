@@ -20,9 +20,9 @@ from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
-    GROUP_DISPLAY_ORDER,
     RespondentFieldDefinition,
     RespondentFieldMappingEntry,
+    field_list_order,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
@@ -1639,13 +1639,7 @@ class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, Respon
             .filter(orm.respondent_field_definitions.c.assembly_id == assembly_id)
             .all()
         )
-        # Order by GROUP_DISPLAY_ORDER in Python — the display order is a fixed
-        # Python list, so a CASE statement in SQL would be more work for the same result.
-        group_index = {group: i for i, group in enumerate(GROUP_DISPLAY_ORDER)}
-        return sorted(
-            rows,
-            key=lambda f: (group_index.get(f.group, len(GROUP_DISPLAY_ORDER)), f.sort_order, f.field_key),
-        )
+        return sorted(rows, key=field_list_order)
 
     def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         return (

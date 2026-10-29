@@ -111,11 +111,11 @@ class TestListByAssembly:
     def test_returns_empty_for_no_fields(self, respondent_field_definition_backend: ContractBackend) -> None:
         assert respondent_field_definition_backend.repo.list_by_assembly(uuid.uuid4()) == []
 
-    def test_orders_by_group_display_order_then_sort_order(
+    def test_orders_by_sort_order_whatever_the_group(
         self, respondent_field_definition_backend: ContractBackend
     ) -> None:
+        """Questions are one list; the old group plays no part in the order."""
         assembly = respondent_field_definition_backend.make_assembly()
-        # Insert out of display order: OTHER first, then NAME_AND_CONTACT.
         _make_field(
             respondent_field_definition_backend,
             assembly.id,
@@ -128,27 +128,41 @@ class TestListByAssembly:
             assembly.id,
             field_key="first_name",
             group=RespondentFieldGroup.NAME_AND_CONTACT,
-            sort_order=20,
-        )
-        _make_field(
-            respondent_field_definition_backend,
-            assembly.id,
-            field_key="email",
-            group=RespondentFieldGroup.NAME_AND_CONTACT,
-            sort_order=10,
+            sort_order=30,
         )
         _make_field(
             respondent_field_definition_backend,
             assembly.id,
             field_key="eligible",
             group=RespondentFieldGroup.ELIGIBILITY,
-            sort_order=10,
+            sort_order=20,
         )
 
-        fields = respondent_field_definition_backend.repo.list_by_assembly(assembly.id)
-        keys = [f.field_key for f in fields]
-        # ELIGIBILITY first, then NAME_AND_CONTACT (email before first_name by sort_order), then OTHER.
-        assert keys == ["eligible", "email", "first_name", "custom"]
+        keys = [f.field_key for f in respondent_field_definition_backend.repo.list_by_assembly(assembly.id)]
+
+        assert keys == ["custom", "eligible", "first_name"]
+
+    def test_derived_fields_come_last(self, respondent_field_definition_backend: ContractBackend) -> None:
+        """Computed columns stay at the end of the export, as they did in the Derived section."""
+        assembly = respondent_field_definition_backend.make_assembly()
+        derived = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key="region",
+            label="Region",
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=5,
+            is_derived=True,
+            derived_from=["postcode"],
+            derivation_type=DerivationType.SMALL_MAPPING,
+            derivation_config={"mapping": {}},
+        )
+        respondent_field_definition_backend.repo.add(derived)
+        respondent_field_definition_backend.commit()
+        _make_field(respondent_field_definition_backend, assembly.id, field_key="postcode", sort_order=10)
+
+        keys = [f.field_key for f in respondent_field_definition_backend.repo.list_by_assembly(assembly.id)]
+
+        assert keys == ["postcode", "region"]
 
     def test_scopes_by_assembly(self, respondent_field_definition_backend: ContractBackend) -> None:
         a1 = respondent_field_definition_backend.make_assembly()
