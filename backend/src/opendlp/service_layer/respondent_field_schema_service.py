@@ -9,11 +9,13 @@ from typing import TYPE_CHECKING
 
 from opendlp.config import to_bool
 from opendlp.domain.registration_content_block import (
+    FieldSection,
     FormItem,
     FormItemKind,
     FormItemRef,
     RegistrationContentBlock,
     form_item_ref,
+    sections_at_headings,
 )
 from opendlp.domain.respondent_field_schema import _UNSET as _UNSET_OPTIONS
 from opendlp.domain.respondent_field_schema import (
@@ -127,6 +129,22 @@ def get_schema(
     _ensure_view_permission(uow, user_id, assembly_id)
     fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
     return [f.create_detached_copy() for f in fields]
+
+
+def get_respondent_sections(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> list[FieldSection]:
+    """The fields split into sections at each heading on the questions list, for a respondent's record.
+
+    See ``sections_at_headings``. Returns detached copies.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    fields = get_schema(uow, user_id, assembly_id)
+    blocks = [b.create_detached_copy() for b in uow.registration_content_blocks.list_by_assembly(assembly_id)]
+    return sections_at_headings(fields, blocks)
 
 
 def get_schema_grouped(

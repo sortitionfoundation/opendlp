@@ -3,11 +3,12 @@ Feature: Respondent field schema
   I want one list of registration questions, with headings and text where I choose to put them
   So that the registration page, and a respondent's record, read in the order I think about the data.
 
-  Scenario: CSV-sourced respondent detail page shows grouped sections
+  Scenario: Respondent detail page is sectioned at the questions list's headings
     Given there is an assembly with respondents imported from CSV called "Grouped Schema Demo"
+    And the questions list for "Grouped Schema Demo" has the heading "About you" below "last_name"
     And I am signed in as an admin user
     When I open the first respondent for "Grouped Schema Demo"
-    Then I should see the "Name and contact" collapsible block
+    Then I should see the "Answers" collapsible block
     And I should see the "About you" collapsible block
     And I should see the "Activity" collapsible block
 

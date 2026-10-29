@@ -11,6 +11,7 @@ from opendlp.domain.registration_content_block import (
     RegistrationContentBlock,
     form_item_ref,
     form_items,
+    sections_at_headings,
 )
 from opendlp.domain.respondent_field_schema import (
     DerivationType,
@@ -147,3 +148,49 @@ class TestFormItems:
     @pytest.mark.parametrize("raw", ["", "block", "heading:9f0c3a52-5d1e-4b7a-8a37-2f6f3c1d0b11", "block:not-a-uuid"])
     def test_a_malformed_form_value_parses_to_none(self, raw: str) -> None:
         assert FormItemRef.parse(raw) is None
+
+
+class TestSectionsAtHeadings:
+    def _labels(self, sections) -> list[tuple[str, list[str]]]:
+        return [(str(s.label), [f.field_key for f in s.fields]) for s in sections]
+
+    def test_each_heading_starts_a_section(self):
+        about = RegistrationContentBlock(assembly_id=ASSEMBLY_ID, sort_order=10, heading="About you")
+        consent = RegistrationContentBlock(assembly_id=ASSEMBLY_ID, sort_order=40, heading="Consent")
+        fields = [_field("gender", 20), _field("age", 30), _field("consent", 50)]
+
+        sections = sections_at_headings(fields, [about, consent])
+
+        assert self._labels(sections) == [("About you", ["gender", "age"]), ("Consent", ["consent"])]
+
+    def test_questions_before_any_heading_go_under_answers(self):
+        heading = RegistrationContentBlock(assembly_id=ASSEMBLY_ID, sort_order=20, heading="More")
+
+        sections = sections_at_headings([_field("first", 10), _field("second", 30)], [heading])
+
+        assert self._labels(sections) == [("Answers", ["first"]), ("More", ["second"])]
+
+    def test_text_without_a_heading_does_not_start_a_section(self):
+        """Text is addressed to the respondent filling the form, not to whoever reads their record."""
+        text = RegistrationContentBlock(assembly_id=ASSEMBLY_ID, sort_order=20, body_html="<p>Now some more</p>")
+
+        sections = sections_at_headings([_field("first", 10), _field("second", 30)], [text])
+
+        assert self._labels(sections) == [("Answers", ["first", "second"])]
+
+    def test_a_heading_with_no_questions_after_it_is_left_out(self):
+        empty = RegistrationContentBlock(assembly_id=ASSEMBLY_ID, sort_order=20, heading="Nothing here")
+
+        sections = sections_at_headings([_field("first", 10)], [empty])
+
+        assert self._labels(sections) == [("Answers", ["first"])]
+
+    def test_computed_questions_come_last_in_their_own_section(self):
+        heading = RegistrationContentBlock(assembly_id=ASSEMBLY_ID, sort_order=5, heading="About you")
+
+        sections = sections_at_headings([_derived("region", 1), _field("postcode", 10)], [heading])
+
+        assert self._labels(sections) == [("About you", ["postcode"]), ("Computed questions", ["region"])]
+
+    def test_no_fields_no_sections(self):
+        assert sections_at_headings([], []) == []

@@ -3,6 +3,7 @@ ABOUTME: Holds page config plus the HTML source that supplies the intro and the 
 
 import html as html_lib
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -13,14 +14,12 @@ from jinja2.sandbox import SandboxedEnvironment
 from markupsafe import Markup
 
 from opendlp.domain.html_default_classes import apply_default_govuk_classes
+from opendlp.domain.registration_content_block import RegistrationContentBlock, form_items
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
-    GROUP_DISPLAY_ORDER,
-    GROUP_LABELS,
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.validators import InvalidSlug, SlugError, UrlSlugValidator
 from opendlp.domain.value_objects import ContentStyle
@@ -939,17 +938,6 @@ def _render_field_govuk(field: RespondentFieldDefinition) -> list[str]:
     return _render_input_govuk(field, "text", required_attr)
 
 
-def _group_fields(
-    fields: list[RespondentFieldDefinition],
-) -> dict[RespondentFieldGroup, list[RespondentFieldDefinition]]:
-    grouped: dict[RespondentFieldGroup, list[RespondentFieldDefinition]] = {g: [] for g in GROUP_DISPLAY_ORDER}
-    for f in fields:
-        grouped.setdefault(f.group, []).append(f)
-    for bucket in grouped.values():
-        bucket.sort(key=lambda f: f.sort_order)
-    return grouped
-
-
 def _literal_html_text(text: str) -> str:
     """Escape text for HTML, braces included, so it can never open a template tag."""
     return html_lib.escape(text).replace("{", "&#123;").replace("}", "&#125;")
@@ -974,50 +962,82 @@ def generate_initial_intro_html(assembly_title: str, assembly_question: str) -> 
     return "\n".join(parts) + "\n"
 
 
-def generate_starter_form_html(fields: list[RespondentFieldDefinition]) -> str:
+def _escape_template_braces(html: str) -> str:
+    """Neutralise braces in HTML so it can never open a template tag."""
+    return html.replace("{", "&#123;").replace("}", "&#125;")
+
+
+def _render_block(block: RegistrationContentBlock, heading_class: str = "", govuk: bool = False) -> list[str]:
+    """A heading/text block as starter HTML: the heading as an h2, then the body.
+
+    Neither may open a template tag - blocks carry no variables, so a block
+    reads the same wherever it is shown.
+    """
+    parts: list[str] = []
+    if block.heading:
+        class_attr = f' class="{heading_class}"' if heading_class else ""
+        parts.append(f"<h2{class_attr}>{_literal_html_text(block.heading)}</h2>")
+    if block.body_html.strip():
+        body = _escape_template_braces(block.body_html)
+        parts.append(apply_default_govuk_classes(body) if govuk else body)
+    return parts
+
+
+def _starter_items(
+    fields: list[RespondentFieldDefinition], blocks: Sequence[RegistrationContentBlock]
+) -> list[RespondentFieldDefinition | RegistrationContentBlock]:
+    """The questions on the page and the blocks among them, in list order."""
+    return [
+        item
+        for item in form_items(fields, list(blocks))
+        if isinstance(item, RegistrationContentBlock) or item.on_registration_page != FieldOnRegistrationPage.NO
+    ]
+
+
+def generate_starter_form_html(
+    fields: list[RespondentFieldDefinition], blocks: Sequence[RegistrationContentBlock] = ()
+) -> str:
     """Generate an unstyled starter HTML form from a respondent field schema.
 
     Output uses ``{{ csrf_form_element }}`` and ``{{ form_action }}`` so it is
     a valid input for ``RegistrationPageHtml.render``. The heading and intro
-    paragraph live in the page's intro, not here. Fields are
-    grouped by ``RespondentFieldGroup`` in ``GROUP_DISPLAY_ORDER`` and
-    ordered by ``sort_order`` within each group; empty groups are suppressed.
-    Fields whose ``on_registration_page`` is ``NO`` are omitted, and a field
-    is marked ``required`` when it is ``YES_REQUIRED``.
+    paragraph live in the page's intro, not here. Questions and the heading/text
+    blocks among them come in list order (``form_items``); a block's heading is
+    an ``<h2>``, followed by its text. Fields whose ``on_registration_page`` is
+    ``NO`` are omitted, and a field is marked ``required`` when it is
+    ``YES_REQUIRED``.
     """
-    grouped = _group_fields(fields)
-
     parts: list[str] = [
         '<form action="{{ form_action }}" method="post">',
         "{{ csrf_form_element }}",
         "{{ form_errors() }}",
     ]
-    for group in GROUP_DISPLAY_ORDER:
-        bucket = [f for f in grouped.get(group, []) if f.on_registration_page != FieldOnRegistrationPage.NO]
-        if not bucket:
-            continue
-        parts.append(f"<h2>{html_lib.escape(str(GROUP_LABELS[group]))}</h2>")
-        for field_def in bucket:
-            parts.extend(_render_field(field_def))
+    for item in _starter_items(fields, blocks):
+        if isinstance(item, RegistrationContentBlock):
+            parts.extend(_render_block(item))
+        else:
+            parts.extend(_render_field(item))
     parts.append('<button type="submit">Register</button>')
     parts.append("</form>")
     return "\n".join(parts) + "\n"
 
 
-def generate_starter_form_html_govuk(fields: list[RespondentFieldDefinition]) -> str:
+def generate_starter_form_html_govuk(
+    fields: list[RespondentFieldDefinition], blocks: Sequence[RegistrationContentBlock] = ()
+) -> str:
     """Generate a GOV.UK Design System-styled starter HTML form from a respondent field schema.
 
-    Structurally identical to ``generate_starter_form_html`` (same grouping,
-    ordering, omission and required-field rules; see its docstring), but each
-    field is wrapped in GOV.UK component markup (``govuk-input``,
-    ``govuk-checkboxes``, ``govuk-radios``, ``govuk-select``, ...) instead of
-    bare HTML. Fields are always laid out one per row, since the generator
-    has no way to know which fields an author would want side by side. The
-    CSS needed to make the fixed ``field_errors()``/``form_errors()`` markup
-    look right in this styling lives in the main SCSS build, not inline here.
+    Structurally identical to ``generate_starter_form_html`` (same ordering,
+    omission and required-field rules; see its docstring), but each field is
+    wrapped in GOV.UK component markup (``govuk-input``, ``govuk-checkboxes``,
+    ``govuk-radios``, ``govuk-select``, ...) instead of bare HTML, a block's
+    heading is a ``govuk-heading-l`` and its text gets the default GOV.UK
+    classes the intro gets. Fields are always laid out one per row, since the
+    generator has no way to know which fields an author would want side by
+    side. The CSS needed to make the fixed ``field_errors()``/``form_errors()``
+    markup look right in this styling lives in the main SCSS build, not inline
+    here.
     """
-    grouped = _group_fields(fields)
-
     parts: list[str] = [
         '<div class="govuk-grid-row">',
         '<div class="govuk-grid-column-two-thirds" style="float: none; margin: 0 auto;">',
@@ -1025,13 +1045,11 @@ def generate_starter_form_html_govuk(fields: list[RespondentFieldDefinition]) ->
         "{{ csrf_form_element }}",
         "{{ form_errors() }}",
     ]
-    for group in GROUP_DISPLAY_ORDER:
-        bucket = [f for f in grouped.get(group, []) if f.on_registration_page != FieldOnRegistrationPage.NO]
-        if not bucket:
-            continue
-        parts.append(f'<h2 class="govuk-heading-l">{html_lib.escape(str(GROUP_LABELS[group]))}</h2>')
-        for field_def in bucket:
-            parts.extend(_render_field_govuk(field_def))
+    for item in _starter_items(fields, blocks):
+        if isinstance(item, RegistrationContentBlock):
+            parts.extend(_render_block(item, heading_class="govuk-heading-l", govuk=True))
+        else:
+            parts.extend(_render_field_govuk(item))
     parts.append('<button type="submit" class="govuk-button" data-module="govuk-button">Register</button>')
     parts.append("</form>")
     parts.append("</div>")

@@ -8,8 +8,9 @@ from datetime import UTC, datetime
 from enum import Enum
 
 from opendlp.domain.html_to_text import html_to_text
-from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
+from opendlp.domain.respondent_field_schema import RespondentFieldDefinition, field_list_order
 from opendlp.translations import gettext as _
+from opendlp.translations import lazy_gettext as _l
 
 # An image has no text, but it is something to show.
 _IMAGE_TAG = re.compile(r"<img\b", re.IGNORECASE)
@@ -131,3 +132,37 @@ def form_items(fields: list[RespondentFieldDefinition], blocks: list[Registratio
     items: list[FormItem] = [f for f in fields if not f.is_derived]
     items.extend(blocks)
     return sorted(items, key=_sort_key)
+
+
+@dataclass(frozen=True)
+class FieldSection:
+    """A run of fields under one heading, for showing a respondent's record."""
+
+    label: str
+    fields: list[RespondentFieldDefinition]
+
+
+def sections_at_headings(
+    fields: list[RespondentFieldDefinition], blocks: list[RegistrationContentBlock]
+) -> list[FieldSection]:
+    """Split the fields into sections at each block with a heading, in list order.
+
+    Fields before the first heading go under "Answers"; a heading with no
+    field after it is left out, and text without a heading starts nothing - it
+    speaks to someone filling in the form, not to someone reading a record.
+    Derived fields, which are not on the list, come last under "Computed
+    questions".
+    """
+    sections: list[FieldSection] = []
+    current = FieldSection(label=_l("Answers"), fields=[])
+    for item in form_items(fields, blocks):
+        if isinstance(item, RegistrationContentBlock):
+            if item.heading:
+                sections.append(current)
+                current = FieldSection(label=item.heading, fields=[])
+            continue
+        current.fields.append(item)
+    sections.append(current)
+    derived = [f for f in sorted(fields, key=field_list_order) if f.is_derived]
+    sections.append(FieldSection(label=_l("Computed questions"), fields=derived))
+    return [section for section in sections if section.fields]

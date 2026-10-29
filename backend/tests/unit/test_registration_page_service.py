@@ -7,6 +7,7 @@ import pytest
 from jinja2 import UndefinedError
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.registration_content_block import RegistrationContentBlock
 from opendlp.domain.registration_page import (
     STARTER_THANK_YOU_HTML,
     RegistrationPage,
@@ -906,6 +907,18 @@ class TestGenerateStarterFormHtml:
         assert "{{ csrf_form_element }}" in html
         assert "{{ form_action }}" in html
 
+    def test_includes_the_headings_and_text_in_place(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name", sort_order=10)
+        _add_field(uow, assembly.id, "consent", sort_order=30)
+        uow.registration_content_blocks.add(
+            RegistrationContentBlock(assembly_id=assembly.id, sort_order=20, heading="The small print")
+        )
+
+        html = service.generate_starter_form_html(uow, admin.id, assembly.id)
+
+        assert html.find('name="first_name"') < html.find("<h2>The small print</h2>") < html.find('name="consent"')
+
     def test_requires_manage_permission(self, uow):
         _admin(uow)
         assembly = _assembly(uow)
@@ -1089,6 +1102,18 @@ class TestFillEmptyRegistrationFormHtml:
         assert 'name="first_name"' in source.form_html
         assert "govuk-input" not in source.form_html
 
+    def test_the_fill_includes_the_headings(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+        uow.registration_content_blocks.add(
+            RegistrationContentBlock(assembly_id=assembly.id, sort_order=5, heading="Your name")
+        )
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        source = service.fill_empty_registration_form_html(uow, admin.id, _page_id(uow, assembly), ContentStyle.GOVUK)
+
+        assert '<h2 class="govuk-heading-l">Your name</h2>' in source.form_html
+
     def test_leaves_a_form_with_html_alone(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
@@ -1120,6 +1145,18 @@ class TestGenerateStarterFormHtmlVariants:
 
         assert 'name="first_name"' in variants.plain
         assert 'name="first_name"' in variants.govuk
+
+    def test_both_variants_include_the_headings(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+        uow.registration_content_blocks.add(
+            RegistrationContentBlock(assembly_id=assembly.id, sort_order=5, heading="Your name")
+        )
+
+        variants = service.generate_starter_form_html_variants(uow, admin.id, assembly.id)
+
+        assert "<h2>Your name</h2>" in variants.plain
+        assert '<h2 class="govuk-heading-l">Your name</h2>' in variants.govuk
 
     def test_govuk_variant_uses_govuk_classes_plain_does_not(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)

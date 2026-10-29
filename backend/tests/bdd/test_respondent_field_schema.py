@@ -6,6 +6,8 @@ import uuid
 from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.domain.registration_content_block import form_item_ref
+from opendlp.service_layer.respondent_field_schema_service import add_content_block
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -60,6 +62,16 @@ def assembly_with_csv_respondents(title: str, assembly_creator, admin_user, test
             csv_content,
             replace_existing=True,
         )
+
+
+@given(parsers.parse('the questions list for "{title}" has the heading "{heading}" below "{field_key}"'))
+def heading_below_field(title: str, heading: str, field_key: str, admin_user, test_database) -> None:
+    assembly_id = uuid.UUID(_schema_assembly_ids[title])
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        field = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, field_key)
+        assert field is not None
+        add_content_block(uow, admin_user.id, assembly_id, heading=heading, after=form_item_ref(field))
+        uow.commit()
 
 
 @given("I am signed in as an admin user")

@@ -23,6 +23,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import ContentStyle, RespondentStatus
 from opendlp.entrypoints.blueprints.backoffice_registration import IMAGE_WIDTH_MAX, IMAGE_WIDTH_MIN
+from opendlp.service_layer import respondent_field_schema_service
 from tests.fakes import FakeUnitOfWork
 
 
@@ -1920,19 +1921,39 @@ class TestSetupTaskList:
 
 
 class TestFieldsChangedWarning:
-    """The form editor warns when the field schema changed after the HTML was last saved."""
+    """The form editor warns when the questions, or the headings among them, changed after the HTML was saved."""
+
+    @pytest.fixture(autouse=True)
+    def _admin(self, admin_user):
+        self.admin = admin_user
 
     def _seed_field(self, fake_store, assembly_id):
         with FakeUnitOfWork(store=fake_store) as uow:
-            uow.respondent_field_definitions.add(
-                RespondentFieldDefinition(
-                    assembly_id=assembly_id,
-                    field_key="gender",
-                    label="Gender",
-                    group=RespondentFieldGroup.ABOUT_YOU,
-                    sort_order=10,
-                )
-            )
+            field = respondent_field_schema_service.add_field(uow, self.admin.id, assembly_id, "gender")
+            uow.commit()
+        return field
+
+    def test_warns_when_a_heading_postdates_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.add_content_block(uow, self.admin.id, assembly_id, heading="About you")
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration/my-slug?section=form")
+
+        assert b"registration questions have changed" in response.data
+
+    def test_warns_when_a_question_is_removed_after_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
+        """A deleted question leaves no row behind, but the form may still ask for it."""
+        field = self._seed_field(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.delete_field(uow, self.admin.id, assembly_id, field.id)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration/my-slug?section=form")
+
+        assert b"registration questions have changed" in response.data
 
     def test_warns_when_a_field_postdates_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
