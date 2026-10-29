@@ -297,7 +297,7 @@ nothing changes for erasure.
   below" menu entries, move up/down/top/bottom across the whole list, the
   Section dropdown removed from the question dialog. Load the `ui-components`
   skill first. E2E tests.
-- [ ] P5. Consumers: **starter form generators** (blocks in place, no group
+- [x] P5. Consumers: **starter form generators** (blocks in place, no group
   headings), respondent view/edit pages split at headings, the CSV upload diff
   page without groups, JSON spec and fixture, the changed-since warning, dev
   endpoint, service docs.
@@ -330,3 +330,10 @@ nothing changes for erasure.
   go inert while a dialog is open.
 - The compact toolbar is a `compact` option on the existing editor macros
   (`rich_editor_compact` on `textarea`), not a separate toolbar.
+- The respondent pages put the questions before the first heading under
+  "Answers", and computed questions under "Computed questions"
+  (`sections_at_headings`). A heading with no question after it, and text
+  without a heading, start no section.
+- The JSON field spec dropped `group` as version 6 of the spec.
+- The dev blueprint's `add_field` handler still takes a `group`: it writes the
+  column that P8 drops, so it changes with P8.
