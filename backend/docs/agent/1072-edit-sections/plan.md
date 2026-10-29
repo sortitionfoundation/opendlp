@@ -292,7 +292,7 @@ nothing changes for erasure.
   CSV seed and uploads append in column order with no headings; the "questions last
   changed" helper called from every schema write; stop reading `field_group`.
   Integration tests.
-- [ ] P4. The step: one list, rows for both kinds, the block dialog with the
+- [x] P4. The step: one list, rows for both kinds, the block dialog with the
   reduced rich editor and the link dialog, the two add buttons and the "add
   below" menu entries, move up/down/top/bottom across the whole list, the
   Section dropdown removed from the question dialog. Load the `ui-components`
@@ -323,3 +323,10 @@ nothing changes for erasure.
 - "Questions last changed" is recorded for writes to questions and blocks,
   including the target sources step creating a question or resyncing its
   options, but not for changes to derived fields: they are never on a form.
+- The link dialog moved out of `registration/_modals.html` into
+  `components/rich_editor_link_modal.html`, so the questions step can include
+  it. There it sits inside the heading/text dialog fragment, hosted by a small
+  `richEditorLinkHost` Alpine component, because the fragment host's siblings
+  go inert while a dialog is open.
+- The compact toolbar is a `compact` option on the existing editor macros
+  (`rich_editor_compact` on `textarea`), not a separate toolbar.
