@@ -287,7 +287,7 @@ nothing changes for erasure.
   to heading blocks (non-empty groups only) and global renumbering, the
   "questions last changed" column; add the table to `_delete_all_test_data()`
   and the BDD `delete_all_except_standard_users()`. Migration tests.
-- [ ] P3. Service layer: `get_form_items`, `reorder_form_items`, add/update/delete
+- [x] P3. Service layer: `get_form_items`, `reorder_form_items`, add/update/delete
   block; every "next sort order in group" becomes "next on the whole list";
   CSV seed and uploads append in column order with no headings; the "questions last
   changed" helper called from every schema write; stop reading `field_group`.
@@ -309,3 +309,17 @@ nothing changes for erasure.
 - [ ] P8. Separate PR: drop `field_group`, `RespondentFieldGroup`,
   `GROUP_DISPLAY_ORDER`, `GROUP_LABELS`, `reorder_group`, `get_schema_grouped`,
   and the heuristics module (`classify_field_key`).
+
+## Where the implementation differs from the plan
+
+- `reorder_group` went in P3, not P8: it renumbered one group 10, 20, 30…,
+  which on the single scale would have collided with the rest of the list.
+  `move_form_item` (up, down, top, bottom) and `reorder_form_items` replace it.
+- `list_by_assembly` orders by `sort_order` with **derived fields last**, so
+  the CSV export keeps computed columns at the end as the Derived section did.
+- A new schema, and a CSV seed, put the built-in questions eligible,
+  can attend and email first and consent and stay on database last. A built-in
+  column the CSV has stays where the CSV has it.
+- "Questions last changed" is recorded for writes to questions and blocks,
+  including the target sources step creating a question or resyncing its
+  options, but not for changes to derived fields: they are never on a form.
