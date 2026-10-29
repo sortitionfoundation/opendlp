@@ -269,6 +269,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Monitoring](docs/monitoring.md) - Health endpoints and end-to-end monitor selection feature
 - [Respondent Field Spec](docs/respondent_field_spec.md) - Hidden JSON endpoint describing an assembly's respondent columns and their valid values
 - [Targets and Registration Questions](docs/targets-and-registration-questions.md) - How targets get their data from registration questions, and the invariants that keep selection pairing them
+- [Registration Questions List](docs/registration-questions-list.md) - The one ordered list of questions and the headings and text among them: how it is ordered, where new items go, and what reads it
 - [Registration Intro Editor](docs/registration-intro-editor.md) - What the visual intro editor keeps, what makes it fall back to HTML, how the intro style adds GOV.UK classes, the thank-you page's choice and variables, and what the auto-reply email's editor leaves out
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup

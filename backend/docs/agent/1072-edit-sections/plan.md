@@ -303,7 +303,7 @@ nothing changes for erasure.
   endpoint, service docs.
 - [x] P6. Drag-and-drop with Sortable.js. Vitest for the component; BDD scenarios
   for drag and for the keyboard route.
-- [ ] P7. Docs (`targets-and-registration-questions.md` "Sections are a fixed
+- [x] P7. Docs (`targets-and-registration-questions.md` "Sections are a fixed
   enum", `respondent_field_spec.md`, the field-schema design note, a short
   note on the manual clear-and-refill), translation catalogues.
 - [ ] P8. Separate PR: drop `field_group`, `RespondentFieldGroup`,
@@ -346,3 +346,7 @@ nothing changes for erasure.
   `#focus=`. After a drag, the step's live region says "Order saved".
 - Sortable.js is bundled into `alpine-components.js`, so every backoffice page
   carries it.
+- P7 added a permanent reference, `docs/registration-questions-list.md`, and
+  "heading or text" to the glossary in `docs/language.md`. The Hungarian
+  catalogue has the new strings untranslated; they show in English until they
+  are translated.

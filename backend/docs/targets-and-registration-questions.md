@@ -135,8 +135,8 @@ match (the most selection tolerates).
 
 **A linked question's option values are the target's values, verbatim.** The
 domain refuses type and option-value changes on a linked question
-(`TargetLinkedFieldError`). Label, help text, per-option help text, section,
-order, required-or-optional, and radio-versus-dropdown stay editable, because
+(`TargetLinkedFieldError`). Label, help text, per-option help text,
+place in the list, required-or-optional, and radio-versus-dropdown stay editable, because
 none of them touch the pairing. The one sanctioned way to change the values is
 re-sync, which copies them from the target.
 
@@ -148,8 +148,9 @@ through the edit form, the export and the target counts. It is meant to read
 as "needs attention".
 
 **A computed question's type and options belong to its rule.** Nobody edits
-them by hand (`DerivedFieldError`). It is never on the registration page, it
-always lives in the `DERIVED` section, and no editing screen lists it: it is
+them by hand (`DerivedFieldError`). It is never on the registration page or
+the questions list, it comes after every other field in the export, and no
+editing screen lists it: it is
 reachable only through the target it feeds. This is why deleting or unlinking
 its target deletes it (below).
 
@@ -257,13 +258,15 @@ revisit the decision it supports.
 - **The registration page is authored HTML that the system never rewrites.**
   Server-side validation follows the schema regardless of the HTML, so adding
   a required question without editing the HTML makes every submission fail.
-  Rendering the page from the schema is agreed direction, not done.
+  Rendering the page from the schema is agreed direction, not done; until it
+  is, see [registration-questions-list.md](registration-questions-list.md#when-the-form-is-behind-the-list).
 - **All live assemblies are still on Google Sheets** at the time of writing, so
   the target-source flow is expected to be used on new assemblies with no
   respondents yet. The "fresh source, everyone fell back" report is therefore
   rare, and the dry-run preview was parked.
-- **Sections are a fixed enum** (`RespondentFieldGroup`), shared with the
-  backoffice registrant page. Free-form sections are deferred.
+- **There are no fixed sections.** The questions are one list, with headings
+  and text wherever the organiser puts them; the registrant page sections at
+  those headings. See [registration-questions-list.md](registration-questions-list.md).
 - **Google Sheets assemblies never get computed questions.** If a Google
   Sheets user needs a derived column, they compute it with a formula in the
   spreadsheet, not inside OpenDLP. The UI says so.
