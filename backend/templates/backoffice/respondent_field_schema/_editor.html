@@ -1,9 +1,84 @@
 {#
-ABOUTME: Registration questions list — a card per section, a row per question with its edit and move actions
-ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
+ABOUTME: Registration questions list — one table of questions and the headings and text among them
+ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/icons.html" import icon_edit, icon_more_vert %}
+{% macro row_menu(row, is_first, is_last, move_url, delete_url, delete_confirm, removable) %}
+    {#
+    The row's less common actions behind a "more" menu. menuButton makes it a WAI-ARIA
+    menu button: arrow keys move between the items, which are tabindex="-1" so the menu
+    is one Tab stop. Escape is bound on this element, not window, so it closes only the
+    menu and not the step dialog around it.
+    #}
+    {% set item = row["item"] %}
+    {% set menu_id = "item-actions-" ~ item.id %}
+    {# No "up" or "to top" for the first item, no "down" or "to bottom" for the last. Built
+       without `set _ = list.append(...)`, which would shadow gettext here. #}
+    {% set move_directions = ([("top", _("Move to top")), ("up", _("Move up"))] if not is_first else []) + ([("down", _("Move down")), ("bottom", _("Move to bottom"))] if not is_last else []) %}
+    {% set add_question_url = url_for('respondent_field_schema.new_field_modal', assembly_id=assembly.id, after=row["ref"]) %}
+    {% set add_block_url = url_for('respondent_field_schema.new_block_modal', assembly_id=assembly.id, after=row["ref"]) %}
+    <div class="relative inline-flex"
+         x-data="menuButton"
+         @keydown.escape="closeOnEscape"
+         @focusout="closeOnFocusOut">
+        {{ button(variant="icon",
+        icon=icon_more_vert(classes="w-4 h-4"),
+        id=menu_id ~ "-toggle",
+        aria_label=_("More actions for %(name)s", name=row["name"]),
+        aria_haspopup="menu",
+        attrs='x-ref="menuToggle" @click="toggleMenu()" @keydown="onToggleKeydown" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="' ~ menu_id ~ '-menu"') }}
+        <div x-show="open"
+             x-cloak
+             id="{{ menu_id }}-menu"
+             role="menu"
+             x-ref="menu"
+             @keydown="onMenuKeydown"
+             aria-labelledby="{{ menu_id }}-toggle"
+             class="menu menu--right"
+             style="min-width: 14rem;">
+        {# role="none": a form is not a valid child of role="menu" - the
+           menuitem is the submit button inside it #}
+            {% for direction, direction_label in move_directions %}
+                <form method="post"
+                      role="none"
+                      action="{{ move_url }}"
+                      x-data
+                      x-preserve-scroll-on-submit>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="direction" value="{{ direction }}">
+                    <button type="submit" role="menuitem" tabindex="-1" class="menu-item">{{ direction_label }}</button>
+                </form>
+            {% endfor %}
+            <a href="{{ add_question_url }}"
+               role="menuitem"
+               tabindex="-1"
+               class="menu-item"
+               hx-get="{{ add_question_url }}"
+               hx-target="#field-modal-container"
+               hx-swap="innerHTML">{{ _("Add a question below") }}</a>
+            <a href="{{ add_block_url }}"
+               role="menuitem"
+               tabindex="-1"
+               class="menu-item"
+               hx-get="{{ add_block_url }}"
+               hx-target="#field-modal-container"
+               hx-swap="innerHTML">{{ _("Add a heading or text below") }}</a>
+            {# Last, and marked as destructive. Built-in questions can't be removed. #}
+            {% if removable %}
+                <form method="post"
+                      role="none"
+                      action="{{ delete_url }}"
+                      x-data
+                      data-preserve-scroll
+                      @submit.prevent="$confirm('{{ delete_confirm }}', $el)">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" role="menuitem" tabindex="-1" class="menu-item menu-item--danger">{{ _("Remove") }}</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
 {# oob=true marks the fragment for an out-of-band swap: HTMX replaces #schema-editor
    in place while the (otherwise empty) response body clears #field-modal-container,
    closing whichever modal triggered the mutation. #}
@@ -23,39 +98,64 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
             </form>
         </section>
     {% endif %}
-    {% for section in sections %}
-        {% set section_heading_id = "question-section-" ~ section.group.value %}
-        <section class="question-section" aria-labelledby="{{ section_heading_id }}">
-            <div class="question-section__header">
-                <h3 id="{{ section_heading_id }}" class="text-heading-lg" style="color: var(--color-headings);">{{ section.label }}</h3>
-                {% set add_url = url_for('respondent_field_schema.new_field_modal', assembly_id=assembly.id, group=section.group.value) %}
-                {{ button(_("Add a question") ,
-                variant="secondary",
-                href=add_url,
-                aria_label=_("Add a question to %(section)s", section=section.label),
-                attrs='data-focus-id="add-question-' ~ section.group.value ~ '" hx-get="' ~ add_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
-            </div>
-            <table class="question-table">
-                <colgroup>
-                    <col style="width: 30%;" />
-                    <col style="width: 30%;" />
-                    <col />
-                    <col style="width: 10rem;" />
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th scope="col">{{ _("Question") }}</th>
-                        <th scope="col">{{ _("Question type") }}</th>
-                        <th scope="col">{{ _("Notes") }}</th>
-                        <th scope="col">
-                            <span class="sr-only">{{ _("Actions") }}</span>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for field in section.fields %}
+    <section class="question-section" aria-labelledby="question-list-heading">
+        <h3 id="question-list-heading" class="sr-only">{{ _("Questions, headings and text, in the order the registration page shows them") }}</h3>
+        <table class="question-table">
+            <colgroup>
+                <col style="width: 30%;" />
+                <col style="width: 30%;" />
+                <col />
+                <col style="width: 10rem;" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th scope="col">{{ _("Question") }}</th>
+                    <th scope="col">{{ _("Question type") }}</th>
+                    <th scope="col">{{ _("Notes") }}</th>
+                    <th scope="col">
+                        <span class="sr-only">{{ _("Actions") }}</span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    {% set item = row["item"] %}
+                    {% set edit_icon %}{{ icon_edit(classes="w-4 h-4") }}{% endset %}
+                    {% if row["kind"] == "block" %}
+                        {% set edit_url = url_for('respondent_field_schema.edit_block_modal', assembly_id=assembly.id, block_id=item.id) %}
+                        <tr class="content-block-row" data-focus-row>
+                            <th scope="row">
+                                {% if item.heading %}
+                                    <div class="content-block-row__heading">{{ item.heading }}</div>
+                                {% endif %}
+                                {% if row["summary"] %}
+                                    <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ row["summary"] }}</div>
+                                {% endif %}
+                            </th>
+                            <td>
+                                <div class="text-body-md">{{ row["kind_label"] }}</div>
+                            </td>
+                            <td></td>
+                            <td>
+                                <div class="question-row__actions">
+                                    {{ button(_("Edit"),
+                                    variant="tertiary",
+                                    href=edit_url,
+                                    leading_icon=edit_icon,
+                                    aria_label=_("Edit %(name)s", name=row["name"]),
+                                    attrs='data-focus-id="block-' ~ item.id ~ '" hx-get="' ~ edit_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+                                    {{ row_menu(row, loop.first, loop.last,
+                                    move_url=url_for('respondent_field_schema.move_block', assembly_id=assembly.id, block_id=item.id),
+                                    delete_url=url_for('respondent_field_schema.delete_block_view', assembly_id=assembly.id, block_id=item.id),
+                                    delete_confirm=_("Remove this heading or text from the list?"),
+                                    removable=true) }}
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        {% set field = item %}
                         {% set edit_url = url_for('respondent_field_schema.edit_field_modal', assembly_id=assembly.id, field_id=field.id) %}
-                        <tr class="question-row">
+                        <tr class="question-row" data-focus-row>
                             <th scope="row">
                                 <div class="text-body-md" style="color: var(--color-headings);">{{ field.label }}</div>
                                 <code class="text-body-sm" style="color: var(--color-body-text);">{{ field.field_key }}</code>
@@ -88,82 +188,35 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                             </td>
                             <td>
                                 <div class="question-row__actions">
-                                    {% set edit_icon %}{{ icon_edit(classes="w-4 h-4") }}{% endset %}
                                     {{ button(_("Edit"),
                                     variant="tertiary",
                                     href=edit_url,
                                     leading_icon=edit_icon,
                                     aria_label=_("Edit %(question)s", question=field.label),
                                     attrs='data-focus-id="question-' ~ field.id ~ '" hx-get="' ~ edit_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
-                                    {# No "up" for a section's first question, no "down" for its last. Built
-                                       without `set _ = list.append(...)`, which would shadow gettext here. #}
-                                    {% set move_directions = ([("up", _("Move up"))] if not loop.first else []) + ([("down", _("Move down"))] if not loop.last else []) %}
-                                    {# Less common actions behind a "more" menu. menuButton makes it a
-                                       WAI-ARIA menu button: arrow keys move between the items, which are
-                                       tabindex="-1" so the menu is one Tab stop.
-                                       Escape is bound on this element, not window, so it closes
-                                       only the menu and not the step dialog around it. A built-in question
-                                       alone in its section has nothing to put there: no menu. #}
-                                    {% if move_directions or not field.is_fixed %}
-                                        <div class="relative inline-flex"
-                                             x-data="menuButton"
-                                             @keydown.escape="closeOnEscape"
-                                             @focusout="closeOnFocusOut">
-                                            {{ button(variant="icon",
-                                            icon=icon_more_vert(classes="w-4 h-4"),
-                                            id="question-actions-" ~ field.id ~ "-toggle",
-                                            aria_label=_("More actions for %(name)s", name=field.label),
-                                            aria_haspopup="menu",
-                                            attrs='x-ref="menuToggle" @click="toggleMenu()" @keydown="onToggleKeydown" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="question-actions-' ~ field.id ~ '-menu"') }}
-                                            <div x-show="open"
-                                                 x-cloak
-                                                 id="question-actions-{{ field.id }}-menu"
-                                                 role="menu"
-                                                 x-ref="menu"
-                                                 @keydown="onMenuKeydown"
-                                                 aria-labelledby="question-actions-{{ field.id }}-toggle"
-                                                 class="menu menu--right"
-                                                 style="min-width: 12rem;">
-                                            {# role="none": a form is not a valid child of role="menu" - the
-                                               menuitem is the submit button inside it #}
-                                                {% for direction, direction_label in move_directions %}
-                                                    <form method="post"
-                                                          role="none"
-                                                          action="{{ url_for('respondent_field_schema.move_field', assembly_id=assembly.id, field_id=field.id) }}"
-                                                          x-data
-                                                          x-preserve-scroll-on-submit>
-                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                        <input type="hidden" name="direction" value="{{ direction }}">
-                                                        <button type="submit" role="menuitem" tabindex="-1" class="menu-item">{{ direction_label }}</button>
-                                                    </form>
-                                                {% endfor %}
-                                                {# Built-in questions can't be removed. Last, and marked as destructive. #}
-                                                {% if not field.is_fixed %}
-                                                    <form method="post"
-                                                          role="none"
-                                                          action="{{ url_for('respondent_field_schema.delete_field_view', assembly_id=assembly.id, field_id=field.id) }}"
-                                                          x-data
-                                                          data-preserve-scroll
-                                                          @submit.prevent="$confirm('{{ _("Remove this question? Respondent data keeps its values; they just stop being rendered.") }}', $el)">
-                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                        <button type="submit" role="menuitem" tabindex="-1" class="menu-item menu-item--danger">{{ _("Remove") }}</button>
-                                                    </form>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% endif %}
+                                    {{ row_menu(row, loop.first, loop.last,
+                                    move_url=url_for('respondent_field_schema.move_field', assembly_id=assembly.id, field_id=field.id),
+                                    delete_url=url_for('respondent_field_schema.delete_field_view', assembly_id=assembly.id, field_id=field.id),
+                                    delete_confirm=_("Remove this question? Respondent data keeps its values; they just stop being rendered."),
+                                    removable=not field.is_fixed) }}
                                 </div>
                             </td>
                         </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="4" class="text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("No questions in this section yet.") }}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
-    {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="flex flex-wrap gap-2">
+            {% set add_question_url = url_for('respondent_field_schema.new_field_modal', assembly_id=assembly.id) %}
+            {% set add_block_url = url_for('respondent_field_schema.new_block_modal', assembly_id=assembly.id) %}
+            {{ button(_("Add a question") ,
+            variant="secondary",
+            href=add_question_url,
+            attrs='data-focus-id="add-question" hx-get="' ~ add_question_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+            {{ button(_("Add a heading or text") ,
+            variant="secondary",
+            href=add_block_url,
+            attrs='data-focus-id="add-block" hx-get="' ~ add_block_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+        </div>
+    </section>
 </div>

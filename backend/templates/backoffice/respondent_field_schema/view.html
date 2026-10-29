@@ -1,6 +1,6 @@
 {#
 ABOUTME: Backoffice page for viewing and editing the respondent field schema
-ABOUTME: Read-only summary rows with section/order controls; field editing happens in a modal
+ABOUTME: Read-only rows of questions, headings and text with order controls; editing happens in a modal
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/info_card.html" import info_card %}
@@ -9,6 +9,14 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/registration/_step_dialog.html" import step_dialog %}
 {% block title %}{{ _("Registration questions") }} - {{ assembly.title }}{% endblock %}
+{% block head %}
+    {# The heading or text dialog's visual editor: its styles, and the script that
+       mounts it over the textarea whenever the dialog is swapped in. #}
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/rich-editor.css', v=static_hashes('css/rich-editor.css')) }}" />
+    <script nonce="{{ csp_nonce }}"
+            src="{{ url_for('static', filename='backoffice/js/dist/html-editor.js', v=static_hashes('backoffice/js/dist/html-editor.js')) }}"></script>
+{% endblock %}
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(
@@ -77,7 +85,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
     {% if schema_has_rows and not (data_source == "gsheet" and gsheet) %}
         <div id="field-modal-container" data-fragment-dialog-host>
             {% if modal_ctx %}
-                {% include "backoffice/respondent_field_schema/_field_modal.html" %}
+                {% include modal_ctx["template"] %}
             {% endif %}
         </div>
     {% endif %}

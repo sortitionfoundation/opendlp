@@ -1,5 +1,5 @@
-"""ABOUTME: Backoffice routes for managing a per-assembly respondent field schema
-ABOUTME: Read-only schema rows plus an HTMX add/edit field modal; move, delete, initialise"""
+"""ABOUTME: Backoffice routes for the registration questions list: questions and the headings and text among them
+ABOUTME: Read-only rows plus HTMX add/edit dialogs for questions and content blocks; move, reorder, delete, initialise"""
 
 import contextlib
 import functools
@@ -16,13 +16,18 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.domain.registration_content_block import FormItemKind, FormItemRef
+from opendlp.domain.html_to_text import html_to_text
+from opendlp.domain.registration_content_block import (
+    FormItem,
+    FormItemKind,
+    FormItemRef,
+    RegistrationContentBlock,
+    form_item_ref,
+)
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     CHOICE_TYPES,
     FIELD_TYPE_LABELS,
-    GROUP_DISPLAY_ORDER,
-    GROUP_LABELS,
     ChoiceOption,
     FieldOnRegistrationPage,
     FieldType,
@@ -41,6 +46,7 @@ from opendlp.service_layer.assembly_service import (
     get_tab_enabled_states,
 )
 from opendlp.service_layer.exceptions import (
+    ContentBlockInvalidError,
     ContentBlockNotFoundError,
     InsufficientPermissions,
     NotFoundError,
@@ -50,14 +56,18 @@ from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
     add_choice_option,
+    add_content_block,
     add_field,
+    delete_content_block,
     delete_field,
-    get_schema_grouped,
+    get_form_items,
+    get_schema,
     guess_field_types,
     initialise_empty_schema,
     move_form_item,
     remove_choice_option,
     update_choice_option,
+    update_content_block,
     update_field,
 )
 from opendlp.service_layer.respondent_field_spec_service import build_field_spec
@@ -68,6 +78,8 @@ from opendlp.translations import lazy_gettext as _l
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
 _MOVE_DIRECTIONS = frozenset({"up", "down", "top", "bottom"})
+_FIELD_MODAL_TEMPLATE = "backoffice/respondent_field_schema/_field_modal.html"
+_BLOCK_MODAL_TEMPLATE = "backoffice/respondent_field_schema/_block_modal.html"
 
 logger = structlog.get_logger(__name__)
 
@@ -104,6 +116,12 @@ def _schema_page_redirect(assembly_id: uuid.UUID) -> ResponseReturnValue:
     # Preserve the submitting form's scroll position so saving a field, moving a
     # row, or editing an option doesn't bounce the user back to the top of the page.
     return redirect_preserving_scroll(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
+
+
+def _valid_after(raw: str) -> str:
+    """The submitted item to add below, if it names one; "" (the end of the list) otherwise."""
+    ref = FormItemRef.parse(raw)
+    return ref.form_value if ref is not None else ""
 
 
 def _parse_registration_group(raw: str | None) -> RespondentFieldGroup | None:
@@ -321,6 +339,7 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
         "help_text": source.get("help_text", ""),
         "on_registration_page": source.get("on_registration_page", FieldOnRegistrationPage.YES_REQUIRED.value),
         "options": options,
+        "after": source.get("after", ""),
     }
     # The modal's single question type dropdown; posts without it (scripted
     # callers) still describe the type with type_choice.
@@ -365,6 +384,8 @@ def _default_modal_values() -> dict[str, Any]:
         "help_text": "",
         "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
         "options": [],
+        # The list item a new question goes below, as a FormItemRef form value; "" for the end.
+        "after": "",
     }
 
 
@@ -381,6 +402,7 @@ def _new_modal_ctx(
     # No Derived option here: a derived field feeds a target, so it is created
     # (and edited) on the target data sources step, never from this modal.
     return {
+        "template": _FIELD_MODAL_TEMPLATE,
         "mode": "new",
         "field": None,
         "action_url": url_for("respondent_field_schema.add_field_view", assembly_id=assembly_id),
@@ -406,6 +428,7 @@ def _edit_modal_ctx(
 ) -> dict[str, Any]:
     target_locked = field.target_category_id is not None and not field.is_fixed and not field.is_derived
     return {
+        "template": _FIELD_MODAL_TEMPLATE,
         "mode": "edit",
         "field": field,
         "action_url": url_for("respondent_field_schema.update_field_view", assembly_id=assembly_id, field_id=field.id),
@@ -525,7 +548,8 @@ def _schema_page_context(
     gsheet = None
     csv_status = None
     assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-    grouped = get_schema_grouped(uow, current_user.id, assembly_id)
+    all_fields = get_schema(uow, current_user.id, assembly_id)
+    items = get_form_items(uow, current_user.id, assembly_id)
     category_names_by_id = {c.id: c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)}
 
     # Reuse the assembly-tabs computed state so the tab bar renders correctly.
@@ -536,24 +560,15 @@ def _schema_page_context(
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
     data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
-    all_fields = [f for group_fields in grouped.values() for f in group_fields]
     has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
     hub_context: dict[str, Any] = {}
     if with_hub:
         hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
 
-    # The DERIVED group is deliberately absent: derived fields are managed on
-    # the target data sources step, not arranged on the registration page.
-    sections = [
-        {
-            "group": group,
-            "label": GROUP_LABELS[group],
-            "fields": grouped.get(group, []),
-        }
-        for group in GROUP_DISPLAY_ORDER
-        if group != RespondentFieldGroup.DERIVED
-    ]
-    schema_has_rows = any(section["fields"] for section in sections)
+    # Derived fields are deliberately absent: they are managed on the target
+    # data sources step, not arranged on the registration page.
+    rows = [_list_row(item) for item in items]
+    schema_has_rows = bool(rows)
 
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
 
@@ -566,13 +581,8 @@ def _schema_page_context(
     return {
         **hub_context,
         "assembly": assembly,
-        "sections": sections,
+        "rows": rows,
         "fed_target_names": fed_target_names,
-        "group_choices": [
-            {"value": group.value, "label": GROUP_LABELS[group]}
-            for group in GROUP_DISPLAY_ORDER
-            if group != RespondentFieldGroup.DERIVED
-        ],
         "field_type_labels_by_value": {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType},
         "schema_has_rows": schema_has_rows,
         "show_guess_button": show_guess_button,
@@ -582,6 +592,28 @@ def _schema_page_context(
         "respondents_enabled": respondents_enabled,
         "selection_enabled": selection_enabled,
     }
+
+
+def _block_kind_label(block: RegistrationContentBlock) -> str:
+    if not block.heading:
+        return _("Text")
+    if not html_to_text(block.body_html).strip():
+        return _("Heading")
+    return _("Heading and text")
+
+
+def _list_row(item: FormItem) -> dict[str, Any]:
+    """One row of the questions list: a question, or a heading/text block with its summary."""
+    ref = form_item_ref(item)
+    row: dict[str, Any] = {"kind": ref.kind.value, "item": item, "ref": ref.form_value}
+    if isinstance(item, RegistrationContentBlock):
+        first_line = next((line for line in html_to_text(item.body_html).splitlines() if line.strip()), "")
+        row["kind_label"] = _block_kind_label(item)
+        row["summary"] = first_line
+        row["name"] = item.heading or first_line
+    else:
+        row["name"] = item.label
+    return row
 
 
 # Each takes the page context its route built inside its ``with uow:`` block, and
@@ -609,9 +641,7 @@ def _render_editor_fragment(page_ctx: dict[str, Any], oob: bool = False) -> Resp
 def _render_modal(page_ctx: dict[str, Any], modal_ctx: dict[str, Any], status: int = 200) -> ResponseReturnValue:
     """Render the dialog — HTMX gets the fragment, no-JS the full page with it open."""
     if _is_htmx():
-        return render_template(
-            "backoffice/respondent_field_schema/_field_modal.html", modal_ctx=modal_ctx, **page_ctx
-        ), status
+        return render_template(modal_ctx["template"], modal_ctx=modal_ctx, **page_ctx), status
     return _render_schema_page(page_ctx, modal_ctx=modal_ctx, status=status)
 
 
@@ -718,10 +748,9 @@ def new_field_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     if "modal" in request.args:
         values = _modal_values_from_request(request.args)
     else:
-        # A section's own "Add a question" button opens the modal with that section chosen.
+        # A row's "Add a question below" opens the modal with that row to go below.
         values = _default_modal_values()
-        if _parse_registration_group(request.args.get("group")) is not None:
-            values["group"] = request.args["group"]
+        values["after"] = _valid_after(request.args.get("after", ""))
     return _modal_response(assembly_id, lambda uow: _new_modal_ctx(uow, assembly_id, values))
 
 
@@ -819,6 +848,7 @@ def _new_field_kwargs(values: dict[str, Any], is_modal: bool) -> tuple[dict[str,
         "options": options,
         "on_registration_page": on_registration_page,
         "help_text": values["help_text"].strip(),
+        "after": FormItemRef.parse(values["after"]),
     }, ""
 
 
@@ -1223,3 +1253,189 @@ def delete_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
         flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
+
+
+# ---------------------------------------------------------------------------
+# Headings and text: the content blocks placed among the questions.
+# ---------------------------------------------------------------------------
+
+
+def _block_values_from_request(source: Any) -> dict[str, str]:
+    return {
+        "heading": source.get("heading", ""),
+        "body_html": source.get("body_html", ""),
+        "after": _valid_after(source.get("after", "")),
+    }
+
+
+def _block_modal_ctx(
+    assembly_id: uuid.UUID,
+    block: RegistrationContentBlock | None,
+    values: dict[str, str],
+    error: str = "",
+) -> dict[str, Any]:
+    if block is None:
+        action_url = url_for("respondent_field_schema.add_block_view", assembly_id=assembly_id)
+    else:
+        action_url = url_for("respondent_field_schema.update_block_view", assembly_id=assembly_id, block_id=block.id)
+    return {
+        "template": _BLOCK_MODAL_TEMPLATE,
+        "mode": "new" if block is None else "edit",
+        "block": block,
+        "action_url": action_url,
+        "error": error,
+        "values": values,
+    }
+
+
+def _load_block(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, block_id: uuid.UUID
+) -> RegistrationContentBlock | None:
+    block: RegistrationContentBlock | None = uow.registration_content_blocks.get(block_id)
+    if block is None or block.assembly_id != assembly_id:
+        return None
+    return block.create_detached_copy()
+
+
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema/blocks/new-modal")
+@login_required
+@_refusals_go_to_the_dashboard
+def new_block_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the add heading or text dialog (HTMX fragment / full-page fallback)."""
+    values = {"heading": "", "body_html": "", "after": _valid_after(request.args.get("after", ""))}
+    return _modal_response(assembly_id, lambda uow: _block_modal_ctx(assembly_id, None, values))
+
+
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema/blocks/<uuid:block_id>/edit-modal")
+@login_required
+@_refusals_go_to_the_dashboard
+def edit_block_modal(assembly_id: uuid.UUID, block_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the edit heading or text dialog (HTMX fragment / full-page fallback)."""
+
+    def build(uow: AbstractUnitOfWork) -> dict[str, Any] | None:
+        block = _load_block(uow, assembly_id, block_id)
+        if block is None:
+            return None
+        values = {"heading": block.heading, "body_html": block.body_html, "after": ""}
+        return _block_modal_ctx(assembly_id, block, values)
+
+    return _modal_response(assembly_id, build)
+
+
+def _block_saved_response(assembly_id: uuid.UUID, page_ctx: dict[str, Any], message: str) -> ResponseReturnValue:
+    if _is_htmx():
+        return _render_editor_fragment(page_ctx, oob=True)
+    flash(message, "success")
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema/blocks/add", methods=["POST"])
+@login_required
+@_refusals_go_to_the_dashboard
+def add_block_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Add a heading, some text, or both to the questions list."""
+    values = _block_values_from_request(request.form)
+    page_ctx: dict[str, Any] = {}
+    error = ""
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            add_content_block(
+                uow,
+                current_user.id,
+                assembly_id,
+                heading=values["heading"],
+                body_html=values["body_html"],
+                after=FormItemRef.parse(values["after"]),
+            )
+            if _is_htmx():
+                page_ctx = _schema_page_context(uow, assembly_id)
+    except ContentBlockInvalidError as e:
+        error = e.user_msg()
+    except InsufficientPermissions:
+        error = _("You don't have permission to edit the schema")
+    if error:
+        return _modal_response(
+            assembly_id, lambda uow: _block_modal_ctx(assembly_id, None, values, error=error), status=422
+        )
+    return _block_saved_response(assembly_id, page_ctx, _("Heading or text added"))
+
+
+@respondent_field_schema_bp.route(
+    "/project/<uuid:assembly_id>/respondent-schema/blocks/<uuid:block_id>/update", methods=["POST"]
+)
+@login_required
+@_refusals_go_to_the_dashboard
+def update_block_view(assembly_id: uuid.UUID, block_id: uuid.UUID) -> ResponseReturnValue:
+    """Save an edited heading or text."""
+    values = _block_values_from_request(request.form)
+    page_ctx: dict[str, Any] = {}
+    error = ""
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            update_content_block(
+                uow,
+                current_user.id,
+                assembly_id,
+                block_id,
+                heading=values["heading"],
+                body_html=values["body_html"],
+            )
+            if _is_htmx():
+                page_ctx = _schema_page_context(uow, assembly_id)
+    except ContentBlockNotFoundError:
+        return _block_missing_response(assembly_id)
+    except ContentBlockInvalidError as e:
+        error = e.user_msg()
+    except InsufficientPermissions:
+        error = _("You don't have permission to edit the schema")
+    if error:
+
+        def dialog(uow: AbstractUnitOfWork) -> dict[str, Any] | None:
+            block = _load_block(uow, assembly_id, block_id)
+            return _block_modal_ctx(assembly_id, block, values, error=error) if block is not None else None
+
+        return _modal_response(assembly_id, dialog, status=422)
+    return _block_saved_response(assembly_id, page_ctx, _("Heading or text updated"))
+
+
+def _block_missing_response(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """The block went while its dialog was open: show the list as it now is."""
+    if _is_htmx():
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            page_ctx = _schema_page_context(uow, assembly_id)
+        return _render_editor_fragment(page_ctx, oob=True)
+    flash(_("That heading or text is no longer on the list"), "error")
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/project/<uuid:assembly_id>/respondent-schema/blocks/<uuid:block_id>/delete", methods=["POST"]
+)
+@login_required
+def delete_block_view(assembly_id: uuid.UUID, block_id: uuid.UUID) -> ResponseReturnValue:
+    """Remove a heading or text from the questions list."""
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            delete_content_block(uow, current_user.id, assembly_id, block_id)
+        flash(_("Heading or text removed"), "success")
+    except ContentBlockNotFoundError:
+        flash(_("That heading or text is no longer on the list"), "error")
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+    except NotFoundError:
+        flash(_("Project not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _schema_page_redirect(assembly_id)
+
+
+@respondent_field_schema_bp.route(
+    "/project/<uuid:assembly_id>/respondent-schema/blocks/<uuid:block_id>/move", methods=["POST"]
+)
+@login_required
+def move_block(assembly_id: uuid.UUID, block_id: uuid.UUID) -> ResponseReturnValue:
+    """Move a heading or text up or down one place, or to the top or bottom of the list."""
+    return _move_item(assembly_id, FormItemRef(FormItemKind.BLOCK, block_id))

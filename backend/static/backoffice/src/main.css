@@ -1055,8 +1055,8 @@
 
     /* ========================================
        REGISTRATION QUESTIONS LIST
-       A card per section, holding a table with a row per question
-       (Figma: Registration fields, node 5357:15299).
+       A card holding a table with a row per question, and per heading or
+       text placed among them (Figma: Registration fields, node 5357:15299).
        ======================================== */
     .question-section {
         display: flex;
@@ -1104,6 +1104,17 @@
 
     .question-table tbody tr:nth-child(odd) > :is(td, th) {
         background-color: var(--color-table-row-alt);
+    }
+
+    /* A heading or text between the questions: marked out with a rule down its
+       first cell, so the list still reads as sections at a glance. */
+    .content-block-row > th {
+        border-left: 4px solid var(--color-primary-action);
+    }
+
+    .content-block-row__heading {
+        font: 600 1.125rem/1.5rem var(--font-body);
+        color: var(--color-headings);
     }
 
     .question-row__actions {
