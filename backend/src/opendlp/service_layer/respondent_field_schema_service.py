@@ -788,10 +788,11 @@ def move_form_item(
     assembly_id: uuid.UUID,
     ref: FormItemRef,
     direction: str,
-) -> None:
+) -> tuple[int, int]:
     """Move one question or block up or down a place, or to the top or bottom of the list.
 
-    Moving past either end changes nothing.
+    Moving past either end changes nothing. Returns where the item now is, as
+    a 1-based position, and how many items the list has.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -810,11 +811,11 @@ def move_form_item(
         direction
     ]
     items.insert(destination, item)
-    if destination == index:
-        return
-    renumber(items)
-    record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    if destination != index:
+        renumber(items)
+        record_questions_changed(uow, assembly_id)
+        request_auto_export(uow, assembly_id)
+    return destination + 1, len(items)
 
 
 def _block_invalid_error() -> ContentBlockInvalidError:

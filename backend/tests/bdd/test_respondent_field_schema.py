@@ -150,6 +150,33 @@ def choose_row_menu_item(admin_logged_in_page: Page, item: str, field_key: str) 
     expect(_block_text(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I drag the "{field_key}" row above the "{target_key}" row'))
+def drag_row_above(admin_logged_in_page: Page, field_key: str, target_key: str) -> None:
+    page = admin_logged_in_page
+    handle = page.locator(f"tr:has(code:text-is('{field_key}')) [data-drag-handle]")
+    target = page.locator(f"tr:has(code:text-is('{target_key}')) [data-drag-handle]")
+    expect(handle).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    with page.expect_response(lambda response: response.url.endswith("/respondent-schema/reorder")):
+        handle.drag_to(target, target_position={"x": 4, "y": 1})
+    page.wait_for_load_state("networkidle")
+
+
+@when(parsers.parse('I use the keyboard to choose "{item}" from the "{field_key}" row menu'))
+def keyboard_row_menu_item(admin_logged_in_page: Page, item: str, field_key: str) -> None:
+    page = admin_logged_in_page
+    row = page.locator(f"tr:has(code:text-is('{field_key}'))")
+    row.get_by_role("button", name="More actions for").focus()
+    page.keyboard.press("Enter")
+    menu_item = row.get_by_role("menuitem", name=item, exact=True)
+    for _ in range(10):
+        if menu_item.evaluate("el => el === document.activeElement"):
+            break
+        page.keyboard.press("ArrowDown")
+    with page.expect_navigation():
+        page.keyboard.press("Enter")
+    page.wait_for_load_state("networkidle")
+
+
 @when(parsers.parse('I save the heading "{heading}" with the text "{text}"'))
 def save_heading_and_text(admin_logged_in_page: Page, heading: str, text: str) -> None:
     page = admin_logged_in_page
@@ -339,6 +366,19 @@ def block_text_links_to(admin_logged_in_page: Page, href: str) -> None:
 @then("the add heading or text dialog should still be open")
 def block_dialog_still_open(admin_logged_in_page: Page) -> None:
     expect(_field_dialog(admin_logged_in_page)).to_contain_text("Add a heading or text")
+
+
+@then(parsers.parse('the page should say "{text}"'))
+def page_says(admin_logged_in_page: Page, text: str) -> None:
+    expect(admin_logged_in_page.get_by_text(text)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('keyboard focus should be on the "{field_key}" row menu button'))
+def focus_on_row_menu(admin_logged_in_page: Page, field_key: str) -> None:
+    toggle = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))").get_by_role(
+        "button", name="More actions for"
+    )
+    expect(toggle).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the required switch should read "{text}"'))

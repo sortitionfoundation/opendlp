@@ -79,6 +79,7 @@ ABOUTME: Read-only rows of questions, headings and text with order controls; edi
                 </form>
             </section>
         {% else %}
+            <p id="question-list-status" class="sr-only" role="status"></p>
             {% include "backoffice/respondent_field_schema/_editor.html" %}
         {% endif %}
     {% endcall %}

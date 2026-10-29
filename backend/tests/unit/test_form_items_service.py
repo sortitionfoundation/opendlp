@@ -359,3 +359,19 @@ class TestQuestionsUpdatedAt:
         move_form_item(uow, admin.id, assembly.id, form_item_ref(last), "down")
 
         assert uow.assemblies.get(assembly.id).questions_updated_at is None
+
+
+class TestMoveReportsWhereTheItemLanded:
+    def test_returns_the_new_position_and_the_list_length(self, uow, admin, assembly):
+        """What the page announces after a move: "Moved to position 1 of 3"."""
+        _field(uow, assembly, "a", 10)
+        _field(uow, assembly, "b", 20)
+        c = _field(uow, assembly, "c", 30)
+
+        assert move_form_item(uow, admin.id, assembly.id, form_item_ref(c), "top") == (1, 3)
+
+    def test_a_move_past_the_end_reports_where_it_already_is(self, uow, admin, assembly):
+        _field(uow, assembly, "a", 10)
+        b = _field(uow, assembly, "b", 20)
+
+        assert move_form_item(uow, admin.id, assembly.id, form_item_ref(b), "down") == (2, 2)

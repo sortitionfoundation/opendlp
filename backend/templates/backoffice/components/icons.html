@@ -204,6 +204,18 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
     </svg>
 {% endmacro %}
 
+{# Lucide "grip-vertical": the handle a row is dragged by. #}
+{% macro icon_grip_vertical(classes="w-5 h-5", style="") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="9" cy="12" r="1"/>
+        <circle cx="9" cy="5" r="1"/>
+        <circle cx="9" cy="19" r="1"/>
+        <circle cx="15" cy="12" r="1"/>
+        <circle cx="15" cy="5" r="1"/>
+        <circle cx="15" cy="19" r="1"/>
+    </svg>
+{% endmacro %}
+
 {% macro icon_more_vert(classes="w-5 h-5", style="") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z"/>

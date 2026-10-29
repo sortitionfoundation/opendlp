@@ -1117,6 +1117,25 @@
         color: var(--color-headings);
     }
 
+    .question-row__name {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .drag-handle {
+        flex: none;
+        padding-top: 2px;
+        cursor: grab;
+        color: var(--color-secondary-text);
+    }
+
+    /* The gap a dragged row leaves where it will drop (Sortable.js ghostClass). */
+    .question-table tr.sortable-ghost > :is(td, th) {
+        background-color: var(--color-subtle-background-panels);
+        opacity: 0.5;
+    }
+
     .question-row__actions {
         display: flex;
         align-items: center;

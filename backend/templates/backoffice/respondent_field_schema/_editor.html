@@ -3,7 +3,8 @@ ABOUTME: Registration questions list — one table of questions and the headings
 ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_edit, icon_more_vert %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/icons.html" import icon_edit, icon_grip_vertical, icon_more_vert %}
 {% macro row_menu(row, is_first, is_last, move_url, delete_url, delete_confirm, removable) %}
     {#
     The row's less common actions behind a "more" menu. menuButton makes it a WAI-ARIA
@@ -27,7 +28,7 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
         id=menu_id ~ "-toggle",
         aria_label=_("More actions for %(name)s", name=row["name"]),
         aria_haspopup="menu",
-        attrs='x-ref="menuToggle" @click="toggleMenu()" @keydown="onToggleKeydown" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="' ~ menu_id ~ '-menu"') }}
+        attrs='data-focus-id="' ~ menu_id ~ '-toggle" x-ref="menuToggle" @click="toggleMenu()" @keydown="onToggleKeydown" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="' ~ menu_id ~ '-menu"') }}
         <div x-show="open"
              x-cloak
              id="{{ menu_id }}-menu"
@@ -79,6 +80,16 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
         </div>
     </div>
 {% endmacro %}
+{% macro drag_handle(row) %}
+    {#
+    What a row is dragged by, and the row's place in the reorder form, which
+    sits outside the table: a form cannot wrap rows that hold forms of their own.
+    The handle is a pointer shortcut only, hidden from assistive technology - the
+    row menu's move commands are the keyboard and screen reader route.
+    #}
+    <span class="drag-handle" data-drag-handle aria-hidden="true">{{ icon_grip_vertical(classes="w-4 h-4") }}</span>
+    <input type="hidden" name="item" value="{{ row['ref'] }}" form="reorder-form">
+{% endmacro %}
 {# oob=true marks the fragment for an out-of-band swap: HTMX replaces #schema-editor
    in place while the (otherwise empty) response body clears #field-modal-container,
    closing whichever modal triggered the mutation. #}
@@ -100,6 +111,20 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
     {% endif %}
     <section class="question-section" aria-labelledby="question-list-heading">
         <h3 id="question-list-heading" class="sr-only">{{ _("Questions, headings and text, in the order the registration page shows them") }}</h3>
+        {% if reorder_failed | default(false) %}
+            {{ alert(reorder_message, variant="error") }}
+        {% endif %}
+        {# Posted by components/sortable-rows.js when a drag ends; the rows' hidden
+           "item" inputs join it through their form attribute. #}
+        {% set reorder_url = url_for('respondent_field_schema.reorder_items', assembly_id=assembly.id) %}
+        <form id="reorder-form"
+              method="post"
+              action="{{ reorder_url }}"
+              hx-post="{{ reorder_url }}"
+              hx-target="#schema-editor"
+              hx-swap="outerHTML">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        </form>
         <table class="question-table">
             <colgroup>
                 <col style="width: 30%;" />
@@ -117,7 +142,7 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                     </th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody x-data="sortableRows">
                 {% for row in rows %}
                     {% set item = row["item"] %}
                     {% set edit_icon %}{{ icon_edit(classes="w-4 h-4") }}{% endset %}
@@ -125,12 +150,17 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                         {% set edit_url = url_for('respondent_field_schema.edit_block_modal', assembly_id=assembly.id, block_id=item.id) %}
                         <tr class="content-block-row" data-focus-row>
                             <th scope="row">
-                                {% if item.heading %}
-                                    <div class="content-block-row__heading">{{ item.heading }}</div>
-                                {% endif %}
-                                {% if row["summary"] %}
-                                    <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ row["summary"] }}</div>
-                                {% endif %}
+                                <div class="question-row__name">
+                                    {{ drag_handle(row) }}
+                                    <div>
+                                        {% if item.heading %}
+                                            <div class="content-block-row__heading">{{ item.heading }}</div>
+                                        {% endif %}
+                                        {% if row["summary"] %}
+                                            <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ row["summary"] }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </th>
                             <td>
                                 <div class="text-body-md">{{ row["kind_label"] }}</div>
@@ -157,11 +187,16 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                         {% set edit_url = url_for('respondent_field_schema.edit_field_modal', assembly_id=assembly.id, field_id=field.id) %}
                         <tr class="question-row" data-focus-row>
                             <th scope="row">
-                                <div class="text-body-md" style="color: var(--color-headings);">{{ field.label }}</div>
-                                <code class="text-body-sm" style="color: var(--color-body-text);">{{ field.field_key }}</code>
-                                {% if field.help_text %}
-                                    <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ field.help_text }}</div>
-                                {% endif %}
+                                <div class="question-row__name">
+                                    {{ drag_handle(row) }}
+                                    <div>
+                                        <div class="text-body-md" style="color: var(--color-headings);">{{ field.label }}</div>
+                                        <code class="text-body-sm" style="color: var(--color-body-text);">{{ field.field_key }}</code>
+                                        {% if field.help_text %}
+                                            <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ field.help_text }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </th>
                             <td>
                                 <div class="text-body-md">{{ field_type_labels_by_value[field.effective_field_type.value] }}</div>
@@ -220,3 +255,8 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
         </div>
     </section>
 </div>
+{# The step dialog's live region, outside this fragment so it survives the swap and
+   its new words are announced: a drag that saved, or one that was refused. #}
+{% if reorder_message is defined %}
+    <p id="question-list-status" hx-swap-oob="innerHTML">{{ reorder_message }}</p>
+{% endif %}

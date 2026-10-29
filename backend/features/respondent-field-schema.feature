@@ -89,3 +89,21 @@ Feature: Respondent field schema
     And I apply the link address "https://example.org/privacy"
     Then the text should link to "https://example.org/privacy"
     And the add heading or text dialog should still be open
+
+  Scenario: Organiser drags a question into a new place
+    Given there is an assembly with respondents imported from CSV called "Schema Drag Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Drag Demo"
+    And I drag the "gender" row above the "first_name" row
+    Then the "gender" field should appear before the "first_name" field
+    When I open the respondent field schema editor for "Schema Drag Demo"
+    Then the "gender" field should appear before the "first_name" field
+
+  Scenario: Organiser moves a question to the top with the keyboard
+    Given there is an assembly with respondents imported from CSV called "Schema Keyboard Move Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Keyboard Move Demo"
+    And I use the keyboard to choose "Move to top" from the "gender" row menu
+    Then the page should say "Moved to position 1 of"
+    And keyboard focus should be on the "gender" row menu button
+    And the "gender" field should appear before the "eligible" field

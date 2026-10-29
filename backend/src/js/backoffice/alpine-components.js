@@ -19,6 +19,7 @@ import {
   progressModalDemo,
 } from "../components/showcase-demos.js";
 import { showcaseNav } from "../components/showcase-nav.js";
+import { sortableRows } from "../components/sortable-rows.js";
 import { suggestionRow } from "../components/suggestion-row.js";
 import { tabsKeyboard } from "../components/tabs-keyboard.js";
 import { targetsPage } from "../components/targets-page.js";
@@ -49,6 +50,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("richEditorLinkHost", richEditorLinkHost);
   Alpine.data("menuButton", menuButton);
   Alpine.data("showcaseNav", showcaseNav);
+  Alpine.data("sortableRows", sortableRows);
   Alpine.data("suggestionRow", suggestionRow);
   Alpine.data("tabsKeyboard", tabsKeyboard);
   Alpine.data("targetsPage", targetsPage);

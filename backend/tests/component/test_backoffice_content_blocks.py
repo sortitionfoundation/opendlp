@@ -5,7 +5,7 @@ import re
 
 import pytest
 
-from opendlp.domain.registration_content_block import RegistrationContentBlock
+from opendlp.domain.registration_content_block import RegistrationContentBlock, form_item_ref
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer import respondent_field_schema_service
 from opendlp.service_layer.user_service import grant_user_assembly_role
@@ -290,3 +290,82 @@ class TestPermissions:
         assert response.status_code == 422
         assert "You don&#39;t have permission to edit the schema" in response.get_data(as_text=True)
         assert _layout(fake_store, admin_user, existing_assembly).count("# Sneaky") == 0
+
+
+@pytest.mark.usefixtures("schema")
+class TestReorder:
+    def _refs(self, fake_store, admin_user, assembly) -> list[str]:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            items = respondent_field_schema_service.get_form_items(uow, admin_user.id, assembly.id)
+        return [form_item_ref(item).form_value for item in items]
+
+    def test_each_row_carries_its_place_for_the_reorder_form(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        block = _block(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(_base(existing_assembly)).get_data(as_text=True)
+
+        assert re.search(r'<form id="reorder-form"[^>]*hx-post="[^"]*/respondent-schema/reorder"', body)
+        assert f'<input type="hidden" name="item" value="block:{block.id}" form="reorder-form">' in body
+        assert body.count('name="item"') == len(self._refs(fake_store, admin_user, existing_assembly))
+
+    def test_drag_handles_are_hidden_from_assistive_technology(self, logged_in_admin, existing_assembly):
+        """Dragging is a pointer shortcut; the row menu's move commands are the accessible route."""
+        body = logged_in_admin.get(_base(existing_assembly)).get_data(as_text=True)
+
+        handles = re.findall(r"<span[^>]*data-drag-handle[^>]*>", body)
+        assert handles
+        assert all('aria-hidden="true"' in handle for handle in handles)
+        assert 'x-data="sortableRows"' in body
+
+    def test_reorder_saves_the_new_order_and_redraws_the_list(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        refs = self._refs(fake_store, admin_user, existing_assembly)
+        reversed_refs = list(reversed(refs))
+
+        response = logged_in_admin.post(
+            f"{_base(existing_assembly)}/reorder", data={"item": reversed_refs}, headers=HTMX
+        )
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert '<div id="schema-editor"' in body
+        assert "Order saved" in body
+        assert self._refs(fake_store, admin_user, existing_assembly) == reversed_refs
+
+    def test_an_order_from_a_stale_page_is_refused_and_the_list_redrawn(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        refs = self._refs(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(f"{_base(existing_assembly)}/reorder", data={"item": refs[1:]}, headers=HTMX)
+
+        # 422, the status the page's HTMX set-up swaps in rather than drops
+        assert response.status_code == 422
+        body = response.get_data(as_text=True)
+        assert "The questions have changed since this page was loaded" in body
+        assert '<div id="schema-editor"' in body
+        assert self._refs(fake_store, admin_user, existing_assembly) == refs
+
+    def test_without_javascript_reorder_redirects(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        refs = self._refs(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(f"{_base(existing_assembly)}/reorder", data={"item": list(reversed(refs))})
+
+        assert response.status_code == 302
+
+    def test_a_menu_move_says_where_it_landed_and_comes_back_to_the_menu(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            email_id = uow.respondent_field_definitions.get_by_assembly_and_key(existing_assembly.id, "email").id
+        total = len(self._refs(fake_store, admin_user, existing_assembly))
+
+        response = logged_in_admin.post(f"{_base(existing_assembly)}/fields/{email_id}/move", data={"direction": "top"})
+
+        assert response.location.endswith(f"#focus=item-actions-{email_id}-toggle")
+        page = logged_in_admin.get(response.location.split("#")[0]).get_data(as_text=True)
+        assert f"Moved to position 1 of {total}" in page
+        assert f'data-focus-id="item-actions-{email_id}-toggle"' in page

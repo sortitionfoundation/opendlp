@@ -66,6 +66,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     initialise_empty_schema,
     move_form_item,
     remove_choice_option,
+    reorder_form_items,
     update_choice_option,
     update_content_block,
     update_field,
@@ -1220,15 +1221,59 @@ def _move_item(assembly_id: uuid.UUID, ref: FormItemRef) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            move_form_item(uow, current_user.id, assembly_id, ref, direction)
+            position, total = move_form_item(uow, current_user.id, assembly_id, ref, direction)
     except (FieldDefinitionNotFoundError, ContentBlockNotFoundError):
         flash(_("That question or heading is no longer on the list"), "error")
+        return _schema_page_redirect(assembly_id)
     except InsufficientPermissions:
         flash(_("You don't have permission to reorder fields"), "error")
+        return _schema_page_redirect(assembly_id)
     except NotFoundError:
         flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
-    return _schema_page_redirect(assembly_id)
+    # Said, and focus put back on the row's menu, so a keyboard or screen reader
+    # user knows where the item went without hunting for it.
+    flash(_("Moved to position %(position)d of %(total)d", position=position, total=total), "success")
+    page_url = url_for("respondent_field_schema.view_schema", assembly_id=assembly_id)
+    return redirect_preserving_scroll(f"{page_url}#focus=item-actions-{ref.item_id}-toggle")
+
+
+@respondent_field_schema_bp.route("/project/<uuid:assembly_id>/respondent-schema/reorder", methods=["POST"])
+@login_required
+@_refusals_go_to_the_dashboard
+def reorder_items(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Put the questions and blocks in the order a drag left them in.
+
+    The form names every item, in order, as ``item`` values. An order that no
+    longer matches the list - someone else changed it - is refused, and the
+    list is redrawn as it now is, with a 422 so HTMX swaps it in.
+    """
+    refs = [FormItemRef.parse(raw) for raw in request.form.getlist("item")]
+    error = ""
+    status = 200
+    page_ctx: dict[str, Any] = {}
+    uow = bootstrap.get_flask_uow()
+    try:
+        with uow:
+            if any(ref is None for ref in refs):
+                raise FieldDefinitionConflictError(_l("The questions list could not be read. Reload the page."))
+            reorder_form_items(uow, current_user.id, assembly_id, [ref for ref in refs if ref is not None])
+            if _is_htmx():
+                page_ctx = _schema_page_context(uow, assembly_id)
+    except FieldDefinitionConflictError as e:
+        error, status = e.user_msg(), 422
+    except InsufficientPermissions:
+        error, status = _("You don't have permission to reorder fields"), 422
+    if not _is_htmx():
+        flash(error or _("Order saved"), "error" if error else "success")
+        return _schema_page_redirect(assembly_id)
+    if error:
+        # The failed block rolled back, so the list it redraws is read afresh.
+        with uow:
+            page_ctx = _schema_page_context(uow, assembly_id)
+    page_ctx["reorder_message"] = error or _("Order saved")
+    page_ctx["reorder_failed"] = bool(error)
+    return render_template("backoffice/respondent_field_schema/_editor.html", **page_ctx), status
 
 
 @respondent_field_schema_bp.route(
