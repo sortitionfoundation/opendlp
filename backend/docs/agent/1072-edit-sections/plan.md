@@ -301,7 +301,7 @@ nothing changes for erasure.
   headings), respondent view/edit pages split at headings, the CSV upload diff
   page without groups, JSON spec and fixture, the changed-since warning, dev
   endpoint, service docs.
-- [ ] P6. Drag-and-drop with Sortable.js. Vitest for the component; BDD scenarios
+- [x] P6. Drag-and-drop with Sortable.js. Vitest for the component; BDD scenarios
   for drag and for the keyboard route.
 - [ ] P7. Docs (`targets-and-registration-questions.md` "Sections are a fixed
   enum", `respondent_field_spec.md`, the field-schema design note, a short
@@ -337,3 +337,12 @@ nothing changes for erasure.
 - The JSON field spec dropped `group` as version 6 of the spec.
 - The dev blueprint's `add_field` handler still takes a `group`: it writes the
   column that P8 drops, so it changes with P8.
+- Dragging posts a `reorder-form` that sits outside the table: a form cannot
+  wrap rows that hold forms of their own, so each row's hidden `item` input
+  joins it through the `form` attribute. A refused order comes back as a 422,
+  the status the page's HTMX set-up swaps in.
+- After a move from the row menu the page says "Moved to position 4 of 22" (a
+  flash message) and focus returns to that row's menu button through
+  `#focus=`. After a drag, the step's live region says "Order saved".
+- Sortable.js is bundled into `alpine-components.js`, so every backoffice page
+  carries it.
