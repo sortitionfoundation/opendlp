@@ -310,6 +310,7 @@ assemblies = Table(
         index=True,
         nullable=True,
     ),
+    Column("questions_updated_at", TZAwareDatetime(), nullable=True),
     # JSON column for flexible assembly configuration
     Column("config", JSON, nullable=True),
 )
@@ -668,6 +669,26 @@ respondent_field_definitions = Table(
     Index("ix_respondent_field_definitions_assembly_key", "assembly_id", "field_key", unique=True),
     # Composite index for grouped display (ordered read path)
     Index("ix_respondent_field_definitions_assembly_group_order", "assembly_id", "field_group", "sort_order"),
+)
+
+# Headings and text an organiser places among the registration questions.
+# sort_order shares one per-assembly scale with respondent_field_definitions.
+registration_content_blocks = Table(
+    "registration_content_blocks",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("sort_order", Integer, nullable=False, default=0),
+    Column("heading", String(255), nullable=False, default="", server_default=""),
+    Column("body_html", Text, nullable=False, default="", server_default=""),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )
 
 # Large-mapping lookup rows for derived fields (e.g. postcode -> region).

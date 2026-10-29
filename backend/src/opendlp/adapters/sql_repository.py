@@ -15,6 +15,7 @@ from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_content_block import RegistrationContentBlock
 from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
@@ -49,6 +50,7 @@ from opendlp.service_layer.repositories import (
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
+    RegistrationContentBlockRepository,
     RegistrationDocumentRepository,
     RegistrationImageRepository,
     RegistrationPageHtmlRepository,
@@ -1664,6 +1666,33 @@ class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, Respon
             )
         )
         return result.rowcount  # type: ignore[attr-defined, no-any-return]
+
+
+class SqlAlchemyRegistrationContentBlockRepository(SqlAlchemyRepository, RegistrationContentBlockRepository):
+    """SQLAlchemy implementation of RegistrationContentBlockRepository."""
+
+    def add(self, item: RegistrationContentBlock) -> None:
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> RegistrationContentBlock | None:
+        return (
+            self.session.query(RegistrationContentBlock).filter(orm.registration_content_blocks.c.id == item_id).first()
+        )
+
+    def all(self) -> Iterable[RegistrationContentBlock]:
+        return self.session.query(RegistrationContentBlock).all()
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RegistrationContentBlock]:
+        return list(
+            self.session
+            .query(RegistrationContentBlock)
+            .filter(orm.registration_content_blocks.c.assembly_id == assembly_id)
+            .order_by(orm.registration_content_blocks.c.sort_order, orm.registration_content_blocks.c.id)
+            .all()
+        )
+
+    def delete(self, item: RegistrationContentBlock) -> None:
+        self.session.delete(item)
 
 
 # Rows per INSERT statement when loading a mapping table; keeps each statement's

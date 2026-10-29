@@ -144,6 +144,6 @@ class TestFormItems:
 
         assert FormItemRef.parse(ref.form_value) == ref
 
-    @pytest.mark.parametrize("raw", ["", "block", "heading:" + str(uuid.uuid4()), "block:not-a-uuid"])
+    @pytest.mark.parametrize("raw", ["", "block", "heading:9f0c3a52-5d1e-4b7a-8a37-2f6f3c1d0b11", "block:not-a-uuid"])
     def test_a_malformed_form_value_parses_to_none(self, raw: str) -> None:
         assert FormItemRef.parse(raw) is None

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from opendlp.domain.email_send_record import RespondentEmailSendRecord
     from opendlp.domain.email_template import EmailTemplate
     from opendlp.domain.password_reset import PasswordResetToken
+    from opendlp.domain.registration_content_block import RegistrationContentBlock
     from opendlp.domain.registration_document import RegistrationDocument
     from opendlp.domain.registration_image import RegistrationImage
     from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
@@ -703,6 +704,20 @@ class RespondentFieldDefinitionRepository(AbstractRepository):
     @abc.abstractmethod
     def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
         """Delete all field definitions for an assembly. Returns count deleted."""
+        raise NotImplementedError
+
+
+class RegistrationContentBlockRepository(AbstractRepository):
+    """Repository interface for the headings and text placed among the registration questions."""
+
+    @abc.abstractmethod
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RegistrationContentBlock]:
+        """Return all blocks for an assembly, ordered by sort_order."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: RegistrationContentBlock) -> None:
+        """Delete a block."""
         raise NotImplementedError
 
 

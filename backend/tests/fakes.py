@@ -16,6 +16,7 @@ from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_content_block import RegistrationContentBlock
 from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
@@ -50,6 +51,7 @@ from opendlp.service_layer.repositories import (
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
+    RegistrationContentBlockRepository,
     RegistrationDocumentRepository,
     RegistrationImageRepository,
     RegistrationPageHtmlRepository,
@@ -1080,6 +1082,17 @@ class FakeRespondentFieldDefinitionRepository(FakeRepository, RespondentFieldDef
         return before - len(self._items)
 
 
+class FakeRegistrationContentBlockRepository(FakeRepository, RegistrationContentBlockRepository):
+    """Fake in-memory RegistrationContentBlockRepository."""
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RegistrationContentBlock]:
+        blocks = [b for b in self._items if b.assembly_id == assembly_id]
+        return sorted(blocks, key=lambda b: (b.sort_order, str(b.id)))
+
+    def delete(self, item: RegistrationContentBlock) -> None:
+        self._items = [b for b in self._items if b.id != item.id]
+
+
 class FakeRespondentFieldMappingEntryRepository(FakeRepository, RespondentFieldMappingEntryRepository):
     """Fake in-memory RespondentFieldMappingEntryRepository."""
 
@@ -1145,6 +1158,7 @@ _REPO_NAMES = (
     "respondents",
     "respondent_field_definitions",
     "respondent_field_mapping_entries",
+    "registration_content_blocks",
     "registration_pages",
     "registration_page_html_sources",
     "registration_images",
@@ -1181,6 +1195,7 @@ class FakeStore:
         self.respondents = FakeRespondentRepository()
         self.respondent_field_definitions = FakeRespondentFieldDefinitionRepository()
         self.respondent_field_mapping_entries = FakeRespondentFieldMappingEntryRepository()
+        self.registration_content_blocks = FakeRegistrationContentBlockRepository()
         self.registration_pages = FakeRegistrationPageRepository()
         self.registration_page_html_sources = FakeRegistrationPageHtmlRepository()
         self.registration_images = FakeRegistrationImageRepository()

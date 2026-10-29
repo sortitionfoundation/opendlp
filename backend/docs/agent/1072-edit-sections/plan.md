@@ -283,7 +283,7 @@ nothing changes for erasure.
 
 - [x] P1. Domain: `RegistrationContentBlock` (heading, body HTML, sort order),
   validation (at least one of heading/body), the merged form-item ordering, unit tests.
-- [ ] P2. ORM table, Alembic migration creating it, the data migration from groups
+- [x] P2. ORM table, Alembic migration creating it, the data migration from groups
   to heading blocks (non-empty groups only) and global renumbering, the
   "questions last changed" column; add the table to `_delete_all_test_data()`
   and the BDD `delete_all_except_standard_users()`. Migration tests.
