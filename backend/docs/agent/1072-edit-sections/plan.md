@@ -1,8 +1,8 @@
 # 1072 — Replace fixed sections with headings and text in the question list
 
-Status: third draft. Nothing implemented. All questions settled over two rounds
+Status: agreed; being implemented. All questions settled over two rounds
 of review; round 2 chose B for Q1, dropped headings from the CSV seed (Q2) and
-dropped tag rejection on save (Q4). Ready to agree.
+dropped tag rejection on save (Q4). Phases are ticked below as they land.
 
 ## The goal
 
@@ -281,31 +281,31 @@ nothing changes for erasure.
 
 ## Phases
 
-- P1. Domain: `RegistrationContentBlock` (heading, body HTML, sort order),
+- [x] P1. Domain: `RegistrationContentBlock` (heading, body HTML, sort order),
   validation (at least one of heading/body), the merged form-item ordering, unit tests.
-- P2. ORM table, Alembic migration creating it, the data migration from groups
+- [ ] P2. ORM table, Alembic migration creating it, the data migration from groups
   to heading blocks (non-empty groups only) and global renumbering, the
   "questions last changed" column; add the table to `_delete_all_test_data()`
   and the BDD `delete_all_except_standard_users()`. Migration tests.
-- P3. Service layer: `get_form_items`, `reorder_form_items`, add/update/delete
+- [ ] P3. Service layer: `get_form_items`, `reorder_form_items`, add/update/delete
   block; every "next sort order in group" becomes "next on the whole list";
   CSV seed and uploads append in column order with no headings; the "questions last
   changed" helper called from every schema write; stop reading `field_group`.
   Integration tests.
-- P4. The step: one list, rows for both kinds, the block dialog with the
+- [ ] P4. The step: one list, rows for both kinds, the block dialog with the
   reduced rich editor and the link dialog, the two add buttons and the "add
   below" menu entries, move up/down/top/bottom across the whole list, the
   Section dropdown removed from the question dialog. Load the `ui-components`
   skill first. E2E tests.
-- P5. Consumers: **starter form generators** (blocks in place, no group
+- [ ] P5. Consumers: **starter form generators** (blocks in place, no group
   headings), respondent view/edit pages split at headings, the CSV upload diff
   page without groups, JSON spec and fixture, the changed-since warning, dev
   endpoint, service docs.
-- P6. Drag-and-drop with Sortable.js. Vitest for the component; BDD scenarios
+- [ ] P6. Drag-and-drop with Sortable.js. Vitest for the component; BDD scenarios
   for drag and for the keyboard route.
-- P7. Docs (`targets-and-registration-questions.md` "Sections are a fixed
+- [ ] P7. Docs (`targets-and-registration-questions.md` "Sections are a fixed
   enum", `respondent_field_spec.md`, the field-schema design note, a short
   note on the manual clear-and-refill), translation catalogues.
-- P8. Separate PR: drop `field_group`, `RespondentFieldGroup`,
+- [ ] P8. Separate PR: drop `field_group`, `RespondentFieldGroup`,
   `GROUP_DISPLAY_ORDER`, `GROUP_LABELS`, `reorder_group`, `get_schema_grouped`,
   and the heuristics module (`classify_field_key`).
