@@ -184,10 +184,8 @@ address; nothing else is stored.
 equals its `name` character for character. This mirrors selection: the data
 adapter feeds category names to sortition-algorithms as feature names and
 respondent attribute keys as the people columns, and the library pairs them by
-exact string match. The heuristics that bucket a newly-imported column into a
-group *do* match target names loosely (`normalise_field_name`), but copying that
-here would report a category as wired up when selection would find no column for
-it.
+exact string match. Matching loosely (`normalise_field_name`) here would report
+a category as wired up when selection would find no column for it.
 
 Categories left over after the join appear in `unmatched_target_categories`.
 Seeing one there is a signal worth acting on — as things stand, selection will
