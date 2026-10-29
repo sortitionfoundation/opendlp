@@ -13,7 +13,6 @@ from opendlp.domain.respondent_field_schema import (
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
@@ -1488,7 +1487,6 @@ class TestTargetLinkedGuardWrites:
             assembly_id=assembly.id,
             field_key=name,
             label=name,
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.CHOICE_RADIO,
             options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
@@ -1567,7 +1565,6 @@ class TestDeletingEveryTargetKeepsLinksHonest:
                 assembly_id=assembly.id,
                 field_key="Gender",
                 label="Gender",
-                group=RespondentFieldGroup.ABOUT_YOU,
                 sort_order=10,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Male")],
@@ -1577,7 +1574,6 @@ class TestDeletingEveryTargetKeepsLinksHonest:
                 assembly_id=assembly.id,
                 field_key="postcode",
                 label="Postcode",
-                group=RespondentFieldGroup.ADDRESS,
                 sort_order=20,
                 field_type=FieldType.TEXT,
             )
@@ -1585,7 +1581,6 @@ class TestDeletingEveryTargetKeepsLinksHonest:
                 assembly_id=assembly.id,
                 field_key="Region",
                 label="Region",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=30,
                 is_derived=True,
                 derived_from=["postcode"],

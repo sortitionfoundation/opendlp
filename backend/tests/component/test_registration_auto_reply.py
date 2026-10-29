@@ -14,7 +14,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus
@@ -132,7 +131,6 @@ def _build_page_with_auto_reply(
                     assembly_id=assembly_id,
                     field_key=key,
                     label=key.capitalize(),
-                    group=RespondentFieldGroup.OTHER,
                     sort_order=(sort + 1) * 10,
                     field_type=ftype,
                     is_fixed=is_fixed,

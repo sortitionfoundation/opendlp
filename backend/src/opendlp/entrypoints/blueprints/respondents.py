@@ -340,7 +340,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     with uow:
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-    new_keys = [key for key, _group in diff.new_keys]
+    new_keys = list(diff.new_keys)
     return render_template(
         "backoffice/respondents/confirm_upload_diff.html",
         assembly=assembly,

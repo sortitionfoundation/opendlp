@@ -12,7 +12,6 @@ from opendlp.domain.respondent_field_schema import (
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
@@ -28,7 +27,6 @@ def _field(assembly_id: uuid.UUID, field_key: str, **kwargs) -> RespondentFieldD
         assembly_id=assembly_id,
         field_key=field_key,
         label=field_key,
-        group=kwargs.pop("group", RespondentFieldGroup.ABOUT_YOU),
         sort_order=10,
         **kwargs,
     )
@@ -38,7 +36,6 @@ def _age_field(assembly_id: uuid.UUID, target_category_id: uuid.UUID | None = No
     return _field(
         assembly_id,
         "Age",
-        group=RespondentFieldGroup.DERIVED,
         is_derived=True,
         derived_from=["year_of_birth"],
         derivation_type=DerivationType.AGE_BRACKET,
@@ -71,7 +68,6 @@ def seeded(postgres_session_factory):
             _field(
                 other_id,
                 "Region",
-                group=RespondentFieldGroup.DERIVED,
                 is_derived=True,
                 derived_from=["Age"],
                 derivation_type=DerivationType.SMALL_MAPPING,

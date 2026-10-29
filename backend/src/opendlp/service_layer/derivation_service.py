@@ -31,7 +31,6 @@ from opendlp.domain.respondent_field_schema import (
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     RespondentFieldMappingEntry,
 )
 from opendlp.domain.respondents import Respondent, normalise_field_name
@@ -362,7 +361,6 @@ def create_derived_field(
     source_field_key: str,
     rule: DerivationRule,
     output_values: list[str] | None = None,
-    group: RespondentFieldGroup = RespondentFieldGroup.DERIVED,
 ) -> tuple[RespondentFieldDefinition, RecomputeReport]:
     """Create a derived field and recompute the existing pool.
 
@@ -386,7 +384,6 @@ def create_derived_field(
         assembly_id=assembly_id,
         field_key=field_key,
         label=label,
-        group=group,
         sort_order=next_sort_order,
         is_derived=True,
         derived_from=[source.field_key],

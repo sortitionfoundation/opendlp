@@ -19,7 +19,6 @@ from opendlp.domain.registration_page import (
 from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, ContentStyle, GlobalRole
@@ -887,7 +886,6 @@ def _add_field(uow: FakeUnitOfWork, assembly_id: uuid.UUID, field_key: str, sort
             assembly_id=assembly_id,
             field_key=field_key,
             label=field_key.replace("_", " ").title(),
-            group=RespondentFieldGroup.NAME_AND_CONTACT,
             sort_order=sort_order,
             field_type=FieldType.TEXT,
         )

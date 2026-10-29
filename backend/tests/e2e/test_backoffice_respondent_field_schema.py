@@ -7,7 +7,6 @@ from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldOnRegistrationPage,
     FieldType,
-    RespondentFieldGroup,
 )
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer import respondent_field_schema_service
@@ -71,7 +70,7 @@ class TestInitialiseSchema:
 
 
 class TestUpdateField:
-    def test_updates_label_and_group(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+    def test_updates_label(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             _seed_schema(uow, admin_user, existing_assembly)
             schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
@@ -81,7 +80,6 @@ class TestUpdateField:
             f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom_field.id}/update",
             data={
                 "label": "Notes from organiser",
-                "group": RespondentFieldGroup.ABOUT_YOU.value,
                 "csrf_token": get_csrf_token(
                     logged_in_admin,
                     f"/backoffice/project/{existing_assembly.id}/respondent-schema",
@@ -95,7 +93,6 @@ class TestUpdateField:
             updated = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
             moved = next(f for f in updated if f.field_key == "custom_notes")
             assert moved.label == "Notes from organiser"
-            assert moved.group == RespondentFieldGroup.ABOUT_YOU
 
 
 class TestMoveField:
@@ -112,7 +109,7 @@ class TestMoveField:
                 replace_existing=True,
             )
             schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
-            others = [f for f in schema if f.group == RespondentFieldGroup.OTHER]
+            others = [f for f in schema if f.field_key in ("a", "b", "c")]
             assert [f.field_key for f in others] == ["a", "b", "c"]
             field_b_id = others[1].id
 
@@ -130,7 +127,7 @@ class TestMoveField:
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
-            after = [f.field_key for f in schema if f.group == RespondentFieldGroup.OTHER]
+            after = [f.field_key for f in schema if f.field_key in ("a", "b", "c")]
             assert after == ["b", "a", "c"]
 
 
@@ -178,7 +175,6 @@ class TestAddField:
             data={
                 "field_key": "Age Range",
                 "label": "Age range",
-                "group": RespondentFieldGroup.ABOUT_YOU.value,
                 "field_type": FieldType.TEXT.value,
                 "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
                 "csrf_token": get_csrf_token(
@@ -195,7 +191,6 @@ class TestAddField:
             # The submitted "Age Range" is normalised to a name-attribute-safe key.
             added = next(f for f in schema if f.field_key == "age_range")
             assert added.label == "Age range"
-            assert added.group == RespondentFieldGroup.ABOUT_YOU
             assert added.field_type == FieldType.TEXT
             assert added.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
 

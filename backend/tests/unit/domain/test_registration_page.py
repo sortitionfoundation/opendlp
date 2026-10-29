@@ -35,7 +35,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     humanise_field_key,
 )
 from opendlp.domain.validators import SlugError
@@ -52,7 +51,6 @@ def _block(sort_order: int, heading: str = "", body_html: str = "") -> Registrat
 
 def _field(
     field_key: str,
-    group: RespondentFieldGroup,
     sort_order: int,
     *,
     label: str = "",
@@ -66,7 +64,6 @@ def _field(
         assembly_id=ASSEMBLY_ID,
         field_key=field_key,
         label=label or humanise_field_key(field_key),
-        group=group,
         sort_order=sort_order,
         is_fixed=is_fixed,
         field_type=field_type,
@@ -693,17 +690,15 @@ class TestRenderGeneratedStarterEndToEnd:
 
     def test_pre_filled_values_and_errors_round_trip(self):
         fields = [
-            _field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL),
+            _field("email", 0, field_type=FieldType.EMAIL),
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
             ),
             _field(
                 "geo",
-                RespondentFieldGroup.ADDRESS,
                 0,
                 field_type=FieldType.CHOICE_DROPDOWN,
                 options=[ChoiceOption(value="North"), ChoiceOption(value="South")],
@@ -1390,7 +1385,7 @@ class TestGenerateStarterFormHtml:
         assert -1 < csrf_pos < form_errors_pos < button_pos
 
     def test_text_field_renders_input_with_value_helper(self):
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        fields = [_field("first_name", 0)]
         html = generate_starter_form_html(fields)
 
         assert '<label for="first_name">First name</label>' in html
@@ -1398,28 +1393,28 @@ class TestGenerateStarterFormHtml:
         assert "{{ field_errors('first_name') }}" in html
 
     def test_email_field_renders_email_input_with_value_helper(self):
-        fields = [_field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL)]
+        fields = [_field("email", 0, field_type=FieldType.EMAIL)]
         html = generate_starter_form_html(fields)
 
         assert ('<input type="email" id="email" name="email" value="{{ value(\'email\') }}">') in html
         assert "{{ field_errors('email') }}" in html
 
     def test_longtext_field_renders_textarea_with_value_helper(self):
-        fields = [_field("about", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.LONGTEXT)]
+        fields = [_field("about", 0, field_type=FieldType.LONGTEXT)]
         html = generate_starter_form_html(fields)
 
         assert ('<textarea id="about" name="about">{{ value(\'about\') }}</textarea>') in html
         assert "{{ field_errors('about') }}" in html
 
     def test_integer_field_renders_number_input_with_value_helper(self):
-        fields = [_field("age", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.INTEGER)]
+        fields = [_field("age", 0, field_type=FieldType.INTEGER)]
         html = generate_starter_form_html(fields)
 
         assert ('<input type="number" id="age" name="age" value="{{ value(\'age\') }}">') in html
         assert "{{ field_errors('age') }}" in html
 
     def test_bool_field_renders_checkbox_with_checked_helper(self):
-        fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, field_type=FieldType.BOOL)]
+        fields = [_field("eligible", 0, field_type=FieldType.BOOL)]
         html = generate_starter_form_html(fields)
 
         assert (
@@ -1430,7 +1425,7 @@ class TestGenerateStarterFormHtml:
         assert 'type="radio"' not in html
 
     def test_bool_or_none_field_renders_single_checkbox(self):
-        fields = [_field("can_attend", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
+        fields = [_field("can_attend", 0, is_fixed=True)]
         html = generate_starter_form_html(fields)
 
         assert html.count('name="can_attend"') == 1
@@ -1441,7 +1436,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
@@ -1461,7 +1455,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "geo",
-                RespondentFieldGroup.ADDRESS,
                 0,
                 field_type=FieldType.CHOICE_DROPDOWN,
                 options=[ChoiceOption(value="North"), ChoiceOption(value="South")],
@@ -1483,7 +1476,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "company",
-                RespondentFieldGroup.OTHER,
                 0,
                 label="AT&T",
                 field_type=FieldType.CHOICE_RADIO,
@@ -1504,7 +1496,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "name_prefix",
-                RespondentFieldGroup.NAME_AND_CONTACT,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="O'Brien")],
@@ -1517,18 +1508,18 @@ class TestGenerateStarterFormHtml:
     def test_questions_alone_get_no_headings(self):
         """The fixed sections are gone: a heading appears only where a block puts one."""
         fields = [
-            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 10),
-            _field("eligible", RespondentFieldGroup.ELIGIBILITY, 20, field_type=FieldType.BOOL),
+            _field("first_name", 10),
+            _field("eligible", 20, field_type=FieldType.BOOL),
         ]
         html = generate_starter_form_html(fields)
 
         assert "<h2" not in html
         assert html.find('name="first_name"') < html.find('name="eligible"')
 
-    def test_fields_follow_sort_order_whatever_their_group(self):
+    def test_fields_follow_sort_order(self):
         fields = [
-            _field("second", RespondentFieldGroup.ELIGIBILITY, 20),
-            _field("first", RespondentFieldGroup.OTHER, 10),
+            _field("second", 20),
+            _field("first", 10),
         ]
         html = generate_starter_form_html(fields)
 
@@ -1536,8 +1527,8 @@ class TestGenerateStarterFormHtml:
 
     def test_a_block_sits_between_the_questions_around_it(self):
         fields = [
-            _field("first_name", RespondentFieldGroup.OTHER, 10),
-            _field("consent", RespondentFieldGroup.OTHER, 30),
+            _field("first_name", 10),
+            _field("consent", 30),
         ]
         blocks = [_block(20, heading="The small print", body_html="<p>We keep your <strong>data</strong> safe.</p>")]
         html = generate_starter_form_html(fields, blocks)
@@ -1568,7 +1559,7 @@ class TestGenerateStarterFormHtml:
         assert "<p>Read this first.</p>" in html
 
     def test_effective_field_type_honoured_for_fixed_fields(self):
-        fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
+        fields = [_field("eligible", 0, is_fixed=True)]
         html = generate_starter_form_html(fields)
 
         assert 'type="checkbox" id="eligible" name="eligible" value="yes"' in html
@@ -1577,7 +1568,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "email",
-                RespondentFieldGroup.NAME_AND_CONTACT,
                 0,
                 field_type=FieldType.EMAIL,
                 on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
@@ -1591,7 +1581,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "consent",
-                RespondentFieldGroup.CONSENT,
                 0,
                 field_type=FieldType.BOOL_OR_NONE,
                 is_fixed=True,
@@ -1604,10 +1593,9 @@ class TestGenerateStarterFormHtml:
 
     def test_no_field_is_omitted(self):
         fields = [
-            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
+            _field("first_name", 0),
             _field(
                 "internal_note",
-                RespondentFieldGroup.OTHER,
                 0,
                 on_registration_page=FieldOnRegistrationPage.NO,
             ),
@@ -1621,7 +1609,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "geo",
-                RespondentFieldGroup.ADDRESS,
                 0,
                 field_type=FieldType.CHOICE_DROPDOWN,
                 options=[ChoiceOption(value="North")],
@@ -1634,7 +1621,7 @@ class TestGenerateStarterFormHtml:
         assert '<option value="">' not in html
 
     def test_render_round_trip_substitutes_tokens(self):
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        fields = [_field("first_name", 0)]
         starter = generate_starter_form_html(fields)
         rendered = RegistrationPageHtml(
             registration_page_id=uuid.uuid4(),
@@ -1647,7 +1634,7 @@ class TestGenerateStarterFormHtml:
         assert "{{ csrf_form_element }}" not in rendered
 
     def test_generated_html_passes_readiness_check(self):
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        fields = [_field("first_name", 0)]
         starter = generate_starter_form_html(fields)
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=starter)
 
@@ -1655,21 +1642,19 @@ class TestGenerateStarterFormHtml:
 
     def test_realistic_schema_shape(self):
         fields = [
-            _field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True),
-            _field("can_attend", RespondentFieldGroup.ELIGIBILITY, 10, is_fixed=True),
-            _field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL, is_fixed=True),
-            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 10),
-            _field("last_name", RespondentFieldGroup.NAME_AND_CONTACT, 20),
+            _field("eligible", 0, is_fixed=True),
+            _field("can_attend", 10, is_fixed=True),
+            _field("email", 0, field_type=FieldType.EMAIL, is_fixed=True),
+            _field("first_name", 10),
+            _field("last_name", 20),
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
             ),
             _field(
                 "geo_bucket",
-                RespondentFieldGroup.ABOUT_YOU,
                 10,
                 field_type=FieldType.CHOICE_DROPDOWN,
                 options=[ChoiceOption(value="North"), ChoiceOption(value="South")],
@@ -1686,7 +1671,7 @@ class TestGenerateStarterFormHtml:
 
     def test_help_text_renders_hint_paragraph_linked_by_aria_describedby(self):
         """A text field's help_text becomes a hint paragraph the input points at."""
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0, help_text="As shown on your passport")]
+        fields = [_field("first_name", 0, help_text="As shown on your passport")]
         html = generate_starter_form_html(fields)
 
         assert '<p class="hint" id="first_name-hint">As shown on your passport</p>' in html
@@ -1694,7 +1679,7 @@ class TestGenerateStarterFormHtml:
 
     def test_help_text_is_escaped(self):
         """Organiser-typed help text is HTML-escaped in the generated form."""
-        fields = [_field("nickname", RespondentFieldGroup.NAME_AND_CONTACT, 0, help_text="e.g. <b>Bob</b> & co")]
+        fields = [_field("nickname", 0, help_text="e.g. <b>Bob</b> & co")]
         html = generate_starter_form_html(fields)
 
         assert "e.g. &lt;b&gt;Bob&lt;/b&gt; &amp; co" in html
@@ -1702,7 +1687,7 @@ class TestGenerateStarterFormHtml:
 
     def test_no_hint_markup_when_help_text_empty(self):
         """Without help_text there is no hint element and no aria-describedby."""
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        fields = [_field("first_name", 0)]
         html = generate_starter_form_html(fields)
 
         assert "hint" not in html
@@ -1713,7 +1698,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Female")],
@@ -1732,7 +1716,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "eligible",
-                RespondentFieldGroup.ELIGIBILITY,
                 0,
                 field_type=FieldType.BOOL,
                 help_text="You must live in the area",
@@ -1748,7 +1731,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[
@@ -1765,7 +1747,7 @@ class TestGenerateStarterFormHtml:
 
     def test_date_field_renders_three_part_inputs_on_one_line(self):
         """A DATE field becomes day/month/year inputs the submission service already accepts."""
-        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        fields = [_field("date_of_birth", 0, field_type=FieldType.DATE)]
         html = generate_starter_form_html(fields)
 
         assert "<legend>Date of birth</legend>" in html
@@ -1785,7 +1767,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "date_of_birth",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.DATE,
                 on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
@@ -1801,7 +1782,7 @@ class TestGenerateStarterFormHtml:
         """They are words on the organiser's form, so they come in the organiser's language."""
         translated = {"Day": "Nap", "Month": "Hónap", "Year": "<Év>", "DD": "NN", "MM": "HH", "YYYY": '"ÉÉÉÉ"'}
         monkeypatch.setattr(registration_page_module, "_", lambda message: translated[message])
-        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        fields = [_field("date_of_birth", 0, field_type=FieldType.DATE)]
 
         html = generate(fields)
 
@@ -1818,7 +1799,6 @@ class TestGenerateStarterFormHtml:
         fields = [
             _field(
                 "date_of_birth",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.DATE,
                 help_text="For example, 27 3 1985",
@@ -1903,7 +1883,7 @@ class TestGenerateStarterFormHtmlGovuk:
         assert "<style>" not in html
 
     def test_text_field_renders_govuk_input_in_form_group(self):
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        fields = [_field("first_name", 0)]
         html = generate_starter_form_html_govuk(fields)
 
         assert '<div class="govuk-form-group">' in html
@@ -1915,7 +1895,7 @@ class TestGenerateStarterFormHtmlGovuk:
         assert "{{ field_errors('first_name') }}" in html
 
     def test_email_field_renders_govuk_email_input(self):
-        fields = [_field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL)]
+        fields = [_field("email", 0, field_type=FieldType.EMAIL)]
         html = generate_starter_form_html_govuk(fields)
 
         assert (
@@ -1923,21 +1903,21 @@ class TestGenerateStarterFormHtmlGovuk:
         ) in html
 
     def test_integer_field_renders_govuk_number_input_with_no_width_modifier(self):
-        fields = [_field("age", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.INTEGER)]
+        fields = [_field("age", 0, field_type=FieldType.INTEGER)]
         html = generate_starter_form_html_govuk(fields)
 
         assert ('<input class="govuk-input" type="number" id="age" name="age" value="{{ value(\'age\') }}">') in html
         assert "govuk-input--width" not in html
 
     def test_longtext_field_renders_govuk_textarea(self):
-        fields = [_field("about", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.LONGTEXT)]
+        fields = [_field("about", 0, field_type=FieldType.LONGTEXT)]
         html = generate_starter_form_html_govuk(fields)
 
         assert ('<textarea class="govuk-textarea" id="about" name="about">{{ value(\'about\') }}</textarea>') in html
         assert "{{ field_errors('about') }}" in html
 
     def test_bool_field_renders_single_govuk_checkbox(self):
-        fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, field_type=FieldType.BOOL)]
+        fields = [_field("eligible", 0, field_type=FieldType.BOOL)]
         html = generate_starter_form_html_govuk(fields)
 
         assert '<div class="govuk-checkboxes" data-module="govuk-checkboxes">' in html
@@ -1950,7 +1930,7 @@ class TestGenerateStarterFormHtmlGovuk:
         assert 'type="radio"' not in html
 
     def test_bool_or_none_field_renders_single_checkbox_not_three_options(self):
-        fields = [_field("can_attend", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
+        fields = [_field("can_attend", 0, is_fixed=True)]
         html = generate_starter_form_html_govuk(fields)
 
         assert html.count('name="can_attend"') == 1
@@ -1960,7 +1940,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
@@ -1988,7 +1967,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "geo",
-                RespondentFieldGroup.ADDRESS,
                 0,
                 field_type=FieldType.CHOICE_DROPDOWN,
                 options=[ChoiceOption(value="North"), ChoiceOption(value="South")],
@@ -2007,7 +1985,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "geo",
-                RespondentFieldGroup.ADDRESS,
                 0,
                 field_type=FieldType.CHOICE_DROPDOWN,
                 options=[ChoiceOption(value="North")],
@@ -2023,7 +2000,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "company",
-                RespondentFieldGroup.OTHER,
                 0,
                 label="AT&T",
                 field_type=FieldType.CHOICE_RADIO,
@@ -2041,7 +2017,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "name_prefix",
-                RespondentFieldGroup.NAME_AND_CONTACT,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="O'Brien")],
@@ -2052,7 +2027,7 @@ class TestGenerateStarterFormHtmlGovuk:
         assert "checked('name_prefix', 'O\\'Brien')" in html
 
     def test_a_block_heading_gets_the_govuk_heading_class(self):
-        fields = [_field("first_name", RespondentFieldGroup.OTHER, 20)]
+        fields = [_field("first_name", 20)]
         html = generate_starter_form_html_govuk(fields, [_block(10, heading="Your name")])
 
         assert '<h2 class="govuk-heading-l">Your name</h2>' in html
@@ -2064,10 +2039,10 @@ class TestGenerateStarterFormHtmlGovuk:
         assert '<p class="govuk-body">Hi</p>' in html
         assert '<ul class="govuk-list govuk-list--bullet">' in html
 
-    def test_fields_follow_sort_order_whatever_their_group(self):
+    def test_fields_follow_sort_order(self):
         fields = [
-            _field("second", RespondentFieldGroup.ELIGIBILITY, 20),
-            _field("first", RespondentFieldGroup.OTHER, 10),
+            _field("second", 20),
+            _field("first", 10),
         ]
         html = generate_starter_form_html_govuk(fields)
 
@@ -2076,10 +2051,9 @@ class TestGenerateStarterFormHtmlGovuk:
 
     def test_no_field_is_omitted(self):
         fields = [
-            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
+            _field("first_name", 0),
             _field(
                 "internal_note",
-                RespondentFieldGroup.OTHER,
                 0,
                 on_registration_page=FieldOnRegistrationPage.NO,
             ),
@@ -2093,7 +2067,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "email",
-                RespondentFieldGroup.NAME_AND_CONTACT,
                 0,
                 field_type=FieldType.EMAIL,
                 on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
@@ -2109,7 +2082,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "consent",
-                RespondentFieldGroup.CONSENT,
                 0,
                 field_type=FieldType.BOOL_OR_NONE,
                 is_fixed=True,
@@ -2125,8 +2097,8 @@ class TestGenerateStarterFormHtmlGovuk:
         # unlike a hand-authored form we never place two of them side by
         # side in a govuk-grid-row.
         fields = [
-            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
-            _field("last_name", RespondentFieldGroup.NAME_AND_CONTACT, 10),
+            _field("first_name", 0),
+            _field("last_name", 10),
         ]
         html = generate_starter_form_html_govuk(fields)
 
@@ -2134,7 +2106,7 @@ class TestGenerateStarterFormHtmlGovuk:
         assert "govuk-grid-column-one-third" not in html
 
     def test_render_round_trip_substitutes_tokens(self):
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        fields = [_field("first_name", 0)]
         starter = generate_starter_form_html_govuk(fields)
         rendered = RegistrationPageHtml(
             registration_page_id=uuid.uuid4(),
@@ -2147,7 +2119,7 @@ class TestGenerateStarterFormHtmlGovuk:
         assert "{{ csrf_form_element }}" not in rendered
 
     def test_generated_html_passes_readiness_check(self):
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        fields = [_field("first_name", 0)]
         starter = generate_starter_form_html_govuk(fields)
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=starter)
 
@@ -2155,7 +2127,7 @@ class TestGenerateStarterFormHtmlGovuk:
 
     def test_help_text_renders_govuk_hint_linked_by_aria_describedby(self):
         """A text field's help_text becomes a govuk-hint div the input points at."""
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0, help_text="As shown on your passport")]
+        fields = [_field("first_name", 0, help_text="As shown on your passport")]
         html = generate_starter_form_html_govuk(fields)
 
         assert '<div class="govuk-hint" id="first_name-hint">As shown on your passport</div>' in html
@@ -2167,7 +2139,7 @@ class TestGenerateStarterFormHtmlGovuk:
 
     def test_no_hint_markup_when_help_text_empty(self):
         """Without help_text there is no govuk-hint and no aria-describedby."""
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        fields = [_field("first_name", 0)]
         html = generate_starter_form_html_govuk(fields)
 
         assert "govuk-hint" not in html
@@ -2178,7 +2150,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Female")],
@@ -2195,7 +2166,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "eligible",
-                RespondentFieldGroup.ELIGIBILITY,
                 0,
                 field_type=FieldType.BOOL,
                 help_text="You must live in the area",
@@ -2213,7 +2183,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "region",
-                RespondentFieldGroup.ADDRESS,
                 0,
                 field_type=FieldType.CHOICE_DROPDOWN,
                 options=[ChoiceOption(value="North")],
@@ -2233,7 +2202,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[
@@ -2254,7 +2222,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Other", help_text="e.g. <b>self-described</b> & more")],
@@ -2270,7 +2237,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "gender",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Female", help_text="option hint")],
@@ -2284,7 +2250,7 @@ class TestGenerateStarterFormHtmlGovuk:
 
     def test_date_field_renders_the_govuk_date_input_pattern(self):
         """A DATE field renders the design-system date input: three labelled parts in a fieldset."""
-        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        fields = [_field("date_of_birth", 0, field_type=FieldType.DATE)]
         html = generate_starter_form_html_govuk(fields)
 
         assert '<fieldset class="govuk-fieldset" role="group">' in html
@@ -2312,7 +2278,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "date_of_birth",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.DATE,
                 on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
@@ -2327,7 +2292,6 @@ class TestGenerateStarterFormHtmlGovuk:
         fields = [
             _field(
                 "date_of_birth",
-                RespondentFieldGroup.ABOUT_YOU,
                 0,
                 field_type=FieldType.DATE,
                 help_text="For example, 27 3 1985",

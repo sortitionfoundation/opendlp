@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     RespondentFieldMappingEntry,
 )
 
@@ -23,7 +22,6 @@ def _make_derived_field(backend: ContractBackend) -> RespondentFieldDefinition:
         assembly_id=assembly.id,
         field_key=f"region_{uuid.uuid4().hex[:6]}",
         label="Region",
-        group=RespondentFieldGroup.DERIVED,
         sort_order=10,
     )
     backend.persist(field)

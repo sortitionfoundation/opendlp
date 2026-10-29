@@ -11,7 +11,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.entrypoints.edit_respondent_form import build_edit_respondent_form
@@ -22,7 +21,6 @@ def _field(field_key: str, field_type: FieldType = FieldType.TEXT, options=None)
         assembly_id=uuid.uuid4(),
         field_key=field_key,
         label=field_key.replace("_", " ").title(),
-        group=RespondentFieldGroup.OTHER,
         sort_order=10,
         field_type=field_type,
         options=options,
@@ -34,7 +32,6 @@ def _email_fixed() -> RespondentFieldDefinition:
         assembly_id=uuid.uuid4(),
         field_key="email",
         label="Email",
-        group=RespondentFieldGroup.NAME_AND_CONTACT,
         sort_order=10,
         is_fixed=True,
         field_type=FieldType.EMAIL,
@@ -46,7 +43,6 @@ def _bool_or_none_fixed(key: str) -> RespondentFieldDefinition:
         assembly_id=uuid.uuid4(),
         field_key=key,
         label=key.replace("_", " ").title(),
-        group=RespondentFieldGroup.ELIGIBILITY,
         sort_order=10,
         is_fixed=True,
         field_type=FieldType.BOOL_OR_NONE,

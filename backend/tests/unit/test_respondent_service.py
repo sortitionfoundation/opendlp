@@ -11,7 +11,6 @@ from opendlp.domain.respondent_field_schema import (
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     RespondentFieldMappingEntry,
 )
 from opendlp.domain.respondents import Respondent
@@ -611,7 +610,6 @@ class TestDerivationOnWritePaths:
                 assembly_id=assembly.id,
                 field_key="date_of_birth",
                 label="Date of birth",
-                group=RespondentFieldGroup.ABOUT_YOU,
                 sort_order=10,
                 field_type=FieldType.DATE,
             )
@@ -621,7 +619,6 @@ class TestDerivationOnWritePaths:
                 assembly_id=assembly.id,
                 field_key="age_bracket",
                 label="Age bracket",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=10,
                 is_derived=True,
                 derived_from=["date_of_birth"],
@@ -647,7 +644,6 @@ class TestDerivationOnWritePaths:
                 assembly_id=assembly.id,
                 field_key="postcode",
                 label="Postcode",
-                group=RespondentFieldGroup.ADDRESS,
                 sort_order=10,
                 field_type=FieldType.TEXT,
             )
@@ -656,7 +652,6 @@ class TestDerivationOnWritePaths:
             assembly_id=assembly.id,
             field_key="region",
             label="Region",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["postcode"],

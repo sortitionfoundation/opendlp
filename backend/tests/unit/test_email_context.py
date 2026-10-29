@@ -20,7 +20,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 
@@ -145,7 +144,6 @@ _ASSEMBLY_ID = uuid.uuid4()
 
 def _field(key: str, ftype: FieldType = FieldType.TEXT, **kwargs) -> RespondentFieldDefinition:
     kwargs.setdefault("label", key.replace("_", " ").capitalize())
-    kwargs.setdefault("group", RespondentFieldGroup.OTHER)
     kwargs.setdefault("sort_order", 10)
     return RespondentFieldDefinition(assembly_id=_ASSEMBLY_ID, field_key=key, field_type=ftype, **kwargs)
 
