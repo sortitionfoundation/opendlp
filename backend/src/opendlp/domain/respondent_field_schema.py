@@ -7,8 +7,9 @@ module-agnostic: modules read from it, they do not each build a parallel one.
 
 Current and anticipated consumers:
 
-- The grouped view_registrant detail page (current): renders fields in the order
-  and groups defined here.
+- The view_registrant detail page (current): renders fields in the order defined
+  here, in sections at the headings placed among them (see
+  ``registration_content_block``).
 - The registration form module (planned): will read the schema as its field
   catalogue when rendering the public form — see docs/agent/module_design.md.
 - The targets module (potential): could eventually reference schema fields
