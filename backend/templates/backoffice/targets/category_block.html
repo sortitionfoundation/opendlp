@@ -72,7 +72,9 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                 </p>
             {% endif %}
             {% if category.comment %}
-                <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ category.comment | linkify }}</p>
+                <p class="text-body-sm"
+                   style="color: var(--color-secondary-text);
+                          white-space: pre-line">{{ category.comment | linkify }}</p>
             {% endif %}
         </div>
     {% endif %}
@@ -181,7 +183,9 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         <td class="py-3 px-4 text-body-sm"
                             style="color: var(--color-secondary-text);
                                    overflow-wrap: anywhere">
-                            {% if val.comment %}{{ val.comment | linkify }}{% endif %}
+                            {# pre-line on a span of its own: on the cell it would also
+                               keep the line breaks this template is indented with. #}
+                            {% if val.comment %}<span style="white-space: pre-line">{{ val.comment | linkify }}</span>{% endif %}
                         </td>
                     </tr>
                     {# ── Value Annotations Rows ── #}

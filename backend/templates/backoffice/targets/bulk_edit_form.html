@@ -5,9 +5,27 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_plus, icon_trash, icon_undo %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
-{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/input.html" import input, textarea %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary %}
 {% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
+{#
+    A comment box: one line, so it sits in a row of inputs, growing to show the
+    whole note while it is being written. The title holds the note for a hover
+    once it is back to one line; autoGrowTextarea keeps it up to date.
+#}
+{% macro comment_box(name, id, value, error="", label="", aria_label="") %}
+    {% set comment_attrs %}x-data="autoGrowTextarea" @focus="grow()" @input="grow()" @blur="shrink()" title="{{ value }}"{% endset %}
+    {{ textarea(name=name,
+    id=id,
+    label=label,
+    value=value,
+    error=error,
+    rows=1,
+    resizable=false,
+    classes="overflow-hidden",
+    aria_label=aria_label,
+    attrs=comment_attrs) }}
+{% endmacro %}
 {# ────────────────────────────────────────────────────────────────────────
    The row controls come from the Figma at node 4908:15647. They are sized and
    coloured by `.btn-icon svg`, so they are drawn with no class of their own and
@@ -145,10 +163,10 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             {% endcall %}
         </td>
         <td class="py-3 px-4">
-            {{ input(name=val_prefix ~ "[comment]",
-            id=field_id ~ "-comment",
+            {{ comment_box(val_prefix ~ "[comment]",
+            field_id ~ "-comment",
+            val.comment if val else "",
             error=errors.get(val_prefix ~ "[comment]", ""),
-            value=val.comment if val else "",
             aria_label=_("Comment on %(row)s", row=row_name)) }}
         </td>
         <td class="py-3 pl-4 text-right">
@@ -243,11 +261,11 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 info=_("A link to the report the percentages come from, such as census tables or a poll."),
                 value=category.source_url if category else "",
                 placeholder="https://") }}
-                {{ input(name=cat_prefix ~ "[comment]",
-                id="bulk-comment-" ~ cat_id|string,
+                {{ comment_box(cat_prefix ~ "[comment]",
+                "bulk-comment-" ~ cat_id|string,
+                category.comment if category else "",
                 error=errors.get(cat_prefix ~ "[comment]", ""),
-                label=_("Comment"),
-                value=category.comment if category else "") }}
+                label=_("Comment")) }}
                                 {# Blocks rather than concatenation: `~` under autoescape escapes
                    the quotes, and an escaped @click is not a handler. #}
                 {% set move_down_attrs %}@click="moveDown()" title="{{ _("Move this target down") }}"{% endset %}

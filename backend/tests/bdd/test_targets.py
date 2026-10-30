@@ -351,7 +351,50 @@ def edit_row_shows_min_max(admin_logged_in_page: Page, value: str, minimum: str,
 @then(parsers.parse('the "{value}" edit row comment should be "{comment}"'))
 def edit_row_comment(admin_logged_in_page: Page, value: str, comment: str) -> None:
     row = _edit_row_for(admin_logged_in_page, value)
-    expect(row.locator('input[name$="[comment]"]')).to_have_value(comment, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(row.locator('textarea[name$="[comment]"]')).to_have_value(comment, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+THREE_LINE_COMMENT = "first line\nsecond line\nthird line"
+
+
+def _comment_box(page: Page, value: str):
+    return _edit_row_for(page, value).locator('textarea[name$="[comment]"]')
+
+
+@when(parsers.parse('I write a three line comment on the "{value}" target value'))
+def write_three_line_comment(admin_logged_in_page: Page, value: str) -> None:
+    _comment_box(admin_logged_in_page, value).fill(THREE_LINE_COMMENT)
+
+
+@when(parsers.parse('I move on from the "{value}" comment box'))
+def leave_comment_box(admin_logged_in_page: Page, value: str) -> None:
+    _comment_box(admin_logged_in_page, value).blur()
+
+
+@then(parsers.parse('the "{value}" comment box should show every line'))
+def comment_box_shows_every_line(admin_logged_in_page: Page, value: str) -> None:
+    """Nothing scrolled out of sight: the box is as tall as the text in it."""
+    box = _comment_box(admin_logged_in_page, value)
+    expect(box).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+    hidden = box.evaluate("el => el.scrollHeight - el.clientHeight")
+    assert hidden <= 1, f"{hidden}px of the comment is out of sight"
+
+
+@then(parsers.parse('the "{value}" comment box should be one line high'))
+def comment_box_is_one_line(admin_logged_in_page: Page, value: str) -> None:
+    """As tall as the single-line value input beside it, so the row keeps its shape."""
+    row = _edit_row_for(admin_logged_in_page, value)
+    box_height = _comment_box(admin_logged_in_page, value).bounding_box()["height"]
+    input_height = row.locator('[data-field="value"]').bounding_box()["height"]
+    assert abs(box_height - input_height) <= 2, f"comment box is {box_height}px, value input {input_height}px"
+    expect(_comment_box(admin_logged_in_page, value)).to_have_attribute("title", THREE_LINE_COMMENT)
+
+
+@then(parsers.parse('the "{value}" comment should read as three lines'))
+def comment_reads_as_three_lines(admin_logged_in_page: Page, value: str) -> None:
+    comment = _row_for(admin_logged_in_page, value).get_by_text("first line")
+    expect(comment).to_have_css("white-space", "pre-line", timeout=PLAYWRIGHT_TIMEOUT)
+    assert comment.inner_text().splitlines() == ["first line", "second line", "third line"]
 
 
 @then(parsers.parse('the focus should be on "{label}" for "{message}"'))

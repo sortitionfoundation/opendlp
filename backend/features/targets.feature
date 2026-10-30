@@ -75,6 +75,19 @@ Feature: Target percentages, notes and ordering
     Then I should see "Targets saved"
     And the "Non-binary" target should show min "2" and max "3"
 
+  Scenario: A value's comment shows every line while it is written, and one line after
+    Given there is an assembly with targets called "Comment Box Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Comment Box Demo"
+    And I choose to edit all targets
+    And I write a three line comment on the "Male" target value
+    Then the "Male" comment box should show every line
+    When I move on from the "Male" comment box
+    Then the "Male" comment box should be one line high
+    When I save all targets
+    Then I should see "Targets saved"
+    And the "Male" comment should read as three lines
+
   Scenario: Deleting a value while editing every target at once
     Given there is an assembly with targets called "Delete Value Demo"
     And I am signed in as an admin user

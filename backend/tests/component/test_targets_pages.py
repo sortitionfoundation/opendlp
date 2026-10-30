@@ -554,6 +554,72 @@ class TestValueCommentColumn:
         assert comment is not None, "the value comment field was not found"
         assert "placeholder" not in comment.group(0)
 
+    def test_the_edit_form_comments_are_boxes_that_grow_while_written_in(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A note can run to several lines, so it gets a box that shows them all while it has focus.
+
+        Out of focus the box is one line, to sit in a row of inputs, and its title
+        holds the whole note for a hover.
+        """
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,comment,category_comment\nGender,Woman,3,7,boosted by 2,from the census\n",
+        )
+
+        edit_form = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        for field, note in (("[values]", "boosted by 2"), ("[comment]", "from the census")):
+            box = re.search(
+                rf'<textarea[^>]*name="cat\[[^\]]+\]{re.escape(field)}[^"]*"[^>]*>([^<]*)</textarea>', edit_form
+            )
+            assert box is not None, f"no comment textarea for {field}"
+            tag = box.group(0)
+            assert box.group(1) == note
+            assert 'rows="1"' in tag
+            assert 'x-data="autoGrowTextarea"' in tag
+            assert '@focus="grow()"' in tag
+            assert '@blur="shrink()"' in tag
+            assert f'title="{note}"' in tag
+            assert "resize-none" in tag
+
+    def test_the_value_comment_box_is_named_for_its_row(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _import_targets(fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nGender,Woman,3,7\n")
+
+        edit_form = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert re.search(r'<textarea[^>]*aria-label="Comment on Woman"', edit_form)
+
+    def test_the_read_only_view_keeps_the_line_breaks_in_a_comment(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        value_id = (
+            _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Woman", 3, 7).values[0].value_id
+        )
+        prefix = f"cat[{category.id}]"
+        # A browser sends the line breaks in a textarea as CRLF.
+        logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[comment]": "census 2021\r\nrounded",
+                f"{prefix}[values][{value_id}][value]": "Woman",
+                f"{prefix}[values][{value_id}][min]": "3",
+                f"{prefix}[values][{value_id}][max]": "7",
+                f"{prefix}[values][{value_id}][comment]": "first line\r\nsecond line",
+            },
+        )
+
+        read_only = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert re.search(r'<span style="white-space: pre-line">first line\r?\nsecond line</span>', read_only)
+        assert re.search(r'white-space: pre-line">census 2021\r?\nrounded</p>', read_only)
+
 
 def _edit_form_html(html_text):
     """The half of the targets page holding the bulk edit form."""
@@ -1064,7 +1130,7 @@ class TestSaveAllValidationErrors:
         row = _bulk_row_for(html, "Male")
         assert 'value="9"' in row, "the min they typed is gone"
         assert 'value="2"' in row, "the max they typed is gone"
-        assert 'value="from the census"' in html, "the category comment they typed is gone"
+        assert ">from the census</textarea>" in html, "the category comment they typed is gone"
 
     def test_the_error_sits_on_the_field_that_caused_it(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
