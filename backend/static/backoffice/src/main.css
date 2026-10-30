@@ -1110,8 +1110,11 @@
         border-bottom: 1px solid var(--color-borders-dividers);
     }
 
+    /* Room on the left for the drag handle, which is placed against the
+       cell rather than the text so it can run the card's full height. */
     .question-table tbody tr > :first-child {
-        padding-left: 12px;
+        position: relative;
+        padding-left: 40px;
         border-left: 1px solid var(--color-borders-dividers);
         border-radius: 8px 0 0 8px;
     }
@@ -1139,9 +1142,17 @@
         gap: 8px;
     }
 
+    /* The whole strip down the card's left edge grabs the row, not just the
+       dots, so an imprecise grab still starts a drag. */
     .drag-handle {
-        flex: none;
-        padding-top: 2px;
+        position: absolute;
+        top: 12px;
+        bottom: 12px;
+        left: 8px;
+        width: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: grab;
         color: var(--color-secondary-text);
     }
