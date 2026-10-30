@@ -212,6 +212,17 @@ Feature: Target percentages, notes and ordering
     When I add the values found in the respondent data
     Then I should not see "and 3 others"
 
+  Scenario: A target with no respondent data column of its name says why it counts nobody
+    Given there is an assembly with targets called "No Column Demo"
+    And the respondent data holds nine ages, one of them targeted
+    And I am signed in as an admin user
+    When I open the targets page for "No Column Demo"
+    Then the "Gender" target should have a "Respondents" column
+    And I should see "The respondent data has no column called 'Gender'"
+    And I should not see "The respondent data has no column called 'Age'"
+    When I choose to edit all targets
+    Then I should see "The respondent data has no column called 'Gender'"
+
   Scenario: Reordering the target categories
     Given there is an assembly with two target categories called "Reorder Demo"
     And I am signed in as an admin user

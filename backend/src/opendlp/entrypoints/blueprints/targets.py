@@ -145,6 +145,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             all_respondent_counts=respondent_counts,
             all_selected_counts=selected_counts,
             has_selected=has_selected,
+            has_respondents=bool(attribute_columns),
             **context,
         ), 200
     except NotFoundError as e:
@@ -402,6 +403,7 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             all_respondent_counts=respondent_counts,
             all_selected_counts=selected_counts,
             has_selected=has_selected,
+            has_respondents=bool(attribute_columns),
             check_result=check_result,
             # Carried through from a failed selection run (see accept_suggestions),
             # so the page offers to re-run and keeps the link alive across rechecks.
@@ -590,6 +592,7 @@ def _render_targets_edit_errors(
         all_respondent_counts=build_respondent_counts(assembly_id, target_categories, attribute_columns),
         all_selected_counts=selected_counts,
         has_selected=any(selected_counts.values()),
+        has_respondents=bool(attribute_columns),
         **context,
     ), 200
 

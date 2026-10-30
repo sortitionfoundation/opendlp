@@ -5,7 +5,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
 {% from "backoffice/components/icons.html" import icon_hand, icon_sparkles %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
-{% from "backoffice/targets/missing_values.html" import missing_values_summary %}
+{% from "backoffice/targets/missing_values.html" import missing_values_summary, no_respondent_column_note %}
 {% macro provenance_icon(manual) %}
     {% if manual %}
         <span class="inline-flex shrink-0"
@@ -32,6 +32,32 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
     A cell a suggestion below would change is outlined in the suggestion's
     orange, so it is plain which of min and max the suggestion is about.
 #}
+{#
+    A respondent or selected count for one value. A dash where there is nothing
+    to count: no respondent holds the value, or no respondent data column has
+    the target's name. Zero would claim the value was asked about and nobody
+    chose it.
+#}
+{% macro count_cell(counts, value) %}
+    {% set count = counts.get(value) if counts else none %}
+    <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
+        {% if count is not none %}
+            {{ count }}
+        {% else %}
+            <span style="color: var(--color-secondary-text);">&mdash;</span>
+        {% endif %}
+    </td>
+{% endmacro %}
+{% macro count_total_cell(counts) %}
+    <td class="py-3 px-4 text-right text-label-md font-bold"
+        style="color: var(--color-headings)">
+        {% if counts is not none %}
+            {{ counts.values() | sum }}
+        {% else %}
+            <span style="color: var(--color-secondary-text);">&mdash;</span>
+        {% endif %}
+    </td>
+{% endmacro %}
 {% macro minmax_cell(number, manual, has_percentage, suggested=false) %}
     {% set tint = ("var(--color-warning-100)" if manual else "var(--color-info-100)") if has_percentage else "transparent" %}
     <td class="py-2" style="color: var(--color-body-text)">
@@ -43,9 +69,15 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
         </span>
     </td>
 {% endmacro %}
-{% set has_counts = respondent_counts is defined and respondent_counts %}
-{% set show_selected = has_selected is defined and has_selected and selected_counts is defined and selected_counts %}
-{% set col_count = 5 + (1 if has_counts else 0) + (1 if show_selected else 0) %}
+{# The count columns are there whenever the project has respondents, so every
+   target lines up the same way. A target with no respondent data column of the
+   same name still gets them, empty, with a note saying why. #}
+{% set show_counts = has_respondents is defined and has_respondents %}
+{% set show_selected = has_selected is defined and has_selected %}
+{% set respondent_counts = respondent_counts if respondent_counts is defined else none %}
+{% set selected_counts = selected_counts if selected_counts is defined else none %}
+{% set has_counts = respondent_counts is not none and respondent_counts %}
+{% set col_count = 5 + (1 if show_counts else 0) + (1 if show_selected else 0) %}
 {% set percentage_total = category.percentage_total() %}
 {% set percentages_plausible = category.percentage_total_is_plausible() %}
 <div class="mb-8 rounded-lg overflow-hidden"
@@ -116,7 +148,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                 <col />
                 <col style="width: 8rem;" />
                 {# Wide enough for "Respondents" and the icon beside it on one line. #}
-                {% if has_counts %}<col style="width: 9rem;" />{% endif %}
+                {% if show_counts %}<col style="width: 9rem;" />{% endif %}
                 {% if show_selected %}<col style="width: 8rem;" />{% endif %}
                 <col style="width: 8rem;" />
                 <col style="width: 8rem;" />
@@ -128,7 +160,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         style="color: var(--color-headings)">{{ _("Value") }}</th>
                     <th class="py-3 px-4 text-right text-label-md"
                         style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
-                    {% if has_counts %}
+                    {% if show_counts %}
                         <th class="py-3 px-4 text-right text-label-md"
                             style="color: var(--color-headings)">
                             <span class="inline-flex items-center justify-end gap-1">
@@ -171,12 +203,8 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                                 <span style="color: var(--color-secondary-text);">&mdash;</span>
                             {% endif %}
                         </td>
-                        {% if has_counts %}
-                            <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ respondent_counts.get(val.value, 0) }}</td>
-                        {% endif %}
-                        {% if show_selected %}
-                            <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ selected_counts.get(val.value, 0) }}</td>
-                        {% endif %}
+                        {% if show_counts %}{{ count_cell(respondent_counts, val.value) }}{% endif %}
+                        {% if show_selected %}{{ count_cell(selected_counts, val.value) }}{% endif %}
                         {% set has_percentage = val.percentage_target is not none %}
                         {{ minmax_cell(val.min, val.minmax_manual, has_percentage, suggested="min" in suggested_fields) }}
                         {{ minmax_cell(val.max, val.minmax_manual, has_percentage, suggested="max" in suggested_fields) }}
@@ -234,14 +262,8 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                             <span style="color: var(--color-secondary-text);">&mdash;</span>
                         {% endif %}
                     </td>
-                    {% if has_counts %}
-                        <td class="py-3 px-4 text-right text-label-md font-bold"
-                            style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
-                    {% endif %}
-                    {% if show_selected %}
-                        <td class="py-3 px-4 text-right text-label-md font-bold"
-                            style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
-                    {% endif %}
+                    {% if show_counts %}{{ count_total_cell(respondent_counts) }}{% endif %}
+                    {% if show_selected %}{{ count_total_cell(selected_counts) }}{% endif %}
                     <td class="py-3 px-4 text-left text-label-md font-bold"
                         style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
                     <td class="py-3 px-4 text-left text-label-md font-bold"
@@ -250,6 +272,10 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                 </tr>
             </tfoot>
         </table>
+        {# ── No Respondent Data Column ─────────────────────── #}
+        {% if show_counts and respondent_counts is none %}
+            {{ no_respondent_column_note(category.name) }}
+        {% endif %}
         {# ── Missing Respondent Values ─────────────────────── #}
         {% if has_counts and can_manage %}
             {% set target_value_names = category.values | map(attribute='value') | list %}

@@ -440,6 +440,14 @@ def _expect_provenance(page: Page, value: str, wanted: str, unwanted: str) -> No
     expect(row.locator(f'[title="{unwanted}"]')).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then(parsers.parse('the "{name}" target should have a "{column}" column'))
+def target_has_column(admin_logged_in_page: Page, name: str, column: str) -> None:
+    block = admin_logged_in_page.locator("#target-categories > div").filter(
+        has=admin_logged_in_page.get_by_role("heading", name=name, exact=True)
+    )
+    expect(block.get_by_role("columnheader", name=column)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then(parsers.parse('I should see "{text}"'))
 def should_see(admin_logged_in_page: Page, text: str) -> None:
     expect(_visible(admin_logged_in_page, text).first).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
