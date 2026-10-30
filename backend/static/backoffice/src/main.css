@@ -1056,7 +1056,8 @@
     /* ========================================
        REGISTRATION QUESTIONS LIST
        A grey panel holding a table whose rows are drawn as white cards, one
-       per question and per heading or text placed among them.
+       per question and per heading or text placed among them (Figma:
+       Registration fields, node 5357:15299).
        ======================================== */
     .question-section {
         display: flex;
@@ -1132,6 +1133,12 @@
     .content-block-row__heading {
         font: 600 1.125rem/1.5rem var(--font-body);
         color: var(--color-headings);
+    }
+
+    .content-block-row__kind {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .question-row__name {

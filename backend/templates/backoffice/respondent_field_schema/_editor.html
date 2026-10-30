@@ -4,7 +4,7 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
-{% from "backoffice/components/icons.html" import icon_edit, icon_grip_vertical, icon_more_vert %}
+{% from "backoffice/components/icons.html" import icon_a_large_small, icon_edit, icon_grip_vertical, icon_more_vert %}
 {% macro row_menu(row, is_first, is_last, move_url, delete_url, delete_confirm, removable) %}
     {#
     The row's less common actions behind a "more" menu. menuButton makes it a WAI-ARIA
@@ -172,7 +172,7 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                                 </div>
                             </th>
                             <td>
-                                <div class="text-body-md">{{ row["kind_label"] }}</div>
+                                <div class="content-block-row__kind text-body-md">{{ icon_a_large_small(classes="w-4 h-4") }}<span>{{ row["kind_label"] }}</span></div>
                             </td>
                             <td></td>
                             <td>
