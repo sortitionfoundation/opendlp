@@ -63,6 +63,17 @@ def percentage_of(numerator: int, denominator: int) -> float:
     return round(numerator / denominator * 100, 1)
 
 
+def flex_is_set_on_all(flex_pairs: Sequence[tuple[int, int]]) -> bool:
+    """Whether every (min_flex, max_flex) pair was set rather than left at its default.
+
+    The sortition library wants flex on every row or none. Where any value has
+    been left unset, it is given no flex columns at all and works out safe
+    defaults itself, so anything handing targets to it - or writing them out to
+    be handed to it later - leaves flex out unless every value has it.
+    """
+    return bool(flex_pairs) and all(min_flex != 0 or max_flex != MAX_FLEX_UNSET for min_flex, max_flex in flex_pairs)
+
+
 def validate_comment(comment: str) -> str:
     """Strip a free-text comment and reject one that is implausibly long."""
     stripped = comment.strip()

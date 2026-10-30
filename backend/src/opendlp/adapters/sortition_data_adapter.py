@@ -12,6 +12,7 @@ from sortition_algorithms.features import MAX_FLEX_UNSET
 from sortition_algorithms.utils import RunReport
 
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import flex_is_set_on_all
 from opendlp.domain.value_objects import SELECTED_RESPONDENT_STATUSES, RespondentStatus
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
@@ -92,9 +93,7 @@ class OpenDLPDataAdapter(AbstractDataSource):
         # Only include flex columns if ALL values have explicit (non-default) flex set.
         # If any value has MAX_FLEX_UNSET, omit flex columns entirely and let
         # the library calculate safe defaults via set_default_max_flex().
-        all_flex_set = bool(feature_rows) and all(
-            min_flex != 0 or max_flex != MAX_FLEX_UNSET for _, _, _, _, min_flex, max_flex in feature_rows
-        )
+        all_flex_set = flex_is_set_on_all([(min_flex, max_flex) for _, _, _, _, min_flex, max_flex in feature_rows])
 
         if all_flex_set:
             headers = ["feature", "value", "min", "max", "min_flex", "max_flex"]
