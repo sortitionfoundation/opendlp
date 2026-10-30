@@ -1,0 +1,113 @@
+// ABOUTME: Unit tests for the autoGrowTextarea Alpine component
+// ABOUTME: Covers growing to the text's height on focus and going back to one clipped line on blur
+
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { autoGrowTextarea } from "./auto-grow-textarea.js";
+
+function textareaState(value, scrollHeight, border = 0) {
+  // The padding and line height come from the stylesheet, as they do on the page.
+  document.body.innerHTML = `
+    <style>#box { padding-top: 10px; padding-bottom: 10px; line-height: 20px; }</style>
+    <textarea id="box" rows="1"></textarea>`;
+  const el = document.getElementById("box");
+  el.value = value;
+  // jsdom does no layout, so the height the text would need is given here,
+  // along with the border that offsetHeight counts and clientHeight does not.
+  Object.defineProperty(el, "scrollHeight", {
+    configurable: true,
+    get: () => scrollHeight,
+  });
+  Object.defineProperty(el, "offsetHeight", {
+    configurable: true,
+    get: () => 30 + border,
+  });
+  Object.defineProperty(el, "clientHeight", {
+    configurable: true,
+    get: () => 30,
+  });
+  const state = autoGrowTextarea();
+  state.$el = el;
+  return state;
+}
+
+beforeEach(() => {
+  document.body.innerHTML = "";
+});
+
+describe("autoGrowTextarea", () => {
+  it("grows to the height of its text", () => {
+    const state = textareaState("one\ntwo\nthree", 72);
+    state.grow();
+    expect(state.$el.style.height).toBe("72px");
+  });
+
+  it("leaves room for its border, or the last line would be clipped", () => {
+    const state = textareaState("one\ntwo\nthree", 72, 2);
+    state.grow();
+    expect(state.$el.style.height).toBe("74px");
+  });
+
+  it("follows the text as it gets shorter", () => {
+    const state = textareaState("one\ntwo\nthree", 72);
+    state.grow();
+    Object.defineProperty(state.$el, "scrollHeight", {
+      configurable: true,
+      get: () => 24,
+    });
+    state.grow();
+    expect(state.$el.style.height).toBe("24px");
+  });
+
+  it("goes back to its one line on blur", () => {
+    const state = textareaState("one\ntwo", 48);
+    state.grow();
+    state.shrink();
+    expect(state.$el.style.height).toBe("");
+  });
+
+  it("starts as one line, its padding turned into line height", () => {
+    // The box keeps its height, but a second line starts below its bottom edge
+    // instead of showing its top half in the padding.
+    const state = textareaState("one\ntwo", 48);
+    state.init();
+    expect(state.$el.style.paddingTop).toBe("0px");
+    expect(state.$el.style.paddingBottom).toBe("0px");
+    expect(state.$el.style.lineHeight).toBe("40px");
+  });
+
+  it("gets its padding back while it grows", () => {
+    const state = textareaState("one\ntwo", 48);
+    state.init();
+    state.grow();
+    expect(state.$el.style.paddingTop).toBe("");
+    expect(state.$el.style.lineHeight).toBe("");
+  });
+
+  it("is one clipped line again after blur", () => {
+    const state = textareaState("one\ntwo", 48);
+    state.init();
+    state.grow();
+    state.shrink();
+    expect(state.$el.style.lineHeight).toBe("40px");
+  });
+
+  it("does not animate, or grow() would measure the padding mid-change", () => {
+    const state = textareaState("one", 24);
+    state.init();
+    expect(state.$el.style.transition).toBe("none");
+  });
+
+  it("leaves the box alone when its line height cannot be measured", () => {
+    const state = textareaState("one", 24);
+    state.$el.style.lineHeight = "normal";
+    state.init();
+    expect(state.$el.style.paddingTop).toBe("");
+  });
+
+  it("leaves the whole text in its hover title on blur", () => {
+    const state = textareaState("a note\nover two lines", 48);
+    state.shrink();
+    expect(state.$el.title).toBe("a note\nover two lines");
+  });
+});

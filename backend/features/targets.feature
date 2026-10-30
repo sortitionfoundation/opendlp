@@ -75,6 +75,19 @@ Feature: Target percentages, notes and ordering
     Then I should see "Targets saved"
     And the "Non-binary" target should show min "2" and max "3"
 
+  Scenario: A value's comment shows every line while it is written, and one line after
+    Given there is an assembly with targets called "Comment Box Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Comment Box Demo"
+    And I choose to edit all targets
+    And I write a three line comment on the "Male" target value
+    Then the "Male" comment box should show every line
+    When I move on from the "Male" comment box
+    Then the "Male" comment box should be one line high
+    When I save all targets
+    Then I should see "Targets saved"
+    And the "Male" comment should read as three lines
+
   Scenario: Deleting a value while editing every target at once
     Given there is an assembly with targets called "Delete Value Demo"
     And I am signed in as an admin user
@@ -199,6 +212,17 @@ Feature: Target percentages, notes and ordering
     When I add the values found in the respondent data
     Then I should not see "and 3 others"
 
+  Scenario: A target with no respondent data column of its name says why it counts nobody
+    Given there is an assembly with targets called "No Column Demo"
+    And the respondent data holds nine ages, one of them targeted
+    And I am signed in as an admin user
+    When I open the targets page for "No Column Demo"
+    Then the "Gender" target should have a "Respondents" column
+    And I should see "The respondent data has no column called 'Gender'"
+    And I should not see "The respondent data has no column called 'Age'"
+    When I choose to edit all targets
+    Then I should see "The respondent data has no column called 'Gender'"
+
   Scenario: Reordering the target categories
     Given there is an assembly with two target categories called "Reorder Demo"
     And I am signed in as an admin user
@@ -243,3 +267,20 @@ Feature: Target percentages, notes and ordering
     When I save all targets
     Then I should see "Targets saved"
     And I should see "All checks passed"
+
+  Scenario: Exporting the targets as a CSV in the format a targets upload reads
+    Given there is an assembly with targets called "Export Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Export Demo"
+    And I open the targets export
+    Then keyboard focus should be inside the targets export
+    And a targets CSV download starts when I run the export
+    And the downloaded targets CSV has a row for each of "Male" and "Female" under "Gender"
+
+  Scenario: Cancelling the targets export puts focus back on its button
+    Given there is an assembly with targets called "Export Cancel Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Export Cancel Demo"
+    And I open the targets export
+    And I cancel the targets export
+    Then keyboard focus should be on the targets Export button

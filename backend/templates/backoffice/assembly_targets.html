@@ -117,6 +117,14 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                    a separate button to do. #}
                 {% if can_manage %}
                     <span class="flex items-center gap-2 shrink-0">
+                        {# Exports what is saved, so it is no use mid-edit: it goes
+                           with "Edit targets" while the form is open. #}
+                        {% if target_categories %}
+                            <span x-show="!editingAll">
+                                {{ button(_("Export"), variant="secondary",
+                                attrs='data-focus-id="targets-export" hx-get="' ~ url_for('targets.export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
+                            </span>
+                        {% endif %}
                         {{ button(_("Add target"),
                         variant="secondary",
                         leading_icon=icon_plus(),
@@ -129,6 +137,9 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                     </span>
                 {% endif %}
             </section>
+            {% if can_manage %}
+                <div id="export-modal-container" data-fragment-dialog-host></div>
+            {% endif %}
 
             {# ── Check Result Display ────────────────────────── #}
             {% if check_result is defined and check_result %}

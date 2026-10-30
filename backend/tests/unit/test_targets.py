@@ -11,6 +11,7 @@ from opendlp.domain.targets import (
     MAX_SOURCE_URL_LENGTH,
     TargetCategory,
     TargetValue,
+    flex_is_set_on_all,
     min_max_for_percentage,
     replacement_min_max,
     target_categories_to_snapshot,
@@ -377,6 +378,21 @@ class TestPercentageTotals:
         cat.add_value(TargetValue(value="Man", min=0, max=0, percentage_target=50.0))
         cat.add_value(TargetValue(value="Woman", min=0, max=0))
         assert cat.percentage_total_is_plausible() is False
+
+
+class TestFlexIsSetOnAll:
+    def test_every_value_with_flex_set(self):
+        assert flex_is_set_on_all([(1, 10), (0, 8)])
+
+    def test_a_min_flex_alone_counts_as_set(self):
+        assert flex_is_set_on_all([(1, MAX_FLEX_UNSET)])
+
+    def test_one_value_left_unset_means_none_are(self):
+        """The library takes flex on every row or none."""
+        assert not flex_is_set_on_all([(1, 10), (0, MAX_FLEX_UNSET)])
+
+    def test_no_values_have_no_flex(self):
+        assert not flex_is_set_on_all([])
 
 
 class TestPercentagesFromMinMax:

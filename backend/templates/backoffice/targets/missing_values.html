@@ -1,6 +1,6 @@
 {#
-ABOUTME: Macro naming the respondent values a target category has no value for
-ABOUTME: Lists the first few and counts the rest, so a long list cannot swamp the page
+ABOUTME: Macros for where a target category and the respondent data do not meet
+ABOUTME: Values the respondents gave that have no target, and a target with no respondent column
 #}
 
 {#
@@ -16,3 +16,20 @@ ABOUTME: Lists the first few and counts the rest, so a long list cannot swamp th
         {{ values | join(", ") }}
     {%- endif -%}
 {%- endmacro %}
+
+{#
+    Respondents are counted from the respondent data column with the target's
+    name, ignoring case. A target with no such column has nothing to count, and
+    a selection stops with a missing column error on it - so its empty count
+    columns say why, rather than leaving a misspelt name to be found later.
+#}
+{% macro no_respondent_column_note(name) %}
+    <div class="mt-4 rounded-lg p-4"
+         data-no-respondent-column="true"
+         style="background-color: var(--color-info-100);
+                border: 1px solid var(--color-info-400)">
+        <p class="text-body-md" style="color: var(--color-info-600);">
+            {{ _("The respondent data has no column called '%(name)s', so there are no respondents to count for this target.", name=name) }}
+        </p>
+    </div>
+{% endmacro %}

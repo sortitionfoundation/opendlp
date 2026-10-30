@@ -3,11 +3,29 @@ ABOUTME: One form covering every target category and value, for edit-all/save-al
 ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed by save_all_parser
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_trash, icon_undo %}
+{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_plus, icon_trash, icon_undo %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
-{% from "backoffice/components/input.html" import input %}
-{% from "backoffice/targets/missing_values.html" import missing_values_summary %}
+{% from "backoffice/components/input.html" import input, textarea %}
+{% from "backoffice/targets/missing_values.html" import missing_values_summary, no_respondent_column_note %}
 {% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
+{#
+    A comment box: one line, so it sits in a row of inputs, growing to show the
+    whole note while it is being written. The title holds the note for a hover
+    once it is back to one line; autoGrowTextarea keeps it up to date.
+#}
+{% macro comment_box(name, id, value, error="", label="", aria_label="") %}
+    {% set comment_attrs %}x-data="autoGrowTextarea" @focus="grow()" @input="grow()" @blur="shrink()" title="{{ value }}"{% endset %}
+    {{ textarea(name=name,
+    id=id,
+    label=label,
+    value=value,
+    error=error,
+    rows=1,
+    resizable=false,
+    classes="overflow-hidden",
+    aria_label=aria_label,
+    attrs=comment_attrs) }}
+{% endmacro %}
 {# ────────────────────────────────────────────────────────────────────────
    The row controls come from the Figma at node 4908:15647. They are sized and
    coloured by `.btn-icon svg`, so they are drawn with no class of their own and
@@ -18,13 +36,24 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 
     The numbers describe the respondent data, which this form never changes, so
     they are what they were when the page loaded. A row whose value is blank -
-    or names something no respondent answered - has nothing to count.
+    or names something no respondent answered, or sits in a target with no
+    respondent data column of its name - has nothing to count.
 #}
 {% macro count_cell(counts, row_value) %}
     {% set count = counts.get(row_value) if counts and row_value else none %}
     <td class="py-3 px-4 text-left" style="color: var(--color-body-text)">
         {% if count is not none %}
             {{ count }}
+        {% else %}
+            <span style="color: var(--color-secondary-text);">&mdash;</span>
+        {% endif %}
+    </td>
+{% endmacro %}
+{% macro count_total_cell(counts) %}
+    <td class="py-3 px-4 text-left text-label-md font-bold"
+        style="color: var(--color-headings)">
+        {% if counts is not none %}
+            {{ counts.values() | sum }}
         {% else %}
             <span style="color: var(--color-secondary-text);">&mdash;</span>
         {% endif %}
@@ -145,11 +174,10 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             {% endcall %}
         </td>
         <td class="py-3 px-4">
-            {{ input(name=val_prefix ~ "[comment]",
-            id=field_id ~ "-comment",
+            {{ comment_box(val_prefix ~ "[comment]",
+            field_id ~ "-comment",
+            val.comment if val else "",
             error=errors.get(val_prefix ~ "[comment]", ""),
-            value=val.comment if val else "",
-            placeholder=_("Why min and max were set by hand"),
             aria_label=_("Comment on %(row)s", row=row_name)) }}
         </td>
         <td class="py-3 pl-4 text-right">
@@ -180,12 +208,13 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         </td>
     </tr>
 {% endmacro %}
-{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None, first_row_id="", value_annotations={}) %}
+{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None, first_row_id="", value_annotations={}, has_respondents=false, has_selected=false) %}
     {% set cat_prefix = "cat[" ~ cat_id ~ "]" %}
-                    {# Both count columns are only worth a column when there is something to
-       count, so a category with no matching respondent data shows neither. #}
-    {% set show_counts = respondent_counts is not none and respondent_counts %}
-    {% set show_selected = selected_counts is not none and selected_counts %}
+                    {# The count columns are there whenever the project has respondents
+       (and, for Selected, anyone selected), so every target lines up the
+       same way - one with no respondent data column of its name included. #}
+    {% set show_counts = has_respondents %}
+    {% set show_selected = has_selected %}
     {% set column_count = 6 + (1 if show_counts else 0) + (1 if show_selected else 0) %}
     {% set block_deleted = "true" if category and category.deleted else "false" %}
     {% set block_error = errors.get(cat_prefix, "") %}
@@ -244,11 +273,11 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 info=_("A link to the report the percentages come from, such as census tables or a poll."),
                 value=category.source_url if category else "",
                 placeholder="https://") }}
-                {{ input(name=cat_prefix ~ "[comment]",
-                id="bulk-comment-" ~ cat_id|string,
+                {{ comment_box(cat_prefix ~ "[comment]",
+                "bulk-comment-" ~ cat_id|string,
+                category.comment if category else "",
                 error=errors.get(cat_prefix ~ "[comment]", ""),
-                label=_("Comment"),
-                value=category.comment if category else "") }}
+                label=_("Comment")) }}
                                 {# Blocks rather than concatenation: `~` under autoescape escapes
                    the quotes, and an escaped @click is not a handler. #}
                 {% set move_down_attrs %}@click="moveDown()" title="{{ _("Move this target down") }}"{% endset %}
@@ -340,7 +369,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
                         <td colspan="{{ column_count }}" class="py-3">
                             <div class="flex items-center gap-3">
-                                {{ button(_("Add value"), variant="tertiary", attrs='@click="addValue()"') }}
+                                {{ button(_("Add value"), variant="tertiary", leading_icon=icon_plus(), attrs='@click="addValue()"') }}
                                                             {# Once every missing value is a row in the table there is
                                    nothing left to add, and nothing left to name. #}
                                 {% if missing_values %}
@@ -364,14 +393,8 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                         <td class="py-3 px-4 text-label-md font-bold targets-total"
                             :class="percentageTotalClass"
                             x-text="percentageTotal"></td>
-                        {% if show_counts %}
-                            <td class="py-3 px-4 text-left text-label-md font-bold"
-                                style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
-                        {% endif %}
-                        {% if show_selected %}
-                            <td class="py-3 px-4 text-left text-label-md font-bold"
-                                style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
-                        {% endif %}
+                        {% if show_counts %}{{ count_total_cell(respondent_counts) }}{% endif %}
+                        {% if show_selected %}{{ count_total_cell(selected_counts) }}{% endif %}
                         <td class="py-3 px-4 text-label-md font-bold targets-total"
                             x-text="minTotal"></td>
                         <td class="py-3 px-4 text-label-md font-bold targets-total"
@@ -381,6 +404,10 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     </tr>
                 </tfoot>
             </table>
+            {# Only for a saved target: a new one has no name yet to look for. #}
+            {% if category and show_counts and respondent_counts is none %}
+                {{ no_respondent_column_note(category.name) }}
+            {% endif %}
         </div>
     </div>
 {% endmacro %}
@@ -424,10 +451,11 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             {% endif %}
             {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
             {{ category_block(category.id, category=category, missing_values=missing_values, errors=errors,
-            respondent_counts=respondent_counts, selected_counts=selected_counts, value_annotations=value_annotations) }}
+            respondent_counts=respondent_counts, selected_counts=selected_counts, value_annotations=value_annotations,
+            has_respondents=has_respondents|default(false), has_selected=has_selected|default(false)) }}
         {% endfor %}
     </div>
                                         {# Blank category blocks are cloned from here by the "Add target" dialog;
        __CAT__ becomes new-<n>, and the one row it carries __ROW__ becomes new-0. #}
-    <template x-ref="categoryTemplate">{{ category_block("__CAT__", first_row_id="__ROW__") }}</template>
+    <template x-ref="categoryTemplate">{{ category_block("__CAT__", first_row_id="__ROW__", has_respondents=has_respondents|default(false), has_selected=has_selected|default(false)) }}</template>
 </form>

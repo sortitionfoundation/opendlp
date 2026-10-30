@@ -1,8 +1,11 @@
 """ABOUTME: BDD tests for target percentages, hand-set notes, bulk edit and reordering
 ABOUTME: Exercises the full UI stack via Playwright for the paths covered by unit + e2e tests"""
 
+import csv
+import pathlib
 import re
 import uuid
+from io import StringIO
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -351,7 +354,50 @@ def edit_row_shows_min_max(admin_logged_in_page: Page, value: str, minimum: str,
 @then(parsers.parse('the "{value}" edit row comment should be "{comment}"'))
 def edit_row_comment(admin_logged_in_page: Page, value: str, comment: str) -> None:
     row = _edit_row_for(admin_logged_in_page, value)
-    expect(row.locator('input[name$="[comment]"]')).to_have_value(comment, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(row.locator('textarea[name$="[comment]"]')).to_have_value(comment, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+THREE_LINE_COMMENT = "first line\nsecond line\nthird line"
+
+
+def _comment_box(page: Page, value: str):
+    return _edit_row_for(page, value).locator('textarea[name$="[comment]"]')
+
+
+@when(parsers.parse('I write a three line comment on the "{value}" target value'))
+def write_three_line_comment(admin_logged_in_page: Page, value: str) -> None:
+    _comment_box(admin_logged_in_page, value).fill(THREE_LINE_COMMENT)
+
+
+@when(parsers.parse('I move on from the "{value}" comment box'))
+def leave_comment_box(admin_logged_in_page: Page, value: str) -> None:
+    _comment_box(admin_logged_in_page, value).blur()
+
+
+@then(parsers.parse('the "{value}" comment box should show every line'))
+def comment_box_shows_every_line(admin_logged_in_page: Page, value: str) -> None:
+    """Nothing scrolled out of sight: the box is as tall as the text in it."""
+    box = _comment_box(admin_logged_in_page, value)
+    expect(box).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+    hidden = box.evaluate("el => el.scrollHeight - el.clientHeight")
+    assert hidden <= 1, f"{hidden}px of the comment is out of sight"
+
+
+@then(parsers.parse('the "{value}" comment box should be one line high'))
+def comment_box_is_one_line(admin_logged_in_page: Page, value: str) -> None:
+    """As tall as the single-line value input beside it, so the row keeps its shape."""
+    row = _edit_row_for(admin_logged_in_page, value)
+    box_height = _comment_box(admin_logged_in_page, value).bounding_box()["height"]
+    input_height = row.locator('[data-field="value"]').bounding_box()["height"]
+    assert abs(box_height - input_height) <= 2, f"comment box is {box_height}px, value input {input_height}px"
+    expect(_comment_box(admin_logged_in_page, value)).to_have_attribute("title", THREE_LINE_COMMENT)
+
+
+@then(parsers.parse('the "{value}" comment should read as three lines'))
+def comment_reads_as_three_lines(admin_logged_in_page: Page, value: str) -> None:
+    comment = _row_for(admin_logged_in_page, value).get_by_text("first line")
+    expect(comment).to_have_css("white-space", "pre-line", timeout=PLAYWRIGHT_TIMEOUT)
+    assert comment.inner_text().splitlines() == ["first line", "second line", "third line"]
 
 
 @then(parsers.parse('the focus should be on "{label}" for "{message}"'))
@@ -395,6 +441,14 @@ def _expect_provenance(page: Page, value: str, wanted: str, unwanted: str) -> No
     row = _row_for(page, value)
     expect(row.locator(f'[title="{wanted}"]')).to_have_count(2, timeout=PLAYWRIGHT_TIMEOUT)
     expect(row.locator(f'[title="{unwanted}"]')).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{name}" target should have a "{column}" column'))
+def target_has_column(admin_logged_in_page: Page, name: str, column: str) -> None:
+    block = admin_logged_in_page.locator("#target-categories > div").filter(
+        has=admin_logged_in_page.get_by_role("heading", name=name, exact=True)
+    )
+    expect(block.get_by_role("columnheader", name=column)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('I should see "{text}"'))
@@ -453,3 +507,40 @@ def category_order(admin_logged_in_page: Page, first: str, second: str) -> None:
     headings = admin_logged_in_page.get_by_role("heading").all_text_contents()
     names = [h.strip() for h in headings]
     assert names.index(first) < names.index(second), f"expected {first} before {second} in {names}"
+
+
+@when("I open the targets export")
+def open_targets_export(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.locator('[data-focus-id="targets-export"]').click()
+    expect(admin_logged_in_page.locator("#export-modal-container [role='dialog']")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I cancel the targets export")
+def cancel_targets_export(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.locator("#export-modal-container").get_by_role("button", name="Cancel").click()
+
+
+@then("keyboard focus should be inside the targets export")
+def focus_inside_targets_export(admin_logged_in_page: Page) -> None:
+    focused = admin_logged_in_page.locator("#export-modal-container [role='dialog'] :focus")
+    expect(focused).to_have_count(1, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("keyboard focus should be on the targets Export button")
+def focus_on_targets_export_button(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.locator('[data-focus-id="targets-export"]')).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("a targets CSV download starts when I run the export", target_fixture="downloaded_targets_csv")
+def run_targets_export_download(admin_logged_in_page: Page) -> str:
+    with admin_logged_in_page.expect_download() as download_info:
+        admin_logged_in_page.locator("#export-modal-container button[type=submit]").click()
+    return pathlib.Path(download_info.value.path()).read_text(encoding="utf-8-sig")
+
+
+@then(parsers.parse('the downloaded targets CSV has a row for each of "{first}" and "{second}" under "{feature}"'))
+def targets_csv_rows(downloaded_targets_csv: str, first: str, second: str, feature: str) -> None:
+    rows = list(csv.DictReader(StringIO(downloaded_targets_csv)))
+    assert [(row["feature"], row["value"]) for row in rows] == [(feature, first), (feature, second)]
