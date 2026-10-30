@@ -3,7 +3,7 @@ ABOUTME: One form covering every target category and value, for edit-all/save-al
 ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed by save_all_parser
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_trash, icon_undo %}
+{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_plus, icon_trash, icon_undo %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary %}
@@ -339,7 +339,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
                         <td colspan="{{ column_count }}" class="py-3">
                             <div class="flex items-center gap-3">
-                                {{ button(_("Add value"), variant="tertiary", attrs='@click="addValue()"') }}
+                                {{ button(_("Add value"), variant="tertiary", leading_icon=icon_plus(), attrs='@click="addValue()"') }}
                                                             {# Once every missing value is a row in the table there is
                                    nothing left to add, and nothing left to name. #}
                                 {% if missing_values %}

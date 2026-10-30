@@ -497,10 +497,22 @@ class TestMissingRespondentValues:
         self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS)
 
         html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
-        add_value = re.search(r'<button[^>]*class="([^"]*)"[^>]*>\s*<span>Add value</span>', html_text)
+        add_value = re.search(
+            r'<button[^>]*class="([^"]*)"[^>]*>(?:(?!</button>).)*<span>Add value</span>', html_text, re.DOTALL
+        )
 
         assert add_value is not None, "the Add value button was not found"
         assert "btn--tertiary" in add_value.group(1)
+
+    def test_add_value_carries_a_plus_like_add_target(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """Both buttons add something, so both say so the same way."""
+        self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS)
+
+        html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+        add_value = re.search(r"<button[^>]*>((?:(?!</button>).)*)<span>Add value</span>", html_text, re.DOTALL)
+
+        assert add_value is not None, "the Add value button was not found"
+        assert re.search(r'<span class="btn-icon">\s*<svg', add_value.group(1))
 
 
 def _read_only_row_cells(html_text, value):
