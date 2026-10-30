@@ -63,6 +63,9 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
             {# Marks a modal submission — fixed-field edits render no type radios,
                so the routes can't rely on type_choice to recognise the modal form. #}
                 <input type="hidden" name="modal" value="1">
+                {% if modal_ctx["mode"] == "new" %}
+                    <input type="hidden" name="after" value="{{ values['after'] }}">
+                {% endif %}
             {# Hidden default submitter: pressing Enter saves, rather than triggering
                whichever options-editor button happens to come first in the form. #}
                 <button type="submit"
@@ -174,13 +177,6 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         checked=values["on_registration_page"] == "yes_required",
                         id="field-modal-required",
                         attrs='value="1"') }}
-                    </div>
-                    <div class="mb-4">
-                        {{ select("group",
-                        label=_("Section"),
-                        options=group_choices,
-                        value=values["group"],
-                        id="field-modal-group") }}
                     </div>
                 {# Most users never need the field key, so it sits behind "Advanced". #}
                     <details class="mb-4">

@@ -10,6 +10,7 @@ from jinja2 import TemplateSyntaxError, UndefinedError
 from jinja2.exceptions import SecurityError
 
 from opendlp.domain import registration_page as registration_page_module
+from opendlp.domain.registration_content_block import RegistrationContentBlock
 from opendlp.domain.registration_page import (
     REQUIRED_TOKENS,
     STARTER_THANK_YOU_HTML,
@@ -30,7 +31,6 @@ from opendlp.domain.registration_page import (
     generate_starter_form_html_govuk,
 )
 from opendlp.domain.respondent_field_schema import (
-    GROUP_LABELS,
     ChoiceOption,
     FieldOnRegistrationPage,
     FieldType,
@@ -42,6 +42,12 @@ from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import ContentStyle
 
 ASSEMBLY_ID = uuid.uuid4()
+
+
+def _block(sort_order: int, heading: str = "", body_html: str = "") -> RegistrationContentBlock:
+    return RegistrationContentBlock(
+        assembly_id=ASSEMBLY_ID, sort_order=sort_order, heading=heading, body_html=body_html
+    )
 
 
 def _field(
@@ -1508,38 +1514,58 @@ class TestGenerateStarterFormHtml:
 
         assert "checked('name_prefix', 'O\\'Brien')" in html
 
-    def test_groups_emitted_in_display_order(self):
+    def test_questions_alone_get_no_headings(self):
+        """The fixed sections are gone: a heading appears only where a block puts one."""
         fields = [
-            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
-            _field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, field_type=FieldType.BOOL),
+            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 10),
+            _field("eligible", RespondentFieldGroup.ELIGIBILITY, 20, field_type=FieldType.BOOL),
         ]
         html = generate_starter_form_html(fields)
 
-        eligibility_label = str(GROUP_LABELS[RespondentFieldGroup.ELIGIBILITY])
-        contact_label = str(GROUP_LABELS[RespondentFieldGroup.NAME_AND_CONTACT])
-        assert html.find(f"<h2>{eligibility_label}</h2>") < html.find(f"<h2>{contact_label}</h2>")
+        assert "<h2" not in html
+        assert html.find('name="first_name"') < html.find('name="eligible"')
 
-    def test_sort_order_within_group(self):
+    def test_fields_follow_sort_order_whatever_their_group(self):
         fields = [
-            _field("second", RespondentFieldGroup.NAME_AND_CONTACT, 20),
-            _field("first", RespondentFieldGroup.NAME_AND_CONTACT, 10),
+            _field("second", RespondentFieldGroup.ELIGIBILITY, 20),
+            _field("first", RespondentFieldGroup.OTHER, 10),
         ]
         html = generate_starter_form_html(fields)
 
         assert html.find('name="first"') < html.find('name="second"')
 
-    def test_empty_groups_suppressed(self):
-        fields = [_field("note", RespondentFieldGroup.OTHER, 0)]
-        html = generate_starter_form_html(fields)
+    def test_a_block_sits_between_the_questions_around_it(self):
+        fields = [
+            _field("first_name", RespondentFieldGroup.OTHER, 10),
+            _field("consent", RespondentFieldGroup.OTHER, 30),
+        ]
+        blocks = [_block(20, heading="The small print", body_html="<p>We keep your <strong>data</strong> safe.</p>")]
+        html = generate_starter_form_html(fields, blocks)
 
-        assert str(GROUP_LABELS[RespondentFieldGroup.ELIGIBILITY]) not in html
-        assert str(GROUP_LABELS[RespondentFieldGroup.OTHER]) in html
+        heading = html.find("<h2>The small print</h2>")
+        body = html.find("<p>We keep your <strong>data</strong> safe.</p>")
+        assert html.find('name="first_name"') < heading < body < html.find('name="consent"')
 
-    def test_group_label_uses_group_labels_mapping(self):
-        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
-        html = generate_starter_form_html(fields)
+    def test_a_block_heading_is_escaped_and_cannot_open_a_template_tag(self):
+        html = generate_starter_form_html([], [_block(10, heading="Tom & {{ Jerry }}")])
 
-        assert f"<h2>{GROUP_LABELS[RespondentFieldGroup.NAME_AND_CONTACT]}</h2>" in html
+        assert "<h2>Tom &amp; &#123;&#123; Jerry &#125;&#125;</h2>" in html
+        RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=html).render(
+            RenderContext(csrf_form_element="", form_action="/r")
+        )
+
+    def test_a_block_body_cannot_open_a_template_tag(self):
+        """No variables in blocks: a block reads the same in the starter HTML and anywhere else."""
+        html = generate_starter_form_html([], [_block(10, body_html="<p>{{ project_title }} {% if %}</p>")])
+
+        assert "<p>&#123;&#123; project_title &#125;&#125; &#123;% if %&#125;</p>" in html
+        assert html.count("{{") == html.count("}}")
+
+    def test_a_text_only_block_has_no_heading(self):
+        html = generate_starter_form_html([], [_block(10, body_html="<p>Read this first.</p>")])
+
+        assert "<h2" not in html
+        assert "<p>Read this first.</p>" in html
 
     def test_effective_field_type_honoured_for_fixed_fields(self):
         fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
@@ -1590,7 +1616,6 @@ class TestGenerateStarterFormHtml:
 
         assert 'name="first_name"' in html
         assert 'name="internal_note"' not in html
-        assert str(GROUP_LABELS[RespondentFieldGroup.OTHER]) not in html
 
     def test_required_dropdown_omits_placeholder_and_marks_required(self):
         fields = [
@@ -1657,10 +1682,7 @@ class TestGenerateStarterFormHtml:
             assert f"{{{{ field_errors('{key}') }}}}" in html
         for value in ("Female", "Male", "North", "South"):
             assert f'value="{value}"' in html
-        eligibility_pos = html.find(str(GROUP_LABELS[RespondentFieldGroup.ELIGIBILITY]))
-        contact_pos = html.find(str(GROUP_LABELS[RespondentFieldGroup.NAME_AND_CONTACT]))
-        about_pos = html.find(str(GROUP_LABELS[RespondentFieldGroup.ABOUT_YOU]))
-        assert eligibility_pos < contact_pos < about_pos
+        assert html.find('name="eligible"') < html.find('name="email"') < html.find('name="gender"')
 
     def test_help_text_renders_hint_paragraph_linked_by_aria_describedby(self):
         """A text field's help_text becomes a hint paragraph the input points at."""
@@ -2029,35 +2051,28 @@ class TestGenerateStarterFormHtmlGovuk:
 
         assert "checked('name_prefix', 'O\\'Brien')" in html
 
-    def test_groups_emitted_in_display_order_with_govuk_heading_class(self):
-        fields = [
-            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
-            _field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, field_type=FieldType.BOOL),
-        ]
-        html = generate_starter_form_html_govuk(fields)
+    def test_a_block_heading_gets_the_govuk_heading_class(self):
+        fields = [_field("first_name", RespondentFieldGroup.OTHER, 20)]
+        html = generate_starter_form_html_govuk(fields, [_block(10, heading="Your name")])
 
-        eligibility_label = str(GROUP_LABELS[RespondentFieldGroup.ELIGIBILITY])
-        contact_label = str(GROUP_LABELS[RespondentFieldGroup.NAME_AND_CONTACT])
-        assert f'<h2 class="govuk-heading-l">{eligibility_label}</h2>' in html
-        assert html.find(f'<h2 class="govuk-heading-l">{eligibility_label}</h2>') < html.find(
-            f'<h2 class="govuk-heading-l">{contact_label}</h2>'
-        )
+        assert '<h2 class="govuk-heading-l">Your name</h2>' in html
+        assert html.find("Your name") < html.find('name="first_name"')
 
-    def test_sort_order_within_group(self):
+    def test_a_block_body_gets_default_govuk_classes(self):
+        html = generate_starter_form_html_govuk([], [_block(10, body_html="<p>Hi</p><ul><li>One</li></ul>")])
+
+        assert '<p class="govuk-body">Hi</p>' in html
+        assert '<ul class="govuk-list govuk-list--bullet">' in html
+
+    def test_fields_follow_sort_order_whatever_their_group(self):
         fields = [
-            _field("second", RespondentFieldGroup.NAME_AND_CONTACT, 20),
-            _field("first", RespondentFieldGroup.NAME_AND_CONTACT, 10),
+            _field("second", RespondentFieldGroup.ELIGIBILITY, 20),
+            _field("first", RespondentFieldGroup.OTHER, 10),
         ]
         html = generate_starter_form_html_govuk(fields)
 
         assert html.find('name="first"') < html.find('name="second"')
-
-    def test_empty_groups_suppressed(self):
-        fields = [_field("note", RespondentFieldGroup.OTHER, 0)]
-        html = generate_starter_form_html_govuk(fields)
-
-        assert str(GROUP_LABELS[RespondentFieldGroup.ELIGIBILITY]) not in html
-        assert str(GROUP_LABELS[RespondentFieldGroup.OTHER]) in html
+        assert "<h2" not in html
 
     def test_no_field_is_omitted(self):
         fields = [

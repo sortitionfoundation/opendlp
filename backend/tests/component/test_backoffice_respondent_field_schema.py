@@ -97,7 +97,7 @@ class TestBuiltInQuestions:
 
 
 class TestQuestionsList:
-    """A card per section and a row per question, each with its own Edit button."""
+    """One list: a row per question, and per heading or text, each with its own Edit button."""
 
     def _page(self, logged_in_admin, assembly):
         return logged_in_admin.get(f"/backoffice/project/{assembly.id}/respondent-schema").get_data(as_text=True)
@@ -105,7 +105,7 @@ class TestQuestionsList:
     def _rows(self, body):
         return {
             re.search(r"<code[^>]*>([^<]+)</code>", row).group(1): row
-            for row in re.findall(r'<tr class="question-row[^"]*">(.*?)</tr>', body, re.DOTALL)
+            for row in re.findall(r'<tr class="question-row"[^>]*>(.*?)</tr>', body, re.DOTALL)
         }
 
     def test_each_row_has_one_edit_link_and_the_row_itself_is_not_a_link(
@@ -163,29 +163,17 @@ class TestQuestionsList:
             assert header is not None
             assert f">{field_key}</code>" in header.group(1)
 
-    def test_every_section_has_its_own_add_button_even_when_empty(
+    def test_the_list_ends_with_add_a_question_and_add_a_heading_or_text(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
-        # Empty the Address section by moving its only question out
-        postcode = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "postcode")
-        with FakeUnitOfWork(store=fake_store) as uow:
-            respondent_field_schema_service.update_field(
-                uow, admin_user.id, existing_assembly.id, postcode.id, group=RespondentFieldGroup.OTHER
-            )
-        assert not any(
-            f.group == RespondentFieldGroup.ADDRESS for f in _get_schema(fake_store, admin_user, existing_assembly)
-        )
 
         body = self._page(logged_in_admin, existing_assembly)
 
-        for group in RespondentFieldGroup:
-            add_link = f"/respondent-schema/fields/new-modal?group={group.value}"
-            if group == RespondentFieldGroup.DERIVED:
-                assert add_link not in body
-            else:
-                assert add_link in body
-        assert "No questions in this section yet." in body
+        assert body.count(f'href="/backoffice/project/{existing_assembly.id}/respondent-schema/fields/new-modal"') == 1
+        assert body.count(f'href="/backoffice/project/{existing_assembly.id}/respondent-schema/blocks/new-modal"') == 1
+        assert "new-modal?group=" not in body
+        assert "No questions in this section yet." not in body
 
     def test_remove_is_in_the_row_menu_only_for_questions_that_can_be_removed(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -202,34 +190,21 @@ class TestQuestionsList:
         # No separate bin button beside the edit link any more
         assert 'aria-label="Remove' not in custom_notes
 
-    def test_a_built_in_question_alone_in_its_section_has_no_empty_menu(
+    def test_every_row_can_add_a_question_or_a_heading_below_it(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
+        """So even a built-in question that can neither move nor go has a menu worth opening."""
         with FakeUnitOfWork(store=fake_store) as uow:
             respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, existing_assembly.id)
-        schema = _get_schema(fake_store, admin_user, existing_assembly)
-        email = next(f for f in schema if f.field_key == "email")
-        assert [f.field_key for f in schema if f.group == email.group] == ["email"]
+        email = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "email")
 
         rows = self._rows(self._page(logged_in_admin, existing_assembly))
 
-        # Can't move, isn't derived, can't be removed: no kebab that opens onto nothing
-        assert 'role="menu"' not in rows["email"]
-        assert "More actions for" not in rows["email"]
-
-    def test_a_removable_question_alone_in_its_section_still_has_its_menu(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        _seed_schema(fake_store, admin_user, existing_assembly)
-        schema = _get_schema(fake_store, admin_user, existing_assembly)
-        postcode = next(f for f in schema if f.field_key == "postcode")
-        assert [f.field_key for f in schema if f.group == postcode.group] == ["postcode"]
-
-        rows = self._rows(self._page(logged_in_admin, existing_assembly))
-
-        assert "Move up" not in rows["postcode"]
-        assert "Move down" not in rows["postcode"]
-        assert ">Remove</button>" in rows["postcode"]
+        menu = rows["email"][rows["email"].index('role="menu"') :]
+        assert f"fields/new-modal?after=question:{email.id}" in menu
+        assert f"blocks/new-modal?after=question:{email.id}" in menu
+        assert ">Add a question below<" in menu
+        assert ">Add a heading or text below<" in menu
 
     def test_moves_are_in_the_row_menu_and_only_where_they_can_go(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -239,14 +214,17 @@ class TestQuestionsList:
         body = self._page(logged_in_admin, existing_assembly)
         rows = self._rows(body)
 
-        # first_name and last_name share a section, in that order
+        # The CSV puts first_name straight before last_name
         assert body.index('<code class="text-body-sm" style="color: var(--color-body-text);">first_name') < body.index(
             '<code class="text-body-sm" style="color: var(--color-body-text);">last_name'
         )
         first, last = rows["first_name"], rows["last_name"]
         assert 'role="menuitem" tabindex="-1" class="menu-item">Move down' in first
         assert last.count('role="menuitem" tabindex="-1" class="menu-item">Move up') == 1
-        assert "Move up" not in rows["eligible"]
+        # The first item can't go up and the last can't go down
+        assert "Move up" not in rows["eligible"] and "Move to top" not in rows["eligible"]
+        assert "Move down" not in rows["stay_on_db"] and "Move to bottom" not in rows["stay_on_db"]
+        assert "Move to bottom" in rows["eligible"] and "Move to top" in rows["stay_on_db"]
         # The old Section select and arrow columns are gone
         assert 'id="row-group-' not in body
         assert ">↑<" not in body
@@ -432,7 +410,7 @@ class TestFieldTypeAndOptions:
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
-        assert b"Question type" in body
+        assert b"Short text" in body
         # Fixed flags are BOOL_OR_NONE; both bool types are a checkbox in question wording
         assert b"Checkbox" in body
         assert b"Yes / No" not in body
@@ -734,9 +712,11 @@ class TestFieldModal:
 
         assert 'id="field-modal-container" data-fragment-dialog-host' in body
         edit_ids = re.findall(r'data-focus-id="(question-[^"]+)"', body)
-        add_ids = re.findall(r'data-focus-id="(add-question-[^"]+)"', body)
         assert edit_ids and len(edit_ids) == len(set(edit_ids))
-        assert add_ids and len(add_ids) == len(set(add_ids))
+        assert 'data-focus-id="add-question"' in body
+        assert 'data-focus-id="add-block"' in body
+        # A row's menu items open dialogs too, so focus comes back to the row's Edit button
+        assert body.count('class="question-row" data-focus-row') == len(edit_ids)
 
     def test_new_modal_plain_request_renders_the_page_with_the_modal_open(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1035,12 +1015,6 @@ class TestFieldModal:
             ).get_data(as_text=True)
             assert bool(re.search(r"\bchecked\b", self._required_switch(body))) is checked, state
 
-    def _selected_group(self, body):
-        select = re.search(r'<select[^>]*id="field-modal-group".*?</select>', body, re.DOTALL)
-        assert select is not None, "no section select"
-        selected = re.search(r'<option value="([^"]*)" selected>', select.group(0))
-        return selected.group(1) if selected else ""
-
     def test_the_form_asks_for_the_question_not_a_label(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -1060,8 +1034,8 @@ class TestFieldModal:
 
         body = logged_in_admin.get(self._base(existing_assembly)).get_data(as_text=True)
 
-        assert re.search(r'<th scope="col">\s*Notes\s*</th>', body)
-        assert not re.search(r'<th scope="col">\s*Tags\s*</th>', body)
+        assert re.search(r'<th scope="col">\s*<span class="sr-only">Notes</span>\s*</th>', body)
+        assert "Tags" not in body
 
     def test_the_field_key_sits_behind_an_advanced_section_on_both_forms(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1088,28 +1062,72 @@ class TestFieldModal:
         assert 'id="field-modal-key"' in new_body
         assert "<code>custom_notes</code>" in edit_body
 
-    def test_new_modal_defaults_to_the_other_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_neither_modal_asks_for_a_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """Sections are gone: a question's place is its place in the list."""
         _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
 
-        body = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
-        ).get_data(as_text=True)
+        for url in (
+            f"{self._base(existing_assembly)}/fields/new-modal",
+            f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal",
+        ):
+            body = logged_in_admin.get(url, headers={"HX-Request": "true"}).get_data(as_text=True)
+            assert 'id="field-modal-group"' not in body
+            assert ">Section<" not in body
 
-        assert self._selected_group(body) == RespondentFieldGroup.OTHER.value
-        assert f'<option value="{RespondentFieldGroup.DERIVED.value}"' not in body
-
-    def test_new_modal_opened_from_a_section_chooses_that_section(
+    def test_new_modal_opened_below_a_row_remembers_it(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        first_name = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "first_name"
+        )
+        after = f"question:{first_name.id}"
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal",
+            query_string={"after": after},
+            headers={"HX-Request": "true"},
+        ).get_data(as_text=True)
+
+        assert f'<input type="hidden" name="after" value="{after}">' in body
+
+    def test_a_malformed_row_to_go_below_is_dropped(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
         body = logged_in_admin.get(
             f"{self._base(existing_assembly)}/fields/new-modal",
-            query_string={"group": RespondentFieldGroup.ADDRESS.value},
+            query_string={"after": "nonsense"},
             headers={"HX-Request": "true"},
         ).get_data(as_text=True)
 
-        assert self._selected_group(body) == RespondentFieldGroup.ADDRESS.value
+        assert '<input type="hidden" name="after" value="">' in body
+
+    def test_add_via_modal_below_a_row_puts_the_question_there(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        first_name = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "first_name"
+        )
+
+        logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Middle name",
+                "after": f"question:{first_name.id}",
+                "question_type": FieldType.TEXT.value,
+                "required_switch": "1",
+            },
+            headers={"HX-Request": "true"},
+        )
+
+        keys = [f.field_key for f in _get_schema(fake_store, admin_user, existing_assembly)]
+        assert keys[keys.index("first_name") + 1] == "middle_name"
 
     def test_add_via_modal_puts_the_question_in_the_chosen_section(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1132,37 +1150,6 @@ class TestFieldModal:
 
         field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "flat_number")
         assert field.group == RespondentFieldGroup.ADDRESS
-
-    def test_edit_modal_shows_and_saves_the_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        _seed_schema(fake_store, admin_user, existing_assembly)
-        custom = next(
-            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
-        )
-
-        body = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
-        ).get_data(as_text=True)
-        assert self._selected_group(body) == custom.group.value
-        assert custom.group != RespondentFieldGroup.ABOUT_YOU
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/{custom.id}/update",
-            data={
-                "modal": "1",
-                "form_action": "save",
-                "label": "Custom notes",
-                "group": RespondentFieldGroup.ABOUT_YOU.value,
-                "type_choice": "free_text",
-                "free_text_subtype": "text",
-                "help_text": "",
-                "on_registration_page": FieldOnRegistrationPage.NO.value,
-            },
-            headers={"HX-Request": "true"},
-        )
-
-        assert response.status_code == 200
-        moved = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
-        assert moved.group == RespondentFieldGroup.ABOUT_YOU
 
     def test_add_via_modal_creates_field_with_options_and_help_text(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

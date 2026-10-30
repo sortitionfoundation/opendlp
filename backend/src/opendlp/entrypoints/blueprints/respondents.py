@@ -14,7 +14,7 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExportTarget
 from opendlp.config import get_max_csv_upload_bytes, get_max_csv_upload_mb
-from opendlp.domain.respondent_field_schema import CHOICE_TYPES, GROUP_DISPLAY_ORDER, GROUP_LABELS, FieldType
+from opendlp.domain.respondent_field_schema import CHOICE_TYPES, FieldType
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import (
@@ -65,8 +65,8 @@ from opendlp.service_layer.respondent_export_service import (
 )
 from opendlp.service_layer.respondent_field_schema_service import (
     compute_diff_for_pending_csv,
+    get_respondent_sections,
     get_schema,
-    get_schema_grouped,
 )
 from opendlp.service_layer.respondent_service import (
     delete_respondent,
@@ -340,16 +340,13 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     with uow:
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-    new_keys_with_labels = [
-        {"key": key, "group": group, "group_label": GROUP_LABELS.get(group, group.value)}
-        for key, group in diff.new_keys
-    ]
+    new_keys = [key for key, _group in diff.new_keys]
     return render_template(
         "backoffice/respondents/confirm_upload_diff.html",
         assembly=assembly,
         filename=pending.filename,
         diff=diff,
-        new_keys_with_labels=new_keys_with_labels,
+        new_keys=new_keys,
         max_csv_upload_mb=get_max_csv_upload_mb(),
     ), 200
 
@@ -872,15 +869,8 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             can_manage = bool(viewer and assembly_obj and can_manage_assembly(viewer, assembly_obj))
             can_edit = bool(viewer and assembly_obj and can_edit_respondent(viewer, assembly_obj))
 
-            # Load the per-assembly field schema for the display sections below.
-            grouped_schema = get_schema_grouped(uow, current_user.id, assembly_id)
-
-        # Empty groups are filtered out so the template renders only populated sections.
-        schema_sections = [
-            {"label": GROUP_LABELS[group], "fields": grouped_schema[group]}
-            for group in GROUP_DISPLAY_ORDER
-            if grouped_schema.get(group)
-        ]
+            # The fields in sections at each heading on the questions list.
+            schema_sections = get_respondent_sections(uow, current_user.id, assembly_id)
 
         allowed_transitions = [
             s.value for s in ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
@@ -1012,7 +1002,7 @@ def _edit_respondent_post(
     methods=["GET", "POST"],
 )
 @login_required
-def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:  # noqa: C901
+def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> ResponseReturnValue:
     """Edit respondent attributes with a required change-note comment."""
     try:
         uow = bootstrap.get_flask_uow()
@@ -1028,7 +1018,7 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
 
             respondent = get_respondent(uow, current_user.id, assembly_id, respondent_id)
             schema = get_schema(uow, current_user.id, assembly_id)
-            grouped_schema = get_schema_grouped(uow, current_user.id, assembly_id)
+            ordered_sections = get_respondent_sections(uow, current_user.id, assembly_id)
 
         if respondent.selection_status == RespondentStatus.DELETED:
             flash(_("Cannot edit a deleted respondent"), "error")
@@ -1048,11 +1038,6 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
 
         # Derived fields stay in the sections: the form builder creates no input
         # for them, and the template shows a will-be-recalculated note instead.
-        ordered_sections = []
-        for group in GROUP_DISPLAY_ORDER:
-            fields_in_group = grouped_schema.get(group, [])
-            if fields_in_group:
-                ordered_sections.append({"label": GROUP_LABELS[group], "fields": fields_in_group})
 
         allowed_transitions = [
             s.value for s in ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])

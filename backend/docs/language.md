@@ -71,6 +71,7 @@ door. The move from "assembly" to "project" is the current example.
 | team member           | A user with a role on a project                                               | member (for a respondent)          |
 | registration page     | The public page where people put themselves forward for an event              | registration form                  |
 | registration question | One thing the registration page asks, such as date of birth                   | registration field                 |
+| heading or text       | A heading, some text, or both, placed between the registration questions      | section, element, block            |
 | intro                 | What a registration page shows above the form, such as a heading and welcome  | introduction, header, preamble     |
 | invite                | What an admin sends so that someone can create an account                     |                                    |
 | invite code           | The code in an invite                                                         | invitation code                    |
@@ -149,6 +150,13 @@ calls them fields (`RespondentFieldDefinition`), and "field" is still the right
 word for the wider idea — a derived field computed from a question, a column
 imported from CSV or Google Sheets, a field key. Say "question" only where the
 reader is thinking about what the page asks.
+
+**heading or text** is what an organiser places among the registration
+questions: "Add a heading or text", "Edit heading or text". Not "section" — there
+are no fixed sections any more — and not "element" or "block", which are the
+code's view. The code calls it a content block (`RegistrationContentBlock`).
+"Add a heading or text" may change if user testing says so; change it everywhere
+at once.
 
 **computed question** is a registration question nobody answers: its value is
 worked out from another question's answer — an age range from a date of birth, a

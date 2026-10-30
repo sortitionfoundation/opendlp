@@ -15,6 +15,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyEmailTemplateRepository,
     SqlAlchemyPasswordResetTokenRepository,
+    SqlAlchemyRegistrationContentBlockRepository,
     SqlAlchemyRegistrationDocumentRepository,
     SqlAlchemyRegistrationImageRepository,
     SqlAlchemyRegistrationPageHtmlRepository,
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
         EmailConfirmationTokenRepository,
         EmailTemplateRepository,
         PasswordResetTokenRepository,
+        RegistrationContentBlockRepository,
         RegistrationDocumentRepository,
         RegistrationImageRepository,
         RegistrationPageHtmlRepository,
@@ -87,6 +89,7 @@ class AbstractUnitOfWork(abc.ABC):
     respondents: RespondentRepository
     respondent_field_definitions: RespondentFieldDefinitionRepository
     respondent_field_mapping_entries: RespondentFieldMappingEntryRepository
+    registration_content_blocks: RegistrationContentBlockRepository
     registration_pages: RegistrationPageRepository
     registration_page_html_sources: RegistrationPageHtmlRepository
     registration_images: RegistrationImageRepository
@@ -226,6 +229,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.respondents = SqlAlchemyRespondentRepository(self.session)
         self.respondent_field_definitions = SqlAlchemyRespondentFieldDefinitionRepository(self.session)
         self.respondent_field_mapping_entries = SqlAlchemyRespondentFieldMappingEntryRepository(self.session)
+        self.registration_content_blocks = SqlAlchemyRegistrationContentBlockRepository(self.session)
         self.registration_pages = SqlAlchemyRegistrationPageRepository(self.session)
         self.registration_page_html_sources = SqlAlchemyRegistrationPageHtmlRepository(self.session)
         self.registration_images = SqlAlchemyRegistrationImageRepository(self.session)

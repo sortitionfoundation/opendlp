@@ -9,6 +9,7 @@ import pytest
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
+from opendlp.domain.registration_content_block import form_item_ref
 from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
@@ -28,7 +29,8 @@ from opendlp.service_layer.respondent_field_schema_service import (
     add_field,
     delete_field,
     initialise_empty_schema,
-    reorder_group,
+    move_form_item,
+    reorder_form_items,
     update_field,
 )
 from opendlp.service_layer.respondent_service import (
@@ -180,11 +182,19 @@ class TestSchemaChangesTriggerAnExport:
         update_field(uow, user.id, assembly.id, field.id, label="Favourite colour")
         dispatch.assert_called_once()
 
-    def test_reorder_group(self, uow, dispatch):
+    def test_reorder_form_items(self, uow, dispatch):
+        """The export's column order follows the questions list."""
         user, assembly = _seed(uow)
         first = _add_field(uow, assembly, "colour")
         second = _add_field(uow, assembly, "shape")
-        reorder_group(uow, user.id, assembly.id, RespondentFieldGroup.ABOUT_YOU, [second.id, first.id])
+        reorder_form_items(uow, user.id, assembly.id, [form_item_ref(second), form_item_ref(first)])
+        dispatch.assert_called_once()
+
+    def test_move_form_item(self, uow, dispatch):
+        user, assembly = _seed(uow)
+        _add_field(uow, assembly, "colour")
+        second = _add_field(uow, assembly, "shape")
+        move_form_item(uow, user.id, assembly.id, form_item_ref(second), "up")
         dispatch.assert_called_once()
 
     def test_add_choice_option(self, uow, dispatch):

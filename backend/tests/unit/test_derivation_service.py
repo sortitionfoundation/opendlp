@@ -248,7 +248,7 @@ class TestCreateDerivedField:
         user, assembly = _seed(uow)
         _add_source(uow, assembly, field_key="postcode", field_type=FieldType.TEXT)
 
-        with pytest.raises(FieldDefinitionConflictError, match="cannot derive from a Text field"):
+        with pytest.raises(FieldDefinitionConflictError, match="cannot derive from a Short text field"):
             create_derived_field(
                 uow,
                 user.id,
@@ -691,7 +691,7 @@ class TestUpdateDerivation:
         )
         source.field_type = FieldType.TEXT
 
-        with pytest.raises(FieldDefinitionConflictError, match="cannot derive from a Text field"):
+        with pytest.raises(FieldDefinitionConflictError, match="cannot derive from a Short text field"):
             update_derivation(uow, user.id, assembly.id, field.id, rule=AGE_RULE)
 
     def test_large_mapping_fallback_change_keeps_outputs_and_swaps_fallback(self, uow):

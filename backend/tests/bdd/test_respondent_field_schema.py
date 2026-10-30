@@ -1,4 +1,4 @@
-"""ABOUTME: BDD tests for the grouped respondent view and the schema management UI
+"""ABOUTME: BDD tests for the respondent view and the questions list, headings and text included
 ABOUTME: Exercises the full UI stack via Playwright for the happy paths covered by unit + e2e tests"""
 
 import uuid
@@ -6,6 +6,8 @@ import uuid
 from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.domain.registration_content_block import form_item_ref
+from opendlp.service_layer.respondent_field_schema_service import add_content_block
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -62,6 +64,16 @@ def assembly_with_csv_respondents(title: str, assembly_creator, admin_user, test
         )
 
 
+@given(parsers.parse('the questions list for "{title}" has the heading "{heading}" below "{field_key}"'))
+def heading_below_field(title: str, heading: str, field_key: str, admin_user, test_database) -> None:
+    assembly_id = uuid.UUID(_schema_assembly_ids[title])
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        field = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, field_key)
+        assert field is not None
+        add_content_block(uow, admin_user.id, assembly_id, heading=heading, after=form_item_ref(field))
+        uow.commit()
+
+
 @given("I am signed in as an admin user")
 def admin_signed_in(admin_logged_in_page: Page) -> None:
     """The ``admin_logged_in_page`` fixture handles the sign-in."""
@@ -112,9 +124,92 @@ def _field_dialog(page: Page) -> Locator:
 
 @when("I open the add-field modal")
 def open_add_field_modal(admin_logged_in_page: Page) -> None:
-    # Every section has its own add button; use the catch-all section's.
-    admin_logged_in_page.get_by_role("button", name="Add a question to Other").click()
+    admin_logged_in_page.get_by_role("button", name="Add a question", exact=True).click()
     expect(_field_dialog(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I open the add heading or text dialog")
+def open_add_block_dialog(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Add a heading or text", exact=True).click()
+    expect(_field_dialog(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # The visual editor mounts over the textarea once the dialog is swapped in.
+    expect(_block_text(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+def _block_text(page: Page) -> Locator:
+    return _field_dialog(page).locator("#block-modal-body-visual")
+
+
+@when(parsers.parse('I choose "{item}" from the "{field_key}" row menu'))
+def choose_row_menu_item(admin_logged_in_page: Page, item: str, field_key: str) -> None:
+    page = admin_logged_in_page
+    row = page.locator(f"tr:has(code:text-is('{field_key}'))")
+    row.get_by_role("button", name="More actions for").click()
+    row.get_by_role("menuitem", name=item, exact=True).click()
+    expect(_field_dialog(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_block_text(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I drag the "{field_key}" row above the "{target_key}" row'))
+def drag_row_above(admin_logged_in_page: Page, field_key: str, target_key: str) -> None:
+    page = admin_logged_in_page
+    handle = page.locator(f"tr:has(code:text-is('{field_key}')) [data-drag-handle]")
+    target = page.locator(f"tr:has(code:text-is('{target_key}')) [data-drag-handle]")
+    expect(handle).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    with page.expect_response(lambda response: response.url.endswith("/respondent-schema/reorder")):
+        handle.drag_to(target, target_position={"x": 4, "y": 1})
+    page.wait_for_load_state("networkidle")
+
+
+@when(parsers.parse('I use the keyboard to choose "{item}" from the "{field_key}" row menu'))
+def keyboard_row_menu_item(admin_logged_in_page: Page, item: str, field_key: str) -> None:
+    page = admin_logged_in_page
+    row = page.locator(f"tr:has(code:text-is('{field_key}'))")
+    row.get_by_role("button", name="More actions for").focus()
+    page.keyboard.press("Enter")
+    menu_item = row.get_by_role("menuitem", name=item, exact=True)
+    for _ in range(10):
+        if menu_item.evaluate("el => el === document.activeElement"):
+            break
+        page.keyboard.press("ArrowDown")
+    with page.expect_navigation():
+        page.keyboard.press("Enter")
+    page.wait_for_load_state("networkidle")
+
+
+@when(parsers.parse('I save the heading "{heading}" with the text "{text}"'))
+def save_heading_and_text(admin_logged_in_page: Page, heading: str, text: str) -> None:
+    page = admin_logged_in_page
+    dialog = _field_dialog(page)
+    dialog.locator("#block-modal-heading").fill(heading)
+    _block_text(page).click()
+    page.keyboard.type(text)
+    dialog.get_by_role("button", name="Save", exact=True).click()
+    expect(dialog).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I type "{text}" into the text and select it'))
+def type_and_select_block_text(admin_logged_in_page: Page, text: str) -> None:
+    page = admin_logged_in_page
+    _block_text(page).click()
+    page.keyboard.type(text)
+    page.keyboard.press("ControlOrMeta+a")
+
+
+@when("I press the Link button in the text toolbar")
+def press_block_link_button(admin_logged_in_page: Page) -> None:
+    _field_dialog(admin_logged_in_page).get_by_role("toolbar", name="Formatting").get_by_role(
+        "button", name="Link", exact=True
+    ).click()
+
+
+@when(parsers.parse('I apply the link address "{href}"'))
+def apply_block_link_address(admin_logged_in_page: Page, href: str) -> None:
+    page = admin_logged_in_page
+    field = page.locator("#link-modal-url")
+    expect(field).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    field.fill(href)
+    page.get_by_role("dialog", name="Link").get_by_role("button", name="Apply", exact=True).click()
 
 
 @when(parsers.parse('I choose "{item}" from the "{field_key}" row menu and confirm'))
@@ -232,6 +327,58 @@ def field_order(admin_logged_in_page: Page, earlier_key: str, later_key: str) ->
         f"Expected {earlier_key!r} to appear before {later_key!r} on the page, "
         f"but earlier.y={earlier_box['y']} is not less than later.y={later_box['y']}"
     )
+
+
+@then(parsers.parse('the schema editor should list the heading "{heading}"'))
+def schema_lists_heading(admin_logged_in_page: Page, heading: str) -> None:
+    expect(admin_logged_in_page.locator(".content-block-row__heading", has_text=heading)).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+def _list_rows(page: Page) -> Locator:
+    return page.locator("#schema-editor tbody > tr")
+
+
+@then(parsers.parse('the heading "{heading}" should come last'))
+def heading_comes_last(admin_logged_in_page: Page, heading: str) -> None:
+    expect(_list_rows(admin_logged_in_page).last).to_contain_text(heading, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the heading "{heading}" should come straight after the "{field_key}" field'))
+def heading_follows_field(admin_logged_in_page: Page, heading: str, field_key: str) -> None:
+    page = admin_logged_in_page
+    expect(page.locator(".content-block-row__heading", has_text=heading)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    texts = _list_rows(page).all_inner_texts()
+    index = next(i for i, text in enumerate(texts) if field_key in text.split())
+    assert heading in texts[index + 1], texts
+
+
+@then(parsers.parse('the text should link to "{href}"'))
+def block_text_links_to(admin_logged_in_page: Page, href: str) -> None:
+    page = admin_logged_in_page
+    expect(page.locator("#link-modal-url")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_block_text(page).locator(f'a[href="{href}"]')).to_have_count(1)
+    body = page.evaluate("document.querySelector('#block-modal-body').value")
+    assert f'href="{href}"' in body
+
+
+@then("the add heading or text dialog should still be open")
+def block_dialog_still_open(admin_logged_in_page: Page) -> None:
+    expect(_field_dialog(admin_logged_in_page)).to_contain_text("Add a heading or text")
+
+
+@then(parsers.parse('the page should say "{text}"'))
+def page_says(admin_logged_in_page: Page, text: str) -> None:
+    expect(admin_logged_in_page.get_by_text(text)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('keyboard focus should be on the "{field_key}" row menu button'))
+def focus_on_row_menu(admin_logged_in_page: Page, field_key: str) -> None:
+    toggle = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))").get_by_role(
+        "button", name="More actions for"
+    )
+    expect(toggle).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the required switch should read "{text}"'))

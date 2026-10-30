@@ -13,6 +13,8 @@ from opendlp.service_layer.exceptions import (
     CannotDisableSelf,
     CannotRemoveLastAssemblyManager,
     CannotRemoveLastAuthMethod,
+    ContentBlockInvalidError,
+    ContentBlockNotFoundError,
     CuratedMessage,
     DocumentQuotaExceeded,
     EmailNotConfirmed,
@@ -73,6 +75,7 @@ CURATED = [
     CannotDisableSelf(),
     CannotRemoveLastAssemblyManager(),
     FieldDefinitionConflictError("A choice field must keep at least one option"),
+    ContentBlockInvalidError("Add a heading, some text, or both"),
     SelectionAlreadyRunning(_RUNNING_SELECTION),
     TabularDataError([TableProblem(kind="empty", message="The file is empty or has no header row.")]),
 ]
@@ -93,6 +96,7 @@ UNCURATED = [
     SelectionRunRecordNotFoundError("Selection run 0f8f-... not found"),
     RespondentNotFoundError("no row for respondent_id=0f8f-... in table respondents"),
     FieldDefinitionNotFoundError("Field 0f8f-... not found in assembly 0f8f-..."),
+    ContentBlockNotFoundError("Block 0f8f-... not found in assembly 0f8f-..."),
     # Its own message is a marker, not a sentence. What the user reads is the
     # per-field messages on `.errors`, which the bulk edit form renders itself.
     TargetsNotSaved([]),

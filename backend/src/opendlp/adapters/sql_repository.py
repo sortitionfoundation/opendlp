@@ -15,13 +15,14 @@ from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_content_block import RegistrationContentBlock
 from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
-    GROUP_DISPLAY_ORDER,
     RespondentFieldDefinition,
     RespondentFieldMappingEntry,
+    field_list_order,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
@@ -49,6 +50,7 @@ from opendlp.service_layer.repositories import (
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
+    RegistrationContentBlockRepository,
     RegistrationDocumentRepository,
     RegistrationImageRepository,
     RegistrationPageHtmlRepository,
@@ -1637,13 +1639,7 @@ class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, Respon
             .filter(orm.respondent_field_definitions.c.assembly_id == assembly_id)
             .all()
         )
-        # Order by GROUP_DISPLAY_ORDER in Python — the display order is a fixed
-        # Python list, so a CASE statement in SQL would be more work for the same result.
-        group_index = {group: i for i, group in enumerate(GROUP_DISPLAY_ORDER)}
-        return sorted(
-            rows,
-            key=lambda f: (group_index.get(f.group, len(GROUP_DISPLAY_ORDER)), f.sort_order, f.field_key),
-        )
+        return sorted(rows, key=field_list_order)
 
     def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         return (
@@ -1664,6 +1660,33 @@ class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, Respon
             )
         )
         return result.rowcount  # type: ignore[attr-defined, no-any-return]
+
+
+class SqlAlchemyRegistrationContentBlockRepository(SqlAlchemyRepository, RegistrationContentBlockRepository):
+    """SQLAlchemy implementation of RegistrationContentBlockRepository."""
+
+    def add(self, item: RegistrationContentBlock) -> None:
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> RegistrationContentBlock | None:
+        return (
+            self.session.query(RegistrationContentBlock).filter(orm.registration_content_blocks.c.id == item_id).first()
+        )
+
+    def all(self) -> Iterable[RegistrationContentBlock]:
+        return self.session.query(RegistrationContentBlock).all()
+
+    def list_by_assembly(self, assembly_id: uuid.UUID) -> list[RegistrationContentBlock]:
+        return list(
+            self.session
+            .query(RegistrationContentBlock)
+            .filter(orm.registration_content_blocks.c.assembly_id == assembly_id)
+            .order_by(orm.registration_content_blocks.c.sort_order, orm.registration_content_blocks.c.id)
+            .all()
+        )
+
+    def delete(self, item: RegistrationContentBlock) -> None:
+        self.session.delete(item)
 
 
 # Rows per INSERT statement when loading a mapping table; keeps each statement's

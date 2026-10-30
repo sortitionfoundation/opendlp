@@ -35,30 +35,19 @@ ABOUTME: Lists added / absent columns and id-column changes; user confirms or ca
         </section>
     {% endif %}
 
-    {% if new_keys_with_labels %}
+    {% if new_keys %}
         <section class="mb-8">
             <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">
-                {{ _("New columns") }} ({{ new_keys_with_labels|length }})
+                {{ _("New columns") }} ({{ new_keys|length }})
             </h2>
             <p class="text-body-md mb-4">
-                {{ _("These columns are in the new CSV but not in the existing schema. They'll be added with the suggested groups; you can re-group them afterwards.") }}
+                {{ _("These columns are in the new CSV but not in the existing schema. They'll be added at the end of the registration questions, in the order the CSV has them; you can move them afterwards.") }}
             </p>
-            <table class="w-full text-left">
-                <thead>
-                    <tr>
-                        <th class="text-label-lg py-2">{{ _("Column") }}</th>
-                        <th class="text-label-lg py-2">{{ _("Suggested group") }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in new_keys_with_labels %}
-                        <tr>
-                            <td class="py-2"><code>{{ entry.key }}</code></td>
-                            <td class="py-2">{{ entry.group_label }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <ul class="flex flex-wrap gap-2">
+                {% for key in new_keys %}
+                    <li><code>{{ key }}</code></li>
+                {% endfor %}
+            </ul>
         </section>
     {% endif %}
 
