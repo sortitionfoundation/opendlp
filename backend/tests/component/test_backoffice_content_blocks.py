@@ -73,6 +73,30 @@ class TestTheList:
         row = re.search(r'<tr class="content-block-row"[^>]*>(.*?)</tr>', body, re.DOTALL)
         assert f'<div class="text-body-md">{kind}</div>' in row.group(1)
 
+    def test_a_text_question_is_short_text_so_it_is_not_confused_with_a_text_block(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A question asking for text and a block holding only text must not share a label."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.add_field(uow, admin_user.id, existing_assembly.id, "first_name")
+            uow.commit()
+        _block(fake_store, admin_user, existing_assembly, "", "<p>Read the notes first.</p>")
+
+        body = logged_in_admin.get(_base(existing_assembly)).get_data(as_text=True)
+
+        question = re.search(r'<tr class="question-row"[^>]*>(?:(?!</tr>).)*first_name.*?</tr>', body, re.DOTALL)
+        block = re.search(r'<tr class="content-block-row"[^>]*>(.*?)</tr>', body, re.DOTALL)
+        assert '<div class="text-body-md">Short text</div>' in question.group(0)
+        assert '<div class="text-body-md">Text</div>' in block.group(1)
+
+    def test_the_column_headers_are_for_screen_readers_only(self, logged_in_admin, existing_assembly):
+        """The cards explain themselves on screen; the headers stay so each cell is announced with its column."""
+        body = logged_in_admin.get(_base(existing_assembly)).get_data(as_text=True)
+
+        thead = re.search(r"<thead>(.*?)</thead>", body, re.DOTALL).group(1)
+        headers = re.findall(r'<th scope="col">\s*<span class="sr-only">([^<]*)</span>\s*</th>', thead)
+        assert headers == ["Item", "Type", "Notes", "Actions"]
+
     def test_a_text_only_block_is_named_by_its_first_line(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

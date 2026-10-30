@@ -1079,22 +1079,20 @@
     }
 
     /* Separate borders so each row can carry its own rounded border, with the
-       spacing as the gap between the cards. The negative margin takes back
-       the spacing above the header and below the last card. */
+       spacing as the gap between the cards. The header row is for screen
+       readers only and has no height, so the negative margin takes back the
+       spacing either side of it and below the last card. */
     .question-table {
         width: 100%;
         table-layout: fixed;
         border-collapse: separate;
         border-spacing: 0 8px;
-        margin: -8px 0;
+        margin: -16px 0 -8px;
         text-align: left;
     }
 
     .question-table thead th {
-        padding: 0 8px;
-        font: 600 0.75rem/1rem var(--font-body);
-        letter-spacing: 0.4px;
-        color: var(--color-headings);
+        padding: 0;
     }
 
     /* Each row's question cell is its row header (th scope="row"), styled as a

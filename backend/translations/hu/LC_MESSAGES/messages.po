@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-29 12:03+0000\n"
+"POT-Creation-Date: 2026-10-30 13:13+0000\n"
 "PO-Revision-Date: 2026-10-28 21:04+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -301,12 +301,8 @@ msgid "Required"
 msgstr "Kötelező"
 
 #: src/opendlp/domain/respondent_field_schema.py:154
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:226
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:600
-#: templates/backoffice/components/rich_editor.html:94
-#: templates/backoffice/respondent_field_schema/_block_modal.html:65
-msgid "Text"
-msgstr "Szöveg"
+msgid "Short text"
+msgstr ""
 
 #: src/opendlp/domain/respondent_field_schema.py:155
 msgid "Long text"
@@ -1199,7 +1195,7 @@ msgstr "például: nem, életkor, etnikai hovatartozás"
 
 #: src/opendlp/entrypoints/forms.py:670 src/opendlp/entrypoints/forms.py:709
 #: templates/backoffice/components/db_replacement_modal.html:135
-#: templates/backoffice/respondent_field_schema/_editor.html:139
+#: templates/backoffice/respondent_field_schema/_editor.html:146
 msgid "Notes"
 msgstr "Megjegyzések"
 
@@ -2980,6 +2976,13 @@ msgstr "Nincs jogosultságod a séma szerkesztéséhez"
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:178
 msgid "Checkbox (can be left unanswered)"
 msgstr "Jelölőnégyzet (üresen hagyható)"
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:226
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:600
+#: templates/backoffice/components/rich_editor.html:94
+#: templates/backoffice/respondent_field_schema/_block_modal.html:65
+msgid "Text"
+msgstr "Szöveg"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:230
 msgid "Choice"
@@ -4782,7 +4785,7 @@ msgid "There are %(count)d problems with this file:"
 msgstr "A fájlban %(count)d probléma van:"
 
 #: src/opendlp/service_layer/tabular_data.py:78
-#: templates/backoffice/respondent_field_schema/_editor.html:207
+#: templates/backoffice/respondent_field_schema/_editor.html:215
 #, python-format
 msgid "… and %(count)d more"
 msgstr "… és még %(count)d"
@@ -5491,7 +5494,7 @@ msgstr "Lejárat"
 #: templates/backoffice/assembly_selection.html:233
 #: templates/backoffice/components/db_selection_progress_modal.html:124
 #: templates/backoffice/components/registration_page_list.html:38
-#: templates/backoffice/respondent_field_schema/_editor.html:141
+#: templates/backoffice/respondent_field_schema/_editor.html:149
 #: templates/backoffice/targets/bulk_edit_form.html:303
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
@@ -5627,8 +5630,8 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/registration/_step_intro.html:40
 #: templates/backoffice/registration/_step_page.html:36
 #: templates/backoffice/registration/_step_thank_you.html:42
-#: templates/backoffice/respondent_field_schema/_editor.html:171
-#: templates/backoffice/respondent_field_schema/_editor.html:226
+#: templates/backoffice/respondent_field_schema/_editor.html:179
+#: templates/backoffice/respondent_field_schema/_editor.html:234
 #: templates/backoffice/target_sources/_checklist.html:73
 #: templates/backoffice/target_sources/_setup_modal.html:192
 #: templates/main/edit_assembly.html:3
@@ -7805,7 +7808,7 @@ msgid "%(count)s (+%(test_count)s test)"
 msgstr "%(count)s (+%(test_count)s teszt)"
 
 #: templates/backoffice/components/registration_page_list.html:148
-#: templates/backoffice/respondent_field_schema/_editor.html:175
+#: templates/backoffice/respondent_field_schema/_editor.html:183
 #, python-format
 msgid "Edit %(name)s"
 msgstr "%(name)s szerkesztése"
@@ -9128,7 +9131,7 @@ msgid "View %(own_link)s or the %(standard_link)s (opens in a new tab)."
 msgstr "Nézd meg %(own_link)s vagy %(standard_link)s (új lapon nyílnak meg)."
 
 #: templates/backoffice/respondent_field_schema/_block_modal.html:28
-#: templates/backoffice/respondent_field_schema/_editor.html:251
+#: templates/backoffice/respondent_field_schema/_editor.html:259
 msgid "Add a heading or text"
 msgstr ""
 
@@ -9235,11 +9238,9 @@ msgstr "Kérdéstípusok becslése az adatokból"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:107
 msgid ""
-"Only questions still set to Text will be updated; explicitly-typed "
+"Only questions still set to Short text will be updated; explicitly-typed "
 "questions are left alone."
 msgstr ""
-"Csak a még Szöveg típusú kérdések frissülnek; a kifejezetten beállított "
-"típusú kérdések változatlanok maradnak."
 
 #: templates/backoffice/respondent_field_schema/_editor.html:113
 msgid ""
@@ -9247,32 +9248,32 @@ msgid ""
 "them"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:137
-#: templates/backoffice/respondent_field_schema/_field_modal.html:82
-msgid "Question"
-msgstr "Kérdés"
+#: templates/backoffice/respondent_field_schema/_editor.html:140
+msgid "Item"
+msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:138
-#: templates/backoffice/respondent_field_schema/_field_modal.html:19
-msgid "Question type"
-msgstr "Kérdéstípus"
+#: templates/backoffice/respondent_field_schema/_editor.html:143
+#: templates/backoffice/respondent_field_schema/_field_modal.html:94
+#: templates/backoffice/respondent_field_schema/_field_modal.html:100
+msgid "Type"
+msgstr "Típus"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:180
+#: templates/backoffice/respondent_field_schema/_editor.html:188
 msgid "Remove this heading or text from the list?"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:219
+#: templates/backoffice/respondent_field_schema/_editor.html:227
 #: templates/backoffice/respondent_field_schema/_field_modal.html:105
 #, python-format
 msgid "Feeds target: %(name)s"
 msgstr "Kiválasztási szempontot táplál: %(name)s"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:230
+#: templates/backoffice/respondent_field_schema/_editor.html:238
 #, python-format
 msgid "Edit %(question)s"
 msgstr "%(question)s szerkesztése"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:235
+#: templates/backoffice/respondent_field_schema/_editor.html:243
 msgid ""
 "Remove this question? Respondent data keeps its values; they just stop "
 "being rendered."
@@ -9280,7 +9281,7 @@ msgstr ""
 "Eltávolítod ezt a kérdést? A jelentkezők adatai megőrzik az értékeiket; "
 "csak nem jelennek meg többé."
 
-#: templates/backoffice/respondent_field_schema/_editor.html:247
+#: templates/backoffice/respondent_field_schema/_editor.html:255
 #: templates/backoffice/respondent_field_schema/_field_modal.html:44
 msgid "Add a question"
 msgstr "Kérdés hozzáadása"
@@ -9291,10 +9292,18 @@ msgstr "Kérdés hozzáadása"
 msgid "Choose one"
 msgstr "Válassz egyet"
 
+#: templates/backoffice/respondent_field_schema/_field_modal.html:19
+msgid "Question type"
+msgstr "Kérdéstípus"
+
 #: templates/backoffice/respondent_field_schema/_field_modal.html:44
 #, python-format
 msgid "Edit %(label)s"
 msgstr "%(label)s szerkesztése"
+
+#: templates/backoffice/respondent_field_schema/_field_modal.html:82
+msgid "Question"
+msgstr "Kérdés"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:86
 msgid "Help text (optional)"
@@ -9303,11 +9312,6 @@ msgstr "Súgószöveg (nem kötelező)"
 #: templates/backoffice/respondent_field_schema/_field_modal.html:87
 msgid "Shown beneath the question on the registration page."
 msgstr "A regisztrációs oldalon a kérdés alatt jelenik meg."
-
-#: templates/backoffice/respondent_field_schema/_field_modal.html:94
-#: templates/backoffice/respondent_field_schema/_field_modal.html:100
-msgid "Type"
-msgstr "Típus"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:96
 msgid "This is a built-in question, so its type can't be changed."

@@ -104,7 +104,7 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {{ button(_("Guess question types from data") , type="submit", variant="secondary") }}
                 <span class="text-body-sm" style="color: var(--color-secondary-text);">
-                    {{ _("Only questions still set to Text will be updated; explicitly-typed questions are left alone.") }}
+                    {{ _("Only questions still set to Short text will be updated; explicitly-typed questions are left alone.") }}
                 </span>
             </form>
         </section>
@@ -118,6 +118,7 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
            "item" inputs join it through their form attribute. #}
         {% set reorder_url = url_for('respondent_field_schema.reorder_items', assembly_id=assembly.id) %}
         <form id="reorder-form"
+              hidden
               method="post"
               action="{{ reorder_url }}"
               hx-post="{{ reorder_url }}"
@@ -132,11 +133,19 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                 <col />
                 <col style="width: 10rem;" />
             </colgroup>
+            {# The cards explain themselves on screen, so the headers are for screen
+               readers only: they keep each cell announced with its column. #}
             <thead>
                 <tr>
-                    <th scope="col">{{ _("Question") }}</th>
-                    <th scope="col">{{ _("Question type") }}</th>
-                    <th scope="col">{{ _("Notes") }}</th>
+                    <th scope="col">
+                        <span class="sr-only">{{ _("Item") }}</span>
+                    </th>
+                    <th scope="col">
+                        <span class="sr-only">{{ _("Type") }}</span>
+                    </th>
+                    <th scope="col">
+                        <span class="sr-only">{{ _("Notes") }}</span>
+                    </th>
                     <th scope="col">
                         <span class="sr-only">{{ _("Actions") }}</span>
                     </th>

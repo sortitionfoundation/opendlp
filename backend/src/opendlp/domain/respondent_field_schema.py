@@ -151,7 +151,7 @@ ON_REGISTRATION_PAGE_LABELS: dict[FieldOnRegistrationPage, str] = {
 
 
 FIELD_TYPE_LABELS: dict[FieldType, str] = {
-    FieldType.TEXT: _l("Text"),
+    FieldType.TEXT: _l("Short text"),
     FieldType.LONGTEXT: _l("Long text"),
     # Both bool types are a checkbox to whoever answers the question — they differ
     # only in whether it may be left unanswered, which the Required tag already says.

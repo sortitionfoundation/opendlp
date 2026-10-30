@@ -410,7 +410,7 @@ class TestFieldTypeAndOptions:
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
-        assert b"Question type" in body
+        assert b"Short text" in body
         # Fixed flags are BOOL_OR_NONE; both bool types are a checkbox in question wording
         assert b"Checkbox" in body
         assert b"Yes / No" not in body
@@ -1034,8 +1034,8 @@ class TestFieldModal:
 
         body = logged_in_admin.get(self._base(existing_assembly)).get_data(as_text=True)
 
-        assert re.search(r'<th scope="col">\s*Notes\s*</th>', body)
-        assert not re.search(r'<th scope="col">\s*Tags\s*</th>', body)
+        assert re.search(r'<th scope="col">\s*<span class="sr-only">Notes</span>\s*</th>', body)
+        assert "Tags" not in body
 
     def test_the_field_key_sits_behind_an_advanced_section_on_both_forms(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
