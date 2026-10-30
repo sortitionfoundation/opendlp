@@ -14,7 +14,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 
 if TYPE_CHECKING:
@@ -26,7 +25,6 @@ def _make_field(
     assembly_id: uuid.UUID,
     field_key: str = "",
     label: str = "",
-    group: RespondentFieldGroup = RespondentFieldGroup.OTHER,
     sort_order: int = 10,
     is_fixed: bool = False,
 ) -> RespondentFieldDefinition:
@@ -38,7 +36,6 @@ def _make_field(
         assembly_id=assembly_id,
         field_key=field_key,
         label=label,
-        group=group,
         sort_order=sort_order,
         is_fixed=is_fixed,
     )
@@ -55,7 +52,6 @@ class TestAddAndGet:
             assembly.id,
             field_key="gender",
             label="Gender",
-            group=RespondentFieldGroup.ABOUT_YOU,
         )
 
         retrieved = respondent_field_definition_backend.repo.get(field.id)
@@ -63,7 +59,6 @@ class TestAddAndGet:
         assert retrieved.id == field.id
         assert retrieved.field_key == "gender"
         assert retrieved.label == "Gender"
-        assert retrieved.group == RespondentFieldGroup.ABOUT_YOU
 
     def test_get_nonexistent_returns_none(self, respondent_field_definition_backend: ContractBackend) -> None:
         assert respondent_field_definition_backend.repo.get(uuid.uuid4()) is None
@@ -75,7 +70,6 @@ class TestAddAndGet:
                 assembly_id=assembly.id,
                 field_key=f"attr_{i}",
                 label=f"Attr {i}",
-                group=RespondentFieldGroup.OTHER,
                 sort_order=i * 10,
             )
             for i in range(3)
@@ -111,30 +105,24 @@ class TestListByAssembly:
     def test_returns_empty_for_no_fields(self, respondent_field_definition_backend: ContractBackend) -> None:
         assert respondent_field_definition_backend.repo.list_by_assembly(uuid.uuid4()) == []
 
-    def test_orders_by_sort_order_whatever_the_group(
-        self, respondent_field_definition_backend: ContractBackend
-    ) -> None:
-        """Questions are one list; the old group plays no part in the order."""
+    def test_orders_by_sort_order(self, respondent_field_definition_backend: ContractBackend) -> None:
         assembly = respondent_field_definition_backend.make_assembly()
         _make_field(
             respondent_field_definition_backend,
             assembly.id,
             field_key="custom",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
         _make_field(
             respondent_field_definition_backend,
             assembly.id,
             field_key="first_name",
-            group=RespondentFieldGroup.NAME_AND_CONTACT,
             sort_order=30,
         )
         _make_field(
             respondent_field_definition_backend,
             assembly.id,
             field_key="eligible",
-            group=RespondentFieldGroup.ELIGIBILITY,
             sort_order=20,
         )
 
@@ -149,7 +137,6 @@ class TestListByAssembly:
             assembly_id=assembly.id,
             field_key="region",
             label="Region",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=5,
             is_derived=True,
             derived_from=["postcode"],
@@ -245,7 +232,6 @@ class TestFieldTypeAndOptions:
             assembly_id=assembly.id,
             field_key="education_level",
             label="Education level",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.CHOICE_RADIO,
             options=[
@@ -280,7 +266,6 @@ class TestHelpText:
             assembly_id=assembly.id,
             field_key="gender",
             label="Gender",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             help_text="As you describe yourself",
         )
@@ -311,7 +296,6 @@ class TestDerivationColumns:
             assembly_id=assembly.id,
             field_key="age_bracket",
             label="Age bracket",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["date_of_birth"],
@@ -354,7 +338,6 @@ class TestOnRegistrationPage:
             assembly_id=assembly.id,
             field_key="nickname",
             label="Nickname",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
             on_registration_page=value,
         )

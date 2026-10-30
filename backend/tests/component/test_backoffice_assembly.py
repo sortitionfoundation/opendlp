@@ -15,7 +15,6 @@ from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
@@ -680,7 +679,6 @@ class TestBackofficeCsvDelete:
                 assembly_id=assembly.id,
                 field_key="gender",
                 label="Your gender",
-                group=RespondentFieldGroup.ABOUT_YOU,
                 sort_order=10,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],

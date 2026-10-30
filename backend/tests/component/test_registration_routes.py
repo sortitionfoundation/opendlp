@@ -14,7 +14,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus
@@ -250,7 +249,6 @@ class TestSubmitRegistrationForm:
                     assembly_id=assembly_id,
                     field_key="email",
                     label="Email",
-                    group=RespondentFieldGroup.NAME_AND_CONTACT,
                     sort_order=0,
                     field_type=FieldType.EMAIL,
                     on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,

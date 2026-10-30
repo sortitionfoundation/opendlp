@@ -14,7 +14,6 @@ from opendlp.adapters.sql_repository import (
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     RespondentFieldMappingEntry,
 )
 
@@ -33,7 +32,6 @@ def region_field(postgres_session: Session) -> RespondentFieldDefinition:
         assembly_id=assembly.id,
         field_key=f"region_{uuid.uuid4().hex[:6]}",
         label="Region",
-        group=RespondentFieldGroup.DERIVED,
         sort_order=10,
     )
     postgres_session.add(field)

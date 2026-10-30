@@ -15,7 +15,6 @@ from opendlp.domain.registration_content_block import (
 from opendlp.domain.respondent_field_schema import (
     DerivationType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
@@ -80,7 +79,6 @@ def _field(uow, assembly: Assembly, key: str, sort_order: int, **kwargs) -> Resp
         assembly_id=assembly.id,
         field_key=key,
         label=key,
-        group=kwargs.pop("group", RespondentFieldGroup.OTHER),
         sort_order=sort_order,
         **kwargs,
     )
@@ -94,7 +92,6 @@ def _derived(uow, assembly: Assembly, key: str, sort_order: int) -> RespondentFi
         assembly,
         key,
         sort_order,
-        group=RespondentFieldGroup.DERIVED,
         is_derived=True,
         derived_from=["source"],
         derivation_type=DerivationType.SMALL_MAPPING,

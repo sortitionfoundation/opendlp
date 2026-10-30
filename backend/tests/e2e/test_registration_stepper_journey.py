@@ -11,7 +11,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole
@@ -48,7 +47,6 @@ def _seed_assembly_with_required_email(postgres_session_factory, admin_id):
                 assembly_id=assembly_id,
                 field_key="email",
                 label="Email",
-                group=RespondentFieldGroup.OTHER,
                 sort_order=10,
                 field_type=FieldType.EMAIL,
                 is_fixed=True,

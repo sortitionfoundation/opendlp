@@ -15,7 +15,6 @@ from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
@@ -87,7 +86,6 @@ def _add_field(uow: FakeUnitOfWork, assembly: Assembly, field_key: str = "colour
         assembly_id=assembly.id,
         field_key=field_key,
         label=field_key.capitalize(),
-        group=RespondentFieldGroup.ABOUT_YOU,
         sort_order=10,
         field_type=FieldType.CHOICE_RADIO,
         options=[ChoiceOption(value="Red"), ChoiceOption(value="Blue")],
@@ -156,7 +154,6 @@ class TestRespondentChangesTriggerAnExport:
             assembly_id=assembly.id,
             field_key="date_of_birth",
             label="Date of birth",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.DATE,
         )

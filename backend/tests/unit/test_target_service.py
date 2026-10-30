@@ -11,7 +11,6 @@ from opendlp.domain.respondent_field_schema import (
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     humanise_field_key,
 )
 from opendlp.domain.respondents import Respondent
@@ -193,7 +192,6 @@ class TestTargetLinkedGuards:
             assembly_id=assembly.id,
             field_key=name,
             label=name,
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.CHOICE_RADIO,
             options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
@@ -257,7 +255,6 @@ class TestTargetLinkedGuards:
                 assembly_id=assembly.id,
                 field_key="postcode",
                 label="Postcode",
-                group=RespondentFieldGroup.ADDRESS,
                 sort_order=10,
                 field_type=FieldType.TEXT,
             )
@@ -266,7 +263,6 @@ class TestTargetLinkedGuards:
             assembly_id=assembly.id,
             field_key=name,
             label=humanise_field_key(name),
-            group=RespondentFieldGroup.DERIVED,
             sort_order=20,
             is_derived=True,
             derived_from=["postcode"],

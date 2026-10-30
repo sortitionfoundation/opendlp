@@ -14,7 +14,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer import derivation_service, respondent_field_schema_service
@@ -283,9 +282,7 @@ class TestMoveField:
         assert response.status_code == 302
 
         after = [
-            f.field_key
-            for f in _get_schema(fake_store, admin_user, existing_assembly)
-            if f.group == RespondentFieldGroup.OTHER
+            f.field_key for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key in ("a", "b")
         ]
         assert after == ["a", "b"]
 
@@ -426,7 +423,6 @@ class TestFieldTypeAndOptions:
             f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
             data={
                 "label": custom.label,
-                "group": custom.group.value,
                 "field_type": FieldType.LONGTEXT.value,
             },
             follow_redirects=False,
@@ -449,7 +445,6 @@ class TestFieldTypeAndOptions:
             f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
             data={
                 "label": custom.label,
-                "group": custom.group.value,
                 "field_type": FieldType.CHOICE_RADIO.value,
             },
             follow_redirects=True,
@@ -621,7 +616,6 @@ class TestFieldTypeAndOptions:
             f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
             data={
                 "label": custom.label,
-                "group": custom.group.value,
                 "field_type": FieldType.TEXT.value,
             },
             follow_redirects=False,
@@ -640,7 +634,6 @@ class TestFieldTypeAndOptions:
             f"/backoffice/project/{existing_assembly.id}/respondent-schema/fields/{email_field.id}/update",
             data={
                 "label": email_field.label,
-                "group": email_field.group.value,
                 "field_type": FieldType.TEXT.value,
             },
             follow_redirects=False,
@@ -1129,28 +1122,6 @@ class TestFieldModal:
         keys = [f.field_key for f in _get_schema(fake_store, admin_user, existing_assembly)]
         assert keys[keys.index("first_name") + 1] == "middle_name"
 
-    def test_add_via_modal_puts_the_question_in_the_chosen_section(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        _seed_schema(fake_store, admin_user, existing_assembly)
-
-        logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add",
-            data={
-                "modal": "1",
-                "form_action": "save",
-                "label": "Flat number",
-                "group": RespondentFieldGroup.ADDRESS.value,
-                "type_choice": "free_text",
-                "free_text_subtype": "text",
-                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
-            },
-            headers={"HX-Request": "true"},
-        )
-
-        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "flat_number")
-        assert field.group == RespondentFieldGroup.ADDRESS
-
     def test_add_via_modal_creates_field_with_options_and_help_text(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -1401,7 +1372,6 @@ class TestFieldModal:
                 assembly_id=assembly.id,
                 field_key="ethnicity",
                 label="Ethnicity",
-                group=RespondentFieldGroup.ABOUT_YOU,
                 sort_order=900,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="White British"), ChoiceOption(value="White Irish")],
@@ -1530,10 +1500,10 @@ class TestFieldModal:
         assert field.help_text == "We only use this to contact you"
         assert field.field_type == FieldType.EMAIL  # stored type untouched
 
-    def test_section_select_change_over_htmx_returns_the_editor_fragment(
+    def test_a_plain_htmx_update_returns_the_editor_fragment(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """The row's section select posts just the group and gets the refreshed editor back."""
+        """A scripted post of just the label gets the refreshed editor back, not a dialog."""
         _seed_schema(fake_store, admin_user, existing_assembly)
         custom = next(
             f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
@@ -1541,7 +1511,7 @@ class TestFieldModal:
 
         response = logged_in_admin.post(
             f"{self._base(existing_assembly)}/fields/{custom.id}/update",
-            data={"group": RespondentFieldGroup.ABOUT_YOU.value},
+            data={"label": "Anything else"},
             headers={"HX-Request": "true"},
         )
         assert response.status_code == 200
@@ -1550,7 +1520,7 @@ class TestFieldModal:
         assert "hx-swap-oob" not in body
 
         field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
-        assert field.group == RespondentFieldGroup.ABOUT_YOU
+        assert field.label == "Anything else"
 
     def test_editing_a_legacy_typed_field_offers_its_type(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1853,7 +1823,6 @@ class TestTargetLinkedFieldUI:
                         assembly_id=existing_assembly.id,
                         field_key=category.name,
                         label=category.name,
-                        group=RespondentFieldGroup.DERIVED,
                         sort_order=100,
                         is_derived=True,
                         derived_from=["postcode"],

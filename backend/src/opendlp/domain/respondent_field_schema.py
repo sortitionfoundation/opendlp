@@ -1,4 +1,4 @@
-"""ABOUTME: Per-assembly respondent field schema — groups, labels, and display order.
+"""ABOUTME: Per-assembly respondent field schema — the fields, their types, labels and order.
 ABOUTME: Shared infrastructure consumed by any module that needs respondent field metadata.
 
 This module defines the canonical schema describing the fields that make up a
@@ -18,7 +18,7 @@ Current and anticipated consumers:
 
 If you are adding a new module that reasons about respondent fields, read the
 schema from here via ``respondent_field_schema_service`` rather than introducing
-a parallel configuration. See docs/agent/446-grouped-registrant-view/respondent_field_schema.md
+a parallel configuration. See docs/agent/history/446-grouped-registrant-view/respondent_field_schema.md
 for the design rationale."""
 
 import re
@@ -58,7 +58,7 @@ class TargetLinkedFieldError(ValueError):
 
     A target-linked field's type and option values mirror the target's values,
     so they cannot be edited directly — unlink the field from its target first.
-    Presentation (radio vs dropdown), label, help texts, group, order and
+    Presentation (radio vs dropdown), label, help texts, order and
     required-vs-optional remain editable. Subclasses ``ValueError`` for the
     same reason as ``FixedFieldError``.
     """
@@ -76,45 +76,6 @@ DERIVATION_TYPE_LABELS: dict[DerivationType, str] = {
     DerivationType.AGE_BRACKET: _l("Age ranges"),
     DerivationType.SMALL_MAPPING: _l("Map more options to fewer"),
     DerivationType.LARGE_MAPPING: _l("Map postcode to value"),
-}
-
-
-class RespondentFieldGroup(Enum):
-    """Fixed catalogue of groups that a respondent field can belong to.
-
-    Stored on ``RespondentFieldDefinition.group`` and used to bucket fields
-    in the view_registrant detail page. Order here is not significant —
-    ``GROUP_DISPLAY_ORDER`` below fixes the rendering order.
-    """
-
-    ELIGIBILITY = "eligibility"
-    NAME_AND_CONTACT = "name_and_contact"
-    ADDRESS = "address"
-    ABOUT_YOU = "about_you"
-    CONSENT = "consent"
-    OTHER = "other"
-    DERIVED = "derived"
-
-
-GROUP_DISPLAY_ORDER: list[RespondentFieldGroup] = [
-    RespondentFieldGroup.ELIGIBILITY,
-    RespondentFieldGroup.NAME_AND_CONTACT,
-    RespondentFieldGroup.ADDRESS,
-    RespondentFieldGroup.ABOUT_YOU,
-    RespondentFieldGroup.CONSENT,
-    RespondentFieldGroup.OTHER,
-    RespondentFieldGroup.DERIVED,
-]
-
-
-GROUP_LABELS: dict[RespondentFieldGroup, str] = {
-    RespondentFieldGroup.ELIGIBILITY: _l("Eligibility"),
-    RespondentFieldGroup.NAME_AND_CONTACT: _l("Name and contact"),
-    RespondentFieldGroup.ADDRESS: _l("Address"),
-    RespondentFieldGroup.ABOUT_YOU: _l("About you"),
-    RespondentFieldGroup.CONSENT: _l("Consent"),
-    RespondentFieldGroup.OTHER: _l("Other"),
-    RespondentFieldGroup.DERIVED: _l("Derived"),
 }
 
 
@@ -229,7 +190,6 @@ class RespondentFieldDefinition:
         assembly_id: uuid.UUID,
         field_key: str,
         label: str,
-        group: RespondentFieldGroup,
         sort_order: int,
         is_fixed: bool = False,
         is_derived: bool = False,
@@ -266,7 +226,6 @@ class RespondentFieldDefinition:
         self.assembly_id = assembly_id
         self.field_key = field_key.strip()
         self.label = label.strip()
-        self.group = group
         self.sort_order = sort_order
         self.is_fixed = is_fixed
         self.is_derived = is_derived
@@ -294,7 +253,6 @@ class RespondentFieldDefinition:
     def update(
         self,
         label: str | None = None,
-        group: RespondentFieldGroup | None = None,
         sort_order: int | None = None,
         field_type: FieldType | None = None,
         options: list[ChoiceOption] | None = _UNSET,
@@ -311,9 +269,6 @@ class RespondentFieldDefinition:
             if not label.strip():
                 raise ValueError(_("The label cannot be empty"))
             self.label = label.strip()
-            changed = True
-        if group is not None:
-            self.group = group
             changed = True
         if sort_order is not None:
             if sort_order < 0:
@@ -415,7 +370,6 @@ class RespondentFieldDefinition:
             assembly_id=self.assembly_id,
             field_key=self.field_key,
             label=self.label,
-            group=self.group,
             sort_order=self.sort_order,
             is_fixed=self.is_fixed,
             is_derived=self.is_derived,
@@ -466,14 +420,14 @@ class RespondentFieldMappingEntry:
         return hash(self.id)
 
 
-# Reserved respondent top-level fields that live in the schema (editable group/order).
-# Paired with their default group, used when seeding a fresh schema.
-IN_SCHEMA_FIXED_FIELDS: list[tuple[str, RespondentFieldGroup, str]] = [
-    ("email", RespondentFieldGroup.NAME_AND_CONTACT, "Email"),
-    ("eligible", RespondentFieldGroup.ELIGIBILITY, "Eligible"),
-    ("can_attend", RespondentFieldGroup.ELIGIBILITY, "Can attend"),
-    ("consent", RespondentFieldGroup.CONSENT, "Consent"),
-    ("stay_on_db", RespondentFieldGroup.CONSENT, "Stay on database"),
+# Reserved respondent top-level fields that live in the schema (editable label and order),
+# with the label each gets when a fresh schema is seeded.
+IN_SCHEMA_FIXED_FIELDS: list[tuple[str, str]] = [
+    ("email", "Email"),
+    ("eligible", "Eligible"),
+    ("can_attend", "Can attend"),
+    ("consent", "Consent"),
+    ("stay_on_db", "Stay on database"),
 ]
 
 

@@ -12,7 +12,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
@@ -62,7 +61,7 @@ def test_assembly(uow):
     return detached
 
 
-FIXED_KEYS = [key for key, _group, _label in IN_SCHEMA_FIXED_FIELDS]
+FIXED_KEYS = [key for key, _label in IN_SCHEMA_FIXED_FIELDS]
 
 
 class TestCsvImportPopulatesSchema:
@@ -93,23 +92,14 @@ class TestCsvImportPopulatesSchema:
         # id column is NOT in the schema
         assert "external_id" not in keys
 
-    def test_heuristics_bucket_fields_into_expected_groups(self, uow, admin_user, test_assembly):
-        csv_content = (
-            "external_id,first_name,last_name,email,gender,postcode,custom\nR001,Alice,Jones,alice@ex.com,F,SW1,foo\n"
-        )
+    def test_first_csv_import_keeps_the_csv_column_order(self, uow, admin_user, test_assembly):
+        """No sections to sort the columns into: the CSV's order is the questions' order."""
+        csv_content = "external_id,postcode,first_name,gender\nR001,SW1,Alice,F\n"
 
         respondent_service.import_respondents_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
-        grouped = respondent_field_schema_service.get_schema_grouped(uow, admin_user.id, test_assembly.id)
-        by_key = {f.field_key: f.group for group_fields in grouped.values() for f in group_fields}
-
-        assert by_key["first_name"] == RespondentFieldGroup.NAME_AND_CONTACT
-        assert by_key["last_name"] == RespondentFieldGroup.NAME_AND_CONTACT
-        # "email" is a fixed field, not a custom one; it shows as is_fixed with NAME_AND_CONTACT
-        assert by_key["email"] == RespondentFieldGroup.NAME_AND_CONTACT
-        assert by_key["gender"] == RespondentFieldGroup.ABOUT_YOU
-        assert by_key["postcode"] == RespondentFieldGroup.ADDRESS
-        assert by_key["custom"] == RespondentFieldGroup.OTHER
+        keys = [f.field_key for f in respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)]
+        assert [k for k in keys if k in ("postcode", "first_name", "gender")] == ["postcode", "first_name", "gender"]
 
     def test_re_import_does_not_duplicate_schema(self, uow, admin_user, test_assembly):
         csv = "external_id,first_name\nR001,Alice\n"
@@ -155,10 +145,8 @@ class TestUpdateField:
             test_assembly.id,
             custom_field.id,
             label="Custom notes",
-            group=RespondentFieldGroup.ABOUT_YOU,
         )
         assert updated.label == "Custom notes"
-        assert updated.group == RespondentFieldGroup.ABOUT_YOU
 
     def _custom_field_id(self, uow, admin_user, test_assembly):
         respondent_service.import_respondents_from_csv(
@@ -591,7 +579,6 @@ class TestAddField:
         # Label is humanised from the key when not supplied (sentence-case)
         assert field.label == "Favourite colour"
         assert field.field_type is FieldType.TEXT
-        assert field.group is RespondentFieldGroup.OTHER
 
         schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
         assert any(f.field_key == "favourite_colour" for f in schema)
@@ -605,25 +592,19 @@ class TestAddField:
             test_assembly.id,
             field_key="age_band",
             label="Age band",
-            group=RespondentFieldGroup.ABOUT_YOU,
             field_type=FieldType.CHOICE_DROPDOWN,
             options=[ChoiceOption(value="18_29"), ChoiceOption(value="30_44")],
         )
 
         assert field.label == "Age band"
-        assert field.group is RespondentFieldGroup.ABOUT_YOU
         assert field.field_type is FieldType.CHOICE_DROPDOWN
         assert [opt.value for opt in field.options] == ["18_29", "30_44"]
 
     def test_sort_order_continues_within_group(self, uow, admin_user, test_assembly):
         respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
 
-        first = respondent_field_schema_service.add_field(
-            uow, admin_user.id, test_assembly.id, field_key="one", group=RespondentFieldGroup.ABOUT_YOU
-        )
-        second = respondent_field_schema_service.add_field(
-            uow, admin_user.id, test_assembly.id, field_key="two", group=RespondentFieldGroup.ABOUT_YOU
-        )
+        first = respondent_field_schema_service.add_field(uow, admin_user.id, test_assembly.id, field_key="one")
+        second = respondent_field_schema_service.add_field(uow, admin_user.id, test_assembly.id, field_key="two")
 
         assert second.sort_order > first.sort_order
 
@@ -734,7 +715,7 @@ class TestReconciliation:
             "external_id",
         )
         assert diff.unchanged == []
-        assert {k for k, _g in diff.new_keys} == {"first_name", "gender"}
+        assert set(diff.new_keys) == {"first_name", "gender"}
         assert diff.absent_keys == []
         assert diff.has_changes is True
 
@@ -774,11 +755,7 @@ class TestReconciliation:
         )
 
         assert "first_name" in diff.unchanged
-        new_keys = {k for k, _g in diff.new_keys}
-        assert new_keys == {"postcode"}
-        new_groups = dict(diff.new_keys)
-        # postcode is recognised by the address heuristic.
-        assert new_groups["postcode"] == RespondentFieldGroup.ADDRESS
+        assert diff.new_keys == ["postcode"]
         assert diff.absent_keys == []
         assert diff.has_changes is True
 
@@ -879,7 +856,7 @@ class TestReconciliation:
             explicit_id_column=None,
         )
         assert diff is not None
-        assert {k for k, _ in diff.new_keys} == {"postcode"}
+        assert diff.new_keys == ["postcode"]
 
     def test_compute_diff_for_pending_csv_flags_id_column_change(self, uow, admin_user, test_assembly):
         # Seed the schema and record the id column in AssemblyCSV (matching what
@@ -1008,7 +985,6 @@ class TestDerivedFieldValuesFollowTheField:
                 assembly_id=assembly_id,
                 field_key="Region",
                 label="Region",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=30,
                 is_derived=True,
                 derived_from=["postcode"],

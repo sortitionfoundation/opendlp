@@ -13,7 +13,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
@@ -36,7 +35,6 @@ def _add_field(uow: FakeUnitOfWork, assembly: Assembly, field_key: str, **kwargs
         assembly_id=assembly.id,
         field_key=field_key,
         label=kwargs.pop("label", field_key.replace("_", " ").capitalize()),
-        group=kwargs.pop("group", RespondentFieldGroup.ABOUT_YOU),
         sort_order=kwargs.pop("sort_order", 10),
         **kwargs,
     )
@@ -128,7 +126,7 @@ class TestCsvColumns:
     def test_columns_are_the_id_column_then_the_field_keys(self):
         with FakeUnitOfWork() as uow:
             user, assembly = _seed(uow)
-            _add_field(uow, assembly, "email", group=RespondentFieldGroup.NAME_AND_CONTACT, sort_order=0)
+            _add_field(uow, assembly, "email", sort_order=0)
             _add_field(uow, assembly, "gender", sort_order=10)
             _add_field(uow, assembly, "age_bracket", sort_order=20)
 
@@ -151,12 +149,11 @@ class TestCsvColumns:
     def test_derived_fields_are_described_but_are_not_columns_to_write(self):
         with FakeUnitOfWork() as uow:
             user, assembly = _seed(uow)
-            _add_field(uow, assembly, "postcode", group=RespondentFieldGroup.ADDRESS, sort_order=10)
+            _add_field(uow, assembly, "postcode", sort_order=10)
             _add_field(
                 uow,
                 assembly,
                 "region",
-                group=RespondentFieldGroup.ADDRESS,
                 sort_order=20,
                 is_derived=True,
                 derived_from=["postcode"],
@@ -237,7 +234,6 @@ class TestFieldPayload:
                 uow,
                 assembly,
                 "consent",
-                group=RespondentFieldGroup.CONSENT,
                 is_fixed=True,
                 field_type=FieldType.TEXT,
             )
@@ -294,7 +290,7 @@ class TestTargetJoin:
     def test_a_field_with_no_category_has_null_target_values(self):
         with FakeUnitOfWork() as uow:
             user, assembly = _seed(uow)
-            _add_field(uow, assembly, "first_name", group=RespondentFieldGroup.NAME_AND_CONTACT)
+            _add_field(uow, assembly, "first_name")
 
             spec = build_field_spec(uow, user.id, assembly.id)
 
@@ -398,7 +394,7 @@ class TestTargetJoin:
             user, assembly = _seed(uow)
             category = _add_category(uow, assembly, "gender", ["Male", "Female"])
             _add_field(uow, assembly, "gender", target_category_id=category.id)
-            _add_field(uow, assembly, "postcode", group=RespondentFieldGroup.ADDRESS)
+            _add_field(uow, assembly, "postcode")
 
             spec = build_field_spec(uow, user.id, assembly.id)
 

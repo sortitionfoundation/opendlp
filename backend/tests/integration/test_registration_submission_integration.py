@@ -7,7 +7,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.value_objects import AssemblyStatus, RespondentStatus
 from opendlp.service_layer.registration_submission_service import submit_registration
@@ -33,7 +32,6 @@ def _build(uow, status: RegistrationPageStatus) -> tuple[FakeUnitOfWork, str]:
                 assembly_id=assembly.id,
                 field_key=key,
                 label=key.replace("_", " ").capitalize(),
-                group=RespondentFieldGroup.OTHER,
                 sort_order=(sort + 1) * 10,
                 field_type=ftype,
                 is_fixed=is_fixed,

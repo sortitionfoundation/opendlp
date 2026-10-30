@@ -17,7 +17,6 @@ from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
@@ -1877,7 +1876,6 @@ class TestSetupTaskList:
                     assembly_id=assembly_id,
                     field_key="Gender",
                     label="Gender",
-                    group=RespondentFieldGroup.ABOUT_YOU,
                     sort_order=10,
                     field_type=FieldType.CHOICE_RADIO,
                     options=[ChoiceOption(value="Male")],

@@ -14,7 +14,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     RespondentFieldMappingEntry,
 )
 from opendlp.domain.respondents import Respondent
@@ -79,7 +78,6 @@ def _add_source(
         assembly_id=assembly.id,
         field_key=field_key,
         label=field_key.replace("_", " ").capitalize(),
-        group=RespondentFieldGroup.ABOUT_YOU,
         sort_order=10,
         field_type=field_type,
         options=options,
@@ -113,7 +111,6 @@ class TestCreateDerivedField:
         assert field.derived_from == ["date_of_birth"]
         assert field.derivation_type == DerivationType.AGE_BRACKET
         assert field.derivation_config == AGE_RULE.to_config()
-        assert field.group == RespondentFieldGroup.DERIVED
         assert field.field_type == FieldType.CHOICE_RADIO
         assert [o.value for o in field.options] == ["16-21", "22-29", "30-54", "55+", "UNKNOWN"]
         assert field.on_registration_page == FieldOnRegistrationPage.NO
@@ -341,7 +338,6 @@ class TestDerivedValueFor:
             assembly_id=assembly_id,
             field_key="derived",
             label="Derived",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=[source_key],
@@ -357,7 +353,6 @@ class TestDerivedValueFor:
             assembly_id=assembly_id,
             field_key="date_of_birth",
             label="DOB",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.DATE,
         )
@@ -373,7 +368,6 @@ class TestDerivedValueFor:
             assembly_id=assembly_id,
             field_key="year_of_birth",
             label="YOB",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.INTEGER,
         )
@@ -388,7 +382,6 @@ class TestDerivedValueFor:
             assembly_id=assembly_id,
             field_key="ethnicity",
             label="Ethnicity",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.CHOICE_RADIO,
             options=[ChoiceOption(value="White Irish")],
@@ -405,7 +398,6 @@ class TestDerivedValueFor:
             assembly_id=assembly_id,
             field_key="postcode",
             label="Postcode",
-            group=RespondentFieldGroup.ADDRESS,
             sort_order=10,
         )
         field = self._derived(assembly_id, "postcode", rule, DerivationType.LARGE_MAPPING)
@@ -420,7 +412,6 @@ class TestApplyDerivations:
             assembly_id=assembly_id,
             field_key="date_of_birth",
             label="DOB",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.DATE,
         )
@@ -428,7 +419,6 @@ class TestApplyDerivations:
             assembly_id=assembly_id,
             field_key="age_bracket",
             label="Age bracket",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["date_of_birth"],
@@ -513,7 +503,6 @@ class TestApplyDerivations:
             assembly_id=assembly_id,
             field_key="ethnicity",
             label="Ethnicity",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.CHOICE_RADIO,
             options=[ChoiceOption(value="White British")],
@@ -522,7 +511,6 @@ class TestApplyDerivations:
             assembly_id=assembly_id,
             field_key="ethnicity_group",
             label="Ethnicity group",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["ethnicity"],
@@ -1071,18 +1059,9 @@ class TestSourceFieldProtection:
         with pytest.raises(FieldDefinitionConflictError, match="derived"):
             update_field(uow, user.id, assembly.id, derived.id, field_type=FieldType.TEXT)
 
-    def test_moving_a_derived_field_out_of_the_derived_section_is_blocked(self, uow):
-        """The registration questions editor hides the Derived section, so a field moved out would appear there."""
-        user, assembly, _, derived = self._age_setup(uow)
-        with pytest.raises(FieldDefinitionConflictError, match="Derived section"):
-            update_field(uow, user.id, assembly.id, derived.id, group=RespondentFieldGroup.ABOUT_YOU)
-        assert uow.respondent_field_definitions.get(derived.id).group == RespondentFieldGroup.DERIVED
-
     def test_a_derived_field_can_be_relabelled_in_place(self, uow):
         user, assembly, _, derived = self._age_setup(uow)
-        updated = update_field(
-            uow, user.id, assembly.id, derived.id, label="Age range", group=RespondentFieldGroup.DERIVED
-        )
+        updated = update_field(uow, user.id, assembly.id, derived.id, label="Age range")
         assert updated.label == "Age range"
 
     def _small_mapping_setup(self, uow):
@@ -1264,7 +1243,6 @@ class TestCompatibleSourceFields:
             assembly_id=assembly.id,
             field_key="email",
             label="Email",
-            group=RespondentFieldGroup.NAME_AND_CONTACT,
             sort_order=0,
             is_fixed=True,
             field_type=FieldType.TEXT,

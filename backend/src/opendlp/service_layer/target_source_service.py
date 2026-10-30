@@ -28,7 +28,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     humanise_field_key,
 )
 from opendlp.service_layer.derivation_service import (
@@ -48,7 +47,6 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.form_order import next_form_sort_order, record_questions_changed
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_auto_export import request_auto_export
-from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
 from opendlp.service_layer.respondent_field_schema_service import delete_derived_field
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
 from opendlp.translations import lazy_gettext as _l
@@ -75,8 +73,8 @@ class SourceFieldSpec:
 
     With ``reuse_field_id`` set, the named existing field is used and every
     other attribute is ignored. Otherwise a new field is created from
-    ``field_key`` (label defaults to the humanised key, group to the
-    ``classify_field_key`` heuristics). ``options`` is only meaningful when
+    ``field_key`` (label defaults to the humanised key), at the end of the
+    questions list. ``options`` is only meaningful when
     ``field_type`` is a choice type — the small-mapping source case.
     """
 
@@ -84,7 +82,6 @@ class SourceFieldSpec:
     field_key: str = ""
     label: str = ""
     help_text: str = ""
-    group: RespondentFieldGroup | None = None
     field_type: FieldType = FieldType.TEXT
     options: tuple[ChoiceOption, ...] | None = None
 
@@ -289,12 +286,10 @@ def _resolve_source_field(
                 key=field_key,
             )
         )
-    group = spec.group or classify_field_key(field_key, [category.name])
     field = RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=field_key,
         label=spec.label.strip() or humanise_field_key(field_key),
-        group=group,
         sort_order=next_form_sort_order(uow, assembly_id),
         field_type=spec.field_type,
         options=list(spec.options) if spec.options else None,
@@ -344,12 +339,10 @@ def _configure_exact_copy(
                 key=category.name,
             )
         )
-    group = spec.source.group or classify_field_key(category.name, [category.name])
     field = RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=category.name,
         label=spec.source.label.strip() or humanise_field_key(category.name),
-        group=group,
         sort_order=next_form_sort_order(uow, assembly_id),
         field_type=choice_type_for(len(target_values)),
         options=[ChoiceOption(value=value) for value in target_values],

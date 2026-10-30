@@ -78,7 +78,6 @@ describe("the composed controller", () => {
     const state = serviceDocsController(CONFIG);
 
     expect(state.createAssemblyNumberToSelect).toBe(10);
-    expect(state.addFieldGroup).toBe("other");
     expect(state.addFieldType).toBe("text");
     expect(state.updateCsvConfigCheckSameAddress).toBe(true);
     expect(state.submitRegistrationFormData).toBe("{}");

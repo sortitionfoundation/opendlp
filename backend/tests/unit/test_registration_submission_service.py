@@ -8,7 +8,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyStatus, GlobalRole, RespondentAction, RespondentStatus
@@ -33,14 +32,12 @@ def _add_field(
     on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
     is_fixed: bool = False,
     options: list[ChoiceOption] | None = None,
-    group: RespondentFieldGroup = RespondentFieldGroup.OTHER,
 ) -> None:
     uow.respondent_field_definitions.add(
         RespondentFieldDefinition(
             assembly_id=assembly.id,
             field_key=field_key,
             label=field_key.replace("_", " ").capitalize(),
-            group=group,
             sort_order=100,
             field_type=field_type,
             is_fixed=is_fixed,
@@ -60,7 +57,6 @@ def _populated_uow_with_text_field(uow) -> tuple[FakeUnitOfWork, Assembly]:
             assembly_id=assembly.id,
             field_key="name",
             label="Name",
-            group=RespondentFieldGroup.NAME_AND_CONTACT,
             sort_order=100,
             field_type=FieldType.TEXT,
         )
@@ -492,7 +488,6 @@ class TestYearOfBirthFeedingAnAgeRange:
                 assembly_id=assembly.id,
                 field_key="Age",
                 label="Age",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=10,
                 is_derived=True,
                 derived_from=[source_key],
@@ -558,7 +553,6 @@ class TestDerivedFieldsOnSubmission:
                 assembly_id=assembly.id,
                 field_key="age_bracket",
                 label="Age bracket",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=10,
                 is_derived=True,
                 derived_from=["date_of_birth"],

@@ -11,7 +11,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.value_objects import AssemblyStatus
 from opendlp.service_layer.email_send_service import send_registration_auto_reply
@@ -69,7 +68,6 @@ def _assembly_with_two_pages(uow: FakeUnitOfWork) -> tuple[Assembly, Registratio
                 assembly_id=assembly.id,
                 field_key=key,
                 label=key,
-                group=RespondentFieldGroup.OTHER,
                 sort_order=10,
                 field_type=ftype,
                 is_fixed=key == "email",

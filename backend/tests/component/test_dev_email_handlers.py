@@ -13,7 +13,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.entrypoints.blueprints.dev import (
     _handle_assign_auto_reply_template,
@@ -65,7 +64,6 @@ def _seed_email_field(store: FakeStore, assembly_id: uuid.UUID, *, on_page: Fiel
         assembly_id=assembly_id,
         field_key="email",
         label="Email",
-        group=RespondentFieldGroup.OTHER,
         sort_order=10,
         field_type=FieldType.EMAIL,
         is_fixed=True,
