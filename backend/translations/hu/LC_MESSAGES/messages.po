@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-30 13:13+0000\n"
-"PO-Revision-Date: 2026-10-28 21:04+0000\n"
+"POT-Creation-Date: 2026-10-30 15:09+0000\n"
+"PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
@@ -404,8 +404,9 @@ msgid "None yet"
 msgstr "Még nincs"
 
 #: src/opendlp/domain/user_signup_surveys.py:74
-msgid "I have taken part in one, but not organised one"
-msgstr "Részt vettem egyben, de még nem szerveztem"
+#, fuzzy
+msgid "I have supported one or more processes"
+msgstr "Egy vagy több folyamat lebonyolításában segítettem"
 
 #: src/opendlp/domain/user_signup_surveys.py:75
 msgid "I have organised one or two"
@@ -428,8 +429,9 @@ msgid "Planning one within the next year"
 msgstr "A következő egy éven belül tervezünk egyet"
 
 #: src/opendlp/domain/user_signup_surveys.py:86
-msgid "No concrete plans yet"
-msgstr "Még nincs konkrét terv"
+#, fuzzy
+msgid "Planning one in the distant future"
+msgstr "A távolabbi jövőben tervezünk egyet"
 
 #: src/opendlp/domain/user_signup_surveys.py:87
 msgid "Just exploring"
@@ -1195,7 +1197,7 @@ msgstr "például: nem, életkor, etnikai hovatartozás"
 
 #: src/opendlp/entrypoints/forms.py:670 src/opendlp/entrypoints/forms.py:709
 #: templates/backoffice/components/db_replacement_modal.html:135
-#: templates/backoffice/respondent_field_schema/_editor.html:146
+#: templates/backoffice/respondent_field_schema/_editor.html:147
 msgid "Notes"
 msgstr "Megjegyzések"
 
@@ -4785,7 +4787,7 @@ msgid "There are %(count)d problems with this file:"
 msgstr "A fájlban %(count)d probléma van:"
 
 #: src/opendlp/service_layer/tabular_data.py:78
-#: templates/backoffice/respondent_field_schema/_editor.html:215
+#: templates/backoffice/respondent_field_schema/_editor.html:216
 #, python-format
 msgid "… and %(count)d more"
 msgstr "… és még %(count)d"
@@ -5494,7 +5496,7 @@ msgstr "Lejárat"
 #: templates/backoffice/assembly_selection.html:233
 #: templates/backoffice/components/db_selection_progress_modal.html:124
 #: templates/backoffice/components/registration_page_list.html:38
-#: templates/backoffice/respondent_field_schema/_editor.html:149
+#: templates/backoffice/respondent_field_schema/_editor.html:150
 #: templates/backoffice/targets/bulk_edit_form.html:303
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
@@ -5630,8 +5632,8 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/registration/_step_intro.html:40
 #: templates/backoffice/registration/_step_page.html:36
 #: templates/backoffice/registration/_step_thank_you.html:42
-#: templates/backoffice/respondent_field_schema/_editor.html:179
-#: templates/backoffice/respondent_field_schema/_editor.html:234
+#: templates/backoffice/respondent_field_schema/_editor.html:180
+#: templates/backoffice/respondent_field_schema/_editor.html:235
 #: templates/backoffice/target_sources/_checklist.html:73
 #: templates/backoffice/target_sources/_setup_modal.html:192
 #: templates/main/edit_assembly.html:3
@@ -7808,7 +7810,7 @@ msgid "%(count)s (+%(test_count)s test)"
 msgstr "%(count)s (+%(test_count)s teszt)"
 
 #: templates/backoffice/components/registration_page_list.html:148
-#: templates/backoffice/respondent_field_schema/_editor.html:183
+#: templates/backoffice/respondent_field_schema/_editor.html:184
 #, python-format
 msgid "Edit %(name)s"
 msgstr "%(name)s szerkesztése"
@@ -9131,7 +9133,7 @@ msgid "View %(own_link)s or the %(standard_link)s (opens in a new tab)."
 msgstr "Nézd meg %(own_link)s vagy %(standard_link)s (új lapon nyílnak meg)."
 
 #: templates/backoffice/respondent_field_schema/_block_modal.html:28
-#: templates/backoffice/respondent_field_schema/_editor.html:259
+#: templates/backoffice/respondent_field_schema/_editor.html:260
 msgid "Add a heading or text"
 msgstr ""
 
@@ -9248,32 +9250,32 @@ msgid ""
 "them"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:140
+#: templates/backoffice/respondent_field_schema/_editor.html:141
 msgid "Item"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:143
+#: templates/backoffice/respondent_field_schema/_editor.html:144
 #: templates/backoffice/respondent_field_schema/_field_modal.html:94
 #: templates/backoffice/respondent_field_schema/_field_modal.html:100
 msgid "Type"
 msgstr "Típus"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:188
+#: templates/backoffice/respondent_field_schema/_editor.html:189
 msgid "Remove this heading or text from the list?"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:227
+#: templates/backoffice/respondent_field_schema/_editor.html:228
 #: templates/backoffice/respondent_field_schema/_field_modal.html:105
 #, python-format
 msgid "Feeds target: %(name)s"
 msgstr "Kiválasztási szempontot táplál: %(name)s"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:238
+#: templates/backoffice/respondent_field_schema/_editor.html:239
 #, python-format
 msgid "Edit %(question)s"
 msgstr "%(question)s szerkesztése"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:243
+#: templates/backoffice/respondent_field_schema/_editor.html:244
 msgid ""
 "Remove this question? Respondent data keeps its values; they just stop "
 "being rendered."
@@ -9281,7 +9283,7 @@ msgstr ""
 "Eltávolítod ezt a kérdést? A jelentkezők adatai megőrzik az értékeiket; "
 "csak nem jelennek meg többé."
 
-#: templates/backoffice/respondent_field_schema/_editor.html:255
+#: templates/backoffice/respondent_field_schema/_editor.html:256
 #: templates/backoffice/respondent_field_schema/_field_modal.html:44
 msgid "Add a question"
 msgstr "Kérdés hozzáadása"
@@ -11561,8 +11563,9 @@ msgid "Remember your password?"
 msgstr "Eszedbe jutott a jelszavad?"
 
 #: templates/public/login.html:15
+#, fuzzy
 msgid "Sign in to OpenDLP"
-msgstr ""
+msgstr "Bejelentkezés az OpenDLP-be"
 
 #: templates/public/login.html:17
 msgid "Don't have an account?"
