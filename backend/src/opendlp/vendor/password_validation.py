@@ -43,7 +43,7 @@ class MinimumLengthValidator:
         return f"This password is too short. It must contain at least {self.min_length} characters."
 
     def get_help_text(self) -> str:
-        return f"Your password must contain at least {self.min_length} character."
+        return f"Your password must contain at least {self.min_length} characters."
 
 
 class MaximumLengthValidator:
