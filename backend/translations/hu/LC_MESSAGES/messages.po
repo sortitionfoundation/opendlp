@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-28 22:07+0000\n"
-"PO-Revision-Date: 2026-10-28 21:04+0000\n"
+"POT-Creation-Date: 2026-10-30 13:39+0000\n"
+"PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
@@ -393,8 +393,9 @@ msgid "None yet"
 msgstr "Még nincs"
 
 #: src/opendlp/domain/user_signup_surveys.py:74
-msgid "I have taken part in one, but not organised one"
-msgstr "Részt vettem egyben, de még nem szerveztem"
+#, fuzzy
+msgid "I have supported one or more processes"
+msgstr "Egy vagy több folyamat lebonyolításában segítettem"
 
 #: src/opendlp/domain/user_signup_surveys.py:75
 msgid "I have organised one or two"
@@ -417,8 +418,9 @@ msgid "Planning one within the next year"
 msgstr "A következő egy éven belül tervezünk egyet"
 
 #: src/opendlp/domain/user_signup_surveys.py:86
-msgid "No concrete plans yet"
-msgstr "Még nincs konkrét terv"
+#, fuzzy
+msgid "Planning one in the distant future"
+msgstr "A távolabbi jövőben tervezünk egyet"
 
 #: src/opendlp/domain/user_signup_surveys.py:87
 msgid "Just exploring"
@@ -11455,8 +11457,9 @@ msgid "Remember your password?"
 msgstr "Eszedbe jutott a jelszavad?"
 
 #: templates/public/login.html:15
+#, fuzzy
 msgid "Sign in to OpenDLP"
-msgstr ""
+msgstr "Bejelentkezés az OpenDLP-be"
 
 #: templates/public/login.html:17
 msgid "Don't have an account?"
