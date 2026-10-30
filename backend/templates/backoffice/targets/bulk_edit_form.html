@@ -149,7 +149,6 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             id=field_id ~ "-comment",
             error=errors.get(val_prefix ~ "[comment]", ""),
             value=val.comment if val else "",
-            placeholder=_("Why min and max were set by hand"),
             aria_label=_("Comment on %(row)s", row=row_name)) }}
         </td>
         <td class="py-3 pl-4 text-right">

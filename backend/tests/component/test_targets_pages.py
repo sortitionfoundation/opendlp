@@ -530,6 +530,18 @@ class TestValueCommentColumn:
         assert "boosted by 2" not in cells[0]
         assert "boosted by 2" in cells[4]
 
+    def test_the_edit_form_comment_suggests_no_particular_note(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A value's comment holds any note about it, not only why min and max were set by hand."""
+        _import_targets(fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nGender,Woman,3,7\n")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        comment = re.search(r"<[^>]*name=\"cat\[[^\]]+\]\[values\]\[[^\]]+\]\[comment\]\"[^>]*>", html_text)
+        assert comment is not None, "the value comment field was not found"
+        assert "placeholder" not in comment.group(0)
+
 
 def _edit_form_html(html_text):
     """The half of the targets page holding the bulk edit form."""
