@@ -1,12 +1,15 @@
 // ABOUTME: Unit tests for the autoGrowTextarea Alpine component
-// ABOUTME: Covers growing to the text's height on focus and going back to one line on blur
+// ABOUTME: Covers growing to the text's height on focus and going back to one clipped line on blur
 
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { autoGrowTextarea } from "./auto-grow-textarea.js";
 
 function textareaState(value, scrollHeight, border = 0) {
-  document.body.innerHTML = `<textarea id="box" rows="1"></textarea>`;
+  // The padding and line height come from the stylesheet, as they do on the page.
+  document.body.innerHTML = `
+    <style>#box { padding-top: 10px; padding-bottom: 10px; line-height: 20px; }</style>
+    <textarea id="box" rows="1"></textarea>`;
   const el = document.getElementById("box");
   el.value = value;
   // jsdom does no layout, so the height the text would need is given here,
@@ -61,6 +64,45 @@ describe("autoGrowTextarea", () => {
     state.grow();
     state.shrink();
     expect(state.$el.style.height).toBe("");
+  });
+
+  it("starts as one line, its padding turned into line height", () => {
+    // The box keeps its height, but a second line starts below its bottom edge
+    // instead of showing its top half in the padding.
+    const state = textareaState("one\ntwo", 48);
+    state.init();
+    expect(state.$el.style.paddingTop).toBe("0px");
+    expect(state.$el.style.paddingBottom).toBe("0px");
+    expect(state.$el.style.lineHeight).toBe("40px");
+  });
+
+  it("gets its padding back while it grows", () => {
+    const state = textareaState("one\ntwo", 48);
+    state.init();
+    state.grow();
+    expect(state.$el.style.paddingTop).toBe("");
+    expect(state.$el.style.lineHeight).toBe("");
+  });
+
+  it("is one clipped line again after blur", () => {
+    const state = textareaState("one\ntwo", 48);
+    state.init();
+    state.grow();
+    state.shrink();
+    expect(state.$el.style.lineHeight).toBe("40px");
+  });
+
+  it("does not animate, or grow() would measure the padding mid-change", () => {
+    const state = textareaState("one", 24);
+    state.init();
+    expect(state.$el.style.transition).toBe("none");
+  });
+
+  it("leaves the box alone when its line height cannot be measured", () => {
+    const state = textareaState("one", 24);
+    state.$el.style.lineHeight = "normal";
+    state.init();
+    expect(state.$el.style.paddingTop).toBe("");
   });
 
   it("leaves the whole text in its hover title on blur", () => {

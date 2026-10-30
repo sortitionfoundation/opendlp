@@ -1493,7 +1493,8 @@ body {
         text-decoration: line-through;
     }
 
-    .is-pending-delete input {
+    .is-pending-delete input,
+    .is-pending-delete textarea {
         text-decoration: line-through;
     }
 

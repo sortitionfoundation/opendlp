@@ -15,8 +15,25 @@
  */
 export function autoGrowTextarea() {
   return {
+    // The height of one line plus the padding around it, measured on init.
+    oneLine: 0,
+
+    init: function () {
+      var el = this.$el;
+      // A transition would animate the padding as it comes and goes, and grow()
+      // would measure the box halfway through.
+      el.style.transition = "none";
+      var style = window.getComputedStyle(el);
+      this.oneLine =
+        parseFloat(style.paddingTop) +
+        parseFloat(style.paddingBottom) +
+        parseFloat(style.lineHeight);
+      this.collapse();
+    },
+
     grow: function () {
       var el = this.$el;
+      this.expand();
       // Cleared first, or the box could never get shorter than it already is:
       // scrollHeight never reports less than the current height.
       el.style.height = "auto";
@@ -28,6 +45,27 @@ export function autoGrowTextarea() {
     shrink: function () {
       this.$el.style.height = "";
       this.$el.title = this.$el.value;
+      this.collapse();
+    },
+
+    /**
+     * Turn the padding into line height, so the box is as tall as before but a
+     * second line starts below its bottom edge. Left in the padding, the top of
+     * that line shows, cut in half.
+     */
+    collapse: function () {
+      if (!(this.oneLine > 0)) return;
+      var el = this.$el;
+      el.style.paddingTop = "0";
+      el.style.paddingBottom = "0";
+      el.style.lineHeight = this.oneLine + "px";
+    },
+
+    expand: function () {
+      var el = this.$el;
+      el.style.paddingTop = "";
+      el.style.paddingBottom = "";
+      el.style.lineHeight = "";
     },
   };
 }
