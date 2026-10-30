@@ -267,3 +267,20 @@ Feature: Target percentages, notes and ordering
     When I save all targets
     Then I should see "Targets saved"
     And I should see "All checks passed"
+
+  Scenario: Exporting the targets as a CSV in the format a targets upload reads
+    Given there is an assembly with targets called "Export Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Export Demo"
+    And I open the targets export
+    Then keyboard focus should be inside the targets export
+    And a targets CSV download starts when I run the export
+    And the downloaded targets CSV has a row for each of "Male" and "Female" under "Gender"
+
+  Scenario: Cancelling the targets export puts focus back on its button
+    Given there is an assembly with targets called "Export Cancel Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Export Cancel Demo"
+    And I open the targets export
+    And I cancel the targets export
+    Then keyboard focus should be on the targets Export button

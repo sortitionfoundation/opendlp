@@ -1,8 +1,11 @@
 """ABOUTME: BDD tests for target percentages, hand-set notes, bulk edit and reordering
 ABOUTME: Exercises the full UI stack via Playwright for the paths covered by unit + e2e tests"""
 
+import csv
+import pathlib
 import re
 import uuid
+from io import StringIO
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -504,3 +507,40 @@ def category_order(admin_logged_in_page: Page, first: str, second: str) -> None:
     headings = admin_logged_in_page.get_by_role("heading").all_text_contents()
     names = [h.strip() for h in headings]
     assert names.index(first) < names.index(second), f"expected {first} before {second} in {names}"
+
+
+@when("I open the targets export")
+def open_targets_export(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.locator('[data-focus-id="targets-export"]').click()
+    expect(admin_logged_in_page.locator("#export-modal-container [role='dialog']")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I cancel the targets export")
+def cancel_targets_export(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.locator("#export-modal-container").get_by_role("button", name="Cancel").click()
+
+
+@then("keyboard focus should be inside the targets export")
+def focus_inside_targets_export(admin_logged_in_page: Page) -> None:
+    focused = admin_logged_in_page.locator("#export-modal-container [role='dialog'] :focus")
+    expect(focused).to_have_count(1, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("keyboard focus should be on the targets Export button")
+def focus_on_targets_export_button(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.locator('[data-focus-id="targets-export"]')).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("a targets CSV download starts when I run the export", target_fixture="downloaded_targets_csv")
+def run_targets_export_download(admin_logged_in_page: Page) -> str:
+    with admin_logged_in_page.expect_download() as download_info:
+        admin_logged_in_page.locator("#export-modal-container button[type=submit]").click()
+    return pathlib.Path(download_info.value.path()).read_text(encoding="utf-8-sig")
+
+
+@then(parsers.parse('the downloaded targets CSV has a row for each of "{first}" and "{second}" under "{feature}"'))
+def targets_csv_rows(downloaded_targets_csv: str, first: str, second: str, feature: str) -> None:
+    rows = list(csv.DictReader(StringIO(downloaded_targets_csv)))
+    assert [(row["feature"], row["value"]) for row in rows] == [(feature, first), (feature, second)]

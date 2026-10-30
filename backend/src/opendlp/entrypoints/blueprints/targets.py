@@ -6,15 +6,19 @@ import uuid
 from typing import Any
 
 import structlog
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExportTarget
 from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.assembly_export_gsheet import default_worksheet_name
 from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.blueprints.backoffice import render_assembly_data_page
+from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_assembly_management
+from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
 from opendlp.entrypoints.save_all_parser import errors_by_field, parse_save_all_targets, pending_categories
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
@@ -39,6 +43,12 @@ from opendlp.service_layer.respondent_service import get_respondent_attribute_va
 from opendlp.service_layer.sortition import get_selection_to_rerun, start_db_select_task
 from opendlp.service_layer.target_checking import check_targets_detailed
 from opendlp.service_layer.target_csv_import import import_targets_from_csv
+from opendlp.service_layer.target_export_service import (
+    EXPORT_KIND,
+    export_targets,
+    export_targets_to_gsheet,
+    get_targets_gsheet_config,
+)
 from opendlp.service_layer.target_respondent_helpers import (
     build_respondent_counts,
     build_selected_counts,
@@ -684,3 +694,100 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
         flash(_("An error occurred while saving the targets"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+
+@targets_bp.route("/project/<uuid:assembly_id>/targets/export/modal")
+@login_required
+def export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the targets export modal fragment (HTMX-loaded)."""
+    targets_url = url_for("targets.view_assembly_targets", assembly_id=assembly_id)
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            gsheet_config = get_targets_gsheet_config(uow, current_user.id, assembly_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to export these targets"), "error")
+        return redirect(targets_url)
+    except NotFoundError:
+        flash(_("Project not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    worksheet_name = gsheet_config.worksheet_name if gsheet_config else default_worksheet_name(EXPORT_KIND)
+    return render_template(
+        "backoffice/targets/export_modal.html",
+        assembly_id=assembly_id,
+        worksheet_name=worksheet_name,
+        gsheet_url=gsheet_config.url if gsheet_config else "",
+        service_account_email=get_service_account_email(),
+    ), 200
+
+
+@targets_bp.route("/project/<uuid:assembly_id>/targets/export/run", methods=["POST"])
+@login_required
+def run_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Run a targets export from the modal: CSV download or Google Sheets write."""
+    targets_url = url_for("targets.view_assembly_targets", assembly_id=assembly_id)
+    file_type = request.form.get("file_type", "csv")
+    if file_type not in ("csv", "gsheet"):
+        flash(_("Only CSV and Google Sheets exports are available for now"), "error")
+        return redirect(targets_url)
+
+    try:
+        if file_type == "gsheet":
+            return _run_gsheet_export(assembly_id, targets_url)
+        # The CSV target is built inline rather than injected: pure in-memory work,
+        # no seam needed. The Google Sheets target is injected via an app factory
+        # instead (see _run_gsheet_export).
+        target = CsvExportTarget()
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_targets(uow, current_user.id, assembly_id, target=target)
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions to export targets",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to export these targets"), "error")
+        return redirect(targets_url)
+    except NotFoundError as e:
+        logger.warning("Assembly not found for targets export", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Project not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    filename = f"targets-{str(assembly_id)[:8]}.csv"
+    return Response(
+        target.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _run_gsheet_export(assembly_id: uuid.UUID, targets_url: str) -> ResponseReturnValue:
+    """Export the targets as a tab of a caller-supplied Google Spreadsheet.
+
+    The shared flow handles the credentials guard, the URL requirement and the
+    error flashes; permission and not-found errors propagate to the caller's
+    handlers.
+    """
+
+    def export(spreadsheet_url: str, worksheet_name: str, target: AbstractGSheetExportTarget) -> None:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_targets_to_gsheet(
+                uow,
+                current_user.id,
+                assembly_id,
+                spreadsheet_url=spreadsheet_url,
+                worksheet_name=worksheet_name,
+                target=target,
+            )
+
+    return run_gsheet_export_flow(
+        redirect_url=targets_url,
+        export=export,
+        success_message=_("Targets exported to Google Sheets."),
+        log_event="Google Sheets targets export failed",
+        log_context={"assembly_id": str(assembly_id), "user_id": str(current_user.id)},
+    )
