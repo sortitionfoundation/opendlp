@@ -416,6 +416,70 @@ class TestCheckTargetsDetailed:
         assert "gender" in result.category_annotations
         assert any("16" in ann.message for ann in result.category_annotations["gender"])
 
+    @staticmethod
+    def _conflicting_targets() -> list[TargetCategory]:
+        """gender's mins add up to 10, age's maxes to 4, so the two conflict with each other."""
+        return [
+            TargetCategory(
+                assembly_id=uuid.uuid4(),
+                name="gender",
+                values=[TargetValue(value="male", min=5, max=6), TargetValue(value="female", min=5, max=6)],
+            ),
+            TargetCategory(
+                assembly_id=uuid.uuid4(),
+                name="age",
+                values=[TargetValue(value="young", min=1, max=2), TargetValue(value="old", min=1, max=2)],
+            ),
+        ]
+
+    @staticmethod
+    def _respondents_for_conflicting_targets() -> list[Respondent]:
+        return [
+            Respondent(
+                assembly_id=uuid.uuid4(),
+                external_id=f"p{i}",
+                attributes={"gender": ("male", "female")[i % 2], "age": ("young", "old")[i // 2 % 2]},
+                selection_status=RespondentStatus.POOL,
+            )
+            for i in range(30)
+        ]
+
+    def test_conflicting_targets_are_reported_against_number_to_select(self, uow):
+        uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow,
+            number_to_select=8,
+            target_categories=self._conflicting_targets(),
+            respondents=self._respondents_for_conflicting_targets(),
+        )
+
+        result = check_targets_detailed(uow, user_id, assembly_id)
+
+        assert result.success is False
+        assert [ann.message for ann in result.category_annotations["gender"]] == [
+            "Sum of minimums (10) exceeds number to select (8)"
+        ]
+        assert [ann.message for ann in result.category_annotations["age"]] == [
+            "Sum of maximums (4) is less than number to select (8)"
+        ]
+
+    def test_conflicting_targets_are_reported_against_each_other_without_number_to_select(self, uow):
+        uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow,
+            number_to_select=0,
+            target_categories=self._conflicting_targets(),
+            respondents=self._respondents_for_conflicting_targets(),
+        )
+
+        result = check_targets_detailed(uow, user_id, assembly_id)
+
+        assert result.success is False
+        assert [ann.message for ann in result.category_annotations["gender"]] == [
+            "Sum of min values (10) is the largest across all targets — conflicts with target 'age'"
+        ]
+        assert [ann.message for ann in result.category_annotations["age"]] == [
+            "Sum of max values (4) is the smallest across all targets — conflicts with target 'gender'"
+        ]
+
     def test_insufficient_respondents_for_value(self, uow):
         targets = [
             TargetCategory(
