@@ -149,6 +149,41 @@ class TestInternalLoadDb:
             assert record.status == SelectionRunStatus.COMPLETED
 
 
+class TestTargetsCheckedAgainstNumberToSelect:
+    """A selection checks the targets against its number to select as they load."""
+
+    def test_conflicting_targets_are_reported_against_number_to_select(
+        self, postgres_session_factory, assembly_with_data, test_settings
+    ):
+        assembly_id = assembly_with_data
+        # Gender's minimums add up to 2 and Age's maximums to 1, so they conflict
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            cat = TargetCategory(assembly_id=assembly_id, name="Age")
+            cat.add_value(TargetValue(value="Young", min=0, max=0))
+            cat.add_value(TargetValue(value="Old", min=0, max=1))
+            uow.target_categories.add(cat)
+            uow.commit()
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+
+        with patch.object(run_select_from_db, "update_state"):
+            success, _selected_panels, _ = run_select_from_db(
+                task_id=task_id,
+                assembly_id=assembly_id,
+                number_people_wanted=2,
+                settings=test_settings,
+                test_selection=False,
+                session_factory=postgres_session_factory,
+            )
+
+        assert success is False
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.status == SelectionRunStatus.FAILED
+            assert "Maximum for feature Age (1) is less than number to select (2)" in record.error_message
+            assert "Inconsistent numbers" not in record.error_message
+
+
 class TestInternalWriteDbResults:
     def test_updates_respondent_statuses_and_stores_remaining_ids(
         self, postgres_session_factory, assembly_with_data, test_settings
