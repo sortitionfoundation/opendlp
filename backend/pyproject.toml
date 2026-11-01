@@ -28,7 +28,7 @@ dependencies = [
   "qrcode[pil]>=8.2",
   "redis>=6.4.0",
   "secure>=1.0.1",
-  "sortition-algorithms==0.12.16",
+  "sortition-algorithms==0.12.17",
   "sqlalchemy[postgresql-psycopgbinary]>=2.1.5",
   "structlog>=25.4.0",
   "tabulate>=0.9.0",
@@ -83,7 +83,7 @@ sortition-algorithms = "0 days"
 certifi = "0 days"
 cryptography = "0 days"
 oauthlib = "3 days"
-pillow = "3 days"
+pyasn1 = "0 days"
 
 [tool.mypy]
 files = ["src"]
