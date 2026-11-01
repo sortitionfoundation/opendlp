@@ -662,6 +662,63 @@ class TestRunSelectTask:
             assert "Selection completed successfully" in log_text  # From selection stage
             assert "Successfully written" in log_text  # From write stage
 
+    def test_run_select_reports_conflicting_targets_against_number_to_select(
+        self, postgres_session_factory, test_settings, csv_files, tmp_path
+    ):
+        """Targets that conflict with each other are reported against the number to select."""
+        task_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=task_id,
+                    task_type=SelectionTaskType.SELECT_GSHEET,
+                    status=SelectionRunStatus.PENDING,
+                    log_messages=[],
+                )
+            )
+            uow.commit()
+
+        # gender's minimums add up to 10 and age's maximums to 4, so they conflict
+        features_file = tmp_path / "features.csv"
+        features_file.write_text(
+            "feature,value,min,max\ngender,male,5,6\ngender,female,5,6\nage,young,1,2\nage,old,1,2\n"
+        )
+        mock_gsheet = Mock(spec=GSheetDataSource)
+        mock_gsheet.feature_tab_name = "Features"
+        mock_gsheet.people_tab_name = "People"
+        mock_gsheet.already_selected_tab_name = "Already Selected"
+        data_source = CSVGSheetDataSource(
+            csv_data_source=CSVFileDataSource(
+                features_file=features_file,
+                people_file=csv_files["people"],
+                selected_file=csv_files["selected"],
+                remaining_file=csv_files["remaining"],
+                already_selected_file=csv_files["already_selected"],
+            ),
+            gsheet_data_source=mock_gsheet,
+        )
+
+        with patch.object(run_select, "update_state"):
+            success, _selected_panels, _report = run_select(
+                task_id=task_id,
+                data_source=data_source,
+                number_people_wanted=8,
+                settings=test_settings,
+                session_factory=postgres_session_factory,
+            )
+
+        assert success is False
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.status == SelectionRunStatus.FAILED
+            assert "Minimum for feature gender (10) is more than number to select (8)" in record.error_message
+            assert "Maximum for feature age (4) is less than number to select (8)" in record.error_message
+            assert "Inconsistent numbers" not in record.error_message
+
     def test_run_select_test_mode(self, postgres_session_factory, csv_gsheet_data_source, test_settings, csv_files):
         """Test selection in test mode (doesn't write results)."""
         task_id = uuid.uuid4()
