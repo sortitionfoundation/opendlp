@@ -4,9 +4,9 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_plus, icon_trash, icon_undo %}
-{% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input, textarea %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary, no_respondent_column_note %}
+{% from "backoffice/targets/table_cells.html" import count_cell, count_headings, count_total_cell, heading, total_cell %}
 {% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
 {#
     A comment box: one line, so it sits in a row of inputs, growing to show the
@@ -31,34 +31,6 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
    coloured by `.btn-icon svg`, so they are drawn with no class of their own and
    the button variant decides the colour - grey when the control is disabled.
 ──────────────────────────────────────────────────────────────────────── #}
-{#
-    A respondent or selected count, read-only, for one value row.
-
-    The numbers describe the respondent data, which this form never changes, so
-    they are what they were when the page loaded. A row whose value is blank -
-    or names something no respondent answered, or sits in a target with no
-    respondent data column of its name - has nothing to count.
-#}
-{% macro count_cell(counts, row_value) %}
-    {% set count = counts.get(row_value) if counts and row_value else none %}
-    <td class="py-3 px-4 text-left" style="color: var(--color-body-text)">
-        {% if count is not none %}
-            {{ count }}
-        {% else %}
-            <span style="color: var(--color-secondary-text);">&mdash;</span>
-        {% endif %}
-    </td>
-{% endmacro %}
-{% macro count_total_cell(counts) %}
-    <td class="py-3 px-4 text-left text-label-md font-bold"
-        style="color: var(--color-headings)">
-        {% if counts is not none %}
-            {{ counts.values() | sum }}
-        {% else %}
-            <span style="color: var(--color-secondary-text);">&mdash;</span>
-        {% endif %}
-    </td>
-{% endmacro %}
 {#
     A min or max input, outlined in the suggestion's orange when a suggestion
     under the row would change it, so it is plain which one it is about.
@@ -300,36 +272,13 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             <table class="w-full text-body-md" style="border-collapse: collapse;">
                 <thead>
                     <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                        <th class="py-3 pr-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Value") }}</th>
-                        <th class="py-3 px-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
-                        {% if show_counts %}
-                            <th class="py-3 px-4 text-left text-label-md"
-                                style="color: var(--color-headings)">
-                                <span class="inline-flex items-center gap-1">
-                                    {{ _("Respondents") }}
-                                    {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
-                                </span>
-                            </th>
-                        {% endif %}
-                        {% if show_selected %}
-                            <th class="py-3 px-4 text-left text-label-md"
-                                style="color: var(--color-headings)">
-                                <span class="inline-flex items-center gap-1">
-                                    {{ _("Selected") }}
-                                    {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place.")) }}
-                                </span>
-                            </th>
-                        {% endif %}
-                        <th class="py-3 px-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Min") }}</th>
-                        <th class="py-3 px-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Max") }}</th>
-                        <th class="py-3 px-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Comment") }}</th>
-                        <th class="py-3 pl-4 text-right text-label-md"
-                            style="color: var(--color-headings)">{{ _("Actions") }}</th>
+                        {{ heading(_("Value"), edge="first") }}
+                        {{ heading(_("Population (%%)")) }}
+                        {{ count_headings(show_counts, show_selected) }}
+                        {{ heading(_("Min")) }}
+                        {{ heading(_("Max")) }}
+                        {{ heading(_("Comment")) }}
+                        {{ heading(_("Actions"), align="right", edge="last") }}
                     </tr>
                 </thead>
                 <tbody x-ref="rows">
@@ -388,17 +337,12 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 </tbody>
                 <tfoot>
                     <tr style="border-top: 2px solid var(--color-borders-dividers);">
-                        <th class="py-3 pr-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Total") }}</th>
-                        <td class="py-3 px-4 text-label-md font-bold targets-total"
-                            :class="percentageTotalClass"
-                            x-text="percentageTotal"></td>
+                        {{ heading(_("Total"), edge="first") }}
+                        {{ total_cell(attrs=':class="percentageTotalClass" x-text="percentageTotal"') }}
                         {% if show_counts %}{{ count_total_cell(respondent_counts) }}{% endif %}
                         {% if show_selected %}{{ count_total_cell(selected_counts) }}{% endif %}
-                        <td class="py-3 px-4 text-label-md font-bold targets-total"
-                            x-text="minTotal"></td>
-                        <td class="py-3 px-4 text-label-md font-bold targets-total"
-                            x-text="maxTotal"></td>
+                        {{ total_cell(attrs='x-text="minTotal"') }}
+                        {{ total_cell(attrs='x-text="maxTotal"') }}
                         <td class="py-3 px-4"></td>
                         <td class="py-3 pl-4"></td>
                     </tr>

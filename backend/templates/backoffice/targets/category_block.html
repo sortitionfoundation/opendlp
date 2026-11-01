@@ -6,6 +6,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary, no_respondent_column_note %}
+{% from "backoffice/targets/table_cells.html" import count_cell, count_headings, count_total_cell, heading, total_cell %}
 {% macro provenance_icon(manual) %}
     {% if manual %}
         <span class="inline-flex shrink-0"
@@ -32,32 +33,6 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
     A cell a suggestion below would change is outlined in the suggestion's
     orange, so it is plain which of min and max the suggestion is about.
 #}
-{#
-    A respondent or selected count for one value. A dash where there is nothing
-    to count: no respondent holds the value, or no respondent data column has
-    the target's name. Zero would claim the value was asked about and nobody
-    chose it.
-#}
-{% macro count_cell(counts, value) %}
-    {% set count = counts.get(value) if counts else none %}
-    <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
-        {% if count is not none %}
-            {{ count }}
-        {% else %}
-            <span style="color: var(--color-secondary-text);">&mdash;</span>
-        {% endif %}
-    </td>
-{% endmacro %}
-{% macro count_total_cell(counts) %}
-    <td class="py-3 px-4 text-right text-label-md font-bold"
-        style="color: var(--color-headings)">
-        {% if counts is not none %}
-            {{ counts.values() | sum }}
-        {% else %}
-            <span style="color: var(--color-secondary-text);">&mdash;</span>
-        {% endif %}
-    </td>
-{% endmacro %}
 {% macro minmax_cell(number, manual, has_percentage, suggested=false) %}
     {% set tint = ("var(--color-warning-100)" if manual else "var(--color-info-100)") if has_percentage else "transparent" %}
     <td class="py-2" style="color: var(--color-body-text)">
@@ -156,34 +131,12 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             </colgroup>
             <thead>
                 <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                    <th class="py-3 pr-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Value") }}</th>
-                    <th class="py-3 px-4 text-right text-label-md"
-                        style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
-                    {% if show_counts %}
-                        <th class="py-3 px-4 text-right text-label-md"
-                            style="color: var(--color-headings)">
-                            <span class="inline-flex items-center justify-end gap-1">
-                                {{ _("Respondents") }}
-                                {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
-                            </span>
-                        </th>
-                    {% endif %}
-                    {% if show_selected %}
-                        <th class="py-3 px-4 text-right text-label-md"
-                            style="color: var(--color-headings)">
-                            <span class="inline-flex items-center justify-end gap-1">
-                                {{ _("Selected") }}
-                                {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place.")) }}
-                            </span>
-                        </th>
-                    {% endif %}
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Min") }}</th>
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Max") }}</th>
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Comment") }}</th>
+                    {{ heading(_("Value"), edge="first") }}
+                    {{ heading(_("Population (%%)"), align="right") }}
+                    {{ count_headings(show_counts, show_selected, align="right") }}
+                    {{ heading(_("Min")) }}
+                    {{ heading(_("Max")) }}
+                    {{ heading(_("Comment")) }}
                 </tr>
             </thead>
             {# Each value is a row group of its own, holding the value and the notes
@@ -203,8 +156,8 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                                 <span style="color: var(--color-secondary-text);">&mdash;</span>
                             {% endif %}
                         </td>
-                        {% if show_counts %}{{ count_cell(respondent_counts, val.value) }}{% endif %}
-                        {% if show_selected %}{{ count_cell(selected_counts, val.value) }}{% endif %}
+                        {% if show_counts %}{{ count_cell(respondent_counts, val.value, align="right") }}{% endif %}
+                        {% if show_selected %}{{ count_cell(selected_counts, val.value, align="right") }}{% endif %}
                         {% set has_percentage = val.percentage_target is not none %}
                         {{ minmax_cell(val.min, val.minmax_manual, has_percentage, suggested="min" in suggested_fields) }}
                         {{ minmax_cell(val.max, val.minmax_manual, has_percentage, suggested="max" in suggested_fields) }}
@@ -252,22 +205,18 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             {% endif %}
             <tfoot>
                 <tr style="border-top: 2px solid var(--color-borders-dividers);">
-                    <th class="py-3 pr-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Total") }}</th>
-                    <td class="py-3 px-4 text-right text-label-md font-bold"
-                        style="color: {{ 'var(--color-warning-600) ' if not percentages_plausible else 'var(--color-headings)' }}">
+                    {{ heading(_("Total"), edge="first") }}
+                    {% call total_cell(align="right", classes="" if percentages_plausible else "targets-total--implausible") %}
                         {% if percentage_total is not none %}
                             {{ percentage_total }}%
                         {% else %}
                             <span style="color: var(--color-secondary-text);">&mdash;</span>
                         {% endif %}
-                    </td>
-                    {% if show_counts %}{{ count_total_cell(respondent_counts) }}{% endif %}
-                    {% if show_selected %}{{ count_total_cell(selected_counts) }}{% endif %}
-                    <td class="py-3 px-4 text-left text-label-md font-bold"
-                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
-                    <td class="py-3 px-4 text-left text-label-md font-bold"
-                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='max') }}</td>
+                    {% endcall %}
+                    {% if show_counts %}{{ count_total_cell(respondent_counts, align="right") }}{% endif %}
+                    {% if show_selected %}{{ count_total_cell(selected_counts, align="right") }}{% endif %}
+                    {% call total_cell() %}{{ (category.values or []) | sum(attribute='min') }}{% endcall %}
+                    {% call total_cell() %}{{ (category.values or []) | sum(attribute='max') }}{% endcall %}
                     <td class="py-3 px-4"></td>
                 </tr>
             </tfoot>

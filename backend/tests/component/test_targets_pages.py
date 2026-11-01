@@ -303,6 +303,22 @@ class TestPercentageColumn:
         assert b"48.5%" in response.data
         assert b"100.0%" in response.data
 
+    @pytest.mark.parametrize(("second", "implausible"), [(51.5, False), (30.0, True)])
+    def test_a_total_far_from_100_is_marked_as_a_warning(
+        self, second, implausible, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=48.5)
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Female", percentage=second)
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        foot = re.search(r"<tfoot>(.*?)</tfoot>", html_text, re.DOTALL).group(1)
+        percentage_total = re.findall(r"<td[^>]*>", foot)[0]
+        assert "targets-total " in percentage_total
+        assert ("targets-total--implausible" in percentage_total) is implausible
+
     def test_a_hand_set_value_keeps_its_note_and_offers_relinking(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
