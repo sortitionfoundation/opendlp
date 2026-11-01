@@ -18,8 +18,7 @@ from sortition_algorithms.errors import (
 from sortition_algorithms.features import (
     FeatureCollection,
     iterate_feature_collection,
-    report_min_max_against_number_to_select_structured,
-    report_min_max_error_details_structured,
+    report_min_max_issues_structured,
 )
 from sortition_algorithms.people import (
     FeatureValueCountCheck,
@@ -337,10 +336,11 @@ def check_targets_detailed(
     data_source = OpenDLPDataAdapter(uow, assembly_id)
     select_data = adapters.SelectionData(data_source)
 
-    # Load features without number_to_select check so we always get the FeatureCollection
-    # back (check_min_max won't raise). We run the structured checks ourselves below.
+    # Load features without the min/max check, so we get the FeatureCollection back
+    # even when the mins and maxes cannot be met. We run the structured checks
+    # ourselves below, to annotate each target with its own problem.
     try:
-        features, _f_report = select_data.load_features(number_to_select=0)
+        features, _f_report = select_data.load_features(validate_min_max=False)
     except ParseTableMultiError as e:
         result.success = False
         _annotations_from_parse_errors(e, result.annotations)
@@ -352,10 +352,8 @@ def check_targets_detailed(
 
     result.num_features = len(features)
 
-    # Run structured cross-feature checks
-    cross_issues = report_min_max_error_details_structured(features)
-    if number_to_select:
-        cross_issues += report_min_max_against_number_to_select_structured(features, number_to_select)
+    # Run structured cross-feature checks - against number_to_select when it is set
+    cross_issues = report_min_max_issues_structured(features, number_to_select)
     if cross_issues:
         result.success = False
         _annotations_from_cross_feature_issues(cross_issues, result.category_annotations)
