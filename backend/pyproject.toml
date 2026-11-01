@@ -83,7 +83,7 @@ sortition-algorithms = "0 days"
 certifi = "0 days"
 cryptography = "0 days"
 oauthlib = "3 days"
-pillow = "3 days"
+pyasn1 = "0 days"
 
 [tool.mypy]
 files = ["src"]
