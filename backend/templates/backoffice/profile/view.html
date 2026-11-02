@@ -1,0 +1,197 @@
+{#
+ABOUTME: My Account page on the backoffice design system - profile details, authentication methods, security
+ABOUTME: Read-only summary with the actions to edit the profile, change or set a password and manage two-factor
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/page_header.html" import page_header %}
+{% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/tag.html" import tag %}
+{% from "components/brand_marks.html" import brand_google, brand_microsoft %}
+
+{% macro detail_row(term) %}
+    {# One key/value row of a details list, as on the project details page.
+       The caller supplies the <dd>s: the value, and optionally a trailing action. #}
+    <div class="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-3 border-b last:border-b-0"
+         style="border-color: var(--color-borders-dividers);">
+        <dt class="text-label-lg sm:w-48 shrink-0" style="color: var(--color-secondary-text);">{{ term }}</dt>
+        {{ caller() }}
+    </div>
+{% endmacro %}
+
+{% block title %}{{ _("My Account") }}{% endblock %}
+
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 py-4 w-full">
+        {{ page_header(
+        title=_("My Account"),
+        back_href=url_for('backoffice.dashboard'),
+        back_label=_("Back to Your projects")
+        ) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    {% set has_password = current_user.has_usable_password() %}
+    {% set provider = current_user.oauth_provider %}
+    <div class="flex flex-col gap-8 max-w-3xl">
+        {# Profile information #}
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Profile Information") }}</h2>
+            <dl>
+                {% call detail_row(_("Email address")) %}
+                    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">{{ current_user.email }}</dd>
+                {% endcall %}
+                {% call detail_row(_("First Name")) %}
+                    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
+                        {{ current_user.first_name if current_user.first_name else _("Not set") }}
+                    </dd>
+                {% endcall %}
+                {% call detail_row(_("Last Name")) %}
+                    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
+                        {{ current_user.last_name if current_user.last_name else _("Not set") }}
+                    </dd>
+                {% endcall %}
+                {% call detail_row(_("Role")) %}
+                    <dd class="flex-1">
+                        {{ tag(role_label, colour="blue") }}
+                        <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">{{ role_description }}</p>
+                    </dd>
+                {% endcall %}
+            </dl>
+        {% endcall %}
+
+        {# Authentication methods #}
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Authentication Methods") }}</h2>
+            <dl>
+                {% call detail_row(_("Password")) %}
+                    <dd class="flex-1">
+                        {% if has_password %}
+                            {{ tag(_("Active"), colour="green") }}
+                        {% else %}
+                            {{ tag(_("Not set")) }}
+                        {% endif %}
+                    </dd>
+                    <dd class="mt-2 sm:mt-0 sm:ml-auto flex items-center">
+                        {% if has_password and provider %}
+                            <form method="POST"
+                                  action="{{ url_for('profile.remove_password') }}"
+                                  data-confirm="{{ _("Are you sure you want to remove password authentication? You will only be able to sign in with Google.") }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                {{ button(_("Remove"), variant="tertiary", type="submit") }}
+                            </form>
+                        {% elif not has_password %}
+                            {% if provider %}
+                                <a href="{{ url_for('profile.set_password') }}"
+                                   class="text-body-md underline font-semibold"
+                                   style="color: var(--color-links);">{{ _("Set password") }}</a>
+                            {% else %}
+                                <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("No password set") }}</span>
+                            {% endif %}
+                        {% endif %}
+                    </dd>
+                {% endcall %}
+                {% if config.OAUTH_GOOGLE_CLIENT_ID %}
+                    {% call detail_row(_("Google OAuth")) %}
+                        <dd class="flex-1">
+                            {% if provider == 'google' %}
+                                {{ tag(_("Active"), colour="green") }}
+                            {% else %}
+                                {{ tag(_("Not linked")) }}
+                            {% endif %}
+                        </dd>
+                        <dd class="mt-2 sm:mt-0 sm:ml-auto flex items-center">
+                            {% if provider == 'google' %}
+                                {% if has_password %}
+                                    <form method="POST"
+                                          action="{{ url_for('profile.remove_oauth') }}"
+                                          data-confirm="{{ _("Are you sure you want to unlink your Google account? You will only be able to sign in with your password.") }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                        {{ button(_("Unlink"), variant="tertiary", type="submit") }}
+                                    </form>
+                                {% else %}
+                                    <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Only authentication method") }}</span>
+                                {% endif %}
+                            {% elif not provider %}
+                                {# The link route is a plain GET that redirects to Google, so this is a
+                                   link styled as a button, as on the sign-in page. #}
+                                {{ button(_("Link Google account"),
+                                variant="secondary",
+                                href=url_for('profile.link_google'),
+                                leading_icon=brand_google())
+                                }}
+                            {% else %}
+                                <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Remove %(provider)s first", provider=provider.title()) }}</span>
+                            {% endif %}
+                        </dd>
+                    {% endcall %}
+                {% endif %}
+                {% if config.OAUTH_MICROSOFT_CLIENT_ID %}
+                    {% call detail_row(_("Microsoft OAuth")) %}
+                        <dd class="flex-1">
+                            {% if provider == 'microsoft' %}
+                                {{ tag(_("Active"), colour="green") }}
+                            {% else %}
+                                {{ tag(_("Not linked")) }}
+                            {% endif %}
+                        </dd>
+                        <dd class="mt-2 sm:mt-0 sm:ml-auto flex items-center">
+                            {% if provider == 'microsoft' %}
+                                {% if has_password %}
+                                    <form method="POST"
+                                          action="{{ url_for('profile.remove_oauth') }}"
+                                          data-confirm="{{ _("Are you sure you want to unlink your Microsoft account? You will only be able to sign in with your password.") }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                        {{ button(_("Unlink"), variant="tertiary", type="submit") }}
+                                    </form>
+                                {% else %}
+                                    <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Only authentication method") }}</span>
+                                {% endif %}
+                            {% elif not provider %}
+                                {{ button(_("Link Microsoft account"),
+                                variant="secondary",
+                                href=url_for('profile.link_microsoft'),
+                                leading_icon=brand_microsoft())
+                                }}
+                            {% else %}
+                                <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Remove %(provider)s first", provider=provider.title()) }}</span>
+                            {% endif %}
+                        </dd>
+                    {% endcall %}
+                {% endif %}
+            </dl>
+        {% endcall %}
+
+        {# Security #}
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Security") }}</h2>
+            <dl>
+                {% call detail_row(_("Two-Factor Authentication")) %}
+                    <dd class="flex-1">
+                        {% if provider %}
+                            {{ tag(_("Not available")) }}
+                            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">{{ _("OAuth users rely on their provider's security") }}</p>
+                        {% elif current_user.totp_enabled %}
+                            {{ tag(_("Enabled"), colour="green") }}
+                        {% else %}
+                            {{ tag(_("Disabled")) }}
+                        {% endif %}
+                    </dd>
+                    <dd class="mt-2 sm:mt-0 sm:ml-auto flex items-center">
+                        <a href="{{ url_for('profile.two_factor_settings') }}"
+                           class="text-body-md underline font-semibold"
+                           style="color: var(--color-links);">{{ _("Manage") }}</a>
+                    </dd>
+                {% endcall %}
+            </dl>
+        {% endcall %}
+
+        <div class="flex flex-wrap gap-4">
+            {{ button(_("Edit profile"), href=url_for('profile.edit'), variant="secondary") }}
+            {% if has_password %}
+                {{ button(_("Change password"), href=url_for('profile.change_password'), variant="secondary") }}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

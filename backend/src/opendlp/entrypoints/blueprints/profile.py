@@ -39,7 +39,7 @@ logger = structlog.get_logger(__name__)
 def view() -> ResponseReturnValue:
     """View own profile."""
     return render_template(
-        "profile/view.html",
+        "backoffice/profile/view.html",
         role_label=global_role_labels[current_user.global_role],
         role_description=global_role_descriptions[current_user.global_role],
     ), 200
@@ -69,7 +69,7 @@ def edit() -> ResponseReturnValue:
             logger.error("Unexpected profile update error", user_id=str(current_user.id), error=str(e))
             flash(_("An error occurred while updating your profile"), "error")
 
-    return render_template("profile/edit.html", form=form), 200
+    return render_template("backoffice/profile/edit.html", form=form), 200
 
 
 @profile_bp.route("/profile/change-password", methods=["GET", "POST"])

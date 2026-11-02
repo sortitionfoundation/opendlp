@@ -1,9 +1,11 @@
 # ABOUTME: Component tests for profile management routes over a FakeUnitOfWork
 # ABOUTME: Drives the real profile Flask routes + services against a seeded fake store, no PostgreSQL
 
+import re
 import uuid
 
 import pytest
+from flask import Flask, url_for
 from flask.testing import FlaskClient
 
 from opendlp.domain.users import User
@@ -73,6 +75,71 @@ class TestProfileEditing:
         assert b"Edit Profile" in response.data
         assert b"First Name" in response.data
         assert b"Last Name" in response.data
+
+
+class TestProfilePagesOnTheBackofficeDesign:
+    """The view and edit pages left GOV.UK Frontend for the backoffice layout (sc-869)."""
+
+    @pytest.mark.parametrize("url", ["/profile", "/profile/edit"])
+    def test_page_has_no_govuk_markup(self, logged_in_user: FlaskClient, url: str) -> None:
+        """A migrated page never mixes in GOV.UK classes or the GOV.UK stylesheet."""
+        response = logged_in_user.get(url)
+
+        assert response.status_code == 200
+        assert b"govuk-" not in response.data
+        assert b"css/application.css" not in response.data
+
+    @pytest.mark.parametrize("url", ["/profile", "/profile/edit"])
+    def test_page_uses_the_backoffice_layout(self, logged_in_user: FlaskClient, url: str) -> None:
+        """The backoffice chrome is there: the account menu in the top bar and the flash container."""
+        response = logged_in_user.get(url)
+
+        assert b"backoffice/dist/main.css" in response.data
+        assert b'id="account-menu-toggle"' in response.data
+        assert b'id="floating-alerts"' in response.data
+
+    def test_my_account_menu_item_opens_in_the_same_tab(self, logged_in_user: FlaskClient) -> None:
+        """It used to open a separate tab because the page was on the old design."""
+        response = logged_in_user.get("/profile")
+
+        my_account_link = re.search(rb'<a href="/profile"\s[^>]*>', response.data)
+        assert my_account_link is not None
+        assert b"target=" not in my_account_link.group(0)
+
+    def test_view_links_back_to_the_projects_list(self, app: Flask, logged_in_user: FlaskClient) -> None:
+        """The old page linked to main.dashboard, which 404s unless the old dashboard is enabled."""
+        with app.test_request_context():
+            projects_url = url_for("backoffice.dashboard")
+        response = logged_in_user.get("/profile")
+
+        back_link = re.search(rb'<a href="([^"]+)"[^>]*aria-label="Back to Your projects"', response.data)
+        assert back_link is not None
+        assert back_link.group(1).decode() == projects_url
+
+    def test_edit_form_keeps_its_fields(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile/edit")
+
+        assert b'name="first_name"' in response.data
+        assert b'name="last_name"' in response.data
+        assert b'autocomplete="given-name"' in response.data
+        assert b'autocomplete="family-name"' in response.data
+        assert b'type="submit"' in response.data
+
+    def test_edit_shows_the_field_error_beside_the_field(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.post("/profile/edit", data={"first_name": "x" * 101, "last_name": "Name"})
+
+        assert response.status_code == 200
+        assert b"Field cannot be longer than 100 characters" in response.data
+        assert b'aria-invalid="true"' in response.data
+
+    def test_successful_edit_flashes_on_the_profile_page(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.post(
+            "/profile/edit", data={"first_name": "Updated", "last_name": "Name"}, follow_redirects=True
+        )
+
+        assert response.status_code == 200
+        assert b"Profile updated successfully" in response.data
+        assert b"Updated" in response.data
 
 
 class TestPasswordChange:
