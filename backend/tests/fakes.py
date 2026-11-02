@@ -1441,11 +1441,15 @@ class FakeEmailAdapter(EmailAdapter):
     email without an SMTP server or a console full of PII.
     """
 
-    def __init__(self, succeed: bool = True) -> None:
+    def __init__(self, succeed: bool = True, sender: str = "") -> None:
         self.sent: list[dict[str, Any]] = []
         # When False, send_email records nothing and reports failure, so tests
         # can drive the "we could not email them" path.
         self.succeed = succeed
+        self.sender = sender
+
+    def sender_email(self) -> str:
+        return self.sender
 
     def send_email(
         self,
