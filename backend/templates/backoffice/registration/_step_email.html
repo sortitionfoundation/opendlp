@@ -168,7 +168,8 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
                             {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
                             {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},
-                            {"expr": "{{ respondent.email }}", "label": _("Respondent email address")}
+                            {"expr": "{{ respondent.email }}", "label": _("Respondent email address")},
+                            {"expr": "{{ reply_to_email }}", "label": _("Reply-to email address, or the address the email is sent from")}
                             ] %}
                             <ul class="space-y-3">
                                 {% for variable in variables %}

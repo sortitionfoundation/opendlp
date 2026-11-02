@@ -509,6 +509,7 @@ class TestVisualEditor:
         assert "Available variables" not in body
         assert "Click a dynamic field to select it" in body
         assert 'value="{{ project.first_event_date_text }}"' in body
+        assert 'value="{{ reply_to_email }}"' in body
 
     def test_view_mode_shows_the_editor_read_only_without_a_toolbar(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
@@ -587,6 +588,24 @@ class TestReplyTo:
         assert response.status_code == 302
         assert adapter.sent[0]["reply_to"] == ("The Team", "team@example.com")
         assert adapter.sent[0]["on_behalf_of"] == "The Team"
+
+    def test_test_send_reply_to_email_falls_back_to_the_sending_address(
+        self, logged_in_admin, fake_store, assembly_id, monkeypatch
+    ):
+        """With no reply-to set, {{ reply_to_email }} is the address the email adapter sends from."""
+        template = _seed_template(fake_store, assembly_id, body_html="<p>Write to {{ reply_to_email }}.</p>")
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+        adapter = FakeEmailAdapter(sender="noreply@example.com")
+        monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
+
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/send-test",
+            data={"test_email_to": "manager@example.com"},
+        )
+
+        assert response.status_code == 302
+        assert adapter.sent[0]["reply_to"] is None
+        assert "<p>Write to noreply@example.com.</p>" in adapter.sent[0]["html_body"]
 
     def test_invalid_reply_to_email_is_flashed_and_not_saved(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)

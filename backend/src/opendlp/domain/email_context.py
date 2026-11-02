@@ -125,9 +125,10 @@ class RespondentContext:
         return self._first or _("Friend")
 
 
-def build_context(assembly: AssemblyContext, respondent: RespondentContext) -> dict[str, Any]:
+def build_context(assembly: AssemblyContext, respondent: RespondentContext, reply_to_email: str = "") -> dict[str, Any]:
+    """``reply_to_email`` is where replies to the email go, for templates to show as a contact address."""
     # "project" is the name the editor offers; "assembly" keeps saved emails working.
-    return {"assembly": assembly, "project": assembly, "respondent": respondent}
+    return {"assembly": assembly, "project": assembly, "respondent": respondent, "reply_to_email": reply_to_email}
 
 
 _SAMPLE_FIRST_NAME = "Alex"
