@@ -116,6 +116,19 @@ class TestSerialiseEmailTemplate:
         # Byte size reflects the full body, not the truncated preview.
         assert result["body_html_bytes"] == len(template.body_html.encode("utf-8"))
 
+    def test_includes_reply_to(self):
+        template = EmailTemplate(
+            assembly_id=uuid.uuid4(),
+            name="A",
+            subject="B",
+            body_html="<p>C</p>",
+            reply_to_name="The Team",
+            reply_to_email="team@example.com",
+        )
+        result = _serialise_email_template(template)
+        assert result["reply_to_name"] == "The Team"
+        assert result["reply_to_email"] == "team@example.com"
+
     def test_short_body_is_not_truncated(self):
         template = EmailTemplate(assembly_id=uuid.uuid4(), name="A", subject="B", body_html="<p>short</p>")
         assert _serialise_email_template(template)["body_html_preview"] == "<p>short</p>"
@@ -139,6 +152,24 @@ class TestHandleCreateEmailTemplate:
         with _uow(fake_store) as uow:
             stored = uow.email_templates.list_by_assembly(existing_assembly.id)
         assert len(stored) == 1
+
+    def test_creates_with_reply_to(self, fake_store, existing_assembly, as_admin):
+        with _uow(fake_store) as uow:
+            result = _handle_create_email_template(
+                uow=uow,
+                params={
+                    "assembly_id": str(existing_assembly.id),
+                    "name": "New template",
+                    "subject": "Subject",
+                    "body_html": "<p>Body</p>",
+                    "reply_to_name": "The Team",
+                    "reply_to_email": "team@example.com",
+                },
+            )
+
+        assert result["status"] == "success"
+        assert result["template"]["reply_to_email"] == "team@example.com"
+        assert result["template"]["reply_to_name"] == "The Team"
 
     def test_invalid_template_returns_error_with_problems(self, fake_store, existing_assembly, as_admin):
         # Empty name/subject/body all violate the domain-level validator.
@@ -212,6 +243,18 @@ class TestHandleUpdateEmailTemplate:
             saved = uow.email_templates.get(template.id)
         assert saved.name == "Renamed"
         assert saved.subject == "New subj"
+
+    def test_updates_reply_to(self, fake_store, existing_assembly, as_admin):
+        template = _seed_template(fake_store, existing_assembly.id)
+
+        with _uow(fake_store) as uow:
+            result = _handle_update_email_template(
+                uow=uow,
+                params={"template_id": str(template.id), "reply_to_email": "team@example.com"},
+            )
+        assert result["status"] == "success"
+        with _uow(fake_store) as uow:
+            assert uow.email_templates.get(template.id).reply_to_email == "team@example.com"
 
     def test_invalid_update_returns_error_with_problems(self, fake_store, existing_assembly, as_admin):
         template = _seed_template(fake_store, existing_assembly.id)
@@ -359,3 +402,19 @@ class TestHandleAutoReplyReadinessProblems:
         assert result["status"] == "success"
         assert result["problem_count"] == 0
         assert result["problems"] == []
+
+    def test_page_id_adds_the_reply_to_check(self, fake_store, existing_assembly, as_admin):
+        _seed_email_field(fake_store, existing_assembly.id, on_page=FieldOnRegistrationPage.YES_REQUIRED)
+        template = _seed_template(fake_store, existing_assembly.id)
+        page = RegistrationPage(assembly_id=existing_assembly.id, auto_reply_email_template_id=template.id)
+        with _uow(fake_store) as uow:
+            uow.registration_pages.add(page)
+            uow.commit()
+
+        with _uow(fake_store) as uow:
+            result = _handle_auto_reply_readiness_problems(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id), "page_id": str(page.id)},
+            )
+        assert result["problem_count"] == 1
+        assert "may not be monitored" in result["problems"][0]["message"]

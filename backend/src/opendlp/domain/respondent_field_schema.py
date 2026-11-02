@@ -22,6 +22,7 @@ for the design rationale."""
 
 import re
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
@@ -516,3 +517,20 @@ def humanise_field_key(field_key: str) -> str:
         return field_key
     # Only capitalise the first character; leave the rest alone so acronyms survive.
     return spaced[0].upper() + spaced[1:]
+
+
+def registration_email_field(
+    field_definitions: Iterable[RespondentFieldDefinition],
+) -> RespondentFieldDefinition | None:
+    """The question the registration page collects the respondent's email address with.
+
+    The fixed ``email`` field when it is on the page. Otherwise the one question
+    on the page whose type is Email - but only when there is exactly one, as
+    with two there is no telling which address to write to. None when neither.
+    """
+    on_page = [fd for fd in field_definitions if fd.on_registration_page != FieldOnRegistrationPage.NO]
+    for fd in on_page:
+        if fd.field_key == "email":
+            return fd
+    email_typed = [fd for fd in on_page if fd.effective_field_type == FieldType.EMAIL]
+    return email_typed[0] if len(email_typed) == 1 else None

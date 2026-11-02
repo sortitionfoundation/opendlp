@@ -28,7 +28,7 @@ Feature: Backoffice Assembly Management
     Given I am logged in as an admin user
     And there is an assembly called "Climate Assembly"
     When I visit the assembly details page for "Climate Assembly"
-    Then I should see the "Edit Assembly" button
+    Then I should see the "Edit project" button
 
   # Edit Assembly Page Tests
 
@@ -36,9 +36,9 @@ Feature: Backoffice Assembly Management
     Given I am logged in as an admin user
     And there is an assembly called "Climate Assembly"
     When I visit the assembly details page for "Climate Assembly"
-    And I click the "Edit Assembly" button
+    And I click the "Edit project" button
     Then I should see the edit assembly page
-    And I should see "Edit Assembly" as the page heading
+    And I should see "Edit project" as the page heading
 
   Scenario: Edit assembly page displays form fields
     Given I am logged in as an admin user
@@ -46,7 +46,7 @@ Feature: Backoffice Assembly Management
     When I visit the edit assembly page for "Climate Assembly"
     Then I should see the title input field
     And I should see the question textarea field
-    And I should see the first assembly date field
+    And I should see the first event date field
     And I should see the number to select field
     And the title input should contain "Climate Assembly"
     And the question textarea should contain "How should we address climate change?"
@@ -73,27 +73,27 @@ Feature: Backoffice Assembly Management
   Scenario: Dashboard displays create assembly button
     Given I am logged in as an admin user
     When I visit the backoffice dashboard
-    Then I should see the "Create New Assembly" button
+    Then I should see the "Create project" button
 
   Scenario: User can navigate to create assembly page from dashboard
     Given I am logged in as an admin user
     When I visit the backoffice dashboard
-    And I click the "Create New Assembly" button
+    And I click the "Create project" button
     Then I should see the create assembly page
-    And I should see "Create Assembly" as the page heading
+    And I should see "Create project" as the page heading
 
   Scenario: Create assembly page displays form fields
     Given I am logged in as an admin user
     When I visit the create assembly page
     Then I should see the title input field
     And I should see the question textarea field
-    And I should see the first assembly date field
+    And I should see the first event date field
     And I should see the number to select field
 
   Scenario: Create assembly page has create and cancel buttons
     Given I am logged in as an admin user
     When I visit the create assembly page
-    Then I should see the "Create Assembly" button
+    Then I should see the "Create project" button
     And I should see the "Cancel" button
 
   Scenario: User can create a new assembly
@@ -102,7 +102,7 @@ Feature: Backoffice Assembly Management
     And I fill in the title with "New Test Assembly"
     And I fill in the question with "What should we discuss?"
     And I fill in the number to select with "50"
-    And I click the "Create Assembly" button
+    And I click the "Create project" button
     Then I should see the assembly details page
     And I should see "New Test Assembly" as the page heading
     And I should see "created successfully"
@@ -111,8 +111,8 @@ Feature: Backoffice Assembly Management
     Given I am logged in as an admin user
     And there are no assemblies
     When I visit the backoffice dashboard
-    Then I should see "No assemblies yet"
-    And I should see the "Create Your First Assembly" button
+    Then I should see "No projects yet"
+    And I should see the "Create your first project" button
 
   # Update Number to Select (from Selection Page)
 

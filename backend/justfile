@@ -94,7 +94,7 @@ install:
   @echo "🚀 Setting up prek (pre-commit) hooks"
   @uv tool run prek install
   @echo "🚀 Install node dependencies & build frontend assets"
-  @npm install
+  @npm ci
   @npm run build
   @echo "🚀 Compile translations"
   @uv run pybabel compile -d translations
@@ -216,6 +216,7 @@ build-all-css: build-css build-backoffice
 # build backoffice JavaScript bundles (esbuild)
 build-js:
   @echo "🚀 Building JavaScript bundles with esbuild"
+  @npm ci
   @npm run build:js
   # this will restart flask, if it is running
   @touch src/opendlp/entrypoints/flask_app.py
@@ -233,7 +234,7 @@ build-vendor:
   @touch src/opendlp/entrypoints/flask_app.py
 
 # build all frontend assets (CSS + JavaScript)
-build-all: build-all-css build-js build-vendor
+build-all: build-js build-all-css build-vendor
 
 # run flask locally
 run: build-all translate-compile flask

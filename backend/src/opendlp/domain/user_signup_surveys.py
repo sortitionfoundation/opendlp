@@ -71,7 +71,7 @@ SIGNUP_SURVEY_QUESTIONS: list[SignupSurveyQuestion] = [
         field_type=SurveyFieldType.SELECT,
         choices={
             "none": _l("None yet"),
-            "participated": _l("I have taken part in one, but not organised one"),
+            "participated": _l("I have supported one or more processes"),
             "organised_few": _l("I have organised one or two"),
             "organised_many": _l("I have organised many"),
         },
@@ -83,7 +83,7 @@ SIGNUP_SURVEY_QUESTIONS: list[SignupSurveyQuestion] = [
         choices={
             "within_3_months": _l("Planning one within the next 3 months"),
             "within_year": _l("Planning one within the next year"),
-            "no_plans": _l("No concrete plans yet"),
+            "no_plans": _l("Planning one in the distant future"),
             "exploring": _l("Just exploring"),
         },
     ),

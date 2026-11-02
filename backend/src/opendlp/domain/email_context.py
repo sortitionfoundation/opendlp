@@ -5,6 +5,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from babel.dates import format_date
+
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     CHOICE_TYPES,
@@ -13,6 +15,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
 )
 from opendlp.domain.respondents import normalise_field_name
+from opendlp.translations import gettext as _
 
 if TYPE_CHECKING:
     from opendlp.domain.assembly import Assembly
@@ -21,19 +24,37 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class AssemblyContext:
-    """Assembly fields exposed to email template authors."""
+    """Project fields exposed to email template authors.
+
+    Templates reach this object as ``project`` and, for emails written before
+    the interface called it a project, as ``assembly``. The date is likewise
+    readable as ``first_event_date`` or ``first_assembly_date``.
+    """
 
     title: str = ""
     question: str = ""
     first_assembly_date: str = ""
+    # The same date written out for the reader, such as "14 November 2026".
+    first_assembly_date_text: str = ""
     number_to_select: int = 0
 
+    @property
+    def first_event_date(self) -> str:
+        return self.first_assembly_date
+
+    @property
+    def first_event_date_text(self) -> str:
+        return self.first_assembly_date_text
+
     @classmethod
-    def from_assembly(cls, assembly: "Assembly") -> "AssemblyContext":
+    def from_assembly(cls, assembly: "Assembly", locale: str = "en") -> "AssemblyContext":
+        """``locale`` is the language the email is read in, such as "hu" or "en_GB"."""
+        first_date = assembly.first_assembly_date
         return cls(
             title=assembly.title,
             question=assembly.question,
-            first_assembly_date=assembly.first_assembly_date.isoformat() if assembly.first_assembly_date else "",
+            first_assembly_date=first_date.isoformat() if first_date else "",
+            first_assembly_date_text=format_date(first_date, "long", locale=locale) if first_date else "",
             number_to_select=assembly.number_to_select,
         )
 
@@ -64,6 +85,10 @@ def _derive_names(attributes: Mapping[str, Any]) -> tuple[str, str, str]:
     first = _first_non_empty(normalised, _FIRST_NAME_KEYS)
     last = _first_non_empty(normalised, _LAST_NAME_KEYS)
     full = _first_non_empty(normalised, _FULL_NAME_KEYS)
+    # A form that asks only for a name gets the whole of it as the first name:
+    # splitting it would guess wrong for names written family name first.
+    if not first:
+        first = full
     if not full:
         full = " ".join(part for part in (first, last) if part)
     return first, last, full
@@ -95,11 +120,14 @@ class RespondentContext:
 
     @property
     def first_name_or_friend(self) -> str:
-        return self._first or "Friend"
+        # Translated at render time, so it follows the language the email is read
+        # in. It completes a greeting such as "Hi Friend," or "Kedves Résztvevő!".
+        return self._first or _("Friend")
 
 
 def build_context(assembly: AssemblyContext, respondent: RespondentContext) -> dict[str, Any]:
-    return {"assembly": assembly, "respondent": respondent}
+    # "project" is the name the editor offers; "assembly" keeps saved emails working.
+    return {"assembly": assembly, "project": assembly, "respondent": respondent}
 
 
 _SAMPLE_FIRST_NAME = "Alex"

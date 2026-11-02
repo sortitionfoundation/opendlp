@@ -66,7 +66,7 @@ def _(page: Page, assembly_title: str):
 @when(parsers.parse('the user makes the question "{assembly_question}"'))
 def _(page: Page, assembly_question: str):
     """the user makes the question "What should Liliput do about the Climate Emergency?"."""
-    page.get_by_label("Assembly Question").fill(assembly_question)
+    page.get_by_label("Framing question").fill(assembly_question)
 
 
 @when("the user finishes editing the assembly")

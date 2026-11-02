@@ -5,7 +5,7 @@ valid values for each, so a script outside the app can generate a respondent CSV
 that will actually load and select.
 
 ```txt
-GET /backoffice/assembly/<assembly_id>/respondent-schema.json
+GET /backoffice/project/<assembly_id>/respondent-schema.json
 ```
 
 **It is not linked from anywhere in the UI.** It is reachable by anyone who knows

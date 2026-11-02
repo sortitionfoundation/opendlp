@@ -189,6 +189,8 @@ judgement calls the checker cannot make.
 - Use imperative SQLAlchemy mapping in adapters
 - Database migrations used via Alembic, see [Deployment Guide](docs/deploy.md) for details.
   - Always create migrations with the alembic command, eg: `uv run alembic revision --autogenerate -m "description of changes"`
+  - Migrations run while the previous release's code is still serving requests, so they must be backwards compatible. Read [Writing Migrations for Zero Downtime Deploys](docs/deploy.md#writing-migrations-for-zero-downtime-deploys) before writing or changing one. Dropping or renaming a column or table, adding a NOT NULL column without a `server_default`, adding constraints, and writing new enum values all need splitting across two releases.
+  - **If a migration or schema change can't be made backwards compatible, flag it explicitly**, in your reply and in the PR description, and say that the release needs `update-with-downtime`. Don't let it through quietly.
   - When adding a new table: also add a corresponding DELETE statement to `_delete_all_test_data()` in `tests/conftest.py`, respecting foreign key ordering (child tables before parent tables). The BDD tests have a similar function `delete_all_except_standard_users()` in `tests/bdd/conftest.py` that also needs updating.
 
 **Important:** When using imperative SQLAlchemy mapping for mypy compatibility, use ORM table column references in repository implementations instead of domain object attributes:
@@ -269,7 +271,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Monitoring](docs/monitoring.md) - Health endpoints and end-to-end monitor selection feature
 - [Respondent Field Spec](docs/respondent_field_spec.md) - Hidden JSON endpoint describing an assembly's respondent columns and their valid values
 - [Targets and Registration Questions](docs/targets-and-registration-questions.md) - How targets get their data from registration questions, and the invariants that keep selection pairing them
-- [Registration Intro Editor](docs/registration-intro-editor.md) - What the visual intro editor keeps, what makes it fall back to HTML, how the intro style adds GOV.UK classes, and what the auto-reply email's editor leaves out
+- [Registration Intro Editor](docs/registration-intro-editor.md) - What the visual intro editor keeps, what makes it fall back to HTML, how the intro style adds GOV.UK classes, the thank-you page's choice and variables, and what the auto-reply email's editor leaves out
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
 - [Language](docs/language.md) - The words the interface uses for things, and the conventions for writing its English text

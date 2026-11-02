@@ -44,7 +44,7 @@ def registration_page(logged_in_admin, admin_user, postgres_session_factory):
             first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
         )
         assembly_id = assembly.id
-    response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/create")
+    response = logged_in_admin.post(f"/backoffice/project/{assembly_id}/registration/create")
     assert response.status_code == 302
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         page = page_for_assembly(uow, assembly_id)
@@ -59,7 +59,7 @@ def test_visual_editor_html_is_saved_verbatim_and_rendered_publicly(
     assembly_id, page_id, slug = registration_page
 
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
+        f"/backoffice/project/{assembly_id}/registration/{slug}/save",
         data={"action": "save", "intro_content": VISUAL_EDITOR_HTML},
     )
     assert response.status_code == 302
@@ -79,7 +79,7 @@ def _save_intro(client, assembly_id, slug, intro: str, content_style: str = "") 
     data = {"action": "save", "intro_content": intro}
     if content_style:
         data["content_style"] = content_style
-    response = client.post(f"/backoffice/assembly/{assembly_id}/registration/{slug}/save", data=data)
+    response = client.post(f"/backoffice/project/{assembly_id}/registration/{slug}/save", data=data)
     assert response.status_code == 302
 
 

@@ -1,5 +1,5 @@
 """ABOUTME: Backoffice Google Sheets routes for configuration, selection, replacement, and tab management
-ABOUTME: Provides /backoffice/assembly/*/gsheet/*, selection/*, replacement/*, and manage-tabs/* routes"""
+ABOUTME: Provides /backoffice/project/*/gsheet/*, selection/*, replacement/*, and manage-tabs/* routes"""
 
 import contextlib
 import time
@@ -425,7 +425,7 @@ def render_selection_page(
     ), 200
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/selection")
+@gsheets_bp.route("/project/<uuid:assembly_id>/selection")
 @login_required
 def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly selection page."""
@@ -433,11 +433,11 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return render_selection_page(assembly_id)
     except NotFoundError as e:
         logger.warning("Assembly not found for selection page", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for assembly selection", assembly_id=str(assembly_id), error=str(e))
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("View assembly selection error", assembly_id=str(assembly_id), error=str(e))
@@ -445,14 +445,14 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>")
+@gsheets_bp.route("/project/<uuid:assembly_id>/selection/<uuid:run_id>")
 @login_required
 def view_assembly_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Legacy route - redirects to query parameter version for backwards compatibility."""
     return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/selection/modal-progress/<uuid:run_id>")
+@gsheets_bp.route("/project/<uuid:assembly_id>/selection/modal-progress/<uuid:run_id>")
 @login_required
 def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return modal progress HTML fragment for HTMX polling of selection task status."""
@@ -501,7 +501,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
         return "", 500
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/selection/replacement-modal-progress/<uuid:run_id>")
+@gsheets_bp.route("/project/<uuid:assembly_id>/selection/replacement-modal-progress/<uuid:run_id>")
 @login_required
 def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return replacement modal progress HTML fragment for HTMX polling."""
@@ -562,7 +562,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
         return "", 500
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/selection/load", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/selection/load", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -600,7 +600,7 @@ def redirect_to_running_task(assembly_id: uuid.UUID, running: SelectionAlreadyRu
     """
     flash(
         _(
-            "Another task is already running on this assembly: %(task)s. You can wait for it to finish, or cancel it here.",
+            "Another task is already running on this project: %(task)s. You can wait for it to finish, or cancel it here.",
             task=running.task_label,
         ),
         "info",
@@ -609,7 +609,7 @@ def redirect_to_running_task(assembly_id: uuid.UUID, running: SelectionAlreadyRu
     return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, **params))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/selection/run", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/selection/run", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -645,7 +645,7 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/selection/<uuid:run_id>/cancel", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/selection/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -684,7 +684,7 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
 # --- Manage tabs views ---
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/manage-tabs/start-list", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/manage-tabs/start-list", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -711,7 +711,7 @@ def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/manage-tabs/start-delete", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/manage-tabs/start-delete", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -740,7 +740,7 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/progress")
+@gsheets_bp.route("/project/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/progress")
 @login_required
 @require_assembly_management
 def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -792,7 +792,7 @@ def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         return "", 500
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/cancel", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -831,7 +831,7 @@ def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRet
 # --- Selection history ---
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/selection/history/<uuid:run_id>")
+@gsheets_bp.route("/project/<uuid:assembly_id>/selection/history/<uuid:run_id>")
 @login_required
 def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """View details of a selection run from history.
@@ -853,7 +853,7 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
 
             # Validate the run belongs to this assembly
             if run_record.assembly_id != assembly_id:
-                flash(_("Selection run does not belong to this assembly"), "error")
+                flash(_("Selection run does not belong to this project"), "error")
                 return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
             # For now, redirect back to selection page with current_selection parameter
@@ -865,11 +865,11 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
 
     except NotFoundError as e:
         logger.warning("Assembly not found for run details", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for assembly run details", assembly_id=str(assembly_id), error=str(e))
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("View run details error", assembly_id=str(assembly_id), run_id=str(run_id), error=str(e))
@@ -880,14 +880,14 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
 # --- Replacement views ---
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/replacement")
+@gsheets_bp.route("/project/<uuid:assembly_id>/replacement")
 @login_required
 def view_assembly_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Legacy route - redirects to selection page with replacement modal open."""
     return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/replacement/<uuid:run_id>")
+@gsheets_bp.route("/project/<uuid:assembly_id>/replacement/<uuid:run_id>")
 @login_required
 def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Legacy route - redirects to query parameter version for backwards compatibility."""
@@ -905,7 +905,7 @@ def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID
     )
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/replacement/load", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/replacement/load", methods=["POST"])
 @login_required
 def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a replacement data validation task."""
@@ -933,7 +933,7 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to manage this assembly"), "error")
+        flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     except Exception as e:
@@ -942,7 +942,7 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/replacement/run", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/replacement/run", methods=["POST"])
 @login_required
 def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a replacement selection task."""
@@ -995,7 +995,7 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to manage this assembly"), "error")
+        flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     except Exception as e:
@@ -1004,7 +1004,7 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/replacement/<uuid:run_id>/cancel", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/replacement/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running replacement task."""
@@ -1102,7 +1102,7 @@ def _handle_gsheet_save_success(
     return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet", check=1))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/gsheet/check", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/check", methods=["POST"])
 @login_required
 @require_assembly_management
 def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -1119,7 +1119,7 @@ def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return render_template(
             "backoffice/components/gsheet_access_status.html",
             gsheet_access_assembly_id=assembly_id,
-            gsheet_access_unavailable_reason=_("This assembly has no Google Sheets configuration."),
+            gsheet_access_unavailable_reason=_("This project has no Google Sheets configuration."),
         ), 404
 
     if not get_service_account_email():
@@ -1160,7 +1160,7 @@ def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
     )
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/gsheet/save", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/save", methods=["POST"])
 @login_required
 def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save Google Spreadsheet configuration for an assembly."""
@@ -1177,7 +1177,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
             except InsufficientPermissions as e:
                 logger.warning("Insufficient permissions for gsheet save", error=str(e))
-                flash(_("You don't have permission to manage Google Sheets for this assembly"), "error")
+                flash(_("You don't have permission to manage Google Sheets for this project"), "error")
                 return redirect(url_for("backoffice.dashboard"))
             except NotFoundError as e:
                 logger.error("Gsheet save validation error for assembly", assembly_id=str(assembly_id), error=str(e))
@@ -1209,13 +1209,13 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except NotFoundError as e:
         logger.warning("Assembly not found for gsheet save", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to save gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
@@ -1223,7 +1223,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
 
 
-@gsheets_bp.route("/assembly/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
+@gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
 @login_required
 def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete Google Spreadsheet configuration for an assembly."""
@@ -1243,7 +1243,7 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Insufficient permissions to delete gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
         )
-        flash(_("You don't have permission to manage Google Sheets for this assembly"), "error")
+        flash(_("You don't have permission to manage Google Sheets for this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Gsheet delete error for assembly", assembly_id=str(assembly_id), error=str(e))

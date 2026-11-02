@@ -8,10 +8,12 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from sortition_algorithms import adapters
+from sortition_algorithms.errors import InfeasibleQuotasError
 from sortition_algorithms.utils import RunReport
 
 from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
+from opendlp.domain.email_template import ReplyTo, reply_to_address
 from opendlp.domain.respondents import normalise_field_name
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator, validate_email
 from opendlp.domain.value_objects import (
@@ -126,6 +128,9 @@ class Assembly:
         self.reply_to_name = name
         self.reply_to_email = _validated_reply_to_email(email)
         self.updated_at = datetime.now(UTC)
+
+    def reply_to(self) -> ReplyTo:
+        return reply_to_address(self.reply_to_name, self.reply_to_email)
 
     def is_active(self) -> bool:
         """Check if assembly is active."""
@@ -327,6 +332,15 @@ class SelectionRunRecord:
     @property
     def is_cancelled(self) -> bool:
         return self.status == SelectionRunStatus.CANCELLED
+
+    @property
+    def failed_on_infeasible_targets(self) -> bool:
+        """True when the run failed because no panel can meet all the targets.
+
+        That is the one failure the targets page can do something about: the
+        check there suggests the changes that would make the targets feasible.
+        """
+        return self.is_failed and isinstance(self.run_report.last_error(), InfeasibleQuotasError)
 
     @property
     def has_finished(self) -> bool:

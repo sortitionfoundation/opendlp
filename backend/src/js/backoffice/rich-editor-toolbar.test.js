@@ -21,6 +21,9 @@ const COMMAND_NAMES = [
   "liftListItem",
   "underline",
   "strike",
+  "alignLeft",
+  "alignCenter",
+  "alignRight",
   "blockquote",
   "horizontalRule",
   "link",
@@ -172,6 +175,31 @@ describe("wireToolbar state", () => {
     expect(button("imageSize").getAttribute("aria-disabled")).toBe("true");
     editor.commands.setNodeSelection(4);
     expect(button("imageSize").getAttribute("aria-disabled")).toBe("false");
+  });
+
+  it("aligns the block the cursor is in, and presses the matching button", () => {
+    wireToolbar(toolbar, editor);
+    editor.commands.setTextSelection(2);
+    expect(button("alignLeft").getAttribute("aria-pressed")).toBe("true");
+    button("alignCenter").click();
+    expect(editor.getHTML()).toBe(
+      '<p style="text-align: center;">Hello world</p>',
+    );
+    expect(button("alignCenter").getAttribute("aria-pressed")).toBe("true");
+    expect(button("alignLeft").getAttribute("aria-pressed")).toBe("false");
+    button("alignRight").click();
+    expect(editor.getHTML()).toBe(
+      '<p style="text-align: right;">Hello world</p>',
+    );
+    expect(button("alignRight").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("aligns left by removing the alignment, as left is the default", () => {
+    editor.commands.setContent('<p style="text-align: right">Hello</p>');
+    wireToolbar(toolbar, editor);
+    editor.commands.setTextSelection(2);
+    button("alignLeft").click();
+    expect(editor.getHTML()).toBe("<p>Hello</p>");
   });
 
   it("presses the toggles that match the selection", () => {
@@ -378,6 +406,27 @@ describe("wireToolbar table menu", () => {
     expect(editor.getHTML()).toContain(
       "<table><tbody><tr><td><p></p></td><td><p></p></td></tr><tr><td><p></p></td><td><p></p></td></tr></tbody></table>",
     );
+  });
+
+  it("inserts a table after a selected image rather than over it", () => {
+    editor.commands.setContent('<p>Hi <img src="/a.png" alt="A"></p>');
+    wireToolbar(toolbar, editor);
+    editor.commands.setNodeSelection(4);
+    button("table").click();
+    item("insertTable").click();
+    const html = editor.getHTML();
+    expect(html).toContain('<img src="/a.png" alt="A">');
+    expect(html.indexOf("<img")).toBeLessThan(html.indexOf("<table>"));
+  });
+
+  it("inserts a table after selected text rather than over it", () => {
+    wireToolbar(toolbar, editor);
+    selectAll();
+    button("table").click();
+    item("insertTable").click();
+    const html = editor.getHTML();
+    expect(html).toContain("Hello world");
+    expect(html.indexOf("Hello world")).toBeLessThan(html.indexOf("<table>"));
   });
 
   it("offers only insert outside a table, and only the edits inside one", () => {

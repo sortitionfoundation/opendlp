@@ -214,7 +214,7 @@ class TestProtectedPagesAndSession:
         assert response.status_code == 302
         assert "dashboard" in response.location
         response = logged_in_user.get("/", follow_redirects=True)
-        assert "Your Assemblies" in response.text
+        assert "Your projects" in response.text
 
     def test_protected_page_redirects_when_not_logged_in(self, client: FlaskClient) -> None:
         response = client.get("/dashboard")
@@ -276,6 +276,13 @@ class TestEmailConfirmation:
         assert response.status_code == 200
         assert b"Confirm your email" in response.data
         assert b'method="POST"' in response.data or b"method=POST" in response.data
+
+    def test_confirm_email_page_is_on_the_design_system(self, client: FlaskClient, unconfirmed_user_with_token) -> None:
+        """The confirmation page is on the public layout, with no GOV.UK markup."""
+        _, token = unconfirmed_user_with_token
+        response = client.get(f"/auth/confirm-email/{token.token}")
+        assert b"govuk-" not in response.data
+        assert b'id="main-content"' in response.data
 
     def test_confirm_email_get_does_not_confirm_email(
         self, client: FlaskClient, fake_store: FakeStore, unconfirmed_user_with_token

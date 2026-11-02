@@ -102,3 +102,26 @@ export function showInlineCopyFeedback(button) {
     if (defaultLabel) button.setAttribute("aria-label", defaultLabel);
   }, 2000);
 }
+
+/**
+ * Put an HTML snippet on the clipboard both as HTML and as its source text.
+ *
+ * Pasted into the visual editor, the HTML arrives as what it describes - an
+ * image, a link. Pasted into the HTML view, or anywhere that only takes plain
+ * text, it arrives as the source. Where the browser can't write HTML to the
+ * clipboard, only the source is copied.
+ *
+ * @param {string} html - the snippet
+ * @returns {Promise<void>} rejects when the browser refuses the clipboard
+ */
+export function writeHtmlToClipboard(html) {
+  if (typeof ClipboardItem === "undefined" || !navigator.clipboard.write) {
+    return navigator.clipboard.writeText(html);
+  }
+  return navigator.clipboard.write([
+    new ClipboardItem({
+      "text/html": new Blob([html], { type: "text/html" }),
+      "text/plain": new Blob([html], { type: "text/plain" }),
+    }),
+  ]);
+}

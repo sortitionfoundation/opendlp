@@ -814,7 +814,7 @@ class TestSelectionRunHistory:
 
         assert response.status_code in [302, 404]
         if response.status_code == 302:
-            assert b"Invalid task ID for this assembly" in response.data or b"not found" in response.data
+            assert b"Invalid task ID for this project" in response.data or b"not found" in response.data
 
     def test_view_gsheet_run_redirect_requires_auth(self, fake_store, client, assembly_with_gsheet):
         """Redirect endpoint requires authentication."""

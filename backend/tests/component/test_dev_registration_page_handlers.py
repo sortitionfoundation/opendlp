@@ -274,7 +274,7 @@ class TestSubmitRegistration:
         result = _handle_submit_registration(shared_uow, {"assembly_id": str(uuid.uuid4()), "form_data": {}})
 
         assert result["status"] == "validation_error"
-        assert result["form_errors"] == ["Assembly not found"]
+        assert result["form_errors"] == ["Project not found"]
 
     def test_lets_an_unexpected_error_propagate_to_the_route(self, fake_store, as_admin, shared_uow):
         with (

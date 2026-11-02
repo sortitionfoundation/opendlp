@@ -23,6 +23,15 @@ Feature: Backoffice registration visual intro editor
     Then the intro HTML view should contain "<h2><strong>Welcome everyone</strong></h2>"
     And the registration preview should show a level 2 heading "Welcome everyone"
 
+  Scenario: Centring a paragraph from the toolbar
+    Given there is an assembly called "Visual Align Assembly" with an empty intro
+    When I visit the registration intro editor for "Visual Align Assembly"
+    And I type "In the middle" into the visual intro editor
+    And I press the "Align centre" toolbar button
+    And I save the registration form
+    Then the intro HTML view should contain "<p style="text-align: center;">In the middle</p>"
+    And the registration preview should show the paragraph "In the middle" centred
+
   Scenario: HTML the visual editor cannot show stays in the HTML view
     Given there is an assembly called "Visual Refuse Assembly" with a registration page
     When I visit the registration intro editor for "Visual Refuse Assembly"
@@ -87,6 +96,16 @@ Feature: Backoffice registration visual intro editor
     Then the registration preview should show the image "Partner A"
     And the registration preview should show the image "Partner B"
 
+  Scenario: Inserting a table while an image is selected keeps the image
+    Given there is an assembly called "Visual Table Keeps Image Assembly" with the intro "<p>Our logo <img src='/static/img/logosortition.svg' alt='Logo'></p>"
+    When I visit the registration intro editor for "Visual Table Keeps Image Assembly"
+    And I select the image "Logo" in the visual intro editor with the arrow keys
+    And I jump to the formatting toolbar with Alt+F10
+    And I move to the "Table" toolbar button with the arrow keys
+    And I press "Enter"
+    And I choose "Insert table" from the open menu with the arrow keys
+    Then the intro should hold "<p>Our logo <img src="/static/img/logosortition.svg" alt="Logo"></p><table><tbody><tr><td><p></p></td><td><p></p></td></tr><tr><td><p></p></td><td><p></p></td></tr></tbody></table>" laid out on lines
+
   Scenario: A styled span pasted from Google Docs survives an edit elsewhere
     Given there is an assembly called "Visual Span Assembly" with the intro "<p>First paragraph</p><p><span style='color: red;'>Red words</span></p>"
     When I visit the registration intro editor for "Visual Span Assembly"
@@ -122,6 +141,18 @@ Feature: Backoffice registration visual intro editor
     When I give the image the alt text "Pasted logo" and upload it
     Then the visual intro editor should show the image "Pasted logo"
     And the assets panel should list the image "Pasted logo"
+
+  Scenario: An image copied from the assets panel pastes into the visual editor as an image
+    Given there is an assembly called "Visual Copy Image Assembly" with an empty intro
+    When I visit the registration intro editor for "Visual Copy Image Assembly"
+    And I paste an image file called "copied.png" into the visual intro editor
+    And I give the image the alt text "Copied logo" and upload it
+    Then the visual intro editor should show the image "Copied logo"
+    When I select everything in the visual intro editor
+    And I press "Delete"
+    And I copy the image "Copied logo" from the assets panel
+    And I paste into the visual intro editor
+    Then the visual intro editor should show the image "Copied logo"
 
   Scenario: The read-only intro view shows the visual editor without a toolbar
     Given there is an assembly called "Visual Read Only Assembly" with the intro "<h1>Read only title</h1><p><img src='/static/img/logosortition.svg' alt='Logo'></p>"

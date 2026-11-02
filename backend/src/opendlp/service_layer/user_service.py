@@ -1330,7 +1330,7 @@ def send_assembly_role_assigned_email(
         # Send email
         success = email_adapter.send_email(
             to=[user.email],
-            subject=f"Added to Assembly: {assembly.title}",
+            subject=f"Added to project: {assembly.title}",
             text_body=text_body,
             html_body=html_body,
         )

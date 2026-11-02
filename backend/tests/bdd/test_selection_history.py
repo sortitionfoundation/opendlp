@@ -267,7 +267,7 @@ def redirected_to_run_details(admin_logged_in_page: Page, request):
     """Verify user is redirected to the selection run details page."""
     page = admin_logged_in_page
     run_id = request.node.run_id
-    # The URL format is /assembly/{assembly_id}/selection/history/{run_id}
+    # The URL format is /project/{assembly_id}/selection/history/{run_id}
     assert str(run_id) in page.url
 
 

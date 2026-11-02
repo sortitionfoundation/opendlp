@@ -1,5 +1,5 @@
 Feature: One writing task per assembly
-  As an Assembly Manager
+  As a Project Manager
   I want a second selection on the same assembly to be refused while one is running
   So that two runs can never write over each other.
 

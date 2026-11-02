@@ -1,5 +1,5 @@
 Feature: View Assembly.
-  As an Assembly Manager
+  As a Project Manager
   I want to be able to view an Assembly
   So that I can see the state of the Assembly and get to the next action.
 

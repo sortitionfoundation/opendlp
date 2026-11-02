@@ -1,5 +1,5 @@
 // ABOUTME: Decides whether HTML can go through the visual editor without losing anything.
-// ABOUTME: Compares the HTML with its round trip after normalising both, and lays out the HTML it saves.
+// ABOUTME: Compares the HTML with its round trip after normalising both, lays out the HTML it saves, tidies pasted HTML.
 import { generateHTML, generateJSON } from "@tiptap/core";
 
 const BLOCK_TAGS = [
@@ -339,4 +339,35 @@ export function roundTripsCleanly(html, extensions) {
     return true;
   }
   return normaliseHtml(html) === normaliseHtml(roundTrip(html, extensions));
+}
+
+/**
+ * Pasted `html` with links and images on this site given as paths.
+ *
+ * The browser writes HTML to the clipboard with every URL made absolute, so an
+ * image copied from the Assets panel would otherwise be stored tied to the
+ * host it was edited on. A URL on another site, or one that is not a URL, such
+ * as a `{{ variable }}`, is left as it is.
+ */
+export function relativiseOwnUrls(html, origin) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  for (const [selector, attribute] of [
+    ["img[src]", "src"],
+    ["a[href]", "href"],
+  ]) {
+    for (const element of template.content.querySelectorAll(selector)) {
+      let url;
+      try {
+        url = new URL(element.getAttribute(attribute));
+      } catch {
+        // Not an absolute URL - a path, a variable or nonsense - so nothing to tidy.
+        continue;
+      }
+      if (url.origin === origin) {
+        element.setAttribute(attribute, url.pathname + url.search + url.hash);
+      }
+    }
+  }
+  return template.innerHTML;
 }

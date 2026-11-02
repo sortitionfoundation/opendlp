@@ -49,6 +49,15 @@ class TargetAnnotation:
     field: str | None = None  # "min", "max", or None for whole-value
     suggested_value: int | None = None
 
+    @property
+    def is_applicable(self) -> bool:
+        """True for a suggestion that names a number for a min or a max.
+
+        Only these can be accepted: everything that offers an Accept, and the
+        route that applies it, asks this rather than repeating the test.
+        """
+        return self.level == "suggestion" and self.suggested_value is not None and self.field in ("min", "max")
+
 
 # annotations[category_name][value_name] -> list of annotations
 AnnotationsDict = dict[str, dict[str, list[TargetAnnotation]]]
@@ -64,6 +73,20 @@ class DetailedCheckResult:
     category_annotations: CategoryAnnotationsDict = field(default_factory=dict)
     num_features: int = 0
     num_people: int = 0
+
+    @property
+    def has_suggestions(self) -> bool:
+        """True when any value carries an applicable min/max suggestion.
+
+        Drives whether the targets page offers the "accept recommended changes"
+        actions: there is nothing to accept unless the solver relaxed a quota.
+        """
+        return any(
+            annotation.is_applicable
+            for value_annotations in self.annotations.values()
+            for annotations in value_annotations.values()
+            for annotation in annotations
+        )
 
 
 def _add_annotation(annotations: AnnotationsDict, category: str, value: str, annotation: TargetAnnotation) -> None:

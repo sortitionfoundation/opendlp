@@ -6,7 +6,9 @@ from io import StringIO
 
 import pytest
 
-from opendlp.domain.value_objects import GSheetExportKind
+from opendlp.domain.registration_page import RegistrationPage
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.value_objects import GSheetExportKind, RespondentSourceType
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.fakes import FakeGSheetExportTarget
@@ -40,7 +42,7 @@ class TestRespondentExportSmoke:
                 csv_content=_CSV,
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export")
 
         assert response.status_code == 200
         assert response.mimetype == "text/csv"
@@ -62,7 +64,7 @@ class TestRespondentExportSmoke:
                 csv_content=_CSV,
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export")
 
         rows = _parse(response)
         prefix = "https://opendlp.example.org/"
@@ -72,6 +74,34 @@ class TestRespondentExportSmoke:
             page = logged_in_admin.get(row["view_url"].removeprefix(prefix[:-1]))
             assert page.status_code == 200
             assert row["external_id"] in page.get_data(as_text=True)
+
+    def test_registration_page_column_has_the_page_slug(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow,
+                user_id=admin_user.id,
+                assembly_id=existing_assembly.id,
+                csv_content=_CSV,
+            )
+            page = RegistrationPage(assembly_id=existing_assembly.id, url_slug="spring-sign-up")
+            uow.registration_pages.add(page)
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=existing_assembly.id,
+                    external_id="R-form",
+                    source_type=RespondentSourceType.REGISTRATION_FORM,
+                    registration_page_id=page.id,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/export")
+
+        by_id = {row["external_id"]: row for row in _parse(response)}
+        assert by_id["R-form"]["registration_page"] == "spring-sign-up"
+        assert by_id["R001"]["registration_page"] == ""
 
 
 class TestGSheetExportSmoke:
@@ -100,7 +130,7 @@ class TestGSheetExportSmoke:
         sheet_url = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "",
@@ -132,7 +162,7 @@ class TestGSheetExportSmoke:
         sheet_url = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
 
         logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            f"/backoffice/project/{existing_assembly.id}/respondents/export/run",
             data={
                 "destination": "gsheet",
                 "status": "selected_or_confirmed",
@@ -150,7 +180,7 @@ class TestGSheetExportSmoke:
             assert config.auto_export is True
             assert config.auto_export_status_filter == "selected_or_confirmed"
 
-        response = logged_in_admin.post(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/auto/stop")
+        response = logged_in_admin.post(f"/backoffice/project/{existing_assembly.id}/respondents/export/auto/stop")
         assert response.status_code == 302
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:

@@ -39,7 +39,7 @@ def user_on_paginated_page(logged_in_page, assembly_with_many_runs):
 def user_on_page_with_form(logged_in_page, assembly_with_gsheet):
     """Navigate to selection page which has forms."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{assembly_with_gsheet.id}/selection")
+    page.goto(f"http://localhost:5002/backoffice/project/{assembly_with_gsheet.id}/selection")
     page.wait_for_load_state("networkidle")
 
 
@@ -47,7 +47,7 @@ def user_on_page_with_form(logged_in_page, assembly_with_gsheet):
 def user_on_page_with_scroll_param(logged_in_page, existing_assembly, scroll_value):
     """Navigate to a page with scroll parameter in URL."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}?scroll={scroll_value}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}?scroll={scroll_value}")
     page.wait_for_load_state("networkidle")
 
 
@@ -55,7 +55,7 @@ def user_on_page_with_scroll_param(logged_in_page, existing_assembly, scroll_val
 def user_on_page_without_scroll(logged_in_page, existing_assembly):
     """Navigate to a page without scroll parameter."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
 
 
@@ -63,7 +63,7 @@ def user_on_page_without_scroll(logged_in_page, existing_assembly):
 def user_on_alpine_page(logged_in_page, existing_assembly):
     """Navigate to backoffice page (Alpine.js enabled)."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}/selection")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}/selection")
     page.wait_for_load_state("networkidle")
 
 

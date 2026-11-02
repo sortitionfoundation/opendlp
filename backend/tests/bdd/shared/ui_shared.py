@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 
 from playwright.sync_api import Page, expect
@@ -138,8 +139,10 @@ def _(page: Page, test_database: sessionmaker):
         page.click('button[type="submit"]')
 
     # Now user should be on dashboard
-    # The header link says "Your Assemblies" too, so wait for the heading
-    expect(page.get_by_role("heading", name="Your Assemblies")).to_be_visible()
+    # The header link says "Your projects" too, so wait for the heading. The
+    # legacy list page, still the landing page when FF_OLD_DEFAULT_DASHBOARD is
+    # set, keeps its old heading.
+    expect(page.get_by_role("heading", name=re.compile(r"^Your (projects|Assemblies)$"))).to_be_visible()
 
 
 @then("the user should see the default view for an authorised user")

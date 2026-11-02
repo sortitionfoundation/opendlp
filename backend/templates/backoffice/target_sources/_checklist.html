@@ -11,7 +11,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
     {% if not statuses %}
         <section class="mb-8">
             <p class="text-body-md mb-4">
-                {{ _("No targets have been set up for this assembly yet. Add your targets first — each one then gets a row here to say where its data comes from.") }}
+                {{ _("No targets have been set up for this project yet. Add your targets first — each one then gets a row here to say where its data comes from.") }}
             </p>
             {{ button(_("Go to Targets") , href=url_for('targets.view_assembly_targets', assembly_id=assembly.id), variant="primary") }}
         </section>

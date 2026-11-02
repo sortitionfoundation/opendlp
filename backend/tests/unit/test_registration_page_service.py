@@ -8,7 +8,7 @@ from jinja2 import UndefinedError
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.registration_page import (
-    DEFAULT_THANK_YOU_HTML,
+    STARTER_THANK_YOU_HTML,
     RegistrationPage,
     RegistrationPageAction,
     RegistrationPageSource,
@@ -90,12 +90,13 @@ class TestCreateRegistrationPage:
         assert page_for_assembly(uow, assembly.id) is not None
         assert uow.registration_page_html_sources.get_by_page_id(page.id) is not None
 
-    def test_create_seeds_default_thank_you_html(self, uow):
+    def test_create_starts_on_the_standard_thank_you_page(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
 
         page = service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        assert page.thank_you_html == DEFAULT_THANK_YOU_HTML
+        assert page.thank_you_use_default is True
+        assert page.thank_you_html == ""
         source = uow.registration_page_html_sources.get_by_page_id(page.id)
         assert source is not None
         assert source.form_html == ""
@@ -370,6 +371,47 @@ class TestUpdateThankYouHtml:
 
         page = service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>thanks</p>")
         assert page.thank_you_html == "<p>thanks</p>"
+        assert page.thank_you_use_default is False
+
+    def test_saves_the_flag_and_keeps_the_html_on_the_standard_page(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_thank_you_html(uow, admin.id, page_id, "<p>mine</p>")
+
+        page = service.update_thank_you_html(uow, admin.id, page_id, "<p>mine</p>", use_default=True)
+
+        assert page.thank_you_use_default is True
+        assert page.thank_you_html == "<p>mine</p>"
+        assert page.activity[-1].text == "Switched to the standard thank-you page"
+
+    def test_records_switching_to_its_own_page(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        page = service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>mine</p>")
+
+        texts = [a.text for a in page.activity if a.action is RegistrationPageAction.EDIT]
+        assert texts == ["Updated thank-you HTML", "Switched to its own thank-you page"]
+
+    def test_refuses_broken_own_html(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        with pytest.raises(ValueError, match=r"\{\{ name \}\}"):
+            service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>{{ name }}</p>")
+        assert page_for_assembly(uow, assembly.id).thank_you_html == ""
+
+    def test_broken_html_can_be_kept_while_the_standard_page_is_used(self, uow):
+        """An author can always get back to a working thank-you page."""
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        page = service.update_thank_you_html(
+            uow, admin.id, _page_id(uow, assembly), "<p>{{ name }}</p>", use_default=True
+        )
+
+        assert page.thank_you_html == "<p>{{ name }}</p>"
 
     def test_rejects_oversized_html(self, uow, temp_env_vars):
         temp_env_vars(REGISTRATION_THANK_YOU_HTML_MAX_BYTES="1024")
@@ -383,7 +425,9 @@ class TestUpdateThankYouHtml:
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>different</p>")
+        page = service.update_thank_you_html(
+            uow, admin.id, _page_id(uow, assembly), "<p>different</p>", use_default=True
+        )
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert len(edits) == 1
         assert "thank-you HTML" in edits[0].text
@@ -392,7 +436,7 @@ class TestUpdateThankYouHtml:
         admin, assembly = _admin(uow), _assembly(uow)
         service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), DEFAULT_THANK_YOU_HTML)
+        page = service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "", use_default=True)
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert edits == []
 
@@ -723,10 +767,117 @@ class TestRenderRegistrationForm:
             service.render_registration_form(uow, page, csrf_form_element="<csrf>", form_action="/r/submit")
 
 
+class TestFillEmptyThankYouHtml:
+    def test_fills_the_starter_and_shows_it(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        page = service.fill_empty_thank_you_html(uow, admin.id, _page_id(uow, assembly))
+
+        assert page.thank_you_html == STARTER_THANK_YOU_HTML
+        assert page.thank_you_use_default is False
+
+    def test_refuses_a_page_that_has_html(self, uow):
+        """The button only shows while the HTML is blank, so HTML here means a stale request."""
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_thank_you_html(uow, admin.id, page_id, "<p>mine</p>", use_default=True)
+
+        with pytest.raises(ValueError, match="already has HTML"):
+            service.fill_empty_thank_you_html(uow, admin.id, page_id)
+        page = page_for_assembly(uow, assembly.id)
+        assert page.thank_you_html == "<p>mine</p>"
+        assert page.thank_you_use_default is True
+
+    def test_requires_manage_permission(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        with pytest.raises(InsufficientPermissions):
+            service.fill_empty_thank_you_html(uow, _viewer(uow, assembly).id, _page_id(uow, assembly))
+
+
 class TestRenderThankYouHtml:
-    def test_returns_thank_you_html_verbatim(self):
-        page = RegistrationPage(assembly_id=uuid.uuid4(), thank_you_html="<p>thanks {{ name }}</p>")
-        assert service.render_thank_you_html(page) == "<p>thanks {{ name }}</p>"
+    def test_fills_the_variables_from_the_assembly(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_thank_you_html(
+            uow, admin.id, _page_id(uow, assembly), '<p>{{ assembly_title }}</p><a href="{{ restart_url }}">x</a>'
+        )
+        page = page_for_assembly(uow, assembly.id)
+
+        rendered = service.render_thank_you_html(uow, page, restart_url="https://example.com/register/x")
+
+        assert '<p class="govuk-body">Test Assembly</p>' in rendered
+        assert 'href="https://example.com/register/x"' in rendered
+
+    def test_follows_the_intro_style(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_registration_page_intro_html(uow, admin.id, page_id, "", content_style=ContentStyle.PLAIN)
+        service.update_thank_you_html(uow, admin.id, page_id, "<p>thanks</p>")
+
+        assert service.render_thank_you_html(uow, page_for_assembly(uow, assembly.id), restart_url="") == (
+            "<p>thanks</p>"
+        )
+
+    def test_is_empty_on_the_standard_page(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+
+        assert service.render_thank_you_html(uow, page_for_assembly(uow, assembly.id), restart_url="") == ""
+
+    def _kept_behind_the_standard_page(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page_id = _page_id(uow, assembly)
+        service.update_registration_page_intro_html(uow, admin.id, page_id, "", content_style=ContentStyle.PLAIN)
+        service.update_thank_you_html(uow, admin.id, page_id, "<p>thanks</p>", use_default=True)
+        return assembly, page_for_assembly(uow, assembly.id)
+
+    def test_someone_who_can_view_the_assembly_can_see_the_own_html_behind_the_standard_page(self, uow):
+        assembly, page = self._kept_behind_the_standard_page(uow)
+        viewer = _viewer(uow, assembly)
+
+        rendered = service.render_thank_you_html(uow, page, restart_url="", use_default=False, viewer_id=viewer.id)
+
+        assert rendered == "<p>thanks</p>"
+
+    def test_without_a_viewer_the_choice_stands(self, uow):
+        """Own HTML behind the standard page may be a draft, so the public never sees it."""
+        _assembly, page = self._kept_behind_the_standard_page(uow)
+
+        assert service.render_thank_you_html(uow, page, restart_url="", use_default=False) == ""
+
+    def test_someone_who_cannot_view_the_assembly_gets_the_choice(self, uow):
+        _assembly, page = self._kept_behind_the_standard_page(uow)
+        outsider = User(email="outsider@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(outsider)
+
+        rendered = service.render_thank_you_html(uow, page, restart_url="", use_default=False, viewer_id=outsider.id)
+
+        assert rendered == ""
+
+    def test_a_viewer_can_ask_for_the_standard_page_while_own_html_is_chosen(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>thanks</p>")
+        page = page_for_assembly(uow, assembly.id)
+
+        assert service.render_thank_you_html(uow, page, restart_url="", use_default=True, viewer_id=admin.id) == ""
+
+    def test_a_broken_page_raises_for_the_caller_to_handle(self, uow):
+        """Saved before the check existed, or set by other means."""
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        page = uow.registration_pages.get(_page_id(uow, assembly))
+        page.thank_you_html = "{{ name }}"
+        page.thank_you_use_default = False
+
+        with pytest.raises(UndefinedError):
+            service.render_thank_you_html(uow, page, restart_url="")
 
 
 def _add_field(uow: FakeUnitOfWork, assembly_id: uuid.UUID, field_key: str, sort_order: int = 0) -> None:

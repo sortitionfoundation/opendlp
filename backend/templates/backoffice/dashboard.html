@@ -1,25 +1,24 @@
 {#
-ABOUTME: Backoffice dashboard page showing user's assemblies
+ABOUTME: Backoffice dashboard page showing the user's projects
 ABOUTME: Uses base_page.html for standard layout with navigation and footer
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/card.html" import card, link_card %}
 {% from "backoffice/components/button.html" import button %}
 
-{% block title %}{{ _("Dashboard") }}{% endblock %}
+{% block title %}{{ _("Your projects") }}{% endblock %}
 
 {% block page_content %}
-    <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">{{ _("Dashboard") }}</h1>
+    <div class="flex justify-between items-center mb-2">
+        <h1 style="color: var(--color-headings);" class="text-display-lg">{{ _("Your projects") }}</h1>
+        {% if perms.create_assembly %}
+            {{ button(_("Create project"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+        {% endif %}
+    </div>
     <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">{{ _("Welcome back, %(name)s!", name=current_user.display_name) }}</p>
 
-    <!-- Assemblies Section -->
+    <!-- Projects Section -->
     <section>
-        <div class="flex justify-between items-center mb-6">
-            <h2 style="color: var(--color-headings);" class="text-heading-lg">{{ _("Your Assemblies") }}</h2>
-            {% if perms.create_assembly %}
-                {{ button(_("Create New Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
-            {% endif %}
-        </div>
 
         {% if assemblies %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -40,12 +39,12 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
             </div>
         {% else %}
             {% call card(id="no-assemblies-card") %}
-                <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No assemblies yet") }}</p>
+                <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No projects yet") }}</p>
                 {% if perms.create_assembly %}
-                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("Create your first citizens' assembly to get started.") }}</p>
-                    {{ button(_("Create Your First Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("Create your first project to get started.") }}</p>
+                    {{ button(_("Create your first project"), href=url_for('backoffice.new_assembly'), variant="primary") }}
                 {% else %}
-                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("You have not been added to any assemblies yet — ask an Assembly Manager to add you.") }}</p>
+                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("You have not been added to any projects yet — ask a Project Manager to add you.") }}</p>
                 {% endif %}
             {% endcall %}
         {% endif %}

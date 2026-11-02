@@ -120,7 +120,7 @@ How it is wired:
 - **Off by default.** An empty `TURNSTILE_SITE_KEY` renders no widget, loads no
   third-party script, and skips the server-side check entirely.
 - The widget (`managed` mode, action `signup`) is embedded in
-  `templates/auth/register.html`; the script and challenge iframe are allowed through the
+  `templates/public/register.html`; the script and challenge iframe are allowed through the
   CSP for `challenges.cloudflare.com` only.
 - The route gates on `verify_turnstile_token()` (`adapters/turnstile.py`), the canonical
   server-side siteverify call. It requires `success`, the `signup` action, and a frontend

@@ -74,6 +74,10 @@ they are the same thing.
 | replacement (the person) | pótszemély | *(B9)* |
 | invite | meghívó | |
 | assembly question | a közösségi gyűlés témája | *(F28)* |
+| project | projekt | *(unreviewed)* |
+| event | esemény | *(unreviewed)* |
+| framing question | a projekt témája | *(unreviewed)* |
+| first event date | az első esemény időpontja | *(unreviewed)* |
 
 **assembly** is *közösségi gyűlés* in full. Bare *gyűlés* is too vague — it is any
 old meeting. Where the full term repeats several times in one short block of text
@@ -100,6 +104,17 @@ lines the short form **szempont** is fine where the context is clear. *(F34)*
 **target** stays *célszám* — it really is a target number. But a *target
 category* is not a number, so it takes the *kiválasztási szempont* above:
 `Target Name` is "Kiválasztási szempont neve", not "Célszám neve". *(B7)*
+
+**project**, **event** and **framing question** came in when the interface
+stopped calling the top-level thing an assembly (see the *Project* entry in
+[`docs/language.md`](../docs/language.md)); no native speaker has checked them
+yet. **project** is the loanword *projekt*, which every Hungarian office uses and
+which, usefully, always takes *a*, so the no-article rule (D16) bites less. **event**
+is *esemény*, as generic as the English — the event may be a forum, a jury or a
+panel, so neither *gyűlés* nor *rendezvény* fits. **framing question** keeps the
+F28 decision below and is *a projekt témája*, the topic, with its help text "a
+téma, amelynek megvitatására az esemény összeül". The default auto-reply body
+still says *közösségi gyűlés*, because its English still does.
 
 **assembly question** is *a közösségi gyűlés **témája*** — the topic, not the
 question. `Assembly Question` names the field where an organiser writes what the
@@ -141,6 +156,44 @@ it. **options** was already settled in the catalogue as *választható értékek
 listed here so the derived-field strings do not drift to *opciók* or
 *lehetőségek*.
 
+### Thank-you page and auto-reply email
+
+These came in with the registration editor's thank-you step and the auto-reply
+email's reply-to settings in October 2026, and no native speaker has checked them
+yet. Use them consistently until someone does.
+
+| English | Hungarian | |
+| --- | --- | --- |
+| thank-you page | köszönőoldal | |
+| standard thank-you page | alapértelmezett köszönőoldal | *(unreviewed)* |
+| your own thank-you page | saját köszönőoldal | *(unreviewed)* |
+| name / email address for replies | a válaszokhoz megadott név / e-mail cím | *(unreviewed)* |
+| Reply-to (label) | Válaszcím | *(unreviewed)* |
+| re-open (a closed registration) | újranyitás | *(unreviewed)* |
+| align left / centre / right (rich editor) | balra / középre / jobbra igazítás | *(unreviewed)* |
+| template syntax error | sablonszintaxis-hiba | *(unreviewed)* |
+
+**standard** is *alapértelmezett*, the built-in page shown unless the organiser
+writes their own, not *szabványos*, which suggests a published standard.
+
+**The default auto-reply body** goes to the public, so it is formal (*magázás*),
+but its `[placeholders]` are notes to the organiser who edits it, so those are
+informal: "[A neved]", "[A szervezeted neve]". Every placeholder needs at least
+one letter between its brackets — the email step warns about bracketed text
+with a letter in it, so "[10–20]" would slip through where "[10–20 főt]" is
+caught. The list of dates puts the date first and an en dash after it,
+"<strong>[Dátum]</strong> – …", rather than the English colon, because a
+Hungarian date ends in a full stop and "2026. november 14.:" reads badly.
+
+**A sentence built from link placeholders** — `View %(own_link)s or the
+%(standard_link)s (opens in a new tab).` — carries its article and case ending
+inside the link text, because the no-article rule (D16) keeps them out of the
+sentence. So the link strings are translated as the object of the sentence,
+already in the accusative: `your thank-you page` is *a saját köszönőoldaladat*
+and `standard thank-you page` is *az alapértelmezett köszönőoldalt*, and the
+sentence is "Nézd meg %(own_link)s vagy %(standard_link)s (új lapon nyílnak
+meg).". Change the link strings and the sentence together.
+
 ### Roles
 
 The global **Organiser** and the per-assembly **Assembly Manager** are different
@@ -151,9 +204,15 @@ roles and must not read as synonyms. *(C14)*
 | admin | adminisztrátor | |
 | organiser (global role) | főszervező | *(C14)* |
 | assembly manager (per-assembly) | gyűlésszervező | *(C12, C14)* |
+| project manager (per-project; the same role, renamed) | projektvezető | *(unreviewed)* |
 | confirmation caller | visszaigazoló | *(C13)* |
 | read only | megtekintő | *(C15)* |
 | role | szerepkör | |
+
+The interface now calls the per-assembly manager a **Project Manager**, so new
+strings say *projektvezető*; *gyűlésszervező* survives only in strings whose
+English still says assembly (the legacy pages). It must still not read as a
+synonym of *főszervező*, and it does not. *(unreviewed)*
 
 *megerősítő hívó* was a calque and is gone; *csak olvasó* is gone too — a
 *megtekintő* is a person who looks, which is what the role is.

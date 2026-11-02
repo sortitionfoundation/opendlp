@@ -43,18 +43,18 @@ class TestProfileViewing:
         """The page used to render the raw enum value, which explained nothing."""
         response = logged_in_user.get("/profile")
         assert response.status_code == 200
-        assert b"An Assembly Manager can add you to one" in response.data
+        assert b"A Project Manager can add you to one" in response.data
 
     def test_an_organiser_is_told_what_their_role_means(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/profile")
         assert response.status_code == 200
         assert b"Organiser" in response.data
-        assert b"You can create assemblies" in response.data
+        assert b"You can create projects" in response.data
 
     def test_an_admin_is_told_what_their_role_means(self, logged_in_admin: FlaskClient) -> None:
         response = logged_in_admin.get("/profile")
         assert response.status_code == 200
-        assert b"You can see and manage every assembly" in response.data
+        assert b"You can see and manage every project" in response.data
 
     def test_the_raw_enum_value_is_not_shown(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/profile")

@@ -41,7 +41,7 @@ VALID_TARGETS_CSV = b"feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\
 
 INVALID_TARGETS_CSV = b"feature,value,min,max\nGender,Male,15,5\n"
 
-PREFIX = "/backoffice/assembly"
+PREFIX = "/backoffice/project"
 
 
 def _targets_url(assembly_id, suffix=""):

@@ -146,13 +146,13 @@ def _run_records(fake_store, assembly_id) -> list[SelectionRunRecord]:
 
 class TestReplacementCard:
     def test_card_is_disabled_before_any_selection(self, logged_in_admin, assembly):
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
         assert response.status_code == 200
         assert b"Run the initial selection first" in response.data
         assert b"Coming Soon" not in response.data
 
     def test_card_is_enabled_once_people_are_selected(self, logged_in_admin, assembly_after_withdrawal):
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_after_withdrawal.id}/selection")
         assert response.status_code == 200
         assert b"replacement_modal=open" in response.data
         # An enabled step carries no hint: the hint only explains a disabled button.
@@ -169,14 +169,14 @@ class TestReplacementCard:
                 )
             )
             uow.commit()
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_after_withdrawal.id}/selection")
         assert b"Wait for the running selection to finish" in response.data
 
 
 class TestReplacementDialog:
     def test_dialog_shows_the_calculated_targets(self, logged_in_admin, assembly_after_withdrawal):
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         assert response.status_code == 200
         html = response.data.decode()
@@ -191,7 +191,7 @@ class TestReplacementDialog:
     def test_number_to_select_is_hidden_until_changed(self, logged_in_admin, assembly_after_withdrawal):
         """The places to fill are bold with a change link, and the number field starts collapsed."""
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
         assert "<strong>6 places are to be filled</strong>" in html
@@ -207,14 +207,14 @@ class TestReplacementDialog:
         form["action"] = "recheck"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
         )
 
         assert 'data-number-editing="true"' in response.data.decode()
 
     def test_short_category_is_open_and_fine_one_is_closed(self, logged_in_admin, assembly_after_withdrawal):
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
         gender_block, age_block = sorted(
@@ -226,7 +226,7 @@ class TestReplacementDialog:
 
     def test_dialog_says_when_every_place_is_filled(self, logged_in_admin, assembly, fake_store):
         _set_statuses(fake_store, assembly.id, {str(n): RespondentStatus.SELECTED for n in range(1, 11)})
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?replacement_modal=open")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?replacement_modal=open")
         html = response.data.decode()
         assert "Every place is filled" in html
         assert "Run Replacement Selection" not in html
@@ -239,7 +239,7 @@ class TestReplacementDialog:
             uow.assemblies.get(assembly_after_withdrawal.id).number_to_select = 20
             uow.commit()
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
         assert "16 places are to be filled, but the replacement targets only allow" in html
@@ -255,7 +255,7 @@ class TestReplacementDialog:
             uow.assemblies.get(assembly_after_withdrawal.id).number_to_select = 7
             uow.commit()
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
         assert "3 places are to be filled, but the replacement targets only allow between 4 and" in html
@@ -263,7 +263,7 @@ class TestReplacementDialog:
         assert "more than the 3 to select" in html
 
     def test_dialog_requires_login(self, client, assembly_after_withdrawal):
-        response = client.get(f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open")
+        response = client.get(f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open")
         assert response.status_code == 302
         assert "/auth/login" in response.headers["Location"]
 
@@ -283,7 +283,7 @@ class TestStartReplacement:
         with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
             mock_delay.return_value = Mock(id="celery-id")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+                f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
             )
 
         assert response.status_code == 302
@@ -312,7 +312,7 @@ class TestStartReplacement:
         form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
         )
 
         assert response.status_code == 200
@@ -327,7 +327,7 @@ class TestStartReplacement:
         form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, min__Gender__Male="lots")
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
         )
 
         assert response.status_code == 200
@@ -347,7 +347,7 @@ class TestStartReplacement:
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
         )
 
         assert response.status_code == 200
@@ -363,7 +363,7 @@ class TestStartReplacement:
                 uow=uow, user_id=admin_user.id, assembly_id=assembly_after_withdrawal.id, settings_confirmed=False
             )
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run",
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run",
             data={"number_to_select": "6"},
         )
         assert response.status_code == 302
@@ -371,7 +371,7 @@ class TestStartReplacement:
 
     def test_requires_login(self, client, assembly_after_withdrawal):
         response = client.post(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run",
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run",
             data={"number_to_select": "6"},
         )
         assert response.status_code == 302
@@ -383,7 +383,7 @@ class TestStartReplacement:
 
         with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
             response = logged_in_user.post(
-                f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+                f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
             )
 
         assert response.status_code == 403
@@ -395,7 +395,7 @@ class TestFeasibilityInDialog:
     def test_opening_the_dialog_runs_the_check_and_reports_success(self, logged_in_admin, assembly_with_feasible_gaps):
         """The calculated targets fit the pool, so the dialog says so and offers no suggestions."""
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
         assert response.status_code == 200
@@ -411,7 +411,7 @@ class TestFeasibilityInDialog:
             uow.assemblies.get(assembly_after_withdrawal.id).number_to_select = 9
             uow.commit()
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
         assert "Needs at least 2 but only 1 eligible" in html
@@ -431,7 +431,7 @@ class TestFeasibilityInDialog:
         form["action"] = "recheck"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
         )
 
         html = response.data.decode()
@@ -444,7 +444,7 @@ class TestFeasibilityInDialog:
     def test_opening_with_too_few_people_says_so(self, logged_in_admin, assembly_after_withdrawal):
         """Six to fill from five in the pool: no committee exists, so the dialog says the pool is too small."""
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
         assert "Needs at least 2 but only 1 eligible" in html
@@ -459,7 +459,7 @@ class TestFeasibilityInDialog:
         form["action"] = "recheck"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
         )
 
         html = response.data.decode()
@@ -475,7 +475,7 @@ class TestFeasibilityInDialog:
         form["action"] = "recheck"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
         )
 
         html = response.data.decode()
@@ -495,7 +495,7 @@ class TestFeasibilityInDialog:
 
         with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+                f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
             )
 
         assert response.status_code == 200
@@ -519,7 +519,7 @@ class TestFeasibilityInDialog:
         form["action"] = "recheck"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
         )
 
         html = response.data.decode()
@@ -537,7 +537,7 @@ class TestFeasibilityInDialog:
         form["action"] = "recheck"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
         )
 
         html = response.data.decode()
@@ -558,7 +558,7 @@ class TestFeasibilityInDialog:
         with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
             mock_delay.return_value = Mock(id="celery-id")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+                f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
             )
 
         assert response.status_code == 302
@@ -583,7 +583,7 @@ class TestViewerWithoutManagement:
 
     def test_link_to_the_open_dialog_renders_the_page_with_it_closed(self, logged_in_reader, assembly_after_withdrawal):
         response = logged_in_reader.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
 
         assert response.status_code == 200
@@ -606,7 +606,7 @@ class TestDialogNotes:
             uow.commit()
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
 
         assert response.status_code == 200
@@ -620,7 +620,7 @@ class TestDialogNotes:
             uow.commit()
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
 
         assert response.status_code == 200
@@ -649,7 +649,7 @@ class TestReplacementRefusedWhileAnotherTaskWrites:
 
         with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+                f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
             )
 
         mock_delay.assert_not_called()
@@ -657,6 +657,6 @@ class TestReplacementRefusedWhileAnotherTaskWrites:
         assert response.headers["Location"].endswith(f"/selection?current_selection={running_id}")
         page = logged_in_admin.get(response.headers["Location"])
         html = page.data.decode()
-        assert "Another task is already running on this assembly" in html
+        assert "Another task is already running on this project" in html
         assert "Cancel Task" in html
         assert [r.task_id for r, _user in _run_records(fake_store, assembly_after_withdrawal.id)] == [running_id]

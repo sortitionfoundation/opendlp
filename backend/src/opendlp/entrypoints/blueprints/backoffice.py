@@ -103,7 +103,7 @@ def dashboard() -> ResponseReturnValue:
         return render_template("backoffice/dashboard.html", assemblies=[]), 500
 
 
-@backoffice_bp.route("/assembly/new", methods=["GET", "POST"])
+@backoffice_bp.route("/project/new", methods=["GET", "POST"])
 @login_required
 @require_create_assembly
 def new_assembly() -> ResponseReturnValue:
@@ -123,25 +123,38 @@ def new_assembly() -> ResponseReturnValue:
                     number_to_select=form.number_to_select.data or 0,
                 )
 
-            flash(_("Assembly '%(title)s' created successfully", title=assembly.title), "success")
+            flash(_("Project '%(title)s' created successfully", title=assembly.title), "success")
             return redirect(url_for("backoffice.view_assembly", assembly_id=assembly.id))
         except InsufficientPermissions as e:
             logger.warning("Insufficient permissions to create assembly", user_id=str(current_user.id), error=str(e))
-            flash(_("You don't have permission to create assemblies"), "error")
+            flash(_("You don't have permission to create projects"), "error")
             return redirect(url_for("backoffice.dashboard"))
         except NotFoundError as e:
             logger.error("User not found during assembly creation", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while creating the assembly"), "error")
+            flash(_("An error occurred while creating the project"), "error")
             return redirect(url_for("backoffice.dashboard"))
         except Exception as e:
             logger.exception("Create assembly error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while creating the assembly"), "error")
+            flash(_("An error occurred while creating the project"), "error")
             return redirect(url_for("backoffice.dashboard"))
 
     return render_template("backoffice/create_assembly.html", form=form), 200
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>")
+@backoffice_bp.route("/assembly/<path:rest>")
+def redirect_old_assembly_url(rest: str) -> ResponseReturnValue:
+    """Send a bookmarked /backoffice/assembly/… URL to its /backoffice/project/… twin.
+
+    The interface calls the thing a project, and so do its URLs; the old paths
+    live on in bookmarks, emails and spreadsheets. The query string comes too.
+    """
+    target = f"/backoffice/project/{rest}"
+    if request.query_string:
+        target = f"{target}?{request.query_string.decode()}"
+    return redirect(target, code=301)
+
+
+@backoffice_bp.route("/project/<uuid:assembly_id>")
 @login_required
 def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly details page."""
@@ -189,17 +202,17 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         # TODO: consider change to "Assembly not found" so as not to leak info
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Backoffice assembly error", user_id=str(current_user.id), error=str(e))
-        flash(_("An error occurred while loading the assembly"), "error")
+        flash(_("An error occurred while loading the project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -327,7 +340,7 @@ def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
     return tables
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard")
+@backoffice_bp.route("/project/<uuid:assembly_id>/dashboard")
 @login_required
 def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly results dashboard (ticket 886).
@@ -373,7 +386,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -382,7 +395,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -392,7 +405,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/modal")
+@backoffice_bp.route("/project/<uuid:assembly_id>/dashboard/export/modal")
 @login_required
 def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the dashboard export modal fragment (HTMX-loaded).
@@ -411,7 +424,7 @@ def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to export the dashboard"), "error")
         return redirect(dashboard_url)
     except NotFoundError:
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     worksheet_name = (
@@ -426,7 +439,7 @@ def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     ), 200
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/run", methods=["POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/dashboard/export/run", methods=["POST"])
 @login_required
 def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run a dashboard export from the modal: CSV download or Google Sheets write."""
@@ -457,7 +470,7 @@ def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(dashboard_url)
     except NotFoundError as e:
         logger.warning("Assembly not found for dashboard export", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     filename = f"dashboard-{str(assembly_id)[:8]}.csv"
@@ -500,7 +513,7 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
     )
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/edit", methods=["GET", "POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice edit assembly page."""
@@ -526,7 +539,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         number_to_select=form.number_to_select.data,
                     )
 
-                flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")
+                flash(_("Project '%(title)s' updated successfully", title=updated_assembly.title), "success")
                 return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
             except InsufficientPermissions as e:
                 logger.warning(
@@ -535,7 +548,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     user_id=str(current_user.id),
                     error=str(e),
                 )
-                flash(_("You don't have permission to edit this assembly"), "error")
+                flash(_("You don't have permission to edit this project"), "error")
                 return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
             except NotFoundError as e:
                 logger.error(
@@ -544,13 +557,13 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     user_id=str(current_user.id),
                     error=str(e),
                 )
-                flash(_("An error occurred while updating the assembly"), "error")
+                flash(_("An error occurred while updating the project"), "error")
                 return redirect(url_for("backoffice.dashboard"))
             except Exception as e:
                 logger.exception(
                     "Edit assembly error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
                 )
-                flash(_("An error occurred while updating the assembly"), "error")
+                flash(_("An error occurred while updating the project"), "error")
                 return redirect(url_for("backoffice.dashboard"))
 
         return render_template(
@@ -562,7 +575,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for edit", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -571,11 +584,11 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to edit this assembly"), "error")
+        flash(_("You don't have permission to edit this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/update-number-to-select", methods=["POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/update-number-to-select", methods=["POST"])
 @login_required
 def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Update just the number_to_select field for an assembly."""
@@ -603,13 +616,13 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to edit this assembly"), "error")
+        flash(_("You don't have permission to edit this project"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for update", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
@@ -748,7 +761,7 @@ def render_assembly_data_page(
     )
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
+@backoffice_bp.route("/project/<uuid:assembly_id>/data")
 @login_required
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly data page."""
@@ -758,7 +771,7 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -767,17 +780,17 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
             "View assembly data error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("An error occurred while loading assembly data"), "error")
+        flash(_("An error occurred while loading project data"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/members")
+@backoffice_bp.route("/project/<uuid:assembly_id>/members")
 @login_required
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly team members page."""
@@ -819,7 +832,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
-        flash(_("Assembly not found"), "error")
+        flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
         logger.warning(
@@ -828,7 +841,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to view this assembly"), "error")
+        flash(_("You don't have permission to view this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception(
@@ -838,7 +851,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/members/add", methods=["POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/members/add", methods=["POST"])
 @login_required
 def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Add a user to an assembly with a specific role."""
@@ -873,7 +886,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
                 flash(
                     _(
-                        "%(user)s added to assembly with role %(role)s",
+                        "%(user)s added to project with role %(role)s",
                         user=target_user.display_name,
                         role=role.value,
                     ),
@@ -886,7 +899,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except NotFoundError as e:
         logger.error("Error adding user to assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Could not add user to assembly: %(error)s", error=str(e)), "error")
+        flash(_("Could not add user to project: %(error)s", error=str(e)), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
@@ -895,7 +908,7 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to add users to this assembly"), "error")
+        flash(_("You don't have permission to add users to this project"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except Exception as e:
         logger.exception(
@@ -904,11 +917,11 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("An error occurred while adding the user to the assembly"), "error")
+        flash(_("An error occurred while adding the user to the project"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/members/<uuid:user_id>/remove", methods=["POST"])
+@backoffice_bp.route("/project/<uuid:assembly_id>/members/<uuid:user_id>/remove", methods=["POST"])
 @login_required
 def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> ResponseReturnValue:
     """Remove a user from an assembly."""
@@ -924,7 +937,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             )
 
             flash(
-                _("%(user)s removed from assembly", user=target_user.display_name),
+                _("%(user)s removed from project", user=target_user.display_name),
                 "success",
             )
 
@@ -940,7 +953,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")
+        flash(_("Could not remove user from project: %(error)s", error=str(e)), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
@@ -949,7 +962,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to remove users from this assembly"), "error")
+        flash(_("You don't have permission to remove users from this project"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except Exception as e:
         logger.exception(
@@ -958,11 +971,11 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("An error occurred while removing the user from the assembly"), "error")
+        flash(_("An error occurred while removing the user from the project"), "error")
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
 
-@backoffice_bp.route("/assembly/<uuid:assembly_id>/members/search")
+@backoffice_bp.route("/project/<uuid:assembly_id>/members/search")
 @login_required
 def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Search for users not yet added to the assembly.

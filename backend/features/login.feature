@@ -1,5 +1,5 @@
 Feature: User Sign in and Registration
-  As an Assembly Manager
+  As a Project Manager
   I want to be able to Register and Sign In
   So that I can view and edit my assemblies.
 

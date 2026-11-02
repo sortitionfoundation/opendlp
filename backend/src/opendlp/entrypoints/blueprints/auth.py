@@ -161,7 +161,7 @@ def login() -> ResponseReturnValue:
             logger.exception("Login error", error=str(e))
             flash(_("An error occurred while signing in. Please try again."), "error")
 
-    return render_template("auth/login.html", form=form, show_resend_confirmation=show_resend_confirmation)
+    return render_template("public/login.html", form=form, show_resend_confirmation=show_resend_confirmation)
 
 
 def _validate_2fa_session() -> tuple[bool, str | None]:
@@ -272,7 +272,7 @@ def verify_2fa() -> ResponseReturnValue:
 
         if not verification_code:
             flash(_("Please enter a verification code"), "error")
-            return render_template("auth/verify_2fa.html")
+            return render_template("public/verify_2fa.html")
 
         try:
             uow = bootstrap.get_flask_uow()
@@ -287,7 +287,7 @@ def verify_2fa() -> ResponseReturnValue:
                         _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
                         "error",
                     )
-                    return render_template("auth/verify_2fa.html", rate_limited=True)
+                    return render_template("public/verify_2fa.html", rate_limited=True)
 
                 user = uow.users.get(pending_user_id)
                 if not user or not user.totp_enabled:
@@ -314,21 +314,21 @@ def verify_2fa() -> ResponseReturnValue:
                             _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
                             "error",
                         )
-                    return render_template("auth/verify_2fa.html")
+                    return render_template("public/verify_2fa.html")
 
                 # Success! Complete login
                 return _complete_2fa_login(uow, pending_user_id, is_backup_code)
 
         except TwoFactorVerificationError as e:
             flash(str(e), "error")
-            return render_template("auth/verify_2fa.html")
+            return render_template("public/verify_2fa.html")
         except Exception as e:
             logger.exception("2FA verification error", error=str(e))
             flash(_("An error occurred during verification. Please try again."), "error")
-            return render_template("auth/verify_2fa.html")
+            return render_template("public/verify_2fa.html")
 
     # GET request - show 2FA form
-    return render_template("auth/verify_2fa.html")
+    return render_template("public/verify_2fa.html")
 
 
 @auth_bp.route("/logout")
@@ -524,7 +524,7 @@ def confirm_email(token: str) -> ResponseReturnValue:
         if request.method == "GET":
             try:
                 validate_confirmation_token(uow, token)
-                return render_template("auth/confirm_email.html", token=token)
+                return render_template("public/confirm_email.html", token=token)
             except InvalidConfirmationToken as e:
                 flash(str(e), "error")
                 return redirect(url_for("auth.login"))
@@ -579,7 +579,7 @@ def resend_confirmation() -> ResponseReturnValue:
             logger.exception("Resend confirmation error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
 
-    return render_template("auth/resend_confirmation.html", form=form)
+    return render_template("public/resend_confirmation.html", form=form)
 
 
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
@@ -633,7 +633,7 @@ def forgot_password() -> ResponseReturnValue:
             logger.exception("Password reset request error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
 
-    return render_template("auth/forgot_password.html", form=form)
+    return render_template("public/forgot_password.html", form=form)
 
 
 @auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
@@ -676,7 +676,7 @@ def reset_password(token: str) -> ResponseReturnValue:
             flash(_("An error occurred. Please try again."), "error")
 
     return render_template(
-        "auth/reset_password.html", form=form, token=token, password_help=password_validators_help_text_html()
+        "public/reset_password.html", form=form, token=token, password_help=password_validators_help_text_html()
     )
 
 

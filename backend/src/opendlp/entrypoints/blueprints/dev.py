@@ -1350,6 +1350,8 @@ def _serialise_email_template(template: Any) -> dict[str, Any]:
         "subject": template.subject,
         "body_html_preview": template.body_html[:300] + "..." if len(template.body_html) > 300 else template.body_html,
         "body_html_bytes": len(template.body_html.encode("utf-8")),
+        "reply_to_name": template.reply_to_name,
+        "reply_to_email": template.reply_to_email,
         "created_at": template.created_at.isoformat() if template.created_at else None,
         "updated_at": template.updated_at.isoformat() if template.updated_at else None,
     }
@@ -1369,6 +1371,8 @@ def _handle_create_email_template(uow: Any, params: dict[str, Any]) -> dict[str,
             name=name,
             subject=subject,
             body_html=body_html,
+            reply_to_name=params.get("reply_to_name", ""),
+            reply_to_email=params.get("reply_to_email", ""),
         )
         return {"status": "success", "template": _serialise_email_template(template)}
     except EmailTemplateInvalid as e:
@@ -1420,6 +1424,8 @@ def _handle_update_email_template(uow: Any, params: dict[str, Any]) -> dict[str,
             name=params.get("name"),
             subject=params.get("subject"),
             body_html=params.get("body_html"),
+            reply_to_name=params.get("reply_to_name"),
+            reply_to_email=params.get("reply_to_email"),
         )
         return {"status": "success", "template": _serialise_email_template(template)}
     except EmailTemplateInvalid as e:
@@ -1481,7 +1487,8 @@ def _handle_assign_auto_reply_template(uow: Any, params: dict[str, Any]) -> dict
 def _handle_auto_reply_readiness_problems(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle auto_reply_readiness_problems service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
-    problems = auto_reply_readiness_problems(uow=uow, assembly_id=assembly_id)
+    page_id = uuid.UUID(params["page_id"]) if params.get("page_id") else None
+    problems = auto_reply_readiness_problems(uow=uow, assembly_id=assembly_id, page_id=page_id)
     return {
         "status": "success",
         "problem_count": len(problems),

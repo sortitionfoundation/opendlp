@@ -86,11 +86,11 @@ def assembly_with_gsheet(fake_store, admin_user):
 
 
 def _check_url(assembly_id) -> str:
-    return f"/backoffice/assembly/{assembly_id}/gsheet/check"
+    return f"/backoffice/project/{assembly_id}/gsheet/check"
 
 
 def _data_url(assembly_id) -> str:
-    return f"/backoffice/assembly/{assembly_id}/data?source=gsheet"
+    return f"/backoffice/project/{assembly_id}/data?source=gsheet"
 
 
 _ALL_TABS = ["Respondents", "Categories", "Remaining", "Replacement Categories", "Selected"]
@@ -221,7 +221,7 @@ class TestCheckRoute:
         response = logged_in_admin.post(_check_url(assembly_with_gsheet.id))
 
         assert response.status_code == 302
-        assert f"/assembly/{assembly_with_gsheet.id}/data" in response.location
+        assert f"/project/{assembly_with_gsheet.id}/data" in response.location
         page = logged_in_admin.get(response.location).get_data(as_text=True)
         assert "Leeds Assembly Respondents" in page
 
@@ -320,7 +320,7 @@ class TestSaveTriggersCheck:
         gsheet_access_check.store_cached_result(assembly_with_gsheet.id, old, redis_client=cache)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_gsheet.id}/gsheet/save",
+            f"/backoffice/project/{assembly_with_gsheet.id}/gsheet/save",
             data={
                 "url": _SHEET_URL,
                 "team": "uk",

@@ -82,24 +82,24 @@ class TestBackofficeAssemblyDetails:
 
     def test_view_assembly_details_page_loads(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that assembly details page loads successfully."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code == 200
         assert existing_assembly.title.encode() in response.data
 
     def test_view_assembly_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code == 302
         assert "login" in response.location
 
     def test_view_nonexistent_assembly_redirects(self, logged_in_admin: FlaskClient) -> None:
         """Test that accessing non-existent assembly redirects with error."""
-        response = logged_in_admin.get("/backoffice/assembly/00000000-0000-0000-0000-000000000000")
+        response = logged_in_admin.get("/backoffice/project/00000000-0000-0000-0000-000000000000")
         assert response.status_code == 302
 
     def test_view_assembly_shows_key_fields(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that assembly details shows key fields."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code == 200
         assert existing_assembly.title.encode() in response.data
         assert existing_assembly.question.encode() in response.data
@@ -121,7 +121,7 @@ class TestBackofficeAssemblyDetails:
         """
         app.config["LANGUAGES"] = ["en", "hu"]
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}",
+            f"/backoffice/project/{existing_assembly.id}",
             headers=[("Accept-Language", "hu")],
         )
         assert response.status_code == 200
@@ -131,14 +131,14 @@ class TestBackofficeAssemblyDetails:
         self, logged_in_user: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test regular users without assembly roles cannot view assembly details."""
-        response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_user.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code in [302, 403, 500]
 
     def test_registration_qr_code_endpoint_404_without_short_url(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """A QR code encodes the short URL, so it 404s when no such registration page exists."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/no-slug/qr-code.png")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/registration/no-slug/qr-code.png")
         assert response.status_code == 404
 
 
@@ -148,7 +148,7 @@ class TestDetailsShowsWhoCreatedIt:
     def test_created_row_names_the_creator(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user: User
     ) -> None:
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
 
         assert response.status_code == 200
         assert f"By {admin_user.display_name} at".encode() in response.data
@@ -157,7 +157,7 @@ class TestDetailsShowsWhoCreatedIt:
         self, app, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Not just the date - the row promises a timestamp."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
 
         assert expected_timestamp(app, existing_assembly.created_at).encode() in response.data
 
@@ -165,7 +165,7 @@ class TestDetailsShowsWhoCreatedIt:
         self, app, logged_in_admin: FlaskClient, assembly_without_a_creator: Assembly
     ) -> None:
         """Assemblies predating the created_by column, and those whose creator was deleted."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_without_a_creator.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_without_a_creator.id}")
 
         assert response.status_code == 200
         assert b"By  at" not in response.data
@@ -177,7 +177,7 @@ class TestBackofficeAssemblyCreate:
 
     def test_create_assembly_get_form(self, logged_in_admin: FlaskClient) -> None:
         """Test create assembly form is displayed."""
-        response = logged_in_admin.get("/backoffice/assembly/new")
+        response = logged_in_admin.get("/backoffice/project/new")
         assert response.status_code == 200
         assert b"title" in response.data.lower()
         assert b"question" in response.data.lower()
@@ -185,25 +185,25 @@ class TestBackofficeAssemblyCreate:
     def test_create_assembly_minimal_data(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
         """Test assembly creation with minimal required data persists to the store."""
         response = logged_in_admin.post(
-            "/backoffice/assembly/new",
+            "/backoffice/project/new",
             data={"title": "Minimal Assembly", "number_to_select": "0"},
             follow_redirects=False,
         )
         assert response.status_code == 302
-        assert "/backoffice/assembly/" in response.location
+        assert "/backoffice/project/" in response.location
 
         with FakeUnitOfWork(store=fake_store) as uow:
             assert "Minimal Assembly" in [a.title for a in uow.assemblies.all()]
 
     def test_create_assembly_validation_errors(self, logged_in_admin: FlaskClient) -> None:
         """Test form validation errors on assembly creation."""
-        response = logged_in_admin.post("/backoffice/assembly/new", data={"title": "x"})
+        response = logged_in_admin.post("/backoffice/project/new", data={"title": "x"})
         assert response.status_code == 200
         assert b"error" in response.data or b"Field must be" in response.data
 
     def test_create_assembly_redirects_when_not_logged_in(self, client: FlaskClient) -> None:
         """Test create assembly redirects to login when not authenticated."""
-        response = client.get("/backoffice/assembly/new")
+        response = client.get("/backoffice/project/new")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -211,7 +211,7 @@ class TestBackofficeAssemblyCreate:
         """Test that newly created assembly appears in backoffice dashboard."""
         future_date = (datetime.now(UTC) + timedelta(days=30)).date()
         logged_in_admin.post(
-            "/backoffice/assembly/new",
+            "/backoffice/project/new",
             data={
                 "title": "Dashboard Visible Assembly",
                 "question": "Will this appear?",
@@ -245,7 +245,7 @@ class TestDetailsTabRegistrationSection:
         )
         self._seed_page(fake_store, existing_assembly.id, name="Spanish", url_slug="details-es")
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
@@ -258,12 +258,12 @@ class TestDetailsTabRegistrationSection:
     def test_section_is_read_only_with_a_link_to_the_registration_tab(
         self, logged_in_admin: FlaskClient, fake_store: FakeStore, existing_assembly: Assembly
     ) -> None:
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
 
         body = response.get_data(as_text=True)
         # No create form here any more — creation happens on the Registration tab.
         assert "registration/create" not in body
-        assert f"/backoffice/assembly/{existing_assembly.id}/registration" in body
+        assert f"/backoffice/project/{existing_assembly.id}/registration" in body
 
 
 class TestBackofficeAssemblyEdit:
@@ -271,7 +271,7 @@ class TestBackofficeAssemblyEdit:
 
     def test_edit_assembly_get_form(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test edit assembly form is displayed with existing data."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/edit")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/edit")
         assert response.status_code == 200
         assert existing_assembly.title.encode() in response.data
 
@@ -287,7 +287,7 @@ class TestBackofficeAssemblyEdit:
             uow.commit()
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/edit",
+            f"/backoffice/project/{existing_assembly.id}/edit",
             data={
                 "title": existing_assembly.title,
                 "question": existing_assembly.question,
@@ -306,7 +306,7 @@ class TestBackofficeAssemblyEdit:
     def test_edit_assembly_validation_errors(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test form validation errors on assembly editing."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/edit",
+            f"/backoffice/project/{existing_assembly.id}/edit",
             data={"title": ""},
         )
         assert response.status_code == 200
@@ -314,12 +314,12 @@ class TestBackofficeAssemblyEdit:
 
     def test_edit_nonexistent_assembly(self, logged_in_admin: FlaskClient) -> None:
         """Test editing non-existent assembly redirects with error."""
-        response = logged_in_admin.get("/backoffice/assembly/00000000-0000-0000-0000-000000000000/edit")
+        response = logged_in_admin.get("/backoffice/project/00000000-0000-0000-0000-000000000000/edit")
         assert response.status_code == 302
 
     def test_edit_assembly_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Test edit assembly redirects to login when not authenticated."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/edit")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/edit")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -329,19 +329,19 @@ class TestBackofficeAssemblyMembers:
 
     def test_members_page_loads(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that the members page loads successfully."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/members")
         assert response.status_code == 200
         assert b"Members" in response.data or b"Team" in response.data
 
     def test_members_page_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{existing_assembly.id}/members")
+        response = client.get(f"/backoffice/project/{existing_assembly.id}/members")
         assert response.status_code == 302
         assert "login" in response.location
 
     def test_members_search_returns_json(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that members search endpoint returns JSON."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=test")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=test")
         assert response.status_code == 200
         assert isinstance(response.get_json(), list)
 
@@ -357,7 +357,7 @@ class TestBackofficeAddUserToAssembly:
     ) -> None:
         """Test that adding user shows success message."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/members/add",
             data={"user_id": str(regular_user.id), "role": AssemblyRole.CONFIRMATION_CALLER.name},
             follow_redirects=True,
         )
@@ -373,7 +373,7 @@ class TestBackofficeAddUserToAssembly:
     ) -> None:
         """Test adding a user with assembly manager role."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/members/add",
             data={"user_id": str(regular_user.id), "role": AssemblyRole.ASSEMBLY_MANAGER.name},
             follow_redirects=False,
         )
@@ -403,7 +403,7 @@ class TestBackofficeAddUserToAssembly:
             other_user_id = other_user.id
 
         response = logged_in_user.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/members/add",
             data={"user_id": str(other_user_id), "role": AssemblyRole.CONFIRMATION_CALLER.name},
             follow_redirects=True,
         )
@@ -418,7 +418,7 @@ class TestBackofficeAddUserToAssembly:
     def test_add_user_with_invalid_user_id(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test adding non-existent user to assembly."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/members/add",
             data={
                 "user_id": "00000000-0000-0000-0000-000000000000",
                 "role": AssemblyRole.CONFIRMATION_CALLER.name,
@@ -451,12 +451,12 @@ class TestBackofficeRemoveUserFromAssembly:
             )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/{regular_user.id}/remove",
+            f"/backoffice/project/{existing_assembly.id}/members/{regular_user.id}/remove",
             data={},
             follow_redirects=True,
         )
         assert response.status_code == 200
-        assert b"removed from assembly" in response.data or b"success" in response.data.lower()
+        assert b"removed from project" in response.data or b"success" in response.data.lower()
 
     def test_remove_user_not_accessible_to_regular_user(
         self,
@@ -477,7 +477,7 @@ class TestBackofficeRemoveUserFromAssembly:
             )
 
         response = logged_in_user.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/{regular_user.id}/remove",
+            f"/backoffice/project/{existing_assembly.id}/members/{regular_user.id}/remove",
             data={},
             follow_redirects=True,
         )
@@ -487,7 +487,7 @@ class TestBackofficeRemoveUserFromAssembly:
     def test_remove_user_with_invalid_user_id(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test removing non-existent user from assembly."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/members/00000000-0000-0000-0000-000000000000/remove",
+            f"/backoffice/project/{existing_assembly.id}/members/00000000-0000-0000-0000-000000000000/remove",
             data={},
             follow_redirects=True,
         )
@@ -500,7 +500,7 @@ class TestBackofficeSearchUsers:
 
     def test_search_users_empty_query(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test search with empty term returns empty results."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=")
         assert response.status_code == 200
         assert response.get_json() == []
 
@@ -508,13 +508,13 @@ class TestBackofficeSearchUsers:
         self, logged_in_user: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Test that regular users cannot search users."""
-        response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=test")
+        response = logged_in_user.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=test")
         assert response.status_code == 403
 
     def test_search_users_no_matches(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test search with no matching users."""
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/members/search?q=nonexistentuser12345"
+            f"/backoffice/project/{existing_assembly.id}/members/search?q=nonexistentuser12345"
         )
         assert response.status_code == 200
         assert response.get_json() == []
@@ -529,7 +529,7 @@ class TestBackofficeCsvUpload:
         """Test that successful targets upload shows success flash message."""
         csv_content = "feature,value,min,max\nRegion,North,5,10\nRegion,South,5,10"
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            f"/backoffice/project/{existing_assembly.id}/targets/upload",
             data={"csv_file": (BytesIO(csv_content.encode()), "targets.csv")},
             content_type="multipart/form-data",
             follow_redirects=True,
@@ -541,7 +541,7 @@ class TestBackofficeCsvUpload:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """A CSV assembly has no address columns yet, so the box must not be pre-ticked."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv&mode=edit")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv&mode=edit")
         assert response.status_code == 200
         html = response.data.decode()
 
@@ -559,11 +559,11 @@ class TestBackofficeCsvUpload:
         rendered form uses a different name (e.g. 'file'), validation silently
         fails and the user lands on the targets tab with a hidden error.
         """
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
         assert response.status_code == 200
         html = response.data.decode()
 
-        target_action = f"/backoffice/assembly/{existing_assembly.id}/targets/upload"
+        target_action = f"/backoffice/project/{existing_assembly.id}/targets/upload"
         form_pattern = re.compile(
             r'<form[^>]*action="' + re.escape(target_action) + r'"[^>]*>(.*?)</form>',
             re.DOTALL,
@@ -585,7 +585,7 @@ class TestBackofficeCsvUpload:
         top of the page, away from the field it is about.
         """
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            f"/backoffice/project/{existing_assembly.id}/targets/upload",
             data={},
             content_type="multipart/form-data",
             follow_redirects=False,
@@ -596,7 +596,7 @@ class TestBackofficeCsvUpload:
         assert b"Please select a CSV file" in response.data, (
             "Expected the FileRequired error message in the response body"
         )
-        assert f'action="/backoffice/assembly/{existing_assembly.id}/targets/upload"' in html, (
+        assert f'action="/backoffice/project/{existing_assembly.id}/targets/upload"' in html, (
             "Expected the upload form to still be on the page so the user can retry"
         )
 
@@ -614,7 +614,7 @@ class TestBackofficeCsvUpload:
         csv_content = "wrong,headers,here\nfoo,bar,baz"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            f"/backoffice/project/{existing_assembly.id}/targets/upload",
             data={"csv_file": (BytesIO(csv_content.encode()), "bad.csv")},
             content_type="multipart/form-data",
             follow_redirects=False,
@@ -628,7 +628,7 @@ class TestBackofficeCsvUpload:
         assert b"CSV import failed" in response.data or b"Failed to parse CSV" in response.data, (
             "Expected the import error message in the response body"
         )
-        assert f'action="/backoffice/assembly/{existing_assembly.id}/targets/upload"' in html, (
+        assert f'action="/backoffice/project/{existing_assembly.id}/targets/upload"' in html, (
             "Expected the upload form to still be on the page so the user can retry"
         )
 
@@ -644,7 +644,7 @@ class TestBackofficeCsvUpload:
         csv_content = "wrong,headers,here\nfoo,bar,baz"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            f"/backoffice/project/{existing_assembly.id}/targets/upload",
             data={"csv_file": (BytesIO(csv_content.encode()), "bad.csv")},
             content_type="multipart/form-data",
             follow_redirects=False,
@@ -666,7 +666,7 @@ class TestBackofficeCsvDelete:
     ) -> None:
         """Test that successful targets deletion shows success flash message."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets",
+            f"/backoffice/project/{assembly_with_targets.id}/data/delete-targets",
             data={},
             follow_redirects=True,
         )
@@ -695,12 +695,12 @@ class TestBackofficeCsvDelete:
     ) -> None:
         self._link_a_question(fake_store, assembly_with_targets)
 
-        response = logged_in_admin.post(f"/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets")
+        response = logged_in_admin.post(f"/backoffice/project/{assembly_with_targets.id}/data/delete-targets")
 
         body = response.get_data(as_text=True)
         assert response.status_code == 200
         assert 'Deleting the target "Gender" unlinks: Your gender' in body
-        assert f'action="/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets"' in body
+        assert f'action="/backoffice/project/{assembly_with_targets.id}/data/delete-targets"' in body
         assert 'name="force_unlink" value="1"' in body
         assert "Break the links and delete all targets" in body
         with FakeUnitOfWork(store=fake_store) as uow:
@@ -712,7 +712,7 @@ class TestBackofficeCsvDelete:
         question = self._link_a_question(fake_store, assembly_with_targets)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets", data={"force_unlink": "1"}
+            f"/backoffice/project/{assembly_with_targets.id}/data/delete-targets", data={"force_unlink": "1"}
         )
 
         assert response.status_code == 302
@@ -728,7 +728,7 @@ class TestBackofficeCsvViewPages:
         self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly
     ) -> None:
         """Test that targets page loads successfully for CSV data source."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_with_targets.id}/targets")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_with_targets.id}/targets")
         assert response.status_code == 200
         assert b"Targets" in response.data
 
@@ -736,7 +736,7 @@ class TestBackofficeCsvViewPages:
         self, client: FlaskClient, assembly_with_targets: Assembly
     ) -> None:
         """Test that unauthenticated users are redirected to login."""
-        response = client.get(f"/backoffice/assembly/{assembly_with_targets.id}/targets")
+        response = client.get(f"/backoffice/project/{assembly_with_targets.id}/targets")
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -750,7 +750,7 @@ def _seed_respondents(fake_store: FakeStore, assembly_id: uuid.UUID, respondents
 
 
 def _data_url(assembly_id: uuid.UUID) -> str:
-    return f"/backoffice/assembly/{assembly_id}/data?source=csv"
+    return f"/backoffice/project/{assembly_id}/data?source=csv"
 
 
 class TestDataTabCreateTargetsFromRespondents:
@@ -770,7 +770,7 @@ class TestDataTabCreateTargetsFromRespondents:
         assert "Create from respondent data" in html
         assert 'value="Gender"' in html
         assert 'value="Age"' in html
-        assert f'action="/backoffice/assembly/{existing_assembly.id}/targets/categories/add-from-columns"' in html
+        assert f'action="/backoffice/project/{existing_assembly.id}/targets/categories/add-from-columns"' in html
 
     def test_no_offer_without_respondent_data(
         self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly

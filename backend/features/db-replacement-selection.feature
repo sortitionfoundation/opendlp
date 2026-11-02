@@ -1,5 +1,5 @@
 Feature: Replacement Selection from the database
-  As an Assembly Manager
+  As a Project Manager
   I want to select replacements from the respondents held in the database
   When people who were selected have withdrawn.
 

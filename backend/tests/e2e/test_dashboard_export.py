@@ -32,18 +32,18 @@ def _seed_gender_targets(postgres_session_factory, assembly_id):
 
 class TestDashboardExportSmoke:
     def test_export_modal_fragment(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/modal")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/dashboard/export/modal")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
-        assert f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run" in body
+        assert f"/backoffice/project/{existing_assembly.id}/dashboard/export/run" in body
         assert 'name="file_type"' in body
 
     def test_export_dashboard_csv(self, logged_in_admin, existing_assembly, postgres_session_factory):
         _seed_gender_targets(postgres_session_factory, existing_assembly.id)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run",
+            f"/backoffice/project/{existing_assembly.id}/dashboard/export/run",
             data={"file_type": "csv"},
         )
 
@@ -57,7 +57,7 @@ class TestDashboardExportSmoke:
 
     def test_export_rejects_disabled_file_type(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run",
+            f"/backoffice/project/{existing_assembly.id}/dashboard/export/run",
             data={"file_type": "xlsx"},
         )
 
@@ -93,7 +93,7 @@ class TestDashboardGSheetExportSmoke:
         # gets the same form as any other.
         assembly, _gsheet = assembly_with_gsheet
         for assembly_id in (assembly.id, existing_assembly.id):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/dashboard/export/modal")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly_id}/dashboard/export/modal")
             assert response.status_code == 200
             body = response.get_data(as_text=True)
             assert '<input type="radio" name="file_type" value="gsheet" x-model="fileType">' in body
@@ -109,7 +109,7 @@ class TestDashboardGSheetExportSmoke:
         destination = "https://docs.google.com/spreadsheets/d/1234567890abcdef/edit"
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run",
+            f"/backoffice/project/{existing_assembly.id}/dashboard/export/run",
             data={"file_type": "gsheet", "spreadsheet_url": destination, "worksheet_name": ""},
         )
 
@@ -132,7 +132,7 @@ class TestDashboardGSheetExportSmoke:
         logged_in_admin.application.extensions["gsheet_export_target_factory"] = _fake_target_factory(captured)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run",
+            f"/backoffice/project/{existing_assembly.id}/dashboard/export/run",
             data={"file_type": "gsheet", "spreadsheet_url": ""},
             follow_redirects=True,
         )
@@ -148,7 +148,7 @@ class TestDashboardGSheetExportSmoke:
         logged_in_admin.application.extensions["gsheet_export_target_factory"] = _fake_target_factory(captured)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run",
+            f"/backoffice/project/{existing_assembly.id}/dashboard/export/run",
             data={"file_type": "gsheet", "spreadsheet_url": "https://example.com/not-a-sheet"},
             follow_redirects=True,
         )
@@ -175,7 +175,7 @@ class TestDashboardGSheetExportSmoke:
         logged_in_admin.application.extensions["gsheet_export_target_factory"] = failing_factory
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run",
+            f"/backoffice/project/{existing_assembly.id}/dashboard/export/run",
             data={"file_type": "gsheet", "spreadsheet_url": VALID_DESTINATION},
             follow_redirects=True,
         )
@@ -197,7 +197,7 @@ class TestDashboardGSheetExportSmoke:
         logged_in_admin.application.extensions["gsheet_export_target_factory"] = _fake_target_factory(captured)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run",
+            f"/backoffice/project/{existing_assembly.id}/dashboard/export/run",
             data={"file_type": "gsheet", "spreadsheet_url": VALID_DESTINATION},
             follow_redirects=True,
         )
@@ -208,7 +208,7 @@ class TestDashboardGSheetExportSmoke:
     def test_modal_disables_gsheet_without_a_service_account(self, logged_in_admin, existing_assembly, monkeypatch):
         monkeypatch.setattr("opendlp.entrypoints.blueprints.backoffice.get_service_account_email", lambda: "")
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/modal")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/dashboard/export/modal")
 
         body = response.get_data(as_text=True)
         assert '<input type="radio" name="file_type" value="gsheet" disabled>' in body

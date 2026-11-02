@@ -15,8 +15,8 @@ class GlobalRole(Enum):
 
 # for forms etc
 global_role_options = {
-    GlobalRole.USER.name: _l("User — Access to the assemblies they are added to"),
-    GlobalRole.ORGANISER.name: _l("Organiser — Can create assemblies, and manage the ones they belong to"),
+    GlobalRole.USER.name: _l("User — Access to the projects they are added to"),
+    GlobalRole.ORGANISER.name: _l("Organiser — Can create projects, and manage the ones they belong to"),
     GlobalRole.ADMIN.name: _l("Admin — Full system access including user management"),
 }
 
@@ -31,11 +31,11 @@ global_role_labels = {
 # What the role means, written for the person who holds it. Shown on the
 # profile page under the label.
 global_role_descriptions = {
-    GlobalRole.USER: _l("You can see the assemblies you have been added to. An Assembly Manager can add you to one."),
+    GlobalRole.USER: _l("You can see the projects you have been added to. A Project Manager can add you to one."),
     GlobalRole.ORGANISER: _l(
-        "You can create assemblies. You can see the assemblies you have been added to, and the ones you create."
+        "You can create projects. You can see the projects you have been added to, and the ones you create."
     ),
-    GlobalRole.ADMIN: _l("You can see and manage every assembly, and manage users and invites."),
+    GlobalRole.ADMIN: _l("You can see and manage every project, and manage users and invites."),
 }
 
 
@@ -57,9 +57,9 @@ class AssemblyRole(Enum):
 
 # for forms etc
 assembly_role_options = {
-    AssemblyRole.ASSEMBLY_MANAGER.name: _l("Assembly Manager — Can manage the assembly and add other users"),
+    AssemblyRole.ASSEMBLY_MANAGER.name: _l("Project Manager — Can manage the project and add other users"),
     AssemblyRole.CONFIRMATION_CALLER.name: _l("Confirmation Caller — Can call confirmations for selected participants"),
-    AssemblyRole.READ_ONLY.name: _l("Read Only — Can view the assembly but cannot make changes"),
+    AssemblyRole.READ_ONLY.name: _l("Read Only — Can view the project but cannot make changes"),
 }
 
 

@@ -22,6 +22,7 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, RespondentStatus
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InsufficientPermissions
 from opendlp.service_layer.target_checking import (
+    DetailedCheckResult,
     TargetAnnotation,
     _annotations_from_cross_feature_issues,
     _annotations_from_infeasible_quotas,
@@ -575,3 +576,48 @@ class TestAnnotationsFromPercentageTotals:
 
         assert result.success is True
         assert result.category_annotations["gender"][0].level == "warning"
+
+
+class TestApplicableSuggestions:
+    @pytest.mark.parametrize(
+        ("annotation", "applicable"),
+        [
+            (TargetAnnotation(level="suggestion", message="", field="min", suggested_value=3), True),
+            (TargetAnnotation(level="suggestion", message="", field="max", suggested_value=0), True),
+            (TargetAnnotation(level="suggestion", message="", field="min"), False),
+            (TargetAnnotation(level="suggestion", message="", field=None, suggested_value=3), False),
+            (TargetAnnotation(level="error", message="", field="min", suggested_value=3), False),
+        ],
+        ids=["min", "max of zero", "no number", "no field", "an error"],
+    )
+    def test_only_a_numbered_min_or_max_suggestion_is_applicable(self, annotation, applicable):
+        assert annotation.is_applicable is applicable
+
+    def test_has_suggestions_when_any_value_has_an_applicable_one(self):
+        result = DetailedCheckResult(
+            success=False,
+            global_errors=[],
+            annotations={
+                "Gender": {"Male": [TargetAnnotation(level="error", message="", field="min")]},
+                "Age": {"16-29": [TargetAnnotation(level="suggestion", message="", field="max", suggested_value=4)]},
+            },
+        )
+        assert result.has_suggestions is True
+
+    def test_no_suggestions_when_none_can_be_applied(self):
+        result = DetailedCheckResult(
+            success=False,
+            global_errors=[],
+            annotations={
+                "Gender": {
+                    "Male": [
+                        TargetAnnotation(level="error", message="", field="min"),
+                        TargetAnnotation(level="suggestion", message="", field="min"),
+                    ]
+                },
+            },
+        )
+        assert result.has_suggestions is False
+
+    def test_no_suggestions_without_annotations(self):
+        assert DetailedCheckResult(success=True, global_errors=[]).has_suggestions is False

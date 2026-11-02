@@ -75,6 +75,14 @@ export function targetsPage(options) {
       this.openLeaveModal(this.discardUrl);
     },
 
+    /**
+     * Accept every suggestion row on the page at once. Each one fills its own
+     * value row in; nothing is saved until the form is.
+     */
+    acceptAllSuggestions: function () {
+      window.dispatchEvent(new CustomEvent("suggestions-accept-all"));
+    },
+
     openAddTarget: function () {
       this.newCategoryName = "";
       this.addTargetOpen = true;

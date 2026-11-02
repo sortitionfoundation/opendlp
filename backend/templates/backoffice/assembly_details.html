@@ -16,7 +16,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to Your Assemblies")
+        back_label=_("Back to Your projects")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(
@@ -33,11 +33,11 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 {% endblock %}
 
 {% block page_content %}
-    {# Assembly Question Section #}
+    {# Framing question section #}
     {% if assembly.question %}
         <div class="mb-8">
             {% call section() %}
-                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Assembly Question") }}</h2>
+                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Framing question") }}</h2>
                 <p class="text-body-lg" style="color: var(--color-body-text);">{{ assembly.question }}</p>
             {% endcall %}
         </div>
@@ -58,10 +58,10 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                     </dd>
                 </div>
 
-                {# First Assembly Date #}
+                {# First event date #}
                 {% if assembly.first_assembly_date %}
                     <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                        <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("First Assembly Date") }}</dt>
+                        <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("First event date") }}</dt>
                         <dd class="text-body-md" style="color: var(--color-body-text);">
                             {{ assembly.first_assembly_date|dateformat('long') }}
                         </dd>
@@ -137,7 +137,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                 </div>
             {% else %}
                 <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
-                    {{ _("No registration page has been created for this assembly.") }}
+                    {{ _("No registration page has been created for this project.") }}
                 </p>
             {% endif %}
 
@@ -152,6 +152,6 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 
     {# Actions #}
     <section class="flex gap-4">
-        {{ button(_("Edit Assembly"), href=url_for('backoffice.edit_assembly', assembly_id=assembly.id), variant="primary") }}
+        {{ button(_("Edit project"), href=url_for('backoffice.edit_assembly', assembly_id=assembly.id), variant="primary") }}
     </section>
 {% endblock %}

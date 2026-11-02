@@ -140,9 +140,9 @@ class TestCsvSelectionCheckData:
             num_people=50,
         )
 
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/check",
+            f"/backoffice/project/{assembly.id}/selection/db/check",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -163,9 +163,9 @@ class TestCsvSelectionRun:
         mock_task_id = uuid.uuid4()
         mock_start.return_value = mock_task_id
 
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/run",
+            f"/backoffice/project/{assembly.id}/selection/db/run",
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
@@ -185,9 +185,9 @@ class TestCsvSelectionRun:
         mock_task_id = uuid.uuid4()
         mock_start.return_value = mock_task_id
 
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/run?test=1",
+            f"/backoffice/project/{assembly.id}/selection/db/run?test=1",
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
@@ -206,9 +206,9 @@ class TestCsvSelectionRun:
         assembly = assembly_with_csv_config
         mock_start.side_effect = InvalidSelection("No respondents available")
 
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/run",
+            f"/backoffice/project/{assembly.id}/selection/db/run",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -226,9 +226,9 @@ class TestCsvSelectionCancel:
         assembly = assembly_with_csv_config
         run_id = uuid.uuid4()
 
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/cancel",
+            f"/backoffice/project/{assembly.id}/selection/db/{run_id}/cancel",
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
@@ -246,9 +246,9 @@ class TestCsvSelectionCancel:
         run_id = uuid.uuid4()
         mock_cancel.side_effect = InvalidSelection("Cannot cancel completed task")
 
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/cancel",
+            f"/backoffice/project/{assembly.id}/selection/db/{run_id}/cancel",
             data={"csrf_token": csrf_token},
             follow_redirects=True,
         )
@@ -279,7 +279,7 @@ class TestCsvSelectionDownload:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/selected")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/selected")
 
         assert response.status_code == 200
         assert response.content_type == "text/csv; charset=utf-8"
@@ -305,7 +305,7 @@ class TestCsvSelectionDownload:
             uow.selection_run_records.add(record)
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/remaining")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/remaining")
 
         assert response.status_code == 200
         assert response.content_type == "text/csv; charset=utf-8"
@@ -401,7 +401,7 @@ class TestSelectionReportDownload:
         run_id = self._completed_run_with_targets(postgres_session_factory, assembly.id)
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly.id}/selection/db/{run_id}/download/report",
+            f"/backoffice/project/{assembly.id}/selection/db/{run_id}/download/report",
         )
 
         assert response.status_code == 200
@@ -420,9 +420,9 @@ class TestSaveCsvSettings:
         """Test successfully saving CSV selection settings."""
         assembly = assembly_with_csv_config_unconfirmed
 
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/data?source=csv")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=csv")
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            f"/backoffice/project/{assembly.id}/data/csv/settings",
             data={
                 "csrf_token": csrf_token,
                 # check_same_address not included = False (no address columns required)
@@ -452,7 +452,7 @@ class TestCsvReplacementSelection:
 
     def test_review_dialog_renders_from_postgres(self, logged_in_admin, assembly_after_withdrawal):
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         assert response.status_code == 200
         html = response.data.decode()
@@ -476,11 +476,11 @@ class TestCsvReplacementSelection:
                 if category.name == "Age" and row.value == "31-50":
                     form[row.min_field] = "1"
         form["csrf_token"] = get_csrf_token(
-            logged_in_admin, f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection"
+            logged_in_admin, f"/backoffice/project/{assembly_after_withdrawal.id}/selection"
         )
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
         )
 
         assert response.status_code == 302

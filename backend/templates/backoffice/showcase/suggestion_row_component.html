@@ -1,0 +1,88 @@
+{#
+ABOUTME: Showcase section for the suggestion row component
+ABOUTME: Shows the message-only, save-on-accept and fill-in-on-accept forms of the row
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
+{% from "backoffice/components/suggestion_row.html" import suggestion_row %}
+{% from "backoffice/components/input.html" import input %}
+
+{% macro suggestion_row_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Suggestion Row") }}
+        {{ showcase_description("A full-width table row offering one suggested change to the row above it. The comment saved with the change is pre-filled and editable from the start, so accepting is a single click. Used for the algorithm's target suggestions.") }}
+
+        {{ showcase_subtitle("Fill in on accept (edit forms)") }}
+        <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+            Pass <code>apply</code> - a map of input id to value - and <code>comment_target</code>. Accept writes them into the
+            row above and fires <code>input</code> on each; the page's own Save keeps them. Undo puts back whatever has not been
+            typed over since. A <code>suggestions-accept-all</code> window event accepts every such row on the page.
+        </p>
+        {% call showcase_example('{% from "backoffice/components/suggestion_row.html" import suggestion_row %}
+
+            {{ suggestion_row(_("Suggested minimum: 3"),
+            colspan=3,
+            comment=_("Accepted algorithm suggestion — minimum 5 → 3"),
+            comment_id="accept-comment-1",
+            apply={"row-1-min": 3},
+            comment_target="row-1-comment") }}', transparent=true) %}
+            <table class="w-full text-body-md" style="border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                        <th class="py-3 pr-4 text-left text-label-md" style="color: var(--color-headings)">Value</th>
+                        <th class="py-3 px-4 text-left text-label-md" style="color: var(--color-headings)">Min</th>
+                        <th class="py-3 px-4 text-left text-label-md" style="color: var(--color-headings)">Comment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
+                        <td class="py-3 pr-4" style="color: var(--color-body-text)">Male</td>
+                        <td class="py-3 px-4">{{ input(name="", id="showcase-suggestion-min", type="number", value=5, classes="w-20", aria_label="Minimum for Male") }}</td>
+                        <td class="py-3 px-4">{{ input(name="", id="showcase-suggestion-comment", aria_label="Comment on Male") }}</td>
+                    </tr>
+                    {{ suggestion_row("Suggested minimum: 3",
+                    colspan=3,
+                    comment="Accepted algorithm suggestion — minimum 5 → 3",
+                    comment_id="showcase-suggestion-apply",
+                    apply={"showcase-suggestion-min": 3},
+                    comment_target="showcase-suggestion-comment") }}
+                </tbody>
+            </table>
+        {% endcall %}
+
+        {{ showcase_subtitle("Save on accept (read-only views)") }}
+        <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+            Pass <code>action</code> and <code>hidden_fields</code>. The row is a form: Accept posts the comment, the csrf
+            token and the hidden fields. (Submitting is switched off here.)
+        </p>
+        {% call showcase_example('{{ suggestion_row(_("Suggested maximum: 6"),
+        colspan=3,
+        comment=_("Accepted algorithm suggestion — maximum 4 → 6"),
+        comment_id="accept-comment-2",
+        action=url_for("targets.accept_suggestions", assembly_id=assembly_id),
+        hidden_fields={"scope": "one", "field": "max", ...}) }}', transparent=true) %}
+        <table class="w-full text-body-md" style="border-collapse: collapse;">
+            <tbody>
+                {{ suggestion_row("Suggested maximum: 6",
+                colspan=3,
+                comment="Accepted algorithm suggestion — maximum 4 → 6",
+                comment_id="showcase-suggestion-action",
+                action="#",
+                form_attrs="x-data @submit.prevent",
+                hidden_fields={"field": "max"}) }}
+            </tbody>
+        </table>
+    {% endcall %}
+
+    {{ showcase_subtitle("Message only") }}
+    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+        With neither, the suggestion is shown with nothing to accept - for someone who may not make the change.
+    </p>
+    {% call showcase_example('{{ suggestion_row(_("Suggested minimum: 3"), colspan=3) }}', transparent=true) %}
+        <table class="w-full text-body-md" style="border-collapse: collapse;">
+            <tbody>{{ suggestion_row("Suggested minimum: 3", colspan=3) }}</tbody>
+        </table>
+    {% endcall %}
+
+    {{ showcase_tokens(["--color-warning-100", "--color-warning-400", "--color-warning-600", "--color-secondary-text"]) }}
+{% endcall %}
+{% endmacro %}

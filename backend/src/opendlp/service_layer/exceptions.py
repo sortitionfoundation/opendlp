@@ -335,7 +335,7 @@ class CannotRemoveLastAssemblyManager(CuratedMessage, ServiceLayerError):
 
     def __init__(self) -> None:
         super().__init__(
-            _("An assembly must keep at least one Assembly Manager. Add another one before removing this one.")
+            _("A project must keep at least one Project Manager. Add another one before removing this one.")
         )
 
 

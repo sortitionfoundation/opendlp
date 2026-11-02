@@ -23,7 +23,7 @@ from opendlp.entrypoints.celery.tasks import (
 )
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 
-BLOCKED_MESSAGE = "Another task was already writing to this assembly when this one started"
+BLOCKED_MESSAGE = "Another task was already writing to this project when this one started"
 
 
 @pytest.fixture

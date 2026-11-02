@@ -174,7 +174,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                     {% endif %}
                     {% if values["method"] == "age_bracket" %}
                         {% set ranges = setup["age_ranges"] %}
-                        {% set as_of_help = _("Usually the first assembly date. Ages are worked out on this one date, so they don't change while registration is open.") %}
+                        {% set as_of_help = _("Usually the first event date. Ages are worked out on this one date, so they don't change while registration is open.") %}
                         <div x-data="ageBracketSetup"
                              data-editing="{{ 'false' if ranges['matched'] else 'true' }}"
                              data-changing-date="{{ 'false' if setup['as_of_date'] else 'true' }}"

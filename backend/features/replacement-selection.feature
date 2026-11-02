@@ -1,5 +1,5 @@
 Feature: Replacement Selection
-  As an Assembly Manager
+  As a Project Manager
   I want to select replacements
   When original selections decline or cannot participate.
 

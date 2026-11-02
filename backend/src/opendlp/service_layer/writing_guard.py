@@ -26,7 +26,7 @@ class SelectionAlreadyRunning(CuratedMessage, InvalidSelection):
 
     def __init__(self, blocking: SelectionRunRecord) -> None:
         super().__init__(
-            _("Another task is already writing to this assembly: %(task)s", task=blocking.task_type_verbose)
+            _("Another task is already writing to this project: %(task)s", task=blocking.task_type_verbose)
         )
         self.task_id = blocking.task_id
         self.task_type = blocking.task_type

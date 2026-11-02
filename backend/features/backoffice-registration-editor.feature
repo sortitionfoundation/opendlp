@@ -126,6 +126,13 @@ Feature: Backoffice registration HTML editor
     And I confirm closing the registration
     Then the registration should be shown as closed
 
+  Scenario: Re-opening a closed registration publishes it again
+    Given I am logged in as an admin user
+    And there is an assembly called "Reopen Assembly" with a closed registration form
+    When I visit the registration preview step for "Reopen Assembly"
+    And I click the Re-open registration button
+    Then the registration should be shown as published
+
   # Scroll preservation: forms/links append ?scroll=<y> on navigation
   # (x-preserve-scroll-on-submit / x-scroll-preserve-links) and the page restores
   # it on load. This exercises the restore leg deterministically. It replaces an

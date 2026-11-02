@@ -63,7 +63,7 @@ class TestReplacementProgressModal:
             patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection/replacement-modal-progress/{run_id}"
+                f"/backoffice/project/{assembly.id}/selection/replacement-modal-progress/{run_id}"
             )
 
             assert response.status_code == 200
@@ -89,7 +89,7 @@ class TestReplacementProgressModal:
             patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection/replacement-modal-progress/{run_id}"
+                f"/backoffice/project/{assembly.id}/selection/replacement-modal-progress/{run_id}"
             )
 
             assert response.status_code == 200
@@ -107,7 +107,7 @@ class TestReplacementProgressModal:
             patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection/replacement-modal-progress/{run_id}"
+                f"/backoffice/project/{assembly.id}/selection/replacement-modal-progress/{run_id}"
             )
             assert response.status_code == 404
 
@@ -124,7 +124,7 @@ class TestReplacementProgressModal:
             patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection/replacement-modal-progress/{run_id}"
+                f"/backoffice/project/{assembly.id}/selection/replacement-modal-progress/{run_id}"
             )
             assert response.status_code == 404
 
@@ -137,7 +137,7 @@ class TestReplacementProgressModal:
             side_effect=InsufficientPermissions("No access"),
         ):
             response = logged_in_admin.get(
-                f"/backoffice/assembly/{existing_assembly.id}/selection/replacement-modal-progress/{run_id}"
+                f"/backoffice/project/{existing_assembly.id}/selection/replacement-modal-progress/{run_id}"
             )
             assert response.status_code == 403
 
@@ -154,9 +154,9 @@ class TestStartReplacementLoad:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_replace_load_task",
             return_value=mock_task_id,
         ) as mock_start:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/replacement/load",
+                f"/backoffice/project/{assembly.id}/replacement/load",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -173,9 +173,9 @@ class TestStartReplacementLoad:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_replace_load_task",
             side_effect=NotFoundError("GSheet not found"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/replacement/load",
+                f"/backoffice/project/{assembly.id}/replacement/load",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -191,9 +191,9 @@ class TestStartReplacementLoad:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_replace_load_task",
             side_effect=InvalidSelection("No initial selection found"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/replacement/load",
+                f"/backoffice/project/{assembly.id}/replacement/load",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -212,9 +212,9 @@ class TestStartReplacementRun:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_replace_task",
             return_value=mock_task_id,
         ) as mock_start:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/replacement/run?min_select=3&max_select=10",
+                f"/backoffice/project/{assembly.id}/replacement/run?min_select=3&max_select=10",
                 data={"csrf_token": csrf_token, "number_to_select": "5"},
                 follow_redirects=False,
             )
@@ -235,9 +235,9 @@ class TestCancelReplacementRun:
         run_id = uuid.uuid4()
 
         with patch("opendlp.entrypoints.blueprints.gsheets.cancel_task") as mock_cancel:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/replacement/{run_id}/cancel",
+                f"/backoffice/project/{assembly.id}/replacement/{run_id}/cancel",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -255,9 +255,9 @@ class TestCancelReplacementRun:
             "opendlp.entrypoints.blueprints.gsheets.cancel_task",
             side_effect=NotFoundError("Task not found"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/replacement/{run_id}/cancel",
+                f"/backoffice/project/{assembly.id}/replacement/{run_id}/cancel",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -274,9 +274,9 @@ class TestCancelReplacementRun:
             "opendlp.entrypoints.blueprints.gsheets.cancel_task",
             side_effect=InvalidSelection("Cannot cancel completed task"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/replacement/{run_id}/cancel",
+                f"/backoffice/project/{assembly.id}/replacement/{run_id}/cancel",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -297,9 +297,9 @@ class TestStartManageTabsList:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_manage_tabs_task",
             return_value=mock_task_id,
         ) as mock_start:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/manage-tabs/start-list",
+                f"/backoffice/project/{assembly.id}/manage-tabs/start-list",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -319,9 +319,9 @@ class TestStartManageTabsList:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_manage_tabs_task",
             side_effect=NotFoundError("GSheet not found"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/manage-tabs/start-list",
+                f"/backoffice/project/{assembly.id}/manage-tabs/start-list",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -340,9 +340,9 @@ class TestStartManageTabsDelete:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_manage_tabs_task",
             return_value=mock_task_id,
         ) as mock_start:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/manage-tabs/start-delete",
+                f"/backoffice/project/{assembly.id}/manage-tabs/start-delete",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -362,9 +362,9 @@ class TestStartManageTabsDelete:
             "opendlp.entrypoints.blueprints.gsheets.start_gsheet_manage_tabs_task",
             side_effect=NotFoundError("GSheet not found"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/manage-tabs/start-delete",
+                f"/backoffice/project/{assembly.id}/manage-tabs/start-delete",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -398,7 +398,7 @@ class TestManageTabsProgress:
                 return_value=ManageOldTabsStatus(ManageOldTabsState.LIST_RUNNING),
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/manage-tabs/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/progress")
 
             assert response.status_code == 200
             assert b"manage-tabs-progress-modal" in response.data
@@ -430,7 +430,7 @@ class TestManageTabsProgress:
                 return_value=ManageOldTabsStatus(ManageOldTabsState.LIST_COMPLETED),
             ),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/manage-tabs/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/progress")
 
             assert response.status_code == 200
             assert b"Old Tab 1" in response.data
@@ -449,7 +449,7 @@ class TestManageTabsProgress:
             patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/manage-tabs/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/progress")
             assert response.status_code == 404
 
     def test_manage_tabs_progress_returns_404_wrong_assembly(self, logged_in_admin, assembly_with_gsheet):
@@ -464,7 +464,7 @@ class TestManageTabsProgress:
             patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/manage-tabs/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/progress")
             assert response.status_code == 404
 
     def test_manage_tabs_progress_returns_403_no_permission(self, logged_in_admin, existing_assembly):
@@ -475,7 +475,7 @@ class TestManageTabsProgress:
             "opendlp.entrypoints.blueprints.gsheets.get_assembly_with_permissions",
             side_effect=InsufficientPermissions("No access"),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/manage-tabs/{run_id}/progress")
+            response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/manage-tabs/{run_id}/progress")
             assert response.status_code == 403
 
 
@@ -488,9 +488,9 @@ class TestCancelManageTabs:
         run_id = uuid.uuid4()
 
         with patch("opendlp.entrypoints.blueprints.gsheets.cancel_task") as mock_cancel:
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/manage-tabs/{run_id}/cancel",
+                f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/cancel",
                 data={"csrf_token": csrf_token},
                 follow_redirects=False,
             )
@@ -508,9 +508,9 @@ class TestCancelManageTabs:
             "opendlp.entrypoints.blueprints.gsheets.cancel_task",
             side_effect=NotFoundError("Task not found"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/manage-tabs/{run_id}/cancel",
+                f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/cancel",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -525,9 +525,9 @@ class TestCancelManageTabs:
             "opendlp.entrypoints.blueprints.gsheets.cancel_task",
             side_effect=InvalidSelection("Cannot cancel completed task"),
         ):
-            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/assembly/{assembly.id}/selection")
+            csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly.id}/manage-tabs/{run_id}/cancel",
+                f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/cancel",
                 data={"csrf_token": csrf_token},
                 follow_redirects=True,
             )
@@ -561,9 +561,7 @@ class TestSelectionPageWithManageTabsContext:
                 return_value=ManageOldTabsStatus(ManageOldTabsState.LIST_RUNNING),
             ),
         ):
-            response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection?current_manage_tabs={task_id}"
-            )
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_manage_tabs={task_id}")
 
             assert response.status_code == 200
             assert b"manage-tabs-progress-modal" in response.data
@@ -594,9 +592,7 @@ class TestSelectionPageWithManageTabsContext:
                 return_value=ManageOldTabsStatus(ManageOldTabsState.LIST_COMPLETED),
             ),
         ):
-            response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection?current_manage_tabs={task_id}"
-            )
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_manage_tabs={task_id}")
 
             assert response.status_code == 200
             assert b"Selection_2024-01-01" in response.data
@@ -617,9 +613,7 @@ class TestSelectionPageWithManageTabsContext:
             patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
         ):
-            response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection?current_manage_tabs={task_id}"
-            )
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_manage_tabs={task_id}")
 
             assert response.status_code == 200
             # Modal should NOT appear because the task belongs to a different assembly
@@ -645,9 +639,7 @@ class TestSelectionPageWithReplacementContext:
             patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
             patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
         ):
-            response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection?current_replacement={task_id}"
-            )
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_replacement={task_id}")
 
             assert response.status_code == 200
             assert b"replacement-modal" in response.data
@@ -680,9 +672,7 @@ class TestSelectionPageWithReplacementContext:
             patch("opendlp.entrypoints.blueprints.gsheets.minimum_selection", return_value=3),
             patch("opendlp.entrypoints.blueprints.gsheets.maximum_selection", return_value=15),
         ):
-            response = logged_in_admin.get(
-                f"/backoffice/assembly/{assembly.id}/selection?current_replacement={task_id}"
-            )
+            response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_replacement={task_id}")
 
             assert response.status_code == 200
             assert b"replacement-modal" in response.data
@@ -694,7 +684,7 @@ class TestSelectionPageWithReplacementContext:
         """Test that replacement_modal=open param opens the replacement modal."""
         assembly, _gsheet = assembly_with_gsheet
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?replacement_modal=open")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?replacement_modal=open")
 
         assert response.status_code == 200
         assert b"replacement-modal" in response.data
@@ -721,14 +711,14 @@ class TestSelectionPageViewRunningButton:
             )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"View Running Selection" in response.data
         assert f"current_selection={run_id}".encode() in response.data
         # The check/test/run button forms should not be rendered
-        assert f"/backoffice/assembly/{assembly.id}/selection/load".encode() not in response.data
-        assert f"/backoffice/assembly/{assembly.id}/selection/run".encode() not in response.data
+        assert f"/backoffice/project/{assembly.id}/selection/load".encode() not in response.data
+        assert f"/backoffice/project/{assembly.id}/selection/run".encode() not in response.data
 
     def test_gsheet_shows_view_running_button_when_load_task_pending(
         self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
@@ -747,7 +737,7 @@ class TestSelectionPageViewRunningButton:
             )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"View Running Selection" in response.data
@@ -767,11 +757,11 @@ class TestSelectionPageViewRunningButton:
             )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"View Running Selection" not in response.data
-        assert f"/backoffice/assembly/{assembly.id}/selection/run".encode() in response.data
+        assert f"/backoffice/project/{assembly.id}/selection/run".encode() in response.data
 
     def test_gsheet_ignores_replacement_task(self, logged_in_admin, assembly_with_gsheet, postgres_session_factory):
         """A running replacement-selection task must not hijack the initial-selection card."""
@@ -788,8 +778,8 @@ class TestSelectionPageViewRunningButton:
             )
             uow.commit()
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
         assert b"View Running Selection" not in response.data
-        assert f"/backoffice/assembly/{assembly.id}/selection/run".encode() in response.data
+        assert f"/backoffice/project/{assembly.id}/selection/run".encode() in response.data

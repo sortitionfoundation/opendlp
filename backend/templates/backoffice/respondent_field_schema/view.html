@@ -14,7 +14,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to Your Assemblies")
+        back_label=_("Back to Your projects")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
@@ -37,7 +37,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
             {# Google Sheet source - fields come from the spreadsheet columns, not from this UI. #}
             {% call info_card(title=_("Fields are defined by your Google Sheets spreadsheet")) %}
                 <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                    {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Sheets spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
+                    {{ _("The fields for this project are the columns in the respondent tabs of your Google Sheets spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
                 </p>
                 <dl class="flex flex-col gap-2">
                     <div class="flex gap-2">
@@ -62,7 +62,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
         {% elif not schema_has_rows %}
             <section class="mb-8">
                 <p class="text-body-md mb-4">
-                    {{ _("No schema has been set up for this assembly yet. Upload a CSV of respondents to seed one automatically from the CSV headers, or click Initialise below to start from the built-in questions only (email, consent, eligibility, etc).") }}
+                    {{ _("No schema has been set up for this project yet. Upload a CSV of respondents to seed one automatically from the CSV headers, or click Initialise below to start from the built-in questions only (email, consent, eligibility, etc).") }}
                 </p>
                 <form method="post"
                       action="{{ url_for('respondent_field_schema.initialise_schema', assembly_id=assembly.id) }}">

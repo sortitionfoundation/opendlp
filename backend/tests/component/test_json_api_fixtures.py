@@ -54,7 +54,7 @@ class TestRegistrationImageFixtures:
     def test_upload_response_matches_schema_and_fixture(self, logged_in_admin, existing_assembly, registration_page):
         """The 201 from an image upload is the shape the assets panel renders a new row from."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            f"/backoffice/project/{existing_assembly.id}/registration/images",
             data={"image": (BytesIO(_png()), "logo.png"), "alt": "Assembly logo"},
             content_type="multipart/form-data",
         )
@@ -73,14 +73,14 @@ class TestRegistrationImageFixtures:
     ):
         """The 200 from a PATCH carries the same image shape as the upload, not a subset."""
         upload = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            f"/backoffice/project/{existing_assembly.id}/registration/images",
             data={"image": (BytesIO(_png()), "logo.png"), "alt": "Assembly logo"},
             content_type="multipart/form-data",
         )
         image_id = upload.get_json()["image"]["id"]
 
         response = logged_in_admin.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image_id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/images/{image_id}",
             json={"alt": "Assembly logo, renamed"},
         )
 
@@ -98,7 +98,7 @@ class TestRegistrationDocumentFixtures:
     def test_upload_response_matches_schema_and_fixture(self, logged_in_admin, existing_assembly, registration_page):
         """The 201 from a PDF upload is the shape the assets panel renders a new row from."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            f"/backoffice/project/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf"), "label": "Information pack"},
             content_type="multipart/form-data",
         )
@@ -127,7 +127,7 @@ class TestRegistrationSkeletonFixtures:
                 replace_existing=True,
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/skeleton")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/registration/skeleton")
 
         assert response.status_code == 200
         check_api_fixture("registration-skeleton", response.get_json(), schema_name="registration-skeleton")
@@ -137,7 +137,7 @@ class TestErrorEnvelopeFixtures:
     def test_validation_error_matches_schema_and_fixture(self, logged_in_admin, existing_assembly, registration_page):
         """A rejected upload returns the standard error envelope, not a bespoke shape."""
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            f"/backoffice/project/{existing_assembly.id}/registration/images",
             data={"image": (BytesIO(_png()), "logo.png"), "alt": "   "},
             content_type="multipart/form-data",
         )
@@ -148,7 +148,7 @@ class TestErrorEnvelopeFixtures:
     def test_permission_error_matches_schema(self, logged_in_user, existing_assembly, registration_page):
         """A 403 uses the same envelope as a 400 - the status code carries the difference."""
         response = logged_in_user.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            f"/backoffice/project/{existing_assembly.id}/registration/images",
             data={"image": (BytesIO(_png()), "logo.png"), "alt": "Assembly logo"},
             content_type="multipart/form-data",
         )
@@ -281,7 +281,7 @@ class TestRespondentFieldSpecFixtures:
                 )
             )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema.json")
 
         assert response.status_code == 200
         check_api_fixture(
@@ -292,7 +292,7 @@ class TestRespondentFieldSpecFixtures:
 
     def test_permission_error_matches_the_error_envelope(self, logged_in_user, existing_assembly):
         """A refused spec request uses the standard envelope, and carries no schema."""
-        response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+        response = logged_in_user.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema.json")
 
         assert response.status_code == 403
         assert_matches_schema(response.get_json(), "error")

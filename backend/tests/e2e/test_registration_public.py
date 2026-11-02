@@ -379,7 +379,7 @@ class TestThankYouPage:
             route_url(client, "registration.thank_you", url_slug=published_registration_page.url_slug)
         )
         assert response.status_code == 200
-        # The page uses DEFAULT_THANK_YOU_HTML from the domain
+        # A new page shows the standard thank-you page
         assert b"Thank you for registering" in response.data
 
 

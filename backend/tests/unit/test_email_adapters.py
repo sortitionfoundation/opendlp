@@ -35,6 +35,18 @@ class TestEmailAdapter:
         result = EmailAdapter._format_address(("John Doe", "john@example.com"))
         assert result == "John Doe <john@example.com>"
 
+    def test_sender_name_is_on_behalf_of_via_default(self) -> None:
+        assert EmailAdapter._sender_name("OpenDLP", "Jane Smith") == "Jane Smith via OpenDLP"
+
+    def test_sender_name_is_default_without_on_behalf_of(self) -> None:
+        assert EmailAdapter._sender_name("OpenDLP", "") == "OpenDLP"
+
+    def test_sender_name_is_on_behalf_of_without_default(self) -> None:
+        assert EmailAdapter._sender_name("", "Jane Smith") == "Jane Smith"
+
+    def test_sender_name_is_empty_when_neither_set(self) -> None:
+        assert EmailAdapter._sender_name("", "") == ""
+
 
 class TestConsoleEmailAdapter:
     """Tests for ConsoleEmailAdapter.
@@ -104,6 +116,20 @@ class TestConsoleEmailAdapter:
         )
 
         assert "Reply-To: team@example.com" in stream.getvalue()
+
+    def test_send_email_writes_on_behalf_of_as_sender_name(self) -> None:
+        """ConsoleEmailAdapter shows the on-behalf-of name on the From line."""
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
+
+        adapter.send_email(
+            to=["recipient@example.com"],
+            subject="Subject",
+            text_body="Body",
+            on_behalf_of="The Team",
+        )
+
+        assert "From: The Team <noreply@opendlp.local>" in stream.getvalue()
 
     def test_send_email_with_html(self) -> None:
         """Test console output with HTML body."""
@@ -260,6 +286,83 @@ class TestSMTPEmailAdapter:
 
             message_str = mock_server.sendmail.call_args[0][2]
             assert "Reply-To:" not in message_str
+
+    def test_send_email_on_behalf_of_sets_from_name_via_default(self) -> None:
+        """The From name becomes "<on_behalf_of> via <default name>"; the address is unchanged."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+            default_from_name="OpenDLP",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_server = MagicMock()
+            mock_smtp.return_value.__enter__.return_value = mock_server
+
+            adapter.send_email(
+                to=["recipient@example.com"],
+                subject="Test",
+                text_body="Plain text",
+                reply_to=("The Team", "team@example.com"),
+                on_behalf_of="The Team",
+            )
+
+            from_addr, _, message_str = mock_server.sendmail.call_args[0]
+            assert from_addr == "sender@example.com"
+            assert "From: The Team via OpenDLP <sender@example.com>" in message_str
+            assert "Reply-To: The Team <team@example.com>" in message_str
+
+    def test_send_email_without_on_behalf_of_uses_default_from_name(self) -> None:
+        """With no on-behalf-of name the From is the configured sender as it is."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+            default_from_name="OpenDLP",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_server = MagicMock()
+            mock_smtp.return_value.__enter__.return_value = mock_server
+
+            adapter.send_email(to=["recipient@example.com"], subject="Test", text_body="Plain text")
+
+            message_str = mock_server.sendmail.call_args[0][2]
+            assert "From: OpenDLP <sender@example.com>" in message_str
+            assert " via " not in message_str
+
+    def test_send_email_on_behalf_of_quotes_a_name_with_an_address_in_it(self) -> None:
+        """A name containing "@" is quoted, so it cannot be read as a second address."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+            default_from_name="OpenDLP",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_server = MagicMock()
+            mock_smtp.return_value.__enter__.return_value = mock_server
+
+            adapter.send_email(
+                to=["recipient@example.com"],
+                subject="Test",
+                text_body="Plain text",
+                on_behalf_of="team@example.com",
+            )
+
+            message_str = mock_server.sendmail.call_args[0][2]
+            assert 'From: "team@example.com via OpenDLP" <sender@example.com>' in message_str
 
     def test_send_email_with_multiple_recipients(self) -> None:
         """Test sending email to multiple recipients."""

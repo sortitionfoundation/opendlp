@@ -271,30 +271,70 @@ uv run alembic history
 
 ### Production Deployment Process
 
-For production deployments, follow this sequence:
+Production and staging deploy with **zero downtime**. The infrastructure is
+described in `docs/deployment.md` in the opendlp-infra repo. In outline, the
+deploy:
 
-1. **Backup the database** (always backup before migrations)
-2. **Stop the application** (to prevent concurrent access during migration)
-3. **Run migrations**: `uv run alembic upgrade head`
-4. **Start the new application version**
+1. Backs up the database.
+2. Pulls the new image.
+3. **Runs `alembic upgrade head` from the new image while the old code is still
+   serving every request.**
+4. Restarts the two gunicorn containers one at a time. For a short while, old
+   and new code serve requests side by side against the new schema.
 
-```bash
-# Example deployment script
-#!/bin/bash
-set -e
+This only works if every migration follows the rules in the next section. A
+release that can't follow them has to be deployed with
+`just update-with-downtime` on the server, which restarts everything and then
+migrates.
 
-# Backup database
-pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
+### Writing Migrations for Zero Downtime Deploys
 
-# Stop application
-docker compose down opendlp
+**The rule: the code from the previous release must keep working against the
+schema after your migration has run.** Old code keeps reading and writing for
+the length of the deploy. Because we use imperative SQLAlchemy mapping, the old
+code's mapper only selects and inserts the columns it knows about. So:
 
-# Run migrations
-uv run alembic upgrade head
+- **Adding is safe.** The old code never sees a new table or column.
+- **Removing or renaming breaks the old code.** Its queries still name the old
+  column.
+- **New constraints can break the old code's writes.** Its inserts don't set
+  columns it doesn't know about.
 
-# Start new application version
-docker compose up -d opendlp
-```
+A change that would break this rule gets split across two releases. This is the
+expand/contract pattern: release 1 expands the schema and moves the code over,
+and release 2 contracts the schema once nothing uses the old shape.
+
+| Change | Safe in one release? | How to do it |
+| --- | --- | --- |
+| Add a table | Yes | |
+| Add a nullable column | Yes | |
+| Add a NOT NULL column | Only with a `server_default` | A Python-side `default=` isn't enough: the old code doesn't know about it, so its inserts would fail. Use `server_default`, or add the column nullable, then backfill and add NOT NULL in a later release |
+| Add an index | Yes | On a large table, consider `op.create_index(..., postgresql_concurrently=True)` inside `with op.get_context().autocommit_block():` so writes aren't blocked |
+| Drop a column or table | **No** | Release 1: stop using it in the code and remove it from `orm.py`. Release 2: the migration that drops it |
+| Rename a column or table | **No** | Release 1: add the new column, write to both, read from the new one, backfill. Release 2: drop the old one |
+| Make a column NOT NULL | **No** | Release 1: the code always writes it, and a migration backfills existing rows. Release 2: add the constraint |
+| Narrow a column's type, or add a CHECK or unique constraint | **No** | Release 1: the code only writes values that satisfy it, plus a migration to clean up existing rows. Release 2: add the constraint |
+| Migrations that rewrite a whole large table | Careful | They hold locks for as long as they run, while the old code is serving. Batch the backfill, or do it in a separate data migration |
+
+Things that are not schema changes but break the same way:
+
+- **New enum values.** `EnumAsString` raises `ValueError` when it reads a value
+  the Python enum doesn't have. If new code writes a new enum value, the old
+  code fails on any row it reads with that value. Add the value in release 1
+  without writing it anywhere, and start writing it in release 2.
+- **JSON column shapes.** The old code reads JSON written by the new code.
+  Adding keys is fine. Removing or renaming keys, or changing their types,
+  follows the expand/contract pattern.
+- **Rows written during the deploy.** Old code can insert rows after the
+  migration has run, for example leaving a new nullable column NULL even though
+  the migration backfilled every existing row. New code must handle that case,
+  or a later release must backfill again.
+- **Celery task arguments.** Old code can enqueue a task that a new worker
+  runs. Give new task arguments defaults.
+
+**If a change can't be made safe**, for example because splitting it isn't
+worth it, say so clearly in the PR description, so the deploy can use
+`update-with-downtime`.
 
 ### Migration Rollback
 

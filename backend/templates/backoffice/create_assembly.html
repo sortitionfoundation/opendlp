@@ -5,18 +5,18 @@ ABOUTME: Uses assembly_form macro for creating new assemblies
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/assembly_form.html" import assembly_form %}
 
-{% block title %}{{ _("Create Assembly") }}{% endblock %}
+{% block title %}{{ _("Create project") }}{% endblock %}
 
 {% block page_content %}
     {# Page Heading #}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Create Assembly") }}</h1>
+    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Create project") }}</h1>
     <p class="text-body-lg mb-8" style="color: var(--color-secondary-text);">
-        {{ _("Set up a new citizens' assembly.") }}
+        {{ _("Set up a new project.") }}
     </p>
 
     {{ assembly_form(
     form=form,
-    submit_label=_("Create Assembly"),
+    submit_label=_("Create project"),
     cancel_url=url_for('backoffice.dashboard')
     ) }}
 {% endblock %}

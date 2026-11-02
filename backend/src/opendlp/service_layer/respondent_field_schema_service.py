@@ -286,7 +286,7 @@ def add_field(
     # Check for duplicate field_key
     existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
     if any(f.field_key == field_key for f in existing):
-        raise FieldDefinitionConflictError(_l("Field '%(key)s' already exists in this assembly", key=field_key))
+        raise FieldDefinitionConflictError(_l("Field '%(key)s' already exists in this project", key=field_key))
 
     # Compute next sort_order for this group
     per_group_next: dict[RespondentFieldGroup, int] = {}

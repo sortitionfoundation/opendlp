@@ -22,6 +22,7 @@
 {% from "backoffice/showcase/tabs_component.html" import tabs_section %}
 {% from "backoffice/showcase/stepper_component.html" import stepper_section %}
 {% from "backoffice/showcase/alert_component.html" import alert_section %}
+{% from "backoffice/showcase/suggestion_row_component.html" import suggestion_row_section %}
 {% from "backoffice/showcase/search_dropdown_component.html" import search_dropdown_section %}
 {% from "backoffice/showcase/select_dropdown_component.html" import select_dropdown_section %}
 {% from "backoffice/showcase/modal_component.html" import modal_section %}
@@ -111,6 +112,7 @@
                 <option value="components:tabs">Tabs</option>
                 <option value="components:stepper">Stepper</option>
                 <option value="components:alert">Alert</option>
+                <option value="components:suggestion-row">Suggestion Row</option>
                 <option value="components:interactivity">Alpine.js Interactivity</option>
             </select>
         </div>
@@ -177,6 +179,9 @@
             <div id="tabs" data-tab="components" style="scroll-margin-top: 6rem;">{{ tabs_section() }}</div>
             <div id="stepper" data-tab="components" style="scroll-margin-top: 6rem;">{{ stepper_section() }}</div>
             <div id="alert" data-tab="components" style="scroll-margin-top: 6rem;">{{ alert_section() }}</div>
+            <div id="suggestion-row"
+                 data-tab="components"
+                 style="scroll-margin-top: 6rem">{{ suggestion_row_section() }}</div>
             <div id="interactivity"
                  data-tab="components"
                  style="scroll-margin-top: 6rem">{{ interactivity_section() }}</div>

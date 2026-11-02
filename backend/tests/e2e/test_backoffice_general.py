@@ -11,6 +11,6 @@ def test_dashboard_loads_for_logged_in_user(logged_in_admin):
 
 def test_view_assembly_data_page_loads(logged_in_admin, existing_assembly):
     """The assembly data page loads successfully."""
-    response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data")
+    response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data")
     assert response.status_code == 200
     assert b"Data Source" in response.data or b"data" in response.data.lower()

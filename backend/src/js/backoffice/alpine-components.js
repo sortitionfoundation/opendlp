@@ -18,6 +18,7 @@ import {
   progressModalDemo,
 } from "../components/showcase-demos.js";
 import { showcaseNav } from "../components/showcase-nav.js";
+import { suggestionRow } from "../components/suggestion-row.js";
 import { tabsKeyboard } from "../components/tabs-keyboard.js";
 import { targetsPage } from "../components/targets-page.js";
 import { urlSelect } from "../components/url-select.js";
@@ -46,6 +47,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("replacementSuggestions", replacementSuggestions);
   Alpine.data("menuButton", menuButton);
   Alpine.data("showcaseNav", showcaseNav);
+  Alpine.data("suggestionRow", suggestionRow);
   Alpine.data("tabsKeyboard", tabsKeyboard);
   Alpine.data("targetsPage", targetsPage);
   Alpine.data("urlSelect", urlSelect);

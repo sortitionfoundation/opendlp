@@ -45,7 +45,7 @@ def gsheet_assembly(fake_store, admin_user):
     ],
 )
 def test_each_page_points_at_the_spreadsheet_in_an_info_card(logged_in_admin, gsheet_assembly, page, heading, detail):
-    body = logged_in_admin.get(f"/backoffice/assembly/{gsheet_assembly.id}/{page}").get_data(as_text=True)
+    body = logged_in_admin.get(f"/backoffice/project/{gsheet_assembly.id}/{page}").get_data(as_text=True)
 
     card = body[body.index('<section class="mb-8">') :]
     card = card[: card.index("</section>")]

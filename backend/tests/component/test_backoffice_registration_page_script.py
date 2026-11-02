@@ -117,7 +117,7 @@ def registration_page(fake_store, admin_user, existing_assembly):
 @pytest.fixture
 def page_html(logged_in_admin, registration_page, existing_assembly) -> str:
     response = logged_in_admin.get(
-        f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
+        f"/backoffice/project/{existing_assembly.id}/registration/{registration_page.url_slug}"
     )
     assert response.status_code == 200
     return response.get_data(as_text=True)
@@ -131,7 +131,7 @@ def every_view_html(logged_in_admin, fake_store, registration_page, existing_ass
     each renders only its own markup - so a binding lives on exactly one of them,
     and checking the default view alone would miss most of them.
     """
-    base = f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
+    base = f"/backoffice/project/{existing_assembly.id}/registration/{registration_page.url_slug}"
     views = [f"{base}?section={section}" for section in ("page", "intro", "form", "email", "preview")]
     views.append(f"{base}?section=page&edit=1")
     views.append(f"{base}?section=intro&edit=1")
@@ -216,7 +216,7 @@ class TestTheBundle:
 
     def test_is_not_loaded_on_the_page_list(self, logged_in_admin, existing_assembly):
         """Nothing on the registration page list is driven by this component, so the bundle would be dead weight."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/registration")
 
         assert response.status_code == 200
         assert "backoffice/js/registration-page.js" not in response.get_data(as_text=True)
@@ -257,7 +257,7 @@ class TestTheDataBlock:
         assert _page_data(page_html)["messages"][key]
 
     def test_says_whether_the_editor_is_unlocked(self, logged_in_admin, registration_page, existing_assembly):
-        url = f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
+        url = f"/backoffice/project/{existing_assembly.id}/registration/{registration_page.url_slug}"
 
         read_only = logged_in_admin.get(url).get_data(as_text=True)
         editing = logged_in_admin.get(f"{url}?edit=1").get_data(as_text=True)
@@ -272,7 +272,7 @@ class TestTheDataBlock:
         _seed_image(fake_store, registration_page, alt="Assembly logo")
 
         html = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
+            f"/backoffice/project/{existing_assembly.id}/registration/{registration_page.url_slug}"
         ).get_data(as_text=True)
 
         data = _page_data(html)
@@ -291,7 +291,7 @@ class TestTheDataBlock:
         _seed_image(fake_store, registration_page, alt='</script><script>alert("xss")</script>')
 
         html = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
+            f"/backoffice/project/{existing_assembly.id}/registration/{registration_page.url_slug}"
         ).get_data(as_text=True)
 
         assert "<script>alert" not in html
@@ -300,9 +300,9 @@ class TestTheDataBlock:
 
 class TestTheDataBlockWithoutAPage:
     def test_is_not_rendered_at_all(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/registration")
 
         assert 'id="registration-page-data"' not in response.get_data(as_text=True)
 
     def test_the_route_still_renders(self, logged_in_admin, existing_assembly):
-        assert logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration").status_code == 200
+        assert logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/registration").status_code == 200

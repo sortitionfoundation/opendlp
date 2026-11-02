@@ -78,7 +78,7 @@ def user_clicks_run_selection(admin_logged_in_page: Page):
 @then("the user is told another task is already running")
 def user_told_another_task_is_running(admin_logged_in_page: Page):
     expect(
-        admin_logged_in_page.get_by_text("Another task is already running on this assembly", exact=False)
+        admin_logged_in_page.get_by_text("Another task is already running on this project", exact=False)
     ).to_be_visible()
 
 

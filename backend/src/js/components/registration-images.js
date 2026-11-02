@@ -6,6 +6,7 @@ import {
   patchJson,
   postFormData,
 } from "../lib/json-request.js";
+import { writeHtmlToClipboard } from "../lib/clipboard.js";
 import { urlWithId } from "../lib/url-utils.js";
 import { INSERT_IMAGE_EVENT } from "../lib/rich-editor-events.js";
 
@@ -211,7 +212,7 @@ export function registrationImages(options) {
         return Promise.resolve();
       }
 
-      return navigator.clipboard.writeText(image.img_snippet).then(
+      return writeHtmlToClipboard(image.img_snippet).then(
         function () {
           self.showToast(messages.snippetCopied, "success");
         },

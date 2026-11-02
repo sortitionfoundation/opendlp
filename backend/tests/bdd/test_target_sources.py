@@ -25,7 +25,7 @@ _assembly_ids: dict[str, str] = {}
 
 
 def _sources_url(assembly_id: str) -> str:
-    return f"{Urls.base}/backoffice/assembly/{assembly_id}/target-sources"
+    return f"{Urls.base}/backoffice/project/{assembly_id}/target-sources"
 
 
 def _row_for(page: Page, target_name: str):
@@ -307,8 +307,8 @@ def choose_menu_item_and_confirm(admin_logged_in_page: Page, item: str) -> None:
 def rename_target(admin_logged_in_page: Page, old_name: str, new_name: str, request) -> None:
     page = admin_logged_in_page
     # The checklist page knows which assembly we're on; derive the targets URL from it.
-    assembly_id = page.url.split("/assembly/")[1].split("/")[0]
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/targets")
+    assembly_id = page.url.split("/project/")[1].split("/")[0]
+    page.goto(f"{Urls.base}/backoffice/project/{assembly_id}/targets")
     page.wait_for_load_state("networkidle")
     page.get_by_role("button", name="Edit targets").click()
     name_input = page.locator(f'#bulk-categories input[value="{old_name}"]')
@@ -326,7 +326,7 @@ def confirm_unlinking(admin_logged_in_page: Page) -> None:
 
 @when(parsers.parse('I open the respondent field schema editor for "{title}"'))
 def open_schema_editor(admin_logged_in_page: Page, title: str) -> None:
-    admin_logged_in_page.goto(f"{Urls.base}/backoffice/assembly/{_assembly_ids[title]}/respondent-schema")
+    admin_logged_in_page.goto(f"{Urls.base}/backoffice/project/{_assembly_ids[title]}/respondent-schema")
     admin_logged_in_page.wait_for_load_state("networkidle")
 
 

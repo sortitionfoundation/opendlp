@@ -1,0 +1,36 @@
+{#
+ABOUTME: Public resend-confirmation page on the OpenDLP design system
+ABOUTME: Asks for an email address and sends a new email confirmation link to it
+#}
+{% extends "public/base.html" %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input %}
+{% from "public/_page_heading.html" import page_heading %}
+{% block title %}{{ _("Resend Confirmation Email") }}{% endblock %}
+{% block content %}
+    <div class="flex flex-col gap-10">
+        {% call page_heading(_("Resend confirmation email")) %}
+            <p class="text-body-md" style="color: var(--color-body-text);">
+                {{ _("Enter your email address and we will send you a new confirmation link.") }}
+            </p>
+        {% endcall %}
+        <form method="POST" class="flex flex-col gap-4" novalidate>
+            {{ form.hidden_tag() }}
+            {{ input(form.email.name,
+            label=form.email.label.text,
+            type="email",
+            value=form.email.data or "",
+            hint=form.email.description or "",
+            error=form.email.errors | join("\n"),
+            attrs='autocomplete="email"')
+            }}
+            {{ button(_("Send confirmation link"), variant="primary", type="submit", full_width=true) }}
+        </form>
+        <p class="text-body-md text-center" style="color: var(--color-body-text);">
+            {{ _("Already confirmed your email?") }}
+            <a href="{{ url_for('auth.login') }}"
+               class="underline font-semibold"
+               style="color: var(--color-links);">{{ _("Sign in") }}</a>
+        </p>
+    </div>
+{% endblock %}

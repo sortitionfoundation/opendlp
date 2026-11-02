@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{{ _("Added to Assembly - OpenDLP") }}</title>
+        <title>{{ _("Added to project - OpenDLP") }}</title>
         <style>
             body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -69,7 +69,7 @@
     <body>
         <div class="container">
             <div class="header">
-                <h1>{{ _("You've Been Added to an Assembly!") }}</h1>
+                <h1>{{ _("You've been added to a project") }}</h1>
             </div>
             <p>
                 {% if user_name %}
@@ -80,29 +80,29 @@
             </p>
             <div class="info-box">
                 <p style="margin: 0 0 10px 0;">
-                    <strong>{{ _("Assembly:") }}</strong> {{ assembly_title }}
+                    <strong>{{ _("Project:") }}</strong> {{ assembly_title }}
                 </p>
                 <p style="margin: 0;">
                     <strong>{{ _("Your role:") }}</strong> <span class="role-badge">{{ role_name }}</span>
                 </p>
                 {% if assembly_question %}
                     <p style="margin: 10px 0 0 0;">
-                        <strong>{{ _("Assembly question:") }}</strong> {{ assembly_question }}
+                        <strong>{{ _("Framing question:") }}</strong> {{ assembly_question }}
                     </p>
                 {% endif %}
             </div>
-            <p>{{ _("You now have access to this assembly and can collaborate with your team.") }}</p>
+            <p>{{ _("You now have access to this project and can collaborate with your team.") }}</p>
             <div class="button-container">
-                <a href="{{ assembly_url }}" class="button">{{ _("View Assembly") }}</a>
+                <a href="{{ assembly_url }}" class="button">{{ _("View project") }}</a>
             </div>
             {% if role == "ASSEMBLY_MANAGER" %}
                 <p style="background-color: #fff3cd;
                           border-left: 4px solid #ffc107;
                           padding: 15px;
                           border-radius: 4px">
-                    <strong>{{ _("Assembly Manager Permissions:") }}</strong>
+                    <strong>{{ _("Project Manager permissions:") }}</strong>
                     <br>
-                    {{ _("As an Assembly Manager, you can manage the assembly configuration, add other team members, and perform all assembly operations.") }}
+                    {{ _("As a Project Manager, you can change the project's settings, add other team members, and run every part of the project.") }}
                 </p>
             {% elif role == "CONFIRMATION_CALLER" %}
                 <p style="background-color: #d1ecf1;
@@ -120,7 +120,7 @@
                           border-radius: 4px">
                     <strong>{{ _("Read Only Permissions:") }}</strong>
                     <br>
-                    {{ _("As a Read Only member, you can view the assembly but cannot make changes.") }}
+                    {{ _("As a Read Only member, you can view the project but cannot make changes.") }}
                 </p>
             {% endif %}
             <div class="footer">

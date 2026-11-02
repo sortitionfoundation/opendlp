@@ -21,6 +21,16 @@ class TestAddAndGet:
         assert retrieved.subject == "Thanks"
         assert retrieved.body_html == "<p>Hi</p>"
 
+    def test_add_and_get_round_trips_reply_to(self, email_template_backend: ContractBackend):
+        template = email_template_backend.make_email_template(
+            reply_to_name="The Team", reply_to_email="team@example.com"
+        )
+
+        retrieved = email_template_backend.repo.get(template.id)
+        assert retrieved is not None
+        assert retrieved.reply_to_name == "The Team"
+        assert retrieved.reply_to_email == "team@example.com"
+
     def test_get_nonexistent_returns_none(self, email_template_backend: ContractBackend):
         assert email_template_backend.repo.get(uuid.uuid4()) is None
 

@@ -55,7 +55,7 @@ class TestConfigureAgeBrackets:
             )
             category_id = _add_target(uow, existing_assembly, "age bracket", ["16-24", "25-39", "40+"])
 
-        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        base = f"/backoffice/project/{existing_assembly.id}/target-sources"
         response = logged_in_admin.post(
             f"{base}/{category_id}/configure",
             data={
@@ -92,7 +92,7 @@ class TestConfigureSmallMapping:
             _seed_schema(uow, admin_user, existing_assembly)
             category_id = _add_target(uow, existing_assembly, "Age group", ["Younger", "Older"])
 
-        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        base = f"/backoffice/project/{existing_assembly.id}/target-sources"
         response = logged_in_admin.post(
             f"{base}/{category_id}/configure",
             data={
@@ -120,7 +120,7 @@ class TestConfigureSmallMapping:
 
 
 def _csrf(client, assembly):
-    return get_csrf_token(client, f"/backoffice/assembly/{assembly.id}/target-sources")
+    return get_csrf_token(client, f"/backoffice/project/{assembly.id}/target-sources")
 
 
 class TestPagesRender:
@@ -131,7 +131,7 @@ class TestPagesRender:
             _seed_schema(uow, admin_user, existing_assembly)
             category_id = _add_target(uow, existing_assembly, "Region", ["North", "South"])
 
-        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        base = f"/backoffice/project/{existing_assembly.id}/target-sources"
         page = logged_in_admin.get(base)
         dialog = logged_in_admin.get(f"{base}/{category_id}/setup-modal", headers={"HX-Request": "true"})
 
@@ -155,7 +155,7 @@ class TestExactCopyLifecycle:
                 options=[ChoiceOption(value="Own"), ChoiceOption(value="Rent")],
             )
             category_id = _add_target(uow, existing_assembly, "Tenure", ["Own", "Rent"])
-        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        base = f"/backoffice/project/{existing_assembly.id}/target-sources"
 
         adopt = logged_in_admin.post(
             f"{base}/{category_id}/adopt",
@@ -201,7 +201,7 @@ class TestLookupTable:
             category_id = _add_target(uow, existing_assembly, "region", ["North", "South"])
         postcode = _field(postgres_session_factory, admin_user, existing_assembly, "postcode")
 
-        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        base = f"/backoffice/project/{existing_assembly.id}/target-sources"
         configure = logged_in_admin.post(
             f"{base}/{category_id}/configure",
             data={

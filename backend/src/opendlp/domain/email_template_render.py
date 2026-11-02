@@ -9,6 +9,7 @@ from jinja2 import TemplateSyntaxError, Undefined
 from jinja2.sandbox import SandboxedEnvironment
 
 from opendlp.domain.html_to_text import html_to_text
+from opendlp.translations import gettext as _
 
 _PARSE_ENV = SandboxedEnvironment(autoescape=True)
 
@@ -53,11 +54,30 @@ def render_template_string(subject: str, body_html: str, context: Mapping[str, A
     )
 
 
+def _syntax_error(source: str) -> TemplateSyntaxError | None:
+    try:
+        _PARSE_ENV.parse(source)
+    except TemplateSyntaxError as exc:
+        return exc
+    return None
+
+
 def template_syntax_problems(subject: str, body_html: str) -> list[str]:
     problems: list[str] = []
-    for label, source in (("subject", subject), ("body", body_html)):
-        try:
-            _PARSE_ENV.parse(source)
-        except TemplateSyntaxError as exc:
-            problems.append(f"The email {label} has a template syntax error on line {exc.lineno}: {exc.message}")
+    if subject_error := _syntax_error(subject):
+        problems.append(
+            _(
+                "The email subject has a template syntax error on line %(line)s: %(error)s",
+                line=subject_error.lineno,
+                error=subject_error.message or "",
+            )
+        )
+    if body_error := _syntax_error(body_html):
+        problems.append(
+            _(
+                "The email body has a template syntax error on line %(line)s: %(error)s",
+                line=body_error.lineno,
+                error=body_error.message or "",
+            )
+        )
     return problems

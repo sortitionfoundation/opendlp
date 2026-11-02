@@ -4,7 +4,7 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
 {% from "backoffice/components/icons.html" import icon_about, icon_arrow_back, icon_arrow_forward, icon_check, icon_check_12, icon_check_20, icon_chevron_down, icon_chevron_right, icon_chevron_up, icon_close, icon_code, icon_copy, icon_data_agreement, icon_download, icon_edit, icon_hand, icon_info, icon_logout, icon_more_vert, icon_pie_chart, icon_plus, icon_question_circle, icon_spinner, icon_sparkles, icon_switch, icon_trash, icon_undo, icon_user, icon_warning, icon_warning_20 %}
-{% from "backoffice/components/icons.html" import icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_list, icon_list_ordered, icon_list_indent_increase, icon_list_indent_decrease, icon_text_quote, icon_link, icon_image, icon_scaling, icon_separator_horizontal, icon_table, icon_undo_2, icon_redo_2 %}
+{% from "backoffice/components/icons.html" import icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_list, icon_list_ordered, icon_list_indent_increase, icon_list_indent_decrease, icon_text_quote, icon_link, icon_image, icon_scaling, icon_separator_horizontal, icon_table, icon_undo_2, icon_redo_2, icon_text_align_left, icon_text_align_center, icon_text_align_right %}
 
 {#
     A glyph and everything a reader needs to use it: how it looks small, how
@@ -178,6 +178,15 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
         ["backoffice/components/rich_editor.html"]) }}
         {{ glyph("icon_strikethrough", "Lucide", "24",
         icon_strikethrough(classes="w-4 h-4"), icon_strikethrough(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_text_align_left", "OpenDLP UI (Figma)", "24",
+        icon_text_align_left(classes="w-4 h-4"), icon_text_align_left(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_text_align_center", "OpenDLP UI (Figma)", "24",
+        icon_text_align_center(classes="w-4 h-4"), icon_text_align_center(classes="w-6 h-6"),
+        ["backoffice/components/rich_editor.html"]) }}
+        {{ glyph("icon_text_align_right", "OpenDLP UI (Figma)", "24",
+        icon_text_align_right(classes="w-4 h-4"), icon_text_align_right(classes="w-6 h-6"),
         ["backoffice/components/rich_editor.html"]) }}
         {{ glyph("icon_list", "Lucide", "24",
         icon_list(classes="w-4 h-4"), icon_list(classes="w-6 h-6"),

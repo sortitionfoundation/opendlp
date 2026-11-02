@@ -292,6 +292,28 @@ describe("mountRichEditor toolbar and links", () => {
     ]);
   });
 
+  function pastedHtml(rich, html) {
+    let result = html;
+    rich.editor.view.someProp("transformPastedHTML", (transform) => {
+      result = transform(result, rich.editor.view);
+    });
+    return result;
+  }
+
+  it("gives a pasted link on this site as a path", () => {
+    const page = setUp("<p>a</p>");
+    const rich = mount(page.textarea);
+    const html = `<a href="${window.location.origin}/register/x">Form</a>`;
+    expect(pastedHtml(rich, html)).toBe('<a href="/register/x">Form</a>');
+  });
+
+  it("keeps a pasted link on this site absolute when links must be absolute, as in an email", () => {
+    const page = setUp("<p>a</p>", 'data-rich-editor-absolute-links="true"');
+    const rich = mount(page.textarea);
+    const html = `<a href="${window.location.origin}/register/x">Form</a>`;
+    expect(pastedHtml(rich, html)).toBe(html);
+  });
+
   it("asks for an absolute address when the textarea says links must be absolute", () => {
     const capture = captureLinkRequests();
     const page = setUp("<p>a</p>", 'data-rich-editor-absolute-links="true"');

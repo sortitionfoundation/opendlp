@@ -971,6 +971,33 @@ class TestSelectionRunRecordORM:
         assert "quota 1 problem" in retrieved_run_report_text
         assert "problemo 2" in retrieved_run_report_text
 
+    def test_a_failure_on_infeasible_quotas_is_still_recognised_after_saving(self, postgres_session: Session):
+        """The progress modal reads the saved report to decide whether to offer "Adjust targets"."""
+        assembly = Assembly(title="Test Assembly", question="Test question?")
+        postgres_session.add(assembly)
+        postgres_session.flush()
+
+        task_id = uuid.uuid4()
+        run_report = RunReport()
+        features = CaseInsensitiveDict()
+        features["feat1"] = CaseInsensitiveDict()
+        features["feat1"]["value1"] = FeatureValueMinMax(min=2, max=4)
+        run_report.add_error(InfeasibleQuotasError(features=features, output=["lower the minimum"]))
+        postgres_session.add(
+            SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                status=SelectionRunStatus.FAILED,
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                run_report=run_report,
+            )
+        )
+        postgres_session.commit()
+        postgres_session.expire_all()
+
+        retrieved_record = postgres_session.query(SelectionRunRecord).filter_by(task_id=task_id).first()
+        assert retrieved_record.failed_on_infeasible_targets is True
+
     def test_selection_run_record_with_error(self, postgres_session: Session):
         """Test SelectionRunRecord with error information."""
         # Create assembly first

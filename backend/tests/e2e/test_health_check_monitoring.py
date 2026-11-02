@@ -116,7 +116,7 @@ class TestMonitorSelectionHealth:
         assert data["monitor_selection_status"] == "OK"
         assert data["monitor_cleanup_status"] == "OK"
         assert data["monitor_selection_last_run_url"]
-        assert "/assembly/" in data["monitor_selection_last_run_url"]
+        assert "/project/" in data["monitor_selection_last_run_url"]
         assert "/selection/" in data["monitor_selection_last_run_url"]
 
     @pytest.mark.db_semantics

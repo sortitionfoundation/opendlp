@@ -33,6 +33,7 @@ class _RecordingEmailAdapter(EmailAdapter):
         html_body: str | None = None,
         from_email: str | tuple[str, str] | None = None,
         reply_to: str | tuple[str, str] | None = None,
+        on_behalf_of: str = "",
     ) -> bool:
         self.sent.append({"to": to, "subject": subject, "html_body": html_body})
         return True

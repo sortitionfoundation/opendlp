@@ -155,7 +155,7 @@ def start_gsheet_select_task(
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     if assembly.number_to_select < 1:
-        raise InvalidSelection(_("The assembly needs to have a non-zero number to select before a selection can run"))
+        raise InvalidSelection(_("The project needs to have a non-zero number to select before a selection can run"))
 
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
@@ -508,7 +508,7 @@ def start_db_select_task(
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     if assembly.number_to_select < 1:
-        raise InvalidSelection(_("The assembly needs to have a non-zero number to select before a selection can run"))
+        raise InvalidSelection(_("The project needs to have a non-zero number to select before a selection can run"))
 
     sel_settings = _get_selection_settings(assembly)
     try:
@@ -953,6 +953,34 @@ def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID)
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     return uow.selection_run_records.get_latest_for_assembly(assembly_id)
+
+
+# The runs the targets page can offer to re-run, once the targets that made them
+# fail have been adjusted.
+_RERUNNABLE_FROM_TARGETS_TASK_TYPES = frozenset({
+    SelectionTaskType.SELECT_FROM_DB,
+    SelectionTaskType.TEST_SELECT_FROM_DB,
+})
+
+
+def get_selection_to_rerun(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, task_id: uuid.UUID
+) -> SelectionRunRecord | None:
+    """The failed selection `task_id` names, if the targets page may re-run it, or None.
+
+    It must be on this assembly, have failed, and be an initial or test
+    selection over the database. A re-run starts the same kind of selection,
+    so a test run is re-run as a test run - which is why the run is looked up
+    rather than its kind taken from the request.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    record = uow.selection_run_records.get_by_task_id(task_id)
+    if record is None or record.assembly_id != assembly_id:
+        return None
+    if not record.is_failed or record.task_type not in _RERUNNABLE_FROM_TARGETS_TASK_TYPES:
+        return None
+    return record.create_detached_copy()
 
 
 def _extract_exception_info(celery_result: AsyncResult) -> str:

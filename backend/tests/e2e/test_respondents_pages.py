@@ -384,7 +384,7 @@ class TestResetSelectionStatus:
             reset_task_id = next(iter(uow.selection_run_records.get_by_assembly_id(existing_assembly.id))).task_id
 
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent_id}",
+            f"/backoffice/project/{existing_assembly.id}/respondents/{respondent_id}",
         )
 
         assert response.status_code == 200

@@ -216,7 +216,7 @@ Run once per environment (via `flask shell` or a bootstrap script):
    UserAssemblyRole sequence with concrete tab names once we settle
    on them.
 
-3. Add the monitor user to the monitor assembly with the "Assembly Manager"
+3. Add the monitor user to the monitor assembly with the "Project Manager"
    role.
 
 4. Set the IDs in the environment's `.env`:

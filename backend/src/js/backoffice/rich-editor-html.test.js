@@ -1,5 +1,5 @@
 // ABOUTME: Tests for the visual editor's round-trip check, HTML normalisation and HTML layout.
-// ABOUTME: Uses the starter intros, and the real intros and auto-replies in tests/fixtures/.
+// ABOUTME: Uses the starter intros and thank-you, and the real intros and auto-replies in tests/fixtures/.
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,7 @@ import { createSchemaExtensions } from "./rich-editor-schema.js";
 import {
   formatHtml,
   normaliseHtml,
+  relativiseOwnUrls,
   roundTrip,
   roundTripsCleanly,
 } from "./rich-editor-html.js";
@@ -221,6 +222,29 @@ describe("roundTripsCleanly", () => {
   });
 });
 
+describe("text alignment", () => {
+  it("keeps a centred or right-aligned paragraph and heading, writing the style once", () => {
+    for (const html of [
+      '<p style="text-align: center">Middle</p>',
+      '<h2 style="text-align: right">Edge</h2>',
+    ]) {
+      expect(roundTripsCleanly(html, extensions)).toBe(true);
+      expect(roundTrip(html, extensions).match(/text-align/g)).toHaveLength(1);
+    }
+  });
+
+  it("keeps the rest of a block's style beside its alignment", () => {
+    const html = '<p style="color: red; text-align: center">Red middle</p>';
+    expect(roundTripsCleanly(html, extensions)).toBe(true);
+    expect(roundTrip(html, extensions).match(/text-align/g)).toHaveLength(1);
+  });
+
+  it("keeps an alignment the toolbar doesn't offer as part of the style", () => {
+    const html = '<p style="text-align: justify">Even</p>';
+    expect(roundTripsCleanly(html, extensions)).toBe(true);
+  });
+});
+
 describe("styled spans (A8 in auto-reply-plan.md)", () => {
   it("keeps a span with a style, a class and a direction", () => {
     const html =
@@ -407,6 +431,24 @@ describe("the real auto-replies", () => {
   });
 });
 
+describe("the starter thank-you page", () => {
+  // A Python test checks this fixture matches STARTER_THANK_YOU_HTML.
+  const starter = readFileSync(
+    resolve(FIXTURE_DIR, "registration_thank_you", "starter.html"),
+    "utf8",
+  );
+
+  it("round-trips cleanly, so it opens in the visual editor", () => {
+    expect(roundTripsCleanly(starter, extensions)).toBe(true);
+  });
+
+  it("keeps its restart link's variable address", () => {
+    expect(contentOf(roundTrip(starter, extensions)).hrefs).toEqual([
+      "{{ restart_url }}",
+    ]);
+  });
+});
+
 describe("the real intros", () => {
   it.each(["inline_styles_intro", "centred_image_intro"])(
     "%s round-trips cleanly",
@@ -576,5 +618,39 @@ describe("formatHtml", () => {
     expect(formatted).not.toBe(visual);
     expect(roundTrip(formatted, extensions)).toBe(visual);
     expect(roundTripsCleanly(formatted, extensions)).toBe(true);
+  });
+});
+
+describe("relativiseOwnUrls", () => {
+  const ORIGIN = "https://opendlp.example";
+
+  it("gives an image on this site as a path", () => {
+    expect(
+      relativiseOwnUrls(
+        '<img src="https://opendlp.example/register-assets/images/a.png" alt="A">',
+        ORIGIN,
+      ),
+    ).toBe('<img src="/register-assets/images/a.png" alt="A">');
+  });
+
+  it("gives a link on this site as a path, keeping its query and fragment", () => {
+    expect(
+      relativiseOwnUrls(
+        '<a href="https://opendlp.example/register/x/documents/a.pdf?v=1#p2">Leaflet</a>',
+        ORIGIN,
+      ),
+    ).toBe('<a href="/register/x/documents/a.pdf?v=1#p2">Leaflet</a>');
+  });
+
+  it("leaves URLs on other sites alone", () => {
+    const html =
+      '<p><a href="https://other.example/page">Other</a><img src="https://other.example/a.png" alt="B"></p>';
+    expect(relativiseOwnUrls(html, ORIGIN)).toBe(html);
+  });
+
+  it("leaves paths and variables alone", () => {
+    const html =
+      '<p><a href="{{ form_url }}">Form</a><img src="/static/a.png" alt="C"></p>';
+    expect(relativiseOwnUrls(html, ORIGIN)).toBe(html);
   });
 });

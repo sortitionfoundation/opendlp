@@ -106,7 +106,7 @@ class TestImageToDict:
 class TestImageRoutesRequireLogin:
     def test_upload_redirects_anonymous_to_login(self, client):
         assembly_id = uuid.uuid4()
-        response = client.post(f"/backoffice/assembly/{assembly_id}/registration/images")
+        response = client.post(f"/backoffice/project/{assembly_id}/registration/images")
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
@@ -114,7 +114,7 @@ class TestImageRoutesRequireLogin:
         assembly_id = uuid.uuid4()
         image_id = uuid.uuid4()
         response = client.patch(
-            f"/backoffice/assembly/{assembly_id}/registration/images/{image_id}",
+            f"/backoffice/project/{assembly_id}/registration/images/{image_id}",
             json={"alt": "x"},
         )
         assert response.status_code == 302
@@ -123,7 +123,7 @@ class TestImageRoutesRequireLogin:
     def test_delete_redirects_anonymous_to_login(self, client):
         assembly_id = uuid.uuid4()
         image_id = uuid.uuid4()
-        response = client.delete(f"/backoffice/assembly/{assembly_id}/registration/images/{image_id}")
+        response = client.delete(f"/backoffice/project/{assembly_id}/registration/images/{image_id}")
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
@@ -133,7 +133,7 @@ class TestUploadRoute:
         self, logged_in_admin, fake_store, existing_assembly, registration_page
     ):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            f"/backoffice/project/{existing_assembly.id}/registration/images",
             data={
                 "image": (BytesIO(_png()), "logo.png"),
                 "alt": "Hello world",
@@ -155,7 +155,7 @@ class TestUploadRoute:
 
     def test_upload_rejects_missing_alt(self, logged_in_admin, existing_assembly, registration_page):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            f"/backoffice/project/{existing_assembly.id}/registration/images",
             data={"image": (BytesIO(_png()), "logo.png"), "alt": "   "},
             content_type="multipart/form-data",
         )
@@ -164,7 +164,7 @@ class TestUploadRoute:
 
     def test_upload_rejects_missing_file(self, logged_in_admin, existing_assembly, registration_page):
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images",
+            f"/backoffice/project/{existing_assembly.id}/registration/images",
             data={"alt": "Logo"},
             content_type="multipart/form-data",
         )
@@ -178,7 +178,7 @@ class TestPatchRoute:
         image = _seed_image(fake_store, registration_page, alt="Original")
 
         response = logged_in_admin.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/images/{image.id}",
             json={"alt": "Renamed"},
         )
 
@@ -194,7 +194,7 @@ class TestPatchRoute:
         image = _seed_image(fake_store, registration_page, alt="Original")
 
         response = logged_in_admin.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/images/{image.id}",
             json={"alt": "  "},
         )
         assert response.status_code == 400
@@ -210,7 +210,7 @@ class TestDeleteRoute:
         image = _seed_image(fake_store, registration_page)
 
         response = logged_in_admin.delete(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/images/{image.id}",
+            f"/backoffice/project/{existing_assembly.id}/registration/images/{image.id}",
         )
 
         assert response.status_code == 204
@@ -233,7 +233,7 @@ class TestImageDetailsModalTemplate:
     def modal_block(self, logged_in_admin, registration_page, existing_assembly) -> str:
         """Return only the Image Details modal subsection of the rendered page."""
         url = (
-            f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}?section=form&edit=1"
+            f"/backoffice/project/{existing_assembly.id}/registration/{registration_page.url_slug}?section=form&edit=1"
         )
         response = logged_in_admin.get(url)
         assert response.status_code == 200

@@ -35,11 +35,11 @@ class TestCreateAssemblyGate:
         assert logged_in_organiser.get("/assemblies/new").status_code == 200
 
     def test_organiser_can_reach_the_backoffice_create_form(self, logged_in_organiser: FlaskClient) -> None:
-        assert logged_in_organiser.get("/backoffice/assembly/new").status_code == 200
+        assert logged_in_organiser.get("/backoffice/project/new").status_code == 200
 
     def test_user_is_refused_the_backoffice_create_form(self, logged_in_user: FlaskClient) -> None:
         """Previously a plain user got the form and a flash on submit; now the route refuses."""
-        assert logged_in_user.get("/backoffice/assembly/new").status_code == 403
+        assert logged_in_user.get("/backoffice/project/new").status_code == 403
 
 
 class TestOrganiserReachesWhatTheyCreate:
@@ -47,7 +47,7 @@ class TestOrganiserReachesWhatTheyCreate:
         self, logged_in_organiser: FlaskClient, organiser_user: User, fake_store: FakeStore
     ) -> None:
         response = logged_in_organiser.post(
-            "/backoffice/assembly/new",
+            "/backoffice/project/new",
             data={"title": "My own assembly", "question": "What should we do?", "number_to_select": "0"},
             follow_redirects=True,
         )
@@ -60,7 +60,7 @@ class TestOrganiserReachesWhatTheyCreate:
 
     def test_the_new_assembly_appears_on_their_dashboard(self, logged_in_organiser: FlaskClient) -> None:
         logged_in_organiser.post(
-            "/backoffice/assembly/new",
+            "/backoffice/project/new",
             data={"title": "On my dashboard", "question": "Shall we?", "number_to_select": "0"},
             follow_redirects=True,
         )
@@ -79,12 +79,12 @@ class TestOrganiserCannotReachSomeoneElsesAssembly:
     def test_the_assembly_url_is_refused(self, logged_in_organiser: FlaskClient, existing_assembly: Assembly) -> None:
         """The route flashes and redirects rather than rendering someone else's assembly."""
         response = logged_in_organiser.get(
-            f"/backoffice/assembly/{existing_assembly.id}",
+            f"/backoffice/project/{existing_assembly.id}",
             follow_redirects=True,
         )
 
         assert response.status_code == 200
-        assert b"You don&#39;t have permission to view this assembly" in response.data
+        assert b"You don&#39;t have permission to view this project" in response.data
         assert existing_assembly.title.encode() not in response.data
 
     def test_a_second_organiser_cannot_reach_the_first_organisers_assembly(
@@ -96,12 +96,12 @@ class TestOrganiserCannotReachSomeoneElsesAssembly:
             uow.commit()
 
         response = _login(client, _second_organiser(fake_store)).get(
-            f"/backoffice/assembly/{theirs.id}",
+            f"/backoffice/project/{theirs.id}",
             follow_redirects=True,
         )
 
         assert response.status_code == 200
-        assert b"You don&#39;t have permission to view this assembly" in response.data
+        assert b"You don&#39;t have permission to view this project" in response.data
         assert b"Not yours" not in response.data
 
 
@@ -111,23 +111,23 @@ class TestDashboardGating:
     def test_backoffice_dashboard_offers_create_to_an_admin(self, logged_in_admin: FlaskClient) -> None:
         response = logged_in_admin.get("/backoffice/dashboard")
         assert response.status_code == 200
-        assert b"Create New Assembly" in response.data
+        assert b"Create project" in response.data
 
     def test_backoffice_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/backoffice/dashboard")
         assert response.status_code == 200
-        assert b"Create New Assembly" in response.data
+        assert b"Create project" in response.data
 
     def test_backoffice_dashboard_hides_create_from_a_user(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/backoffice/dashboard")
         assert response.status_code == 200
-        assert b"Create New Assembly" not in response.data
-        assert b"Create Your First Assembly" not in response.data
+        assert b"Create project" not in response.data
+        assert b"Create your first project" not in response.data
 
     def test_a_user_with_nothing_is_told_what_to_do(self, logged_in_user: FlaskClient) -> None:
-        """The empty state must not tell someone to create an assembly they cannot create."""
+        """The empty state must not tell someone to create a project they cannot create."""
         response = logged_in_user.get("/backoffice/dashboard")
-        assert b"ask an Assembly Manager to add you" in response.data
+        assert b"ask a Project Manager to add you" in response.data
 
     def test_legacy_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/dashboard")
@@ -181,10 +181,10 @@ class TestAssemblyManagerManagesMembers:
     ) -> None:
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
 
-        response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members")
+        response = logged_in_organiser.get(f"/backoffice/project/{assembly.id}/members")
 
         assert response.status_code == 200
-        assert b"Add User to Assembly" in response.data
+        assert b"Add user to project" in response.data
 
     def test_an_exact_email_finds_the_colleague(
         self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
@@ -192,7 +192,7 @@ class TestAssemblyManagerManagesMembers:
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
         colleague = self._colleague(fake_store)
 
-        response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members/search?q={colleague.email}")
+        response = logged_in_organiser.get(f"/backoffice/project/{assembly.id}/members/search?q={colleague.email}")
 
         assert response.status_code == 200
         assert [row["id"] for row in response.get_json()] == [str(colleague.id)]
@@ -204,7 +204,7 @@ class TestAssemblyManagerManagesMembers:
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
         self._colleague(fake_store)
 
-        response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members/search?q=colle")
+        response = logged_in_organiser.get(f"/backoffice/project/{assembly.id}/members/search?q=colle")
 
         assert response.status_code == 200
         assert response.get_json() == []
@@ -214,7 +214,7 @@ class TestAssemblyManagerManagesMembers:
     ) -> None:
         colleague = self._colleague(fake_store)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=colle")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=colle")
 
         assert response.status_code == 200
         assert str(colleague.id) in [row["id"] for row in response.get_json()]
@@ -222,7 +222,7 @@ class TestAssemblyManagerManagesMembers:
     def test_a_non_member_is_refused_the_search(
         self, logged_in_organiser: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        response = logged_in_organiser.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=anyone")
+        response = logged_in_organiser.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=anyone")
 
         assert response.status_code == 403
         assert response.get_json() == []
@@ -231,14 +231,14 @@ class TestAssemblyManagerManagesMembers:
         self, logged_in_organiser: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """Otherwise the endpoint answers whether an assembly id exists."""
-        unknown = logged_in_organiser.get(f"/backoffice/assembly/{uuid.uuid4()}/members/search?q=anyone")
-        someone_elses = logged_in_organiser.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=anyone")
+        unknown = logged_in_organiser.get(f"/backoffice/project/{uuid.uuid4()}/members/search?q=anyone")
+        someone_elses = logged_in_organiser.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=anyone")
 
         assert unknown.status_code == someone_elses.status_code == 403
 
     def test_an_admin_still_gets_an_honest_not_found(self, logged_in_admin: FlaskClient) -> None:
         """An admin may see every assembly, so nothing is hidden from them."""
-        response = logged_in_admin.get(f"/backoffice/assembly/{uuid.uuid4()}/members/search?q=anyone")
+        response = logged_in_admin.get(f"/backoffice/project/{uuid.uuid4()}/members/search?q=anyone")
 
         assert response.status_code == 404
 
@@ -249,7 +249,7 @@ class TestAssemblyManagerManagesMembers:
         colleague = self._colleague(fake_store)
 
         response = logged_in_organiser.post(
-            f"/backoffice/assembly/{assembly.id}/members/add",
+            f"/backoffice/project/{assembly.id}/members/add",
             data={"user_id": str(colleague.id), "role": AssemblyRole.CONFIRMATION_CALLER.name},
             follow_redirects=True,
         )
@@ -273,7 +273,7 @@ class TestTheAssemblyKeepsAManager:
     ) -> None:
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
 
-        response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members")
+        response = logged_in_organiser.get(f"/backoffice/project/{assembly.id}/members")
 
         assert response.status_code == 200
         assert b"Last manager" in response.data
@@ -286,12 +286,12 @@ class TestTheAssemblyKeepsAManager:
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
 
         response = logged_in_organiser.post(
-            f"/backoffice/assembly/{assembly.id}/members/{organiser_user.id}/remove",
+            f"/backoffice/project/{assembly.id}/members/{organiser_user.id}/remove",
             follow_redirects=True,
         )
 
         assert response.status_code == 200
-        assert b"must keep at least one Assembly Manager" in response.data
+        assert b"must keep at least one Project Manager" in response.data
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.users.get(organiser_user.id).get_assembly_role(assembly.id) == AssemblyRole.ASSEMBLY_MANAGER
 
@@ -301,7 +301,7 @@ class TestTheAssemblyKeepsAManager:
         """An admin can put a manager back, so they are not stopped."""
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/members")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/members")
 
         assert response.status_code == 200
         assert f"members/{organiser_user.id}/remove".encode() in response.data

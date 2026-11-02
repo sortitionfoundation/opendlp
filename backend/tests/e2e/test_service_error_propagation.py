@@ -17,7 +17,7 @@ class TestRespondentsPageErrorPropagation:
     That must not extend to infrastructure failures from the same calls.
     """
 
-    URL = "/backoffice/assembly/{}/respondents"
+    URL = "/backoffice/project/{}/respondents"
 
     def test_gsheet_lookup_failure_is_not_suppressed(self, logged_in_admin, existing_assembly):
         with patch("opendlp.entrypoints.blueprints.respondents.get_assembly_gsheet", side_effect=boom()):
@@ -41,7 +41,7 @@ class TestRespondentsPageErrorPropagation:
 class TestRespondentSchemaPageErrorPropagation:
     """This view handles only the domain errors, so anything else must surface as a 500."""
 
-    URL = "/backoffice/assembly/{}/respondent-schema"
+    URL = "/backoffice/project/{}/respondent-schema"
 
     def test_gsheet_lookup_failure_is_not_suppressed(self, logged_in_admin, existing_assembly):
         with (
@@ -64,7 +64,7 @@ class TestRespondentSchemaPageErrorPropagation:
 
 
 class TestTargetsPageErrorPropagation:
-    URL = "/backoffice/assembly/{}/targets"
+    URL = "/backoffice/project/{}/targets"
 
     def test_gsheet_lookup_failure_is_not_suppressed(self, logged_in_admin, existing_assembly):
         with patch("opendlp.entrypoints.blueprints.targets.get_assembly_gsheet", side_effect=boom()):
@@ -92,7 +92,7 @@ class TestTargetsPageErrorPropagation:
 
 
 class TestSelectionPageErrorPropagation:
-    URL = "/backoffice/assembly/{}/selection"
+    URL = "/backoffice/project/{}/selection"
 
     def test_gsheet_lookup_failure_is_not_suppressed(self, logged_in_admin, existing_assembly):
         with patch("opendlp.entrypoints.blueprints.gsheets.get_assembly_gsheet", side_effect=boom()):
