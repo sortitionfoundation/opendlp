@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-30 13:39+0000\n"
+"POT-Creation-Date: 2026-11-02 11:58+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -3726,13 +3726,13 @@ msgstr ""
 "%(detail)s). Ellenőrizd, hogy az URL helyes-e, és hogy a táblázat meg "
 "van-e osztva ezzel a címmel: %(email)s."
 
-#: src/opendlp/entrypoints/celery/tasks.py:284
+#: src/opendlp/entrypoints/celery/tasks.py:290
 msgid "Starting Google Sheets load task"
 msgstr "A Google Táblázat betöltési feladatának indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:326
-#: src/opendlp/entrypoints/celery/tasks.py:466
-#: src/opendlp/entrypoints/celery/tasks.py:1197
+#: src/opendlp/entrypoints/celery/tasks.py:332
+#: src/opendlp/entrypoints/celery/tasks.py:472
+#: src/opendlp/entrypoints/celery/tasks.py:1210
 #, python-format
 msgid ""
 "Failed to load the spreadsheet due to permissions issues. Check the "
@@ -3741,25 +3741,25 @@ msgstr ""
 "A Google Táblázat betöltése jogosultsági hiba miatt sikertelen. "
 "Ellenőrizd, hogy a táblázat meg van-e osztva a következővel: %(email)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:355
+#: src/opendlp/entrypoints/celery/tasks.py:361
 #, python-format
 msgid "Loading spreadsheet with title: %(title)s"
 msgstr "Táblázat betöltése, cím: %(title)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:356
+#: src/opendlp/entrypoints/celery/tasks.py:362
 #, python-format
 msgid "Loading targets from tab: %(tab_name)s"
 msgstr "Célszámok betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:377
+#: src/opendlp/entrypoints/celery/tasks.py:383
 #, python-format
 msgid "Found %(num_features)s targets with a total of %(num_values)s values."
 msgstr ""
 "%(num_features)s kiválasztási szempont található, összesen %(num_values)s"
 " értékkel."
 
-#: src/opendlp/entrypoints/celery/tasks.py:382
-#: src/opendlp/entrypoints/celery/tasks.py:733
+#: src/opendlp/entrypoints/celery/tasks.py:388
+#: src/opendlp/entrypoints/celery/tasks.py:744
 #, python-format
 msgid ""
 "Minimum selection for targets is %(min_select)s, maximum is "
@@ -3768,45 +3768,45 @@ msgstr ""
 "A célszámok szerinti minimális kiválasztás %(min_select)s, a maximális "
 "%(max_select)s."
 
-#: src/opendlp/entrypoints/celery/tasks.py:386
+#: src/opendlp/entrypoints/celery/tasks.py:392
 #, python-format
 msgid "Loading people from tab: %(tab_name)s"
 msgstr "Emberek betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:401
+#: src/opendlp/entrypoints/celery/tasks.py:407
 #, python-format
 msgid "Loaded %(count)s people."
 msgstr "%(count)s ember betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:411
+#: src/opendlp/entrypoints/celery/tasks.py:417
 #, python-format
 msgid "Loading already selected from tab: %(tab_name)s"
 msgstr "A már kiválasztottak betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:428
+#: src/opendlp/entrypoints/celery/tasks.py:434
 #, python-format
 msgid "Loaded %(count)s already selected people."
 msgstr "%(count)s már kiválasztott ember betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:437
+#: src/opendlp/entrypoints/celery/tasks.py:443
 msgid "Google Sheets load completed successfully."
 msgstr "A Google Táblázat betöltése sikeresen befejeződött."
 
-#: src/opendlp/entrypoints/celery/tasks.py:480
+#: src/opendlp/entrypoints/celery/tasks.py:486
 #, python-format
 msgid "Failed to load the spreadsheet: %(error)s"
 msgstr "A Google Táblázat betöltése sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:514
+#: src/opendlp/entrypoints/celery/tasks.py:520
 msgid ": TEST only, do not use for real selection"
 msgstr ": CSAK TESZT, ne használd valódi kiválasztáshoz"
 
-#: src/opendlp/entrypoints/celery/tasks.py:519
+#: src/opendlp/entrypoints/celery/tasks.py:525
 #, python-format
 msgid "Starting selection algorithm for %(number)s people%(suffix)s"
 msgstr "A kiválasztási algoritmus indítása %(number)s emberre%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:532
+#: src/opendlp/entrypoints/celery/tasks.py:538
 #, python-format
 msgid ""
 "Running stratified selection with %(people_count)s people and "
@@ -3815,33 +3815,33 @@ msgstr ""
 "Rétegzett kiválasztás futtatása %(people_count)s emberrel és "
 "%(features_count)s kiválasztási szemponttal%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:558
+#: src/opendlp/entrypoints/celery/tasks.py:564
 #, python-format
 msgid "Selection completed successfully. Selected %(count)s panel(s).%(suffix)s"
 msgstr ""
 "A kiválasztás sikeresen befejeződött. %(count)s csoport-összeállítás "
 "kiválasztva.%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:575
+#: src/opendlp/entrypoints/celery/tasks.py:581
 msgid "Selection algorithm could not find panels meeting the specified criteria"
 msgstr ""
 "A kiválasztási algoritmus nem talált a megadott feltételeknek megfelelő "
 "csoport-összeállítást"
 
-#: src/opendlp/entrypoints/celery/tasks.py:579
+#: src/opendlp/entrypoints/celery/tasks.py:585
 msgid "Selection algorithm failed to find suitable panels"
 msgstr "A kiválasztási algoritmus nem talált megfelelő csoport-összeállítást"
 
-#: src/opendlp/entrypoints/celery/tasks.py:588
+#: src/opendlp/entrypoints/celery/tasks.py:594
 #, python-format
 msgid "Selection task failed: %(error)s"
 msgstr "A kiválasztási feladat sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:621
+#: src/opendlp/entrypoints/celery/tasks.py:627
 msgid "About to write selected and remaining tabs"
 msgstr "A kiválasztottak és a fennmaradók munkalapjának írása következik"
 
-#: src/opendlp/entrypoints/celery/tasks.py:646
+#: src/opendlp/entrypoints/celery/tasks.py:652
 #, python-format
 msgid ""
 "In the remaining tab there are %(count)s people who share an address with"
@@ -3851,7 +3851,7 @@ msgstr ""
 "lakik valaki mással a kiválasztottak vagy a fennmaradók közül. Ők "
 "narancssárgával vannak kiemelve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:658
+#: src/opendlp/entrypoints/celery/tasks.py:664
 #, python-format
 msgid ""
 "Successfully written %(selected_count)s selected and %(remaining_count)s "
@@ -3860,50 +3860,50 @@ msgstr ""
 "%(selected_count)s kiválasztott és %(remaining_count)s fennmaradó "
 "sikeresen kiírva a táblázatba."
 
-#: src/opendlp/entrypoints/celery/tasks.py:669
+#: src/opendlp/entrypoints/celery/tasks.py:675
 #, python-format
 msgid "Writing results failed: %(error)s"
 msgstr "Az eredmények kiírása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:710
+#: src/opendlp/entrypoints/celery/tasks.py:721
 msgid "Starting database data load"
 msgstr "Az adatbázisból való adatbetöltés indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:728
+#: src/opendlp/entrypoints/celery/tasks.py:739
 #, python-format
 msgid "Found %(num_features)s targets with %(num_values)s values."
 msgstr "%(num_features)s kiválasztási szempont található, %(num_values)s értékkel."
 
-#: src/opendlp/entrypoints/celery/tasks.py:737
+#: src/opendlp/entrypoints/celery/tasks.py:748
 msgid "Loading respondents from database"
 msgstr "Jelentkezők betöltése az adatbázisból"
 
-#: src/opendlp/entrypoints/celery/tasks.py:745
+#: src/opendlp/entrypoints/celery/tasks.py:756
 #, python-format
 msgid "Loaded %(count)s respondents."
 msgstr "%(count)s jelentkező betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:753
+#: src/opendlp/entrypoints/celery/tasks.py:764
 #, python-format
 msgid "%(num)s person already holds a place."
 msgid_plural "%(num)s people already hold a place."
 msgstr[0] "%(num)s személynek már van helye."
 msgstr[1] "%(num)s személynek már van helye."
 
-#: src/opendlp/entrypoints/celery/tasks.py:764
+#: src/opendlp/entrypoints/celery/tasks.py:775
 msgid "Database load completed successfully."
 msgstr "Az adatbázisból való betöltés sikeresen befejeződött."
 
-#: src/opendlp/entrypoints/celery/tasks.py:787
+#: src/opendlp/entrypoints/celery/tasks.py:798
 #, python-format
 msgid "Failed to load data from database: %(error)s"
 msgstr "Az adatok betöltése az adatbázisból sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:816
+#: src/opendlp/entrypoints/celery/tasks.py:827
 msgid "Writing selection results to database"
 msgstr "A kiválasztás eredményeinek írása az adatbázisba"
 
-#: src/opendlp/entrypoints/celery/tasks.py:838
+#: src/opendlp/entrypoints/celery/tasks.py:849
 #, python-format
 msgid ""
 "Successfully selected %(selected_count)s people. %(remaining_count)s "
@@ -3912,39 +3912,39 @@ msgstr ""
 "%(selected_count)s fő kiválasztva. %(remaining_count)s fő marad a "
 "jelentkezők között."
 
-#: src/opendlp/entrypoints/celery/tasks.py:850
+#: src/opendlp/entrypoints/celery/tasks.py:861
 #, python-format
 msgid "Writing results to database failed: %(error)s"
 msgstr "Az eredmények adatbázisba írása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1135
+#: src/opendlp/entrypoints/celery/tasks.py:1148
 msgid "listing"
 msgstr "listázása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1135
+#: src/opendlp/entrypoints/celery/tasks.py:1148
 msgid "deleting"
 msgstr "törlése"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1139
+#: src/opendlp/entrypoints/celery/tasks.py:1152
 #, python-format
 msgid "Starting task to %(action)s old output tabs"
 msgstr "A régi kimeneti munkalapok %(action)s – a feladat indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1151
+#: src/opendlp/entrypoints/celery/tasks.py:1164
 msgid "No old output tabs found"
 msgstr "Nem található régi kimeneti munkalap"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1153
+#: src/opendlp/entrypoints/celery/tasks.py:1166
 #, python-format
 msgid "Found %(count)s old output tab(s) that can be deleted"
 msgstr "%(count)s törölhető régi kimeneti munkalap található"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1155
+#: src/opendlp/entrypoints/celery/tasks.py:1168
 #, python-format
 msgid "Successfully deleted %(count)s old output tab(s)"
 msgstr "%(count)s régi kimeneti munkalap sikeresen törölve"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1212
+#: src/opendlp/entrypoints/celery/tasks.py:1225
 #, python-format
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A régi munkalapok %(action)s sikertelen: %(error)s"
@@ -4351,21 +4351,21 @@ msgstr "Az űrlapban már van HTML, ezért változatlan maradt"
 msgid "intro HTML"
 msgstr "bevezető HTML"
 
-#: src/opendlp/service_layer/replacement_targets.py:348
+#: src/opendlp/service_layer/replacement_targets.py:347
 msgid "The targets have changed since this dialog opened. Review them again."
 msgstr ""
 "A célszámok megváltoztak a párbeszédablak megnyitása óta. Nézd át őket "
 "újra."
 
-#: src/opendlp/service_layer/replacement_targets.py:353
+#: src/opendlp/service_layer/replacement_targets.py:352
 msgid "Enter whole numbers of zero or more"
 msgstr "Nullát vagy annál nagyobb egész számot adj meg"
 
-#: src/opendlp/service_layer/replacement_targets.py:356
+#: src/opendlp/service_layer/replacement_targets.py:355
 msgid "Maximum must be at least the minimum"
 msgstr "A maximum nem lehet kisebb a minimumnál"
 
-#: src/opendlp/service_layer/replacement_targets.py:403
+#: src/opendlp/service_layer/replacement_targets.py:402
 #, python-format
 msgid ""
 "The targets cannot all be met at once: %(target_needing)s needs at least "
@@ -4374,7 +4374,7 @@ msgstr ""
 "A célszámok nem teljesíthetők egyszerre: %(target_needing)s legalább "
 "%(min)s főt igényel, de %(target_allowing)s legfeljebb %(max)s főt enged"
 
-#: src/opendlp/service_layer/replacement_targets.py:414
+#: src/opendlp/service_layer/replacement_targets.py:413
 #, python-format
 msgid ""
 "%(target)s needs at least %(sum)s replacements, more than the %(number)s "
@@ -4383,7 +4383,7 @@ msgstr ""
 "%(target)s legalább %(sum)s pótszemélyt igényel, többet, mint a "
 "kiválasztandó %(number)s"
 
-#: src/opendlp/service_layer/replacement_targets.py:423
+#: src/opendlp/service_layer/replacement_targets.py:422
 #, python-format
 msgid ""
 "%(target)s allows at most %(sum)s replacements, fewer than the %(number)s"
@@ -4392,13 +4392,13 @@ msgstr ""
 "%(target)s legfeljebb %(sum)s pótszemélyt enged, kevesebbet, mint a "
 "kiválasztandó %(number)s"
 
-#: src/opendlp/service_layer/replacement_targets.py:473
+#: src/opendlp/service_layer/replacement_targets.py:472
 msgid "Enter a whole number of replacements to select, one or more"
 msgstr ""
 "A kiválasztandó pótszemélyek számához adj meg egy egész számot, legalább "
 "1-et"
 
-#: src/opendlp/service_layer/replacement_targets.py:517
+#: src/opendlp/service_layer/replacement_targets.py:516
 #, python-format
 msgid ""
 "Needs at least %(min)s but only %(num)s eligible person with this value "
@@ -4413,7 +4413,7 @@ msgstr[1] ""
 "Legalább %(min)s fő kell, de csak %(num)s jogosult jelentkező maradt "
 "ezzel az értékkel"
 
-#: src/opendlp/service_layer/replacement_targets.py:555
+#: src/opendlp/service_layer/replacement_targets.py:554
 msgid ""
 "The feasibility check could not be completed. The selection can still be "
 "run."
@@ -4421,7 +4421,7 @@ msgstr ""
 "A megvalósíthatósági ellenőrzés nem fejeződött be. A kiválasztás ettől "
 "még futtatható."
 
-#: src/opendlp/service_layer/replacement_targets.py:587
+#: src/opendlp/service_layer/replacement_targets.py:586
 #, python-format
 msgid ""
 "Only %(num)s eligible person is in the pool, fewer than the %(number)s to"
@@ -4779,7 +4779,7 @@ msgstr ""
 "%(letter)s oszlop %(row)d. sorában null karakter van, amely nem menthető "
 "el. Távolítsd el, majd töltsd fel újra a fájlt."
 
-#: src/opendlp/service_layer/target_checking.py:143
+#: src/opendlp/service_layer/target_checking.py:145
 #, python-format
 msgid ""
 "Sum of max values (%(value)s) is the smallest across all targets — "
@@ -4788,7 +4788,7 @@ msgstr ""
 "A maximumok összege (%(value)s) a legkisebb az összes kiválasztási "
 "szempont közül – ütközik '%(other)s' kiválasztási szemponttal"
 
-#: src/opendlp/service_layer/target_checking.py:156
+#: src/opendlp/service_layer/target_checking.py:158
 #, python-format
 msgid ""
 "Sum of min values (%(value)s) is the largest across all targets — "
@@ -4797,43 +4797,57 @@ msgstr ""
 "A minimumok összege (%(value)s) a legnagyobb az összes kiválasztási "
 "szempont közül – ütközik '%(other)s' kiválasztási szemponttal"
 
-#: src/opendlp/service_layer/target_checking.py:170
+#: src/opendlp/service_layer/target_checking.py:172
 #, python-format
 msgid "Sum of minimums (%(sum)s) exceeds number to select (%(limit)s)"
 msgstr ""
 "A minimumok összege (%(sum)s) meghaladja a kiválasztandók számát "
 "(%(limit)s)"
 
-#: src/opendlp/service_layer/target_checking.py:183
+#: src/opendlp/service_layer/target_checking.py:185
 #, python-format
 msgid "Sum of maximums (%(sum)s) is less than number to select (%(limit)s)"
 msgstr ""
 "A maximumok összege (%(sum)s) kevesebb, mint a kiválasztandók száma "
 "(%(limit)s)"
 
-#: src/opendlp/service_layer/target_checking.py:204
+#: src/opendlp/service_layer/target_checking.py:206
 #, python-format
 msgid "Need minimum %(min)s but only %(count)s respondents match"
 msgstr "Legalább %(min)s szükséges, de csak %(count)s jelentkező felel meg"
 
-#: src/opendlp/service_layer/target_checking.py:231
+#: src/opendlp/service_layer/target_checking.py:233
 #: templates/backoffice/components/db_replacement_modal.html:197
 #, python-format
 msgid "Suggested minimum: %(value)s (currently %(current)s)"
 msgstr "Javasolt minimum: %(value)s (jelenleg %(current)s)"
 
-#: src/opendlp/service_layer/target_checking.py:247
+#: src/opendlp/service_layer/target_checking.py:249
 #: templates/backoffice/components/db_replacement_modal.html:199
 #, python-format
 msgid "Suggested maximum: %(value)s (currently %(current)s)"
 msgstr "Javasolt maximum: %(value)s (jelenleg %(current)s)"
 
-#: src/opendlp/service_layer/target_checking.py:298
+#: src/opendlp/service_layer/target_checking.py:270
+#, python-format
+msgid ""
+"There are only %(people)s respondents in the pool, fewer than the "
+"%(number)s to select, so the targets could not be checked to see whether "
+"a selection can meet them."
+msgstr ""
+
+#: src/opendlp/service_layer/target_checking.py:312
 #, python-format
 msgid "Percentages for this target add up to %(total)s%%, not 100%%"
 msgstr ""
 "Ebben a kiválasztási szempontban a százalékos arányok összege "
 "%(total)s%%, nem 100%%"
+
+#: src/opendlp/service_layer/target_checking.py:379
+msgid ""
+"There are no respondents in the pool yet, so the targets have not been "
+"checked against them."
+msgstr ""
 
 #: src/opendlp/service_layer/target_csv_import.py:130
 #, python-format
@@ -5103,7 +5117,7 @@ msgstr "Fiók létrehozása"
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
 #: templates/respondents/view_respondents.html:13
-#: templates/targets/view_targets.html:220
+#: templates/targets/view_targets.html:230
 msgid "There is a problem"
 msgstr "Probléma merült fel"
 
@@ -5343,7 +5357,8 @@ msgstr "Ismeretlen"
 #: templates/profile/2fa_backup_codes.html:19
 #: templates/profile/2fa_setup.html:37
 #: templates/targets/components/category_block.html:185
-#: templates/targets/view_targets.html:212
+#: templates/targets/view_targets.html:28
+#: templates/targets/view_targets.html:222
 msgid "Warning"
 msgstr "Figyelem"
 
@@ -6773,7 +6788,7 @@ msgstr "Célszám hozzáadása"
 msgid "Edit targets"
 msgstr "Célszámok szerkesztése"
 
-#: templates/backoffice/assembly_targets.html:138
+#: templates/backoffice/assembly_targets.html:144
 #, python-format
 msgid ""
 "All checks passed. Found %(num_features)s targets and %(num_people)s "
@@ -6783,14 +6798,14 @@ msgstr ""
 "%(num_people)s jogosult jelentkező található. A célszámok készen állnak a"
 " kiválasztásra."
 
-#: templates/backoffice/assembly_targets.html:147
-#: templates/targets/view_targets.html:41
-#: templates/targets/view_targets.html:52
-#: templates/targets/view_targets.html:61
+#: templates/backoffice/assembly_targets.html:153
+#: templates/targets/view_targets.html:51
+#: templates/targets/view_targets.html:62
+#: templates/targets/view_targets.html:71
 msgid "Target check found problems"
 msgstr "A célszámok ellenőrzése problémákat talált"
 
-#: templates/backoffice/assembly_targets.html:155
+#: templates/backoffice/assembly_targets.html:161
 msgid ""
 "Target check found problems. See details below next to the affected "
 "targets."
@@ -6798,7 +6813,7 @@ msgstr ""
 "A célszámok ellenőrzése problémákat talált. A részleteket alább, az "
 "érintett célszámok mellett találod."
 
-#: templates/backoffice/assembly_targets.html:173
+#: templates/backoffice/assembly_targets.html:179
 msgid ""
 "The algorithm has recommended target changes. Accept them individually "
 "below, or all at once here."
@@ -6806,33 +6821,33 @@ msgstr ""
 "Az algoritmus módosításokat javasolt a célszámokhoz. Fogadd el őket alább"
 " egyenként, vagy itt egyszerre."
 
-#: templates/backoffice/assembly_targets.html:176
-#: templates/backoffice/assembly_targets.html:187
+#: templates/backoffice/assembly_targets.html:182
+#: templates/backoffice/assembly_targets.html:193
 msgid "Accept all suggestions"
 msgstr "Minden javaslat elfogadása"
 
-#: templates/backoffice/assembly_targets.html:196
+#: templates/backoffice/assembly_targets.html:202
 msgid "Accept all and re-run test selection"
 msgstr "Minden elfogadása és a tesztkiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:196
+#: templates/backoffice/assembly_targets.html:202
 msgid "Accept all and re-run selection"
 msgstr "Minden elfogadása és a kiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:239
+#: templates/backoffice/assembly_targets.html:245
 #: templates/backoffice/components/leave_guard_modal.html:17
 msgid "Discard changes"
 msgstr "Módosítások elvetése"
 
-#: templates/backoffice/assembly_targets.html:241
+#: templates/backoffice/assembly_targets.html:247
 msgid "Save and re-run test selection"
 msgstr "Mentés és a tesztkiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:241
+#: templates/backoffice/assembly_targets.html:247
 msgid "Save and re-run selection"
 msgstr "Mentés és a kiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:243
+#: templates/backoffice/assembly_targets.html:249
 #: templates/backoffice/components/edit_number_to_select_modal.html:41
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:23
@@ -10020,7 +10035,7 @@ msgstr ""
 " a minimumokat és a maximumokat utána a Célszámok lapon állíthatod be."
 
 #: templates/backoffice/targets/create_from_columns_modal.html:42
-#: templates/targets/view_targets.html:118
+#: templates/targets/view_targets.html:128
 msgid ""
 "These columns have few distinct values and are likely useful as targets. "
 "Select the columns you want to use as targets."
@@ -10037,19 +10052,19 @@ msgstr "%(column)s (%(count)s érték)"
 
 #: templates/backoffice/targets/create_from_columns_modal.html:49
 #: templates/backoffice/targets/create_from_columns_modal.html:76
-#: templates/targets/view_targets.html:136
-#: templates/targets/view_targets.html:179
+#: templates/targets/view_targets.html:146
+#: templates/targets/view_targets.html:189
 msgid "already defined"
 msgstr "már meghatározva"
 
 #: templates/backoffice/targets/create_from_columns_modal.html:65
-#: templates/targets/view_targets.html:154
+#: templates/targets/view_targets.html:164
 #, python-format
 msgid "Other columns (%(count)s)"
 msgstr "Egyéb oszlopok (%(count)s)"
 
 #: templates/backoffice/targets/create_from_columns_modal.html:69
-#: templates/targets/view_targets.html:159
+#: templates/targets/view_targets.html:169
 msgid ""
 "These columns have many different values and probably aren't useful as "
 "targets. Only the target will be created; values will not be added "
@@ -10060,7 +10075,7 @@ msgstr ""
 "jön létre; az értékek nem kerülnek be automatikusan."
 
 #: templates/backoffice/targets/create_from_columns_modal.html:88
-#: templates/targets/view_targets.html:190
+#: templates/targets/view_targets.html:200
 msgid "Add selected targets"
 msgstr "Kijelölt kiválasztási szempontok hozzáadása"
 
@@ -11700,7 +11715,7 @@ msgstr ""
 " tetszőleges további attribútumoszlopokat."
 
 #: templates/respondents/view_respondents.html:78
-#: templates/targets/view_targets.html:252
+#: templates/targets/view_targets.html:262
 msgid "Upload CSV"
 msgstr "CSV feltöltése"
 
@@ -11762,11 +11777,11 @@ msgstr "%(count)s kiválasztási szempont meghatározva."
 msgid "Check targets in detail"
 msgstr "Célszámok részletes ellenőrzése"
 
-#: templates/targets/view_targets.html:27
+#: templates/targets/view_targets.html:37
 msgid "All checks passed"
 msgstr "Minden ellenőrzés sikeres"
 
-#: templates/targets/view_targets.html:31
+#: templates/targets/view_targets.html:41
 #, python-format
 msgid ""
 "Found %(num_features)s targets and %(num_people)s eligible respondents. "
@@ -11775,37 +11790,37 @@ msgstr ""
 "%(num_features)s kiválasztási szempont és %(num_people)s jogosult "
 "jelentkező található. A célszámok készen állnak a kiválasztásra."
 
-#: templates/targets/view_targets.html:54
-#: templates/targets/view_targets.html:68
+#: templates/targets/view_targets.html:64
+#: templates/targets/view_targets.html:78
 msgid "See details below next to the affected targets."
 msgstr "A részleteket alább, az érintett célszámok mellett találod."
 
-#: templates/targets/view_targets.html:111
+#: templates/targets/view_targets.html:121
 msgid "Respondent data columns"
 msgstr "Jelentkezői adatoszlopok"
 
-#: templates/targets/view_targets.html:134
-#: templates/targets/view_targets.html:176
+#: templates/targets/view_targets.html:144
+#: templates/targets/view_targets.html:186
 msgid "values"
 msgstr "érték"
 
-#: templates/targets/view_targets.html:198
+#: templates/targets/view_targets.html:208
 msgid "Import from CSV"
 msgstr "Importálás CSV-ből"
 
-#: templates/targets/view_targets.html:202
+#: templates/targets/view_targets.html:212
 msgid "Upload a CSV file with columns either:"
 msgstr "Tölts fel egy CSV fájlt a következő oszlopokkal:"
 
-#: templates/targets/view_targets.html:204
+#: templates/targets/view_targets.html:214
 msgid "category, name, min, max."
 msgstr "category, name, min, max."
 
-#: templates/targets/view_targets.html:206
+#: templates/targets/view_targets.html:216
 msgid "feature, value, min, max."
 msgstr "feature, value, min, max."
 
-#: templates/targets/view_targets.html:213
+#: templates/targets/view_targets.html:223
 msgid "Uploading a CSV will replace all existing target categories."
 msgstr "A CSV feltöltése lecseréli az összes meglévő kiválasztási szempontot."
 

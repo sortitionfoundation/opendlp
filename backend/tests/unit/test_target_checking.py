@@ -365,25 +365,119 @@ class TestCheckTargetsDetailed:
         # (empty features is not an error at the parse level)
         assert result.num_features == 0
 
-    def test_no_respondents_returns_global_error(self, uow):
-        targets = [
+    @staticmethod
+    def _gender_targets(min_val: int = 3, max_val: int = 7) -> list[TargetCategory]:
+        return [
             TargetCategory(
                 assembly_id=uuid.uuid4(),
                 name="gender",
                 values=[
-                    TargetValue(value="male", min=3, max=7),
-                    TargetValue(value="female", min=3, max=7),
+                    TargetValue(value="male", min=min_val, max=max_val),
+                    TargetValue(value="female", min=min_val, max=max_val),
                 ],
             ),
         ]
+
+    @staticmethod
+    def _gender_respondents(count: int, **kwargs) -> list[Respondent]:
+        return [
+            Respondent(
+                assembly_id=uuid.uuid4(),
+                external_id=f"p{i}",
+                attributes={"gender": "male" if i % 2 == 0 else "female"},
+                selection_status=RespondentStatus.POOL,
+                **kwargs,
+            )
+            for i in range(count)
+        ]
+
+    def test_no_respondents_is_a_warning_not_an_error(self, uow):
         uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
-            uow, number_to_select=10, target_categories=targets, respondents=[]
+            uow, number_to_select=10, target_categories=self._gender_targets(), respondents=[]
+        )
+
+        result = check_targets_detailed(uow, user_id, assembly_id)
+
+        assert result.success is True
+        assert result.global_errors == []
+        assert result.global_warnings == [
+            "There are no respondents in the pool yet, so the targets have not been checked against them."
+        ]
+        assert result.num_features == 1
+        assert result.num_people == 0
+        assert result.annotations == {}
+
+    def test_ineligible_respondents_do_not_count_as_a_pool(self, uow):
+        uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow,
+            number_to_select=10,
+            target_categories=self._gender_targets(),
+            respondents=self._gender_respondents(20, eligible=False),
+        )
+
+        result = check_targets_detailed(uow, user_id, assembly_id)
+
+        assert result.global_errors == []
+        assert len(result.global_warnings) == 1
+
+    def test_no_respondents_still_reports_targets_that_conflict_with_the_number_to_select(self, uow):
+        # sum of mins = 16 > number_to_select = 10, which needs no respondents to see
+        uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow, number_to_select=10, target_categories=self._gender_targets(8, 10), respondents=[]
         )
 
         result = check_targets_detailed(uow, user_id, assembly_id)
 
         assert result.success is False
-        assert len(result.global_errors) > 0
+        assert [ann.message for ann in result.category_annotations["gender"]] == [
+            "Sum of minimums (16) exceeds number to select (10)"
+        ]
+        assert len(result.global_warnings) == 1
+
+    def test_fewer_respondents_than_the_number_to_select_skips_the_feasibility_check(self, uow):
+        uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow,
+            number_to_select=10,
+            target_categories=self._gender_targets(1, 7),
+            respondents=self._gender_respondents(6),
+        )
+
+        result = check_targets_detailed(uow, user_id, assembly_id)
+
+        assert result.success is True
+        assert result.global_errors == []
+        assert result.global_warnings == [
+            (
+                "There are only 6 respondents in the pool, fewer than the 10 to select, "
+                "so the targets could not be checked to see whether a selection can meet them."
+            )
+        ]
+        assert result.num_people == 6
+        assert result.annotations == {}
+
+    def test_fewer_respondents_than_the_number_to_select_still_checks_each_value(self, uow):
+        # 3 of each gender in the pool, but each needs at least 4
+        uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow,
+            number_to_select=10,
+            target_categories=self._gender_targets(4, 7),
+            respondents=self._gender_respondents(6),
+        )
+
+        result = check_targets_detailed(uow, user_id, assembly_id)
+
+        assert result.success is False
+        assert set(result.annotations["gender"]) == {"male", "female"}
+        assert len(result.global_warnings) == 1
+
+    def test_enough_respondents_gives_no_warning(self, uow):
+        uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow, number_to_select=10, target_categories=self._gender_targets(), respondents=self._gender_respondents(20)
+        )
+
+        result = check_targets_detailed(uow, user_id, assembly_id)
+
+        assert result.global_warnings == []
 
     def test_cross_feature_min_exceeds_number_to_select(self, uow):
         targets = [
