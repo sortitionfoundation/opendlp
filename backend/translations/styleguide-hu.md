@@ -169,6 +169,8 @@ yet. Use them consistently until someone does.
 | your own thank-you page | saját köszönőoldal | *(unreviewed)* |
 | name / email address for replies | a válaszokhoz megadott név / e-mail cím | *(unreviewed)* |
 | Reply-to (label) | Válaszcím | *(unreviewed)* |
+| the address the email is sent from | a feladó e-mail címe | *(unreviewed)* |
+| write to {{ reply_to_email }} (auto-reply body) | írjon nekünk ide: {{ reply_to_email }} | *(unreviewed)* |
 | re-open (a closed registration) | újranyitás | *(unreviewed)* |
 | align left / centre / right (rich editor) | balra / középre / jobbra igazítás | *(unreviewed)* |
 | template syntax error | sablonszintaxis-hiba | *(unreviewed)* |
@@ -184,6 +186,9 @@ with a letter in it, so "[10–20]" would slip through where "[10–20 főt]" is
 caught. The list of dates puts the date first and an en dash after it,
 "<strong>[Dátum]</strong> – …", rather than the English colon, because a
 Hungarian date ends in a full stop and "2026. november 14.:" reads badly.
+`{{ reply_to_email }}` follows a colon, "írjon nekünk ide: {{ reply_to_email }}",
+rather than "a(z) {{ reply_to_email }} címre": the article depends on how the
+address begins, which the template cannot know.
 
 **A sentence built from link placeholders** — `View %(own_link)s or the
 %(standard_link)s (opens in a new tab).` — carries its article and case ending
