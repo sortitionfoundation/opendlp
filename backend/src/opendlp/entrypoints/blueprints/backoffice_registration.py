@@ -712,7 +712,7 @@ def _default_email_template_content() -> dict[str, str]:
             "<p>You can read how we look after your details in our privacy policy: "
             "[link to your privacy policy].</p>\n"
             "<p>If you have any questions, or your plans change and you can no longer take part, "
-            "please reply to this email as soon as you can.</p>\n"
+            "please reply to this email or write to {{ reply_to_email }} as soon as you can.</p>\n"
             "<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>"
         ),
     }
