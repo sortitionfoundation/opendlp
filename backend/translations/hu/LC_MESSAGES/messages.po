@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-02 11:58+0000\n"
+"POT-Creation-Date: 2026-11-02 18:26+0100\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -544,8 +544,9 @@ msgstr "Megtekintő – Megtekintheti a projektet, de nem módosíthat"
 #: src/opendlp/domain/value_objects.py:74 templates/admin/invite_view.html:64
 #: templates/admin/invites.html:89 templates/admin/user_view.html:58
 #: templates/admin/users.html:91 templates/admin/users.html:140
-#: templates/profile/view.html:44 templates/profile/view.html:77
-#: templates/profile/view.html:128
+#: templates/backoffice/profile/view.html:71
+#: templates/backoffice/profile/view.html:99
+#: templates/backoffice/profile/view.html:134
 msgid "Active"
 msgstr "Aktív"
 
@@ -731,9 +732,10 @@ msgstr "Nem"
 #: templates/backoffice/assembly_edit_respondent.html:77
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:164
+#: templates/backoffice/profile/view.html:47
+#: templates/backoffice/profile/view.html:52
+#: templates/backoffice/profile/view.html:73
 #: templates/gsheets/components/view_config.html:41
-#: templates/profile/view.html:19 templates/profile/view.html:25
-#: templates/profile/view.html:46
 msgid "Not set"
 msgstr "Nincs beállítva"
 
@@ -786,14 +788,15 @@ msgstr "Adj meg egy teljes http:// vagy https:// című webcímet"
 
 #: src/opendlp/entrypoints/forms.py:132 src/opendlp/entrypoints/forms.py:261
 #: src/opendlp/entrypoints/forms.py:302 src/opendlp/entrypoints/forms.py:313
+#: templates/backoffice/profile/view.html:42
 #: templates/backoffice/registration/_step_email.html:115
-#: templates/profile/view.html:11 templates/public/register.html:79
+#: templates/public/register.html:79
 msgid "Email address"
 msgstr "E-mail cím"
 
 #: src/opendlp/entrypoints/forms.py:136 src/opendlp/entrypoints/forms.py:267
 #: src/opendlp/entrypoints/forms.py:628 templates/admin/user_view.html:70
-#: templates/profile/view.html:41
+#: templates/backoffice/profile/view.html:68
 msgid "Password"
 msgstr "Jelszó"
 
@@ -823,13 +826,13 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
 #: src/opendlp/entrypoints/forms.py:249 src/opendlp/entrypoints/forms.py:516
 #: src/opendlp/entrypoints/forms.py:588 templates/admin/user_view.html:29
-#: templates/profile/view.html:17
+#: templates/backoffice/profile/view.html:45
 msgid "First Name"
 msgstr "Keresztnév"
 
 #: src/opendlp/entrypoints/forms.py:255 src/opendlp/entrypoints/forms.py:523
 #: src/opendlp/entrypoints/forms.py:595 templates/admin/user_view.html:39
-#: templates/profile/view.html:23
+#: templates/backoffice/profile/view.html:50
 msgid "Last Name"
 msgstr "Vezetéknév"
 
@@ -5086,8 +5089,8 @@ msgstr "Sortition Lab"
 msgid "Help"
 msgstr "Súgó"
 
-#: templates/base.html:77 templates/profile/view.html:3
-#: templates/profile/view.html:7
+#: templates/backoffice/profile/view.html:22
+#: templates/backoffice/profile/view.html:27 templates/base.html:77
 msgid "My Account"
 msgstr "Fiókom"
 
@@ -5205,9 +5208,9 @@ msgstr "Meghívók kezelése"
 #: templates/backoffice/assembly_respondents.html:23
 #: templates/backoffice/assembly_selection.html:19
 #: templates/backoffice/assembly_targets.html:20
+#: templates/backoffice/profile/view.html:29
 #: templates/backoffice/respondent_field_schema/view.html:17
 #: templates/backoffice/target_sources/view.html:16
-#: templates/profile/view.html:206
 msgid "Back to Your projects"
 msgstr "Vissza a projektjeidhez"
 
@@ -5234,6 +5237,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:88
 #: templates/backoffice/dashboard_export_modal.html:62
+#: templates/backoffice/profile/edit.html:38
 #: templates/backoffice/registration/_assets.html:256
 #: templates/backoffice/registration/_assets.html:312
 #: templates/backoffice/registration/_modals.html:96
@@ -5259,7 +5263,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/gsheets/replace.html:46 templates/gsheets/select.html:68
 #: templates/main/create_assembly.html:96 templates/main/edit_assembly.html:82
 #: templates/profile/2fa_setup.html:85
-#: templates/profile/change_password.html:19 templates/profile/edit.html:41
+#: templates/profile/change_password.html:19
 #: templates/profile/set_password.html:21
 #: templates/targets/components/category_block.html:43
 #: templates/targets/components/category_block.html:169
@@ -5298,7 +5302,8 @@ msgstr "URL másolása"
 
 #: templates/admin/invite_view.html:53 templates/admin/invites.html:68
 #: templates/admin/users.html:117 templates/backoffice/assembly_members.html:49
-#: templates/main/view_assembly_members.html:12 templates/profile/view.html:29
+#: templates/backoffice/profile/view.html:55
+#: templates/main/view_assembly_members.html:12
 msgid "Role"
 msgstr "Szerepkör"
 
@@ -5507,14 +5512,14 @@ msgid "Details"
 msgstr "Részletek"
 
 #: templates/admin/user_2fa_audit_log.html:45 templates/admin/user_view.html:80
-#: templates/admin/users.html:149 templates/profile/2fa_settings.html:25
-#: templates/profile/view.html:185
+#: templates/admin/users.html:149 templates/backoffice/profile/view.html:176
+#: templates/profile/2fa_settings.html:25
 msgid "Enabled"
 msgstr "Bekapcsolva"
 
 #: templates/admin/user_2fa_audit_log.html:47 templates/admin/user_view.html:91
-#: templates/admin/users.html:151 templates/profile/2fa_settings.html:27
-#: templates/profile/view.html:187
+#: templates/admin/users.html:151 templates/backoffice/profile/view.html:178
+#: templates/profile/2fa_settings.html:27
 msgid "Disabled"
 msgstr "Kikapcsolva"
 
@@ -5645,9 +5650,9 @@ msgstr "Bejelentkezési mód"
 msgid "OAuth"
 msgstr "OAuth"
 
-#: templates/admin/user_view.html:75 templates/profile/2fa_settings.html:2
-#: templates/profile/2fa_settings.html:6 templates/profile/2fa_settings.html:22
-#: templates/profile/view.html:178 templates/public/verify_2fa.html:9
+#: templates/admin/user_view.html:75 templates/backoffice/profile/view.html:170
+#: templates/profile/2fa_settings.html:2 templates/profile/2fa_settings.html:6
+#: templates/profile/2fa_settings.html:22 templates/public/verify_2fa.html:9
 #: templates/public/verify_2fa.html:12
 msgid "Two-Factor Authentication"
 msgstr "Kétlépcsős azonosítás"
@@ -5968,11 +5973,12 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:78
 #: templates/backoffice/assembly_members.html:83
+#: templates/backoffice/profile/view.html:82
 #: templates/backoffice/respondent_field_schema/_editor.html:149
 #: templates/backoffice/respondent_field_schema/_field_modal.html:155
 #: templates/backoffice/target_sources/_setup_modal.html:298
 #: templates/backoffice/target_sources/_setup_modal.html:324
-#: templates/main/view_assembly_members.html:31 templates/profile/view.html:61
+#: templates/main/view_assembly_members.html:31
 msgid "Remove"
 msgstr "Eltávolítás"
 
@@ -6396,7 +6402,7 @@ msgid "Why are you making this change?"
 msgstr "Miért végzed el ezt a módosítást?"
 
 #: templates/backoffice/assembly_edit_respondent.html:159
-#: templates/profile/edit.html:40
+#: templates/backoffice/profile/edit.html:37
 msgid "Save changes"
 msgstr "Módosítások mentése"
 
@@ -8169,6 +8175,115 @@ msgstr "Elfogadva. A módosítás megtartásához mentsd el."
 msgid "Copied to clipboard"
 msgstr "Vágólapra másolva"
 
+#: templates/backoffice/profile/edit.html:9
+#: templates/backoffice/profile/edit.html:12
+msgid "Edit Profile"
+msgstr "Profil szerkesztése"
+
+#: templates/backoffice/profile/view.html:40
+msgid "Profile Information"
+msgstr "Profiladatok"
+
+#: templates/backoffice/profile/view.html:66
+msgid "Authentication Methods"
+msgstr "Bejelentkezési módok"
+
+#: templates/backoffice/profile/view.html:80
+msgid ""
+"Are you sure you want to remove password authentication? You will only be"
+" able to sign in with Google."
+msgstr ""
+"Biztosan eltávolítod a jelszavas bejelentkezést? Ezután csak Google-"
+"fiókkal tudsz majd bejelentkezni."
+
+#: templates/backoffice/profile/view.html:88
+#: templates/profile/set_password.html:20
+msgid "Set password"
+msgstr "Jelszó beállítása"
+
+#: templates/backoffice/profile/view.html:90
+msgid "No password set"
+msgstr "Nincs beállított jelszó"
+
+#: templates/backoffice/profile/view.html:96
+msgid "Google OAuth"
+msgstr "Google OAuth"
+
+#: templates/backoffice/profile/view.html:101
+#: templates/backoffice/profile/view.html:136
+msgid "Not linked"
+msgstr "Nincs összekapcsolva"
+
+#: templates/backoffice/profile/view.html:109
+msgid ""
+"Are you sure you want to unlink your Google account? You will only be "
+"able to sign in with your password."
+msgstr ""
+"Biztosan leválasztod a Google-fiókodat? Ezután csak a jelszavaddal tudsz "
+"majd bejelentkezni."
+
+#: templates/backoffice/profile/view.html:111
+#: templates/backoffice/profile/view.html:146
+#: templates/backoffice/target_sources/_checklist.html:161
+msgid "Unlink"
+msgstr "Leválasztás"
+
+#: templates/backoffice/profile/view.html:114
+#: templates/backoffice/profile/view.html:149
+msgid "Only authentication method"
+msgstr "Az egyetlen bejelentkezési mód"
+
+#: templates/backoffice/profile/view.html:119
+msgid "Link Google account"
+msgstr "Google-fiók összekapcsolása"
+
+#: templates/backoffice/profile/view.html:125
+#: templates/backoffice/profile/view.html:158
+#, python-format
+msgid "Remove %(provider)s first"
+msgstr "Előbb távolítsd el a következőt: %(provider)s"
+
+#: templates/backoffice/profile/view.html:131
+msgid "Microsoft OAuth"
+msgstr "Microsoft OAuth"
+
+#: templates/backoffice/profile/view.html:144
+msgid ""
+"Are you sure you want to unlink your Microsoft account? You will only be "
+"able to sign in with your password."
+msgstr ""
+"Biztosan leválasztod a Microsoft-fiókodat? Ezután csak a jelszavaddal "
+"tudsz majd bejelentkezni."
+
+#: templates/backoffice/profile/view.html:152
+msgid "Link Microsoft account"
+msgstr "Microsoft-fiók összekapcsolása"
+
+#: templates/backoffice/profile/view.html:168
+msgid "Security"
+msgstr "Biztonság"
+
+#: templates/backoffice/profile/view.html:173
+msgid "Not available"
+msgstr "Nem érhető el"
+
+#: templates/backoffice/profile/view.html:174
+msgid "OAuth users rely on their provider's security"
+msgstr "Az OAuth-felhasználók a szolgáltatójuk biztonságára támaszkodnak"
+
+#: templates/backoffice/profile/view.html:184
+msgid "Manage"
+msgstr "Kezelés"
+
+#: templates/backoffice/profile/view.html:191
+msgid "Edit profile"
+msgstr "Profil szerkesztése"
+
+#: templates/backoffice/profile/view.html:193
+#: templates/profile/change_password.html:18
+msgid "Change password"
+msgstr "Jelszó megváltoztatása"
+
 #: templates/backoffice/registration/_assets.html:291
 msgid "File name"
 msgstr "Fájlnév"
@@ -9539,11 +9654,6 @@ msgstr ""
 #: templates/backoffice/target_sources/_checklist.html:161
 msgid "Delete computed question"
 msgstr "Számított kérdés törlése"
-
-#: templates/backoffice/target_sources/_checklist.html:161
-#: templates/profile/view.html:95 templates/profile/view.html:146
-msgid "Unlink"
-msgstr "Leválasztás"
 
 #: templates/backoffice/target_sources/_checklist.html:174
 msgid "Link it"
@@ -11314,18 +11424,6 @@ msgstr "Jelszó megváltoztatása"
 msgid "Your password must meet the following requirements:"
 msgstr "A jelszavadnak meg kell felelnie a következő követelményeknek:"
 
-#: templates/profile/change_password.html:18 templates/profile/view.html:202
-msgid "Change password"
-msgstr "Jelszó megváltoztatása"
-
-#: templates/profile/edit.html:2 templates/profile/edit.html:6
-msgid "Edit Profile"
-msgstr "Profil szerkesztése"
-
-#: templates/profile/edit.html:17 templates/profile/edit.html:32
-msgid "Error"
-msgstr "Hiba történt"
-
 #: templates/profile/set_password.html:2 templates/profile/set_password.html:6
 msgid "Set Password"
 msgstr "Jelszó beállítása"
@@ -11337,95 +11435,6 @@ msgid ""
 msgstr ""
 "Állíts be jelszót, hogy további bejelentkezési módként használhasd. "
 "Ezután a jelszavaddal vagy Google OAuth-tal is bejelentkezhetsz."
-
-#: templates/profile/set_password.html:20 templates/profile/view.html:65
-msgid "Set password"
-msgstr "Jelszó beállítása"
-
-#: templates/profile/view.html:8
-msgid "Profile Information"
-msgstr "Profiladatok"
-
-#: templates/profile/view.html:38
-msgid "Authentication Methods"
-msgstr "Bejelentkezési módok"
-
-#: templates/profile/view.html:54
-msgid ""
-"Are you sure you want to remove password authentication? You will only be"
-" able to sign in with Google."
-msgstr ""
-"Biztosan eltávolítod a jelszavas bejelentkezést? Ezután csak Google-"
-"fiókkal tudsz majd bejelentkezni."
-
-#: templates/profile/view.html:67
-msgid "No password set"
-msgstr "Nincs beállított jelszó"
-
-#: templates/profile/view.html:74
-msgid "Google OAuth"
-msgstr "Google OAuth"
-
-#: templates/profile/view.html:79 templates/profile/view.html:130
-msgid "Not linked"
-msgstr "Nincs összekapcsolva"
-
-#: templates/profile/view.html:88
-msgid ""
-"Are you sure you want to unlink your Google account? You will only be "
-"able to sign in with your password."
-msgstr ""
-"Biztosan leválasztod a Google-fiókodat? Ezután csak a jelszavaddal tudsz "
-"majd bejelentkezni."
-
-#: templates/profile/view.html:98 templates/profile/view.html:149
-msgid "Only authentication method"
-msgstr "Az egyetlen bejelentkezési mód"
-
-#: templates/profile/view.html:111 templates/profile/view.html:112
-msgid "Link Google account"
-msgstr "Google-fiók összekapcsolása"
-
-#: templates/profile/view.html:118 templates/profile/view.html:169
-#, python-format
-msgid "Remove %(provider)s first"
-msgstr "Előbb távolítsd el a következőt: %(provider)s"
-
-#: templates/profile/view.html:125
-msgid "Microsoft OAuth"
-msgstr "Microsoft OAuth"
-
-#: templates/profile/view.html:139
-msgid ""
-"Are you sure you want to unlink your Microsoft account? You will only be "
-"able to sign in with your password."
-msgstr ""
-"Biztosan leválasztod a Microsoft-fiókodat? Ezután csak a jelszavaddal "
-"tudsz majd bejelentkezni."
-
-#: templates/profile/view.html:162 templates/profile/view.html:163
-msgid "Link Microsoft account"
-msgstr "Microsoft-fiók összekapcsolása"
-
-#: templates/profile/view.html:175
-msgid "Security"
-msgstr "Biztonság"
-
-#: templates/profile/view.html:181
-msgid "Not available"
-msgstr "Nem érhető el"
-
-#: templates/profile/view.html:183
-msgid "OAuth users rely on their provider's security"
-msgstr "Az OAuth-felhasználók a szolgáltatójuk biztonságára támaszkodnak"
-
-#: templates/profile/view.html:191
-msgid "Manage"
-msgstr "Kezelés"
-
-#: templates/profile/view.html:198
-msgid "Edit profile"
-msgstr "Profil szerkesztése"
 
 #: templates/public/_survey_fields.html:52
 msgid "characters"
