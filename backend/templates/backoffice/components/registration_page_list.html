@@ -126,6 +126,9 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                                         {{ row.registration_count }}
                                     {%- endif -%}
                                 </td>
+                                {# Empty unless the page is Published: a page taken back to Test or
+                                   closed keeps its publish history, not its date (see
+                                   RegistrationPage.published_at_if_live). #}
                                 <td class="px-3 py-3"
                                     data-cell="published-at"
                                     style="color: var(--color-body-text);">

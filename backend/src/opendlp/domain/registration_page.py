@@ -254,6 +254,17 @@ class RegistrationPage:
         stamps = [a.created_at for a in self.activity if a.action == RegistrationPageAction.PUBLISH]
         return max(stamps) if stamps else None
 
+    def published_at_if_live(self) -> datetime | None:
+        """When the page went live, while it is live; None in every other state.
+
+        The pages list's "Date published" column shows this. A page taken back
+        to Test, or closed, keeps its publish history - last_published_at()
+        still answers - but has no date to show until it is published again.
+        """
+        if self.status != RegistrationPageStatus.PUBLISHED:
+            return None
+        return self.last_published_at()
+
     def can_be_deleted(self) -> bool:
         """True if the page may be deleted outright rather than closed.
 
