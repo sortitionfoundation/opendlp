@@ -15,6 +15,9 @@ ABOUTME: Displays text input, textarea, and file input variants with usage examp
             {# Basic text input #}
             {{ input("title", label="Assembly Title", placeholder="Enter title...") }}
 
+            {# Inline input: label beside it, help in an info icon #}
+            {{ input("subject", label="Email subject", info="Dynamic fields allowed.", inline=true) }}
+
             {# Required email input with hint #}
             {{ input("email", label="Email", type="email", required=true,
             hint="We will send confirmation to this address.") }}
@@ -62,6 +65,18 @@ ABOUTME: Displays text input, textarea, and file input variants with usage examp
                     <span class="text-label-md" style="color: var(--color-secondary-text);">Password</span>
                     {{ input("demo-password", label="Password", type="password", placeholder="Enter password...") }}
                 </div>
+            </div>
+
+            {# Inline Section #}
+            <h3 class="text-heading-md mt-8 mb-4" style="color: var(--color-headings);">Inline, with info icons</h3>
+            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                inline=true puts the label in a fixed-width column so a run of inputs lines up; info= moves the help
+                text into an icon beside the label. They stack on narrow screens.
+            </p>
+            <div class="space-y-3">
+                {{ input("demo-inline-name", label="Reply-to name", info="Also shown as who the email is from.", inline=true) }}
+                {{ input("demo-inline-email", label="Reply-to email address", type="email", inline=true) }}
+                {{ input("demo-inline-subject", label="Email subject", required=true, info="Dynamic fields allowed.", inline=true) }}
             </div>
 
             {# Textarea Section #}
