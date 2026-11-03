@@ -21,7 +21,7 @@ Feature: Backoffice Assembly Management
     And I should see "How should we address climate change?"
     And I should see the assembly details summary
     And I should see "Status"
-    And I should see "Number to Select"
+    And I should see "Panel size"
     And I should see "Created"
 
   Scenario: Assembly details page has edit button

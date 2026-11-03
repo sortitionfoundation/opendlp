@@ -10,7 +10,7 @@ Feature: Target percentages, notes and ordering
     Then I should see the percentage total "100.0%"
     And the "Male" target should show min "10" and max "11"
     And the "Male" target should be marked as auto calculated
-    And I should see "Number to select: 20"
+    And I should see "Panel size: 20"
 
   Scenario: A hand-set target is marked, with its reason visible, and can be linked back
     Given there is an assembly with targets called "Relink Demo"

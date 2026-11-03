@@ -430,7 +430,7 @@ class TestCheckTargetsDetailed:
 
         assert result.success is False
         assert [ann.message for ann in result.category_annotations["gender"]] == [
-            "Sum of minimums (16) exceeds number to select (10)"
+            "Sum of minimums (16) exceeds the panel size (10)"
         ]
         assert len(result.global_warnings) == 1
 
@@ -550,10 +550,10 @@ class TestCheckTargetsDetailed:
 
         assert result.success is False
         assert [ann.message for ann in result.category_annotations["gender"]] == [
-            "Sum of minimums (10) exceeds number to select (8)"
+            "Sum of minimums (10) exceeds the panel size (8)"
         ]
         assert [ann.message for ann in result.category_annotations["age"]] == [
-            "Sum of maximums (4) is less than number to select (8)"
+            "Sum of maximums (4) is less than the panel size (8)"
         ]
 
     def test_conflicting_targets_are_reported_against_each_other_without_number_to_select(self, uow):

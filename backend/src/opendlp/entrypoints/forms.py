@@ -335,7 +335,7 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     number_to_select = IntegerField(
-        _l("Number to Select"),
+        _l("Panel size"),
         validators=[InputRequired(), NonNegativeValidator()],
         description=_l("The number of participants to select for this event"),
         default=0,

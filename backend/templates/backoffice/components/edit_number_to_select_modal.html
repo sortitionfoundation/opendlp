@@ -8,7 +8,7 @@
    opens this modal). The methods must come from a registered component because
    the CSP Alpine build does not register methods defined inline in x-data. #}
 <div x-data="modal({ initialOpen: {{ 'true' if edit_number_modal_open else 'false' }}, closeUrl: '{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) }}' })">
-    {% call modal(id="edit-number-modal", title=_("Edit Number to Select")) %}
+    {% call modal(id="edit-number-modal", title=_("Edit panel size")) %}
         <p class="text-body-md mb-4" style="color: var(--color-body-text);">
             {{ _("Set the number of participants to select from the pool.") }}
         </p>

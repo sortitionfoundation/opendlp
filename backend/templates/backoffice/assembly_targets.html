@@ -5,6 +5,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/info_card.html" import info_card %}
 {% from "backoffice/components/icons.html" import icon_plus %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
@@ -103,7 +104,8 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                     {# The seat count, not a category tally: every min and max on this
                        page is a share of it, so it is the number to have in mind. #}
                         <p class="text-body-md" style="color: var(--color-secondary-text);">
-                            {{ _("Number to select: %(number)s", number=assembly.number_to_select) }}
+                            {{ _("Panel size: %(number)s", number=assembly.number_to_select) }}
+                            {{ info_icon(_("The number of people to select")) }}
                         </p>
                         {% if not target_categories %}
                             <p class="text-body-md" style="color: var(--color-secondary-text);">

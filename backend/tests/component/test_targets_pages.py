@@ -1189,7 +1189,8 @@ class TestViewIsReadOnly:
 
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
-        assert b"Number to select: 42" in response.data
+        assert b"Panel size: 42" in response.data
+        assert b'title="The number of people to select"' in response.data
         assert b"categories defined" not in response.data
 
     def test_the_page_offers_editing_and_adding_a_target(

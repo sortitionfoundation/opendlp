@@ -64,6 +64,7 @@ door. The move from "assembly" to "project" is the current example.
 | selection             | Choosing people from the pool by stratified random lottery                    | draw, lottery, sortition           |
 | selection run         | One run of the selection, recorded in the run history                         |                                    |
 | panel                 | One possible line-up of the whole event; a selection picks one                | committee, line-up                 |
+| panel size            | The number of people to select for the event                                  | number to select                   |
 | initial selection     | The selection run that picks the participants, before any replacements        | first selection, main selection    |
 | test selection        | A selection run that is not for real                                          |                                    |
 | replacement selection | A selection run to fill places left by people who withdrew                    | replacements, substitute, reserve  |
@@ -276,6 +277,7 @@ put the code's word on the page.
 | `feature` (sortition-algorithms)              | target                                         |
 | `agent` (sortition-algorithms)                | respondent                                     |
 | `committee` (sortition-algorithms)            | panel                                          |
+| `number_to_select`, `number_people_wanted`    | panel size                                     |
 | `ContentStyle`, `content_style`               | intro style                                    |
 | `rich_editor`, Tiptap                         | visual editor                                  |
 | an `Enum` member's `.value`                   | its label from the labels dict beside the enum |
