@@ -547,8 +547,9 @@ def update_target_value(
 
     The rules that matter:
 
-    - min/max supplied and *different* from the stored values breaks the
-      auto-calculate link, via `set_manual_min_max`.
+    - min/max supplied and *different* from both the stored values and the
+      ones the submitted percentage works out to breaks the auto-calculate
+      link, via `set_manual_min_max`.
     - min/max supplied and *identical* to the stored values changes nothing and
       does **not** break the link. Without this a bulk save that round-trips
       every field would break every link in the assembly on first use.
@@ -621,7 +622,10 @@ def _apply_value_numbers(
 
     new_min = submitted_against[0] if min_count is None else min_count
     new_max = submitted_against[1] if max_count is None else max_count
-    if (new_min, new_max) != submitted_against:
+    # The edit form recalculates min/max as the percentage is typed, so numbers
+    # matching the recalculated ones came from the percentage, not from a hand.
+    recalculated = (target_value.min, target_value.max)
+    if (new_min, new_max) not in (submitted_against, recalculated):
         target_value.set_manual_min_max(new_min, new_max)
 
 
@@ -1113,7 +1117,13 @@ def _write_value_edit(
             percentage_target=value_edit.percentage,
             comment=value_edit.comment,
         )
+        # Min and max typed alongside a percentage keep the numbers they were
+        # given unless they are the ones the percentage works out to.
+        typed = (target_value.min, target_value.max)
         target_value.apply_percentage(number_to_select)
+        all_given = None not in (value_edit.percentage, value_edit.min, value_edit.max)
+        if all_given and typed != (target_value.min, target_value.max):
+            target_value.set_manual_min_max(*typed)
         category.add_value(target_value)
         return
 

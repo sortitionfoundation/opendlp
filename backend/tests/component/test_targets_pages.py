@@ -347,6 +347,7 @@ class TestPercentageColumn:
             _edit_form_html(response.data.decode()), "Male", "Recalculate min and max from the percentage"
         )
         assert not _is_disabled(relink)
+        assert ':disabled="!canRelink"' in relink
 
     def test_the_column_heading_reads_population(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """The heading is escaped as `%%` for gettext, so check what actually reaches the page."""
@@ -1107,6 +1108,56 @@ class TestMinMaxProvenance:
             assert "background-color: transparent" in cell
             assert "Auto calculated" not in cell
             assert "Manually modified" not in cell
+
+    def test_the_edit_form_starts_a_hand_set_row_as_manual(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The row's own state decides which icon its min and max boxes show."""
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        edit_form = _edit_form_html(response.data.decode())
+        row = re.search(r'<tr data-value-row="true".*?</tr>', edit_form, re.DOTALL).group(0)
+        assert "manual: true, relink: false" in row
+        assert "Set by hand" not in edit_form
+        assert "will be recalculated" not in edit_form
+
+    def test_the_edit_form_starts_a_calculated_row_as_automatic(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        row = re.search(r'<tr data-value-row="true".*?</tr>', _edit_form_html(response.data.decode()), re.DOTALL)
+        assert "manual: false, relink: false" in row.group(0)
+
+    def test_the_edit_form_puts_both_icons_in_each_min_and_max_box(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Both are rendered and the row shows one, as typing can switch between them."""
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        min_cell, max_cell = _edit_form_row_cells(_edit_form_html(response.data.decode()), "Male")[2:4]
+        for cell in (min_cell, max_cell):
+            assert 'x-show="showsCalculated"' in cell
+            assert 'x-show="showsManual"' in cell
+            assert '@input="minMaxEdited()"' in cell
+            assert ":disabled" not in cell
+
+    def test_the_edit_form_carries_the_panel_size_for_the_calculation(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert f'data-number-to-select="{existing_assembly.number_to_select}"' in response.data.decode()
 
 
 class TestViewIsReadOnly:

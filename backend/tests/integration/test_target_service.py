@@ -748,6 +748,73 @@ class TestUpdateTargetValueLinkRules:
         assert after.values[0].percentage_target is None
         assert (after.values[0].min, after.values[0].max) == before
 
+    def test_a_new_percentage_with_its_recalculated_minmax_does_not_break_the_link(
+        self, uow, admin_user: User, test_assembly: Assembly
+    ):
+        """The edit form fills min and max in from the percentage as it is typed.
+
+        Those numbers came from the percentage, so submitting them must keep the
+        link - otherwise every recalculation in the form would be saved as a
+        hand edit.
+        """
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            value.value_id,
+            value="Man",
+            percentage=25.0,
+            min_count=7,
+            max_count=8,
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].minmax_manual is False
+        assert (after.values[0].min, after.values[0].max) == (7, 8)
+
+
+class TestSaveAllNewValueLinkRules:
+    """A value added in the edit form, with a percentage, min and max typed in."""
+
+    def _save_new_value(self, uow, admin_user, assembly, **numbers):
+        category = target_service.create_target_category(uow, admin_user.id, assembly.id, name="Gender")
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=category.id,
+                    name="Gender",
+                    values=[target_service.TargetValueEdit(value="Man", form_id="new-1", **numbers)],
+                )
+            ],
+        )
+        return target_service.get_targets_for_assembly(uow, admin_user.id, assembly.id)[0].values[0]
+
+    def test_minmax_from_the_percentage_stay_linked(self, uow, admin_user: User, test_assembly: Assembly):
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0, min=15, max=16)
+
+        assert value.minmax_manual is False
+        assert (value.min, value.max) == (15, 16)
+
+    def test_minmax_typed_by_hand_are_kept(self, uow, admin_user: User, test_assembly: Assembly):
+        """Not overwritten by the percentage, as the form showed them as the row's own."""
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0, min=10, max=20)
+
+        assert value.minmax_manual is True
+        assert (value.min, value.max) == (10, 20)
+
+    def test_a_percentage_alone_calculates_minmax(self, uow, admin_user: User, test_assembly: Assembly):
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0)
+
+        assert value.minmax_manual is False
+        assert (value.min, value.max) == (15, 16)
+
 
 class TestRelinkTargetValue:
     def test_restores_auto_calculation(self, uow, admin_user: User, test_assembly: Assembly):

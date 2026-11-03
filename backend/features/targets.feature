@@ -26,6 +26,36 @@ Feature: Target percentages, notes and ordering
     Then the "Male" target should be marked as auto calculated
     And the "Male" target should show min "10" and max "11"
 
+  Scenario: Min and max follow the percentage as it is typed, until they are set by hand
+    Given there is an assembly with targets called "Live Percentage Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Live Percentage Demo"
+    And I choose to edit all targets
+    Then the "Male" edit row should be marked as auto calculated
+    When I set the "Male" percentage to "30"
+    Then the "Male" edit row should show min "6" and max "7"
+    When I set the "Male" min to "5" and max to "7"
+    Then the "Male" edit row should be marked as manually modified
+    When I set the "Male" percentage to "40"
+    Then the "Male" edit row should show min "5" and max "7"
+    When I link the "Male" target back to its percentage
+    Then the "Male" edit row should show min "8" and max "9"
+    And the "Male" edit row should be marked as auto calculated
+    When I save all targets
+    Then the "Male" target should be marked as auto calculated
+    And the "Male" target should show min "8" and max "9"
+
+  Scenario: A percentage typed in the form is saved as auto calculated
+    Given there is an assembly with targets called "Saved Percentage Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Saved Percentage Demo"
+    And I choose to edit all targets
+    And I set the "Male" percentage to "30"
+    And I save all targets
+    Then I should see "Targets saved"
+    And the "Male" target should be marked as auto calculated
+    And the "Male" target should show min "6" and max "7"
+
   Scenario: Editing every target at once
     Given there is an assembly with targets called "Edit All Demo"
     And I am signed in as an admin user
@@ -158,7 +188,7 @@ Feature: Target percentages, notes and ordering
     Then I should see "Discard changes?"
     When I choose to keep editing
     Then I should still be on the targets page
-    And the "Male" edit row should show min "10" and max "11"
+    And the "Male" edit row should show min "6" and max "7"
 
   Scenario: Discarding unsaved target edits leaves the page
     Given there is an assembly with targets called "Discard Demo"

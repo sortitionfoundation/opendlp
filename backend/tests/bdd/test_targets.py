@@ -443,6 +443,27 @@ def _expect_provenance(page: Page, value: str, wanted: str, unwanted: str) -> No
     expect(row.locator(f'[title="{unwanted}"]')).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then(parsers.parse('the "{value}" edit row should be marked as auto calculated'))
+def edit_row_marked_automatic(admin_logged_in_page: Page, value: str) -> None:
+    _expect_edit_row_provenance(admin_logged_in_page, value, "Auto calculated", "Manually modified")
+
+
+@then(parsers.parse('the "{value}" edit row should be marked as manually modified'))
+def edit_row_marked_manual(admin_logged_in_page: Page, value: str) -> None:
+    _expect_edit_row_provenance(admin_logged_in_page, value, "Manually modified", "Auto calculated")
+
+
+def _expect_edit_row_provenance(page: Page, value: str, wanted: str, unwanted: str) -> None:
+    """Both the min and the max box of this edit row show the one mark, and not the other.
+
+    The edit row renders both marks in each box and shows one, so these count
+    what is visible rather than what is in the markup.
+    """
+    row = _edit_row_for(page, value)
+    expect(row.locator(f'[title="{wanted}"]:visible')).to_have_count(2, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(row.locator(f'[title="{unwanted}"]:visible')).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then(parsers.parse('the "{name}" target should have a "{column}" column'))
 def target_has_column(admin_logged_in_page: Page, name: str, column: str) -> None:
     block = admin_logged_in_page.locator("#target-categories > div").filter(

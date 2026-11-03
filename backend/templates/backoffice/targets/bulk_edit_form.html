@@ -3,7 +3,7 @@ ABOUTME: One form covering every target category and value, for edit-all/save-al
 ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed by save_all_parser
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_plus, icon_trash, icon_undo %}
+{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_hand, icon_plus, icon_sparkles, icon_trash, icon_undo %}
 {% from "backoffice/components/input.html" import input, textarea %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary, no_respondent_column_note %}
 {% from "backoffice/targets/table_cells.html" import count_cell, count_headings, count_total_cell, heading, total_cell %}
@@ -45,6 +45,41 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     {% endif %}
 {% endmacro %}
 {#
+    A min or max input with the icon the read-only view shows beside the number:
+    sparkles while it is worked out from the percentage, a hand once it has been
+    typed in. The row decides which, as it changes while the form is filled in.
+#}
+{% macro minmax_input(name, id, value, error, aria_label, field) %}
+    <div class="relative">
+        {{ input(name=name,
+        id=id,
+        error=error,
+        type="number",
+        value=value,
+        classes="w-28 pl-9",
+        aria_label=aria_label,
+        attrs='min="0" data-field="' ~ field ~ '" @input="minMaxEdited()"') }}
+        {# Pinned to the top rather than centred, so an error under the input
+           does not pull it out of the box. #}
+        <span class="absolute left-3 top-3.5 inline-flex"
+              x-show="showsCalculated"
+              x-cloak
+              title="{{ _('Auto calculated') }}"
+              style="color: var(--color-info-600)">
+            {{ icon_sparkles() }}
+            <span class="sr-only">{{ _("Auto calculated") }}</span>
+        </span>
+        <span class="absolute left-3 top-3.5 inline-flex"
+              x-show="showsManual"
+              x-cloak
+              title="{{ _('Manually modified') }}"
+              style="color: var(--color-warning-400)">
+            {{ icon_hand() }}
+            <span class="sr-only">{{ _("Manually modified") }}</span>
+        </span>
+    </div>
+{% endmacro %}
+{#
     `suggested_fields` lists which of "min" and "max" a suggestion under the row
     would change. A row with suggestions under it leaves its dividing line off,
     and the last suggestion draws it, so the line closes the group.
@@ -53,6 +88,8 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     {% set val_prefix = "cat[" ~ category_id ~ "][values][" ~ row_id ~ "]" %}
     {% set field_id = "bulk-" ~ category_id ~ "-" ~ row_id %}
     {% set can_relink = val and val.minmax_manual and val.percentage_target is not none %}
+    {% set row_manual = "true" if val and val.minmax_manual else "false" %}
+    {% set row_relink = "true" if val and val.relink else "false" %}
     {# A row redisplayed after a rejected save carries the pending deletion it
        was submitted with, or saving again would quietly undo it. #}
     {% set row_deleted = "true" if val and val.deleted else "false" %}
@@ -63,7 +100,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     {% set row_name = (val.value if val else prefill) or _("the new value") %}
     <tr data-value-row="true"
         data-deleted="{{ row_deleted }}"
-        x-data="bulkTargetsValueRow({ isNew: {{ 'true' if is_new else 'false' }}, deleted: {{ row_deleted }} })"
+        x-data="bulkTargetsValueRow({ isNew: {{ 'true' if is_new else 'false' }}, deleted: {{ row_deleted }}, manual: {{ row_manual }}, relink: {{ row_relink }} })"
         :class="rowClass"
         {% if not suggested_fields %}style="border-bottom: 1px solid var(--color-borders-dividers)"{% endif %}>
         <td class="py-3 pr-4">
@@ -73,14 +110,15 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                    x-ref="deletedField" />
             <input type="hidden"
                    name="{{ val_prefix }}[relink]"
-                   value="{{ "true" if val and val.relink else "false" }}"
+                   value="{{ row_relink }}"
                    x-ref="relinkField" />
-            {# Carried so a rejected save redisplays the "Set by hand" badge and the
-               re-link button. The save works the flag out for itself; this only
-               decides what the form shows. #}
+            {# Carried so a rejected save redisplays each row's min and max icon
+               and its re-link button as they were. The save works the flag out
+               for itself; this only decides what the form shows. #}
             <input type="hidden"
                    name="{{ val_prefix }}[minmax_manual]"
-                   value="{{ "true" if val and val.minmax_manual else "false" }}" />
+                   value="{{ row_manual }}"
+                   x-ref="manualField" />
             {{ input(name=val_prefix ~ "[value]",
             id=field_id ~ "-value",
             value=val.value if val else prefill,
@@ -93,21 +131,6 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                    style="color: var(--color-primary-action);
                           white-space: pre-line">{{ row_error }}</p>
             {% endif %}
-            {% if can_relink %}
-                <span class="text-label-md px-1.5 py-0.5 rounded inline-block mt-1"
-                      x-show="!relink"
-                      style="background-color: var(--color-warning-400);
-                             color: white"
-                      title="{{ _('Min and max were set by hand, not calculated from the percentage') }}">
-                    {{ _("Set by hand") }}
-                </span>
-                <span class="text-body-sm inline-block mt-1"
-                      x-show="relink"
-                      x-cloak
-                      style="color: var(--color-secondary-text)">
-                    {{ _("Min and max will be recalculated when you save.") }}
-                </span>
-            {% endif %}
         </td>
         <td class="py-3 px-4">
             {{ input(name=val_prefix ~ "[percentage]",
@@ -117,32 +140,28 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             value=val.percentage_target if val and val.percentage_target is not none else "",
             classes="w-24",
             aria_label=_("Population share for %(row)s, in percent", row=row_name),
-            attrs='min="0" max="100" step="0.1" data-field="percentage"') }}
+            attrs='min="0" max="100" step="0.1" data-field="percentage" @input="percentageChanged()"') }}
         </td>
         {% if show_counts %}{{ count_cell(respondent_counts, val.value if val else prefill) }}{% endif %}
         {% if show_selected %}{{ count_cell(selected_counts, val.value if val else prefill) }}{% endif %}
         <td class="py-3 px-4">
             {% call suggested_outline("min" in suggested_fields) %}
-                {{ input(name=val_prefix ~ "[min]",
-                id=field_id ~ "-min",
-                error=errors.get(val_prefix ~ "[min]", ""),
-                type="number",
-                value=val.min if val else "",
-                classes="w-20",
-                aria_label=_("Minimum for %(row)s", row=row_name),
-                attrs='min="0" data-field="min" :disabled="relink"') }}
+                {{ minmax_input(val_prefix ~ "[min]",
+                field_id ~ "-min",
+                val.min if val else "",
+                errors.get(val_prefix ~ "[min]", ""),
+                _("Minimum for %(row)s", row=row_name),
+                "min") }}
             {% endcall %}
         </td>
         <td class="py-3 px-4">
             {% call suggested_outline("max" in suggested_fields) %}
-                {{ input(name=val_prefix ~ "[max]",
-                id=field_id ~ "-max",
-                error=errors.get(val_prefix ~ "[max]", ""),
-                type="number",
-                value=val.max if val else "",
-                classes="w-20",
-                aria_label=_("Maximum for %(row)s", row=row_name),
-                attrs='min="0" data-field="max" :disabled="relink"') }}
+                {{ minmax_input(val_prefix ~ "[max]",
+                field_id ~ "-max",
+                val.max if val else "",
+                errors.get(val_prefix ~ "[max]", ""),
+                _("Maximum for %(row)s", row=row_name),
+                "max") }}
             {% endcall %}
         </td>
         <td class="py-3 px-4">
@@ -167,7 +186,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 icon=icon_undo(),
                 aria_label=_("Recalculate min and max from the percentage"),
                 disabled=not can_relink,
-                alpine_disabled="relink" if can_relink else "",
+                alpine_disabled="!canRelink",
                 attrs=relink_attrs) }}
                 <span x-show="!deleted">
                     {{ button(variant="icon",
@@ -369,6 +388,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 <form method="post"
       action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
       id="save-all-form"
+      data-number-to-select="{{ assembly.number_to_select }}"
       @input="markEditDirty()"
       @change="markEditDirty()"
       @targets-changed="markEditDirty()"
