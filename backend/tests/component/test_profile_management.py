@@ -35,6 +35,13 @@ def _login_session(client: FlaskClient, user: User) -> None:
         session["_user_id"] = user.get_id()
 
 
+def _assert_page_is_named(page: bytes, name: str) -> None:
+    """The <title> and the <h1> carry the page's name, exactly as written."""
+    html = page.decode()
+    assert re.search(rf"<title>\s*{re.escape(name)}\s*- OpenDLP</title>", html)
+    assert re.search(rf"<h1[^>]*>\s*{re.escape(name)}\s*</h1>", html)
+
+
 class TestProfileViewing:
     def test_view_profile_requires_login(self, client: FlaskClient) -> None:
         response = client.get("/profile")
@@ -72,12 +79,19 @@ class TestProfileEditing:
     def test_edit_profile_get(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/profile/edit")
         assert response.status_code == 200
-        assert b"Edit Profile" in response.data
-        assert b"First Name" in response.data
-        assert b"Last Name" in response.data
+        assert b"Edit profile" in response.data
+        assert b"First name" in response.data
+        assert b"Last name" in response.data
 
 
-PASSWORD_USER_PAGES = ["/profile", "/profile/edit", "/profile/change-password", "/profile/2fa", "/profile/2fa/setup"]
+# Each page a password user can open, and the name its <title> and <h1> carry
+PASSWORD_USER_PAGES = {
+    "/profile": "My account",
+    "/profile/edit": "Edit profile",
+    "/profile/change-password": "Change password",  # pragma: allowlist secret
+    "/profile/2fa": "Two-factor authentication",
+    "/profile/2fa/setup": "Set up two-factor authentication",
+}
 
 
 class TestProfilePagesOnTheBackofficeDesign:
@@ -105,6 +119,22 @@ class TestProfilePagesOnTheBackofficeDesign:
         assert b'id="account-menu-toggle"' in response.data
         assert b'id="floating-alerts"' in response.data
 
+    @pytest.mark.parametrize(("url", "name"), PASSWORD_USER_PAGES.items())
+    def test_page_is_named_in_sentence_case(self, logged_in_user: FlaskClient, url: str, name: str) -> None:
+        """docs/language.md: sentence case for every string, the page's own name included."""
+        response = logged_in_user.get(url)
+
+        _assert_page_is_named(response.data, name)
+
+    def test_view_sections_and_rows_are_in_sentence_case(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile")
+
+        assert b"Profile information" in response.data
+        assert b"First name" in response.data
+        assert b"Last name" in response.data
+        assert b"Authentication methods" in response.data
+        assert b"Two-factor authentication" in response.data
+
     def test_set_password_page_is_on_the_backoffice_design(self, client: FlaskClient, oauth_user: User) -> None:
         _login_session(client, oauth_user)
 
@@ -116,6 +146,8 @@ class TestProfilePagesOnTheBackofficeDesign:
         assert b'name="new_password"' in response.data
         assert b'name="new_password_confirm"' in response.data
         assert response.data.count(b'autocomplete="new-password"') == 2
+        _assert_page_is_named(response.data, "Set password")
+        assert b"Confirm password" in response.data
 
     def test_change_password_form_keeps_its_fields(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/profile/change-password")
@@ -150,6 +182,8 @@ class TestProfilePagesOnTheBackofficeDesign:
         response = logged_in_user.get("/profile/2fa")
 
         assert b"Disabled" in response.data
+        assert b"Current status" in response.data
+        assert b"Enable two-factor authentication" in response.data
         assert b'href="/profile/2fa/setup"' in response.data
         assert b'aria-label="Back to profile"' in response.data
         # Nothing to regenerate or disable yet
@@ -210,15 +244,16 @@ class TestPasswordChange:
 
         response = client.get("/profile/change-password", follow_redirects=True)
         assert response.status_code == 200
-        assert b"Set Password" in response.data
+        assert b"Set password" in response.data
         assert b"You need to set a password first" in response.data
 
     def test_change_password_get(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/profile/change-password")
         assert response.status_code == 200
-        assert b"Change Password" in response.data
-        assert b"Current Password" in response.data
-        assert b"New Password" in response.data
+        assert b"Change password" in response.data
+        assert b"Current password" in response.data
+        assert b"New password" in response.data
+        assert b"Confirm new password" in response.data
 
     def test_change_password_with_wrong_current_password(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.post(

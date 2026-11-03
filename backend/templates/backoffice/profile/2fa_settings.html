@@ -11,12 +11,12 @@ ABOUTME: The regenerate and disable forms sit in native details disclosures and 
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/profile/_detail_row.html" import detail_row %}
 
-{% block title %}{{ _("Two-Factor Authentication") }}{% endblock %}
+{% block title %}{{ _("Two-factor authentication") }}{% endblock %}
 
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 py-4 w-full">
         {{ page_header(
-        title=_("Two-Factor Authentication"),
+        title=_("Two-factor authentication"),
         back_href=url_for('profile.view'),
         back_label=_("Back to profile")
         ) }}
@@ -30,9 +30,9 @@ ABOUTME: The regenerate and disable forms sit in native details disclosures and 
         {% else %}
             {# Current status #}
             {% call section() %}
-                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Current Status") }}</h2>
+                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Current status") }}</h2>
                 <dl>
-                    {% call detail_row(_("Two-Factor Authentication")) %}
+                    {% call detail_row(_("Two-factor authentication")) %}
                         <dd class="flex-1">
                             {% if status.enabled %}
                                 {{ tag(_("Enabled"), colour="green") }}
@@ -59,7 +59,7 @@ ABOUTME: The regenerate and disable forms sit in native details disclosures and 
             {% if not status.enabled %}
                 {# Enable #}
                 {% call section() %}
-                    <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Enable Two-Factor Authentication") }}</h2>
+                    <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Enable two-factor authentication") }}</h2>
                     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
                         {{ _("Two-factor authentication adds an extra layer of security to your account. When enabled, you'll need to enter a code from your authenticator app in addition to your password.") }}
                     </p>
@@ -76,7 +76,7 @@ ABOUTME: The regenerate and disable forms sit in native details disclosures and 
                    on the forms, so the browser's pattern check catches a mistyped
                    code before it is sent. #}
                 {% call section() %}
-                    <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Manage Two-Factor Authentication") }}</h2>
+                    <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Manage two-factor authentication") }}</h2>
                     <div class="flex flex-col gap-8">
                         <div>
                             <h3 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Regenerate backup codes") }}</h3>

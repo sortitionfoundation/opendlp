@@ -1,5 +1,5 @@
 {#
-ABOUTME: My Account page on the backoffice design system - profile details, authentication methods, security
+ABOUTME: My account page on the backoffice design system - profile details, authentication methods, security
 ABOUTME: Read-only summary with the actions to edit the profile, change or set a password and manage two-factor
 #}
 {% extends "backoffice/base_page.html" %}
@@ -10,12 +10,12 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
 {% from "backoffice/profile/_detail_row.html" import detail_row %}
 
-{% block title %}{{ _("My Account") }}{% endblock %}
+{% block title %}{{ _("My account") }}{% endblock %}
 
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 py-4 w-full">
         {{ page_header(
-        title=_("My Account"),
+        title=_("My account"),
         back_href=url_for('backoffice.dashboard'),
         back_label=_("Back to Your projects")
         ) }}
@@ -28,17 +28,17 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
     <div class="flex flex-col gap-8 max-w-3xl">
         {# Profile information #}
         {% call section() %}
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Profile Information") }}</h2>
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Profile information") }}</h2>
             <dl>
                 {% call detail_row(_("Email address")) %}
                     <dd class="text-body-md flex-1" style="color: var(--color-body-text);">{{ current_user.email }}</dd>
                 {% endcall %}
-                {% call detail_row(_("First Name")) %}
+                {% call detail_row(_("First name")) %}
                     <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
                         {{ current_user.first_name if current_user.first_name else _("Not set") }}
                     </dd>
                 {% endcall %}
-                {% call detail_row(_("Last Name")) %}
+                {% call detail_row(_("Last name")) %}
                     <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
                         {{ current_user.last_name if current_user.last_name else _("Not set") }}
                     </dd>
@@ -54,7 +54,7 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
 
         {# Authentication methods #}
         {% call section() %}
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Authentication Methods") }}</h2>
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Authentication methods") }}</h2>
             <dl>
                 {% call detail_row(_("Password")) %}
                     <dd class="flex-1">
@@ -158,7 +158,7 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
         {% call section() %}
             <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Security") }}</h2>
             <dl>
-                {% call detail_row(_("Two-Factor Authentication")) %}
+                {% call detail_row(_("Two-factor authentication")) %}
                     <dd class="flex-1">
                         {% if provider %}
                             {{ tag(_("Not available")) }}

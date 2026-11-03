@@ -67,12 +67,12 @@ class Test2FASetupFlow:
         # Navigate to 2FA settings
         response = logged_in_client.get("/profile/2fa")
         assert response.status_code == 200
-        assert b"Two-Factor Authentication" in response.data
+        assert b"Two-factor authentication" in response.data
 
         # Start 2FA setup
         response = logged_in_client.get("/profile/2fa/setup")
         assert response.status_code == 200
-        assert b"Scan this QR code" in response.data or b"Set Up Two-Factor Authentication" in response.data
+        assert b"Scan this QR code" in response.data or b"Set up two-factor authentication" in response.data
 
         # Extract the TOTP secret from the response
         # In a real implementation, we'd parse the QR code data or session

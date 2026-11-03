@@ -158,6 +158,9 @@ class Test2FAPagesOnTheBackofficeDesign:
         assert response.status_code == 200
         assert b"govuk-" not in response.data
         assert b"backoffice/dist/main.css" in response.data
+        assert b"Step 1: Scan QR code" in response.data
+        assert b"Step 2: Save backup codes" in response.data
+        assert b"Step 3: Verify setup" in response.data
         # The download handler reads the codes out of this element
         assert b'id="backup-codes"' in response.data
         assert b"data-download-backup-codes" in response.data
@@ -180,6 +183,8 @@ class Test2FAPagesOnTheBackofficeDesign:
         assert response.status_code == 200
         assert b"govuk-" not in response.data
         assert b"Enabled" in response.data
+        assert b"Current status" in response.data
+        assert b"Manage two-factor authentication" in response.data
         assert b"Backup codes remaining" in response.data
         assert b'action="/profile/2fa/backup-codes/regenerate"' in response.data
         assert b'action="/profile/2fa/disable"' in response.data
@@ -201,6 +206,7 @@ class Test2FAPagesOnTheBackofficeDesign:
 
         assert response.status_code == 200
         assert b"govuk-" not in response.data
+        assert b"New backup codes" in response.data
         assert b"Your backup codes have been regenerated" in response.data
         assert b'id="backup-codes"' in response.data
         assert b"data-download-backup-codes" in response.data
