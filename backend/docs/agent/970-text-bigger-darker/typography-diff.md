@@ -37,7 +37,7 @@ Pixel values assume the 16px root; `rem` is what the CSS says.
 | numeric | 14/20 · 500 · 0.1 (style) / 0 (sample text) | 14/20 · 500 · 0.1px · tabular | 13/18 | none (confirm tracking) |
 | code | — (not in Figma) | 14/20 · 400 · mono | 13/18 | no Figma value |
 
-Reading of the table: Gergő's branch is a +1px pass with the weights left
+Reading of the table: the current branch is a +1px pass with the weights left
 alone; Klára's revision is a +1–2px pass on the same classes **and** a weight
 pass that moves every label, heading and overline from 500 to 600 and the
 caption from 400 to 500. The two agree on direction and overlap on body-sm,
