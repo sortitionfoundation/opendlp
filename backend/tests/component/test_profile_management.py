@@ -77,10 +77,17 @@ class TestProfileEditing:
         assert b"Last Name" in response.data
 
 
-class TestProfilePagesOnTheBackofficeDesign:
-    """The view and edit pages left GOV.UK Frontend for the backoffice layout (sc-869)."""
+PASSWORD_USER_PAGES = ["/profile", "/profile/edit", "/profile/change-password", "/profile/2fa", "/profile/2fa/setup"]
 
-    @pytest.mark.parametrize("url", ["/profile", "/profile/edit"])
+
+class TestProfilePagesOnTheBackofficeDesign:
+    """The profile pages left GOV.UK Frontend for the backoffice layout (sc-869).
+
+    The set-password page is only reachable by an OAuth user without a password, and the
+    regenerated backup codes page only by a POST with a valid code (tests/component/test_2fa_flow.py).
+    """
+
+    @pytest.mark.parametrize("url", PASSWORD_USER_PAGES)
     def test_page_has_no_govuk_markup(self, logged_in_user: FlaskClient, url: str) -> None:
         """A migrated page never mixes in GOV.UK classes or the GOV.UK stylesheet."""
         response = logged_in_user.get(url)
@@ -89,7 +96,7 @@ class TestProfilePagesOnTheBackofficeDesign:
         assert b"govuk-" not in response.data
         assert b"css/application.css" not in response.data
 
-    @pytest.mark.parametrize("url", ["/profile", "/profile/edit"])
+    @pytest.mark.parametrize("url", PASSWORD_USER_PAGES)
     def test_page_uses_the_backoffice_layout(self, logged_in_user: FlaskClient, url: str) -> None:
         """The backoffice chrome is there: the account menu in the top bar and the flash container."""
         response = logged_in_user.get(url)
@@ -97,6 +104,56 @@ class TestProfilePagesOnTheBackofficeDesign:
         assert b"backoffice/dist/main.css" in response.data
         assert b'id="account-menu-toggle"' in response.data
         assert b'id="floating-alerts"' in response.data
+
+    def test_set_password_page_is_on_the_backoffice_design(self, client: FlaskClient, oauth_user: User) -> None:
+        _login_session(client, oauth_user)
+
+        response = client.get("/profile/set-password")
+
+        assert response.status_code == 200
+        assert b"govuk-" not in response.data
+        assert b"backoffice/dist/main.css" in response.data
+        assert b'name="new_password"' in response.data
+        assert b'name="new_password_confirm"' in response.data
+        assert response.data.count(b'autocomplete="new-password"') == 2
+
+    def test_change_password_form_keeps_its_fields(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile/change-password")
+
+        assert b'<form method="POST" novalidate' in response.data
+        assert b'name="current_password"' in response.data
+        assert b'autocomplete="current-password"' in response.data
+        assert b'name="new_password"' in response.data
+        assert b'name="new_password_confirm"' in response.data
+        assert response.data.count(b'autocomplete="new-password"') == 2
+        # The show/hide toggle the design system renders on every password input
+        assert response.data.count(b"data-toggle-password=") == 3
+        # The password requirements list under the new password field
+        assert b"Your password must meet the following requirements:" in response.data
+        assert b"<li>" in response.data
+
+    def test_change_password_shows_the_field_error_beside_the_field(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.post(
+            "/profile/change-password",
+            data={
+                "current_password": "userpass123",  # pragma: allowlist secret
+                "new_password": "weak",  # pragma: allowlist secret
+                "new_password_confirm": "weak",  # pragma: allowlist secret
+            },
+        )
+
+        assert response.status_code == 200
+        assert b'id="new_password-error"' in response.data
+        assert b'aria-describedby="new_password-error"' in response.data
+
+    def test_two_factor_settings_offer_the_set_up_when_disabled(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile/2fa")
+
+        assert b"Disabled" in response.data
+        assert b'href="/profile/2fa/setup"' in response.data
+        assert b'aria-label="Back to profile"' in response.data
+        # Nothing to regenerate or disable yet
+        assert b"/profile/2fa/disable" not in response.data
 
     def test_my_account_menu_item_opens_in_the_same_tab(self, logged_in_user: FlaskClient) -> None:
         """It used to open a separate tab because the page was on the old design."""

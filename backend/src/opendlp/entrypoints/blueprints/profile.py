@@ -111,7 +111,7 @@ def change_password() -> ResponseReturnValue:
             flash(_("An error occurred while changing your password"), "error")
 
     return render_template(
-        "profile/change_password.html", form=form, password_help=password_validators_help_text_html()
+        "backoffice/profile/change_password.html", form=form, password_help=password_validators_help_text_html()
     ), 200
 
 
@@ -329,7 +329,7 @@ def set_password() -> ResponseReturnValue:
             flash(_("An error occurred while setting your password"), "error")
 
     return render_template(
-        "profile/set_password.html", form=form, password_help=password_validators_help_text_html()
+        "backoffice/profile/set_password.html", form=form, password_help=password_validators_help_text_html()
     ), 200
 
 
@@ -342,7 +342,7 @@ def two_factor_settings() -> ResponseReturnValue:
         with uow:
             status = two_factor_service.get_2fa_status(uow, current_user.id)
 
-        return render_template("profile/2fa_settings.html", status=status), 200
+        return render_template("backoffice/profile/2fa_settings.html", status=status), 200
 
     except Exception as e:
         logger.error("Error loading 2FA settings", user_id=str(current_user.id), error=str(e))
@@ -364,7 +364,7 @@ def setup_2fa() -> ResponseReturnValue:
         session["totp_setup_backup_codes"] = backup_codes
 
         return render_template(
-            "profile/2fa_setup.html",
+            "backoffice/profile/2fa_setup.html",
             qr_code_url=qr_code_url,
             totp_secret=totp_secret,
             backup_codes=backup_codes,
@@ -460,7 +460,7 @@ def regenerate_backup_codes() -> ResponseReturnValue:
         with uow:
             backup_codes = two_factor_service.regenerate_backup_codes(uow, current_user.id, totp_code)
 
-        return render_template("profile/2fa_backup_codes.html", backup_codes=backup_codes), 200
+        return render_template("backoffice/profile/2fa_backup_codes.html", backup_codes=backup_codes), 200
 
     except TwoFactorVerificationError as e:
         flash(str(e), "error")

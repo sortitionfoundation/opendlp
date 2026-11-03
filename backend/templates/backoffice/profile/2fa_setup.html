@@ -1,0 +1,72 @@
+{#
+ABOUTME: Two-factor authentication setup on the backoffice design system - scan the QR code, save the backup codes, verify
+ABOUTME: Three section steps; the verification form posts to profile.enable_2fa
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/profile/_backup_codes.html" import backup_codes_panel %}
+
+{% block title %}{{ _("Set Up Two-Factor Authentication") }}{% endblock %}
+
+{% block page_content %}
+    <h1 class="text-display-lg mb-8" style="color: var(--color-headings);">{{ _("Set Up Two-Factor Authentication") }}</h1>
+
+    <div class="flex flex-col gap-8 max-w-3xl">
+        {# Step 1 #}
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Step 1: Scan QR Code") }}</h2>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Open your authenticator app and scan this QR code:") }}
+            </p>
+            <img src="{{ qr_code_url }}"
+                 alt="{{ _('QR code for two-factor authentication setup') }}"
+                 class="max-w-[300px] h-auto rounded-lg p-5 mb-6"
+                 style="border: 1px solid var(--color-borders-dividers);
+                        background-color: var(--color-page-background);" />
+            <details>
+                <summary class="text-body-md font-semibold underline cursor-pointer"
+                         style="color: var(--color-links);">{{ _("Can't scan the QR code?") }}</summary>
+                <div class="flex flex-col gap-3 mt-3">
+                    <p class="text-body-md" style="color: var(--color-body-text);">{{ _("You can enter this code manually in your authenticator app:") }}</p>
+                    <code class="text-code block p-4 rounded-lg break-all select-all"
+                          style="background-color: var(--color-subtle-background-panels);
+                                 border: 1px solid var(--color-borders-dividers);
+                                 color: var(--color-body-text);">{{ totp_secret }}</code>
+                </div>
+            </details>
+        {% endcall %}
+
+        {# Step 2 #}
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Step 2: Save Backup Codes") }}</h2>
+            {{ alert(_("Save these backup codes in a safe place. Each code can only be used once. If you lose access to your authenticator app, you'll need these codes to sign in."), variant="warning") }}
+            {{ backup_codes_panel(backup_codes) }}
+        {% endcall %}
+
+        {# Step 3. No novalidate: the browser's pattern check catches a mistyped
+           code before it is sent. No autofocus either: focusing this field on
+           load scrolled the page past the QR code the visitor came to scan. #}
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Step 3: Verify Setup") }}</h2>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Enter the 6-digit code from your authenticator app to complete setup:") }}
+            </p>
+            <form method="POST" action="{{ url_for('profile.enable_2fa') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="max-w-xs">
+                    {{ input("totp_code",
+                    label=_("Verification code"),
+                    attrs='inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required')
+                    }}
+                </div>
+                <div class="flex gap-4 mt-6">
+                    {{ button(_("Verify and enable"), type="submit", variant="primary") }}
+                    {{ button(_("Cancel"), href=url_for('profile.two_factor_settings'), variant="secondary") }}
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+{% endblock %}

@@ -8,16 +8,7 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/tag.html" import tag %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
-
-{% macro detail_row(term) %}
-    {# One key/value row of a details list, as on the project details page.
-       The caller supplies the <dd>s: the value, and optionally a trailing action. #}
-    <div class="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-3 border-b last:border-b-0"
-         style="border-color: var(--color-borders-dividers);">
-        <dt class="text-label-lg sm:w-48 shrink-0" style="color: var(--color-secondary-text);">{{ term }}</dt>
-        {{ caller() }}
-    </div>
-{% endmacro %}
+{% from "backoffice/profile/_detail_row.html" import detail_row %}
 
 {% block title %}{{ _("My Account") }}{% endblock %}
 
