@@ -68,7 +68,7 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
                         {% if has_password and provider %}
                             <form method="POST"
                                   action="{{ url_for('profile.remove_password') }}"
-                                  data-confirm="{{ _("Are you sure you want to remove password authentication? You will only be able to sign in with Google.") }}">
+                                  data-confirm="{{ _("Are you sure you want to remove password authentication? You will only be able to sign in with %(provider)s.", provider=provider.title()) }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 {{ button(_("Remove"), variant="tertiary", type="submit") }}
                             </form>

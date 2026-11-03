@@ -334,6 +334,9 @@ class TestRemoveAuthMethods:
             assert user.password_hash is not None
 
 
+LINKED_PROVIDERS = [("google", "Google", "Microsoft"), ("microsoft", "Microsoft", "Google")]
+
+
 class TestOAuthProfileDisplay:
     """OAuth information display in the profile page."""
 
@@ -396,3 +399,56 @@ class TestOAuthProfileDisplay:
         assert b"Microsoft OAuth" in response.data
         assert b"Active" in response.data
         assert b"Remove" in response.data or b"Remove Microsoft first" in response.data
+
+    @pytest.mark.parametrize(("provider", "name", "other_name"), LINKED_PROVIDERS)
+    def test_remove_password_confirm_names_the_linked_provider(
+        self, client: FlaskClient, fake_store: FakeStore, provider: str, name: str, other_name: str
+    ):
+        """The confirm used to say Google whichever provider was linked."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user, _ = create_user(
+                uow=uow,
+                email=f"dual-{provider}-{uuid.uuid4()}@example.com",
+                password="SecureTestPass123!",  # pragma: allowlist secret
+                oauth_provider=provider,
+                oauth_id=f"{provider}-456",
+                first_name="Dual",
+                last_name="User",
+                global_role=GlobalRole.USER,
+                accept_data_agreement=True,
+            )
+            dual_user = user.create_detached_copy()
+
+        _login(client, dual_user)
+
+        response = client.get("/profile")
+
+        assert response.status_code == 200
+        assert f"You will only be able to sign in with {name}.".encode() in response.data
+        assert f"You will only be able to sign in with {other_name}.".encode() not in response.data
+
+    @pytest.mark.parametrize(("provider", "name", "other_name"), LINKED_PROVIDERS)
+    def test_set_password_intro_names_the_linked_provider(
+        self, client: FlaskClient, fake_store: FakeStore, provider: str, name: str, other_name: str
+    ):
+        """The intro used to say Google OAuth whichever provider was linked."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user, _ = create_user(
+                uow=uow,
+                email=f"oauth-{provider}-{uuid.uuid4()}@example.com",
+                oauth_provider=provider,
+                oauth_id=f"{provider}-789",
+                first_name="OAuth",
+                last_name="User",
+                global_role=GlobalRole.USER,
+                accept_data_agreement=True,
+            )
+            oauth_user = user.create_detached_copy()
+
+        _login(client, oauth_user)
+
+        response = client.get("/profile/set-password")
+
+        assert response.status_code == 200
+        assert f"either your password or {name} OAuth.".encode() in response.data
+        assert f"{other_name} OAuth".encode() not in response.data
