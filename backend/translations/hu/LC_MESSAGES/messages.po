@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 13:44+0000\n"
+"POT-Creation-Date: 2026-11-03 16:31+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -74,7 +74,9 @@ msgstr "Feldolgozás…"
 #: templates/backoffice/components/assembly_tabs.html:58
 #: templates/backoffice/respondents/export_modal.html:64
 #: templates/backoffice/targets/bulk_edit_form.html:282
+#: templates/backoffice/targets/bulk_edit_form.html:283
 #: templates/backoffice/targets/category_block.html:133
+#: templates/backoffice/targets/category_block.html:134
 #: templates/db_selection/select.html:43
 #: templates/main/view_assembly_base.html:42
 #: templates/respondents/view_respondents.html:2
@@ -622,7 +624,9 @@ msgstr "Jelentkezők"
 #: templates/backoffice/assembly_view_respondent.html:226
 #: templates/backoffice/components/table.html:209
 #: templates/backoffice/targets/bulk_edit_form.html:291
+#: templates/backoffice/targets/bulk_edit_form.html:292
 #: templates/backoffice/targets/category_block.html:142
+#: templates/backoffice/targets/category_block.html:143
 #: templates/respondents/view_respondents.html:132
 msgid "Selected"
 msgstr "Kiválasztva"
@@ -3238,6 +3242,7 @@ msgstr "Az automatikus exportálás leállítva"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:675
 #: templates/admin/users.html:90
+#: templates/backoffice/assembly_respondents.html:108
 #: templates/respondents/view_respondents.html:130
 msgid "All statuses"
 msgstr "Minden állapot"
@@ -7599,6 +7604,15 @@ msgstr "Munkalap neve"
 msgid "Share the spreadsheet with %(email)s so it can be written to."
 msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
+#: templates/backoffice/components/info_icon.html:28
+#, python-format
+msgid "More about %(thing)s"
+msgstr "Bővebben: %(thing)s"
+
+#: templates/backoffice/components/info_icon.html:28
+msgid "More information"
+msgstr "További információ"
+
 #: templates/backoffice/components/input.html:638
 msgid "On"
 msgstr "Be"
@@ -7680,6 +7694,7 @@ msgid "QR code"
 msgstr "QR-kód"
 
 #: templates/backoffice/components/registration_page_list.html:32
+#: templates/backoffice/components/registration_page_list.html:33
 #: templates/backoffice/registration/_hub.html:30
 msgid "Registrations"
 msgstr "Regisztrációk"
@@ -9681,6 +9696,10 @@ msgstr "%(value)s kezdő életkora"
 msgid "Respondent age calculated on %(date)s"
 msgstr "A jelentkezők életkora erre a dátumra számítva: %(date)s"
 
+#: templates/backoffice/target_sources/_setup_modal.html:251
+msgid "the date ages are calculated on"
+msgstr "az életkor számításának dátuma"
+
 #: templates/backoffice/target_sources/_setup_modal.html:252
 msgid "Change"
 msgstr "Módosítás"
@@ -9917,6 +9936,7 @@ msgid "'%(name)s' and all its values will be deleted when you save."
 msgstr "\"%(name)s\" és az összes értéke törlődik, amikor mentesz."
 
 #: templates/backoffice/targets/bulk_edit_form.html:243
+#: templates/backoffice/targets/category_block.html:66
 msgid "Source of population figures"
 msgstr "Népességi adatok forrása"
 

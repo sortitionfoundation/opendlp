@@ -105,7 +105,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                                     <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }} ({{ option.count }})</option>
                                 {% endfor %}
                             </select>
-                            {{ info_icon(_("All statuses: every respondent except deleted ones, whose details have been removed. Test submissions are included.")) }}
+                            {{ info_icon(_("All statuses: every respondent except deleted ones, whose details have been removed. Test submissions are included."), about=_("All statuses")) }}
                         </div>
                         {% if total_count > 0 %}
                             <button type="button"
