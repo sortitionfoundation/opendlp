@@ -7,7 +7,7 @@ and components the backoffice pages already use.
 
 The story has no description. This document is the inventory, the precedent
 to copy, and a page-by-page proposal; the open questions at the end are the
-ones only Gergő can answer.
+ones this document cannot settle on its own.
 
 ## Inventory
 
@@ -140,7 +140,11 @@ project pages made.
   type="submit", variant="primary")` + `button(_("Cancel"), href=…,
   variant="secondary")`. `form.hidden_tag()` and `novalidate` kept.
 
-### `/profile/change-password` and `/profile/set-password` (waits for #2)
+**Scope (decided 2 Nov):** this PR redesigns `/profile` (view) and `/profile/edit` only.
+The password and 2FA pages below are written up so the follow-up story can start from
+these notes; they keep their current templates for now.
+
+### `/profile/change-password` and `/profile/set-password` (follow-up story, not in this PR)
 
 - Same shape as `public/reset_password.html`: `input(type="password")` ×3 / ×2
   with `autocomplete`, the requirements list (`password_help|safe`) under the
@@ -151,7 +155,7 @@ project pages made.
   (noted in the public-pages plan as the reason that macro survived phase 3)
   — delete the macro with them.
 
-### `/profile/2fa`, `/profile/2fa/setup`, backup codes (waits for #2)
+### `/profile/2fa`, `/profile/2fa/setup`, backup codes (follow-up story, not in this PR)
 
 - `2fa_settings.html`: `section()` + `<dl>` rows for the status; the two
   disclosures stay native `<details>` (no disclosure component; the verify-2FA
@@ -170,7 +174,7 @@ project pages made.
 - The 2FA pages carry inline `style="…"` colours (`#f3f2f1`, `#b1b4b6`,
   `#1d70b8`) that must become tokens.
 
-### What waits for the design source (#1)
+### What waits for a design source
 
 Everything above uses only what the design system already provides. A Figma
 frame would decide: whether *My Account* is one page or tabs (Profile /
