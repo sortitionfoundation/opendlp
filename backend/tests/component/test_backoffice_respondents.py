@@ -1199,9 +1199,10 @@ class TestEditRespondentPage:
             },
             follow_redirects=False,
         )
-        assert response.status_code == 200
+        assert response.status_code == 422
         body = response.get_data(as_text=True)
         assert "Please enter a valid date" in body
+        assert 'href="#attr_date_of_birth-day"' in body
         assert 'value="31"' in body
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondents.get(resp_id).attributes["date_of_birth"] == "1985-07-03"
@@ -1236,7 +1237,10 @@ class TestEditRespondentPage:
             data={"email": "other@example.com", "comment": ""},
             follow_redirects=False,
         )
-        assert response.status_code == 200
+        assert response.status_code == 422
+        body = response.get_data(as_text=True)
+        assert "There is a problem" in body
+        assert 'href="#comment"' in body
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondents.get(resp_id).email == "r@example.com"
 
@@ -1276,3 +1280,73 @@ class TestEditRespondentPage:
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents")
         assert response.status_code == 200
         assert b"Edit" in response.data
+
+    def _make_respondent_with_bool_attribute(self, fake_store: FakeStore, admin_user, assembly_id, stored_value):
+        """A respondent whose BOOL attribute holds `stored_value` - the registration form stores a real bool."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            import_respondents_from_csv(
+                uow, admin_user.id, assembly_id, "external_id,attending\nR001,placeholder\n", replace_existing=True
+            )
+            schema = get_schema(uow, admin_user.id, assembly_id)
+            source = next(f for f in schema if f.field_key == "attending")
+            update_field(uow, admin_user.id, assembly_id, source.id, field_type=FieldType.BOOL)
+            respondent = uow.respondents.get_by_assembly_id(assembly_id)[0]
+            respondent.attributes = {**respondent.attributes, "attending": stored_value}
+            uow.commit()
+            return respondent.id
+
+    def test_bool_attribute_stored_as_json_true_is_preselected(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        resp_id = self._make_respondent_with_bool_attribute(fake_store, admin_user, existing_assembly.id, True)
+
+        response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        checked = re.findall(r'<input[^>]*name="attr_attending"[^>]*value="(\w*)"[^>]*\bchecked\b', body)
+        assert checked == ["true"]
+
+    def test_bool_attribute_stored_as_json_true_saves_without_being_touched(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        """Submitting the form as rendered - the radio already set - saves."""
+        resp_id = self._make_respondent_with_bool_attribute(fake_store, admin_user, existing_assembly.id, True)
+
+        response = logged_in_admin.post(
+            self._edit_url(existing_assembly.id, resp_id),
+            data={"attr_attending": "true", "comment": "no real change"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.get(resp_id).attributes["attending"] == "true"
+
+    def test_post_with_unanswered_bool_shows_error_summary_and_field_error(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        resp_id = self._make_respondent_with_bool_attribute(fake_store, admin_user, existing_assembly.id, "")
+
+        response = logged_in_admin.post(
+            self._edit_url(existing_assembly.id, resp_id),
+            data={"comment": "forgot the radio"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 422
+        body = response.get_data(as_text=True)
+        # A summary at the top of the page, linking to the field
+        assert "There is a problem" in body
+        assert body.index("There is a problem") < body.index("Selection status")
+        assert 'href="#attr_attending_1"' in body
+        # The error is rendered by the radio group, tied to its fieldset
+        assert 'id="attr_attending-error"' in body
+        assert 'aria-describedby="attr_attending-error"' in body
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.get(resp_id).attributes["attending"] == ""
+
+    def test_valid_get_shows_no_error_summary(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        resp_id = self._make_respondent_with_bool_attribute(fake_store, admin_user, existing_assembly.id, True)
+
+        response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
+        assert "There is a problem" not in response.get_data(as_text=True)
