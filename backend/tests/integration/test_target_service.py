@@ -15,7 +15,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
     RespondentFieldGroup,
 )
-from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.domain.targets import MAX_SOURCE_URL_LENGTH, TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import assembly_service, respondent_service, target_csv_import, target_service
@@ -920,7 +920,7 @@ class TestSaveAllTargets:
                     target_service.TargetCategoryEdit(
                         category_id=category.id,
                         name="Renamed",
-                        source_url="javascript:alert(1)",
+                        source_url="x" * (MAX_SOURCE_URL_LENGTH + 1),
                         values=[],
                     )
                 ],
@@ -1433,27 +1433,29 @@ Gender,Female,10,15,https://www.ons.gov.uk/one"""
 
         assert result.warnings == []
 
-    def test_an_invalid_source_url_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
-        """InvalidSelection rather than a bare ValueError, so the upload route can show it."""
-        csv_content = """feature,value,min,max,source_url
-Gender,Male,10,15,javascript:alert(1)"""
-
-        with pytest.raises(InvalidSelection, match="http"):
-            target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
-
-    def test_a_source_url_with_no_scheme_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
+    def test_an_over_long_source_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
         """Bad data in the spreadsheet is the user's mistake, not an internal error.
 
         InvalidSelection reaches the upload route's own handler, which puts the
         message on the file field. A bare ValueError would fall through to
         `except Exception` - "an unexpected error occurred", plus a stack trace.
         """
-        csv_content = """feature,value,min,max,source_url
-Gender,Male,3,7,www.ons.gov.uk/dataset
-Gender,Female,3,7,www.ons.gov.uk/dataset"""
+        long_source = "x" * (MAX_SOURCE_URL_LENGTH + 1)
+        csv_content = f"""feature,value,min,max,source_url
+Gender,Male,10,15,{long_source}"""
 
-        with pytest.raises(InvalidSelection):
+        with pytest.raises(InvalidSelection, match="2048"):
             target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+    def test_a_source_that_is_not_a_url_is_imported(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,source_url
+Gender,Male,3,7,The council sent the numbers by email
+Gender,Female,3,7,The council sent the numbers by email"""
+
+        target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        stored = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert stored.source_url == "The council sent the numbers by email"
 
     def test_an_over_long_comment_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
         csv_content = (

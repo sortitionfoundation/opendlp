@@ -1007,10 +1007,7 @@ def _apply_category_edit(
     except ValueError:
         errors.append(
             TargetEditError(
-                _(
-                    "Enter a full http:// or https:// address, %(limit)s characters or fewer",
-                    limit=MAX_SOURCE_URL_LENGTH,
-                ),
+                _("Source must be %(limit)s characters or fewer", limit=MAX_SOURCE_URL_LENGTH),
                 category_edit.form_id,
                 field="source_url",
             )

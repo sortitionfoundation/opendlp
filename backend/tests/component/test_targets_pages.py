@@ -17,6 +17,7 @@ from opendlp.domain.respondent_field_schema import (
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
+from opendlp.domain.targets import MAX_SOURCE_URL_LENGTH
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, RespondentStatus
 from opendlp.entrypoints.template_filters import MAX_URL_TEXT_LENGTH
@@ -424,7 +425,10 @@ class TestCategorySourceAndComment:
 
         assert "Source of population figures:" in html_text
         assert "Data Source" not in html_text
-        assert 'title="A link to the report the percentages come from, such as census tables or a poll."' in html_text
+        assert (
+            'title="Source of the percentages. Could be a link to the report the percentages come from, such as census tables or a poll, or could be a statement that a council provided the numbers in an email."'
+            in html_text
+        )
 
     def test_the_edit_form_describes_the_source_field_with_its_info_icon(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -438,9 +442,49 @@ class TestCategorySourceAndComment:
         assert re.search(rf'<label for="{source_id}"[^>]*>\s*Source of population figures\s*</label>', html_text)
         assert f'aria-describedby="{source_id}-info"' in html_text
         assert re.search(
-            rf'id="{source_id}-info">A link to the report the percentages come from, such as census tables or a poll\.',
+            rf'id="{source_id}-info">Source of the percentages\. Could be a link to the report',
             html_text,
         )
+
+    def test_the_edit_form_does_not_ask_for_a_url(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """The source may be a sentence with no link in it, so the field must not suggest one."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 1, 2)
+
+        html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        source_input = re.search(rf'<input[^>]*id="bulk-source-{category.id}"[^>]*>', html_text)
+        assert source_input
+        assert "placeholder" not in source_input.group(0)
+
+    def test_a_url_in_the_source_is_a_link(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,source_url\nGender,Male,3,7,Census 2021 https://www.ons.gov.uk/dataset\n",
+        )
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "Census 2021" in html_text
+        assert 'href="https://www.ons.gov.uk/dataset"' in html_text
+
+    def test_a_source_that_is_not_a_url_is_shown_as_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A `javascript:` source is stored as typed and must never become a link."""
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,source_url\nGender,Male,3,7,javascript:alert(1)\n",
+        )
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "javascript:alert(1)" in html_text
+        assert 'href="javascript' not in html_text
 
 
 # Nine values in the respondent data, one of them targeted, so the eight that
@@ -1215,10 +1259,10 @@ class TestSaveAllValidationErrors:
             },
         )
 
-    def test_an_invalid_source_url_comes_back_as_the_form(
+    def test_an_over_long_source_comes_back_as_the_form(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """A scheme the domain refuses must reach the user as a field error, not a 500."""
+        """A source the domain refuses must reach the user as a field error, not a 500."""
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
         cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
         prefix = f"cat[{category.id}]"
@@ -1227,7 +1271,7 @@ class TestSaveAllValidationErrors:
             _targets_url(existing_assembly.id, "/save-all"),
             data={
                 f"{prefix}[name]": "Gender",
-                f"{prefix}[source_url]": "javascript:alert(1)",
+                f"{prefix}[source_url]": "x" * (MAX_SOURCE_URL_LENGTH + 1),
                 f"{prefix}[values][{cat.values[0].value_id}][value]": "Male",
                 f"{prefix}[values][{cat.values[0].value_id}][min]": "3",
                 f"{prefix}[values][{cat.values[0].value_id}][max]": "7",
@@ -1237,7 +1281,7 @@ class TestSaveAllValidationErrors:
         assert response.status_code == 200, "a rejected save should re-render, not redirect"
         with FakeUnitOfWork(store=fake_store) as uow:
             stored = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
-        assert stored.source_url == "", "the refused URL must not have been saved"
+        assert stored.source_url == "", "the refused source must not have been saved"
 
     def test_a_min_above_max_comes_back_as_the_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")

@@ -68,14 +68,12 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
     {% if category.source_url or category.comment %}
         <div class="px-6 pt-4">
             {% if category.source_url %}
+                {# Free text, so linkify: it may be a link, a sentence with one in
+                   it, or no link at all. #}
                 <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
                     {{ _("Source of population figures:") }}
-                    {{ info_icon(_("A link to the report the percentages come from, such as census tables or a poll.")) }}
-                    <a href="{{ category.source_url }}"
-                       class="underline"
-                       style="color: var(--color-links)"
-                       target="_blank"
-                       rel="noopener noreferrer">{{ category.source_url | trim_url }}</a>
+                    {{ info_icon(_("Source of the percentages. Could be a link to the report the percentages come from, such as census tables or a poll, or could be a statement that a council provided the numbers in an email.")) }}
+                    {{ category.source_url | linkify }}
                 </p>
             {% endif %}
             {% if category.comment %}

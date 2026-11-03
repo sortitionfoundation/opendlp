@@ -420,31 +420,32 @@ class TestPercentagesFromMinMax:
 
 class TestSourceUrlValidation:
     @pytest.mark.parametrize(
-        "url",
-        ["https://www.ons.gov.uk/dataset", "http://example.com", "https://example.com/a?b=c#d"],
+        "source",
+        [
+            "https://www.ons.gov.uk/dataset",
+            "Census 2021 tables, https://www.ons.gov.uk/dataset",
+            "The council sent the numbers by email",
+            # Not a link anywhere it is shown: linkify leaves it as inert text.
+            "javascript:alert(1)",
+        ],
     )
-    def test_accepts_http_and_https(self, url):
-        assert validate_source_url(url) == url
+    def test_accepts_free_text(self, source):
+        assert validate_source_url(source) == source
+
+    def test_strips_surrounding_space(self):
+        assert validate_source_url("  from the council  ") == "from the council"
 
     def test_empty_is_valid(self):
         assert validate_source_url("") == ""
         assert validate_source_url("   ") == ""
 
-    @pytest.mark.parametrize(
-        "url",
-        ["javascript:alert(1)", "data:text/html,<script>", "example.com", "ftp://example.com", "https://"],
-    )
-    def test_rejects_anything_else(self, url):
-        with pytest.raises(ValueError, match="http"):
-            validate_source_url(url)
-
-    def test_rejects_an_over_long_url(self):
+    def test_rejects_an_over_long_source(self):
         with pytest.raises(ValueError, match="2048"):
             validate_source_url("https://example.com/" + "a" * MAX_SOURCE_URL_LENGTH)
 
     def test_category_validates_its_source_url(self):
-        with pytest.raises(ValueError, match="http"):
-            TargetCategory(assembly_id=uuid.uuid4(), name="Gender", source_url="javascript:alert(1)")
+        with pytest.raises(ValueError, match="2048"):
+            TargetCategory(assembly_id=uuid.uuid4(), name="Gender", source_url="a" * (MAX_SOURCE_URL_LENGTH + 1))
 
 
 class TestComments:

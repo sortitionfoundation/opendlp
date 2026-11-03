@@ -32,7 +32,7 @@ from wtforms.validators import (
 
 from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
-from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH, validate_source_url
+from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, SignupSurveyQuestion, SurveyFieldType
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.validators import validate_email as domain_validate_email
@@ -104,25 +104,6 @@ class NonNegativeValidator:
     def __call__(self, form: Any, field: Any) -> None:
         if field.data is not None and field.data < 0:
             raise ValidationError(str(self.message))
-
-
-class SourceUrlValidator:
-    """Mirror the domain's http(s)-only rule so the user gets a field error.
-
-    Without this the domain's ValueError would surface as a 500. The domain check
-    is still the one that matters - this is the friendly copy of it, not a
-    replacement.
-    """
-
-    def __call__(self, form: Any, field: Any) -> None:
-        if not field.data:
-            return
-        try:
-            validate_source_url(field.data)
-        except ValueError as e:
-            # A literal rather than str(e): the domain's message is written for a
-            # developer and never passes through gettext.
-            raise ValidationError(_l("Enter a full http:// or https:// address")) from e
 
 
 class LoginForm(FlaskForm):  # type: ignore[no-any-unimported]
@@ -674,8 +655,8 @@ class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     source_url = StringField(
         _l("Data Source"),
-        validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH), SourceUrlValidator()],
-        description=_l("Optional — a link to where the percentages came from"),
+        validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH)],
+        description=_l("Optional — where the percentages came from, such as a link to a report"),
     )
 
 
