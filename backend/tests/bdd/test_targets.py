@@ -185,6 +185,25 @@ def open_targets_page(admin_logged_in_page: Page, title: str) -> None:
     admin_logged_in_page.goto(_targets_url(_target_assembly_ids[title]))
 
 
+@when(parsers.parse('I open the targets page for "{title}" in a short window'))
+def open_targets_page_short(admin_logged_in_page: Page, title: str) -> None:
+    """Short enough that two targets run off the bottom, so the page scrolls."""
+    admin_logged_in_page.set_viewport_size({"width": 1280, "height": 500})
+    admin_logged_in_page.goto(_targets_url(_target_assembly_ids[title]))
+
+
+@when("I scroll to the bottom of the page")
+def scroll_to_bottom(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    admin_logged_in_page.wait_for_function("window.scrollY > 0", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{name}" button should be in view'))
+def button_in_view(admin_logged_in_page: Page, name: str) -> None:
+    button = admin_logged_in_page.get_by_role("button", name=name, exact=True).filter(visible=True)
+    expect(button).to_be_in_viewport(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when(parsers.parse('I adjust the targets for "{title}" after a failed test selection'))
 def adjust_targets_after_failed_selection(admin_logged_in_page: Page, title: str, test_database) -> None:
     """Where "Adjust targets" on a failed test selection leads: the check, open in the editor."""

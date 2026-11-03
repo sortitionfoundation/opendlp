@@ -94,20 +94,23 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                      discardUrl: '{{ discard_url }}'
                      })">
             {# ── Targets Heading and Actions ──────────────── #}
-            <section class="mb-6 flex items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h2>
+            {# Pinned under the page header as the targets scroll by, so the
+               title and the way into editing are always in reach. #}
+            <div class="sticky-below-header mb-3" x-data="stickyBelowHeader">
+                <section class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h2>
                     {# The seat count, not a category tally: every min and max on this
                        page is a share of it, so it is the number to have in mind. #}
-                    <p class="text-body-md" style="color: var(--color-secondary-text);">
-                        {{ _("Number to select: %(number)s", number=assembly.number_to_select) }}
-                    </p>
-                    {% if not target_categories %}
                         <p class="text-body-md" style="color: var(--color-secondary-text);">
-                            {{ _("No targets defined yet.") }}
+                            {{ _("Number to select: %(number)s", number=assembly.number_to_select) }}
                         </p>
-                    {% endif %}
-                </div>
+                        {% if not target_categories %}
+                            <p class="text-body-md" style="color: var(--color-secondary-text);">
+                                {{ _("No targets defined yet.") }}
+                            </p>
+                        {% endif %}
+                    </div>
                 {# The actions that get you into a mode, beside the heading. The
                    two that get you out of editing - discard and save - sit in
                    the sticky bar at the foot of the page instead, where they
@@ -115,28 +118,29 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                    targets" button: saving runs the detailed check and lands
                    back here with its annotations, so there is nothing left for
                    a separate button to do. #}
-                {% if can_manage %}
-                    <span class="flex items-center gap-2 shrink-0">
+                    {% if can_manage %}
+                        <span class="flex items-center gap-2 shrink-0">
                         {# Exports what is saved, so it is no use mid-edit: it goes
                            with "Edit targets" while the form is open. #}
-                        {% if target_categories %}
-                            <span x-show="!editingAll">
-                                {{ button(_("Export"), variant="secondary",
-                                attrs='data-focus-id="targets-export" hx-get="' ~ url_for('targets.export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
-                            </span>
-                        {% endif %}
-                        {{ button(_("Add target"),
-                        variant="secondary",
-                        leading_icon=icon_plus(),
-                        attrs='x-ref="addTargetButton" @click="openAddTarget()"') }}
-                        {% if target_categories %}
-                            <span x-show="!editingAll">
-                                {{ button(_("Edit targets"), variant="primary", attrs='@click="editingAll = true"') }}
-                            </span>
-                        {% endif %}
-                    </span>
-                {% endif %}
-            </section>
+                            {% if target_categories %}
+                                <span x-show="!editingAll">
+                                    {{ button(_("Export"), variant="secondary",
+                                    attrs='data-focus-id="targets-export" hx-get="' ~ url_for('targets.export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
+                                </span>
+                            {% endif %}
+                            {{ button(_("Add target"),
+                            variant="secondary",
+                            leading_icon=icon_plus(),
+                            attrs='x-ref="addTargetButton" @click="openAddTarget()"') }}
+                            {% if target_categories %}
+                                <span x-show="!editingAll">
+                                    {{ button(_("Edit targets"), variant="primary", attrs='@click="editingAll = true"') }}
+                                </span>
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </section>
+            </div>
             {% if can_manage %}
                 <div id="export-modal-container" data-fragment-dialog-host></div>
             {% endif %}

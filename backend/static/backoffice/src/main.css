@@ -1468,6 +1468,37 @@
 }
 
 /*
+ * A page's own heading and actions, kept in view under the sticky header as
+ * the page scrolls - the targets page's title, "Add target" and "Edit targets".
+ * `top` is set by the stickyBelowHeader component, from the header's height.
+ * The page background makes it opaque, so what scrolls under it is hidden.
+ * Once stuck it gets a dividing line, so it reads as part of the header and
+ * not as content that has stopped scrolling; browsers without scroll-state
+ * queries keep it without the line.
+ */
+@layer components {
+    .sticky-below-header {
+        position: sticky;
+        top: 0;
+        z-index: 30; /* under the header (z-40) and the modal layer */
+        container-type: scroll-state;
+        /* Up by the padding below, so in flow it sits where it would without. */
+        margin-top: -0.75rem;
+    }
+
+    .sticky-below-header > * {
+        background-color: var(--color-bg-secondary);
+        padding-block: 0.75rem;
+    }
+
+    @container scroll-state(stuck: top) {
+        .sticky-below-header > * {
+            border-bottom: 1px solid var(--color-borders-dividers);
+        }
+    }
+}
+
+/*
  * The stuck footer's breakout margins are computed from 100vw, which includes
  * the scrollbar gutter on platforms with classic scrollbars — that would add a
  * few pixels of horizontal overflow. clip (unlike hidden) does not create a

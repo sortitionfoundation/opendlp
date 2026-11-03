@@ -117,6 +117,22 @@ class TestViewTargetsPage:
         assert "add-from-columns" not in html
 
 
+class TestStickyHeading:
+    def test_the_heading_and_its_buttons_are_pinned_under_the_page_header(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        sticky = html_text.split('class="sticky-below-header')[1].split('id="export-modal-container"')[0]
+        assert 'x-data="stickyBelowHeader"' in sticky
+        assert ">Targets</h2>" in sticky
+        assert "Add target" in sticky
+        assert "Edit targets" in sticky
+        assert "data-sticky-header" in html_text, "the header it sits under must be marked for it"
+
+
 class TestUploadTargetsCsv:
     def test_upload_always_replaces_existing(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _import_targets(

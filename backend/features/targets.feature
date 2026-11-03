@@ -56,6 +56,14 @@ Feature: Target percentages, notes and ordering
     And the "Male" target should be marked as auto calculated
     And the "Male" target should show min "6" and max "7"
 
+  Scenario: The targets heading and its buttons stay in view as the page scrolls
+    Given there is an assembly with two target categories called "Sticky Heading Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Sticky Heading Demo" in a short window
+    And I scroll to the bottom of the page
+    Then the "Edit targets" button should be in view
+    And the "Add target" button should be in view
+
   Scenario: Editing every target at once
     Given there is an assembly with targets called "Edit All Demo"
     And I am signed in as an admin user
