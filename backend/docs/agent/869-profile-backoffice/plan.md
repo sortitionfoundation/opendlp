@@ -11,9 +11,9 @@ ones this document cannot settle on its own.
 
 ## Inventory
 
-### The pages (all GOV.UK today)
+### The pages (as they were before this branch, all GOV.UK)
 
-Every template under `templates/profile/` extends the GOV.UK `base.html` and
+Every template under `templates/profile/` extended the GOV.UK `base.html` and
 is rendered by `src/opendlp/entrypoints/blueprints/profile.py`:
 
 | Route | Template | Form / context | Notes |
@@ -140,39 +140,63 @@ project pages made.
   type="submit", variant="primary")` + `button(_("Cancel"), href=…,
   variant="secondary")`. `form.hidden_tag()` and `novalidate` kept.
 
-**Scope (decided 2 Nov):** this PR redesigns `/profile` (view) and `/profile/edit` only.
-The password and 2FA pages below are written up so the follow-up story can start from
-these notes; they keep their current templates for now.
+**Scope (decided 3 Nov):** this PR moves every page under `/profile` — view, edit,
+the two password pages and the three 2FA pages — so the account journey is on one
+design system and `templates/profile/` goes away. The first cut covered view and
+edit only, leaving the five below as a follow-up; review asked for the whole
+journey in one PR, and the notes below were already the specification.
 
-### `/profile/change-password` and `/profile/set-password` (follow-up story, not in this PR)
+### `/profile/change-password` and `/profile/set-password` (done in this branch)
 
-- Same shape as `public/reset_password.html`: `input(type="password")` ×3 / ×2
-  with `autocomplete`, the requirements list (`password_help|safe`) under the
-  new-password field in `text-body-sm`, primary submit + Cancel. On the
-  backoffice layout they take the `edit.html` form idiom rather than the
-  centred public column.
+- `templates/backoffice/profile/change_password.html` and `set_password.html`,
+  the `edit.html` form idiom (`h1.text-display-lg`, a `max-w-2xl` form, primary
+  submit + secondary Cancel): `input(type="password", required=true)` ×3 / ×2
+  with `autocomplete` through `attrs`; the requirements list
+  (`password_help|safe`) under the new-password field in `text-body-sm`, the
+  way `public/reset_password.html` places it. `form.hidden_tag()` and
+  `novalidate` kept; the design system's show/hide toggle replaces the GOV.UK
+  one.
 - Retires the last two users of `components/govuk_password_input.html`
   (noted in the public-pages plan as the reason that macro survived phase 3)
-  — delete the macro with them.
+  — the macro is deleted with them.
 
-### `/profile/2fa`, `/profile/2fa/setup`, backup codes (follow-up story, not in this PR)
+### `/profile/2fa`, `/profile/2fa/setup`, backup codes (done in this branch)
 
-- `2fa_settings.html`: `section()` + `<dl>` rows for the status; the two
-  disclosures stay native `<details>` (no disclosure component; the verify-2FA
-  page did the same), each wrapping its POST form with an `input()` for the
-  code (`inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
-  autocomplete="one-time-code"` via `attrs`) and `button(variant="danger")`
-  for Regenerate / Disable. The OAuth-user notice becomes
+- `2fa_settings.html`: `page_header()` with a back arrow to `/profile` (the old
+  bottom *Back to profile* link; same move as the view page), `section()` +
+  `<dl>` rows for the status, the row macro shared with the view page in
+  `backoffice/profile/_detail_row.html`. The two disclosures stay native
+  `<details>` (no disclosure component; the verify-2FA page did the same),
+  each wrapping its POST form with an `input()` for the code
+  (`inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+  autocomplete="one-time-code"` via `attrs`, no `novalidate` so the browser
+  catches a mistyped code) and `button(variant="danger")` for Regenerate /
+  Disable; `data-confirm` stays on the disable form. The OAuth-user notice is
   `alert(variant="info")`.
-- `2fa_setup.html`: three `section()` steps; the QR `<img>` and the secret in
-  a `text-code` block on `--color-subtle-background-panels`; the warning as
-  `alert(variant="warning")`; the backup-codes grid keeps `id="backup-codes"`
-  (the download handler reads it); Download / Print as secondary buttons with
-  their `data-*` attributes; the verification form as above.
+- `2fa_setup.html`: three `section()` steps; the QR `<img>` on
+  `--color-page-background` with a `--color-borders-dividers` border, the
+  secret in a `text-code` block on `--color-subtle-background-panels`
+  (`select-all`, so one click selects it); the warning as
+  `alert(variant="warning")`; the backup-codes grid and the Download / Print
+  buttons in `backoffice/profile/_backup_codes.html`, shared with the
+  regenerated-codes page. The grid keeps `id="backup-codes"` (the download
+  handler reads its children); Download / Print are secondary buttons carrying
+  `data-download-backup-codes` / `data-print`. The verification field lost its
+  `autofocus`: focusing it on load scrolled the page past the QR code, so the
+  page opened on step 3. (The public verify page keeps its autofocus; the code
+  field is all that page has.)
 - `2fa_backup_codes.html`: the GOV.UK success banner becomes
-  `alert(variant="success")`, the rest as in setup; *Done* primary.
-- The 2FA pages carry inline `style="…"` colours (`#f3f2f1`, `#b1b4b6`,
-  `#1d70b8`) that must become tokens.
+  `alert(variant="success")`, the rest as in setup; *Done* primary in the
+  same row.
+- The inline `style="…"` colours of the 2FA pages (`#f3f2f1`, `#b1b4b6`,
+  `#1d70b8`) are tokens now.
+- `src/js/init/document-actions.js`: the `data-print` and
+  `data-download-backup-codes` handlers read `e.target.dataset` directly, so a
+  click on the label `<span>` the `button()` macro renders missed them. They
+  use `closest()` now, as the `data-confirm` handler already did for the same
+  reason; `document-actions.test.js` covers both.
+- Dropped msgid: the GOV.UK warning text's assistive "Information". No new
+  strings.
 
 ### What waits for a design source
 
@@ -184,7 +208,7 @@ headings and hints, and any illustration or avatar on the page.
 
 ## Verification
 
-- `with-lock.sh opendlp-tests uv run python -m pytest tests/component/test_profile_management.py
+- `uv run python -m pytest tests/component/test_profile_management.py
   tests/component/test_oauth_flow.py tests/component/test_2fa_flow.py
   tests/e2e/test_profile_management.py tests/unit/test_design_tokens.py
   tests/unit/test_icons.py -q`
@@ -200,3 +224,11 @@ headings and hints, and any illustration or avatar on the page.
   edit moved onto `backoffice/base_page.html` as `templates/backoffice/profile/`;
   the five remaining `templates/profile/` pages stay GOV.UK until the scope
   question is answered. *My account* opens in the same tab now.
+- **2026-11-03** — Scope widened to the whole journey. Change password, set
+  password, 2FA settings, 2FA setup and the regenerated backup codes page moved
+  onto `backoffice/base_page.html`; `templates/profile/` and
+  `components/govuk_password_input.html` deleted. Two shared partials under
+  `templates/backoffice/profile/` (`_detail_row.html`, `_backup_codes.html`).
+  The print / download click handlers use `closest()`. Component tests pin the
+  five pages GOV.UK-free and on the backoffice layout, and the 2FA pages' forms
+  and `data-*` hooks; catalogues regenerated.
