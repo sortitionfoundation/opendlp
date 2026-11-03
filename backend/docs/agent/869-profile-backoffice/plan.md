@@ -1,4 +1,4 @@
-# 869 — Profile / My Account on the backoffice design
+# 869 — Profile / My account on the backoffice design
 
 Shortcut [sc-869](https://app.shortcut.com/sortitionfoundation/story/869) (epic
 *New Backoffice Design*): bring the signed-in account pages under `/profile`
@@ -108,15 +108,15 @@ project pages made.
 ### `/profile` — view (done in this branch)
 
 - `templates/backoffice/profile/view.html` extends `backoffice/base_page.html`.
-- `page_header` block: `page_header(title=_("My Account"),
+- `page_header` block: `page_header(title=_("My account"),
   back_href=url_for('backoffice.dashboard'), back_label=_("Back to Your
   projects"))` — the detail-page header `assembly_details.html` uses. The old
   bottom link pointed at `main.dashboard`, which 404s unless
   `FF_OLD_DEFAULT_DASHBOARD` is on; the back arrow fixes that in passing.
 - Three `section()` boxes, each with an `h2.text-heading-lg` and the
-  `assembly_details.html` `<dl>` rows: *Profile Information* (email, first
+  `assembly_details.html` `<dl>` rows: *Profile information* (email, first
   name, last name, role as `tag(role_label, colour="blue")` + the description
-  in `text-body-sm`), *Authentication Methods* (password, Google, Microsoft:
+  in `text-body-sm`), *Authentication methods* (password, Google, Microsoft:
   `tag()` green/grey for the state, the action in a trailing `<dd>`),
   *Security* (2FA state + *Manage*).
 - Actions keep their semantics: the POST forms (Remove / Unlink) stay forms
@@ -201,7 +201,7 @@ journey in one PR, and the notes below were already the specification.
 ### What waits for a design source
 
 Everything above uses only what the design system already provides. A Figma
-frame would decide: whether *My Account* is one page or tabs (Profile /
+frame would decide: whether *My account* is one page or tabs (Profile /
 Security), where *Edit profile* sits (page-header action vs bottom row),
 whether the summary rows become a two-column grid or cards, the copy of the
 headings and hints, and any illustration or avatar on the page.
@@ -232,3 +232,15 @@ headings and hints, and any illustration or avatar on the page.
   The print / download click handlers use `closest()`. Component tests pin the
   five pages GOV.UK-free and on the backoffice layout, and the 2FA pages' forms
   and `data-*` hooks; catalogues regenerated.
+- **2026-11-03** — Review. Page titles, headings, step headings and field labels
+  on the seven pages are in sentence case (`docs/language.md`), including the
+  labels of `EditOwnProfileForm`, `ChangeOwnPasswordForm` and `SetPasswordForm`,
+  which only these pages render. Five reuse an existing msgid (*My account*,
+  *Edit profile*, *Change password*, *Set password*, *Set up two-factor
+  authentication*). The Title Case twins remain only outside these pages: the
+  legacy `base.html`, the admin user pages, sign-up, password reset and the
+  verify-2FA page. The remove-password confirm and the set-password intro said
+  Google whichever provider was linked; both name the linked provider now. The
+  Hungarian for the 18 new msgids is flagged fuzzy for review: the old
+  translations carried over, except *Current password*, whose old entry said
+  "new password", and the two strings with the provider placeholder.
