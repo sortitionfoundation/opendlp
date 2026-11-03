@@ -710,7 +710,7 @@ msgstr "A válaszértékeknek különbözniük kell: \"%(value)s\" többször sz
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
-#: templates/backoffice/components/input.html:381
+#: templates/backoffice/components/input.html:396
 #: templates/backoffice/components/table.html:252
 msgid "Yes"
 msgstr "Igen"
@@ -722,7 +722,7 @@ msgstr "Igen"
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
-#: templates/backoffice/components/input.html:381
+#: templates/backoffice/components/input.html:396
 #: templates/backoffice/components/table.html:254
 msgid "No"
 msgstr "Nem"
@@ -793,7 +793,6 @@ msgstr "Adj meg egy teljes http:// vagy https:// című webcímet"
 
 #: src/opendlp/entrypoints/forms.py:132 src/opendlp/entrypoints/forms.py:261
 #: src/opendlp/entrypoints/forms.py:302 src/opendlp/entrypoints/forms.py:313
-#: templates/backoffice/registration/_step_email.html:115
 #: templates/profile/view.html:11 templates/public/register.html:79
 msgid "Email address"
 msgstr "E-mail cím"
@@ -2099,34 +2098,6 @@ msgid ""
 " soon as you can.</p>\n"
 "<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>"
 msgstr ""
-"<p>Kedves {{ respondent.first_name_or_friend }}!</p>\n"
-"<p>Köszönjük, hogy jelentkezett erre a közösségi gyűlésre: <strong>{{ "
-"assembly.title }}</strong>. A közösségi gyűlés témája:</p>\n"
-"<p><strong>{{ assembly.question }}</strong></p>\n"
-"<p>A közösségi gyűlés alkalmai:</p>\n"
-"<ul>\n"
-"    <li>[Az egyes alkalmak dátuma, időpontja és helyszíne]</li>\n"
-"</ul>\n"
-"<p><strong>A következő lépések</strong></p>\n"
-"<p>A jelentkezés lezárulta után a közösségi gyűlés tagjait sorsolással "
-"választjuk ki az összes jelentkező közül. Attól függően, hogy hányan "
-"jelentkeznek, általában 100 jelentkezőből nagyjából [10–20 főt] "
-"választunk ki.</p>\n"
-"<ul>\n"
-"    <li><strong>[Dátum]</strong> – ha Önt kiválasztották, e-mailben vagy "
-"telefonon értesítjük, és egyeztetünk egy rövid telefonbeszélgetést, "
-"amelyben megválaszoljuk a kérdéseit.</li>\n"
-"    <li><strong>[Dátum]</strong> – ha Önt nem választották ki, e-mailben "
-"értesítjük.</li>\n"
-"    <li><strong>{{ assembly.first_assembly_date_text }}</strong> – a "
-"közösségi gyűlés első alkalma.</li>\n"
-"</ul>\n"
-"<p>Arról, hogyan kezeljük az adatait, az adatvédelmi tájékoztatónkban "
-"olvashat: [link az adatvédelmi tájékoztatóhoz].</p>\n"
-"<p>Ha kérdése van, vagy megváltoztak a tervei, és mégsem tud részt venni,"
-" kérjük, minél előbb válaszoljon erre az e-mailre, vagy írjon nekünk ide:"
-" {{ reply_to_email }}</p>\n"
-"<p>Üdvözlettel,<br>[A neved]<br>[A szervezeted neve]</p>"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:751
 msgid "Auto-reply email created. Edit it below and click Save."
@@ -5830,7 +5801,6 @@ msgstr "%(total)s felhasználóból %(start)s–%(end)s látható"
 #: templates/backoffice/assembly_respondents.html:127
 #: templates/backoffice/components/db_selection_progress_modal.html:122
 #: templates/backoffice/components/registration_page_list.html:26
-#: templates/backoffice/registration/_step_email.html:110
 msgid "Name"
 msgstr "Név"
 
@@ -7629,11 +7599,11 @@ msgstr "Munkalap neve"
 msgid "Share the spreadsheet with %(email)s so it can be written to."
 msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
-#: templates/backoffice/components/input.html:623
+#: templates/backoffice/components/input.html:638
 msgid "On"
 msgstr "Be"
 
-#: templates/backoffice/components/input.html:623
+#: templates/backoffice/components/input.html:638
 msgid "Off"
 msgstr "Ki"
 
@@ -8716,23 +8686,27 @@ msgstr "Automatikus válasz e-mail sablonja"
 msgid "Send auto-reply email"
 msgstr "Automatikus válasz e-mail küldése"
 
-#: templates/backoffice/registration/_step_email.html:104
-msgid "Reply-to"
-msgstr "Válaszcím"
+#: templates/backoffice/registration/_step_email.html:107
+msgid "Reply-to name"
+msgstr ""
 
-#: templates/backoffice/registration/_step_email.html:106
-msgid "When someone replies to the auto-reply, their email goes here."
-msgstr "Ha valaki válaszol az automatikus válaszra, az e-mailje ide érkezik."
-
-#: templates/backoffice/registration/_step_email.html:111
+#: templates/backoffice/registration/_step_email.html:108
 msgid "Also shown as who the email is from."
 msgstr "Ez jelenik meg az e-mail feladójaként is."
 
-#: templates/backoffice/registration/_step_email.html:124
+#: templates/backoffice/registration/_step_email.html:113
+msgid "Reply-to email address"
+msgstr ""
+
+#: templates/backoffice/registration/_step_email.html:114
+msgid "When someone replies to the auto-reply, their email goes here."
+msgstr "Ha valaki válaszol az automatikus válaszra, az e-mailje ide érkezik."
+
+#: templates/backoffice/registration/_step_email.html:122
 msgid "Email subject"
 msgstr "E-mail tárgya"
 
-#: templates/backoffice/registration/_step_email.html:126
+#: templates/backoffice/registration/_step_email.html:124
 msgid "Dynamic fields allowed, e.g. {{ project.title }}."
 msgstr "Dinamikus mezők használhatók, például: {{ project.title }}."
 
@@ -8787,7 +8761,7 @@ msgstr "A jelentkező e-mail címe"
 
 #: templates/backoffice/registration/_step_email.html:172
 msgid "Reply-to email address, or the address the email is sent from"
-msgstr "Válaszcím, vagy ha nincs, a feladó e-mail címe"
+msgstr ""
 
 #: templates/backoffice/registration/_step_email.html:196
 msgid "Variable copied to clipboard"

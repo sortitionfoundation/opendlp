@@ -184,7 +184,8 @@ radios — but a question that asks for a checkbox is a checkbox either way, and
 Required tag already says whether it may be left unanswered.
 
 **reply-to** is the word for where replies to an email go, as in the
-"Reply-to" fieldset on the auto-reply email step. It is the email header's own
+"Reply-to name" and "Reply-to email address" fields on the auto-reply email
+step. It is the email header's own
 name, but user testing showed it is common language, and that avoiding it for a
 plainer phrase such as "replies go to" was more confusing, not less. Hyphenated,
 with a capital R only where it starts a label or sentence.

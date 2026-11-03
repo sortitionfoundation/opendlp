@@ -168,7 +168,7 @@ yet. Use them consistently until someone does.
 | standard thank-you page | alapértelmezett köszönőoldal | *(unreviewed)* |
 | your own thank-you page | saját köszönőoldal | *(unreviewed)* |
 | name / email address for replies | a válaszokhoz megadott név / e-mail cím | *(unreviewed)* |
-| Reply-to (label) | Válaszcím | *(unreviewed)* |
+| Reply-to name / email address (labels) | Név a válaszokhoz / E-mail cím a válaszokhoz | *(unreviewed)* |
 | the address the email is sent from | a feladó e-mail címe | *(unreviewed)* |
 | write to {{ reply_to_email }} (auto-reply body) | írjon nekünk ide: {{ reply_to_email }} | *(unreviewed)* |
 | re-open (a closed registration) | újranyitás | *(unreviewed)* |
