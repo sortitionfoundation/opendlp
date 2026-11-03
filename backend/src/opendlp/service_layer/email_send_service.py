@@ -29,10 +29,14 @@ from .unit_of_work import AbstractUnitOfWork
 logger = structlog.get_logger(__name__)
 
 
-def build_email_context(assembly: Assembly, respondent: Respondent, locale: str = "en") -> dict:
+def build_email_context(
+    assembly: Assembly, respondent: Respondent, locale: str = "en", reply_to_email: str = ""
+) -> dict:
     """The template variables for an email read in ``locale``, such as "hu" or "en_GB"."""
     return build_context(
-        AssemblyContext.from_assembly(assembly, locale=locale), RespondentContext.from_respondent(respondent)
+        AssemblyContext.from_assembly(assembly, locale=locale),
+        RespondentContext.from_respondent(respondent),
+        reply_to_email=reply_to_email,
     )
 
 
@@ -59,6 +63,15 @@ def _reply_to_email(reply_to: ReplyTo) -> str:
     return reply_to
 
 
+def _contact_email(reply_to: ReplyTo, sender_email: str) -> str:
+    """The address an email offers for questions: where replies go, else the address it is sent from.
+
+    Backs the ``{{ reply_to_email }}`` template variable, so a sentence such as
+    "write to {{ reply_to_email }}" always has an address in it.
+    """
+    return _reply_to_email(reply_to) or sender_email
+
+
 def _build_and_send(
     uow: AbstractUnitOfWork,
     email_adapter: EmailAdapter,
@@ -67,8 +80,9 @@ def _build_and_send(
     respondent: Respondent,
     locale: str = "en",
 ) -> RespondentEmailSendRecord:
-    rendered = template.render(build_email_context(assembly, respondent, locale))
     reply_to = resolve_reply_to(template, assembly)
+    contact = _contact_email(reply_to, email_adapter.sender_email())
+    rendered = template.render(build_email_context(assembly, respondent, locale, reply_to_email=contact))
     if rendered.missing_variables:
         logger.warning("Email template %s rendered with missing variables: %s", template.id, rendered.missing_variables)
     try:
@@ -152,6 +166,7 @@ def prepare_test_auto_reply(
     page_id: uuid.UUID,
     to_email: str,
     locale: str = "en",
+    sender_email: str = "",
 ) -> PreparedTestAutoReply:
     """Load and render a page's auto-reply for a test send, using a made-up respondent.
 
@@ -160,6 +175,9 @@ def prepare_test_auto_reply(
     sample_respondent_context); the assembly context is real. Does no sending and
     writes no RespondentEmailSendRecord — there is no respondent for the record to
     hang off, and test sends are not part of the delivery history.
+
+    ``sender_email`` is the address the email adapter sends from, which
+    ``{{ reply_to_email }}`` falls back to when no reply-to is set.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -177,7 +195,14 @@ def prepare_test_auto_reply(
 
     field_definitions = uow.respondent_field_definitions.list_by_assembly(page.assembly_id)
     respondent_ctx = sample_respondent_context(field_definitions, to_email)
-    rendered = template.render(build_context(AssemblyContext.from_assembly(assembly, locale=locale), respondent_ctx))
+    reply_to = resolve_reply_to(template, assembly)
+    rendered = template.render(
+        build_context(
+            AssemblyContext.from_assembly(assembly, locale=locale),
+            respondent_ctx,
+            reply_to_email=_contact_email(reply_to, sender_email),
+        )
+    )
     return PreparedTestAutoReply(
         user_id=user_id,
         page_id=page.id,
@@ -186,7 +211,7 @@ def prepare_test_auto_reply(
         subject=rendered.subject,
         text_body=rendered.text_body,
         html_body=rendered.html_body,
-        reply_to=resolve_reply_to(template, assembly),
+        reply_to=reply_to,
         missing_variables=rendered.missing_variables,
     )
 
@@ -238,7 +263,14 @@ def send_test_auto_reply(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    prepared = prepare_test_auto_reply(uow, user_id=user_id, page_id=page_id, to_email=to_email, locale=locale)
+    prepared = prepare_test_auto_reply(
+        uow,
+        user_id=user_id,
+        page_id=page_id,
+        to_email=to_email,
+        locale=locale,
+        sender_email=email_adapter.sender_email(),
+    )
     return deliver_test_auto_reply(email_adapter, prepared)
 
 

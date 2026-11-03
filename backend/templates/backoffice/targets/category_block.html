@@ -63,7 +63,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             {% if category.source_url %}
                 <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
                     {{ _("Source of population figures:") }}
-                    {{ info_icon(_("A link to the report the percentages come from, such as census tables or a poll.")) }}
+                    {{ info_icon(_("A link to the report the percentages come from, such as census tables or a poll."), about=_("Source of population figures")) }}
                     <a href="{{ category.source_url }}"
                        class="underline"
                        style="color: var(--color-links)"
@@ -131,7 +131,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                             style="color: var(--color-headings)">
                             <span class="inline-flex items-center justify-end gap-1">
                                 {{ _("Respondents") }}
-                                {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
+                                {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted."), about=_("Respondents")) }}
                             </span>
                         </th>
                     {% endif %}
@@ -140,7 +140,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                             style="color: var(--color-headings)">
                             <span class="inline-flex items-center justify-end gap-1">
                                 {{ _("Selected") }}
-                                {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place.")) }}
+                                {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place."), about=_("Selected")) }}
                             </span>
                         </th>
                     {% endif %}

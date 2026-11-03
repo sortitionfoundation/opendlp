@@ -17,7 +17,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldDefinition,
 )
-from opendlp.domain.validators import parse_date_text, validate_date_field
+from opendlp.domain.validators import parse_date_text, validate_bool, validate_date_field
 from opendlp.entrypoints.forms import DomainEmailValidator
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
@@ -93,6 +93,19 @@ def _bool_value_to_radio(value: bool | None) -> str:
     if value is False:
         return "false"
     return ""
+
+
+def _stored_bool_to_radio(stored: Any) -> str:
+    """The radio value for a bool attribute as stored.
+
+    Attributes hold a bool in several forms: a JSON bool from the registration
+    form, "true"/"false" from this form, and whatever text an import had, such
+    as "Yes" or "TRUE". A value that isn't any of those selects nothing.
+    """
+    if stored is None:
+        return ""
+    value, _error = validate_bool(str(stored).strip(), allow_none=True)
+    return _bool_value_to_radio(value)
 
 
 def _ensure_current_value_in_options(
@@ -194,7 +207,8 @@ def _build_field_for_definition(
         return _build_fixed_field(field_def, respondent)
 
     form_name = _attr_field_name(field_def.field_key)
-    current_value = str(respondent.attributes.get(field_def.field_key, "") or "")
+    stored_value = respondent.attributes.get(field_def.field_key, "")
+    current_value = str(stored_value or "")
 
     if effective == FieldType.LONGTEXT:
         return form_name, TextAreaField(label, validators=[Optional()]), current_value
@@ -206,18 +220,10 @@ def _build_field_for_definition(
         return form_name, StringField(label, validators=[Optional(), DomainEmailValidator()]), current_value
     if effective == FieldType.BOOL:
         strict_bool_field: Any = _HelpTextRadioField(label, choices=_bool_choices(), validators=[InputRequired()])
-        return (
-            form_name,
-            strict_bool_field,
-            current_value if current_value in {"true", "false"} else "",
-        )
+        return form_name, strict_bool_field, _stored_bool_to_radio(stored_value)
     if effective == FieldType.BOOL_OR_NONE:
         nullable_bool_field: Any = _HelpTextRadioField(label, choices=_bool_or_none_choices(), validators=[Optional()])
-        return (
-            form_name,
-            nullable_bool_field,
-            current_value if current_value in {"true", "false"} else "",
-        )
+        return form_name, nullable_bool_field, _stored_bool_to_radio(stored_value)
     if effective in CHOICE_TYPES:
         field, data = _build_choice_field(field_def, current_value, warnings)
         return form_name, field, data
@@ -252,6 +258,49 @@ def build_edit_respondent_form(  # type: ignore[no-any-unimported]
     return form, warnings
 
 
+def field_form_name(field_def: RespondentFieldDefinition) -> str:
+    """The name of the form field for a schema field."""
+    if field_def.field_key in FIXED_FIELD_NAMES:
+        return field_def.field_key
+    return _attr_field_name(field_def.field_key)
+
+
+def _field_anchor(field_def: RespondentFieldDefinition) -> str:
+    """The id of the first control the page renders for a schema field, for a link to jump to it."""
+    form_name = field_form_name(field_def)
+    effective = field_def.effective_field_type
+    if effective == FieldType.DATE:
+        return f"{form_name}-day"
+    if effective in BOOL_TYPES or effective == FieldType.CHOICE_RADIO:
+        # radio_group numbers its inputs from 1
+        return f"{form_name}_1"
+    return form_name
+
+
+def build_error_summary(  # type: ignore[no-any-unimported]
+    form: FlaskForm,
+    fields_in_display_order: list[RespondentFieldDefinition],
+) -> list[dict[str, str]]:
+    """One {"href", "text"} entry per field with an error, in the order the page shows them.
+
+    The change note comes last, as it does on the page.
+    """
+    summary: list[dict[str, str]] = []
+    for field_def in fields_in_display_order:
+        form_name = field_form_name(field_def)
+        if form_name in form and form[form_name].errors:
+            summary.append({
+                "href": f"#{_field_anchor(field_def)}",
+                "text": _("%(label)s: %(error)s", label=field_def.label, error=form[form_name].errors[0]),
+            })
+    if form["comment"].errors:
+        summary.append({
+            "href": "#comment",
+            "text": _("%(label)s: %(error)s", label=_("Change note"), error=form["comment"].errors[0]),
+        })
+    return summary
+
+
 def radio_or_none_to_bool(raw: str | None) -> bool | None:
     """Coerce a bool-or-none radio submission to True/False/None."""
     if raw == "true":
@@ -279,6 +328,8 @@ __all__ = [
     "CHOICE_TYPES",
     "FIXED_FIELD_NAMES",
     "build_edit_respondent_form",
+    "build_error_summary",
+    "field_form_name",
     "radio_or_none_to_bool",
     "radio_to_bool",
 ]

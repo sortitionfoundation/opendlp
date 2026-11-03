@@ -290,8 +290,9 @@ A body containing a table or an image opens in HTML mode, with the usual
 notice, and loses nothing.
 
 The editor lists the email's variables in a **Dynamic fields** panel beside
-the body. They are spelt with dots, like `{{ project.title }}` and
+the body. Most are spelt with dots, like `{{ project.title }}` and
 `{{ respondent.first_name_or_friend }}`, and are highlighted the same way.
+`{{ reply_to_email }}` stands alone; see [Where replies go](#where-replies-go).
 Emails written when the interface still said assembly use `{{ assembly.title }}`,
 `{{ assembly.question }}`, `{{ assembly.first_assembly_date }}` and
 `{{ assembly.first_assembly_date_text }}`; those keep working, and mean the
@@ -342,6 +343,13 @@ If the template has no reply-to address, the assembly's reply-to is used.
 Nothing in the interface sets that yet; it is there for a future default for
 each assembly. If neither is set, the email has no Reply-To, and the step
 shows a warning. Every send records the reply-to address it used.
+
+`{{ reply_to_email }}` puts that same reply-to address in the email, for a
+sentence such as the default's "please reply to this email or write to
+{{ reply_to_email }}". When neither reply-to is set it is the address the email
+is sent from (`SMTP_FROM_EMAIL`), so the sentence always has an address in
+it; an organiser who wants no replies deletes the sentence. Its name is left
+out: the variable is only ever the address.
 
 The reply-to's name is also put in the From name, as "The Team via OpenDLP"
 (the second part is `SMTP_FROM_NAME`), so the inbox shows who the email is

@@ -100,32 +100,32 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                         </div>
                         <div class="space-y-4">
                             {% set common_input_attrs %}{% if not edit_mode %}readonly aria-readonly="true" style="background-color: var(--color-subtle-background-panels); cursor: default;"{% endif %}{% endset %}
-                            <fieldset class="flex flex-col gap-4" aria-describedby="reply-to-hint">
-                                <legend class="text-heading-sm mb-1" style="color: var(--color-headings);">{{ _("Reply-to") }}</legend>
-                                <p id="reply-to-hint" class="text-body-sm" style="color: var(--color-secondary-text);">
-                                    {{ _("When someone replies to the auto-reply, their email goes here.") }}
-                                </p>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {{ input(name="template_reply_to_name",
-                                    label=_("Name"),
-                                    hint=_("Also shown as who the email is from."),
-                                    value=email_template.reply_to_name,
-                                    attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
-                                    {{ input(name="template_reply_to_email",
-                                    label=_("Email address"),
-                                    type="email",
-                                    value=email_template.reply_to_email,
-                                    attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
-                                </div>
-                            </fieldset>
+                            {# One row per field, labels in a shared column so the inputs line up;
+                               the help text is in each label's info icon. #}
+                            <div class="space-y-3">
+                                {{ input(name="template_reply_to_name",
+                                label=_("Reply-to name"),
+                                info=_("Also shown as who the email is from."),
+                                inline=true,
+                                value=email_template.reply_to_name,
+                                attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                {{ input(name="template_reply_to_email",
+                                label=_("Reply-to email address"),
+                                info=_("When someone replies to the auto-reply, their email goes here."),
+                                inline=true,
+                                type="email",
+                                value=email_template.reply_to_email,
+                                attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
                                             {# Template name is not exposed yet — one template per page, always called "Registration
 auto-reply". When multi-template support ships this becomes a visible input. #}
-                            {{ input(name="template_subject",
-                            label=_("Email subject"),
-                            value=email_template.subject,
-                            hint=_("Dynamic fields allowed, e.g. {{ project.title }}."),
-                            required=true,
-                            attrs=common_input_attrs|trim) }}
+                                {{ input(name="template_subject",
+                                label=_("Email subject"),
+                                value=email_template.subject,
+                                info=_("Dynamic fields allowed, e.g. {{ project.title }}."),
+                                inline=true,
+                                required=true,
+                                attrs=common_input_attrs|trim) }}
+                            </div>
                             {% set body_attrs %}
                                 {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
                             {% endset %}
@@ -134,7 +134,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             {{ textarea(name="template_body_html",
                             label=_("Email body"),
                             value=email_template.body_html,
-                            hint=_("A plain-text version is generated automatically for email clients that need it."),
+                            info=_("A plain-text version is generated automatically for email clients that need it."),
                             required=true,
                             rows=18,
                             rich_editor=true,
@@ -168,7 +168,8 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                             {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
                             {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
                             {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},
-                            {"expr": "{{ respondent.email }}", "label": _("Respondent email address")}
+                            {"expr": "{{ respondent.email }}", "label": _("Respondent email address")},
+                            {"expr": "{{ reply_to_email }}", "label": _("Reply-to email address, or the address the email is sent from")}
                             ] %}
                             <ul class="space-y-3">
                                 {% for variable in variables %}

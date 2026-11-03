@@ -15,7 +15,7 @@ ABOUTME: Documents CRUD on EmailTemplate, auto-reply assignment, readiness check
             <code>assembly.title</code>, <code>assembly.question</code>, <code>assembly.first_assembly_date</code>,
             <code>assembly.number_to_select</code>, <code>respondent.email</code>,
             <code>respondent.first_name</code>, <code>respondent.last_name</code>, <code>respondent.full_name</code>,
-            <code>respondent.first_name_or_friend</code>, <code>respondent.attributes</code>.
+            <code>respondent.first_name_or_friend</code>, <code>respondent.attributes</code>, <code>reply_to_email</code>.
         </p>
     </div>
 
@@ -680,7 +680,10 @@ ABOUTME: Documents CRUD on EmailTemplate, auto-reply assignment, readiness check
 
 respondent:
   email, attributes (dict),
-  first_name, last_name, full_name, first_name_or_friend</pre>
+  first_name, last_name, full_name, first_name_or_friend
+
+reply_to_email:
+  where replies go, else the address the email is sent from</pre>
             </div>
         {% endcall %}
     {% endcall %}

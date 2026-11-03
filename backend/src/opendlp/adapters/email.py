@@ -17,6 +17,9 @@ logger = structlog.get_logger(__name__)
 # so a stalled SMTP server must fail well before the gunicorn worker timeout.
 SMTP_TIMEOUT_SECONDS = 10
 
+# The From address the console adapter shows when a send names none.
+CONSOLE_FROM_EMAIL = "noreply@opendlp.local"
+
 
 class EmailAdapter(ABC):
     """Abstract base class for email sending adapters."""
@@ -49,6 +52,10 @@ class EmailAdapter(ABC):
         Returns:
             True if email sent successfully, False otherwise
         """
+
+    def sender_email(self) -> str:
+        """The From address used when a send names none; empty when the adapter has none."""
+        return ""
 
     @staticmethod
     def _parse_address(addr: str | tuple[str, str]) -> tuple[str, str]:
@@ -107,6 +114,9 @@ class ConsoleEmailAdapter(EmailAdapter):
         """
         self.output_stream: typing.TextIO = output_stream if output_stream is not None else sys.stdout
 
+    def sender_email(self) -> str:
+        return CONSOLE_FROM_EMAIL
+
     def send_email(
         self,
         to: list[str | tuple[str, str]],
@@ -131,7 +141,7 @@ class ConsoleEmailAdapter(EmailAdapter):
         Returns:
             Always returns True
         """
-        from_name, from_email_addr = self._parse_address(from_email) if from_email else ("", "noreply@opendlp.local")
+        from_name, from_email_addr = self._parse_address(from_email) if from_email else ("", CONSOLE_FROM_EMAIL)
         from_addr = self._format_address((self._sender_name(from_name, on_behalf_of), from_email_addr))
         to_addrs = [self._format_address(addr) for addr in to]
         reply_to_line = f"\n  Reply-To: {self._format_address(reply_to)}" if reply_to else ""
@@ -189,6 +199,9 @@ class SMTPEmailAdapter(EmailAdapter):
         self.use_tls = use_tls
         self.default_from_email = default_from_email
         self.default_from_name = default_from_name
+
+    def sender_email(self) -> str:
+        return self.default_from_email
 
     def send_email(
         self,

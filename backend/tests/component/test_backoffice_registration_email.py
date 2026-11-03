@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the backoffice auto-reply email editor route and its context loading
 # ABOUTME: Drives the real Flask route + email_template_service over a FakeUnitOfWork via a logged-in client
 
+import re
 import uuid
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -509,6 +510,7 @@ class TestVisualEditor:
         assert "Available variables" not in body
         assert "Click a dynamic field to select it" in body
         assert 'value="{{ project.first_event_date_text }}"' in body
+        assert 'value="{{ reply_to_email }}"' in body
 
     def test_view_mode_shows_the_editor_read_only_without_a_toolbar(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
@@ -588,6 +590,24 @@ class TestReplyTo:
         assert adapter.sent[0]["reply_to"] == ("The Team", "team@example.com")
         assert adapter.sent[0]["on_behalf_of"] == "The Team"
 
+    def test_test_send_reply_to_email_falls_back_to_the_sending_address(
+        self, logged_in_admin, fake_store, assembly_id, monkeypatch
+    ):
+        """With no reply-to set, {{ reply_to_email }} is the address the email adapter sends from."""
+        template = _seed_template(fake_store, assembly_id, body_html="<p>Write to {{ reply_to_email }}.</p>")
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+        adapter = FakeEmailAdapter(sender="noreply@example.com")
+        monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
+
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/send-test",
+            data={"test_email_to": "manager@example.com"},
+        )
+
+        assert response.status_code == 302
+        assert adapter.sent[0]["reply_to"] is None
+        assert "<p>Write to noreply@example.com.</p>" in adapter.sent[0]["html_body"]
+
     def test_invalid_reply_to_email_is_flashed_and_not_saved(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
@@ -609,18 +629,30 @@ class TestReplyTo:
         # Back in edit mode, so the Save button is offered again.
         assert 'name="action" value="save"' in body
 
-    def test_edit_mode_has_reply_to_fieldset(self, logged_in_admin, fake_store, assembly_id):
+    def test_edit_mode_has_reply_to_fields_explained_in_info_icons(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
         body = _email_step(logged_in_admin, assembly_id, edit=True)
 
-        assert "<legend" in body
-        assert "Reply-to</legend>" in body
         assert 'name="template_reply_to_name"' in body
         assert 'name="template_reply_to_email"' in body
-        assert "Also shown as who the email is from." in body
         assert 'type="email"' in body
+        assert re.search(r'id="template_reply_to_name-info"[^>]*>Also shown as who the email is from\.</span>', body)
+        assert re.search(r'id="template_reply_to_email-info"[^>]*>When someone replies to the auto-reply', body)
+        assert 'aria-describedby="template_reply_to_name-info"' in body
+        assert 'aria-describedby="template_reply_to_email-info"' in body
+
+    def test_subject_and_body_help_is_in_info_icons(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=True)
+
+        assert 'id="template_subject-hint"' not in body
+        assert 'id="template_body_html-hint"' not in body
+        assert 'id="template_subject-info"' in body
+        assert re.search(r'id="template_body_html-info"[^>]*>A plain-text version is generated', body)
 
     def test_view_mode_shows_reply_to_read_only(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
