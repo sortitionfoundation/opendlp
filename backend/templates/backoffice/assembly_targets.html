@@ -144,14 +144,20 @@ ABOUTME: Displays target categories and values, with respondent counts and check
             {# ── Check Result Display ────────────────────────── #}
             {% if check_result is defined and check_result %}
                 <section class="mb-6">
-                    {% if check_result.success %}
+                    {# Checks that could not be run. The targets are not ready for
+                       selection while one is outstanding, so it replaces "All
+                       checks passed" rather than sitting beside it. #}
+                    {% for warning_msg in check_result.global_warnings %}
+                        {{ alert(warning_msg, variant="warning") }}
+                    {% endfor %}
+                    {% if check_result.success and not check_result.global_warnings %}
                         {{ alert(
                         _("All checks passed. Found %(num_features)s targets and %(num_people)s eligible respondents. Targets are ready for selection.",
                         num_features=check_result.num_features,
                         num_people=check_result.num_people),
                         variant="success"
                         ) }}
-                    {% else %}
+                    {% elif not check_result.success %}
                         {% if check_result.global_errors %}
                             <div class="mb-4 rounded-lg p-4"
                                  style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">

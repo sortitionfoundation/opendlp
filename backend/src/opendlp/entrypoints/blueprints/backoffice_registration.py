@@ -712,7 +712,7 @@ def _default_email_template_content() -> dict[str, str]:
             "<p>You can read how we look after your details in our privacy policy: "
             "[link to your privacy policy].</p>\n"
             "<p>If you have any questions, or your plans change and you can no longer take part, "
-            "please reply to this email as soon as you can.</p>\n"
+            "please reply to this email or write to {{ reply_to_email }} as soon as you can.</p>\n"
             "<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>"
         ),
     }
@@ -869,6 +869,7 @@ def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str)
         flash(_("Enter a valid email address to send the test email to"), "error")
         return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
     try:
+        email_adapter = bootstrap.get_email_adapter()
         uow = bootstrap.get_flask_uow()
         with uow:
             page = _page_by_slug(uow, assembly_id, url_slug)
@@ -883,8 +884,9 @@ def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str)
                 page_id=page.id,
                 to_email=to_email,
                 locale=get_locale(),
+                sender_email=email_adapter.sender_email(),
             )
-        result = deliver_test_auto_reply(bootstrap.get_email_adapter(), prepared)
+        result = deliver_test_auto_reply(email_adapter, prepared)
         if result.sent:
             flash(_("Test email sent to %(email)s", email=to_email), "success")
         else:

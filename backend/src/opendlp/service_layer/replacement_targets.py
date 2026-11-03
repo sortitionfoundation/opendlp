@@ -13,8 +13,7 @@ from sortition_algorithms.errors import InfeasibleQuotasError, SortitionBaseErro
 from sortition_algorithms.features import (
     MAX_FLEX_UNSET,
     iterate_feature_collection,
-    report_min_max_against_number_to_select_structured,
-    report_min_max_error_details_structured,
+    report_min_max_issues_structured,
 )
 from sortition_algorithms.people import check_people_per_feature_value, exclude_matching_selected_addresses
 
@@ -494,13 +493,13 @@ def validate_replacement_form(
 
     select_data = adapters.SelectionData(OpenDLPDataAdapter(uow, assembly_id, targets_snapshot=result.targets_snapshot))
     try:
-        features, _f_report = select_data.load_features(number_to_select=0)
+        # without the min/max check, which is reported just below in our own words
+        features, _f_report = select_data.load_features(validate_min_max=False)
     except SortitionBaseError as e:
         result.errors.append(translate_sortition_error(e))
         return result
 
-    issues = report_min_max_error_details_structured(features)
-    issues += report_min_max_against_number_to_select_structured(features, result.number_to_select)
+    issues = report_min_max_issues_structured(features, result.number_to_select)
     result.errors.extend(_cross_category_messages(issues))
 
     try:

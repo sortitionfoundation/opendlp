@@ -338,7 +338,7 @@ class TestStartReplacement:
     def test_cross_category_conflict_is_an_error_at_the_top(
         self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user
     ):
-        """Gender still needs 4 but Age is edited to allow at most 3."""
+        """Gender still needs 4 but Age is edited to allow at most 3, fewer than the 6 to select."""
         form = _plan_form(
             fake_store,
             admin_user,
@@ -352,9 +352,8 @@ class TestStartReplacement:
 
         assert response.status_code == 200
         html = response.data.decode()
-        assert "Inconsistent numbers" in html
-        assert "The smallest maximum is 3 for feature &#39;Age&#39;" in html
-        assert "The largest minimum is 4 for feature &#39;Gender&#39;" in html
+        assert "Inconsistent numbers" not in html
+        assert "Age allows at most 3 replacements, fewer than the 6 to select" in html
         assert "one target needs at least 4 replacements while another allows at most 3" in html
 
     def test_requires_confirmed_settings(self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user):

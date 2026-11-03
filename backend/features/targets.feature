@@ -54,7 +54,7 @@ Feature: Target percentages, notes and ordering
     When I choose to edit all targets
     And I save all targets
     Then I should see "Targets saved"
-    And I should see "Target check found problems"
+    And I should see "There are no respondents in the pool yet"
 
   Scenario: The view page offers no way to change a target on the spot
     Given there is an assembly with targets called "Read Only Demo"

@@ -850,3 +850,48 @@ class TestFailureViewLink:
 
         assert response.status_code == 200
         assert b"Adjust targets" not in response.data
+
+
+class TestCheckPageWarnings:
+    """A check that could not be run is a warning, and the targets are not called ready."""
+
+    def _check_url(self, assembly_id):
+        return f"/backoffice/project/{assembly_id}/targets/check"
+
+    def test_no_respondents_warns_instead_of_failing(self, logged_in_admin, assembly_with_targets):
+        response = logged_in_admin.get(self._check_url(assembly_with_targets))
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "There are no respondents in the pool yet" in html
+        assert "No eligible respondents found" not in html
+        assert "Target check found problems" not in html
+        assert "All checks passed" not in html
+
+    def test_a_warning_replaces_all_checks_passed(self, logged_in_admin, assembly_with_targets):
+        check = DetailedCheckResult(success=True, global_errors=[], global_warnings=["Pool too small to check"])
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.get(self._check_url(assembly_with_targets))
+
+        html = response.data.decode()
+        assert "Pool too small to check" in html
+        assert "All checks passed" not in html
+
+    def test_a_warning_shows_beside_the_problems(self, logged_in_admin, assembly_with_targets):
+        check = DetailedCheckResult(
+            success=False, global_errors=["Something is wrong"], global_warnings=["Pool too small to check"]
+        )
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.get(self._check_url(assembly_with_targets))
+
+        html = response.data.decode()
+        assert "Pool too small to check" in html
+        assert "Something is wrong" in html
+        assert "Target check found problems" in html
+
+    def test_no_warning_keeps_all_checks_passed(self, logged_in_admin, assembly_with_targets):
+        check = DetailedCheckResult(success=True, global_errors=[], num_features=1, num_people=20)
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.get(self._check_url(assembly_with_targets))
+
+        assert "All checks passed" in response.data.decode()

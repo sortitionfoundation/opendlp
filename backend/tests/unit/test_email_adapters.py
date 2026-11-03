@@ -56,6 +56,9 @@ class TestConsoleEmailAdapter:
     triggers the email-in-log audit nor gets scrubbed by the redaction processor.
     """
 
+    def test_sender_email_is_the_console_from_address(self) -> None:
+        assert ConsoleEmailAdapter(output_stream=StringIO()).sender_email() == "noreply@opendlp.local"
+
     def test_send_email_writes_to_output_stream(self) -> None:
         """Test that ConsoleEmailAdapter writes email details to its output stream."""
         stream = StringIO()
@@ -183,6 +186,16 @@ class TestConsoleEmailAdapter:
 
 class TestSMTPEmailAdapter:
     """Tests for SMTPEmailAdapter."""
+
+    def test_sender_email_is_the_default_from_email(self) -> None:
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="",
+            password="",
+            default_from_email="sender@example.com",
+        )
+        assert adapter.sender_email() == "sender@example.com"
 
     def test_send_email_success(self) -> None:
         """Test successful email sending via SMTP."""
