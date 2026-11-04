@@ -1,0 +1,11 @@
+feature,value,min,max
+Gender,Female,4,5
+Gender,Male,4,5
+Gender,Non-binary,0,2
+Age,18-35,2,4
+Age,36-55,3,5
+Age,56+,2,4
+Region,North,2,3
+Region,South,2,3
+Region,East,2,3
+Region,West,2,3

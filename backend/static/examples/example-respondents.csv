@@ -1,0 +1,21 @@
+ID,First name,Last name,Email,Gender,Age,Region
+1001,Amara,Okafor,amara.okafor@example.com,Female,18-35,North
+1002,Ben,Hughes,ben.hughes@example.com,Male,36-55,South
+1003,Chloe,Davies,chloe.davies@example.com,Female,56+,East
+1004,Daniel,Murphy,daniel.murphy@example.com,Male,18-35,West
+1005,Elif,Yilmaz,elif.yilmaz@example.com,Female,36-55,North
+1006,Fergus,MacLeod,fergus.macleod@example.com,Male,56+,South
+1007,Grace,Adeyemi,grace.adeyemi@example.com,Female,18-35,East
+1008,Hassan,Khan,hassan.khan@example.com,Male,36-55,West
+1009,Isla,Campbell,isla.campbell@example.com,Female,56+,North
+1010,Robin,Ellis,robin.ellis@example.com,Non-binary,18-35,South
+1011,Kirsty,Reid,kirsty.reid@example.com,Female,36-55,East
+1012,Liam,O'Connor,liam.oconnor@example.com,Male,56+,West
+1013,Mei,Chen,mei.chen@example.com,Female,18-35,North
+1014,Nikhil,Patel,nikhil.patel@example.com,Male,36-55,South
+1015,Olivia,Walsh,olivia.walsh@example.com,Female,56+,East
+1016,Pawel,Kowalski,pawel.kowalski@example.com,Male,18-35,West
+1017,Rosa,Fernandez,rosa.fernandez@example.com,Female,36-55,North
+1018,Samuel,Boateng,samuel.boateng@example.com,Male,56+,South
+1019,Tanvi,Desai,tanvi.desai@example.com,Female,18-35,East
+1020,William,Price,william.price@example.com,Male,36-55,West
