@@ -1739,7 +1739,7 @@ dev = [
     { name = "pytest-playwright", specifier = ">=0.7.0" },
     { name = "pytest-subprocess", specifier = ">=1.5.3" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.16.9" },
+    { name = "ruff", specifier = ">=0.17.3" },
     { name = "tenacity", specifier = ">=9.2.1" },
     { name = "time-machine", specifier = ">=2.19.0" },
     { name = "types-authlib", specifier = ">=1.8.0.20260911" },
