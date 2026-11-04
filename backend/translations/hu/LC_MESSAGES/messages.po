@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 16:31+0000\n"
+"POT-Creation-Date: 2026-11-04 14:37+0100\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -991,7 +991,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:450 src/opendlp/entrypoints/forms.py:757
 #: templates/backoffice/assembly_data.html:179
-#: templates/backoffice/assembly_data.html:477
+#: templates/backoffice/assembly_data.html:501
 #: templates/gsheets/components/view_config.html:48
 msgid "Check Same Address"
 msgstr "Címegyezés ellenőrzése"
@@ -1046,7 +1046,7 @@ msgstr ""
 #: src/opendlp/entrypoints/forms.py:477 src/opendlp/entrypoints/forms.py:745
 #: templates/backoffice/assembly_data.html:213
 #: templates/backoffice/assembly_data.html:243
-#: templates/backoffice/assembly_data.html:442
+#: templates/backoffice/assembly_data.html:466
 #: templates/gsheets/components/view_config.html:60
 msgid "ID Column"
 msgstr "ID (azonosító) oszlop"
@@ -1168,8 +1168,8 @@ msgid "Current Password"
 msgstr "Új jelszó"
 
 #: src/opendlp/entrypoints/forms.py:642 src/opendlp/entrypoints/forms.py:727
-#: templates/backoffice/assembly_data.html:362
-#: templates/backoffice/assembly_data.html:424
+#: templates/backoffice/assembly_data.html:376
+#: templates/backoffice/assembly_data.html:446
 msgid "CSV File"
 msgstr "CSV fájl"
 
@@ -1283,7 +1283,7 @@ msgstr ""
 "hozzáadni az újakat."
 
 #: src/opendlp/entrypoints/forms.py:748
-#: templates/backoffice/assembly_data.html:439
+#: templates/backoffice/assembly_data.html:463
 msgid ""
 "Name of column containing unique identifiers. If blank, the first column "
 "in the CSV will be used."
@@ -1296,7 +1296,7 @@ msgid "Prevent selecting multiple respondents from the same address"
 msgstr "Ne lehessen több jelentkezőt kiválasztani ugyanarról a címről"
 
 #: src/opendlp/entrypoints/forms.py:763
-#: templates/backoffice/assembly_data.html:506
+#: templates/backoffice/assembly_data.html:530
 msgid "Address Attributes"
 msgstr "Cím attribútumok"
 
@@ -1307,7 +1307,7 @@ msgstr ""
 "elválasztott listája"
 
 #: src/opendlp/entrypoints/forms.py:769
-#: templates/backoffice/assembly_data.html:515
+#: templates/backoffice/assembly_data.html:539
 msgid "Attributes to Keep"
 msgstr "Megtartandó attribútumok"
 
@@ -5096,7 +5096,7 @@ msgid "Create Account"
 msgstr "Fiók létrehozása"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
-#: templates/backoffice/assembly_data.html:324
+#: templates/backoffice/assembly_data.html:338
 #: templates/backoffice/assembly_edit_respondent.html:30
 #: templates/backoffice/assembly_form.html:21 templates/base.html:131
 #: templates/gsheets/create_config.html:14
@@ -5212,7 +5212,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 
 #: templates/admin/invite_create.html:96 templates/admin/user_edit.html:115
 #: templates/backoffice/assembly_data.html:268
-#: templates/backoffice/assembly_data.html:546
+#: templates/backoffice/assembly_data.html:570
 #: templates/backoffice/assembly_edit_respondent.html:178
 #: templates/backoffice/assembly_form.html:96
 #: templates/backoffice/assembly_view_respondent.html:303
@@ -6076,7 +6076,7 @@ msgid "Options"
 msgstr "Beállítások"
 
 #: templates/backoffice/assembly_data.html:181
-#: templates/backoffice/assembly_data.html:479
+#: templates/backoffice/assembly_data.html:503
 msgid "Prevent selecting multiple respondents from the same address."
 msgstr "Ne lehessen több jelentkezőt kiválasztani ugyanarról a címről."
 
@@ -6089,7 +6089,7 @@ msgid "Choose a preset or configure custom column settings."
 msgstr "Válassz egy előbeállítást, vagy adj meg egyéni oszlopbeállításokat."
 
 #: templates/backoffice/assembly_data.html:215
-#: templates/backoffice/assembly_data.html:444
+#: templates/backoffice/assembly_data.html:468
 msgid "e.g., ID"
 msgstr "például: ID"
 
@@ -6099,7 +6099,7 @@ msgid "Column name containing unique respondent identifiers."
 msgstr "A jelentkezők egyedi azonosítóit tartalmazó oszlop neve."
 
 #: templates/backoffice/assembly_data.html:223
-#: templates/backoffice/assembly_data.html:508
+#: templates/backoffice/assembly_data.html:532
 msgid "e.g., Street, City, PostCode"
 msgstr "például: Utca, Város, Irányítószám"
 
@@ -6109,7 +6109,7 @@ msgid "Comma-separated column names used for address matching."
 msgstr "A címegyeztetéshez használt oszlopnevek vesszővel elválasztva."
 
 #: templates/backoffice/assembly_data.html:231
-#: templates/backoffice/assembly_data.html:517
+#: templates/backoffice/assembly_data.html:541
 msgid "e.g., Name, Email, Phone"
 msgstr "például: Név, E-mail, Telefon"
 
@@ -6133,15 +6133,21 @@ msgstr "Beállítások mentése"
 msgid "Remove Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
-#: templates/backoffice/assembly_data.html:298
+#: templates/backoffice/assembly_data.html:300
+#, fuzzy
+msgid "Download an example CSV"
+msgstr "Példa CSV fájl letöltése"
+
+#: templates/backoffice/assembly_data.html:312
 msgid "CSV Files Upload"
 msgstr "CSV fájlok feltöltése"
 
-#: templates/backoffice/assembly_data.html:300
+#: templates/backoffice/assembly_data.html:314
 msgid "Upload CSV files to import targets and people data."
 msgstr "Tölts fel CSV fájlokat a célszámok és az emberek adatainak importálásához."
 
-#: templates/backoffice/assembly_data.html:312
+#: templates/backoffice/assembly_data.html:326
+#: templates/backoffice/assembly_data.html:386
 #: templates/backoffice/assembly_targets.html:13
 #: templates/backoffice/assembly_targets.html:99
 #: templates/backoffice/components/assembly_tabs.html:45
@@ -6150,29 +6156,38 @@ msgstr "Tölts fel CSV fájlokat a célszámok és az emberek adatainak importá
 msgid "Targets"
 msgstr "Célszámok"
 
-#: templates/backoffice/assembly_data.html:314
+#: templates/backoffice/assembly_data.html:328
 msgid "Upload the targets for selection."
 msgstr "Töltsd fel a kiválasztási szempontokat."
 
-#: templates/backoffice/assembly_data.html:343
+#: templates/backoffice/assembly_data.html:357
 #, python-format
 msgid "%(count)d targets uploaded"
 msgstr "%(count)d kiválasztási szempont feltöltve"
 
-#: templates/backoffice/assembly_data.html:351
+#: templates/backoffice/assembly_data.html:365
 msgid "Are you sure you want to delete all targets? This action cannot be undone."
 msgstr "Biztosan törlöd az összes célszámot? Ez a művelet nem vonható vissza."
 
-#: templates/backoffice/assembly_data.html:353
+#: templates/backoffice/assembly_data.html:367
 msgid "Delete Targets"
 msgstr "Célszámok törlése"
 
-#: templates/backoffice/assembly_data.html:365
+#: templates/backoffice/assembly_data.html:379
 msgid "Select a CSV file with targets."
 msgstr "Válassz ki egy kiválasztási szempontokat tartalmazó CSV fájlt."
 
-#: templates/backoffice/assembly_data.html:368
-#: templates/backoffice/assembly_data.html:447
+#: templates/backoffice/assembly_data.html:387
+#, fuzzy
+msgid ""
+"To run a selection with the example targets, set the number to select to "
+"10 before uploading them."
+msgstr ""
+"Ha a példa célszámokkal szeretnél kiválasztást futtatni, feltöltés előtt "
+"állítsd a kiválasztandó emberek számát 10-re."
+
+#: templates/backoffice/assembly_data.html:389
+#: templates/backoffice/assembly_data.html:471
 #: templates/backoffice/registration/_assets.html:146
 #: templates/backoffice/registration/_assets.html:257
 #: templates/backoffice/target_sources/_upload_modal.html:80
@@ -6180,44 +6195,45 @@ msgstr "Válassz ki egy kiválasztási szempontokat tartalmazó CSV fájlt."
 msgid "Upload"
 msgstr "Feltöltés"
 
-#: templates/backoffice/assembly_data.html:378
+#: templates/backoffice/assembly_data.html:399
 msgid "Or build the targets from the columns in your respondent data."
 msgstr ""
 "Vagy építsd fel a kiválasztási szempontokat a jelentkezői adataid "
 "oszlopaiból."
 
-#: templates/backoffice/assembly_data.html:380
+#: templates/backoffice/assembly_data.html:401
 msgid "Create from respondent data"
 msgstr "Létrehozás a jelentkezői adatokból"
 
-#: templates/backoffice/assembly_data.html:392
+#: templates/backoffice/assembly_data.html:413
+#: templates/backoffice/assembly_data.html:451
 msgid "People"
 msgstr "Emberek"
 
-#: templates/backoffice/assembly_data.html:394
+#: templates/backoffice/assembly_data.html:415
 msgid "Upload respondent data for selection."
 msgstr "Tölts fel jelentkezői adatokat a kiválasztáshoz."
 
-#: templates/backoffice/assembly_data.html:402
+#: templates/backoffice/assembly_data.html:423
 #, python-format
 msgid "%(count)d respondents uploaded"
 msgstr "%(count)d jelentkező feltöltve"
 
-#: templates/backoffice/assembly_data.html:410
+#: templates/backoffice/assembly_data.html:431
 msgid ""
 "Are you sure you want to delete all respondents? This action cannot be "
 "undone."
 msgstr "Biztosan törlöd az összes jelentkezőt? Ez a művelet nem vonható vissza."
 
-#: templates/backoffice/assembly_data.html:412
+#: templates/backoffice/assembly_data.html:433
 msgid "Delete Respondents"
 msgstr "Jelentkezők törlése"
 
-#: templates/backoffice/assembly_data.html:427
+#: templates/backoffice/assembly_data.html:449
 msgid "Select a CSV file with respondent data."
 msgstr "Válassz ki egy jelentkezői adatokat tartalmazó CSV fájlt."
 
-#: templates/backoffice/assembly_data.html:437
+#: templates/backoffice/assembly_data.html:461
 #, python-format
 msgid ""
 "Using '%(id_column)s' from your last upload. Change it if this file uses "
@@ -6227,30 +6243,30 @@ msgstr ""
 "Módosítsd, ha ez a fájl más oszlopot használ, vagy töröld ki, hogy az "
 "első oszlop legyen az azonosító."
 
-#: templates/backoffice/assembly_data.html:461
+#: templates/backoffice/assembly_data.html:485
 #: templates/db_selection/select.html:121
 #: templates/db_selection/settings.html:2
 #: templates/db_selection/settings.html:11
 msgid "Selection Settings"
 msgstr "Kiválasztási beállítások"
 
-#: templates/backoffice/assembly_data.html:464
+#: templates/backoffice/assembly_data.html:488
 msgid "Configure how the selection algorithm runs for this project."
 msgstr "Állítsd be, hogyan fusson a kiválasztási algoritmus ennél a projektnél."
 
-#: templates/backoffice/assembly_data.html:488
+#: templates/backoffice/assembly_data.html:512
 #: templates/db_selection/settings.html:33
 msgid "Available respondent attributes"
 msgstr "Elérhető jelentkezői attribútumok"
 
-#: templates/backoffice/assembly_data.html:492
+#: templates/backoffice/assembly_data.html:516
 #: templates/db_selection/settings.html:36
 msgid ""
 "The following attribute names are available from the uploaded respondent "
 "data:"
 msgstr "A feltöltött jelentkezői adatokból a következő attribútumnevek érhetők el:"
 
-#: templates/backoffice/assembly_data.html:500
+#: templates/backoffice/assembly_data.html:524
 #: templates/db_selection/settings.html:42
 msgid ""
 "No respondent data has been uploaded yet. Attribute validation will be "
@@ -6259,32 +6275,32 @@ msgstr ""
 "Még nem töltöttél fel jelentkezői adatokat. Az attribútumok ellenőrzése "
 "kimarad."
 
-#: templates/backoffice/assembly_data.html:509
+#: templates/backoffice/assembly_data.html:533
 msgid "Comma-separated respondent attribute names used for address matching."
 msgstr ""
 "A címegyeztetéshez használt jelentkezői attribútumnevek vesszővel "
 "elválasztva."
 
-#: templates/backoffice/assembly_data.html:518
+#: templates/backoffice/assembly_data.html:542
 msgid "Comma-separated respondent attribute names to include in CSV output."
 msgstr ""
 "A CSV kimenetbe beveendő jelentkezői attribútumnevek vesszővel "
 "elválasztva."
 
-#: templates/backoffice/assembly_data.html:529
+#: templates/backoffice/assembly_data.html:553
 msgid "Settings have been confirmed. You can run selection."
 msgstr "A beállításokat megerősítetted. Futtathatod a kiválasztást."
 
-#: templates/backoffice/assembly_data.html:536
+#: templates/backoffice/assembly_data.html:560
 msgid "Please review and save these settings before running selection."
 msgstr "A kiválasztás futtatása előtt nézd át és mentsd el ezeket a beállításokat."
 
-#: templates/backoffice/assembly_data.html:544
+#: templates/backoffice/assembly_data.html:568
 #: templates/db_selection/settings.html:75
 msgid "Save Settings"
 msgstr "Beállítások mentése"
 
-#: templates/backoffice/assembly_data.html:553
+#: templates/backoffice/assembly_data.html:577
 msgid "Edit Settings"
 msgstr "Beállítások szerkesztése"
 
