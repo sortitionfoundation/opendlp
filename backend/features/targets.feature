@@ -73,6 +73,33 @@ Feature: Target percentages, notes and ordering
     When I save all targets
     Then I should see "Targets saved"
 
+  Scenario: The back button leaves the edit form for the read-only view
+    Given there is an assembly with targets called "Back Button Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Back Button Demo"
+    And I choose to edit all targets
+    Then I should be in the targets edit form
+    When I go back in the browser
+    Then I should still be on the targets page
+    And I should not see the bulk edit form
+
+  Scenario: Reloading the edit form keeps it open
+    Given there is an assembly with targets called "Reload Edit Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Reload Edit Demo"
+    And I choose to edit all targets
+    And I reload the page
+    Then I should see the bulk edit form
+
+  Scenario: Opening the edit form keeps the scroll position
+    Given there is an assembly with two target categories called "Edit Scroll Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Edit Scroll Demo" in a short window
+    And I scroll to the bottom of the page
+    And I choose to edit all targets
+    Then I should see the bulk edit form
+    And the page should not be scrolled to the top
+
   Scenario: A rejected save comes back as the form, with the error on its field
     Given there is an assembly with targets called "Bad Numbers Demo"
     And I am signed in as an admin user
@@ -185,6 +212,7 @@ Feature: Target percentages, notes and ordering
     And I add a target called "Age"
     Then the "Age" category should be on screen with one blank value
     And I should see the "Save" button
+    And I should be in the targets edit form
 
   Scenario: Leaving the page with unsaved target edits asks first
     Given there is an assembly with targets called "Leave Guard Demo"
@@ -195,7 +223,7 @@ Feature: Target percentages, notes and ordering
     And I try to leave for the assembly details
     Then I should see "Discard changes?"
     When I choose to keep editing
-    Then I should still be on the targets page
+    Then I should be in the targets edit form
     And the "Male" edit row should show min "6" and max "7"
 
   Scenario: Discarding unsaved target edits leaves the page

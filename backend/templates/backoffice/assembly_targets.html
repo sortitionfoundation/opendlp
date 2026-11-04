@@ -85,13 +85,21 @@ ABOUTME: Displays target categories and values, with respondent counts and check
            The url goes into a quoted string in x-data below. That is only safe
            because the route accepts run_id only as the UUID of a real run; |tojson is no help
            here, as the CSP build of Alpine does not decode its \u escapes. #}
+        {# The edit form has its own URL, the read-only one plus ?edit=1, so the
+           back button leaves the form for the view. Both stay on the check
+           when that is where the organiser is. #}
         {% if check_result is defined and check_result %}
             {% set discard_url = url_for('targets.check_targets', assembly_id=assembly.id, **provenance) %}
+            {% set edit_url = url_for('targets.check_targets', assembly_id=assembly.id, edit=1, **provenance) %}
+            {% set add_url = url_for('targets.check_targets', assembly_id=assembly.id, edit=1, add=1, **provenance) %}
         {% else %}
             {% set discard_url = url_for('targets.view_assembly_targets', assembly_id=assembly.id) %}
+            {% set edit_url = url_for('targets.view_assembly_targets', assembly_id=assembly.id, edit=1) %}
+            {% set add_url = url_for('targets.view_assembly_targets', assembly_id=assembly.id, edit=1, add=1) %}
         {% endif %}
         <div x-data="targetsPage({
                      editingAll: {{ "true" if editing_all is defined and editing_all else "false" }},
+                     addTargetOnLoad: {{ "true" if add_target_on_load is defined and add_target_on_load else "false" }},
                      discardUrl: '{{ discard_url }}'
                      })">
             {# ── Targets Heading and Actions ──────────────── #}
@@ -121,7 +129,12 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                    back here with its annotations, so there is nothing left for
                    a separate button to do. #}
                     {% if can_manage %}
-                        <span class="flex items-center gap-2 shrink-0">
+                    {# On the read-only view, "Add target" and "Edit targets" are
+                       links into the edit form's URL, keeping the scroll
+                       position across the reload. In the form, "Add target"
+                       opens its dialog on the spot, as there are edits on the
+                       page that a reload would lose. #}
+                        <span class="flex items-center gap-2 shrink-0" x-scroll-preserve-links>
                         {# Exports what is saved, so it is no use mid-edit: it goes
                            with "Edit targets" while the form is open. #}
                             {% if target_categories %}
@@ -130,13 +143,18 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                                     attrs='data-focus-id="targets-export" hx-get="' ~ url_for('targets.export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
                                 </span>
                             {% endif %}
-                            {{ button(_("Add target"),
-                            variant="secondary",
-                            leading_icon=icon_plus(),
-                            attrs='x-ref="addTargetButton" @click="openAddTarget()"') }}
+                            <span x-show="!editingAll">
+                                {{ button(_("Add target"), variant="secondary", leading_icon=icon_plus(), href=add_url) }}
+                            </span>
+                            <span x-show="editingAll" x-cloak>
+                                {{ button(_("Add target"),
+                                variant="secondary",
+                                leading_icon=icon_plus(),
+                                attrs='x-ref="addTargetButton" @click="openAddTarget()"') }}
+                            </span>
                             {% if target_categories %}
                                 <span x-show="!editingAll">
-                                    {{ button(_("Edit targets"), variant="primary", attrs='@click="editingAll = true"') }}
+                                    {{ button(_("Edit targets"), variant="primary", href=edit_url) }}
                                 </span>
                             {% endif %}
                         </span>

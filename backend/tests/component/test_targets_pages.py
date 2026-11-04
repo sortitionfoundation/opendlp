@@ -306,6 +306,91 @@ class TestViewerPermissions:
         assert b"Add target" not in response.data
         assert b"Add value" not in response.data
 
+    def test_viewer_asking_for_the_edit_form_gets_the_read_only_view(
+        self, logged_in_user, existing_assembly, admin_user, fake_store
+    ):
+        _import_targets(fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nGender,Male,3,7\n")
+        _give_user_a_role(fake_store, existing_assembly.id)
+
+        response = logged_in_user.get(_targets_url(existing_assembly.id, "?edit=1&add=1"))
+
+        assert response.status_code == 200
+        assert b"editingAll: false" in response.data
+        assert b"addTargetOnLoad: false" in response.data
+
+
+class TestEditFormUrl:
+    """The edit form is the read-only page's URL plus ?edit=1, so back leaves it for the view."""
+
+    def test_the_page_opens_read_only_by_default(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "editingAll: false" in html_text
+        assert "addTargetOnLoad: false" in html_text
+
+    def test_the_edit_flag_opens_the_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id, "?edit=1")).data.decode()
+
+        assert "editingAll: true" in html_text
+        assert "addTargetOnLoad: false" in html_text
+
+    def test_the_add_flag_opens_the_add_target_dialog_in_the_form(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id, "?edit=1&add=1")).data.decode()
+
+        assert "editingAll: true" in html_text
+        assert "addTargetOnLoad: true" in html_text
+
+    def test_the_add_flag_alone_does_not_open_the_dialog(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The dialog adds into the form, so it means nothing on the read-only view."""
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id, "?add=1")).data.decode()
+
+        assert "editingAll: false" in html_text
+        assert "addTargetOnLoad: false" in html_text
+
+    def test_edit_targets_links_to_the_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert re.search(
+            r'<a href="' + re.escape(_targets_url(existing_assembly.id, "?edit=1")) + r'"(?:(?!</a>).)*Edit targets',
+            html_text,
+            re.DOTALL,
+        )
+
+    def test_add_target_on_the_view_links_to_the_form_with_the_dialog_open(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert f'<a href="{_targets_url(existing_assembly.id, "?edit=1&amp;add=1")}"' in html_text
+        # In the form it opens the dialog on the spot, with no reload to lose edits to.
+        assert 'x-ref="addTargetButton" @click="openAddTarget()"' in html_text
+
+    def test_the_links_into_the_form_keep_the_scroll_position(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+        heading_section = html_text[html_text.index("<h2") : html_text.index("</section>", html_text.index("<h2"))]
+
+        assert "x-scroll-preserve-links" in heading_section
+
 
 class TestPercentageColumn:
     def test_page_shows_the_percentage_and_its_total(self, logged_in_admin, existing_assembly, admin_user, fake_store):
@@ -1258,7 +1343,7 @@ class TestViewIsReadOnly:
 
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
         heading_section = html[html.index("<h2") : html.index("</section>", html.index("<h2"))]
-        edit_button = heading_section[: heading_section.index("Edit targets")].rsplit("<button", 1)[-1]
+        edit_button = heading_section[: heading_section.index("Edit targets")].rsplit("<a", 1)[-1]
 
         assert "btn--primary" in edit_button
 

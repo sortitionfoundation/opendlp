@@ -99,6 +99,21 @@ def _can_manage(assembly_id: uuid.UUID) -> bool:
     return False
 
 
+def _page_mode(can_manage: bool) -> dict[str, bool]:
+    """Which mode the targets page opens in, read from the query string.
+
+    The read-only view and the edit form are different URLs, so the back button
+    leaves the form for the view and a reload keeps you where you were. ?edit=1
+    opens the form; ?add=1 on top of it opens the "Add target" dialog too, which
+    is how "Add target" on the read-only view gets into the form.
+    """
+    editing_all = can_manage and request.args.get("edit") == "1"
+    return {
+        "editing_all": editing_all,
+        "add_target_on_load": editing_all and request.args.get("add") == "1",
+    }
+
+
 def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
     """Get common assembly context needed for the targets page layout (tabs, data source)."""
     uow = bootstrap.get_flask_uow()
@@ -156,6 +171,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             all_selected_counts=selected_counts,
             has_selected=has_selected,
             has_respondents=bool(attribute_columns),
+            **_page_mode(can_manage),
             **context,
         ), 200
     except NotFoundError as e:
@@ -421,7 +437,7 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             rerun_is_test=_is_test_run(rerun),
             # "Adjust targets" on a failed run opens straight into the editor,
             # with each suggestion under the row it would change.
-            editing_all=can_manage and request.args.get("edit") == "1",
+            **_page_mode(can_manage),
             **context,
         ), 200
 

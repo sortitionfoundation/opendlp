@@ -286,6 +286,29 @@ def still_on_targets(admin_logged_in_page: Page) -> None:
     expect(admin_logged_in_page).to_have_url(_targets_url(_current_assembly_id[-1]), timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then("I should be in the targets edit form")
+def in_targets_edit_form(admin_logged_in_page: Page) -> None:
+    """The form has its own URL, so the back button leaves it for the read-only view."""
+    expect(admin_logged_in_page).to_have_url(
+        _targets_url(_current_assembly_id[-1]) + "?edit=1", timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I go back in the browser")
+def go_back(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.go_back()
+
+
+@when("I reload the page")
+def reload_page(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.reload()
+
+
+@then("the page should not be scrolled to the top")
+def not_scrolled_to_top(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.wait_for_function("window.scrollY > 0", timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then("I should be on the assembly details page")
 def on_details_page(admin_logged_in_page: Page) -> None:
     """Named positively: "not the targets page" also passes on an error page."""
@@ -535,6 +558,11 @@ def bulk_edit_total(admin_logged_in_page: Page, total: str) -> None:
 @then("I should see the bulk edit form")
 def see_bulk_edit_form(admin_logged_in_page: Page) -> None:
     expect(admin_logged_in_page.locator("#save-all-form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("I should not see the bulk edit form")
+def not_see_bulk_edit_form(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.locator("#save-all-form")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the "{second}" category should appear after the "{first}" category'))
