@@ -80,10 +80,10 @@ exclude-newer = "1 week"
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
 # made shorter to get security fixes
-certifi = "0 days"
-cryptography = "0 days"
-oauthlib = "3 days"
-pyasn1 = "0 days"
+certifi = "2 days"
+cryptography = "2 days"
+oauthlib = "6 days"
+pyasn1 = "6 days"
 
 [tool.mypy]
 files = ["src"]
