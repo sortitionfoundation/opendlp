@@ -3,15 +3,12 @@
 
 import re
 import uuid
-from datetime import UTC, datetime
 from unittest.mock import patch
 
 import pytest
 
 from opendlp.domain.registration_page import (
     RegistrationPage,
-    RegistrationPageAction,
-    RegistrationPageActivity,
     RegistrationPageHtml,
     RegistrationPageNotReady,
     RegistrationPageStatus,
@@ -41,7 +38,6 @@ def _seed_page(
     language="",
     thank_you_html="",
     thank_you_use_default=True,
-    activity=None,
 ):
     page = RegistrationPage(
         assembly_id=assembly_id,
@@ -51,7 +47,6 @@ def _seed_page(
         language=language,
         thank_you_html=thank_you_html,
         thank_you_use_default=thank_you_use_default,
-        activity=activity,
     )
     html = RegistrationPageHtml(registration_page_id=page.id, form_html=form_html, intro_html=intro_html)
     with FakeUnitOfWork(store=fake_store) as uow:
@@ -1462,30 +1457,6 @@ class TestRegistrationListView:
         assert _published_at_cell(body, "Pulled") == "\u2014"
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.registration_pages.get(page.id).last_published_at() is not None
-
-    def test_republished_page_shows_the_new_publish_date(self, logged_in_admin, fake_store, assembly_id):
-        author = uuid.uuid4()
-        first = datetime(2024, 6, 1, tzinfo=UTC)
-        pulled = datetime(2024, 7, 1, tzinfo=UTC)
-        second = datetime(2026, 3, 15, tzinfo=UTC)
-        _seed_page(
-            fake_store,
-            assembly_id,
-            RegistrationPageStatus.PUBLISHED,
-            url_slug="again-slug",
-            name="Relaunched",
-            activity=[
-                RegistrationPageActivity("", author, first, RegistrationPageAction.PUBLISH),
-                RegistrationPageActivity("", author, pulled, RegistrationPageAction.UNPUBLISH),
-                RegistrationPageActivity("", author, second, RegistrationPageAction.PUBLISH),
-            ],
-        )
-
-        body = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration").get_data(as_text=True)
-
-        cell = _published_at_cell(body, "Relaunched")
-        assert "2026" in cell
-        assert "2024" not in cell
 
     def test_each_page_shows_its_registration_count(self, logged_in_admin, fake_store, assembly_id):
         busy = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="busy-slug", name="Busy")

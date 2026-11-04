@@ -255,11 +255,12 @@ class RegistrationPage:
         return max(stamps) if stamps else None
 
     def published_at_if_live(self) -> datetime | None:
-        """When the page went live, while it is live; None in every other state.
+        """The last publish date while the page is Published; None in every other state.
 
-        The pages list's "Date published" column shows this. A page taken back
-        to Test, or closed, keeps its publish history - last_published_at()
-        still answers - but has no date to show until it is published again.
+        Back in Test, or closed, the page keeps its publish history
+        (last_published_at() still answers) but has no publish date in this
+        sense. A reopen is not a publish: after close and reopen the date is
+        that of the last publish, not of the reopen.
         """
         if self.status != RegistrationPageStatus.PUBLISHED:
             return None
