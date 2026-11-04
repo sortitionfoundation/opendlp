@@ -32,7 +32,7 @@
     "@tiptap/extension-image": "^3.31.4",
     "@tiptap/extension-table": "^3.31.4",
     "@tiptap/extension-text-align": "^3.31.4",
-    "@tiptap/extension-text-style": "^3.31.4",
+    "@tiptap/extension-text-style": "^3.32.0",
     "@tiptap/pm": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
     "chart.js": "^4.5.1",
