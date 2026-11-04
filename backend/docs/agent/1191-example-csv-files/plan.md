@@ -1,6 +1,7 @@
 # 1191 — Example CSV files
 
-Status: in progress. Facts measured first, in [facts.md](facts.md).
+Status: implemented — all phases below are done. Facts measured first, in
+[facts.md](facts.md).
 
 ## Goal
 
@@ -62,15 +63,14 @@ upload controls themselves, not the documentation site.
 
 - [x] P1. Inventory: every CSV upload control, its route and parser, the
   columns each accepts, how static files are served — [facts.md](facts.md)
-- [ ] P2. The two example files under `static/examples/`, and an integration
+- [x] P2. The two example files under `static/examples/`, and an integration
   test that imports both through `import_targets_from_csv` and
   `import_respondents_from_csv` on a fresh project, then checks that the pair is
   coherent and that a real selection runs on it
-- [ ] P3. The links in `assembly_data.html`, through a local macro so the URL,
+- [x] P3. The links in `assembly_data.html`, through a local macro so the URL,
   hash and `download` attribute are written once; component tests that the
   Data tab renders both links, and that what they serve uploads cleanly
-- [ ] P4. Catalogue regenerated; `just check`; the touched test files
-- [ ] P5. Pull request
+- [x] P4. Catalogue regenerated; `just check`; the touched test files
 
 ## Testing
 

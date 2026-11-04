@@ -59,8 +59,8 @@ tolerated. The respondents route also refuses files over `MAX_CSV_UPLOAD_MB`.
 4. `min_flex` and `max_flex` bound how far a selection that finds no panel may
    relax that value's min and max (`committee_generation/common.py`). `min_flex`
    must not exceed `min`, and `max_flex` must not be below `max`. Left out, they
-   default to 0 and to the largest sum of maxes across the targets, which leaves
-   relaxation unbounded. No backoffice screen shows them; only the dev-only
+   default to 0 and to the largest sum of maxes across the targets, which gives
+   relaxation its full range. No backoffice screen shows them; only the dev-only
    `service_docs/_targets.html` mentions them.
 5. The import does not compare the numbers with the project's number to select:
    `read_in_features` is called without it, so it only checks min against max
