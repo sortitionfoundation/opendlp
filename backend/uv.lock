@@ -1732,7 +1732,7 @@ dev = [
     { name = "gettext-auto", git = "https://github.com/cartertemm/gettext-auto?rev=0a4c870a263c8e7e7ba909f73f8acb1335d302e2" },
     { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "mypy", specifier = ">=1.17.1" },
-    { name = "playwright", specifier = ">=1.63.0" },
+    { name = "playwright", specifier = ">=1.64.1" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-bdd", specifier = ">=8.1.0" },
     { name = "pytest-cov", specifier = ">=6.2.1" },
