@@ -3,7 +3,7 @@ ABOUTME: Backoffice assembly data page
 ABOUTME: Displays data source selection and data management for assemblies
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/icons.html" import icon_check %}
+{% from "backoffice/components/icons.html" import icon_check, icon_download %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, checkbox, radio_group, file_input, first_error as e %}
@@ -288,6 +288,20 @@ ABOUTME: Displays data source selection and data management for assemblies
         </div>
     </section>
 {% endmacro %}
+{# An example file to download, under a CSV file input. The hidden suffix is for a
+   screen reader's list of links, where this page's two would otherwise read the same. #}
+{% macro example_csv_link(path, about, note="") %}
+    <p class="text-body-sm mt-2">
+        <a href="{{ url_for('static', filename=path, v=static_hashes(path)) }}"
+           class="inline-flex items-center gap-1.5 underline"
+           style="color: var(--color-links);"
+           download>
+            {{ icon_download(classes="w-4 h-4") }}
+            <span>{{ _("Download an example CSV") }}<span class="sr-only"> ({{ about }})</span></span>
+        </a>
+    </p>
+    {% if note %}<p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ note }}</p>{% endif %}
+{% endmacro %}
 {# CSV file content macro #}
 {% macro render_csv_content() %}
     {% set has_targets = csv_status.has_targets if csv_status else false %}
@@ -365,6 +379,13 @@ ABOUTME: Displays data source selection and data management for assemblies
                         hint=_("Select a CSV file with targets."),
                         error=e(targets_upload_errors.get("csv_file", []))
                         ) }}
+                        {# The example's numbers only suit one project size, and this project may be any.
+                           Before uploading, because the import works out the percentages from the number
+                           to select at that moment, and changing the number later does not redo them. #}
+                        {{ example_csv_link("examples/example-targets.csv",
+                        about=_("Targets"),
+                        note=_("To run a selection with the example targets, set the number to select to 10 before uploading them.")
+                        ) }}
                         <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary") }}</div>
                     </form>
                 {% endif %}
@@ -420,12 +441,15 @@ ABOUTME: Displays data source selection and data management for assemblies
                           x-data
                           x-preserve-scroll-on-submit>
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        {{ file_input(name="file",
-                        label=_("CSV File") ,
-                        accept=".csv",
-                        required=true,
-                        hint=_("Select a CSV file with respondent data.")
-                        ) }}
+                        <div>
+                            {{ file_input(name="file",
+                            label=_("CSV File") ,
+                            accept=".csv",
+                            required=true,
+                            hint=_("Select a CSV file with respondent data.")
+                            ) }}
+                            {{ example_csv_link("examples/example-respondents.csv", about=_("People")) }}
+                        </div>
                         {# Prefilled from the last upload so a file whose id column isn't the
                         first one works without retyping, and the hint says where the value
                         came from so a leftover doesn't read as something they typed.

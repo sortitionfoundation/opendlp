@@ -73,11 +73,18 @@ tolerated. The respondents route also refuses files over `MAX_CSV_UPLOAD_MB`.
    to select shows "Percentages for this target add up to %(total)s%%, not 100%%"
    on the targets page (`target_checking.py`, tolerance one percentage point).
    Without one, it is normalised within the target and always totals 100.
+   Changing the number to select later does not redo them. Measured with the
+   example targets: uploaded at 10 or at 0 and then set to 10, each total is 100%;
+   uploaded at 30 and then set to 10, the totals stay at 33.3%.
 7. The upload replaces whatever targets exist (`replace_existing=True`); the
    form itself only shows while the project has none.
 
 The number to select defaults to 0 on the project form
-(`entrypoints/forms.py`), and a selection refuses to start below 1.
+(`entrypoints/forms.py`), and a selection refuses to start below 1. On the Selection
+tab the Run buttons stay disabled until the selection settings on the Data tab have
+been saved once. The backoffice's own check of targets against respondents is
+`GET /backoffice/project/<id>/targets/check`; `check_db_selection_data` is reached
+from the legacy `db_selection/select.html`.
 
 ## What the respondents parser accepts
 

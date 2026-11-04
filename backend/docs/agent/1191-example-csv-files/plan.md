@@ -45,9 +45,12 @@ upload controls themselves, not the documentation site.
 - **The Targets link says what the example needs.** The targets only work with
   the number to select at 10, and that number can be anything, 0 by default, when
   the organiser arrives here. So one line under the link says "To run a selection
-  with the example targets, set the number to select to 10." Without it, trying
-  the files on a project of any other size ends in a min/max error that reads as
-  the example being broken.
+  with the example targets, set the number to select to 10 before uploading them."
+  Without it, trying the files on a project of another size ends in a min/max error
+  that reads as the example being broken. "Before uploading" matters: the import
+  works out the percentages from the number to select at that moment and changing
+  the number later does not redo them, so a project uploaded at 30 and then set to
+  10 keeps totals of 33.3%. From 0 or 10 the totals are 100%.
 - **Left out, deliberately.** The lookup-table dialog (Link targets to
   questions): its two-column format depends on the linked question, the dialog
   already states it with the question's keys filled in, and a generic file
@@ -78,5 +81,7 @@ upload controls themselves, not the documentation site.
 - `tests/component/test_backoffice_assembly.py` — each upload form links its own
   example with a hash and the `download` attribute, a link goes when its form
   goes, and the bytes a link serves upload cleanly through the route.
-- A manual pass on the Data tab: download both files, upload them in turn, run
-  the check.
+- A manual pass on the Data tab: download both files, upload them in turn, read
+  the targets check, save the selection settings and see the Run buttons enabled.
+  Running the selection from the page needs Celery, so that step is covered by the
+  integration test, which runs the task in-process.

@@ -9,6 +9,7 @@ from io import BytesIO
 import pytest
 from flask.testing import FlaskClient
 
+from opendlp import config
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondent_field_schema import (
@@ -751,6 +752,118 @@ def _seed_respondents(fake_store: FakeStore, assembly_id: uuid.UUID, respondents
 
 def _data_url(assembly_id: uuid.UUID) -> str:
     return f"/backoffice/project/{assembly_id}/data?source=csv"
+
+
+def _upload_form(html: str, assembly_id: uuid.UUID, action: str) -> str:
+    """The body of the form on the page that posts to this project's ``action``."""
+    url = f"/backoffice/project/{assembly_id}/{action}"
+    match = re.search(r'<form[^>]*action="' + re.escape(url) + r'"[^>]*>(.*?)</form>', html, re.DOTALL)
+    assert match, f"No form posting to {url}"
+    return match.group(1)
+
+
+def _example_href(form_body: str, filename: str) -> str:
+    """The href of the download link to ``filename``. The hash is empty if the path names no file."""
+    pattern = r'<a href="([^"]*/static/examples/' + re.escape(filename) + r'\?v=[0-9a-f]{8})"[^>]*\sdownload>'
+    match = re.search(pattern, form_body)
+    assert match, f"No download link to {filename} in:\n{form_body[:800]}"
+    return match.group(1)
+
+
+EXAMPLE_UPLOADS = [
+    pytest.param("targets/upload", "example-targets.csv", "Targets", id="targets"),
+    pytest.param("data/upload-respondents", "example-respondents.csv", "People", id="respondents"),
+]
+
+
+class TestDataTabExampleCsvFiles:
+    """Beside each CSV upload on the data page, an example to download, read and upload."""
+
+    @pytest.mark.parametrize(("action", "filename", "card"), EXAMPLE_UPLOADS)
+    def test_each_upload_form_links_its_own_example(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, action: str, filename: str, card: str
+    ) -> None:
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+
+        form = _upload_form(html, existing_assembly.id, action)
+
+        _example_href(form, filename)
+        assert f'Download an example CSV<span class="sr-only"> ({card})</span>' in form
+
+    def test_targets_form_says_what_the_example_targets_need(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The number the integration test of the example files runs a selection with."""
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+
+        form = _upload_form(html, existing_assembly.id, "targets/upload")
+
+        assert "set the number to select to 10 before uploading" in form
+
+    def test_targets_example_goes_with_the_targets_upload_form(
+        self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly
+    ) -> None:
+        html = logged_in_admin.get(_data_url(assembly_with_targets.id)).data.decode()
+
+        assert "example-targets.csv" not in html
+        assert "example-respondents.csv" in html
+
+    def test_respondents_example_goes_with_the_respondents_upload_form(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_respondents(fake_store, existing_assembly.id, [("1", {"Gender": "Female"})])
+
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+
+        assert "example-respondents.csv" not in html
+        assert "example-targets.csv" in html
+
+    @pytest.mark.parametrize(
+        ("action", "filename", "field", "message"),
+        [
+            pytest.param(
+                "targets/upload",
+                "example-targets.csv",
+                "csv_file",
+                "Successfully imported 3 targets with 10 values from example-targets.csv",
+                id="targets",
+            ),
+            pytest.param(
+                "data/upload-respondents",
+                "example-respondents.csv",
+                "file",
+                "Respondents uploaded successfully: 20 imported",
+                id="respondents",
+            ),
+        ],
+    )
+    def test_what_a_link_serves_uploads_cleanly(
+        self,
+        logged_in_admin: FlaskClient,
+        existing_assembly: Assembly,
+        action: str,
+        filename: str,
+        field: str,
+        message: str,
+    ) -> None:
+        """Download, then upload: the whole of what the links are for."""
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+        href = _example_href(_upload_form(html, existing_assembly.id, action), filename)
+
+        downloaded = logged_in_admin.get(href)
+
+        assert downloaded.status_code == 200
+        assert downloaded.data == (config.get_static_path() / "examples" / filename).read_bytes()
+
+        uploaded = logged_in_admin.post(
+            f"/backoffice/project/{existing_assembly.id}/{action}",
+            data={field: (BytesIO(downloaded.data), filename)},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        assert uploaded.status_code == 200
+        assert message in uploaded.data.decode()
 
 
 class TestDataTabCreateTargetsFromRespondents:
