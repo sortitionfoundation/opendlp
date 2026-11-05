@@ -432,7 +432,11 @@ def comment_box_is_one_line(admin_logged_in_page: Page, value: str) -> None:
     box_height = _comment_box(admin_logged_in_page, value).bounding_box()["height"]
     input_height = row.locator('[data-field="value"]').bounding_box()["height"]
     assert abs(box_height - input_height) <= 2, f"comment box is {box_height}px, value input {input_height}px"
-    expect(_comment_box(admin_logged_in_page, value)).to_have_attribute("title", THREE_LINE_COMMENT)
+    # The whole note is the hover title of the box's holder, not of the box
+    # itself, which a screen reader would read out a second time.
+    holder = row.locator("[data-hover-title]").filter(has=admin_logged_in_page.locator('textarea[name$="[comment]"]'))
+    expect(holder).to_have_attribute("title", THREE_LINE_COMMENT)
+    expect(_comment_box(admin_logged_in_page, value)).not_to_have_attribute("title", THREE_LINE_COMMENT)
 
 
 @then(parsers.parse('the "{value}" comment should read as three lines'))
