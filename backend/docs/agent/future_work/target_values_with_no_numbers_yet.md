@@ -63,7 +63,7 @@ These need the flag:
 | Where | What it does with an unset value |
 | --- | --- |
 | `templates/backoffice/targets/bulk_edit_form.html` | empty min and max boxes, not 0 |
-| `templates/backoffice/targets/category_block.html` and `table_cells.html` | a dash, not 0-0 |
+| `templates/backoffice/targets/category_block.html` and `value_suggestions.html` | a dash, not 0-0 |
 | `adapters/sortition_data_adapter.py` (`OpenDLPDataAdapter.read_feature_data`) | refuse, naming the values without numbers |
 | `service_layer/target_export_service.py` | empty min and max cells |
 | `service_layer/respondent_field_spec_service.py` and its JSON schema | expose it, or null the numbers - a response shape change, so the schema and fixture change too |
