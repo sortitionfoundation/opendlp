@@ -366,8 +366,11 @@ class TestLoadGSheetTask:
             assert any("Loaded" in msg and "people" in msg for msg in updated_record.log_messages)
             assert any("completed successfully" in msg for msg in updated_record.log_messages)
 
-    def test_load_gsheet_with_invalid_csv(self, postgres_session_factory, test_settings, tmp_path):
-        """Test loading with invalid CSV file."""
+    @pytest.mark.filterwarnings("error::DeprecationWarning")
+    def test_load_gsheet_with_invalid_csv(self, postgres_session_factory, test_settings, tmp_path, caplog):
+        """Test loading with invalid CSV file.
+
+        The traceback goes to the server logs, not into the report organisers see."""
         task_id = uuid.uuid4()
         assembly_id = uuid.uuid4()
 
@@ -411,8 +414,8 @@ class TestLoadGSheetTask:
         )
 
         # Attempt to load data
-        with patch.object(load_gsheet, "update_state"):
-            success, features, people, already_selected, _ = load_gsheet(
+        with patch.object(load_gsheet, "update_state"), caplog.at_level("ERROR"):
+            success, features, people, already_selected, report = load_gsheet(
                 task_id=task_id,
                 data_source=csv_gsheet_data_source,
                 settings=test_settings,
@@ -424,6 +427,10 @@ class TestLoadGSheetTask:
         assert features is None
         assert people is None
         assert already_selected is None
+
+        assert "Traceback" not in report.as_text()
+        assert "load_gsheet failed" in caplog.text
+        assert "Traceback" in caplog.text
 
         # Verify record shows failure
         with bootstrap(session_factory=postgres_session_factory) as uow:

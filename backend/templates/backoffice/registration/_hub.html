@@ -13,7 +13,7 @@ ABOUTME: The Registration tab's landing page, and the dimmed backdrop behind eac
     {% endif %}
     <span data-total="{{ key }}" class="inline-flex items-center gap-1" style="color: var(--color-body-text);">
         {{ label }}
-        {{ info_icon(note) }}
+        {{ info_icon(note, about=label) }}
         <span data-total-count style="color: var(--color-headings); font-weight: 700;">{{ count }}</span>
     </span>
 {% endmacro %}

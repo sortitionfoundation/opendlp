@@ -1,5 +1,4 @@
 import logging
-import traceback
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -484,11 +483,10 @@ def _internal_load_gsheet(
         return False, None, None, None, report
     except Exception as err:
         error_msg = _("Failed to load the spreadsheet: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
 
-        # TODO: add to logs - just say "error occurred, contact admins" to the user
+        # TODO: just say "error occurred, contact admins" to the user, not str(err)
         report.add_line(error_msg)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("load_gsheet failed", task_id=str(task_id))
 
         _update_selection_record(
             task_id=task_id,
@@ -592,11 +590,10 @@ def _internal_run_select(
 
     except Exception as err:
         error_msg = _("Selection task failed: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
 
-        # TODO: add to logs - just say "error occurred, contact admins" to the user
+        # TODO: just say "error occurred, contact admins" to the user, not str(err)
         report.add_line(error_msg, ReportLevel.IMPORTANT)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("run_select failed", task_id=str(task_id))
 
         _update_selection_record(
             task_id=task_id,
@@ -673,11 +670,10 @@ def _internal_write_selected(
         return report
     except Exception as err:
         error_msg = _("Writing results failed: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
 
-        # TODO: add to logs - just say "error occurred, contact admins" to the user
+        # TODO: just say "error occurred, contact admins" to the user, not str(err)
         report.add_line(error_msg, ReportLevel.IMPORTANT)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("write_selected failed", task_id=str(task_id))
 
         _update_selection_record(
             task_id=task_id,
@@ -796,9 +792,8 @@ def _internal_load_db(
 
     except Exception as err:
         error_msg = _("Failed to load data from database: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
         report.add_line(error_msg)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("load_db failed", task_id=str(task_id))
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.FAILED,
@@ -859,9 +854,8 @@ def _internal_write_db_results(
 
     except Exception as err:
         error_msg = _("Writing results to database failed: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
         report.add_line(error_msg, ReportLevel.IMPORTANT)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("write_db_results failed", task_id=str(task_id))
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.FAILED,
@@ -1223,10 +1217,9 @@ def manage_old_tabs(
 
     except Exception as err:
         error_msg = _("Failed to %(action)s old tabs: %(error)s", action=action, error=str(err))
-        traceback_msg = traceback.format_exc()
 
         report.add_line(error_msg)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("manage_old_tabs failed", task_id=str(task_id))
 
         _update_selection_record(
             task_id=task_id,

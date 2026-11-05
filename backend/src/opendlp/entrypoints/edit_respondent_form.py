@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from flask_wtf import FlaskForm
-from wtforms import IntegerField, RadioField, SelectField, StringField, TextAreaField
+from wtforms import IntegerField, RadioField, SelectChoice, SelectField, StringField, TextAreaField
 from wtforms.utils import unset_value
 from wtforms.validators import DataRequired, InputRequired, Optional, ValidationError
 
@@ -79,12 +79,12 @@ class _DatePartsField(StringField):
         self.data = value
 
 
-def _bool_choices() -> list[tuple[str, str]]:
-    return [("true", _("Yes")), ("false", _("No"))]
+def _bool_choices() -> list[SelectChoice]:
+    return [SelectChoice("true", _("Yes")), SelectChoice("false", _("No"))]
 
 
-def _bool_or_none_choices() -> list[tuple[str, str]]:
-    return [("true", _("Yes")), ("false", _("No")), ("", _("Not set"))]
+def _bool_or_none_choices() -> list[SelectChoice]:
+    return [SelectChoice("true", _("Yes")), SelectChoice("false", _("No")), SelectChoice("", _("Not set"))]
 
 
 def _bool_value_to_radio(value: bool | None) -> str:
@@ -137,8 +137,8 @@ def _build_choice_field(
             )
         )
 
-    choices: list[tuple[str, str]] = [("", _("— none —"))]
-    choices.extend([(o.value, o.value) for o in options])
+    choices: list[SelectChoice] = [SelectChoice("", _("— none —"))]
+    choices.extend([SelectChoice(o.value, o.value) for o in options])
     option_help = {o.value: o.help_text for o in options}
 
     field: _HelpTextSelectField | _HelpTextRadioField

@@ -72,7 +72,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                    it, or no link at all. #}
                 <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
                     {{ _("Source of population figures:") }}
-                    {{ info_icon(_("Where the percentages came from: a link to the report, such as census tables or a poll, or a note that a council sent the numbers by email.")) }}
+                    {{ info_icon(_("Where the percentages came from: a link to the report, such as census tables or a poll, or a note that a council sent the numbers by email."), about=_("Source of population figures")) }}
                     {{ category.source_url | linkify }}
                 </p>
             {% endif %}

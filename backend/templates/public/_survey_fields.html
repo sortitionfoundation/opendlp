@@ -7,7 +7,8 @@ ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTION
 {% macro survey_field(field) %}
     {% if field.type == "RadioField" %}
         {% set options = [] %}
-        {% for value, label in field.choices %}
+        {% for choice in field.choices %}
+            {% set value, label = choice.value, choice.label %}
             {% set _ = options.append({"value": value, "label": label}) %}
         {% endfor %}
         {{ radio_group(field.name,
@@ -19,7 +20,8 @@ ABOUTME: Switches on the WTForms field type, so it tracks SIGNUP_SURVEY_QUESTION
         }}
     {% elif field.type == "SelectField" %}
         {% set options = [] %}
-        {% for value, label in field.choices %}
+        {% for choice in field.choices %}
+            {% set value, label = choice.value, choice.label %}
             {% set _ = options.append({"value": value, "label": label}) %}
         {% endfor %}
         {{ select_dropdown(field.name,

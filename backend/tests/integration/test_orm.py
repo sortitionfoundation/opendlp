@@ -1090,6 +1090,7 @@ class TestSelectionRunRecordORM:
         # Verify SelectionRunRecords were cascade deleted
         assert postgres_session.query(SelectionRunRecord).filter_by(assembly_id=assembly.id).count() == 0
 
+    @pytest.mark.filterwarnings("error::sqlalchemy.exc.SAWarning")
     def test_selection_run_record_task_id_primary_key(self, postgres_session: Session):
         """Test that task_id serves as primary key and must be unique."""
         # Create assembly first
@@ -1114,6 +1115,9 @@ class TestSelectionRunRecordORM:
 
         postgres_session.add(record1)
         postgres_session.commit()
+        # Drop record1 from the identity map, so the clash is refused by the
+        # database's primary key rather than by SQLAlchemy's session
+        postgres_session.expunge(record1)
 
         # Try to create second SelectionRunRecord with same task_id
         record2 = SelectionRunRecord(

@@ -113,7 +113,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                        page is a share of it, so it is the number to have in mind. #}
                         <p class="text-body-md" style="color: var(--color-secondary-text);">
                             {{ _("Panel size: %(number)s", number=assembly.number_to_select) }}
-                            {{ info_icon(_("The number of people to select")) }}
+                            {{ info_icon(_("The number of people to select"), about=_("Panel size")) }}
                         </p>
                         {% if not target_categories %}
                             <p class="text-body-md" style="color: var(--color-secondary-text);">

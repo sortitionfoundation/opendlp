@@ -75,6 +75,11 @@ class TestInputInfo:
         assert 'aria-describedby="source-info source-error"' in html
         assert 'aria-invalid="true"' in html
 
+    def test_the_info_button_is_named_after_the_label(self):
+        html = _render('{{ input("source", label="Source", info="Where the numbers come from.") }}')
+
+        assert 'aria-label="More about Source"' in html
+
     def test_without_info_there_is_no_icon_and_no_describedby(self):
         html = _render('{{ input("source", label="Source") }}')
 

@@ -1,6 +1,7 @@
 """ABOUTME: End-to-end PostgreSQL happy-path smokes for the backoffice registration-page routes
 ABOUTME: Covers creating a registration page, filling its empty form and fetching the starter HTML skeleton"""
 
+import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.users import User
@@ -67,6 +68,7 @@ def test_create_seeds_the_intro_and_a_fill_starts_the_form(
         assert "govuk-button" in source.form_html
 
 
+@pytest.mark.filterwarnings("error::sqlalchemy.exc.SAWarning")
 def test_delete_assembly_registration_page_success(
     logged_in_admin: FlaskClient, existing_assembly, postgres_session_factory
 ):

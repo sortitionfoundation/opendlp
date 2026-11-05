@@ -1,7 +1,14 @@
 // ABOUTME: Tests for the entry point that mounts editors over HTML-editing textareas.
 // ABOUTME: Covers mounting the right editor, mounting textareas added later, and destroying removed ones.
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { editorFor } from "./html-editor.js";
+
+// These tests keep editors alive across several ticks while the observer
+// mounts and destroys them, long enough for a CodeMirror measure to run on an
+// animation frame. jsdom has no layout, so that measure throws; no test here
+// needs one, so animation frames never run.
+vi.stubGlobal("requestAnimationFrame", () => 0);
+vi.stubGlobal("cancelAnimationFrame", () => {});
 
 // The observer reacts after the DOM changes, and mounts in a microtask.
 function settle() {

@@ -248,7 +248,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                                        x-show="!changingDate"
                                        data-testid="ts-as-of-text">
                                         <span>{{ _("Respondent age calculated on %(date)s", date=setup["as_of_date"] | date_text) }}</span>
-                                        {{ info_icon(as_of_help) }}
+                                        {{ info_icon(as_of_help, about=_("the date ages are calculated on")) }}
                                         {{ button(_("Change") , variant="tertiary", attrs='@click="changeDate()"', aria_label=_("Change the date respondent age is calculated on")) }}
                                     </p>
                                 {% endif %}

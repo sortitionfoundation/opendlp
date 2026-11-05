@@ -604,3 +604,46 @@ def run_targets_export_download(admin_logged_in_page: Page) -> str:
 def targets_csv_rows(downloaded_targets_csv: str, first: str, second: str, feature: str) -> None:
     rows = list(csv.DictReader(StringIO(downloaded_targets_csv)))
     assert [(row["feature"], row["value"]) for row in rows] == [(feature, first), (feature, second)]
+
+
+def _info_bubble(page: Page, text: str):
+    """The bubble an info icon shows, not the live region that announces it."""
+    return page.locator(".info-toggletip__bubble").filter(has_text=text).filter(visible=True)
+
+
+@when(parsers.parse('I tab to "{name}" and press Enter'))
+def tab_to_and_press_enter(admin_logged_in_page: Page, name: str) -> None:
+    """Tab from the top of the page until the named control has focus.
+
+    Going by Tab rather than focusing the control directly is the point: it
+    shows the control is in the keyboard's reach at all.
+    """
+    page = admin_logged_in_page
+    page.locator("body").focus()
+    for _ in range(200):
+        page.keyboard.press("Tab")
+        if page.evaluate("() => document.activeElement && document.activeElement.getAttribute('aria-label')") == name:
+            break
+    else:
+        raise AssertionError(f'Tab never reached "{name}"')
+    page.keyboard.press("Enter")
+
+
+@when("I press Escape")
+def press_escape(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.keyboard.press("Escape")
+
+
+@then(parsers.parse('the note "{text}" should be showing'))
+def note_is_showing(admin_logged_in_page: Page, text: str) -> None:
+    expect(_info_bubble(admin_logged_in_page, text)).to_have_count(1, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the note "{text}" should not be showing'))
+def note_is_not_showing(admin_logged_in_page: Page, text: str) -> None:
+    expect(_info_bubble(admin_logged_in_page, text)).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the focus should be back on "{name}"'))
+def focus_is_on(admin_logged_in_page: Page, name: str) -> None:
+    expect(admin_logged_in_page.locator(":focus")).to_have_attribute("aria-label", name, timeout=PLAYWRIGHT_TIMEOUT)

@@ -44,7 +44,7 @@ opendlp = "opendlp.entrypoints.cli:cli"
 production = ["gunicorn>=23.0.0"]
 
 [build-system]
-requires = ["uv_build>=0.13.4,<1.0"]
+requires = ["uv_build>=0.13.6,<1.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
@@ -68,7 +68,7 @@ dev = [
   "types-authlib>=1.8.0.20260911",
   "types-gunicorn>=23.0.0.20251001",
   "types-qrcode>=8.2.0.20250914",
-  "types-wtforms>=3.2.1.20250809",
+  "types-wtforms>=3.3.0.20261103",
 ]
 
 [tool.uv]
@@ -80,10 +80,14 @@ exclude-newer = "1 week"
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
 # made shorter to get security fixes
-certifi = "0 days"
-cryptography = "0 days"
-oauthlib = "3 days"
-pyasn1 = "0 days"
+certifi = "3 days"
+cryptography = "3 days"
+oauthlib = "4 days"
+# 9.0.1 fixes the crash with pytest 9.2 - this can be removed after 2026-11-08
+pytest-bdd = "4 days"
+# 3.3 stubs know SelectChoice, which wtforms 3.3 wants instead of choice tuples -
+# type-only package, so lower risk - this can be removed after 2026-11-11
+types-wtforms = "1 day"
 
 [tool.mypy]
 files = ["src"]

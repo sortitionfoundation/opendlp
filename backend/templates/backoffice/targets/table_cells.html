@@ -9,7 +9,7 @@ ABOUTME: Column headings, respondent and selected counts, and the Total row's ce
 #}
 {% macro edge_padding(edge) %}{{ "pr-4" if edge == "first" else "pl-4" if edge == "last" else "px-4" }}{% endmacro %}
 {#
-    A column heading, or the Total row's label. `info` puts a hover note beside
+    A column heading, or the Total row's label. `info` puts a note beside
     the label, for a column one word at the top cannot explain.
 #}
 {% macro heading(label, align="left", edge="", info="") %}
@@ -18,7 +18,7 @@ ABOUTME: Column headings, respondent and selected counts, and the Total row's ce
         {% if info %}
             <span class="inline-flex items-center {{ 'justify-end' if align == 'right' else '' }} gap-1">
                 {{ label }}
-                {{ info_icon(info) }}
+                {{ info_icon(info, about=label) }}
             </span>
         {% else %}
             {{ label }}
