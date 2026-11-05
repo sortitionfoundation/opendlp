@@ -1110,10 +1110,13 @@ def _write_value_edit(
     if value_edit.value_id is None:
         if value_edit.deleted:
             return
+        all_given = None not in (value_edit.percentage, value_edit.min, value_edit.max)
+        # Half a range is not a hand-set one, so the percentage fills in both.
+        from_percentage = value_edit.percentage is not None and not all_given
         target_value = TargetValue(
             value=value_edit.value,
-            min=value_edit.min or 0,
-            max=value_edit.max or 0,
+            min=0 if from_percentage else value_edit.min or 0,
+            max=0 if from_percentage else value_edit.max or 0,
             percentage_target=value_edit.percentage,
             comment=value_edit.comment,
         )
@@ -1121,7 +1124,6 @@ def _write_value_edit(
         # given unless they are the ones the percentage works out to.
         typed = (target_value.min, target_value.max)
         target_value.apply_percentage(number_to_select)
-        all_given = None not in (value_edit.percentage, value_edit.min, value_edit.max)
         if all_given and typed != (target_value.min, target_value.max):
             target_value.set_manual_min_max(*typed)
         category.add_value(target_value)

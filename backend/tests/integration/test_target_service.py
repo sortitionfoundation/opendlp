@@ -815,6 +815,15 @@ class TestSaveAllNewValueLinkRules:
         assert value.minmax_manual is False
         assert (value.min, value.max) == (15, 16)
 
+    def test_a_percentage_with_only_one_of_minmax_calculates_minmax(
+        self, uow, admin_user: User, test_assembly: Assembly
+    ):
+        """Half a range is not a hand-set one, so the percentage fills in both."""
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0, min=3)
+
+        assert value.minmax_manual is False
+        assert (value.min, value.max) == (15, 16)
+
 
 class TestRelinkTargetValue:
     def test_restores_auto_calculation(self, uow, admin_user: User, test_assembly: Assembly):
