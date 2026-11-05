@@ -146,6 +146,31 @@ Rules of thumb:
 - Prefer this capture pattern over inlining the wrapped macro's HTML: inlining duplicates the
   atom's markup and the copies drift apart when the atom changes.
 
+## Dialogs Over Dialogs
+
+A dialog dims everything beneath it, including any dialog it opened over. That
+only holds if it is drawn on a higher layer, and the layer comes from a fixed
+z-index table in `static/backoffice/src/main.css`, chosen by where the dialog
+sits in the page - not by when it opened. Two dialogs in the same host get the
+same layer, and the second one's backdrop ends up beneath the first one's panel.
+
+- A dialog that can open while another dialog is open - a confirmation, the Link
+  dialog, "Discard changes?" - passes `stacked=true` to `controlled_modal()` or
+  `controlled_alert_dialog()`. The leave guard (`components/leave_guard_modal.html`)
+  and the Link dialog (`components/rich_editor_link_modal.html`) always do.
+- A dialog swapped into a fragment host over a takeover panel is lifted by the
+  `[data-fragment-dialog-host]` / `[data-takeover-dialog-host]` rules - mark the
+  host and it is handled.
+- Adding a layer to the table? Update the table at the top of the dialog styles
+  in `main.css` with it.
+- Every BDD step ends with a check that at most one open dialog is undimmed (see
+  "Open dialogs are checked after every step" in `docs/testing.md`), so a
+  scenario that reaches the nesting catches a mistake. A nesting no scenario
+  reaches is not checked.
+
+This has gone wrong three times. Two ways to make the layer follow opening
+order instead are written up in `docs/agent/future_work/dialog_stacking.md`.
+
 ## Icons
 
 - Every UI icon lives in `templates/backoffice/components/icons.html`, one macro per glyph.
