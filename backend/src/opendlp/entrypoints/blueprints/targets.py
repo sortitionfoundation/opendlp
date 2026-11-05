@@ -803,7 +803,7 @@ def _run_gsheet_export(assembly_id: uuid.UUID, targets_url: str) -> ResponseRetu
     return run_gsheet_export_flow(
         redirect_url=targets_url,
         export=export,
-        success_message=_("Targets exported to Google Sheets."),
+        success_message=_("Targets exported to Google Sheets"),
         log_event="Google Sheets targets export failed",
         log_context={"assembly_id": str(assembly_id), "user_id": str(current_user.id)},
     )

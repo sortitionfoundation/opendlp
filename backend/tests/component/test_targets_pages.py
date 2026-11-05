@@ -528,7 +528,7 @@ class TestCategorySourceAndComment:
         assert "Source of population figures:" in html_text
         assert "Data Source" not in html_text
         assert (
-            'title="Source of the percentages. Could be a link to the report the percentages come from, such as census tables or a poll, or could be a statement that a council provided the numbers in an email."'
+            'title="Where the percentages came from: a link to the report, such as census tables or a poll, or a note that a council sent the numbers by email."'
             in html_text
         )
 
@@ -544,7 +544,7 @@ class TestCategorySourceAndComment:
         assert re.search(rf'<label for="{source_id}"[^>]*>\s*Source of population figures\s*</label>', html_text)
         assert f'aria-describedby="{source_id}-info"' in html_text
         assert re.search(
-            rf'id="{source_id}-info">Source of the percentages\. Could be a link to the report',
+            rf'id="{source_id}-info">Where the percentages came from: a link to the report',
             html_text,
         )
 

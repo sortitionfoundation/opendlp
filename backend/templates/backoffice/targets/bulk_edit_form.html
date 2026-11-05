@@ -268,7 +268,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 id="bulk-source-" ~ cat_id|string,
                 error=errors.get(cat_prefix ~ "[source_url]", ""),
                 label=_("Source of population figures"),
-                info=_("Source of the percentages. Could be a link to the report the percentages come from, such as census tables or a poll, or could be a statement that a council provided the numbers in an email."),
+                info=_("Where the percentages came from: a link to the report, such as census tables or a poll, or a note that a council sent the numbers by email."),
                 value=category.source_url if category else "") }}
                 {{ comment_box(cat_prefix ~ "[comment]",
                 "bulk-comment-" ~ cat_id|string,

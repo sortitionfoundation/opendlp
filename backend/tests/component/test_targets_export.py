@@ -247,7 +247,7 @@ class TestRunExport:
             follow_redirects=True,
         )
 
-        assert "Targets exported to Google Sheets." in response.get_data(as_text=True)
+        assert "Targets exported to Google Sheets" in response.get_data(as_text=True)
         ((url, target),) = captured
         assert url == SHEET_URL
         ((title, table),) = target.writes
