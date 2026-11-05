@@ -20,7 +20,17 @@
     {% endif %}
     {# ── Check Result Display ────────────────────────────── #}
     {% if check_result is defined and check_result %}
-        {% if check_result.success %}
+        {# Checks that could not be run: the targets are not ready while one is outstanding #}
+        {% for warning_msg in check_result.global_warnings %}
+            <div class="govuk-warning-text">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
+                    {{ warning_msg }}
+                </strong>
+            </div>
+        {% endfor %}
+        {% if check_result.success and not check_result.global_warnings %}
             <div class="govuk-notification-banner govuk-notification-banner--success"
                  role="alert">
                 <div class="govuk-notification-banner__header">
@@ -34,7 +44,7 @@
                     </p>
                 </div>
             </div>
-        {% else %}
+        {% elif not check_result.success %}
             {% if check_result.global_errors %}
                 <div class="govuk-error-summary" data-module="govuk-error-summary">
                     <div role="alert">

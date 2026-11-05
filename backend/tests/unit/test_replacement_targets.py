@@ -406,7 +406,7 @@ class TestValidateReplacementForm:
         assert "changed" in result.errors[0]
 
     def test_cross_category_conflict_blocks(self, uow):
-        """Gender still needs 3 but Age Range is edited to allow at most 2."""
+        """Gender still needs 3 but Age Range is edited to allow at most 2, fewer than the 3 to select."""
         admin, assembly, _, _ = _seed(uow)
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         form = _form_from_plan(plan)
@@ -415,7 +415,7 @@ class TestValidateReplacementForm:
         form[rows[("Age", "31+")].max_field] = "1"
         result = validate_replacement_form(uow, assembly.id, plan, form)
         assert not result.ok
-        assert any("Gender" in e and "Age" in e for e in result.errors)
+        assert result.errors == ["Age allows at most 2 replacements, fewer than the 3 to select"]
 
     def test_number_outside_range_blocks(self, uow):
         admin, assembly, _, _ = _seed(uow)

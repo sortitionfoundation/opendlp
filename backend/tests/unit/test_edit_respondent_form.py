@@ -14,7 +14,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
-from opendlp.entrypoints.edit_respondent_form import build_edit_respondent_form
+from opendlp.entrypoints.edit_respondent_form import build_edit_respondent_form, build_error_summary
 
 
 def _field(field_key: str, field_type: FieldType = FieldType.TEXT, options=None) -> RespondentFieldDefinition:
@@ -95,14 +95,44 @@ class TestBuildFormFieldRendering:
         schema = [_field("attending", FieldType.BOOL)]
         form, _ = build_edit_respondent_form(schema, _respondent(attributes={"attending": "true"}))
         assert isinstance(form["attr_attending"], RadioField)
-        values = [v for v, _label in form["attr_attending"].choices]
+        values = [choice.value for choice in form["attr_attending"].choices]
         assert values == ["true", "false"]
+
+    @pytest.mark.parametrize(
+        ("stored", "expected"),
+        [
+            # The registration form stores real JSON booleans
+            (True, "true"),
+            (False, "false"),
+            # The edit form stores lower-case strings
+            ("true", "true"),
+            ("false", "false"),
+            # Imports keep whatever text the spreadsheet had
+            ("TRUE", "true"),
+            ("Yes", "true"),
+            ("no", "false"),
+            ("1", "true"),
+            ("0", "false"),
+            ("", ""),
+            ("maybe", ""),
+        ],
+    )
+    def test_bool_attribute_preselects_from_any_stored_form(self, app_ctx, stored, expected):
+        schema = [_field("attending", FieldType.BOOL)]
+        form, _ = build_edit_respondent_form(schema, _respondent(attributes={"attending": stored}))
+        assert form["attr_attending"].data == expected
+
+    @pytest.mark.parametrize(("stored", "expected"), [(True, "true"), (False, "false"), ("Yes", "true"), ("", "")])
+    def test_bool_or_none_attribute_preselects_from_any_stored_form(self, app_ctx, stored, expected):
+        schema = [_field("returning", FieldType.BOOL_OR_NONE)]
+        form, _ = build_edit_respondent_form(schema, _respondent(attributes={"returning": stored}))
+        assert form["attr_returning"].data == expected
 
     def test_bool_or_none_renders_three_radios_with_not_set(self, app_ctx):
         schema = [_bool_or_none_fixed("eligible")]
         form, _ = build_edit_respondent_form(schema, _respondent(eligible=None))
         assert isinstance(form["eligible"], RadioField)
-        values = [v for v, _label in form["eligible"].choices]
+        values = [choice.value for choice in form["eligible"].choices]
         assert values == ["true", "false", ""]
         assert form["eligible"].data == ""
 
@@ -119,7 +149,7 @@ class TestBuildFormFieldRendering:
         field.on_registration_page = FieldOnRegistrationPage.NO
         form, _ = build_edit_respondent_form([field], _respondent(eligible=None))
         assert isinstance(form["eligible"], RadioField)
-        values = [v for v, _label in form["eligible"].choices]
+        values = [choice.value for choice in form["eligible"].choices]
         assert values == ["true", "false", ""]
 
     def test_choice_radio_renders_radio_field(self, app_ctx):
@@ -127,7 +157,7 @@ class TestBuildFormFieldRendering:
         schema = [_field("pick", FieldType.CHOICE_RADIO, options=options)]
         form, _ = build_edit_respondent_form(schema, _respondent(attributes={"pick": "a"}))
         assert isinstance(form["attr_pick"], RadioField)
-        values = [v for v, _label in form["attr_pick"].choices]
+        values = [choice.value for choice in form["attr_pick"].choices]
         assert values == ["", "a", "b"]
 
     def test_choice_dropdown_renders_select_field_with_empty_first(self, app_ctx):
@@ -135,7 +165,7 @@ class TestBuildFormFieldRendering:
         schema = [_field("zone", FieldType.CHOICE_DROPDOWN, options=options)]
         form, _ = build_edit_respondent_form(schema, _respondent(attributes={"zone": "x"}))
         assert isinstance(form["attr_zone"], SelectField)
-        values = [v for v, _label in form["attr_zone"].choices]
+        values = [choice.value for choice in form["attr_zone"].choices]
         assert values[0] == ""
         assert set(values[1:]) == {"x", "y"}
 
@@ -164,7 +194,7 @@ class TestBuildFormDrift:
         options = [ChoiceOption(value="a"), ChoiceOption(value="b")]
         schema = [_field("pick", FieldType.CHOICE_RADIO, options=options)]
         form, warnings = build_edit_respondent_form(schema, _respondent(attributes={"pick": "outsider"}))
-        values = [v for v, _label in form["attr_pick"].choices]
+        values = [choice.value for choice in form["attr_pick"].choices]
         assert "outsider" in values
         assert any("outsider" in w for w in warnings)
 
@@ -184,6 +214,57 @@ def _post_form(schema, respondent, data):
         form, _warnings = build_edit_respondent_form(schema, respondent)
         valid = form.validate()
     return form, valid
+
+
+class TestBuildErrorSummary:
+    def test_valid_form_has_no_summary(self):
+        schema = [_field("attending", FieldType.BOOL)]
+        form, valid = _post_form(schema, _respondent(), {"attr_attending": "true"})
+        assert valid
+        assert build_error_summary(form, schema) == []
+
+    def test_links_each_failing_field_to_its_first_control_in_display_order(self):
+        options = [ChoiceOption(value="a")]
+        schema = [
+            _field("attending", FieldType.BOOL),
+            _field("pick", FieldType.CHOICE_DROPDOWN, options=options),
+            _field("date_of_birth", FieldType.DATE),
+            _field("age", FieldType.INTEGER),
+        ]
+        form, valid = _post_form(
+            schema,
+            _respondent(),
+            {
+                "attr_pick": "not-an-option",
+                "attr_date_of_birth-day": "31",
+                "attr_date_of_birth-month": "2",
+                "attr_date_of_birth-year": "1990",
+                "attr_age": "abc",
+            },
+        )
+        assert not valid
+        summary = build_error_summary(form, schema)
+        assert [item["href"] for item in summary] == [
+            "#attr_attending_1",
+            "#attr_pick",
+            "#attr_date_of_birth-day",
+            "#attr_age",
+        ]
+        assert summary[0]["text"].startswith("Attending: ")
+
+    def test_fixed_field_uses_its_plain_name(self):
+        schema = [_email_fixed()]
+        form, valid = _post_form(schema, _respondent(), {"email": "not-an-email"})
+        assert not valid
+        assert [item["href"] for item in build_error_summary(form, schema)] == ["#email"]
+
+    def test_change_note_comes_last(self):
+        schema = [_field("attending", FieldType.BOOL)]
+        form, valid = _post_form(schema, _respondent(), {"comment": ""})
+        assert not valid
+        summary = build_error_summary(form, schema)
+        assert [item["href"] for item in summary] == ["#attr_attending_1", "#comment"]
+        assert summary[1]["text"].startswith("Change note: ")
 
 
 class TestBuildFormDateField:

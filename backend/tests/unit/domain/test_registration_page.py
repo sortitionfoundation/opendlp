@@ -1182,6 +1182,62 @@ class TestLastPublishedAt:
         assert page.last_published_at() == page.activity[-1].created_at
 
 
+class TestPublishedAtIfLive:
+    """The date the pages list shows: the last publish, and only while the page is Published."""
+
+    def test_none_when_never_published(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        assert page.published_at_if_live() is None
+
+    def test_the_publish_timestamp_while_published(self):
+        page = _published_page()
+        assert page.published_at_if_live() == page.activity[-1].created_at
+
+    def test_none_after_unpublish_though_the_history_is_kept(self):
+        """sc-969: back in Test the list showed the old publish date. The history stays, the date goes."""
+        page = _published_page()
+        page.unpublish(author_id=uuid.uuid4())
+        assert page.published_at_if_live() is None
+        assert page.last_published_at() is not None
+
+    def test_the_new_date_after_republish(self):
+        page = _published_page()
+        page.unpublish(author_id=uuid.uuid4())
+        page.publish(_StubSource(), author_id=uuid.uuid4())
+        assert page.published_at_if_live() == page.activity[-1].created_at
+        assert page.published_at_if_live() == page.last_published_at()
+
+    def test_the_newest_publish_wins_over_an_earlier_one(self):
+        """Explicit timestamps, so the test does not rest on two publishes landing in different microseconds."""
+        author = uuid.uuid4()
+        first = datetime(2026, 1, 5, 9, 0, tzinfo=UTC)
+        pulled = datetime(2026, 2, 1, 9, 0, tzinfo=UTC)
+        second = datetime(2026, 3, 15, 9, 0, tzinfo=UTC)
+        page = RegistrationPage(
+            assembly_id=uuid.uuid4(),
+            status=RegistrationPageStatus.PUBLISHED,
+            activity=[
+                RegistrationPageActivity("", author, first, RegistrationPageAction.PUBLISH),
+                RegistrationPageActivity("", author, pulled, RegistrationPageAction.UNPUBLISH),
+                RegistrationPageActivity("", author, second, RegistrationPageAction.PUBLISH),
+            ],
+        )
+        assert page.published_at_if_live() == second
+
+    def test_none_while_closed(self):
+        page = _published_page()
+        page.close(author_id=uuid.uuid4())
+        assert page.published_at_if_live() is None
+
+    def test_the_publish_timestamp_again_after_reopen(self):
+        """Reopening is not a publish, so the date that comes back is the original one."""
+        page = _published_page()
+        published_at = page.last_published_at()
+        page.close(author_id=uuid.uuid4())
+        page.reopen(_StubSource(), author_id=uuid.uuid4())
+        assert page.published_at_if_live() == published_at
+
+
 class TestNameAndLanguage:
     def test_default_to_empty_strings(self):
         """A page created without a name or language carries empty strings."""

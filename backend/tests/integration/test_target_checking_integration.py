@@ -158,7 +158,7 @@ class TestCheckTargetsDetailedIntegration:
         assert result.success is True
         assert result.num_people == 20
 
-    def test_no_respondents_gives_global_error(self, uow, admin_user, assembly_with_csv):
+    def test_no_respondents_gives_a_warning_not_an_error(self, uow, admin_user, assembly_with_csv):
         assembly_id = assembly_with_csv.id
 
         with uow:
@@ -175,8 +175,11 @@ class TestCheckTargetsDetailedIntegration:
         with uow2:
             result = check_targets_detailed(uow2, admin_user.id, assembly_id)
 
-        assert result.success is False
-        assert len(result.global_errors) > 0
+        assert result.global_errors == []
+        assert result.global_warnings == [
+            "There are no respondents in the pool yet, so the targets have not been checked against them."
+        ]
+        assert result.num_people == 0
 
     def test_cross_feature_error_annotated(self, uow, admin_user, assembly_with_csv):
         assembly_id = assembly_with_csv.id

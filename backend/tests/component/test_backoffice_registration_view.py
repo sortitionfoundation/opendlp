@@ -91,6 +91,13 @@ def _count_cell(body: str, page_name: str) -> str:
     return cell.split(">", 1)[1].strip()
 
 
+def _published_at_cell(body: str, page_name: str) -> str:
+    """The text of a page's Date published cell in the pages list: a formatted date, or the em dash."""
+    row = body.split(page_name, 1)[1].split("</tr>", 1)[0]
+    cell = row.split('data-cell="published-at"', 1)[1].split("</td>", 1)[0]
+    return re.sub(r"<[^>]+>", "", cell.split(">", 1)[1]).strip()
+
+
 def _total(body: str, key: str) -> str:
     """The number on one of the headline totals above the pages list."""
     total = body.split(f'data-total="{key}"', 1)[1]
@@ -1421,9 +1428,36 @@ class TestRegistrationListView:
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         # The publish date renders through the babel dateformat filter (not the em dash placeholder)
-        row = body.split("Live", 1)[1].split("</tr>", 1)[0]
-        date_cell = row.split('data-cell="published-at"', 1)[1].split("</td>", 1)[0]
-        assert "\u2014" not in date_cell
+        assert "\u2014" not in _published_at_cell(body, "Live")
+
+    def test_never_published_page_shows_no_publish_date(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="new-slug", name="Fresh")
+
+        body = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration").get_data(as_text=True)
+
+        assert _published_at_cell(body, "Fresh") == "\u2014"
+
+    def test_unpublished_page_shows_no_publish_date(self, logged_in_admin, fake_store, assembly_id):
+        """sc-969: after Unpublish the row kept the last publish date. The database keeps it; the list does not."""
+        page = _seed_page(
+            fake_store,
+            assembly_id,
+            RegistrationPageStatus.TEST,
+            url_slug="back-slug",
+            name="Pulled",
+            form_html="<form>{{ csrf_form_element }} {{ form_action }}</form>",
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+            stored.publish(uow.registration_page_html_sources.get_by_page_id(page.id), author_id=uuid.uuid4())
+            stored.unpublish(author_id=uuid.uuid4())
+            uow.commit()
+
+        body = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration").get_data(as_text=True)
+
+        assert _published_at_cell(body, "Pulled") == "\u2014"
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id).last_published_at() is not None
 
     def test_each_page_shows_its_registration_count(self, logged_in_admin, fake_store, assembly_id):
         busy = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="busy-slug", name="Busy")

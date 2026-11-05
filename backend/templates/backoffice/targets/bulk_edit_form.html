@@ -280,7 +280,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                                 style="color: var(--color-headings)">
                                 <span class="inline-flex items-center gap-1">
                                     {{ _("Respondents") }}
-                                    {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
+                                    {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted."), about=_("Respondents")) }}
                                 </span>
                             </th>
                         {% endif %}
@@ -289,7 +289,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                                 style="color: var(--color-headings)">
                                 <span class="inline-flex items-center gap-1">
                                     {{ _("Selected") }}
-                                    {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place.")) }}
+                                    {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place."), about=_("Selected")) }}
                                 </span>
                             </th>
                         {% endif %}

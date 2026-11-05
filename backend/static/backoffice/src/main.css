@@ -1949,3 +1949,53 @@ body {
         display: none;
     }
 }
+
+/* ========================================
+   INFO TOGGLETIP
+   ======================================== */
+
+/*
+ * The info_icon macro: a circled-i button and the bubble it shows. The bubble
+ * is a popover, so it sits in the top layer and a card's overflow:hidden does
+ * not clip it; src/js/components/info-toggletip.js places it next to the icon.
+ * The UA stylesheet hides a popover until it is shown, so nothing here sets
+ * `display` on the bubble.
+ */
+@layer components {
+    .info-toggletip {
+        display: inline-flex;
+        flex-shrink: 0;
+        vertical-align: middle;
+    }
+
+    .info-toggletip__button {
+        display: inline-flex;
+        padding: 0;
+        border: 0;
+        border-radius: 9999px;
+        background: none;
+        color: var(--color-secondary-text);
+        cursor: pointer;
+    }
+
+    .info-toggletip__button:hover {
+        color: var(--color-headings);
+    }
+
+    .info-toggletip__bubble {
+        position: fixed;
+        inset: auto;
+        margin: 0;
+        max-width: min(20rem, calc(100vw - 1rem));
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        font-weight: 400;
+        text-align: left;
+        text-transform: none;
+        white-space: normal;
+        color: var(--color-body-text);
+        background-color: var(--color-tables-cards);
+    }
+}

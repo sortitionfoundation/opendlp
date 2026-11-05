@@ -93,7 +93,7 @@ Also:
 > fail without the fixes, which confirms the 500s were real.
 >
 > App-level handlers for `InsufficientPermissions` / `NotFoundError` are written
-> up as an issue in [error_handlers_and_info_icon.md](../../future_work/error_handlers_and_info_icon.md), not done here. A handler for
+> up as an issue in [app_level_error_handlers.md](../../future_work/app_level_error_handlers.md), not done here. A handler for
 > `ServiceLayerError` is argued against there.
 >
 > Not addressed: these routes still show `str(e)` for the uncurated

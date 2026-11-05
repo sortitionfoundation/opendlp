@@ -82,7 +82,8 @@
                                 </p>
                             {% endif %}
                             <div class="govuk-radios" data-module="govuk-radios">
-                                {% for value, label in form.global_role.choices %}
+                                {% for choice in form.global_role.choices %}
+                                    {% set value, label = choice.value, choice.label %}
                                     <div class="govuk-radios__item">
                                         <input class="govuk-radios__input"
                                                id="global_role_{{ loop.index }}"

@@ -1,27 +1,44 @@
 {#
-ABOUTME: Small circled-i icon carrying a note about the thing it sits beside
-ABOUTME: Used in table headings whose column needs a sentence of explanation
+ABOUTME: Small circled-i button that shows a note about the thing it sits beside
+ABOUTME: A toggletip, used in table headings and by input() labels whose field needs a sentence of explanation
 #}
 
 {% from "backoffice/components/icons.html" import icon_info %}
-{% macro info_icon(text, id="") %}
+{% macro info_icon(text, id="", about="") %}
     {#
-    An explanation attached to a label, shown on hover and read out by a screen
-    reader. A glyph on its own says nothing, so the wording is both the `title`
-    and `sr-only` text rather than only the tooltip.
+    An explanation attached to a label, behind a button so that it can be read
+    with a mouse, a keyboard or a finger. Pressing the button shows the text in a
+    bubble and announces it through a live region; pressing it again, Escape, a
+    click elsewhere or tabbing away hides it. See src/js/components/info-toggletip.js.
+
+    The bubble holds the text all the time, hidden, so a control can point
+    aria-describedby at it. Without JavaScript the text is the button's `title`,
+    a hover tooltip, which the component removes once it is running.
 
     Args:
         text: The sentence explaining whatever the icon sits beside.
-        id: Optional id for the read-out text, so a control can point
-            aria-describedby at it.
+        id: Optional id for the text, so a control can point aria-describedby
+            at it.
+        about: What the text explains, for the button's name: "More about
+            Registrations". Without it the button is "More information".
 
     Usage:
-        {{ info_icon(_("Withdrawn people are not counted.")) }}
+        {{ info_icon(_("Withdrawn people are not counted."), about=_("Registrations")) }}
     #}
-    <span class="inline-flex shrink-0 align-middle"
-          title="{{ text }}"
-          style="color: var(--color-secondary-text)">
-        {{ icon_info() }}
-        <span class="sr-only"{% if id %} id="{{ id }}"{% endif %}>{{ text }}</span>
+    {% set button_name = _("More about %(thing)s", thing=about) if about else _("More information") %}
+    <span class="info-toggletip"
+          x-data="infoToggletip"
+          @keydown.escape="closeOnEscape"
+          @click.outside="close"
+          @focusout="closeOnFocusOut">
+        <button type="button"
+                class="info-toggletip__button"
+                aria-label="{{ button_name }}"
+                title="{{ text }}"
+                :title="nativeTitle"
+                x-ref="button"
+                @click="toggle">{{ icon_info() }}</button>
+        <span role="status" class="sr-only" x-text="announced"></span>
+        <span class="info-toggletip__bubble text-body-sm" popover="manual" aria-hidden="true" x-ref="bubble"{% if id %} id="{{ id }}"{% endif %}>{{ text }}</span>
     </span>
 {% endmacro %}

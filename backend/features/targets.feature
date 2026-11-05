@@ -54,7 +54,7 @@ Feature: Target percentages, notes and ordering
     When I choose to edit all targets
     And I save all targets
     Then I should see "Targets saved"
-    And I should see "Target check found problems"
+    And I should see "There are no respondents in the pool yet"
 
   Scenario: The view page offers no way to change a target on the spot
     Given there is an assembly with targets called "Read Only Demo"
@@ -243,3 +243,14 @@ Feature: Target percentages, notes and ordering
     When I save all targets
     Then I should see "Targets saved"
     And I should see "All checks passed"
+
+  Scenario: A column's note can be read without a mouse
+    Given there is an assembly with targets called "Info Note Demo"
+    And the respondent data holds nine ages, one of them targeted
+    And I am signed in as an admin user
+    When I open the targets page for "Info Note Demo"
+    And I tab to "More about Respondents" and press Enter
+    Then the note "Counts people in the pool" should be showing
+    When I press Escape
+    Then the note "Counts people in the pool" should not be showing
+    And the focus should be back on "More about Respondents"

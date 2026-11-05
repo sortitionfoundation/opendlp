@@ -466,6 +466,10 @@ def delete_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_i
     source = uow.registration_page_html_sources.get_by_page_id(page.id)
     if source is not None:
         uow.registration_page_html_sources.delete(source)
+        # The mapping has no relationship between the two, so SQLAlchemy could
+        # delete the page first - and the FK cascade would remove the source
+        # under it. Flushing here makes the order explicit.
+        uow.flush()
     uow.registration_pages.delete(page)
 
 

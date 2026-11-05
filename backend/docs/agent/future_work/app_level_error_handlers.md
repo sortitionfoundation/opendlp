@@ -1,11 +1,9 @@
-# Future work arising from `793-two-step-fields`
+# App-level handlers for `InsufficientPermissions` and `NotFoundError`
 
-Things the review of the `793-two-step-fields` branch turned up that are worth
-doing, but not on that branch. Each section is written to be pasted into an issue.
+Turned up by the review of the `793-two-step-fields` branch as worth doing, but
+not on that branch. Written to be pasted into an issue.
 
-## App-level handlers for `InsufficientPermissions` and `NotFoundError`
-
-### Problem
+## Problem
 
 `flask_app.py` registers error handlers for 404, 500, 403, 413 and CSRF only. A
 service-layer `InsufficientPermissions` or `NotFoundError` that a route does not
@@ -28,7 +26,7 @@ that pass review:
 All three were on `793-two-step-fields`, all were found by review rather than by
 a test, and all were fixed locally. Nothing stops the next one.
 
-### Proposal
+## Proposal
 
 Register two app-level handlers as a **safety net**. Routes keep their local
 catches - those carry the route-specific message and destination - and the
@@ -56,7 +54,7 @@ Messages: `exc.user_msg()` for `InsufficientPermissions` (it mixes in
 `CuratedMessage`); a literal `_("Not found")` for `NotFoundError`, which is
 uncurated and must not have its message shown.
 
-### Explicitly not proposed
+## Explicitly not proposed
 
 - **A handler for `ServiceLayerError`.** It spans everything from
   `PasswordTooWeak` to `TargetLinkedError`, most of it uncurated, so the only
@@ -68,7 +66,7 @@ uncurated and must not have its message shown.
   redundant, but removing them is a large, separate, optional change, and the
   ones carrying a route-specific message or destination should stay.
 
-### Open questions
+## Open questions
 
 - How does the handler know a request is a JSON one? By blueprint is probably the
   most reliable; `request.accept_mimetypes` is not, since `fetch` callers are not
@@ -82,7 +80,7 @@ uncurated and must not have its message shown.
   other blueprints. If so, a shared `dashboard_redirect()` helper that is
   HTMX-aware is part of this work, and the handlers should use it.
 
-### Tests
+## Tests
 
 - Component: a throwaway route registered in the test app that raises each
   exception, exercised as an ordinary, an HTMX, a JSON and a public request.
@@ -95,48 +93,8 @@ uncurated and must not have its message shown.
   it as a user with no role and with an unknown assembly, and assert the status
   is never 500.
 
-### Why not on `793-two-step-fields`
+## Why not on `793-two-step-fields`
 
 It changes behaviour on every blueprint in the application, and that branch is
 already a 9.4k-line diff. Landed on its own it is a twenty-line commit that
 `git bisect` can point at if a public 404 starts redirecting somewhere odd.
-
-## Make `info_icon` readable without a mouse
-
-### Problem
-
-`templates/backoffice/components/info_icon.html` carries its explanation in two
-places: a `title` attribute (a hover tooltip) and `sr-only` text for screen
-readers. The span isn't focusable and has no toggle. So a sighted user on a
-keyboard, or on a phone or tablet, has no way to read the text. The icon tells
-them something is explained, then doesn't let them read it.
-
-It's used in the target tables (`targets/category_block.html`,
-`targets/bulk_edit_form.html`) and by the `info` argument of
-`components/input.html`, and `793-registration-tweaks` adds another use.
-
-### Proposal
-
-Turn it into a **toggletip**: a real `<button type="button">` holding the icon,
-with an accessible name ("More about <thing>"). Activating it shows the text in
-a live region next to it, and Escape or a click elsewhere hides it. Heydon
-Pickering's toggletip in *Inclusive Components* is the usual reference. The
-WAI-ARIA APG tooltip pattern alone isn't enough, since a tooltip only appears on
-hover or focus, and touch has neither.
-
-It needs a small CSP-safe Alpine component (see `templates/backoffice/patterns.html`)
-plus a no-JS fallback. Drop the `title` so desktop users don't see the text
-twice.
-
-### Open questions
-
-- Should the `input.html` `info` argument keep using the icon, or become a normal
-  hint below the label? A hint is simpler and always visible. The icon earns
-  its place only where space is tight, like table headings.
-
-### Tests
-
-- Component: the macro renders a button with an accessible name, and the text
-  is referenced by `aria-describedby` or sits in a live region.
-- JS (vitest): open/close on click, close on Escape and on an outside click.
-- e2e: tab to the icon, press Enter, see the text.

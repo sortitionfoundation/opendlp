@@ -168,6 +168,25 @@ class TestGetSelectionRunStatus:
         assert run_record.status == SelectionRunStatus.RUNNING
         assert len(run_record.log_messages) == 2
 
+    def test_get_selection_run_status_without_celery_task_id_skips_celery(self, uow):
+        """A record with no Celery id (task creation failed) must not build an
+        AsyncResult - one with an empty id raises when garbage-collected."""
+        task_id = uuid.uuid4()
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=task_id,
+            task_type=SelectionTaskType.LOAD_GSHEET,
+            status=SelectionRunStatus.RUNNING,
+        )
+        assert record.celery_task_id == ""
+        uow.selection_run_records.add(record)
+
+        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+            result = sortition.get_selection_run_status(uow, task_id)
+
+        mock_async_result.assert_not_called()
+        assert result.run_record is not None
+
     def test_get_selection_run_status_not_found(self, uow):
         """Test getting status for non-existent task."""
 

@@ -21,6 +21,22 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
     </div>
 {% endblock %}
 {% block page_content %}
+    {% if error_summary %}
+        {# Sits above everything else, so the first thing a failed save shows is why it failed. #}
+        <div class="mb-6 rounded-lg p-4 flex flex-col gap-2"
+             style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);"
+             role="alert"
+             aria-labelledby="error-summary-title">
+            <h2 id="error-summary-title" class="text-label-lg" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h2>
+            <p class="text-body-md" style="color: var(--color-error-600);">{{ _("Your changes have not been saved.") }}</p>
+            <ul class="list-disc pl-6 text-body-md">
+                {% for item in error_summary %}
+                    <li><a href="{{ item.href }}" class="underline" style="color: var(--color-error-600);">{{ item.text }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
     {# Selection status — its own form, visually separated from the attribute edit form below. #}
     {% call section(classes="mb-8") %}
         {{ respondent_status_form(assembly, respondent, allowed_transitions) }}
@@ -62,13 +78,15 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                 </div>
                             {% elif wt %}
                                 {% set effective = field.effective_field_type.value %}
+                                {% set field_error = first_error(wt.errors) | trim %}
                                 {% if effective == "bool" %}
                                     {{ radio_group(
                                     name=form_field_name,
                                     label=field.label,
                                     options=[{"value": "true", "label": _("Yes")}, {"value": "false", "label": _("No")}],
                                     value=wt.data,
-                                    inline=true
+                                    inline=true,
+                                    error=field_error
                                     ) }}
                                 {% elif effective == "bool_or_none" %}
                                     {{ radio_group(
@@ -76,7 +94,8 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                     label=field.label,
                                     options=[{"value": "true", "label": _("Yes")}, {"value": "false", "label": _("No")}, {"value": "", "label": _("Not set")}],
                                     value=wt.data,
-                                    inline=true
+                                    inline=true,
+                                    error=field_error
                                     ) }}
                                 {% elif effective == "choice_radio" %}
                                     {% set choice_options = [{"value": "", "label": _("— none —")}] %}
@@ -92,7 +111,8 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                     label=field.label,
                                     options=choice_options,
                                     value=wt.data or "",
-                                    option_help_text=help_map
+                                    option_help_text=help_map,
+                                    error=field_error
                                     ) }}
                                 {% elif effective == "choice_dropdown" %}
                                     {% set choice_options = [{"value": "", "label": _("— none —")}] %}
@@ -103,7 +123,8 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                     name=form_field_name,
                                     label=field.label,
                                     options=choice_options,
-                                    value=wt.data or ""
+                                    value=wt.data or "",
+                                    error=field_error
                                     ) }}
                                     {% set help_block = field.options | selectattr("help_text") | list %}
                                     {% if help_block %}
@@ -114,13 +135,13 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                         </dl>
                                     {% endif %}
                                 {% elif effective == "longtext" %}
-                                    {{ textarea(name=form_field_name, label=field.label, value=wt.data or "") }}
+                                    {{ textarea(name=form_field_name, label=field.label, value=wt.data or "", error=field_error) }}
                                 {% elif effective == "integer" %}
-                                    {{ input(name=form_field_name, label=field.label, type="number", value=(wt.data|string if wt.data is not none else "")) }}
+                                    {{ input(name=form_field_name, label=field.label, type="number", value=(wt.data|string if wt.data is not none else ""), error=field_error) }}
                                 {% elif effective == "email" %}
-                                    {{ input(name=form_field_name, label=field.label, type="email", value=wt.data or "") }}
+                                    {{ input(name=form_field_name, label=field.label, type="email", value=wt.data or "", error=field_error) }}
                                 {% elif effective == "date" %}
-                                    <fieldset class="flex flex-col gap-1.5">
+                                    <fieldset class="flex flex-col gap-1.5"{% if field_error %} aria-describedby="{{ form_field_name }}-error"{% endif %}>
                                         <legend class="text-label-lg" style="color: var(--color-headings);">{{ field.label }}</legend>
                                         <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("For example, 27 3 1985") }}</p>
                                         <div class="flex gap-2">
@@ -134,12 +155,12 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                                 {{ input(form_field_name ~ "-year", label=_("Year"), value=wt.year, attrs='inputmode="numeric"') }}
                                             </div>
                                         </div>
+                                        {% if field_error %}
+                                            <p id="{{ form_field_name }}-error" class="text-body-sm" style="color: var(--color-primary-action); white-space: pre-line;">{{ field_error }}</p>
+                                        {% endif %}
                                     </fieldset>
                                 {% else %}
-                                    {{ input(name=form_field_name, label=field.label, value=wt.data or "") }}
-                                {% endif %}
-                                {% if wt.errors %}
-                                    {{ first_error(wt.errors) }}
+                                    {{ input(name=form_field_name, label=field.label, value=wt.data or "", error=field_error) }}
                                 {% endif %}
                             {% endif %}
                         {% endfor %}
@@ -149,10 +170,7 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
 
             {% call section(classes="mb-6") %}
                 <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Change note") }}</h2>
-                {{ textarea(name="comment", label=_("Why are you making this change?") , value=form.comment.data or "", required=true, rows=3) }}
-                {% if form.comment.errors %}
-                    {{ first_error(form.comment.errors) }}
-                {% endif %}
+                {{ textarea(name="comment", label=_("Why are you making this change?") , value=form.comment.data or "", required=true, rows=3, error=first_error(form.comment.errors) | trim) }}
             {% endcall %}
 
             <section class="flex gap-4">

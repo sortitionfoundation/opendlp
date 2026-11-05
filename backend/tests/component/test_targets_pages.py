@@ -544,12 +544,14 @@ def _read_only_html(html_text):
 def _column_headings(html_text):
     """The column headings of the first values table in `html_text`.
 
-    A heading's hover note is written out for screen readers as well, so drop
-    that before reading the label off the cell.
+    A heading's info icon carries its note in a bubble, so drop that before
+    reading the label off the cell.
     """
     head = re.search(r"<thead>(.*?)</thead>", html_text, re.DOTALL).group(1)
     cells = re.findall(r"<th[^>]*>(.*?)</th>", head, re.DOTALL)
-    cells = [re.sub(r'<span class="sr-only">.*?</span>', "", cell, flags=re.DOTALL) for cell in cells]
+    cells = [
+        re.sub(r'<span class="info-toggletip__bubble[^"]*".*?</span>', "", cell, flags=re.DOTALL) for cell in cells
+    ]
     return [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", cell)).strip() for cell in cells]
 
 
@@ -709,8 +711,10 @@ class TestRespondentCountColumns:
         for view in (_read_only_html(html_text), _edit_form_html(html_text)):
             head = re.search(r"<thead>(.*?)</thead>", view, re.DOTALL).group(1)
             heading = next(th for th in re.findall(r"<th[^>]*>(.*?)</th>", head, re.DOTALL) if column in th)
-            assert f'title="{note}"' in heading, "the icon has no hover text"
-            assert f'<span class="sr-only">{note}</span>' in heading, "the note is there for a mouse only"
+            assert re.search(rf'<button type="button"[^>]*aria-label="More about {column}"', heading), (
+                "the note is there for a mouse only"
+            )
+            assert re.search(rf'x-ref="bubble">{re.escape(note)}</span>', heading), "the icon has no note"
 
     def test_selected_respondents_get_their_own_column(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

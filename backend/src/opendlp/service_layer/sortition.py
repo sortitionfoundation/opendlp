@@ -818,11 +818,14 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
         # task whose final return value still lives in the result backend.
         result.log_messages = list(run_record.log_messages)
 
-        celery_result = app.app.AsyncResult(run_record.celery_task_id)
-        if celery_result.id and celery_result.successful():
-            # Celery still has the result — pull the typed final value out so
-            # the caller gets features/people/selected_ids etc.
-            return _process_celery_final_result(celery_result, run_record)
+        # A record has no Celery id if creating the task failed. Building an
+        # AsyncResult for an empty id raises when it is garbage-collected.
+        if run_record.celery_task_id:
+            celery_result = app.app.AsyncResult(run_record.celery_task_id)
+            if celery_result.successful():
+                # Celery still has the result — pull the typed final value out so
+                # the caller gets features/people/selected_ids etc.
+                return _process_celery_final_result(celery_result, run_record)
 
         if run_record.run_report:
             result.run_report = run_record.run_report
