@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 16:51+0000\n"
+"POT-Creation-Date: 2026-11-05 14:32+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -88,7 +88,7 @@ msgstr "Eredmények"
 #: src/opendlp/domain/assembly_export_gsheet.py:19
 #: templates/backoffice/assembly_data.html:312
 #: templates/backoffice/assembly_targets.html:14
-#: templates/backoffice/assembly_targets.html:103
+#: templates/backoffice/assembly_targets.html:111
 #: templates/backoffice/components/assembly_tabs.html:45
 #: templates/main/view_assembly_base.html:36
 #: templates/targets/view_targets.html:2
@@ -718,7 +718,7 @@ msgstr "A válaszértékeknek különbözniük kell: \"%(value)s\" többször sz
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
-#: templates/backoffice/components/input.html:400
+#: templates/backoffice/components/input.html:402
 #: templates/backoffice/components/table.html:252
 msgid "Yes"
 msgstr "Igen"
@@ -730,7 +730,7 @@ msgstr "Igen"
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
-#: templates/backoffice/components/input.html:400
+#: templates/backoffice/components/input.html:402
 #: templates/backoffice/components/table.html:254
 msgid "No"
 msgstr "Nem"
@@ -1186,7 +1186,7 @@ msgid "Select a CSV file containing targets"
 msgstr "Válassz ki egy kiválasztási szempontokat tartalmazó CSV fájlt"
 
 #: src/opendlp/entrypoints/forms.py:636 src/opendlp/entrypoints/forms.py:646
-#: templates/backoffice/targets/bulk_edit_form.html:256
+#: templates/backoffice/targets/bulk_edit_form.html:263
 msgid "Target Name"
 msgstr "Kiválasztási szempont neve"
 
@@ -1221,7 +1221,7 @@ msgstr ""
 #: templates/backoffice/components/db_replacement_modal.html:129
 #: templates/backoffice/components/db_selection_progress_modal.html:84
 #: templates/backoffice/components/db_selection_progress_modal.html:92
-#: templates/backoffice/targets/bulk_edit_form.html:293
+#: templates/backoffice/targets/bulk_edit_form.html:300
 #: templates/backoffice/targets/category_block.html:132
 #: templates/targets/components/category_block.html:69
 #: templates/targets/components/category_block.html:136
@@ -1244,7 +1244,7 @@ msgstr "Nem kötelező – a minimum és a maximum ebből adódik"
 #: src/opendlp/entrypoints/forms.py:680
 #: src/opendlp/service_layer/selection_report.py:221
 #: templates/backoffice/components/db_selection_progress_modal.html:93
-#: templates/backoffice/targets/bulk_edit_form.html:296
+#: templates/backoffice/targets/bulk_edit_form.html:303
 #: templates/backoffice/targets/category_block.html:135
 #: templates/targets/components/category_block.html:70
 #: templates/targets/components/category_block.html:147
@@ -1255,7 +1255,7 @@ msgstr "Min."
 #: src/opendlp/entrypoints/forms.py:685
 #: src/opendlp/service_layer/selection_report.py:222
 #: templates/backoffice/components/db_selection_progress_modal.html:94
-#: templates/backoffice/targets/bulk_edit_form.html:297
+#: templates/backoffice/targets/bulk_edit_form.html:304
 #: templates/backoffice/targets/category_block.html:136
 #: templates/targets/components/category_block.html:71
 #: templates/targets/components/category_block.html:158
@@ -1764,8 +1764,8 @@ msgstr "Hiba történt a projekt létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/target_sources.py:667
 #: src/opendlp/entrypoints/blueprints/target_sources.py:689
 #: src/opendlp/entrypoints/blueprints/target_sources.py:870
-#: src/opendlp/entrypoints/blueprints/targets.py:172
-#: src/opendlp/entrypoints/blueprints/targets.py:432
+#: src/opendlp/entrypoints/blueprints/targets.py:188
+#: src/opendlp/entrypoints/blueprints/targets.py:448
 msgid "You don't have permission to view this project"
 msgstr "Nincs jogosultságod a projekt megtekintéséhez"
 
@@ -1835,13 +1835,13 @@ msgstr "Nincs jogosultságod a projekt megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/target_sources.py:924
 #: src/opendlp/entrypoints/blueprints/target_sources.py:988
 #: src/opendlp/entrypoints/blueprints/target_sources.py:1004
-#: src/opendlp/entrypoints/blueprints/targets.py:163
-#: src/opendlp/entrypoints/blueprints/targets.py:237
-#: src/opendlp/entrypoints/blueprints/targets.py:292
-#: src/opendlp/entrypoints/blueprints/targets.py:429
-#: src/opendlp/entrypoints/blueprints/targets.py:557
-#: src/opendlp/entrypoints/blueprints/targets.py:712
-#: src/opendlp/entrypoints/blueprints/targets.py:756
+#: src/opendlp/entrypoints/blueprints/targets.py:179
+#: src/opendlp/entrypoints/blueprints/targets.py:253
+#: src/opendlp/entrypoints/blueprints/targets.py:308
+#: src/opendlp/entrypoints/blueprints/targets.py:445
+#: src/opendlp/entrypoints/blueprints/targets.py:573
+#: src/opendlp/entrypoints/blueprints/targets.py:728
+#: src/opendlp/entrypoints/blueprints/targets.py:772
 msgid "Project not found"
 msgstr "A projekt nem található"
 
@@ -1894,7 +1894,7 @@ msgid "You don't have permission to export the dashboard"
 msgstr "Nincs jogosultságod az irányítópult exportálásához"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:449
-#: src/opendlp/entrypoints/blueprints/targets.py:732
+#: src/opendlp/entrypoints/blueprints/targets.py:748
 msgid "Only CSV and Google Sheets exports are available for now"
 msgstr "Jelenleg csak CSV-be és Google Táblázatba lehet exportálni"
 
@@ -2298,7 +2298,7 @@ msgstr "Váratlan hiba történt az adatok ellenőrzése közben"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:114
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:161
-#: src/opendlp/entrypoints/blueprints/targets.py:471
+#: src/opendlp/entrypoints/blueprints/targets.py:487
 msgid "Please review and save the selection settings before running selection"
 msgstr ""
 "A kiválasztás futtatása előtt nézd át és mentsd el a kiválasztási "
@@ -2307,7 +2307,7 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:130
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:191
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:452
-#: src/opendlp/entrypoints/blueprints/targets.py:478
+#: src/opendlp/entrypoints/blueprints/targets.py:494
 #, python-format
 msgid "Could not start selection task: %(error)s"
 msgstr "Nem sikerült elindítani a kiválasztási feladatot: %(error)s"
@@ -2324,7 +2324,7 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:479
 #: src/opendlp/entrypoints/blueprints/gsheets.py:936
 #: src/opendlp/entrypoints/blueprints/gsheets.py:998
-#: src/opendlp/entrypoints/blueprints/targets.py:560
+#: src/opendlp/entrypoints/blueprints/targets.py:576
 msgid "You don't have permission to manage this project"
 msgstr "Nincs jogosultságod a projekt kezeléséhez"
 
@@ -3157,7 +3157,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:201
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:176
-#: src/opendlp/entrypoints/blueprints/targets.py:243
+#: src/opendlp/entrypoints/blueprints/targets.py:259
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:188
 msgid "Could not read CSV file. Please ensure it is UTF-8 encoded."
 msgstr "Nem sikerült beolvasni a CSV fájlt. Győződj meg róla, hogy UTF-8 kódolású."
@@ -3323,7 +3323,7 @@ msgid "%(count)s rows were skipped: %(errors)s"
 msgstr "%(count)s sor kihagyva: %(errors)s"
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:167
-#: src/opendlp/entrypoints/blueprints/targets.py:234
+#: src/opendlp/entrypoints/blueprints/targets.py:250
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:179
 #, python-format
 msgid "CSV import failed: %(error)s"
@@ -3334,7 +3334,7 @@ msgid "You don't have permission to import respondents"
 msgstr "Nincs jogosultságod jelentkezők importálásához"
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:180
-#: src/opendlp/entrypoints/blueprints/targets.py:247
+#: src/opendlp/entrypoints/blueprints/targets.py:263
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:192
 msgid "An unexpected error occurred during import"
 msgstr "Váratlan hiba történt az importálás közben"
@@ -3527,11 +3527,11 @@ msgstr "Számított kérdés törölve"
 msgid "Question unlinked from its target"
 msgstr "A kérdés leválasztva a kiválasztási szempontról"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:178
+#: src/opendlp/entrypoints/blueprints/targets.py:194
 msgid "An error occurred while loading project targets"
 msgstr "Hiba történt a projekt célszámainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:220
+#: src/opendlp/entrypoints/blueprints/targets.py:236
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:167
 #, python-format
 msgid "Successfully imported %(cats)s targets with %(vals)s values from %(file)s"
@@ -3539,76 +3539,76 @@ msgstr ""
 "Sikeresen importálva %(cats)s kiválasztási szempont %(vals)s értékkel a "
 "következő fájlból: %(file)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:240
+#: src/opendlp/entrypoints/blueprints/targets.py:256
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:185
 msgid "You don't have permission to import targets"
 msgstr "Nincs jogosultságod célszámok importálásához"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:265
+#: src/opendlp/entrypoints/blueprints/targets.py:281
 #, python-format
 msgid "Targets deleted: %(count)d"
 msgstr "Kiválasztási szempontok törölve: %(count)d"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:286
+#: src/opendlp/entrypoints/blueprints/targets.py:302
 msgid "You don't have permission to delete targets"
 msgstr "Nincs jogosultságod célszámok törléséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:298
+#: src/opendlp/entrypoints/blueprints/targets.py:314
 msgid "An error occurred while deleting targets"
 msgstr "Hiba történt a célszámok törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:314
+#: src/opendlp/entrypoints/blueprints/targets.py:330
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:663
 msgid "No columns selected"
 msgstr "Nincs kiválasztott oszlop"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:356
+#: src/opendlp/entrypoints/blueprints/targets.py:372
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:731
 msgid "No new targets were created"
 msgstr "Nem jött létre új kiválasztási szempont"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:362
+#: src/opendlp/entrypoints/blueprints/targets.py:378
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:718
 #, python-format
 msgid "Created %(count)s targets with %(values)s values: %(names)s"
 msgstr "%(count)s kiválasztási szempont létrehozva %(values)s értékkel: %(names)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:371
+#: src/opendlp/entrypoints/blueprints/targets.py:387
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:727
 #, python-format
 msgid "Created %(count)s targets: %(names)s"
 msgstr "%(count)s kiválasztási szempont létrehozva: %(names)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:436
+#: src/opendlp/entrypoints/blueprints/targets.py:452
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:795
 msgid "An unexpected error occurred while checking targets"
 msgstr "Váratlan hiba történt a célszámok ellenőrzése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:547
+#: src/opendlp/entrypoints/blueprints/targets.py:563
 msgid "That suggestion is no longer available. The targets have been re-checked."
 msgstr "Ez a javaslat már nem érhető el. A célszámok újraellenőrizve."
 
-#: src/opendlp/entrypoints/blueprints/targets.py:553
+#: src/opendlp/entrypoints/blueprints/targets.py:569
 msgid "Recommended changes applied."
 msgstr "A javasolt módosítások alkalmazva."
 
-#: src/opendlp/entrypoints/blueprints/targets.py:564
+#: src/opendlp/entrypoints/blueprints/targets.py:580
 msgid "An unexpected error occurred while applying the recommended changes"
 msgstr "Váratlan hiba történt a javasolt módosítások alkalmazása közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:589
+#: src/opendlp/entrypoints/blueprints/targets.py:605
 msgid "Your targets were not saved. Please correct the errors below."
 msgstr "A célszámaid nem lettek elmentve. Javítsd az alábbi hibákat."
 
-#: src/opendlp/entrypoints/blueprints/targets.py:646
+#: src/opendlp/entrypoints/blueprints/targets.py:662
 msgid "Please try again"
 msgstr "Kérjük, próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:668
+#: src/opendlp/entrypoints/blueprints/targets.py:684
 msgid "Targets saved"
 msgstr "A célszámok mentve"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:684
+#: src/opendlp/entrypoints/blueprints/targets.py:700
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:253
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:335
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:457
@@ -3617,21 +3617,21 @@ msgstr "A célszámok mentve"
 msgid "Error: %(error)s"
 msgstr "Hiba: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:687
+#: src/opendlp/entrypoints/blueprints/targets.py:703
 msgid "You don't have permission to edit these targets"
 msgstr "Nincs jogosultságod ezeknek a célszámoknak a szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:695
+#: src/opendlp/entrypoints/blueprints/targets.py:711
 msgid "An error occurred while saving the targets"
 msgstr "Hiba történt a célszámok mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:709
-#: src/opendlp/entrypoints/blueprints/targets.py:752
+#: src/opendlp/entrypoints/blueprints/targets.py:725
+#: src/opendlp/entrypoints/blueprints/targets.py:768
 msgid "You don't have permission to export these targets"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:790
-msgid "Targets exported to Google Sheets."
+#: src/opendlp/entrypoints/blueprints/targets.py:806
+msgid "Targets exported to Google Sheets"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:208
@@ -5436,7 +5436,7 @@ msgstr "Lejárat"
 #: templates/backoffice/components/db_selection_progress_modal.html:124
 #: templates/backoffice/components/registration_page_list.html:38
 #: templates/backoffice/respondent_field_schema/_editor.html:51
-#: templates/backoffice/targets/bulk_edit_form.html:299
+#: templates/backoffice/targets/bulk_edit_form.html:306
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
 #: templates/targets/components/category_block.html:76
@@ -5539,7 +5539,7 @@ msgid "View details"
 msgstr "Részletek megtekintése"
 
 #: templates/admin/user_2fa_audit_log.html:82
-#: templates/backoffice/targets/bulk_edit_form.html:219
+#: templates/backoffice/targets/bulk_edit_form.html:226
 #: templates/main/view_assembly_data.html:105
 msgid "None"
 msgstr "Nincs"
@@ -5887,7 +5887,7 @@ msgstr "Táblázat"
 
 #: templates/backoffice/assembly_dashboard.html:72
 #: templates/backoffice/assembly_respondents.html:118
-#: templates/backoffice/assembly_targets.html:129
+#: templates/backoffice/assembly_targets.html:142
 #: templates/backoffice/dashboard_export_modal.html:14
 #: templates/backoffice/dashboard_export_modal.html:63
 #: templates/backoffice/respondents/export_modal.html:76
@@ -6294,7 +6294,7 @@ msgid "Edit Settings"
 msgstr "Beállítások szerkesztése"
 
 #: templates/backoffice/assembly_details.html:76
-#: templates/backoffice/assembly_targets.html:108
+#: templates/backoffice/assembly_targets.html:116
 msgid "The number of people to select"
 msgstr "A kiválasztandó emberek száma"
 
@@ -6690,8 +6690,8 @@ msgstr "Befejezve"
 #: templates/backoffice/assembly_selection.html:104
 #: templates/backoffice/assembly_selection.html:231
 #: templates/backoffice/assembly_view_respondent.html:242
-#: templates/backoffice/targets/bulk_edit_form.html:270
-#: templates/backoffice/targets/bulk_edit_form.html:298
+#: templates/backoffice/targets/bulk_edit_form.html:277
+#: templates/backoffice/targets/bulk_edit_form.html:305
 #: templates/backoffice/targets/category_block.html:137
 #: templates/main/view_assembly_data.html:59
 msgid "Comment"
@@ -6767,27 +6767,28 @@ msgstr "Kezdeti kiválasztás kiválasztási szempontok munkalapja:"
 msgid "Replacement Categories Tab:"
 msgstr "Pótláshoz tartozó kiválasztási szempontok munkalapja:"
 
-#: templates/backoffice/assembly_targets.html:107
+#: templates/backoffice/assembly_targets.html:115
 #, python-format
 msgid "Panel size: %(number)s"
 msgstr "Kiválasztandók száma: %(number)s"
 
-#: templates/backoffice/assembly_targets.html:112
+#: templates/backoffice/assembly_targets.html:120
 #: templates/targets/view_targets.html:8
 msgid "No targets defined yet."
 msgstr "Még nincsenek meghatározva kiválasztási szempontok."
 
-#: templates/backoffice/assembly_targets.html:133
+#: templates/backoffice/assembly_targets.html:147
+#: templates/backoffice/assembly_targets.html:150
 #: templates/backoffice/targets/add_target_modal.html:14
 #: templates/targets/components/add_category_form.html:28
 msgid "Add target"
 msgstr "Célszám hozzáadása"
 
-#: templates/backoffice/assembly_targets.html:139
+#: templates/backoffice/assembly_targets.html:157
 msgid "Edit targets"
 msgstr "Célszámok szerkesztése"
 
-#: templates/backoffice/assembly_targets.html:161
+#: templates/backoffice/assembly_targets.html:179
 #, python-format
 msgid ""
 "All checks passed. Found %(num_features)s targets and %(num_people)s "
@@ -6797,14 +6798,14 @@ msgstr ""
 "%(num_people)s jogosult jelentkező található. A célszámok készen állnak a"
 " kiválasztásra."
 
-#: templates/backoffice/assembly_targets.html:170
+#: templates/backoffice/assembly_targets.html:188
 #: templates/targets/view_targets.html:51
 #: templates/targets/view_targets.html:62
 #: templates/targets/view_targets.html:71
 msgid "Target check found problems"
 msgstr "A célszámok ellenőrzése problémákat talált"
 
-#: templates/backoffice/assembly_targets.html:178
+#: templates/backoffice/assembly_targets.html:196
 msgid ""
 "Target check found problems. See details below next to the affected "
 "targets."
@@ -6812,7 +6813,7 @@ msgstr ""
 "A célszámok ellenőrzése problémákat talált. A részleteket alább, az "
 "érintett célszámok mellett találod."
 
-#: templates/backoffice/assembly_targets.html:196
+#: templates/backoffice/assembly_targets.html:214
 msgid ""
 "The algorithm has recommended target changes. Accept them individually "
 "below, or all at once here."
@@ -6820,33 +6821,33 @@ msgstr ""
 "Az algoritmus módosításokat javasolt a célszámokhoz. Fogadd el őket alább"
 " egyenként, vagy itt egyszerre."
 
-#: templates/backoffice/assembly_targets.html:199
-#: templates/backoffice/assembly_targets.html:210
+#: templates/backoffice/assembly_targets.html:217
+#: templates/backoffice/assembly_targets.html:228
 msgid "Accept all suggestions"
 msgstr "Minden javaslat elfogadása"
 
-#: templates/backoffice/assembly_targets.html:219
+#: templates/backoffice/assembly_targets.html:237
 msgid "Accept all and re-run test selection"
 msgstr "Minden elfogadása és a tesztkiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:219
+#: templates/backoffice/assembly_targets.html:237
 msgid "Accept all and re-run selection"
 msgstr "Minden elfogadása és a kiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:262
+#: templates/backoffice/assembly_targets.html:280
 #: templates/backoffice/components/leave_guard_modal.html:17
 msgid "Discard changes"
 msgstr "Módosítások elvetése"
 
-#: templates/backoffice/assembly_targets.html:264
+#: templates/backoffice/assembly_targets.html:282
 msgid "Save and re-run test selection"
 msgstr "Mentés és a tesztkiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:264
+#: templates/backoffice/assembly_targets.html:282
 msgid "Save and re-run selection"
 msgstr "Mentés és a kiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:266
+#: templates/backoffice/assembly_targets.html:284
 #: templates/backoffice/components/edit_number_to_select_modal.html:41
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:23
@@ -7617,11 +7618,11 @@ msgstr "Munkalap neve"
 msgid "Share the spreadsheet with %(email)s so it can be written to."
 msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
-#: templates/backoffice/components/input.html:642
+#: templates/backoffice/components/input.html:644
 msgid "On"
 msgstr ""
 
-#: templates/backoffice/components/input.html:642
+#: templates/backoffice/components/input.html:644
 msgid "Off"
 msgstr ""
 
@@ -8037,8 +8038,8 @@ msgstr "Táblázat törlése"
 
 #: templates/backoffice/components/rich_editor.html:153
 #: templates/backoffice/components/suggestion_row.html:118
-#: templates/backoffice/targets/bulk_edit_form.html:197
-#: templates/backoffice/targets/bulk_edit_form.html:244
+#: templates/backoffice/targets/bulk_edit_form.html:204
+#: templates/backoffice/targets/bulk_edit_form.html:251
 msgid "Undo"
 msgstr "Mégse"
 
@@ -9169,12 +9170,12 @@ msgid "Edit %(question)s"
 msgstr "%(question)s szerkesztése"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:100
-#: templates/backoffice/targets/bulk_edit_form.html:285
+#: templates/backoffice/targets/bulk_edit_form.html:292
 msgid "Move up"
 msgstr "Mozgatás felfelé"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:100
-#: templates/backoffice/targets/bulk_edit_form.html:281
+#: templates/backoffice/targets/bulk_edit_form.html:288
 msgid "Move down"
 msgstr "Mozgatás lefelé"
 
@@ -9872,117 +9873,117 @@ msgstr "például: Nem"
 msgid "Add"
 msgstr "Hozzáadás"
 
-#: templates/backoffice/targets/bulk_edit_form.html:67
-#: templates/backoffice/targets/bulk_edit_form.html:70
+#: templates/backoffice/targets/bulk_edit_form.html:71
+#: templates/backoffice/targets/bulk_edit_form.html:81
 #: templates/backoffice/targets/category_block.html:20
 #: templates/backoffice/targets/category_block.html:23
 msgid "Auto calculated"
 msgstr "Automatikusan számolva"
 
-#: templates/backoffice/targets/bulk_edit_form.html:75
-#: templates/backoffice/targets/bulk_edit_form.html:78
+#: templates/backoffice/targets/bulk_edit_form.html:76
+#: templates/backoffice/targets/bulk_edit_form.html:82
 #: templates/backoffice/targets/category_block.html:13
 #: templates/backoffice/targets/category_block.html:16
 msgid "Manually modified"
 msgstr "Kézzel módosítva"
 
-#: templates/backoffice/targets/bulk_edit_form.html:100
+#: templates/backoffice/targets/bulk_edit_form.html:104
 msgid "the new value"
 msgstr "az új érték"
 
-#: templates/backoffice/targets/bulk_edit_form.html:127
+#: templates/backoffice/targets/bulk_edit_form.html:131
 #, python-format
 msgid "Name of %(row)s"
 msgstr "%(row)s neve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:142
+#: templates/backoffice/targets/bulk_edit_form.html:146
 #, python-format
 msgid "Population share for %(row)s, in percent"
 msgstr "%(row)s népességi aránya, százalékban"
 
-#: templates/backoffice/targets/bulk_edit_form.html:153
+#: templates/backoffice/targets/bulk_edit_form.html:160
 #, python-format
 msgid "Minimum for %(row)s"
 msgstr "%(row)s minimuma"
 
-#: templates/backoffice/targets/bulk_edit_form.html:163
+#: templates/backoffice/targets/bulk_edit_form.html:170
 #, python-format
 msgid "Maximum for %(row)s"
 msgstr "%(row)s maximuma"
 
-#: templates/backoffice/targets/bulk_edit_form.html:172
+#: templates/backoffice/targets/bulk_edit_form.html:179
 #, python-format
 msgid "Comment on %(row)s"
 msgstr "Megjegyzés a következőhöz: %(row)s"
 
-#: templates/backoffice/targets/bulk_edit_form.html:177
-#: templates/backoffice/targets/bulk_edit_form.html:187
+#: templates/backoffice/targets/bulk_edit_form.html:184
+#: templates/backoffice/targets/bulk_edit_form.html:194
 msgid "Recalculate min and max from the percentage"
 msgstr "A minimum és a maximum újraszámolása a százalékból"
 
-#: templates/backoffice/targets/bulk_edit_form.html:180
-#: templates/backoffice/targets/bulk_edit_form.html:194
+#: templates/backoffice/targets/bulk_edit_form.html:187
+#: templates/backoffice/targets/bulk_edit_form.html:201
 msgid "Delete value"
 msgstr "Érték törlése"
 
-#: templates/backoffice/targets/bulk_edit_form.html:241
+#: templates/backoffice/targets/bulk_edit_form.html:248
 #, python-format
 msgid "'%(name)s' and all its values will be deleted when you save."
 msgstr "\"%(name)s\" és az összes értéke törlődik, amikor mentesz."
 
-#: templates/backoffice/targets/bulk_edit_form.html:263
+#: templates/backoffice/targets/bulk_edit_form.html:270
 msgid "Source of population figures"
 msgstr "Népességi adatok forrása"
 
-#: templates/backoffice/targets/bulk_edit_form.html:264
+#: templates/backoffice/targets/bulk_edit_form.html:271
 #: templates/backoffice/targets/category_block.html:75
 msgid ""
-"Source of the percentages. Could be a link to the report the percentages "
-"come from, such as census tables or a poll, or could be a statement that "
-"a council provided the numbers in an email."
+"Where the percentages came from: a link to the report, such as census "
+"tables or a poll, or a note that a council sent the numbers by email."
 msgstr ""
-"A százalékos arányok forrása. Lehet link ahhoz a jelentéshez, amelyből a "
-"százalékos arányok származnak, például népszámlálási táblák vagy "
-"közvélemény-kutatás, vagy annak rögzítése, hogy az önkormányzat e-mailben"
-" küldte meg a számokat."
 
-#: templates/backoffice/targets/bulk_edit_form.html:273
+#: templates/backoffice/targets/bulk_edit_form.html:280
 msgid "Move this target down"
 msgstr "Célszám mozgatása lefelé"
 
-#: templates/backoffice/targets/bulk_edit_form.html:274
+#: templates/backoffice/targets/bulk_edit_form.html:281
 msgid "Move this target up"
 msgstr "Célszám mozgatása felfelé"
 
-#: templates/backoffice/targets/bulk_edit_form.html:287
+#: templates/backoffice/targets/bulk_edit_form.html:294
 msgid "Delete target"
 msgstr "Célszám törlése"
 
-#: templates/backoffice/targets/bulk_edit_form.html:294
+#: templates/backoffice/targets/bulk_edit_form.html:301
 #: templates/backoffice/targets/category_block.html:133
 #, python-format
 msgid "Population (%%)"
 msgstr "Népesség (%%)"
 
-#: templates/backoffice/targets/bulk_edit_form.html:339
+#: templates/backoffice/targets/bulk_edit_form.html:346
 #: templates/targets/components/category_block.html:247
 msgid "Add value"
 msgstr "Érték hozzáadása"
 
-#: templates/backoffice/targets/bulk_edit_form.html:344
+#: templates/backoffice/targets/bulk_edit_form.html:351
 msgid "Add values found in respondent data"
 msgstr "A jelentkezői adatokban talált értékek hozzáadása"
 
-#: templates/backoffice/targets/bulk_edit_form.html:349
+#: templates/backoffice/targets/bulk_edit_form.html:356
 #, python-format
 msgid "Not yet targeted: %(values)s"
 msgstr "Még nincs hozzájuk célszám: %(values)s"
 
-#: templates/backoffice/targets/bulk_edit_form.html:358
+#: templates/backoffice/targets/bulk_edit_form.html:365
 #: templates/backoffice/targets/category_block.html:206
 #: templates/targets/components/category_block.html:195
 msgid "Total"
 msgstr "Összesen"
+
+#: templates/backoffice/targets/bulk_edit_form.html:399
+#, python-format
+msgid "Min %(min)s and max %(max)s, from the percentage"
+msgstr ""
 
 #: templates/backoffice/targets/category_block.html:74
 msgid "Source of population figures:"
