@@ -61,6 +61,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         value=value,
         classes="w-28 pl-9",
         aria_label=aria_label,
+        described_by_id=id ~ "-provenance",
         attrs='min="0" data-field="' ~ field ~ '" @input="minMaxEdited()"') }}
         {# Pinned to the top rather than centred, so an error under the input
            does not pull it out of the box. #}
@@ -68,17 +69,17 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
               x-show="showsCalculated"
               x-cloak
               title="{{ _('Auto calculated') }}"
-              style="color: var(--color-info-600)">
-            {{ icon_sparkles() }}
-            <span class="sr-only">{{ _("Auto calculated") }}</span>
-        </span>
+              style="color: var(--color-info-600)">{{ icon_sparkles() }}</span>
         <span class="absolute left-3 top-3.5 inline-flex"
               x-show="showsManual"
               x-cloak
               title="{{ _('Manually modified') }}"
-              style="color: var(--color-warning-400)">
-            {{ icon_hand() }}
-            <span class="sr-only">{{ _("Manually modified") }}</span>
+              style="color: var(--color-warning-400)">{{ icon_hand() }}</span>
+        {# What the icon says, describing the input. The text that is hidden is
+           left out of the description, so it always says the one showing. #}
+        <span id="{{ id }}-provenance" class="sr-only">
+            <span x-show="showsCalculated" x-cloak>{{ _("Auto calculated") }}</span>
+            <span x-show="showsManual" x-cloak>{{ _("Manually modified") }}</span>
         </span>
     </div>
 {% endmacro %}
@@ -144,6 +145,9 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             classes="w-24",
             aria_label=_("Population share for %(row)s, in percent", row=row_name),
             attrs='min="0" max="100" step="0.1" data-field="percentage" @input="percentageChanged()"') }}
+            {# Min and max change as the percentage is typed; this tells a screen
+               reader user what to, without moving them from the percentage. #}
+            <span class="sr-only" aria-live="polite" x-text="announcement"></span>
         </td>
         {% if show_counts %}{{ count_cell(respondent_counts, val.value if val else prefill) }}{% endif %}
         {% if show_selected %}{{ count_cell(selected_counts, val.value if val else prefill) }}{% endif %}
@@ -392,6 +396,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
       action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
       id="save-all-form"
       data-number-to-select="{{ assembly.number_to_select }}"
+      data-recalculated-message="{{ _('Min %(min)s and max %(max)s, from the percentage', min='{min}', max='{max}') }}"
       @input="markEditDirty()"
       @change="markEditDirty()"
       @targets-changed="markEditDirty()"

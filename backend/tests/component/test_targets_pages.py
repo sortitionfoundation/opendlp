@@ -1254,6 +1254,37 @@ class TestMinMaxProvenance:
             assert '@input="minMaxEdited()"' in cell
             assert ":disabled" not in cell
 
+    def test_the_edit_form_min_and_max_boxes_are_described_by_their_icon(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The icon's meaning is read with the input, not only to a reader who finds it."""
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        min_cell, max_cell = _edit_form_row_cells(_edit_form_html(response.data.decode()), "Male")[2:4]
+        for cell in (min_cell, max_cell):
+            described_by = re.search(r'<input[^>]*aria-describedby="([^"]+)"', cell).group(1)
+            provenance = re.search(
+                rf'<span id="{re.escape(described_by)}" class="sr-only">(.*?)</span>\s*</span>', cell, re.DOTALL
+            )
+            assert provenance is not None, "the input is not described by its icon's text"
+            assert "Auto calculated" in provenance.group(1)
+            assert "Manually modified" in provenance.group(1)
+
+    def test_the_edit_form_tells_a_screen_reader_when_min_and_max_are_recalculated(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The message comes from the template so it is translated; the row fills in the numbers."""
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        edit_form = _edit_form_html(response.data.decode())
+        assert 'data-recalculated-message="Min {min} and max {max}, from the percentage"' in edit_form
+        percentage_cell = _edit_form_row_cells(edit_form, "Male")[1]
+        assert '<span class="sr-only" aria-live="polite" x-text="announcement"></span>' in percentage_cell
+
     def test_the_edit_form_carries_the_panel_size_for_the_calculation(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

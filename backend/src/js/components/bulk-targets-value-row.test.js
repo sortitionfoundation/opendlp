@@ -19,7 +19,8 @@ function rowState({
   panelSize = "30",
 } = {}) {
   document.body.innerHTML = `
-    <form data-number-to-select="${panelSize}">
+    <form data-number-to-select="${panelSize}"
+          data-recalculated-message="Min {min} and max {max}, from the percentage">
     <table><tbody id="rows">
       <tr id="row" data-value-row="true" data-deleted="false">
         <td>
@@ -222,6 +223,37 @@ describe("bulkTargetsValueRow", () => {
     expect(state.showsCalculated).toBe(false);
     expect(state.showsManual).toBe(false);
     expect(minMax()).toEqual(["15", "16"]);
+  });
+
+  it("says what min and max were recalculated to", () => {
+    // Otherwise a screen reader user is not told the numbers beside them moved.
+    const state = rowState({ percentage: "" });
+    typeInto("percentage", "50");
+    state.percentageChanged();
+    expect(state.announcement).toBe("Min 15 and max 16, from the percentage");
+  });
+
+  it("says nothing while min and max are left alone", () => {
+    const state = rowState({
+      manual: true,
+      percentage: "50",
+      min: "1",
+      max: "2",
+    });
+    typeInto("percentage", "60");
+    state.percentageChanged();
+    expect(state.announcement).toBe("");
+  });
+
+  it("says what min and max were recalculated to on re-linking", () => {
+    const state = rowState({
+      manual: true,
+      percentage: "50",
+      min: "1",
+      max: "2",
+    });
+    state.usePercentage();
+    expect(state.announcement).toBe("Min 15 and max 16, from the percentage");
   });
 
   it("gives 0 and 0 while the panel size is not set", () => {

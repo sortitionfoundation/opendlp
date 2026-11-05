@@ -39,6 +39,8 @@ export function bulkTargetsValueRow(options) {
     relink: Boolean(options && options.relink),
     hasPercentage: false,
     isNew: isNew,
+    // What a screen reader is told when min and max are recalculated.
+    announcement: "",
 
     init: function () {
       this.hasPercentage = numberIn(this.$root, "percentage") !== null;
@@ -120,6 +122,7 @@ export function bulkTargetsValueRow(options) {
       var range = minMaxForPercentage(percentage, numberToSelect(this.$root));
       setField(this.$root, "min", range[0]);
       setField(this.$root, "max", range[1]);
+      this.announcement = recalculatedMessage(this.$root, range);
     },
 
     /**
@@ -168,6 +171,23 @@ function numberToSelect(row) {
   if (!holder) return 0;
   var parsed = Number(holder.getAttribute("data-number-to-select"));
   return isNaN(parsed) ? 0 : parsed;
+}
+
+/**
+ * What to tell a screen reader min and max are now, from the translated
+ * message on the form, with `{min}` and `{max}` in it for the numbers.
+ *
+ * @param {Element} row - the row
+ * @param {number[]} range - [min, max]
+ * @returns {string} the message, or "" when the form has none
+ */
+function recalculatedMessage(row, range) {
+  var holder = row.closest("[data-recalculated-message]");
+  if (!holder) return "";
+  return holder
+    .getAttribute("data-recalculated-message")
+    .replace("{min}", String(range[0]))
+    .replace("{max}", String(range[1]));
 }
 
 /**

@@ -25,7 +25,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% from "backoffice/components/icons.html" import icon_check_12 %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/rich_editor.html" import rich_editor_controls %}
-{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="", info="", inline=false) %}
+{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="", info="", inline=false, described_by_id="") %}
     {#
     Text input component using semantic design tokens.
 
@@ -48,6 +48,8 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         id: Optional id attribute (defaults to name)
         classes: Additional CSS classes for the input
         attrs: Additional HTML attributes
+        described_by_id: The id of an element of the caller's that also describes
+                         the input, added to the aria-describedby the macro builds
         link_url: If provided with readonly, renders value as a link
         link_text: Text for the link (defaults to value if not provided)
         dim: When disabled, controls whether the value text is dimmed (default true).
@@ -113,7 +115,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 {% if disabled %}disabled{% endif %}
                 {# The error is next to the input on screen; these are what say so
                    to anything that is not looking at the screen. #}
-                {% set described_by = ([input_id ~ "-hint"] if hint else []) + ([input_id ~ "-info"] if info and label else []) + ([input_id ~ "-error"] if has_error else []) %}
+                {% set described_by = ([input_id ~ "-hint"] if hint else []) + ([input_id ~ "-info"] if info and label else []) + ([input_id ~ "-error"] if has_error else []) + ([described_by_id] if described_by_id else []) %}
                 {% if has_error %}aria-invalid="true"{% endif %}
                 {% if described_by %}aria-describedby="{{ described_by | join(' ') }}"{% endif %}
                 {# For inputs whose only visible label is a column heading, which
