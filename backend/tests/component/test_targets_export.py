@@ -9,6 +9,7 @@ import pytest
 from flask.testing import FlaskClient
 
 from opendlp.adapters import database
+from opendlp.adapters.tabular_export import ExportTargetError
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.users import UserAssemblyRole
@@ -63,6 +64,10 @@ def _give_user_a_role(fake_store: FakeStore, assembly_id) -> None:
 def _parse(response) -> list[dict[str, str]]:
     body = response.get_data(as_text=True).lstrip("﻿")
     return list(csv.DictReader(StringIO(body)))
+
+
+def _use_gsheet_target(client: FlaskClient, target: FakeGSheetExportTarget) -> None:
+    client.application.extensions["gsheet_export_target_factory"] = lambda url: target
 
 
 def _export_button(html_text):
@@ -172,6 +177,9 @@ class TestExportModal:
         response = logged_in_user.get(_url(existing_assembly.id, "/export/modal"))
 
         assert response.status_code == 302
+        assert response.headers["Location"].endswith(_url(existing_assembly.id))
+        followed = logged_in_user.get(response.headers["Location"]).get_data(as_text=True)
+        assert "permission to export these targets" in followed
 
 
 class TestRunExport:
@@ -266,22 +274,102 @@ class TestRunExport:
 
         assert "A spreadsheet URL is required" in response.get_data(as_text=True)
 
+    def test_google_sheets_refuses_a_url_that_is_not_a_spreadsheet(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        _seed_targets(fake_store, admin_user, existing_assembly.id)
+        target = FakeGSheetExportTarget()
+        _use_gsheet_target(logged_in_admin, target)
+
+        response = logged_in_admin.post(
+            _url(existing_assembly.id, "/export/run"),
+            data={"file_type": "gsheet", "spreadsheet_url": "https://example.com/not-a-sheet"},
+            follow_redirects=True,
+        )
+
+        assert "Could not export to Google Sheets" in response.get_data(as_text=True)
+        assert target.writes == []
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert (
+                uow.assembly_export_gsheets.get_by_assembly_and_kind(existing_assembly.id, GSheetExportKind.TARGETS)
+                is None
+            )
+
+    def test_google_sheets_says_so_when_the_sheet_cannot_be_written(
+        self,
+        logged_in_admin: FlaskClient,
+        existing_assembly: Assembly,
+        admin_user,
+        fake_store: FakeStore,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        _seed_targets(fake_store, admin_user, existing_assembly.id)
+        _use_gsheet_target(logged_in_admin, FakeGSheetExportTarget(error=ExportTargetError("not shared")))
+
+        with caplog.at_level("WARNING"):
+            response = logged_in_admin.post(
+                _url(existing_assembly.id, "/export/run"),
+                data={"file_type": "gsheet", "spreadsheet_url": SHEET_URL},
+                follow_redirects=True,
+            )
+
+        body = response.get_data(as_text=True)
+        assert "Could not write to the spreadsheet" in body
+        assert "sheets-writer@example.iam.gserviceaccount.com" in body
+        assert "Google Sheets targets export failed" in caplog.text
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert (
+                uow.assembly_export_gsheets.get_by_assembly_and_kind(existing_assembly.id, GSheetExportKind.TARGETS)
+                is None
+            )
+
+    def test_google_sheets_is_unavailable_without_a_service_account(
+        self,
+        logged_in_admin: FlaskClient,
+        existing_assembly: Assembly,
+        admin_user,
+        fake_store: FakeStore,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        _seed_targets(fake_store, admin_user, existing_assembly.id)
+        monkeypatch.setattr("opendlp.entrypoints.gsheet_export_flow.get_service_account_email", lambda: "")
+        target = FakeGSheetExportTarget()
+        _use_gsheet_target(logged_in_admin, target)
+
+        response = logged_in_admin.post(
+            _url(existing_assembly.id, "/export/run"),
+            data={"file_type": "gsheet", "spreadsheet_url": SHEET_URL},
+            follow_redirects=True,
+        )
+
+        assert "no Google service account is configured" in response.get_data(as_text=True)
+        assert target.writes == []
+
     def test_an_unknown_file_type_is_refused(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         response = logged_in_admin.post(_url(existing_assembly.id, "/export/run"), data={"file_type": "xlsx"})
 
         assert response.status_code == 302
         assert response.headers["Location"].endswith(_url(existing_assembly.id))
+        followed = logged_in_admin.get(response.headers["Location"]).get_data(as_text=True)
+        assert "Only CSV and Google Sheets exports are available for now" in followed
 
     def test_a_viewer_may_not_export(
-        self, logged_in_user: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+        self,
+        logged_in_user: FlaskClient,
+        existing_assembly: Assembly,
+        admin_user,
+        fake_store: FakeStore,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         _seed_targets(fake_store, admin_user, existing_assembly.id)
         _give_user_a_role(fake_store, existing_assembly.id)
 
-        response = logged_in_user.post(
-            _url(existing_assembly.id, "/export/run"), data={"file_type": "csv"}, follow_redirects=True
-        )
+        with caplog.at_level("WARNING"):
+            response = logged_in_user.post(
+                _url(existing_assembly.id, "/export/run"), data={"file_type": "csv"}, follow_redirects=True
+            )
 
         body = response.get_data(as_text=True)
         assert "permission to export these targets" in body
         assert "Gender,Woman" not in body
+        assert "Insufficient permissions to export targets" in caplog.text
