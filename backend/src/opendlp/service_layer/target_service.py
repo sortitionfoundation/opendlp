@@ -1067,6 +1067,13 @@ def _value_problem(value_edit: TargetValueEdit) -> tuple[str, str] | None:
     """
     if value_edit.deleted or value_edit.relink:
         return None
+    # An empty box is unset, never a guess: half a range is refused rather than
+    # completed from the percentage or the number stored before. All of them
+    # empty is fine - a value can be known before its numbers are.
+    if value_edit.min is not None and value_edit.max is None:
+        return "max", _("Enter a max as well")
+    if value_edit.max is not None and value_edit.min is None:
+        return "min", _("Enter a min as well")
     if value_edit.min is not None and value_edit.min < 0:
         return "min", _("Min cannot be negative")
     if value_edit.max is not None and value_edit.max < 0:
@@ -1110,13 +1117,10 @@ def _write_value_edit(
     if value_edit.value_id is None:
         if value_edit.deleted:
             return
-        all_given = None not in (value_edit.percentage, value_edit.min, value_edit.max)
-        # Half a range is not a hand-set one, so the percentage fills in both.
-        from_percentage = value_edit.percentage is not None and not all_given
         target_value = TargetValue(
             value=value_edit.value,
-            min=0 if from_percentage else value_edit.min or 0,
-            max=0 if from_percentage else value_edit.max or 0,
+            min=value_edit.min or 0,
+            max=value_edit.max or 0,
             percentage_target=value_edit.percentage,
             comment=value_edit.comment,
         )
@@ -1124,6 +1128,7 @@ def _write_value_edit(
         # given unless they are the ones the percentage works out to.
         typed = (target_value.min, target_value.max)
         target_value.apply_percentage(number_to_select)
+        all_given = None not in (value_edit.percentage, value_edit.min, value_edit.max)
         if all_given and typed != (target_value.min, target_value.max):
             target_value.set_manual_min_max(*typed)
         category.add_value(target_value)

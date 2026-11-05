@@ -815,14 +815,83 @@ class TestSaveAllNewValueLinkRules:
         assert value.minmax_manual is False
         assert (value.min, value.max) == (15, 16)
 
-    def test_a_percentage_with_only_one_of_minmax_calculates_minmax(
-        self, uow, admin_user: User, test_assembly: Assembly
-    ):
-        """Half a range is not a hand-set one, so the percentage fills in both."""
-        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0, min=3)
+    def test_a_value_with_no_numbers_yet_is_saved(self, uow, admin_user: User, test_assembly: Assembly):
+        """Early on the buckets are known before any numbers are worked out."""
+        value = self._save_new_value(uow, admin_user, test_assembly)
 
-        assert value.minmax_manual is False
-        assert (value.min, value.max) == (15, 16)
+        assert value.percentage_target is None
+        assert (value.min, value.max) == (0, 0)
+
+    def test_zero_min_and_max_typed_in_are_kept(self, uow, admin_user: User, test_assembly: Assembly):
+        """Typed zeros exclude a value; they are numbers, not blanks."""
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0, min=0, max=1)
+
+        assert value.minmax_manual is True
+        assert (value.min, value.max) == (0, 1)
+
+
+class TestSaveAllHalfARange:
+    """A min with no max, or a max with no min, is refused on the empty box."""
+
+    @pytest.mark.parametrize(
+        ("numbers", "empty_field", "message"),
+        [
+            ({"min": 3}, "max", "Enter a max as well"),
+            ({"max": 5}, "min", "Enter a min as well"),
+            ({"percentage": 50.0, "min": 3}, "max", "Enter a max as well"),
+            ({"percentage": 50.0, "max": 20}, "min", "Enter a min as well"),
+        ],
+    )
+    def test_a_new_value(self, uow, admin_user: User, test_assembly: Assembly, numbers, empty_field, message):
+        category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
+
+        with pytest.raises(target_service.TargetsNotSaved) as caught:
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(
+                        category_id=category.id,
+                        name="Gender",
+                        form_id="cat-1",
+                        values=[target_service.TargetValueEdit(value="Man", form_id="new-1", **numbers)],
+                    )
+                ],
+            )
+
+        (error,) = caught.value.errors
+        assert (error.message, error.value_form_id, error.field) == (message, "new-1", empty_field)
+
+    def test_an_existing_value_with_a_box_emptied(self, uow, admin_user: User, test_assembly: Assembly):
+        """Not quietly given its old number back: the box was emptied on purpose."""
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+
+        with pytest.raises(target_service.TargetsNotSaved) as caught:
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(
+                        category_id=category.id,
+                        name="Gender",
+                        values=[
+                            target_service.TargetValueEdit(
+                                value="Man",
+                                value_id=value.value_id,
+                                form_id=str(value.value_id),
+                                percentage=50.0,
+                                min=value.min,
+                            )
+                        ],
+                    )
+                ],
+            )
+
+        (error,) = caught.value.errors
+        assert (error.message, error.field) == ("Enter a max as well", "max")
 
 
 class TestRelinkTargetValue:

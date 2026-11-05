@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-05 14:32+0000\n"
+"POT-Creation-Date: 2026-11-05 15:00+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -4879,23 +4879,31 @@ msgstr "A forrás legfeljebb %(limit)s karakter lehet"
 msgid "Two values in this target are both called '%(name)s'"
 msgstr "Ebben a kiválasztási szempontban két érték neve is '%(name)s'"
 
-#: src/opendlp/service_layer/target_service.py:1071
+#: src/opendlp/service_layer/target_service.py:1074
+msgid "Enter a max as well"
+msgstr ""
+
+#: src/opendlp/service_layer/target_service.py:1076
+msgid "Enter a min as well"
+msgstr ""
+
+#: src/opendlp/service_layer/target_service.py:1078
 msgid "Min cannot be negative"
 msgstr "A minimum nem lehet negatív"
 
-#: src/opendlp/service_layer/target_service.py:1073
+#: src/opendlp/service_layer/target_service.py:1080
 msgid "Max cannot be negative"
 msgstr "A maximum nem lehet negatív"
 
-#: src/opendlp/service_layer/target_service.py:1075
+#: src/opendlp/service_layer/target_service.py:1082
 msgid "Max must be at least the min"
 msgstr "A maximumnak legalább akkorának kell lennie, mint a minimum"
 
-#: src/opendlp/service_layer/target_service.py:1077
+#: src/opendlp/service_layer/target_service.py:1084
 msgid "Population share must be between 0 and 100"
 msgstr "A népességi aránynak 0 és 100 között kell lennie"
 
-#: src/opendlp/service_layer/target_service.py:1101
+#: src/opendlp/service_layer/target_service.py:1108
 msgid "Check the numbers in this row"
 msgstr "Ellenőrizd a sorban szereplő számokat"
 

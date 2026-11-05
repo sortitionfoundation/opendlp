@@ -1506,6 +1506,28 @@ class TestSaveAllValidationErrors:
         row = _bulk_row_for(response.data.decode(), "Male")
         assert "Max must be at least the min" in row
 
+    def test_an_emptied_max_box_is_asked_for(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """An empty box is not given back its old number: the form asks for one."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+        value_prefix = f"cat[{category.id}][values][{cat.values[0].value_id}]"
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                f"cat[{category.id}][name]": "Gender",
+                f"{value_prefix}[value]": "Male",
+                f"{value_prefix}[min]": "3",
+                f"{value_prefix}[max]": "",
+            },
+        )
+
+        assert response.status_code == 200, "a rejected save should re-render, not redirect"
+        assert "Enter a max as well" in _bulk_row_for(response.data.decode(), "Male")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
+        assert (stored.min, stored.max) == (3, 7)
+
     def test_the_redisplayed_form_still_counts_the_respondents(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
