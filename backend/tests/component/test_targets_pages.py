@@ -732,8 +732,9 @@ class TestValueCommentColumn:
     ):
         """A note can run to several lines, so it gets a box that shows them all while it has focus.
 
-        Out of focus the box is one line, to sit in a row of inputs, and its title
-        holds the whole note for a hover.
+        Out of focus the box is one line, to sit in a row of inputs, and the title
+        around it holds the whole note for a hover - around it, not on it, or a
+        screen reader would read the note twice.
         """
         _import_targets(
             fake_store,
@@ -751,11 +752,13 @@ class TestValueCommentColumn:
             assert box is not None, f"no comment textarea for {field}"
             tag = box.group(0)
             assert box.group(1) == note
+            holders = re.findall(r'<div data-hover-title title="([^"]*)">', edit_form[: box.start()])
+            assert holders and holders[-1] == note, f"no hover title around the {field} box"
             assert 'rows="1"' in tag
             assert 'x-data="autoGrowTextarea"' in tag
             assert '@focus="grow()"' in tag
             assert '@blur="shrink()"' in tag
-            assert f'title="{note}"' in tag
+            assert "title=" not in tag
             assert "resize-none" in tag
 
     def test_the_value_comment_box_is_named_for_its_row(

@@ -9,7 +9,7 @@ function textareaState(value, scrollHeight, border = 0) {
   // The padding and line height come from the stylesheet, as they do on the page.
   document.body.innerHTML = `
     <style>#box { padding-top: 10px; padding-bottom: 10px; line-height: 20px; }</style>
-    <textarea id="box" rows="1"></textarea>`;
+    <div id="holder" data-hover-title title=""><textarea id="box" rows="1"></textarea></div>`;
   const el = document.getElementById("box");
   el.value = value;
   // jsdom does no layout, so the height the text would need is given here,
@@ -105,9 +105,27 @@ describe("autoGrowTextarea", () => {
     expect(state.$el.style.paddingTop).toBe("");
   });
 
-  it("leaves the whole text in its hover title on blur", () => {
+  it("leaves the whole text in the hover title around it on blur", () => {
     const state = textareaState("a note\nover two lines", 48);
     state.shrink();
-    expect(state.$el.title).toBe("a note\nover two lines");
+    expect(document.getElementById("holder").title).toBe(
+      "a note\nover two lines",
+    );
+  });
+
+  it("keeps the hover title up to date as the text changes", () => {
+    // A suggestion appends to the note without the box ever having focus.
+    const state = textareaState("a note", 24);
+    state.$el.value = "a note; and more";
+    state.grow();
+    expect(document.getElementById("holder").title).toBe("a note; and more");
+  });
+
+  it("does not give the textarea a title of its own", () => {
+    // A screen reader would read it as the description, and so the note twice.
+    const state = textareaState("a note", 24);
+    state.grow();
+    state.shrink();
+    expect(state.$el.hasAttribute("title")).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 // ABOUTME: Alpine component for a one-line textarea that grows to fit its text while being edited
-// ABOUTME: Shrinks back to one line on blur, leaving the full text in its hover title
+// ABOUTME: Shrinks back to one line on blur, leaving the full text in the hover title around it
 
 /**
  * Build the state for a textarea that is one line tall until it has focus.
@@ -9,7 +9,9 @@
  *
  * While focused the box is as tall as its text, so a note of several lines
  * can be read as it is written. Out of focus it goes back to the one line a
- * table row has room for, and the title carries the whole note for a hover.
+ * table row has room for, and the title of the element around it marked
+ * `data-hover-title` carries the whole note for a hover. Not the textarea's
+ * own title: a screen reader reads that as its description, so the note twice.
  *
  * @returns {Object} Alpine component state
  */
@@ -40,12 +42,18 @@ export function autoGrowTextarea() {
       // The height includes the border, which scrollHeight leaves out.
       var border = el.offsetHeight - el.clientHeight;
       el.style.height = el.scrollHeight + border + "px";
+      this.syncTitle();
     },
 
     shrink: function () {
       this.$el.style.height = "";
-      this.$el.title = this.$el.value;
+      this.syncTitle();
       this.collapse();
+    },
+
+    syncTitle: function () {
+      var holder = this.$el.closest("[data-hover-title]");
+      if (holder) holder.title = this.$el.value;
     },
 
     /**

@@ -10,21 +10,24 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 {% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
 {#
     A comment box: one line, so it sits in a row of inputs, growing to show the
-    whole note while it is being written. The title holds the note for a hover
-    once it is back to one line; autoGrowTextarea keeps it up to date.
+    whole note while it is being written. The title around it holds the note for
+    a hover once it is back to one line; autoGrowTextarea keeps it up to date.
+    Not on the textarea, where a screen reader would read the note twice.
 #}
 {% macro comment_box(name, id, value, error="", label="", aria_label="") %}
-    {% set comment_attrs %}x-data="autoGrowTextarea" @focus="grow()" @input="grow()" @blur="shrink()" title="{{ value }}"{% endset %}
-    {{ textarea(name=name,
-    id=id,
-    label=label,
-    value=value,
-    error=error,
-    rows=1,
-    resizable=false,
-    classes="overflow-hidden",
-    aria_label=aria_label,
-    attrs=comment_attrs) }}
+    {% set comment_attrs %}x-data="autoGrowTextarea" @focus="grow()" @input="grow()" @blur="shrink()"{% endset %}
+    <div data-hover-title title="{{ value }}">
+        {{ textarea(name=name,
+        id=id,
+        label=label,
+        value=value,
+        error=error,
+        rows=1,
+        resizable=false,
+        classes="overflow-hidden",
+        aria_label=aria_label,
+        attrs=comment_attrs) }}
+    </div>
 {% endmacro %}
 {# ────────────────────────────────────────────────────────────────────────
    The row controls come from the Figma at node 4908:15647. They are sized and
