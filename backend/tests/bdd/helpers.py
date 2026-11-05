@@ -1,4 +1,4 @@
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, Page, expect
 
 
 def wait_for_page_with_text(page: Page, text: str) -> None:
@@ -62,3 +62,25 @@ def assert_step_dialog_dimmed(page: Page, host_selector: str) -> None:
         [x, y, host_selector],
     )
     assert covered_by_host_backdrop, "the step dialog behind the fragment dialog is not dimmed"
+
+
+def assert_dialog_dimmed_by_stacked_dialog(page: Page, covered_panel: Locator) -> None:
+    """
+    A dialog opened over another dialog - the link dialog, "Discard changes?" -
+    must grey out the dialog underneath, not only the page. Checks that, at the
+    top-left corner of the covered dialog's panel (its header, clear of the
+    narrower dialog centred over it), the topmost element is the stacked
+    dialog's backdrop.
+    """
+    expect(page.locator(".dialog-stacked > .dialog-positioner")).to_be_visible()
+    box = covered_panel.bounding_box()
+    assert box is not None
+    # Empty when the stacked dialog's backdrop is on top, else what is
+    top_element = page.evaluate(
+        """([x, y]) => {
+            const top = document.elementFromPoint(x, y);
+            return top && top.matches(".dialog-stacked > .dialog-backdrop") ? "" : (top ? top.outerHTML.slice(0, 300) : "nothing");
+        }""",
+        [box["x"] + 10, box["y"] + 10],
+    )
+    assert not top_element, f"the dialog behind the stacked dialog is not dimmed - on top is {top_element}"

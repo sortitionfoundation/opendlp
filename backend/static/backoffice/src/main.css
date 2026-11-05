@@ -1237,6 +1237,8 @@
          modal dialog (.dialog-positioner) .... 50
          backdrop of a dialog over a takeover . 51  (see .dialog-panel--takeover below)
          dialog over a takeover panel ......... 52
+         backdrop of a dialog over a dialog ... 53  (see .dialog-stacked below)
+         dialog over a dialog ................. 54
          flash alerts over a takeover panel ... 55
          registration editor toast ............ 55  (.takeover-toast)
        ======================================== */
@@ -1444,6 +1446,26 @@
     body:has(.dialog-panel--takeover) [data-fragment-dialog-host] .dialog-positioner,
     body:has(.dialog-panel--takeover) [data-takeover-dialog-host] .dialog-positioner {
         z-index: 52;
+    }
+
+    /* A dialog opened over another dialog - the link dialog, "Discard changes?" -
+       lifts above it, so its backdrop dims the dialog underneath as well as the
+       page. Within one host both would otherwise share a layer, putting this
+       backdrop beneath the other dialog's panel. The second selector of each
+       pair is as specific as the host rules above, and overrides them by coming
+       later. See the z-index stack. */
+    .dialog-stacked > .dialog-backdrop,
+    body:has(.dialog-panel--takeover) .dialog-stacked > .dialog-backdrop {
+        z-index: 53;
+    }
+
+    .dialog-stacked > .dialog-positioner,
+    body:has(.dialog-panel--takeover) .dialog-stacked > .dialog-positioner {
+        z-index: 54;
+    }
+
+    body:has(.dialog-stacked) #floating-alerts {
+        z-index: 55;
     }
 
     /* The registration editor's toast reports on what its dialogs did ("Copied"),

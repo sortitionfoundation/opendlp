@@ -86,9 +86,20 @@ Feature: Respondent field schema
     And I open the add heading or text dialog
     And I type "privacy notice" into the text and select it
     And I press the Link button in the text toolbar
-    And I apply the link address "https://example.org/privacy"
+    Then the heading or text dialog should be dimmed behind the dialog over it
+    When I apply the link address "https://example.org/privacy"
     Then the text should link to "https://example.org/privacy"
     And the add heading or text dialog should still be open
+
+  Scenario: Asking whether to discard a heading or text greys out its dialog
+    Given there is an assembly with respondents imported from CSV called "Schema Heading Discard Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Heading Discard Demo"
+    And I open the add heading or text dialog
+    And I type the heading "About you"
+    And I press Cancel in the heading or text dialog
+    Then I should be asked whether to discard my changes
+    And the heading or text dialog should be dimmed behind the dialog over it
 
   Scenario: Organiser drags a question into a new place
     Given there is an assembly with respondents imported from CSV called "Schema Drag Demo"

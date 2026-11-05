@@ -135,8 +135,13 @@ Requires wrapping element with x-data="modal({...})" Alpine component:
    Both use <template x-if> rather than x-show, so a closed dialog has no DOM
    and a reopened one mounts fresh — which is what lets a code editor inside
    the body re-read its textarea every time it opens.
+
+   stacked=true is for a dialog that opens over another dialog (the link
+   dialog over a text editor's dialog, "Discard changes?" over a form). It
+   lifts the backdrop above that dialog's panel, so the dialog underneath is
+   dimmed too - see .dialog-stacked in main.css.
 ============================================================================ #}
-{% macro controlled_modal(id, title, open_expr, close_expr, panel_classes="dialog-panel--default", close_disabled_expr="") %}
+{% macro controlled_modal(id, title, open_expr, close_expr, panel_classes="dialog-panel--default", close_disabled_expr="", stacked=false) %}
     {#
 Args:
   id: Element id stem. The title gets "{id}-title" and names the dialog.
@@ -145,6 +150,7 @@ Args:
   close_expr: Alpine expression that closes it — used by the X, the backdrop and Escape
   panel_classes: Size modifier for the panel (a dialog-panel--* class, or a max-w-* utility)
   close_disabled_expr: Alpine expression that disables the close X (e.g. while uploading)
+  stacked: The dialog opens over another dialog, and dims it
 
 An expression containing && renders as &amp;&amp;. That is correct HTML and
 Alpine reads the decoded value back, so it is left escaped rather than marked
@@ -158,7 +164,7 @@ The caller supplies the body and footer, so that the footer stays optional:
   {% endcall %}
     #}
     <template x-if="{{ open_expr }}">
-        <div x-cloak>
+        <div x-cloak{% if stacked %} class="dialog-stacked"{% endif %}>
             <div class="dialog-backdrop dialog-backdrop--clickable"
                  @click="{{ close_expr }}"
                  @keydown.escape.window="{{ close_expr }}"></div>
@@ -183,7 +189,7 @@ The caller supplies the body and footer, so that the footer stays optional:
         </div>
     </template>
 {% endmacro %}
-{% macro controlled_alert_dialog(id, title, description, open_expr, close_expr) %}
+{% macro controlled_alert_dialog(id, title, description, open_expr, close_expr, stacked=false) %}
     {#
 Compact confirmation on the same surface as alert_dialog(), driven by the
 page's own controller. The caller supplies the action buttons.
@@ -194,9 +200,10 @@ Args:
   description: Supporting text
   open_expr: Alpine expression that is truthy while the dialog is open
   close_expr: Alpine expression that dismisses it without acting
+  stacked: The dialog opens over another dialog, and dims it
     #}
     <template x-if="{{ open_expr }}">
-        <div x-cloak>
+        <div x-cloak{% if stacked %} class="dialog-stacked"{% endif %}>
             <div class="dialog-backdrop dialog-backdrop--clickable"
                  @click="{{ close_expr }}"
                  @keydown.escape.window="{{ close_expr }}"></div>
