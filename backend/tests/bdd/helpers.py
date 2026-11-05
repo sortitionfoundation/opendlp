@@ -84,3 +84,51 @@ def assert_dialog_dimmed_by_stacked_dialog(page: Page, covered_panel: Locator) -
         [box["x"] + 10, box["y"] + 10],
     )
     assert not top_element, f"the dialog behind the stacked dialog is not dimmed - on top is {top_element}"
+
+
+# Probes the top-left corner of every open dialog's panel. A dialog with a
+# backdrop over its corner is dimmed; one whose own panel is on top is not. Hit
+# testing passes straight through inert elements - and a dialog that has opened
+# another one is often inert - so each probe lifts the inert attributes above the
+# panel and puts them back. It all runs in one synchronous call, so nothing else
+# sees the change.
+_UNDIMMED_DIALOGS_JS = """() => {
+    const open = [...document.querySelectorAll(".dialog-positioner")].filter(
+        (positioner) => positioner.querySelector(".dialog-panel") && positioner.getClientRects().length > 0
+    );
+    if (open.length < 2) return [];
+    const undimmed = [];
+    for (const positioner of open) {
+        const panel = positioner.querySelector(".dialog-panel");
+        const box = panel.getBoundingClientRect();
+        const inert = [];
+        for (let el = panel; el; el = el.parentElement) {
+            if (el.hasAttribute("inert")) inert.push(el);
+        }
+        inert.forEach((el) => el.removeAttribute("inert"));
+        const top = document.elementFromPoint(box.left + 10, box.top + 10);
+        inert.forEach((el) => el.setAttribute("inert", ""));
+        if (top && panel.contains(top)) {
+            const title = positioner.querySelector(".dialog-title, .dialog-text-stack__title");
+            undimmed.push(title ? title.textContent.trim() : positioner.outerHTML.slice(0, 120));
+        }
+    }
+    return undimmed;
+}"""
+
+
+def assert_only_the_top_dialog_is_undimmed(page: Page) -> None:
+    """
+    With dialogs open over one another, every one but the topmost must sit under
+    a backdrop - so the dialogs beneath read as out of reach, as the page does.
+    Runs after every BDD step (see pytest_bdd_after_step in conftest.py), so any
+    scenario that opens one dialog over another checks the stacking for free.
+
+    A corner covered by something other than a backdrop or the dialog's own panel
+    - a flash alert, say - counts as neither, so it cannot fail the check.
+    """
+    undimmed = page.evaluate(_UNDIMMED_DIALOGS_JS)
+    assert len(undimmed) <= 1, (
+        f"more than one open dialog is drawn above every backdrop: {undimmed} - a dialog that "
+        "opens over another needs stacked=true (see .dialog-stacked in main.css)"
+    )
