@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { stickyBelowHeader } from "./sticky-below-header.js";
 
-function setUp({ withHeader = true, headerHeight = 120 } = {}) {
+function setUp({ withHeader = true, headerHeight = 120, ownHeight = 60 } = {}) {
   document.body.innerHTML = `
     ${withHeader ? '<header id="header" data-sticky-header></header>' : ""}
     <section id="heading"></section>`;
@@ -15,6 +15,10 @@ function setUp({ withHeader = true, headerHeight = 120 } = {}) {
       get: () => headerHeight,
     });
   }
+  Object.defineProperty(document.getElementById("heading"), "offsetHeight", {
+    configurable: true,
+    get: () => ownHeight,
+  });
   const state = stickyBelowHeader();
   state.$el = document.getElementById("heading");
   return state;
@@ -22,6 +26,7 @@ function setUp({ withHeader = true, headerHeight = 120 } = {}) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  document.documentElement.style.scrollPaddingTop = "";
   document.body.innerHTML = "";
 });
 
@@ -30,6 +35,12 @@ describe("stickyBelowHeader", () => {
     const state = setUp({ headerHeight: 120 });
     state.init();
     expect(state.$el.style.top).toBe("120px");
+  });
+
+  it("keeps a focused field from scrolling in under the header and itself", () => {
+    const state = setUp({ headerHeight: 120, ownHeight: 60 });
+    state.init();
+    expect(document.documentElement.style.scrollPaddingTop).toBe("180px");
   });
 
   it("moves when the header changes height", () => {
@@ -56,6 +67,7 @@ describe("stickyBelowHeader", () => {
     resized();
 
     expect(state.$el.style.top).toBe("168px");
+    expect(document.documentElement.style.scrollPaddingTop).toBe("228px");
   });
 
   it("stops watching the header when it goes", () => {
@@ -73,6 +85,7 @@ describe("stickyBelowHeader", () => {
     state.init();
     state.destroy();
     expect(disconnect).toHaveBeenCalled();
+    expect(document.documentElement.style.scrollPaddingTop).toBe("");
   });
 
   it("leaves its position to the stylesheet without a header", () => {

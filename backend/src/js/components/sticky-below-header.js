@@ -10,6 +10,10 @@
  * The header is the element marked `data-sticky-header`. Without one the
  * element sticks to the top of the window.
  *
+ * The page's scroll padding is kept at the header and the element together,
+ * so a field the browser scrolls to on focus lands below both of them rather
+ * than hidden underneath.
+ *
  * @returns {Object} Alpine component state
  */
 export function stickyBelowHeader() {
@@ -22,15 +26,19 @@ export function stickyBelowHeader() {
       var element = this.$el;
       var place = function () {
         element.style.top = header.offsetHeight + "px";
+        document.documentElement.style.scrollPaddingTop =
+          header.offsetHeight + element.offsetHeight + "px";
       };
       place();
       if (typeof ResizeObserver === "undefined") return;
       this.observer = new ResizeObserver(place);
       this.observer.observe(header);
+      this.observer.observe(element);
     },
 
     destroy: function () {
       if (this.observer) this.observer.disconnect();
+      document.documentElement.style.scrollPaddingTop = "";
     },
   };
 }
