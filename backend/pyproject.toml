@@ -80,10 +80,11 @@ exclude-newer = "1 week"
 # we control this package, and frequently release it and want it straight in opendlp
 sortition-algorithms = "0 days"
 # made shorter to get security fixes
-certifi = "2 days"
-cryptography = "2 days"
-oauthlib = "6 days"
-pyasn1 = "6 days"
+certifi = "3 days"
+cryptography = "3 days"
+oauthlib = "4 days"
+# 9.0.1 fixes the crash with pytest 9.2 - this can be removed after 2026-11-08
+pytest-bdd = "4 days"
 
 [tool.mypy]
 files = ["src"]
