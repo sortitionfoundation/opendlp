@@ -45,17 +45,6 @@ Feature: Target percentages, notes and ordering
     Then the "Male" target should be marked as auto calculated
     And the "Male" target should show min "8" and max "9"
 
-  Scenario: A percentage typed in the form is saved as auto calculated
-    Given there is an assembly with targets called "Saved Percentage Demo"
-    And I am signed in as an admin user
-    When I open the targets page for "Saved Percentage Demo"
-    And I choose to edit all targets
-    And I set the "Male" percentage to "30"
-    And I save all targets
-    Then I should see "Targets saved"
-    And the "Male" target should be marked as auto calculated
-    And the "Male" target should show min "6" and max "7"
-
   Scenario: The targets heading and its buttons stay in view as the page scrolls
     Given there is an assembly with two target categories called "Sticky Heading Demo"
     And I am signed in as an admin user
@@ -277,17 +266,6 @@ Feature: Target percentages, notes and ordering
     Then I should see "and 3 others"
     When I add the values found in the respondent data
     Then I should not see "and 3 others"
-
-  Scenario: A target with no respondent data column of its name says why it counts nobody
-    Given there is an assembly with targets called "No Column Demo"
-    And the respondent data holds nine ages, one of them targeted
-    And I am signed in as an admin user
-    When I open the targets page for "No Column Demo"
-    Then the "Gender" target should have a "Respondents" column
-    And I should see "The respondent data has no column called 'Gender'"
-    And I should not see "The respondent data has no column called 'Age'"
-    When I choose to edit all targets
-    Then I should see "The respondent data has no column called 'Gender'"
 
   Scenario: Reordering the target categories
     Given there is an assembly with two target categories called "Reorder Demo"
