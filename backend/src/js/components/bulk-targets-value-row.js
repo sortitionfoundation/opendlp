@@ -110,6 +110,10 @@ export function bulkTargetsValueRow(options) {
       this.fillMinMax(percentage);
       this.syncFields();
       this.$root.dispatchEvent(bubblingChange());
+      // The button disables itself, which would drop focus to the page. The
+      // percentage rather than min or max, where typing would break the link.
+      var input = this.$root.querySelector('[data-field="percentage"]');
+      if (input) input.focus();
     },
 
     fillMinMax: function (percentage) {

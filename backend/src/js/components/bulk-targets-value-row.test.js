@@ -130,6 +130,19 @@ describe("bulkTargetsValueRow", () => {
     expect(state.showsCalculated).toBe(true);
   });
 
+  it("moves focus to the percentage on re-linking", () => {
+    // The Recalculate button disables itself, which would drop focus to the
+    // page. Not to min or max: typing there would break the link again.
+    const state = rowState({
+      manual: true,
+      percentage: "50",
+      min: "1",
+      max: "2",
+    });
+    state.usePercentage();
+    expect(document.activeElement).toBe(document.getElementById("percentage"));
+  });
+
   it("has nothing to re-link to without a percentage", () => {
     const state = rowState({ manual: true, min: "1", max: "2" });
     expect(state.canRelink).toBe(false);
