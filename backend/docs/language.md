@@ -169,9 +169,9 @@ from, such as the census.
 a CSV upload, as chosen on the Data tab. It never means the question behind a
 target, nor where a target's percentages come from.
 
-**source of population figures** is the link a target can carry to the report
-its percentages come from: census tables from the ONS, or an opinion poll for an
-attitudinal target. The code calls it `source_url`. Not "data source", for the
+**source of population figures** is the note a target can carry saying where
+its percentages come from - usually a link to the report, such as census tables
+from the ONS or an opinion poll for an attitudinal target. The code calls it `source_url`. Not "data source", for the
 reasons above, and not "Population % source", which needs its `%` escaped.
 
 **built-in question** is a registration question every project has, such as
