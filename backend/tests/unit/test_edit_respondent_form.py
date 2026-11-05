@@ -95,7 +95,7 @@ class TestBuildFormFieldRendering:
         schema = [_field("attending", FieldType.BOOL)]
         form, _ = build_edit_respondent_form(schema, _respondent(attributes={"attending": "true"}))
         assert isinstance(form["attr_attending"], RadioField)
-        values = [v for v, _label in form["attr_attending"].choices]
+        values = [choice.value for choice in form["attr_attending"].choices]
         assert values == ["true", "false"]
 
     @pytest.mark.parametrize(
@@ -132,7 +132,7 @@ class TestBuildFormFieldRendering:
         schema = [_bool_or_none_fixed("eligible")]
         form, _ = build_edit_respondent_form(schema, _respondent(eligible=None))
         assert isinstance(form["eligible"], RadioField)
-        values = [v for v, _label in form["eligible"].choices]
+        values = [choice.value for choice in form["eligible"].choices]
         assert values == ["true", "false", ""]
         assert form["eligible"].data == ""
 
@@ -149,7 +149,7 @@ class TestBuildFormFieldRendering:
         field.on_registration_page = FieldOnRegistrationPage.NO
         form, _ = build_edit_respondent_form([field], _respondent(eligible=None))
         assert isinstance(form["eligible"], RadioField)
-        values = [v for v, _label in form["eligible"].choices]
+        values = [choice.value for choice in form["eligible"].choices]
         assert values == ["true", "false", ""]
 
     def test_choice_radio_renders_radio_field(self, app_ctx):
@@ -157,7 +157,7 @@ class TestBuildFormFieldRendering:
         schema = [_field("pick", FieldType.CHOICE_RADIO, options=options)]
         form, _ = build_edit_respondent_form(schema, _respondent(attributes={"pick": "a"}))
         assert isinstance(form["attr_pick"], RadioField)
-        values = [v for v, _label in form["attr_pick"].choices]
+        values = [choice.value for choice in form["attr_pick"].choices]
         assert values == ["", "a", "b"]
 
     def test_choice_dropdown_renders_select_field_with_empty_first(self, app_ctx):
@@ -165,7 +165,7 @@ class TestBuildFormFieldRendering:
         schema = [_field("zone", FieldType.CHOICE_DROPDOWN, options=options)]
         form, _ = build_edit_respondent_form(schema, _respondent(attributes={"zone": "x"}))
         assert isinstance(form["attr_zone"], SelectField)
-        values = [v for v, _label in form["attr_zone"].choices]
+        values = [choice.value for choice in form["attr_zone"].choices]
         assert values[0] == ""
         assert set(values[1:]) == {"x", "y"}
 
@@ -194,7 +194,7 @@ class TestBuildFormDrift:
         options = [ChoiceOption(value="a"), ChoiceOption(value="b")]
         schema = [_field("pick", FieldType.CHOICE_RADIO, options=options)]
         form, warnings = build_edit_respondent_form(schema, _respondent(attributes={"pick": "outsider"}))
-        values = [v for v, _label in form["attr_pick"].choices]
+        values = [choice.value for choice in form["attr_pick"].choices]
         assert "outsider" in values
         assert any("outsider" in w for w in warnings)
 

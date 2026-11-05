@@ -17,6 +17,7 @@ cryptography = { timestamp = "0001-01-01T00:00:00Z", span = "P3D" }
 oauthlib = { timestamp = "0001-01-01T00:00:00Z", span = "P4D" }
 pytest-bdd = { timestamp = "0001-01-01T00:00:00Z", span = "P4D" }
 sortition-algorithms = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
+types-wtforms = { timestamp = "0001-01-01T00:00:00Z", span = "P1D" }
 
 [[package]]
 name = "alembic"
@@ -1744,7 +1745,7 @@ dev = [
     { name = "types-authlib", specifier = ">=1.8.0.20260911" },
     { name = "types-gunicorn", specifier = ">=23.0.0.20251001" },
     { name = "types-qrcode", specifier = ">=8.2.0.20250914" },
-    { name = "types-wtforms", specifier = ">=3.2.1.20250809" },
+    { name = "types-wtforms", specifier = ">=3.3.0.20261103" },
 ]
 
 [[package]]
@@ -2944,14 +2945,14 @@ wheels = [
 
 [[package]]
 name = "types-wtforms"
-version = "3.2.1.20260518"
+version = "3.3.0.20261104"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bf/f0/0c84f7175c56089ba0c000d1eb4f20b144721b7446b90280625f3c8ce23b/types_wtforms-3.2.1.20260518.tar.gz", hash = "sha256:05fb7adfc8cdd72c7b597e20b74f6270511ca492a80953805f25ee7d1cfd1282", size = 17505, upload-time = "2026-05-18T06:07:30.769Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0d/aa/e98cb418d7c9de5ff940a8e3a63992e00ae15432f2746cf085761d284d87/types_wtforms-3.3.0.20261104.tar.gz", hash = "sha256:8f0465275e0656a5787863daa9ca3a075a219404b43ef6b5de155323759a2d0b", size = 20244, upload-time = "2026-11-04T08:14:31.294Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6e/94/0da3294e8c4fd4b64e96d57f7a768fb57e3b2d77ac0aed142c25fe1f28d5/types_wtforms-3.2.1.20260518-py3-none-any.whl", hash = "sha256:193377e60e715920b47481fbc62a7f3796045d0492e02a46319c5064eee81e23", size = 24303, upload-time = "2026-05-18T06:07:29.866Z" },
+    { url = "https://files.pythonhosted.org/packages/89/9f/beb0da54cb03e13056239683b57428d58aaca5854915497e29f8ba891320/types_wtforms-3.3.0.20261104-py3-none-any.whl", hash = "sha256:9bddb70c42e48fc6eab5544c0d51d3c89e604dbd0d27842e1ca7f5c7fc80066e", size = 28021, upload-time = "2026-11-04T08:14:30.14Z" },
 ]
 
 [[package]]

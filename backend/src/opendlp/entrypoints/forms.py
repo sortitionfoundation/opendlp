@@ -1,7 +1,7 @@
 """ABOUTME: Form definitions using Flask-WTF with CSRF protection
 ABOUTME: Uses GOV.UK Design System components for consistent government service design"""
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -15,6 +15,7 @@ from wtforms import (
     IntegerField,
     PasswordField,
     RadioField,
+    SelectChoice,
     SelectField,
     StringField,
     TextAreaField,
@@ -56,6 +57,11 @@ def coerce_for_enum(enum: type[Enum]) -> Callable:
             raise ValueError(name) from None
 
     return coerce
+
+
+def _select_choices(options: Mapping[str, Any]) -> list[SelectChoice]:
+    """Turn a value -> label mapping into the choices a SelectField or RadioField takes."""
+    return [SelectChoice(value, label) for value, label in options.items()]
 
 
 class DomainEmailValidator:
@@ -192,14 +198,14 @@ def _make_survey_field(question: SignupSurveyQuestion) -> Any:
     """
     hint = question.hint
     if question.field_type == SurveyFieldType.SELECT:
-        choices = [("", _l("Please select")), *question.choices.items()]
+        choices = [SelectChoice("", _l("Please select")), *_select_choices(question.choices)]
         return SelectField(
             question.label, choices=choices, validators=[Optional()], validate_choice=False, description=hint
         )
     if question.field_type == SurveyFieldType.RADIO:
         return RadioField(
             question.label,
-            choices=list(question.choices.items()),
+            choices=_select_choices(question.choices),
             validators=[Optional()],
             validate_choice=False,
             description=hint,
@@ -461,10 +467,10 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
     team = RadioField(
         _l("Team Configuration"),
         choices=[
-            ("uk", _l("UK Team")),
-            ("eu", _l("EU Team")),
-            ("aus", _l("Australia Team")),
-            ("other", _l("Custom configuration")),
+            SelectChoice("uk", _l("UK Team")),
+            SelectChoice("eu", _l("EU Team")),
+            SelectChoice("aus", _l("Australia Team")),
+            SelectChoice("other", _l("Custom configuration")),
         ],
         default="other",
         validators=[DataRequired()],
@@ -528,7 +534,7 @@ class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     global_role = RadioField(
         _l("Global Role"),
-        choices=[(k, v) for k, v in global_role_options.items()],
+        choices=_select_choices(global_role_options),
         coerce=coerce_for_enum(GlobalRole),
         validators=[DataRequired()],
         description=_l("User's global role determines their permissions across the system"),
@@ -540,7 +546,7 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     global_role = RadioField(
         _l("Role for New User"),
-        choices=[(k, v) for k, v in global_role_options.items()],
+        choices=_select_choices(global_role_options),
         coerce=coerce_for_enum(GlobalRole),
         validators=[DataRequired()],
         description=_l("The role that will be granted to the user who uses this invite"),
@@ -573,7 +579,7 @@ class AddUserToAssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     role = RadioField(
         _l("Project role"),
-        choices=[(k, v) for k, v in assembly_role_options.items()],
+        choices=_select_choices(assembly_role_options),
         coerce=coerce_for_enum(AssemblyRole),
         validators=[DataRequired()],
         description=_l("Select the role this user will have on the project"),
