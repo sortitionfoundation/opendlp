@@ -351,6 +351,48 @@ class TestTitleRule:
         )
 
 
+class TestListAssemblies:
+    """list_assemblies lists every assembly with its data source, filtered by membership and archive status."""
+
+    def test_lists_every_active_assembly_with_data_source(self, uow):
+        empty = Assembly(title="Empty")
+        with_gsheet = Assembly(title="Sheet", gsheet=AssemblyGSheet(assembly_id=uuid.uuid4(), url=VALID_GSHEET_URL))
+        with_respondents = Assembly(title="Database")
+        archived = Assembly(title="Archived")
+        archived.archive()
+        for assembly in (empty, with_gsheet, with_respondents, archived):
+            uow.assemblies.add(assembly)
+        uow.respondents.add(Respondent(assembly_id=with_respondents.id, external_id="r1"))
+
+        sources = {listing.assembly.title: listing.data_source for listing in assembly_service.list_assemblies(uow)}
+
+        assert sources == {"Empty": "", "Sheet": "gsheet", "Database": "csv"}
+
+    def test_include_archived(self, uow):
+        archived = Assembly(title="Archived")
+        archived.archive()
+        uow.assemblies.add(archived)
+
+        listings = assembly_service.list_assemblies(uow, include_archived=True)
+
+        assert [listing.assembly.title for listing in listings] == ["Archived"]
+
+    def test_member_filter_keeps_only_assemblies_with_a_role_even_for_an_admin(self, uow):
+        """An admin can see everything, but membership is about roles."""
+        admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin)
+        theirs = Assembly(title="Theirs")
+        uow.assemblies.add(theirs)
+        uow.assemblies.add(Assembly(title="Not theirs"))
+        admin.assembly_roles.append(
+            UserAssemblyRole(user_id=admin.id, assembly_id=theirs.id, role=AssemblyRole.ASSEMBLY_MANAGER)
+        )
+
+        listings = assembly_service.list_assemblies(uow, member_user_id=admin.id)
+
+        assert [listing.assembly.title for listing in listings] == ["Theirs"]
+
+
 class TestGetAssemblyWithPermissions:
     """Test assembly retrieval with permission checks."""
 
