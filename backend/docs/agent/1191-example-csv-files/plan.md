@@ -12,25 +12,44 @@ upload controls themselves, not the documentation site.
 
 ## Decisions
 
-- **Two files, one pair.** `static/examples/example-targets.csv` and
-  `static/examples/example-respondents.csv`, written so that they belong
-  together: every target value occurs in the respondent data, and a selection of
-  10 from the 20 respondents meets the targets. They derive from the 453 samples
-  (`docs/agent/history/453-csv-upload/`). The monitoring fixtures load too, but
-  100 respondents with 16 columns are too much for a first look.
-- **The columns everyone needs, and no others.** The targets file has
-  `feature,value,min,max`. The samples' `min_flex` and `max_flex` are gone: they
-  are optional, no backoffice screen shows them, and the samples set them equal
-  to min and max, which stops a selection relaxing anything when it finds no
-  panel. `percentage`, `comment`, `category_comment` and `source_url` are optional
-  too, and stay out so the example teaches the shape rather than every option.
-- **A clean first upload at 10 people.** Each target's midpoints sum to exactly
-  10, so the targets page shows no "Percentages for this target add up to…"
-  warning. The samples' sums were 10, 11 and 12.
-- **Realistic, and readable at a glance.** Twenty respondents with separate first
-  and last names and `example.com` addresses, so nothing can reach a real
-  mailbox. Gender has a `Non-binary` value with a min of 0, as the monitoring
-  fixture does, which also shows that a min can be zero.
+- **Two files, one pair, from the demo data.** `static/examples/example-targets.csv`
+  and `static/examples/example-respondents.csv` are the demo data in the
+  "OpenDLP Dummy Data" Google Sheet attached to story sc-1191, the data the
+  product has been demonstrated with: its Categories tab is the targets file and
+  its Respondents tab the people. It is the same data, cell for cell, as the
+  end-to-end monitor's fixtures in `docs/fixtures/monitoring/`. Every target
+  value occurs among the respondents and every respondent value is a target
+  value, and a selection of 30 from the 100 respondents meets the targets. The
+  sheet's other tabs hold its notes, the number of participants (30), the
+  wording of the opinion questions, and three empty output tabs; none of them is
+  an upload. See [facts.md](facts.md#the-demo-data-the-examples-come-from).
+- **The respondents as they are in the demo.** All 100 rows and 16 columns,
+  unchanged: the file is byte for byte `docs/fixtures/monitoring/respondents.csv`.
+  The people of a fictional country, Sortonia, with names, age and age group,
+  gender, ethnicity, province, town, a street line, education, economic
+  stability and four opinion answers coded 1 to 4. There is no email or phone
+  column, so a file anyone can download reaches no one. The ID column,
+  `unique_id`, comes first, which is the column the upload takes when the ID
+  Column field is left blank. About 10 KB: it reads in a spreadsheet.
+- **The targets in today's format.** The demo's `category,name` headers become
+  `feature,value`: the import takes both, and the example shows the current
+  names. Its three empty helper columns (`suggest min`, `suggest max`,
+  `Current #`), which the import ignores, are dropped. Min and max are the
+  demo's. `min_flex`, `max_flex`, `comment`, `category_comment` and `source_url`
+  are optional and stay out, so the example teaches the shape rather than every
+  option.
+- **One optional column added: `percentage`.** The demo's midpoints sum to 29.5
+  (gender), 30.5 (ethnicity), 33 (province) and 32 (education). A targets file
+  without percentages gets them worked out at upload as each value's midpoint
+  over the number to select at that moment, so on a project of 30 the four
+  targets would total 98.3%, 101.6%, 110.1% and 106.6%, and the targets page would
+  greet the upload with four "Percentages for this target add up to…" warnings.
+  The column gives each value the percentage its min and max imply within its
+  target, by the rule the app itself uses when there is no number to select
+  (`percentages_from_minmax`, one decimal place). Every target then totals 100
+  within the page's one-point tolerance, whatever the number to select was at
+  upload. The column adds no numbers of its own, and a test holds it to the min
+  and max.
 - **Static files, not a route.** The files hold no project data and nothing is
   computed, so WhiteNoise serves them as it serves every other asset, and the
   Docker image already ships `static/`. The links carry `v=static_hashes(...)`
@@ -44,14 +63,12 @@ upload controls themselves, not the documentation site.
   screen reader's list of links, where the two would otherwise be identical. The
   existing hint msgids are left alone so their translations survive.
 - **The Targets link says what the example needs.** The targets only work with
-  the number to select at 10, and that number can be anything, 0 by default, when
+  the number to select at 30, and that number can be anything, 0 by default, when
   the organiser arrives here. So one line under the link says "To run a selection
-  with the example targets, set the number to select to 10 before uploading them."
-  Without it, trying the files on a project of another size ends in a min/max error
-  that reads as the example being broken. "Before uploading" matters: the import
-  works out the percentages from the number to select at that moment and changing
-  the number later does not redo them, so a project uploaded at 30 and then set to
-  10 keeps totals of 33.3%. From 0 or 10 the totals are 100%.
+  with the example targets, set the number to select to 30." Without it, trying
+  the files on a project of another size ends in a min/max error that reads as the
+  example being broken. The order does not matter: the file gives its own
+  percentages, so the number can be set before or after uploading.
 - **Left out, deliberately.** The lookup-table dialog (Link targets to
   questions): its two-column format depends on the linked question, the dialog
   already states it with the question's keys filled in, and a generic file
@@ -71,13 +88,18 @@ upload controls themselves, not the documentation site.
   hash and `download` attribute are written once; component tests that the
   Data tab renders both links, and that what they serve uploads cleanly
 - [x] P4. Catalogue regenerated; `just check`; the touched test files
+- [x] P5. The examples replaced by the demo data (its Categories and
+  Respondents tabs), the note under the Targets link from 10 to 30, the tests and
+  the catalogue to match
 
 ## Testing
 
 - `tests/integration/test_example_csv_files.py` — the files, through the
-  service layer, against the database: no warnings, every value present among
-  the respondents, the selection check passes in either upload order, and the
-  selection task finds 10 people within the targets.
+  service layer, against the database: no warnings; every target's percentages
+  total 100 whether the number to select was set before the upload or not, and
+  are what its min and max imply; every value present among the respondents; no
+  contact details; the selection check passes in either upload order; and the
+  selection task finds 30 people within the targets.
 - `tests/component/test_backoffice_assembly.py` — each upload form links its own
   example with a hash and the `download` attribute, a link goes when its form
   goes, and the bytes a link serves upload cleanly through the route.

@@ -1,7 +1,8 @@
 # 1191 — Example CSV files: fact sheet
 
 What the code does today, measured on `main` at 25e72c62 before anything was
-changed. The plan is in [plan.md](plan.md).
+changed, and the demo data the example files come from. The plan is in
+[plan.md](plan.md).
 
 ## Where a CSV can be uploaded
 
@@ -73,9 +74,13 @@ tolerated. The respondents route also refuses files over `MAX_CSV_UPLOAD_MB`.
    to select shows "Percentages for this target add up to %(total)s%%, not 100%%"
    on the targets page (`target_checking.py`, tolerance one percentage point).
    Without one, it is normalised within the target and always totals 100.
-   Changing the number to select later does not redo them. Measured with the
-   example targets: uploaded at 10 or at 0 and then set to 10, each total is 100%;
-   uploaded at 30 and then set to 10, the totals stay at 33.3%.
+   Changing the number to select later does not redo them. Measured with a
+   targets file whose midpoints sum to 10: uploaded at 10, or at 0 and then set
+   to 10, each total is 100%; uploaded at 30 and then set to 10, the totals stay
+   at 33.3%. Measured with the demo targets without their percentage column
+   (below): uploaded at 30 the totals are 98.3%, 101.6%, 110.1% and 106.6%, each
+   a warning; uploaded at 0 they are 100.0% to 100.1%. A percentage that is given
+   is stored as given, whatever the number to select.
 7. The upload replaces whatever targets exist (`replace_existing=True`); the
    form itself only shows while the project has none.
 
@@ -138,13 +143,52 @@ would be refused until the organiser ticks the box. This upload stays as it is.
 | `tests/csv_fixtures/selection_data/candidates.csv` | 150 | 13 columns, a NationBuilder-style export | the BDD suite and the CSV data source default (`config.py`) |
 | `tests/csv_fixtures/selection_data/features.csv` | 20 | `feature,value,min,max,min_flex,max_flex` | as above |
 
-The monitoring targets load through the CSV import; 100 respondents with 16
-columns are simply too much for a first look. The 453 pair is the right size and
-its values match each other, but as it stands `sample_targets.csv` has two
-problems for an example. Its midpoints sum to 10 for Gender, 11 for Age and 12
-for Region, so no number to select avoids the percentage warning on every target.
-And its flex equals its min and max, which allows a selection no relaxation at
-all.
+The 453 pair is small and its values match each other, but `sample_targets.csv`
+has two problems for an example. Its midpoints sum to 10 for Gender, 11 for Age
+and 12 for Region, so no number to select avoids the percentage warning on every
+target. And its flex equals its min and max, which allows a selection no
+relaxation at all. The monitoring pair loads through both imports, and it is the
+demo data below.
+
+## The demo data the examples come from
+
+The "OpenDLP Dummy Data" Google Sheet attached to story sc-1191, read from an
+xlsx export. Its README tab calls it "just enough to use opendlp and strat
+select on it": the questions and respondents come from the "Beanocracy" game and
+are set in a fictional country, Sortonia. The tabs carry the names a Google
+Sheet data source reads by default (`adapters/orm.py`: `Respondents` and
+`Categories` for a selection; `Remaining`, `Replacement Categories` and
+`Selected` for replacements).
+
+| Tab | Size | Header row | Used for the examples |
+| --- | --- | --- | --- |
+| README | 7 lines of notes | — | no |
+| Respondents | 100 rows, 16 columns | `unique_id,first_name,last_name,age_bucket,economic_stability,gender,age,ethnicity,address_line_1,province,town,education,money_fairness,env_daily_life,belong_shared_space,education_next_gen` | the people file, unchanged |
+| Selected | empty | — | no |
+| Categories | 18 rows, 7 columns | `category,name,suggest min,suggest max,Current #,min,max`, the middle three empty | the targets file |
+| Replacement Categories | empty | — | no |
+| Remaining | empty | — | no |
+| Specification | one row | `Number of participants`, 30 | the number to select |
+| Question Details | 16 rows, 4 columns | `Category,Key Question,Answer,Attitude Match` | no; the wording behind the four opinion columns' codes |
+
+- The Respondents and Categories tabs are, cell for cell, the monitoring
+  fixtures `docs/fixtures/monitoring/respondents.csv` and `categories.csv`,
+  whose README gives the same settings: 30 to select, `unique_id` as the ID
+  column. Written as CSV, the Respondents tab is that fixture byte for byte.
+- No tab holds an email address, a phone number, a postcode or a web address.
+  The provinces (Artesa, Harborview, Ironhold, Nexor, Verdelands), the towns and
+  the six ethnicities (Agrican, Artis, Forian and three more) are invented, and
+  seven street lines each recur for two people with different
+  surnames in different towns. One cell is blank: `education_next_gen` for
+  `unique_id` 45.
+- The two tabs agree: every target value occurs among the respondents and every
+  respondent value of a target column is a target value. Against 30, the mins
+  and maxes sum to 26–33 for gender, 24–37 for ethnicity, 28–38 for province and
+  27–37 for education, and every value has at least its min among the 100
+  people, with room to spare: the smallest groups are Forian (3 people, min 0),
+  Mixed Ethnic (5, min 1) and Non-binary (8, min 0).
+- The midpoints sum to 29.5, 30.5, 33 and 32, not 30, which is why the example
+  targets carry a percentage column (point 6 above, and the plan).
 
 ## How static files reach the browser
 
