@@ -1,9 +1,11 @@
 # ABOUTME: Component tests for accepting the algorithm's recommended target changes (sc-281)
 # ABOUTME: Covers the accept-suggestions route (one/all, comment, re-run gating) and the failure-view link
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from sortition_algorithms.errors import InfeasibleQuotasError, SelectionError
@@ -524,6 +526,32 @@ class TestEditModeEntry:
         assert html.count(f'aria-describedby="{message_id}"') == 3
         assert 'role="status"' in html
 
+    def test_edit_targets_on_the_check_stays_on_the_check(self, logged_in_admin, fake_store, assembly_with_targets):
+        """Into the form with the run it came from, so the suggestions and re-run survive."""
+        run_id = _run(fake_store, assembly_with_targets)
+        response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={run_id}")
+
+        html = response.data.decode()
+        edit_href = re.search(r'<a href="([^"]*)"(?:(?!</a>).)*Edit targets', html, re.DOTALL).group(1)
+        url = urlsplit(edit_href.replace("&amp;", "&"))
+        assert url.path == self._check_url(assembly_with_targets)
+        assert parse_qs(url.query) == {"from": ["selection"], "run_id": [str(run_id)], "edit": ["1"]}
+
+    def test_add_target_on_the_check_stays_on_the_check(self, logged_in_admin, fake_store, assembly_with_targets):
+        run_id = _run(fake_store, assembly_with_targets)
+        response = self._get(logged_in_admin, assembly_with_targets, f"?from=selection&run_id={run_id}")
+
+        html = response.data.decode()
+        add_href = re.search(r'<a href="([^"]*)"[^>]*>(?:(?!</a>).)*Add target', html, re.DOTALL).group(1)
+        url = urlsplit(add_href.replace("&amp;", "&"))
+        assert url.path == self._check_url(assembly_with_targets)
+        assert parse_qs(url.query) == {
+            "from": ["selection"],
+            "run_id": [str(run_id)],
+            "edit": ["1"],
+            "add": ["1"],
+        }
+
     def test_without_the_edit_flag_the_page_opens_read_only(self, logged_in_admin, fake_store, assembly_with_targets):
         response = self._get(
             logged_in_admin, assembly_with_targets, f"?from=selection&run_id={_run(fake_store, assembly_with_targets)}"
@@ -850,3 +878,48 @@ class TestFailureViewLink:
 
         assert response.status_code == 200
         assert b"Adjust targets" not in response.data
+
+
+class TestCheckPageWarnings:
+    """A check that could not be run is a warning, and the targets are not called ready."""
+
+    def _check_url(self, assembly_id):
+        return f"/backoffice/project/{assembly_id}/targets/check"
+
+    def test_no_respondents_warns_instead_of_failing(self, logged_in_admin, assembly_with_targets):
+        response = logged_in_admin.get(self._check_url(assembly_with_targets))
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "There are no respondents in the pool yet" in html
+        assert "No eligible respondents found" not in html
+        assert "Target check found problems" not in html
+        assert "All checks passed" not in html
+
+    def test_a_warning_replaces_all_checks_passed(self, logged_in_admin, assembly_with_targets):
+        check = DetailedCheckResult(success=True, global_errors=[], global_warnings=["Pool too small to check"])
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.get(self._check_url(assembly_with_targets))
+
+        html = response.data.decode()
+        assert "Pool too small to check" in html
+        assert "All checks passed" not in html
+
+    def test_a_warning_shows_beside_the_problems(self, logged_in_admin, assembly_with_targets):
+        check = DetailedCheckResult(
+            success=False, global_errors=["Something is wrong"], global_warnings=["Pool too small to check"]
+        )
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.get(self._check_url(assembly_with_targets))
+
+        html = response.data.decode()
+        assert "Pool too small to check" in html
+        assert "Something is wrong" in html
+        assert "Target check found problems" in html
+
+    def test_no_warning_keeps_all_checks_passed(self, logged_in_admin, assembly_with_targets):
+        check = DetailedCheckResult(success=True, global_errors=[], num_features=1, num_people=20)
+        with patch(CHECK, return_value=check):
+            response = logged_in_admin.get(self._check_url(assembly_with_targets))
+
+        assert "All checks passed" in response.data.decode()

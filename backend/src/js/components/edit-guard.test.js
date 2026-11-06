@@ -10,7 +10,11 @@ let realLocation;
 beforeEach(() => {
   realLocation = window.location;
   delete window.location;
-  window.location = { assign: vi.fn(), href: "https://example.org/edit" };
+  window.location = {
+    assign: vi.fn(),
+    replace: vi.fn(),
+    href: "https://example.org/edit",
+  };
   document.body.innerHTML = "";
 });
 
@@ -156,7 +160,28 @@ describe("the discard dialog", () => {
     state.discardAndLeave();
 
     expect(window.location.assign).toHaveBeenCalledWith("/elsewhere");
+    expect(window.location.replace).not.toHaveBeenCalled();
     expect(state.wouldLoseEdits()).toBe(false);
+  });
+
+  it("replaces this page in the history on discard when asked to", () => {
+    const state = guard();
+    state.markEditDirty();
+    state.openLeaveModal("/view", true);
+    state.discardAndLeave();
+
+    expect(window.location.replace).toHaveBeenCalledWith("/view");
+    expect(window.location.assign).not.toHaveBeenCalled();
+  });
+
+  it("forgets it was asked to replace once closed", () => {
+    const state = guard();
+    state.openLeaveModal("/view", true);
+    state.closeLeaveModal();
+    state.openLeaveModal("/elsewhere");
+    state.discardAndLeave();
+
+    expect(window.location.assign).toHaveBeenCalledWith("/elsewhere");
   });
 
   it("does nothing without a destination", () => {

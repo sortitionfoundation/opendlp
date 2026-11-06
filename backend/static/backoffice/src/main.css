@@ -424,6 +424,13 @@
         color: var(--color-error-600);
     }
 
+    /* A line between groups of menu items. Give it role="separator" in a
+       role="menu" - menu-button.js moves only between the menuitems. */
+    .menu-separator {
+        margin: 0.25rem 0;
+        border-top: 1px solid var(--color-borders-dividers);
+    }
+
     /* Icon wrapper inside buttons — used by leading_icon/trailing_icon/icon
        slots on the button macro. Not to be confused with .btn--icon (variant). */
     .btn-icon {
@@ -1237,6 +1244,8 @@
          modal dialog (.dialog-positioner) .... 50
          backdrop of a dialog over a takeover . 51  (see .dialog-panel--takeover below)
          dialog over a takeover panel ......... 52
+         backdrop of a dialog over a dialog ... 53  (see .dialog-stacked below)
+         dialog over a dialog ................. 54
          flash alerts over a takeover panel ... 55
          registration editor toast ............ 55  (.takeover-toast)
        ======================================== */
@@ -1446,6 +1455,26 @@
         z-index: 52;
     }
 
+    /* A dialog opened over another dialog - the link dialog, "Discard changes?" -
+       lifts above it, so its backdrop dims the dialog underneath as well as the
+       page. Within one host both would otherwise share a layer, putting this
+       backdrop beneath the other dialog's panel. The second selector of each
+       pair is as specific as the host rules above, and overrides them by coming
+       later. See the z-index stack. */
+    .dialog-stacked > .dialog-backdrop,
+    body:has(.dialog-panel--takeover) .dialog-stacked > .dialog-backdrop {
+        z-index: 53;
+    }
+
+    .dialog-stacked > .dialog-positioner,
+    body:has(.dialog-panel--takeover) .dialog-stacked > .dialog-positioner {
+        z-index: 54;
+    }
+
+    body:has(.dialog-stacked) #floating-alerts {
+        z-index: 55;
+    }
+
     /* The registration editor's toast reports on what its dialogs did ("Copied"),
        so it shows above them, level with the flash alerts. */
     .takeover-toast {
@@ -1530,6 +1559,37 @@
 }
 
 /*
+ * A page's own heading and actions, kept in view under the sticky header as
+ * the page scrolls - the targets page's title, "Add target" and "Edit targets".
+ * `top` is set by the stickyBelowHeader component, from the header's height.
+ * The page background makes it opaque, so what scrolls under it is hidden.
+ * Once stuck it gets a dividing line, so it reads as part of the header and
+ * not as content that has stopped scrolling; browsers without scroll-state
+ * queries keep it without the line.
+ */
+@layer components {
+    .sticky-below-header {
+        position: sticky;
+        top: 0;
+        z-index: 30; /* under the header (z-40) and the modal layer */
+        container-type: scroll-state;
+        /* Up by the padding below, so in flow it sits where it would without. */
+        margin-top: -0.75rem;
+    }
+
+    .sticky-below-header > * {
+        background-color: var(--color-bg-secondary);
+        padding-block: 0.75rem;
+    }
+
+    @container scroll-state(stuck: top) {
+        .sticky-below-header > * {
+            border-bottom: 1px solid var(--color-borders-dividers);
+        }
+    }
+}
+
+/*
  * The stuck footer's breakout margins are computed from 100vw, which includes
  * the scrollbar gutter on platforms with classic scrollbars — that would add a
  * few pixels of horizontal overflow. clip (unlike hidden) does not create a
@@ -1555,7 +1615,8 @@ body {
         text-decoration: line-through;
     }
 
-    .is-pending-delete input {
+    .is-pending-delete input,
+    .is-pending-delete textarea {
         text-decoration: line-through;
     }
 
@@ -1918,5 +1979,55 @@ body {
 
     .gsheet-access.htmx-request .gsheet-access__result {
         display: none;
+    }
+}
+
+/* ========================================
+   INFO TOGGLETIP
+   ======================================== */
+
+/*
+ * The info_icon macro: a circled-i button and the bubble it shows. The bubble
+ * is a popover, so it sits in the top layer and a card's overflow:hidden does
+ * not clip it; src/js/components/info-toggletip.js places it next to the icon.
+ * The UA stylesheet hides a popover until it is shown, so nothing here sets
+ * `display` on the bubble.
+ */
+@layer components {
+    .info-toggletip {
+        display: inline-flex;
+        flex-shrink: 0;
+        vertical-align: middle;
+    }
+
+    .info-toggletip__button {
+        display: inline-flex;
+        padding: 0;
+        border: 0;
+        border-radius: 9999px;
+        background: none;
+        color: var(--color-secondary-text);
+        cursor: pointer;
+    }
+
+    .info-toggletip__button:hover {
+        color: var(--color-headings);
+    }
+
+    .info-toggletip__bubble {
+        position: fixed;
+        inset: auto;
+        margin: 0;
+        max-width: min(20rem, calc(100vw - 1rem));
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        font-weight: 400;
+        text-align: left;
+        text-transform: none;
+        white-space: normal;
+        color: var(--color-body-text);
+        background-color: var(--color-tables-cards);
     }
 }

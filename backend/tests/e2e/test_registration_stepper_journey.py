@@ -20,6 +20,7 @@ from opendlp.service_layer.assembly_service import create_assembly, update_assem
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
 from opendlp.service_layer.registration_page_service import page_for_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.fakes import FakeEmailAdapter
 
 
 @pytest.fixture(autouse=True)
@@ -238,11 +239,7 @@ def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_sessi
     assert "bogus_name" in text
 
     # The adapter declining the send surfaces as an error flash.
-    class RefusingAdapter:
-        def send_email(self, **kwargs):
-            return False
-
-    monkeypatch.setattr(bootstrap, "get_email_adapter", lambda: RefusingAdapter())
+    monkeypatch.setattr(bootstrap, "get_email_adapter", lambda: FakeEmailAdapter(succeed=False))
     text = logged_in_admin.post(send_test_url, data=data, follow_redirects=True).get_data(as_text=True)
     assert "The test email could not be sent" in text
     monkeypatch.undo()

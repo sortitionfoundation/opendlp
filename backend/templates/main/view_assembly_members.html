@@ -74,7 +74,8 @@
                     <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ add_user_form.role.label }}</legend>
                     {% if add_user_form.role.description %}<div class="govuk-hint">{{ add_user_form.role.description }}</div>{% endif %}
                     <div class="govuk-radios" data-module="govuk-radios">
-                        {% for value, label in add_user_form.role.choices %}
+                        {% for choice in add_user_form.role.choices %}
+                            {% set value, label = choice.value, choice.label %}
                             <div class="govuk-radios__item">
                                 <input class="govuk-radios__input"
                                        id="role_{{ loop.index }}"

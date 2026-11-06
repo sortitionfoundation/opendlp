@@ -12,7 +12,7 @@ from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 from .config import PLAYWRIGHT_TIMEOUT, Urls
-from .helpers import assert_step_dialog_dimmed
+from .helpers import assert_dialog_dimmed_by_stacked_dialog, assert_step_dialog_dimmed
 
 scenarios("../../features/respondent-field-schema.feature")
 
@@ -203,6 +203,16 @@ def press_block_link_button(admin_logged_in_page: Page) -> None:
     ).click()
 
 
+@when(parsers.parse('I type the heading "{heading}"'))
+def type_block_heading(admin_logged_in_page: Page, heading: str) -> None:
+    _field_dialog(admin_logged_in_page).locator("#block-modal-heading").fill(heading)
+
+
+@when("I press Cancel in the heading or text dialog")
+def press_block_cancel(admin_logged_in_page: Page) -> None:
+    _field_dialog(admin_logged_in_page).get_by_role("button", name="Cancel", exact=True).click()
+
+
 @when(parsers.parse('I apply the link address "{href}"'))
 def apply_block_link_address(admin_logged_in_page: Page, href: str) -> None:
     page = admin_logged_in_page
@@ -276,6 +286,20 @@ def edit_modal_open(admin_logged_in_page: Page, label: str) -> None:
     dialog = _field_dialog(admin_logged_in_page)
     expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     expect(dialog.locator('input[name="label"]')).to_have_value(label, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("I should be asked whether to discard my changes")
+def asked_to_discard(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.get_by_role("alertdialog", name="Discard changes?")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@then("the heading or text dialog should be dimmed behind the dialog over it")
+def block_dialog_is_dimmed(admin_logged_in_page: Page) -> None:
+    # Found by its title: the link dialog is a dialog in the same container
+    panel = admin_logged_in_page.locator("#field-modal-container [aria-labelledby='block-modal-title'] .dialog-panel")
+    assert_dialog_dimmed_by_stacked_dialog(admin_logged_in_page, panel)
 
 
 @then("the question list behind the edit modal should be dimmed")

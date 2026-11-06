@@ -1439,10 +1439,14 @@ def not_see_text_on_page(page: Page, text: str):
 
 @then(parsers.parse('I should see "{text}" after searching'))
 def see_text_after_searching(page: Page, text: str):
-    """Verify specific text is visible after searching."""
-    # Wait for search results to load
-    page.wait_for_timeout(500)
-    expect(page.locator("body")).to_contain_text(text)
+    """Verify the search dropdown announced the text after searching.
+
+    Checks the search's own live region, which holds the outcome of the last
+    search. The page body is no use: the template always carries a hidden
+    "No results found" element, so the body contains that text whatever the
+    search found. No sleep: expect() retries until the announcement arrives.
+    """
+    expect(page.locator('.sr-only[aria-live="polite"]')).to_have_text(text)
 
 
 @when(parsers.parse('I try to access the assembly details page for "{title}"'))
@@ -1725,7 +1729,7 @@ def click_edit_number_to_select(page: Page):
     edit_link = (
         page
         .locator("a[href*='edit_number=1'], a:has-text('Edit')")
-        .filter(has=page.locator(":scope").locator("xpath=./ancestor::*[contains(., 'Number to Select')]"))
+        .filter(has=page.locator(":scope").locator("xpath=./ancestor::*[contains(., 'Panel size')]"))
         .first
     )
     if edit_link.count() == 0:
@@ -1948,6 +1952,17 @@ def create_test_assembly_by_organiser(title: str, organiser_user, test_database)
     with SqlAlchemyUnitOfWork(test_database) as uow:
         assembly = create_assembly(uow=uow, title=title, created_by_user_id=organiser_user.id)
     _assembly_name_id_cache.add_existing(title, assembly)
+
+
+@given(parsers.parse('there is a user "{email}"'))
+def there_is_a_user(email: str, normal_user):
+    """Make sure the standard normal user exists.
+
+    `normal_user` is session scoped and only made when a scenario asks for it,
+    so a scenario that searches for that account must say so, or it passes or
+    fails depending on which scenarios ran before it.
+    """
+    assert email == normal_user.email, f"only the standard normal user is available, not {email}"
 
 
 @when(parsers.parse('I create an assembly called "{title}"'))
@@ -2562,17 +2577,15 @@ def email_html_view_contains(page: Page, html: str):
 
 @when(parsers.parse('I set replies to go to "{name}" at "{email}"'))
 def set_replies_go_to(page: Page, name: str, email: str):
-    replies = page.get_by_role("group", name="Reply-to")
-    replies.get_by_label("Name", exact=True).fill(name)
-    replies.get_by_label("Email address", exact=True).fill(email)
+    page.get_by_label("Reply-to name", exact=True).fill(name)
+    page.get_by_label("Reply-to email address", exact=True).fill(email)
 
 
 @then(parsers.parse('replies should go to "{name}" at "{email}"'))
 def replies_go_to(page: Page, name: str, email: str):
-    replies = page.get_by_role("group", name="Reply-to")
-    expect(replies.get_by_label("Name", exact=True)).to_have_value(name, timeout=PLAYWRIGHT_TIMEOUT)
-    expect(replies.get_by_label("Email address", exact=True)).to_have_value(email)
-    expect(replies.get_by_label("Email address", exact=True)).to_have_attribute("readonly", "")
+    expect(page.get_by_label("Reply-to name", exact=True)).to_have_value(name, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.get_by_label("Reply-to email address", exact=True)).to_have_value(email)
+    expect(page.get_by_label("Reply-to email address", exact=True)).to_have_attribute("readonly", "")
 
 
 @then(parsers.parse('the formatting toolbar should offer "{name}"'))

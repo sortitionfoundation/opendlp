@@ -16,7 +16,7 @@ from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 from .config import PLAYWRIGHT_TIMEOUT, Urls
-from .helpers import assert_step_dialog_dimmed
+from .helpers import assert_dialog_dimmed_by_stacked_dialog, assert_step_dialog_dimmed
 
 scenarios("../../features/target-data-sources.feature")
 
@@ -425,6 +425,13 @@ def asked_to_discard(admin_logged_in_page: Page) -> None:
         timeout=PLAYWRIGHT_TIMEOUT
     )
     expect(_setup_dialog(admin_logged_in_page)).to_be_visible()
+
+
+@then("the set-up dialog should be dimmed behind the dialog over it")
+def setup_dialog_is_dimmed(admin_logged_in_page: Page) -> None:
+    assert_dialog_dimmed_by_stacked_dialog(
+        admin_logged_in_page, _setup_dialog(admin_logged_in_page).locator(".dialog-panel")
+    )
 
 
 @then(parsers.parse('the set-up dialog should still have the "{method}" method chosen'))

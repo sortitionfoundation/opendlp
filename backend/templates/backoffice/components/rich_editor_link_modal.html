@@ -6,12 +6,14 @@ ABOUTME: Include inside an Alpine scope that carries the richEditorLinkDialog sl
 {% from "backoffice/components/modal.html" import controlled_modal %}
 {% from "backoffice/registration/_assets.html" import inline_error %}
 {# Link — opened by the visual editor's Link button or Ctrl/Cmd-K, through the
-   rich-editor-link-request event; the answer goes back as rich-editor-link-result. #}
+   rich-editor-link-request event; the answer goes back as rich-editor-link-result.
+   Stacked, as the editor it serves may itself be in a dialog. #}
 {% call controlled_modal(id="link-modal",
 title=_("Link"),
 open_expr="linkDialogOpen",
 close_expr="cancelLink()",
-panel_classes="max-w-lg") %}
+panel_classes="max-w-lg",
+stacked=true) %}
 <div class="dialog-body">
     <div class="space-y-4">
         <p x-show="linkText"

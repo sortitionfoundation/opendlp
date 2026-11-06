@@ -119,5 +119,6 @@
     --color-error-background: var(--color-error-100);
     --color-error-text: var(--color-error-600);
     --color-info-background: var(--color-info-100);
+    --color-info-border: var(--color-info-400);
     --color-info-text: var(--color-info-600);
 }

@@ -177,8 +177,10 @@ can disagree deliberately.
 `comment` is the organiser's free-text note on the value, empty when none was
 written. On a category, `comment` plays the same role and `source_url` records
 where the figures came from — a census table, say. Both are notes for people, not
-data to generate from. `source_url` is empty or a full `http://`/`https://`
-address; nothing else is stored.
+data to generate from. `source_url` is free text, empty when none was given: a
+link to a report, a sentence with a link in it, or a note such as "from the
+council by email". It is not guaranteed to be a URL, so never put it in an
+`href` as it stands.
 
 **The join is exact.** A category is attached to the field whose `field_key`
 equals its `name` character for character. This mirrors selection: the data

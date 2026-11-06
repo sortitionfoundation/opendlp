@@ -127,7 +127,8 @@ ABOUTME: Displays team members table, with add/remove for anyone who can manage 
                     {# Role Selection Radio Buttons #}
                     <div class="mb-6">
                         {% set role_options = [] %}
-                        {% for value, label in add_user_form.role.choices %}
+                        {% for choice in add_user_form.role.choices %}
+                            {% set value, label = choice.value, choice.label %}
                             {% set _ = role_options.append({"value": value, "label": label}) %}
                         {% endfor %}
                         {% set selected_role = add_user_form.role.data.name if add_user_form.role.data else "" %}

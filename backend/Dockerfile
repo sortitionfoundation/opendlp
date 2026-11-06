@@ -3,7 +3,7 @@
 # A named stage, rather than `COPY --from=<image>`, so that Dependabot can see
 # and bump the version. Keep `uv-version` in .github/actions/setup-env/action.yml
 # in step with it - Dependabot cannot bump that one.
-FROM ghcr.io/astral-sh/uv:0.13.6 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.7 AS uv
 
 FROM ubuntu:resolute AS build
 
@@ -173,7 +173,7 @@ apt-get install -qyy \
 apt-get upgrade -qyy \
   -o APT::Install-Recommends=false \
   -o APT::Install-Suggests=false \
-  coreutils
+  coreutils apt
 
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

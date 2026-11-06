@@ -125,6 +125,15 @@ def test_build_context_shape() -> None:
     assert context["respondent"] is respondent
 
 
+def test_build_context_offers_the_reply_to_email() -> None:
+    context = build_context(AssemblyContext(), RespondentContext(), reply_to_email="team@example.com")
+    assert context["reply_to_email"] == "team@example.com"
+
+
+def test_build_context_reply_to_email_defaults_to_empty() -> None:
+    assert build_context(AssemblyContext(), RespondentContext())["reply_to_email"] == ""
+
+
 def test_project_is_the_same_object_as_assembly() -> None:
     """Saved emails say assembly; the editor now offers project. Both must work."""
     assembly = AssemblyContext(title="A")

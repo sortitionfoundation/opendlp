@@ -26,6 +26,7 @@ from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.edit_respondent_form import (
     ATTR_FIELD_PREFIX,
     build_edit_respondent_form,
+    build_error_summary,
     radio_or_none_to_bool,
     radio_to_bool,
 )
@@ -1028,16 +1029,22 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
 
         form, warnings = build_edit_respondent_form(schema, respondent)
 
-        if request.method == "POST" and form.validate_on_submit():
-            response = _edit_respondent_post(form, schema, assembly_id, respondent_id)
-            if response is not None:
-                return response
+        status_code = 200
+        if request.method == "POST":
+            if form.validate_on_submit():
+                response = _edit_respondent_post(form, schema, assembly_id, respondent_id)
+                if response is not None:
+                    return response
+            # Reaching here means the save didn't happen
+            status_code = 422
 
         for warning in warnings:
             flash(warning, "warning")
 
         # Derived fields stay in the sections: the form builder creates no input
         # for them, and the template shows a will-be-recalculated note instead.
+        fields_in_display_order = [field for section in ordered_sections for field in section.fields]
+        error_summary = build_error_summary(form, fields_in_display_order)
 
         allowed_transitions = [
             s.value for s in ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
@@ -1051,7 +1058,8 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             ordered_sections=ordered_sections,
             attr_prefix=ATTR_FIELD_PREFIX,
             allowed_transitions=allowed_transitions,
-        ), 200
+            error_summary=error_summary,
+        ), status_code
     except RespondentNotFoundError:
         flash(_("Respondent not found"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))

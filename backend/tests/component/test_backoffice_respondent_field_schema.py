@@ -205,6 +205,22 @@ class TestQuestionsList:
         assert ">Add a question below<" in menu
         assert ">Add a heading or text below<" in menu
 
+    def test_the_row_menu_draws_a_line_between_moves_adds_and_remove(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        menu = rows["custom_notes"][rows["custom_notes"].index('role="menu"') :]
+        separators = [m.start() for m in re.finditer('<div role="separator" class="menu-separator"></div>', menu)]
+        assert len(separators) == 2
+        assert menu.rindex(">Move ") < separators[0] < menu.index(">Add a question below<")
+        assert menu.index(">Add a heading or text below<") < separators[1] < menu.index(">Remove</button>")
+        # A question that can't be removed has no line below its adds
+        email_menu = rows["email"][rows["email"].index('role="menu"') :]
+        assert email_menu.count('role="separator"') == 1
+
     def test_moves_are_in_the_row_menu_and_only_where_they_can_go(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

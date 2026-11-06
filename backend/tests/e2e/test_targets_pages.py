@@ -8,6 +8,7 @@ import pytest
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
+from opendlp.domain.targets import MAX_SOURCE_URL_LENGTH
 from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_service import (
     add_target_value,
@@ -57,7 +58,7 @@ class TestViewTargetsPage:
         assert b"Gender" in response.data
         assert b"Male" in response.data
         assert b"Female" in response.data
-        assert b"Number to select:" in response.data
+        assert b"Panel size:" in response.data
 
 
 class TestUploadTargetsCsv:
@@ -416,7 +417,7 @@ class TestSaveAll:
             data={
                 "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
                 f"{prefix}[name]": "Gender",
-                f"{prefix}[source_url]": "javascript:alert(1)",
+                f"{prefix}[source_url]": "x" * (MAX_SOURCE_URL_LENGTH + 1),
                 f"{prefix}[values][{male_id}][value]": "Male",
                 f"{prefix}[values][{male_id}][min]": "9",
                 f"{prefix}[values][{male_id}][max]": "2",
@@ -430,7 +431,7 @@ class TestSaveAll:
         assert html.count("Max must be at least the min") == 2
         # The message the form shows, not the domain's own - that one is written
         # for a developer and never passes through gettext.
-        assert "Enter a full http:// or https:// address" in html
+        assert f"Source must be {MAX_SOURCE_URL_LENGTH} characters or fewer" in html
 
     def test_saving_runs_the_detailed_check(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
@@ -463,7 +464,7 @@ class TestSaveAll:
         # The percentages come to 30, so the check's warning is on the page.
         assert b"add up to" in landed.data
 
-    def test_an_invalid_source_url_is_a_flash_not_a_500(
+    def test_an_over_long_source_is_a_flash_not_a_500(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -474,7 +475,7 @@ class TestSaveAll:
             data={
                 "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
                 f"cat[{category.id}][name]": "Gender",
-                f"cat[{category.id}][source_url]": "javascript:alert(1)",
+                f"cat[{category.id}][source_url]": "x" * (MAX_SOURCE_URL_LENGTH + 1),
             },
             follow_redirects=True,
         )

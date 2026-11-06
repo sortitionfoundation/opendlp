@@ -1,0 +1,11 @@
+{#
+ABOUTME: One key/value row of a details list on the profile pages, as on the project details page
+ABOUTME: The caller supplies the <dd>s - the value, and optionally a trailing action
+#}
+{% macro detail_row(term) %}
+    <div class="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-3 border-b last:border-b-0"
+         style="border-color: var(--color-borders-dividers);">
+        <dt class="text-label-lg sm:w-48 shrink-0" style="color: var(--color-secondary-text);">{{ term }}</dt>
+        {{ caller() }}
+    </div>
+{% endmacro %}

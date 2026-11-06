@@ -300,6 +300,21 @@ just install-dev
 - Service layer integration for creating test data (invites, users)
 - Playwright for browser automation with cross-browser support
 
+### Open dialogs are checked after every step
+
+`pytest_bdd_after_step` in `tests/bdd/conftest.py` runs
+`assert_only_the_top_dialog_is_undimmed` (`tests/bdd/helpers.py`) after every
+step of a scenario that uses a `page`. With two or more dialogs open, it probes
+the top-left corner of each one's panel. Only the topmost may have its own
+panel there - every other one must be under a backdrop. A failure names the
+dialogs, and usually means a dialog that opens over another one is missing
+`stacked=true` (see "Dialogs Over Dialogs" in
+`docs/agent/frontend_design_system.md`).
+
+So any scenario that opens one dialog over another tests the stacking without
+asking to. A step that leaves a navigation in flight skips the check, as there
+is no page left to probe.
+
 ### Key BDD Fixtures
 
 - `test_database` - PostgreSQL test database setup

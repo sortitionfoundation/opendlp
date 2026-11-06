@@ -147,3 +147,68 @@ class Test2FAManagement:
         assert response.status_code == 200 or (
             response.status_code == 302 and "backup-codes" in response.headers["Location"]
         )
+
+
+class Test2FAPagesOnTheBackofficeDesign:
+    """The 2FA pages left GOV.UK Frontend for the backoffice layout (sc-869)."""
+
+    def test_setup_page_keeps_what_the_scripts_and_the_enable_route_read(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile/2fa/setup")
+
+        assert response.status_code == 200
+        assert b"govuk-" not in response.data
+        assert b"backoffice/dist/main.css" in response.data
+        assert b"Step 1: Scan QR code" in response.data
+        assert b"Step 2: Save backup codes" in response.data
+        assert b"Step 3: Verify setup" in response.data
+        # The download handler reads the codes out of this element
+        assert b'id="backup-codes"' in response.data
+        assert b"data-download-backup-codes" in response.data
+        assert b"data-print" in response.data
+        # The verification form
+        assert b'action="/profile/2fa/enable"' in response.data
+        assert b'name="totp_code"' in response.data
+        assert b'autocomplete="one-time-code"' in response.data
+        assert b'pattern="[0-9]{6}"' in response.data
+
+    def test_settings_page_offers_regenerate_and_disable_once_enabled(
+        self, client: FlaskClient, fake_store: FakeStore, user_with_2fa: dict
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user = uow.users.get(user_with_2fa["id"]).create_detached_copy()
+        _login_session(client, user)
+
+        response = client.get("/profile/2fa")
+
+        assert response.status_code == 200
+        assert b"govuk-" not in response.data
+        assert b"Enabled" in response.data
+        assert b"Current status" in response.data
+        assert b"Manage two-factor authentication" in response.data
+        assert b"Backup codes remaining" in response.data
+        assert b'action="/profile/2fa/backup-codes/regenerate"' in response.data
+        assert b'action="/profile/2fa/disable"' in response.data
+        assert b"data-confirm=" in response.data
+        # Both forms take a code, under different ids so the labels stay unambiguous
+        assert response.data.count(b'name="totp_code"') == 2
+        assert b'id="totp_code_disable"' in response.data
+        assert response.data.count(b'autocomplete="one-time-code"') == 2
+
+    def test_regenerated_codes_page_lists_the_codes_for_download(
+        self, client: FlaskClient, fake_store: FakeStore, user_with_2fa: dict
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user = uow.users.get(user_with_2fa["id"]).create_detached_copy()
+        _login_session(client, user)
+
+        valid_code = pyotp.TOTP(user_with_2fa["totp_secret"]).now()
+        response = client.post("/profile/2fa/backup-codes/regenerate", data={"totp_code": valid_code})
+
+        assert response.status_code == 200
+        assert b"govuk-" not in response.data
+        assert b"New backup codes" in response.data
+        assert b"Your backup codes have been regenerated" in response.data
+        assert b'id="backup-codes"' in response.data
+        assert b"data-download-backup-codes" in response.data
+        assert b"data-print" in response.data
+        assert b'href="/profile/2fa"' in response.data

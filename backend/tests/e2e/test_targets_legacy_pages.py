@@ -686,6 +686,39 @@ class TestCheckTargets:
         # Should have inline error annotation for "female"
         assert b"respondents match" in response.data
 
+    def test_check_with_too_few_respondents_warns_instead_of_passing(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        csv_content = "feature,value,min,max\nGender,Male,1,7\nGender,Female,1,7\n"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            import_targets_from_csv(
+                uow=uow, user_id=admin_user.id, assembly_id=existing_assembly.id, csv_content=csv_content
+            )
+
+        # 4 in the pool, 10 to select
+        _add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [(f"p{i}", {"Gender": "Male" if i % 2 == 0 else "Female"}) for i in range(4)],
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = uow.assemblies.get(existing_assembly.id)
+            assembly.number_to_select = 10
+            assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+            assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
+            uow.commit()
+
+        response = logged_in_admin.post(
+            f"/assemblies/{existing_assembly.id}/targets/check",
+            data={"csrf_token": get_csrf_token(logged_in_admin, f"/assemblies/{existing_assembly.id}/targets")},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"There are only 4 respondents in the pool, fewer than the 10 to select" in response.data
+        assert b"All checks passed" not in response.data
+        assert b"Target check found problems" not in response.data
+
     def test_check_requires_login(self, client, existing_assembly):
         response = client.post(f"/assemblies/{existing_assembly.id}/targets/check")
         assert response.status_code == 302

@@ -1,7 +1,7 @@
 // ABOUTME: Unit tests for the targetsPage Alpine component
 // ABOUTME: Covers the add-target dialog and cloning a category from the blank block template
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { targetsPage } from "./targets-page.js";
 
@@ -52,9 +52,23 @@ function existingBlock(id, sortOrder) {
   return `<div id="bulk-category-${id}"><input type="hidden" data-sort-order="true" name="cat[${id}][sort_order]" value="${sortOrder}" /></div>`;
 }
 
+let realLocation;
+
 beforeEach(() => {
+  realLocation = window.location;
+  delete window.location;
+  window.location = {
+    assign: vi.fn(),
+    replace: vi.fn(),
+    href: "https://example.org/targets?edit=1",
+  };
   document.body.innerHTML = "";
   Element.prototype.scrollIntoView = vi.fn();
+});
+
+afterEach(() => {
+  window.location = realLocation;
+  vi.restoreAllMocks();
 });
 
 describe("targetsPage", () => {
@@ -102,14 +116,13 @@ describe("targetsPage", () => {
       expect(state.$refs.categories.children.length).toBe(0);
     });
 
-    it("closes, switches to the edit form and clears the name", () => {
-      const state = pageState();
+    it("closes and clears the name", () => {
+      const state = pageState("", { editingAll: true });
       state.addTargetOpen = true;
       state.newCategoryName = "Age";
       state.confirmAddTarget();
 
       expect(state.addTargetOpen).toBe(false);
-      expect(state.editingAll).toBe(true);
       expect(state.newCategoryName).toBe("");
     });
 
@@ -231,8 +244,8 @@ describe("targetsPage", () => {
       ).toBe(true);
     });
 
-    it("counts a target added from the read-only view as an edit to lose", () => {
-      const state = pageState();
+    it("counts an added target as an edit to lose", () => {
+      const state = pageState("", { editingAll: true });
       state.newCategoryName = "Age";
       state.confirmAddTarget();
 
@@ -254,20 +267,57 @@ describe("targetsPage", () => {
       expect(pageState().editingAll).toBe(false);
     });
 
-    it("is the edit form when a rejected save says so", () => {
+    it("is the edit form when the server says so", () => {
       expect(pageState("", { editingAll: true }).editingAll).toBe(true);
+    });
+  });
+
+  describe("opening the add-target dialog as the page loads", () => {
+    const OPTIONS = { editingAll: true, addTargetOnLoad: true };
+
+    it("does not open it unless asked", () => {
+      const state = pageState("", { editingAll: true });
+      state.init();
+
+      expect(state.addTargetOpen).toBe(false);
+    });
+
+    it("opens it, focused on the name, when asked", () => {
+      window.location.href = "https://example.org/targets?edit=1&add=1";
+      vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
+      const state = pageState("", OPTIONS);
+      state.init();
+
+      expect(state.addTargetOpen).toBe(true);
+      expect(document.activeElement).toBe(state.$refs.newTargetName);
+    });
+
+    it("takes add=1 off the address bar, so a reload does not open it again", () => {
+      window.location.href = "https://example.org/targets?edit=1&add=1";
+      const replaceState = vi
+        .spyOn(window.history, "replaceState")
+        .mockImplementation(() => {});
+      pageState("", OPTIONS).init();
+
+      expect(replaceState).toHaveBeenCalledWith(
+        window.history.state,
+        "",
+        "https://example.org/targets?edit=1",
+      );
     });
   });
 
   describe("discarding the edits", () => {
     const OPTIONS = { editingAll: true, discardUrl: "/targets" };
 
-    it("just closes the form when there is nothing to lose", () => {
+    it("goes straight back to the read-only page when there is nothing to lose", () => {
       const state = pageState("", OPTIONS);
       state.discardEdits();
 
-      expect(state.editingAll).toBe(false);
       expect(state.leaveModalOpen).toBe(false);
+      // In place of the form in the history, so back does not return to it.
+      expect(window.location.replace).toHaveBeenCalledWith("/targets");
+      expect(window.location.assign).not.toHaveBeenCalled();
     });
 
     it("asks first when there are edits to lose", () => {
@@ -288,6 +338,16 @@ describe("targetsPage", () => {
       // The url the template passed in, not the one in the address bar: a
       // rejected save renders this page at the save-all POST url.
       expect(state.leaveUrl).toBe("/targets");
+    });
+
+    it("replaces the form in the history once the dialog agrees", () => {
+      const state = pageState("", OPTIONS);
+      state.markEditDirty();
+      state.discardEdits();
+      state.discardAndLeave();
+
+      expect(window.location.replace).toHaveBeenCalledWith("/targets");
+      expect(window.location.assign).not.toHaveBeenCalled();
     });
   });
 });

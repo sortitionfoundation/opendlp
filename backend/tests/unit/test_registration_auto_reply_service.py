@@ -27,7 +27,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.registration_submission_service import submit_registration
-from tests.fakes import FakeUnitOfWork
+from tests.fakes import FakeEmailAdapter, FakeUnitOfWork
 
 _SCHEMA = [
     ("email", FieldType.EMAIL, True, FieldOnRegistrationPage.YES_REQUIRED),
@@ -286,3 +286,77 @@ def test_test_submission_sends_auto_reply(uow) -> None:
     assert record is not None
     assert record.outcome is EmailSendOutcome.SENT
     adapter.send_email.assert_called_once()
+
+
+def _use_reply_to_email_in_body(uow) -> EmailTemplate:
+    template = uow.email_templates.get(_page(uow).auto_reply_email_template_id)
+    template.body_html = "<p>Write to {{ reply_to_email }}.</p>"
+    return template
+
+
+def _register_and_send(uow, slug: str, adapter: FakeEmailAdapter) -> None:
+    result = submit_registration(
+        uow,
+        url_slug=slug,
+        form_data={"email": "ada@example.com", "consent": "yes", "first_name": "Ada"},
+    )
+    send_registration_auto_reply(uow, adapter, respondent=result.respondent)
+
+
+def test_reply_to_email_is_the_templates_reply_to(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
+    _use_reply_to_email_in_body(uow).update(reply_to_name="Page Team", reply_to_email="page@example.com")
+    adapter = FakeEmailAdapter(sender="noreply@example.com")
+
+    _register_and_send(uow, slug, adapter)
+
+    assert "<p>Write to page@example.com.</p>" in adapter.sent[0]["html_body"]
+
+
+def test_reply_to_email_falls_back_to_the_projects_reply_to(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
+    _use_reply_to_email_in_body(uow)
+    adapter = FakeEmailAdapter(sender="noreply@example.com")
+
+    _register_and_send(uow, slug, adapter)
+
+    assert "<p>Write to team@example.com.</p>" in adapter.sent[0]["html_body"]
+
+
+def test_reply_to_email_falls_back_to_the_sending_address(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
+    _use_reply_to_email_in_body(uow)
+    assembly = next(a for a in uow.assemblies._items)
+    assembly.reply_to_email = ""
+    adapter = FakeEmailAdapter(sender="noreply@example.com")
+
+    _register_and_send(uow, slug, adapter)
+
+    sent = adapter.sent[0]
+    assert sent["reply_to"] is None
+    assert "<p>Write to noreply@example.com.</p>" in sent["html_body"]
+
+
+def test_test_send_reply_to_email_is_the_templates_reply_to(uow) -> None:
+    _build(uow, RegistrationPageStatus.TEST)
+    admin = _admin(uow)
+    _use_reply_to_email_in_body(uow).update(reply_to_email="page@example.com")
+    adapter = FakeEmailAdapter(sender="noreply@example.com")
+
+    result = send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=_page(uow).id, to_email="m@example.com")
+
+    assert result.missing_variables == []
+    assert "<p>Write to page@example.com.</p>" in adapter.sent[0]["html_body"]
+
+
+def test_test_send_reply_to_email_falls_back_to_the_sending_address(uow) -> None:
+    _build(uow, RegistrationPageStatus.TEST)
+    admin = _admin(uow)
+    _use_reply_to_email_in_body(uow)
+    assembly = next(a for a in uow.assemblies._items)
+    assembly.reply_to_email = ""
+    adapter = FakeEmailAdapter(sender="noreply@example.com")
+
+    send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=_page(uow).id, to_email="m@example.com")
+
+    assert "<p>Write to noreply@example.com.</p>" in adapter.sent[0]["html_body"]

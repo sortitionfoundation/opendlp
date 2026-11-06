@@ -51,6 +51,9 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                     <button type="submit" role="menuitem" tabindex="-1" class="menu-item">{{ direction_label }}</button>
                 </form>
             {% endfor %}
+            {# Lines between the groups - moves, adds, remove - drawn only where a
+               group sits on both sides of them #}
+            {% if move_directions %}<div role="separator" class="menu-separator"></div>{% endif %}
             <a href="{{ add_question_url }}"
                role="menuitem"
                tabindex="-1"
@@ -67,6 +70,7 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                hx-swap="innerHTML">{{ _("Add a heading or text below") }}</a>
             {# Last, and marked as destructive. Built-in questions can't be removed. #}
             {% if removable %}
+                <div role="separator" class="menu-separator"></div>
                 <form method="post"
                       role="none"
                       action="{{ delete_url }}"

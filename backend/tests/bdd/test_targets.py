@@ -1,8 +1,11 @@
 """ABOUTME: BDD tests for target percentages, hand-set notes, bulk edit and reordering
 ABOUTME: Exercises the full UI stack via Playwright for the paths covered by unit + e2e tests"""
 
+import csv
+import pathlib
 import re
 import uuid
+from io import StringIO
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -182,6 +185,25 @@ def open_targets_page(admin_logged_in_page: Page, title: str) -> None:
     admin_logged_in_page.goto(_targets_url(_target_assembly_ids[title]))
 
 
+@when(parsers.parse('I open the targets page for "{title}" in a short window'))
+def open_targets_page_short(admin_logged_in_page: Page, title: str) -> None:
+    """Short enough that two targets run off the bottom, so the page scrolls."""
+    admin_logged_in_page.set_viewport_size({"width": 1280, "height": 500})
+    admin_logged_in_page.goto(_targets_url(_target_assembly_ids[title]))
+
+
+@when("I scroll to the bottom of the page")
+def scroll_to_bottom(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    admin_logged_in_page.wait_for_function("window.scrollY > 0", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{name}" button should be in view'))
+def button_in_view(admin_logged_in_page: Page, name: str) -> None:
+    button = admin_logged_in_page.get_by_role("button", name=name, exact=True).filter(visible=True)
+    expect(button).to_be_in_viewport(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when(parsers.parse('I adjust the targets for "{title}" after a failed test selection'))
 def adjust_targets_after_failed_selection(admin_logged_in_page: Page, title: str, test_database) -> None:
     """Where "Adjust targets" on a failed test selection leads: the check, open in the editor."""
@@ -262,6 +284,29 @@ def discard_changes(admin_logged_in_page: Page) -> None:
 @then("I should still be on the targets page")
 def still_on_targets(admin_logged_in_page: Page) -> None:
     expect(admin_logged_in_page).to_have_url(_targets_url(_current_assembly_id[-1]), timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("I should be in the targets edit form")
+def in_targets_edit_form(admin_logged_in_page: Page) -> None:
+    """The form has its own URL, so the back button leaves it for the read-only view."""
+    expect(admin_logged_in_page).to_have_url(
+        _targets_url(_current_assembly_id[-1]) + "?edit=1", timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I go back in the browser")
+def go_back(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.go_back()
+
+
+@when("I reload the page")
+def reload_page(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.reload()
+
+
+@then("the page should not be scrolled to the top")
+def not_scrolled_to_top(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.wait_for_function("window.scrollY > 0", timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("I should be on the assembly details page")
@@ -351,7 +396,54 @@ def edit_row_shows_min_max(admin_logged_in_page: Page, value: str, minimum: str,
 @then(parsers.parse('the "{value}" edit row comment should be "{comment}"'))
 def edit_row_comment(admin_logged_in_page: Page, value: str, comment: str) -> None:
     row = _edit_row_for(admin_logged_in_page, value)
-    expect(row.locator('input[name$="[comment]"]')).to_have_value(comment, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(row.locator('textarea[name$="[comment]"]')).to_have_value(comment, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+THREE_LINE_COMMENT = "first line\nsecond line\nthird line"
+
+
+def _comment_box(page: Page, value: str):
+    return _edit_row_for(page, value).locator('textarea[name$="[comment]"]')
+
+
+@when(parsers.parse('I write a three line comment on the "{value}" target value'))
+def write_three_line_comment(admin_logged_in_page: Page, value: str) -> None:
+    _comment_box(admin_logged_in_page, value).fill(THREE_LINE_COMMENT)
+
+
+@when(parsers.parse('I move on from the "{value}" comment box'))
+def leave_comment_box(admin_logged_in_page: Page, value: str) -> None:
+    _comment_box(admin_logged_in_page, value).blur()
+
+
+@then(parsers.parse('the "{value}" comment box should show every line'))
+def comment_box_shows_every_line(admin_logged_in_page: Page, value: str) -> None:
+    """Nothing scrolled out of sight: the box is as tall as the text in it."""
+    box = _comment_box(admin_logged_in_page, value)
+    expect(box).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+    hidden = box.evaluate("el => el.scrollHeight - el.clientHeight")
+    assert hidden <= 1, f"{hidden}px of the comment is out of sight"
+
+
+@then(parsers.parse('the "{value}" comment box should be one line high'))
+def comment_box_is_one_line(admin_logged_in_page: Page, value: str) -> None:
+    """As tall as the single-line value input beside it, so the row keeps its shape."""
+    row = _edit_row_for(admin_logged_in_page, value)
+    box_height = _comment_box(admin_logged_in_page, value).bounding_box()["height"]
+    input_height = row.locator('[data-field="value"]').bounding_box()["height"]
+    assert abs(box_height - input_height) <= 2, f"comment box is {box_height}px, value input {input_height}px"
+    # The whole note is the hover title of the box's holder, not of the box
+    # itself, which a screen reader would read out a second time.
+    holder = row.locator("[data-hover-title]").filter(has=admin_logged_in_page.locator('textarea[name$="[comment]"]'))
+    expect(holder).to_have_attribute("title", THREE_LINE_COMMENT)
+    expect(_comment_box(admin_logged_in_page, value)).not_to_have_attribute("title", THREE_LINE_COMMENT)
+
+
+@then(parsers.parse('the "{value}" comment should read as three lines'))
+def comment_reads_as_three_lines(admin_logged_in_page: Page, value: str) -> None:
+    comment = _row_for(admin_logged_in_page, value).get_by_text("first line")
+    expect(comment).to_have_css("white-space", "pre-line", timeout=PLAYWRIGHT_TIMEOUT)
+    assert comment.inner_text().splitlines() == ["first line", "second line", "third line"]
 
 
 @then(parsers.parse('the focus should be on "{label}" for "{message}"'))
@@ -395,6 +487,27 @@ def _expect_provenance(page: Page, value: str, wanted: str, unwanted: str) -> No
     row = _row_for(page, value)
     expect(row.locator(f'[title="{wanted}"]')).to_have_count(2, timeout=PLAYWRIGHT_TIMEOUT)
     expect(row.locator(f'[title="{unwanted}"]')).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{value}" edit row should be marked as auto calculated'))
+def edit_row_marked_automatic(admin_logged_in_page: Page, value: str) -> None:
+    _expect_edit_row_provenance(admin_logged_in_page, value, "Auto calculated", "Manually modified")
+
+
+@then(parsers.parse('the "{value}" edit row should be marked as manually modified'))
+def edit_row_marked_manual(admin_logged_in_page: Page, value: str) -> None:
+    _expect_edit_row_provenance(admin_logged_in_page, value, "Manually modified", "Auto calculated")
+
+
+def _expect_edit_row_provenance(page: Page, value: str, wanted: str, unwanted: str) -> None:
+    """Both the min and the max box of this edit row show the one mark, and not the other.
+
+    The edit row renders both marks in each box and shows one, so these count
+    what is visible rather than what is in the markup.
+    """
+    row = _edit_row_for(page, value)
+    expect(row.locator(f'[title="{wanted}"]:visible')).to_have_count(2, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(row.locator(f'[title="{unwanted}"]:visible')).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('I should see "{text}"'))
@@ -443,6 +556,11 @@ def see_bulk_edit_form(admin_logged_in_page: Page) -> None:
     expect(admin_logged_in_page.locator("#save-all-form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then("I should not see the bulk edit form")
+def not_see_bulk_edit_form(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.locator("#save-all-form")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then(parsers.parse('the "{second}" category should appear after the "{first}" category'))
 def category_order_after(admin_logged_in_page: Page, first: str, second: str) -> None:
     category_order(admin_logged_in_page, first, second)
@@ -453,3 +571,83 @@ def category_order(admin_logged_in_page: Page, first: str, second: str) -> None:
     headings = admin_logged_in_page.get_by_role("heading").all_text_contents()
     names = [h.strip() for h in headings]
     assert names.index(first) < names.index(second), f"expected {first} before {second} in {names}"
+
+
+@when("I open the targets export")
+def open_targets_export(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.locator('[data-focus-id="targets-export"]').click()
+    expect(admin_logged_in_page.locator("#export-modal-container [role='dialog']")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I cancel the targets export")
+def cancel_targets_export(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.locator("#export-modal-container").get_by_role("button", name="Cancel").click()
+
+
+@then("keyboard focus should be inside the targets export")
+def focus_inside_targets_export(admin_logged_in_page: Page) -> None:
+    focused = admin_logged_in_page.locator("#export-modal-container [role='dialog'] :focus")
+    expect(focused).to_have_count(1, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("keyboard focus should be on the targets Export button")
+def focus_on_targets_export_button(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.locator('[data-focus-id="targets-export"]')).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("a targets CSV download starts when I run the export", target_fixture="downloaded_targets_csv")
+def run_targets_export_download(admin_logged_in_page: Page) -> str:
+    with admin_logged_in_page.expect_download() as download_info:
+        admin_logged_in_page.locator("#export-modal-container button[type=submit]").click()
+    return pathlib.Path(download_info.value.path()).read_text(encoding="utf-8-sig")
+
+
+@then(parsers.parse('the downloaded targets CSV has a row for each of "{first}" and "{second}" under "{feature}"'))
+def targets_csv_rows(downloaded_targets_csv: str, first: str, second: str, feature: str) -> None:
+    rows = list(csv.DictReader(StringIO(downloaded_targets_csv)))
+    assert [(row["feature"], row["value"]) for row in rows] == [(feature, first), (feature, second)]
+
+
+def _info_bubble(page: Page, text: str):
+    """The bubble an info icon shows, not the live region that announces it."""
+    return page.locator(".info-toggletip__bubble").filter(has_text=text).filter(visible=True)
+
+
+@when(parsers.parse('I tab to "{name}" and press Enter'))
+def tab_to_and_press_enter(admin_logged_in_page: Page, name: str) -> None:
+    """Tab from the top of the page until the named control has focus.
+
+    Going by Tab rather than focusing the control directly is the point: it
+    shows the control is in the keyboard's reach at all.
+    """
+    page = admin_logged_in_page
+    page.locator("body").focus()
+    for _ in range(200):
+        page.keyboard.press("Tab")
+        if page.evaluate("() => document.activeElement && document.activeElement.getAttribute('aria-label')") == name:
+            break
+    else:
+        raise AssertionError(f'Tab never reached "{name}"')
+    page.keyboard.press("Enter")
+
+
+@when("I press Escape")
+def press_escape(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.keyboard.press("Escape")
+
+
+@then(parsers.parse('the note "{text}" should be showing'))
+def note_is_showing(admin_logged_in_page: Page, text: str) -> None:
+    expect(_info_bubble(admin_logged_in_page, text)).to_have_count(1, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the note "{text}" should not be showing'))
+def note_is_not_showing(admin_logged_in_page: Page, text: str) -> None:
+    expect(_info_bubble(admin_logged_in_page, text)).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the focus should be back on "{name}"'))
+def focus_is_on(admin_logged_in_page: Page, name: str) -> None:
+    expect(admin_logged_in_page.locator(":focus")).to_have_attribute("aria-label", name, timeout=PLAYWRIGHT_TIMEOUT)

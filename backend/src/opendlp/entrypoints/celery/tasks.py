@@ -1,5 +1,4 @@
 import logging
-import traceback
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -273,7 +272,13 @@ def _internal_load_gsheet(
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
     progress_reporter: ProgressReporter | None = None,
+    number_to_select: int = 0,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
+    """Load the targets, the pool and the people already selected from a Google Sheet.
+
+    ``number_to_select`` is checked against the targets' mins and maxes as they
+    load. A load that only reads, with no selection to follow, leaves it at 0.
+    """
     reporter = progress_reporter or NullProgressReporter()
     reporter.start_phase("read_gsheet", total=None)
     data_source = select_data.data_source
@@ -358,7 +363,7 @@ def _internal_load_gsheet(
             session_factory=session_factory,
         )
 
-        features, f_report = select_data.load_features()
+        features, f_report = select_data.load_features(number_to_select)
         # print(f_report.as_text())
         report.add_report(f_report)
         task_obj.update_state(
@@ -478,11 +483,10 @@ def _internal_load_gsheet(
         return False, None, None, None, report
     except Exception as err:
         error_msg = _("Failed to load the spreadsheet: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
 
-        # TODO: add to logs - just say "error occurred, contact admins" to the user
+        # TODO: just say "error occurred, contact admins" to the user, not str(err)
         report.add_line(error_msg)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("load_gsheet failed", task_id=str(task_id))
 
         _update_selection_record(
             task_id=task_id,
@@ -586,11 +590,10 @@ def _internal_run_select(
 
     except Exception as err:
         error_msg = _("Selection task failed: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
 
-        # TODO: add to logs - just say "error occurred, contact admins" to the user
+        # TODO: just say "error occurred, contact admins" to the user, not str(err)
         report.add_line(error_msg, ReportLevel.IMPORTANT)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("run_select failed", task_id=str(task_id))
 
         _update_selection_record(
             task_id=task_id,
@@ -667,11 +670,10 @@ def _internal_write_selected(
         return report
     except Exception as err:
         error_msg = _("Writing results failed: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
 
-        # TODO: add to logs - just say "error occurred, contact admins" to the user
+        # TODO: just say "error occurred, contact admins" to the user, not str(err)
         report.add_line(error_msg, ReportLevel.IMPORTANT)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("write_selected failed", task_id=str(task_id))
 
         _update_selection_record(
             task_id=task_id,
@@ -692,6 +694,7 @@ def _internal_load_db(
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
     targets_snapshot: list[dict[str, Any]] | None = None,
+    number_to_select: int = 0,
 ) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
     """Load features, the pool, and the people already holding a place.
 
@@ -701,6 +704,10 @@ def _internal_load_db(
     loaded, for the algorithm to keep their households out of the pool: an
     initial or test selection starts with nobody holding a place, so its
     already_selected is None.
+
+    ``number_to_select`` is checked against the targets' mins and maxes as they
+    load, so a target that cannot fit the selection is reported against that
+    number rather than against another target.
 
     Returns (success, features, pool, already_selected, report).
     """
@@ -715,7 +722,7 @@ def _internal_load_db(
             data_source = OpenDLPDataAdapter(uow, assembly_id, targets_snapshot=targets_snapshot)
             select_data = adapters.SelectionData(data_source)
 
-            features, f_report = select_data.load_features()
+            features, f_report = select_data.load_features(number_to_select)
             report.add_report(f_report)
 
             num_features = len(features)
@@ -785,9 +792,8 @@ def _internal_load_db(
 
     except Exception as err:
         error_msg = _("Failed to load data from database: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
         report.add_line(error_msg)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("load_db failed", task_id=str(task_id))
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.FAILED,
@@ -848,9 +854,8 @@ def _internal_write_db_results(
 
     except Exception as err:
         error_msg = _("Writing results to database failed: %(error)s", error=str(err))
-        traceback_msg = traceback.format_exc()
         report.add_line(error_msg, ReportLevel.IMPORTANT)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("write_db_results failed", task_id=str(task_id))
         _update_selection_record(
             task_id=task_id,
             status=SelectionRunStatus.FAILED,
@@ -887,6 +892,7 @@ def run_select_from_db(
         final_task=False,
         session_factory=session_factory,
         targets_snapshot=targets_snapshot,
+        number_to_select=number_people_wanted,
     )
     report.add_report(load_report)
     if not success:
@@ -972,6 +978,7 @@ def run_select(
         final_task=False,
         session_factory=session_factory,
         progress_reporter=reporter,
+        number_to_select=number_people_wanted,
     )
     report.add_report(load_report)
     if not success:
@@ -1210,10 +1217,9 @@ def manage_old_tabs(
 
     except Exception as err:
         error_msg = _("Failed to %(action)s old tabs: %(error)s", action=action, error=str(err))
-        traceback_msg = traceback.format_exc()
 
         report.add_line(error_msg)
-        report.add_lines(traceback_msg.split("\n"))
+        struct_logger.exception("manage_old_tabs failed", task_id=str(task_id))
 
         _update_selection_record(
             task_id=task_id,

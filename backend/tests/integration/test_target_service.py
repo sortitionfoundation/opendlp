@@ -14,7 +14,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldDefinition,
 )
-from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.domain.targets import MAX_SOURCE_URL_LENGTH, TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import assembly_service, respondent_service, target_csv_import, target_service
@@ -747,6 +747,151 @@ class TestUpdateTargetValueLinkRules:
         assert after.values[0].percentage_target is None
         assert (after.values[0].min, after.values[0].max) == before
 
+    def test_a_new_percentage_with_its_recalculated_minmax_does_not_break_the_link(
+        self, uow, admin_user: User, test_assembly: Assembly
+    ):
+        """The edit form fills min and max in from the percentage as it is typed.
+
+        Those numbers came from the percentage, so submitting them must keep the
+        link - otherwise every recalculation in the form would be saved as a
+        hand edit.
+        """
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            value.value_id,
+            value="Man",
+            percentage=25.0,
+            min_count=7,
+            max_count=8,
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].minmax_manual is False
+        assert (after.values[0].min, after.values[0].max) == (7, 8)
+
+
+class TestSaveAllNewValueLinkRules:
+    """A value added in the edit form, with a percentage, min and max typed in."""
+
+    def _save_new_value(self, uow, admin_user, assembly, **numbers):
+        category = target_service.create_target_category(uow, admin_user.id, assembly.id, name="Gender")
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=category.id,
+                    name="Gender",
+                    values=[target_service.TargetValueEdit(value="Man", form_id="new-1", **numbers)],
+                )
+            ],
+        )
+        return target_service.get_targets_for_assembly(uow, admin_user.id, assembly.id)[0].values[0]
+
+    def test_minmax_from_the_percentage_stay_linked(self, uow, admin_user: User, test_assembly: Assembly):
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0, min=15, max=16)
+
+        assert value.minmax_manual is False
+        assert (value.min, value.max) == (15, 16)
+
+    def test_minmax_typed_by_hand_are_kept(self, uow, admin_user: User, test_assembly: Assembly):
+        """Not overwritten by the percentage, as the form showed them as the row's own."""
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0, min=10, max=20)
+
+        assert value.minmax_manual is True
+        assert (value.min, value.max) == (10, 20)
+
+    def test_a_percentage_alone_calculates_minmax(self, uow, admin_user: User, test_assembly: Assembly):
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0)
+
+        assert value.minmax_manual is False
+        assert (value.min, value.max) == (15, 16)
+
+    def test_a_value_with_no_numbers_yet_is_saved(self, uow, admin_user: User, test_assembly: Assembly):
+        """Early on the buckets are known before any numbers are worked out."""
+        value = self._save_new_value(uow, admin_user, test_assembly)
+
+        assert value.percentage_target is None
+        assert (value.min, value.max) == (0, 0)
+
+    def test_zero_min_and_max_typed_in_are_kept(self, uow, admin_user: User, test_assembly: Assembly):
+        """Typed zeros exclude a value; they are numbers, not blanks."""
+        value = self._save_new_value(uow, admin_user, test_assembly, percentage=50.0, min=0, max=1)
+
+        assert value.minmax_manual is True
+        assert (value.min, value.max) == (0, 1)
+
+
+class TestSaveAllHalfARange:
+    """A min with no max, or a max with no min, is refused on the empty box."""
+
+    @pytest.mark.parametrize(
+        ("numbers", "empty_field", "message"),
+        [
+            ({"min": 3}, "max", "Enter a max as well"),
+            ({"max": 5}, "min", "Enter a min as well"),
+            ({"percentage": 50.0, "min": 3}, "max", "Enter a max as well"),
+            ({"percentage": 50.0, "max": 20}, "min", "Enter a min as well"),
+        ],
+    )
+    def test_a_new_value(self, uow, admin_user: User, test_assembly: Assembly, numbers, empty_field, message):
+        category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
+
+        with pytest.raises(target_service.TargetsNotSaved) as caught:
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(
+                        category_id=category.id,
+                        name="Gender",
+                        form_id="cat-1",
+                        values=[target_service.TargetValueEdit(value="Man", form_id="new-1", **numbers)],
+                    )
+                ],
+            )
+
+        (error,) = caught.value.errors
+        assert (error.message, error.value_form_id, error.field) == (message, "new-1", empty_field)
+
+    def test_an_existing_value_with_a_box_emptied(self, uow, admin_user: User, test_assembly: Assembly):
+        """Not quietly given its old number back: the box was emptied on purpose."""
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+
+        with pytest.raises(target_service.TargetsNotSaved) as caught:
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(
+                        category_id=category.id,
+                        name="Gender",
+                        values=[
+                            target_service.TargetValueEdit(
+                                value="Man",
+                                value_id=value.value_id,
+                                form_id=str(value.value_id),
+                                percentage=50.0,
+                                min=value.min,
+                            )
+                        ],
+                    )
+                ],
+            )
+
+        (error,) = caught.value.errors
+        assert (error.message, error.field) == ("Enter a max as well", "max")
+
 
 class TestRelinkTargetValue:
     def test_restores_auto_calculation(self, uow, admin_user: User, test_assembly: Assembly):
@@ -919,7 +1064,7 @@ class TestSaveAllTargets:
                     target_service.TargetCategoryEdit(
                         category_id=category.id,
                         name="Renamed",
-                        source_url="javascript:alert(1)",
+                        source_url="x" * (MAX_SOURCE_URL_LENGTH + 1),
                         values=[],
                     )
                 ],
@@ -1432,27 +1577,29 @@ Gender,Female,10,15,https://www.ons.gov.uk/one"""
 
         assert result.warnings == []
 
-    def test_an_invalid_source_url_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
-        """InvalidSelection rather than a bare ValueError, so the upload route can show it."""
-        csv_content = """feature,value,min,max,source_url
-Gender,Male,10,15,javascript:alert(1)"""
-
-        with pytest.raises(InvalidSelection, match="http"):
-            target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
-
-    def test_a_source_url_with_no_scheme_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
+    def test_an_over_long_source_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
         """Bad data in the spreadsheet is the user's mistake, not an internal error.
 
         InvalidSelection reaches the upload route's own handler, which puts the
         message on the file field. A bare ValueError would fall through to
         `except Exception` - "an unexpected error occurred", plus a stack trace.
         """
-        csv_content = """feature,value,min,max,source_url
-Gender,Male,3,7,www.ons.gov.uk/dataset
-Gender,Female,3,7,www.ons.gov.uk/dataset"""
+        long_source = "x" * (MAX_SOURCE_URL_LENGTH + 1)
+        csv_content = f"""feature,value,min,max,source_url
+Gender,Male,10,15,{long_source}"""
 
-        with pytest.raises(InvalidSelection):
+        with pytest.raises(InvalidSelection, match="2048"):
             target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+    def test_a_source_that_is_not_a_url_is_imported(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,source_url
+Gender,Male,3,7,The council sent the numbers by email
+Gender,Female,3,7,The council sent the numbers by email"""
+
+        target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        stored = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert stored.source_url == "The council sent the numbers by email"
 
     def test_an_over_long_comment_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
         csv_content = (
