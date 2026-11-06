@@ -22,6 +22,7 @@ from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus
 from . import target_service
 from .exceptions import (
     AssemblyNotFoundError,
+    AssemblyTitleTaken,
     GoogleSheetConfigNotFoundError,
     InsufficientPermissions,
     UserNotFoundError,
@@ -67,6 +68,8 @@ def create_assembly(
     if not can_create_assembly(user):
         raise InsufficientPermissions(action="create assembly", required_role="organiser or admin")
 
+    check_title_available(uow, created_by_user_id, title)
+
     # Create the assembly
     assembly = Assembly(
         title=title,
@@ -82,6 +85,39 @@ def create_assembly(
     # there is no branch here to get wrong.
     assign_assembly_role(uow, created_by_user_id, assembly.id, AssemblyRole.ASSEMBLY_MANAGER)
     return assembly.create_detached_copy()
+
+
+def _normalised_title(title: str) -> str:
+    return title.strip().casefold()
+
+
+def is_title_available(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, title: str, exclude_assembly_id: uuid.UUID | None = None
+) -> bool:
+    """True unless an unarchived assembly the user can see already has this title.
+
+    Case and surrounding whitespace are ignored. The rule is scoped to what the
+    user can see, so it never reveals that an assembly they cannot see exists.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    wanted = _normalised_title(title)
+    return not any(
+        _normalised_title(assembly.title) == wanted
+        for assembly in get_user_assemblies(uow, user_id)
+        if assembly.id != exclude_assembly_id
+    )
+
+
+def check_title_available(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, title: str, exclude_assembly_id: uuid.UUID | None = None
+) -> None:
+    """Raise AssemblyTitleTaken if `is_title_available` says no.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    if not is_title_available(uow, user_id, title, exclude_assembly_id):
+        raise AssemblyTitleTaken(title.strip())
 
 
 def update_assembly(
@@ -118,6 +154,9 @@ def update_assembly(
     # Check permissions
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(action="update assembly", required_role="assembly-manager or admin")
+
+    if "title" in updates and _normalised_title(updates["title"] or "") != _normalised_title(assembly.title):
+        check_title_available(uow, user_id, updates["title"], exclude_assembly_id=assembly_id)
 
     # Apply updates
     previous_number_to_select = assembly.number_to_select

@@ -606,7 +606,7 @@ Taken as agreed in the first round, since there was no comment on them:
 Each step is its own commit, with its tests, and leaves `just test` and
 `just check` passing.
 
-1. **The title rule** - `check_title_available` / `is_title_available` and
+1. ✅ **The title rule** - `check_title_available` / `is_title_available` and
    `AssemblyTitleTaken`; called from `create_assembly` and `update_assembly`;
    the error shown on the web create and edit forms; catalogues regenerated;
    existing tests that reuse a title fixed.

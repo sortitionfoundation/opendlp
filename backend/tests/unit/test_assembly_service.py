@@ -14,6 +14,7 @@ from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRol
 from opendlp.service_layer import assembly_service, target_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
+    AssemblyTitleTaken,
     GoogleSheetConfigNotFoundError,
     InsufficientPermissions,
     UserNotFoundError,
@@ -237,6 +238,117 @@ class TestUpdateAssembly:
 
         assert "Assembly" in str(exc_info.value)
         assert "not found" in str(exc_info.value)
+
+
+class TestTitleRule:
+    """A title may not match an unarchived assembly the acting user can see."""
+
+    @staticmethod
+    def _organiser(uow, email="organiser@example.com"):
+        user = User(email=email, global_role=GlobalRole.ORGANISER, password_hash="hash")
+        uow.users.add(user)
+        return user
+
+    @staticmethod
+    def _admin(uow):
+        user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(user)
+        return user
+
+    @staticmethod
+    def _assembly_with_role(uow, user, title):
+        assembly = Assembly(title=title)
+        uow.assemblies.add(assembly)
+        user.assembly_roles.append(
+            UserAssemblyRole(user_id=user.id, assembly_id=assembly.id, role=AssemblyRole.ASSEMBLY_MANAGER)
+        )
+        return assembly
+
+    def test_create_refused_when_user_has_project_with_same_title(self, uow):
+        organiser = self._organiser(uow)
+        self._assembly_with_role(uow, organiser, "Climate Assembly")
+
+        with pytest.raises(AssemblyTitleTaken) as exc_info:
+            assembly_service.create_assembly(uow=uow, title="Climate Assembly", created_by_user_id=organiser.id)
+
+        assert "Climate Assembly" in exc_info.value.user_msg()
+
+    def test_match_ignores_case_and_surrounding_whitespace(self, uow):
+        organiser = self._organiser(uow)
+        self._assembly_with_role(uow, organiser, "Climate Assembly")
+
+        with pytest.raises(AssemblyTitleTaken):
+            assembly_service.create_assembly(uow=uow, title="  climate ASSEMBLY ", created_by_user_id=organiser.id)
+
+    def test_create_allowed_when_matching_project_is_not_visible_to_user(self, uow):
+        """An organiser cannot see another organiser's project, so its title is no clash - and is not revealed."""
+        other = self._organiser(uow, email="other@example.com")
+        self._assembly_with_role(uow, other, "Climate Assembly")
+        organiser = self._organiser(uow)
+
+        assembly = assembly_service.create_assembly(uow=uow, title="Climate Assembly", created_by_user_id=organiser.id)
+
+        assert assembly.title == "Climate Assembly"
+
+    def test_admin_clashes_with_any_unarchived_project(self, uow):
+        other = self._organiser(uow, email="other@example.com")
+        self._assembly_with_role(uow, other, "Climate Assembly")
+        admin = self._admin(uow)
+
+        with pytest.raises(AssemblyTitleTaken):
+            assembly_service.create_assembly(uow=uow, title="Climate Assembly", created_by_user_id=admin.id)
+
+    def test_create_allowed_when_matching_project_is_archived(self, uow):
+        organiser = self._organiser(uow)
+        archived = self._assembly_with_role(uow, organiser, "Climate Assembly")
+        archived.archive()
+
+        assembly = assembly_service.create_assembly(uow=uow, title="Climate Assembly", created_by_user_id=organiser.id)
+
+        assert assembly.title == "Climate Assembly"
+
+    def test_rename_refused_when_title_taken(self, uow):
+        organiser = self._organiser(uow)
+        self._assembly_with_role(uow, organiser, "Climate Assembly")
+        second = self._assembly_with_role(uow, organiser, "Climate Assembly 2")
+
+        with pytest.raises(AssemblyTitleTaken):
+            assembly_service.update_assembly(
+                uow=uow, assembly_id=second.id, user_id=organiser.id, title="Climate Assembly"
+            )
+
+        assert second.title == "Climate Assembly 2"
+
+    def test_rename_to_a_change_of_case_of_own_title_allowed(self, uow):
+        organiser = self._organiser(uow)
+        assembly = self._assembly_with_role(uow, organiser, "Climate assembly")
+
+        updated = assembly_service.update_assembly(
+            uow=uow, assembly_id=assembly.id, user_id=organiser.id, title="Climate Assembly"
+        )
+
+        assert updated.title == "Climate Assembly"
+
+    def test_edit_of_already_duplicated_title_allowed_when_title_unchanged(self, uow):
+        """Duplicates from before the rule must not block edits that leave the title alone."""
+        organiser = self._organiser(uow)
+        self._assembly_with_role(uow, organiser, "Climate Assembly")
+        duplicate = self._assembly_with_role(uow, organiser, "Climate Assembly")
+
+        updated = assembly_service.update_assembly(
+            uow=uow, assembly_id=duplicate.id, user_id=organiser.id, title="Climate Assembly", question="New?"
+        )
+
+        assert updated.question == "New?"
+
+    def test_is_title_available_excludes_given_assembly(self, uow):
+        organiser = self._organiser(uow)
+        assembly = self._assembly_with_role(uow, organiser, "Climate Assembly")
+
+        assert not assembly_service.is_title_available(uow, organiser.id, "Climate Assembly")
+        assert assembly_service.is_title_available(
+            uow, organiser.id, "Climate Assembly", exclude_assembly_id=assembly.id
+        )
 
 
 class TestGetAssemblyWithPermissions:

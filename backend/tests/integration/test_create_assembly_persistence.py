@@ -6,7 +6,8 @@ from sqlalchemy import text
 
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
-from opendlp.service_layer.assembly_service import create_assembly, get_assembly_creator_name
+from opendlp.service_layer.assembly_service import create_assembly, get_assembly_creator_name, update_assembly
+from opendlp.service_layer.exceptions import AssemblyTitleTaken
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -131,3 +132,22 @@ class TestCreatedByColumnShape:
         ).scalar_one()
 
         assert nullable == "YES"
+
+
+class TestTitleRulePersistence:
+    def test_second_project_with_same_title_refused(self, postgres_session_factory, organiser):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            create_assembly(uow=uow, title="Climate Assembly", created_by_user_id=organiser.id)
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow, pytest.raises(AssemblyTitleTaken):
+            create_assembly(uow=uow, title="CLIMATE assembly", created_by_user_id=organiser.id)
+
+    def test_rename_onto_taken_title_refused(self, postgres_session_factory, organiser):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            create_assembly(uow=uow, title="Climate Assembly", created_by_user_id=organiser.id)
+            other = create_assembly(uow=uow, title="Other Assembly", created_by_user_id=organiser.id)
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow, pytest.raises(AssemblyTitleTaken):
+            update_assembly(uow=uow, assembly_id=other.id, user_id=organiser.id, title="Climate Assembly")

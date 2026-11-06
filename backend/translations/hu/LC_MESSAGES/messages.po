@@ -3912,6 +3912,15 @@ msgstr "Túllépted a gyakorisági korlátot. Próbáld újra később"
 
 #: src/opendlp/service_layer/exceptions.py
 #, python-format
+msgid "You already have a project called %(title)s"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py
+msgid "You already have a project with that title"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py
+#, python-format
 msgid "This registration page already has the maximum of %(limit)s images"
 msgstr "Ezen a regisztrációs oldalon már megvan a maximális %(limit)s kép"
 
