@@ -29,12 +29,14 @@ from .celery import celery  # noqa: E402
 from .database import database  # noqa: E402
 from .invites import invites  # noqa: E402
 from .monitor import monitor  # noqa: E402
+from .projects import projects  # noqa: E402
 from .users import users  # noqa: E402
 
 cli.add_command(celery)
 cli.add_command(database)
 cli.add_command(invites)
 cli.add_command(monitor)
+cli.add_command(projects)
 cli.add_command(users)
 
 
