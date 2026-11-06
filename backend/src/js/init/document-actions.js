@@ -46,8 +46,9 @@ export function initDocumentActions() {
       return;
     }
 
-    // Check for print
-    if (e.target.dataset.print !== undefined) {
+    // Check for print. closest(), as for the confirmation above: the button()
+    // macro wraps its label in a span, which is what usually gets clicked.
+    if (e.target.closest("[data-print]")) {
       window.print();
     }
 
@@ -60,7 +61,7 @@ export function initDocumentActions() {
     }
 
     // Check for backup codes download
-    if (e.target.dataset.downloadBackupCodes !== undefined) {
+    if (e.target.closest("[data-download-backup-codes]")) {
       downloadBackupCodes();
     }
   });

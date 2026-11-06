@@ -1,9 +1,11 @@
 # ABOUTME: Component tests for profile management routes over a FakeUnitOfWork
 # ABOUTME: Drives the real profile Flask routes + services against a seeded fake store, no PostgreSQL
 
+import re
 import uuid
 
 import pytest
+from flask import Flask, url_for
 from flask.testing import FlaskClient
 
 from opendlp.domain.users import User
@@ -31,6 +33,13 @@ def oauth_user(fake_store: FakeStore) -> User:
 def _login_session(client: FlaskClient, user: User) -> None:
     with client.session_transaction() as session:
         session["_user_id"] = user.get_id()
+
+
+def _assert_page_is_named(page: bytes, name: str) -> None:
+    """The <title> and the <h1> carry the page's name, exactly as written."""
+    html = page.decode()
+    assert re.search(rf"<title>\s*{re.escape(name)}\s*- OpenDLP</title>", html)
+    assert re.search(rf"<h1[^>]*>\s*{re.escape(name)}\s*</h1>", html)
 
 
 class TestProfileViewing:
@@ -70,9 +79,158 @@ class TestProfileEditing:
     def test_edit_profile_get(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/profile/edit")
         assert response.status_code == 200
-        assert b"Edit Profile" in response.data
-        assert b"First Name" in response.data
-        assert b"Last Name" in response.data
+        assert b"Edit profile" in response.data
+        assert b"First name" in response.data
+        assert b"Last name" in response.data
+
+
+# Each page a password user can open, and the name its <title> and <h1> carry
+PASSWORD_USER_PAGES = {
+    "/profile": "My account",
+    "/profile/edit": "Edit profile",
+    "/profile/change-password": "Change password",  # pragma: allowlist secret
+    "/profile/2fa": "Two-factor authentication",
+    "/profile/2fa/setup": "Set up two-factor authentication",
+}
+
+
+class TestProfilePagesOnTheBackofficeDesign:
+    """The profile pages left GOV.UK Frontend for the backoffice layout (sc-869).
+
+    The set-password page is only reachable by an OAuth user without a password, and the
+    regenerated backup codes page only by a POST with a valid code (tests/component/test_2fa_flow.py).
+    """
+
+    @pytest.mark.parametrize("url", PASSWORD_USER_PAGES)
+    def test_page_has_no_govuk_markup(self, logged_in_user: FlaskClient, url: str) -> None:
+        """A migrated page never mixes in GOV.UK classes or the GOV.UK stylesheet."""
+        response = logged_in_user.get(url)
+
+        assert response.status_code == 200
+        assert b"govuk-" not in response.data
+        assert b"css/application.css" not in response.data
+
+    @pytest.mark.parametrize("url", PASSWORD_USER_PAGES)
+    def test_page_uses_the_backoffice_layout(self, logged_in_user: FlaskClient, url: str) -> None:
+        """The backoffice chrome is there: the account menu in the top bar and the flash container."""
+        response = logged_in_user.get(url)
+
+        assert b"backoffice/dist/main.css" in response.data
+        assert b'id="account-menu-toggle"' in response.data
+        assert b'id="floating-alerts"' in response.data
+
+    @pytest.mark.parametrize(("url", "name"), PASSWORD_USER_PAGES.items())
+    def test_page_is_named_in_sentence_case(self, logged_in_user: FlaskClient, url: str, name: str) -> None:
+        """docs/language.md: sentence case for every string, the page's own name included."""
+        response = logged_in_user.get(url)
+
+        _assert_page_is_named(response.data, name)
+
+    def test_view_sections_and_rows_are_in_sentence_case(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile")
+
+        assert b"Profile information" in response.data
+        assert b"First name" in response.data
+        assert b"Last name" in response.data
+        assert b"Authentication methods" in response.data
+        assert b"Two-factor authentication" in response.data
+
+    def test_set_password_page_is_on_the_backoffice_design(self, client: FlaskClient, oauth_user: User) -> None:
+        _login_session(client, oauth_user)
+
+        response = client.get("/profile/set-password")
+
+        assert response.status_code == 200
+        assert b"govuk-" not in response.data
+        assert b"backoffice/dist/main.css" in response.data
+        assert b'name="new_password"' in response.data
+        assert b'name="new_password_confirm"' in response.data
+        assert response.data.count(b'autocomplete="new-password"') == 2
+        _assert_page_is_named(response.data, "Set password")
+        assert b"Confirm password" in response.data
+
+    def test_change_password_form_keeps_its_fields(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile/change-password")
+
+        assert b'<form method="POST" novalidate' in response.data
+        assert b'name="current_password"' in response.data
+        assert b'autocomplete="current-password"' in response.data
+        assert b'name="new_password"' in response.data
+        assert b'name="new_password_confirm"' in response.data
+        assert response.data.count(b'autocomplete="new-password"') == 2
+        # The show/hide toggle the design system renders on every password input
+        assert response.data.count(b"data-toggle-password=") == 3
+        # The password requirements list under the new password field
+        assert b"Your password must meet the following requirements:" in response.data
+        assert b"<li>" in response.data
+
+    def test_change_password_shows_the_field_error_beside_the_field(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.post(
+            "/profile/change-password",
+            data={
+                "current_password": "userpass123",  # pragma: allowlist secret
+                "new_password": "weak",  # pragma: allowlist secret
+                "new_password_confirm": "weak",  # pragma: allowlist secret
+            },
+        )
+
+        assert response.status_code == 200
+        assert b'id="new_password-error"' in response.data
+        assert b'aria-describedby="new_password-error"' in response.data
+
+    def test_two_factor_settings_offer_the_set_up_when_disabled(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile/2fa")
+
+        assert b"Disabled" in response.data
+        assert b"Current status" in response.data
+        assert b"Enable two-factor authentication" in response.data
+        assert b'href="/profile/2fa/setup"' in response.data
+        assert b'aria-label="Back to profile"' in response.data
+        # Nothing to regenerate or disable yet
+        assert b"/profile/2fa/disable" not in response.data
+
+    def test_my_account_menu_item_opens_in_the_same_tab(self, logged_in_user: FlaskClient) -> None:
+        """It used to open a separate tab because the page was on the old design."""
+        response = logged_in_user.get("/profile")
+
+        my_account_link = re.search(rb'<a href="/profile"\s[^>]*>', response.data)
+        assert my_account_link is not None
+        assert b"target=" not in my_account_link.group(0)
+
+    def test_view_links_back_to_the_projects_list(self, app: Flask, logged_in_user: FlaskClient) -> None:
+        """The old page linked to main.dashboard, which 404s unless the old dashboard is enabled."""
+        with app.test_request_context():
+            projects_url = url_for("backoffice.dashboard")
+        response = logged_in_user.get("/profile")
+
+        back_link = re.search(rb'<a href="([^"]+)"[^>]*aria-label="Back to Your projects"', response.data)
+        assert back_link is not None
+        assert back_link.group(1).decode() == projects_url
+
+    def test_edit_form_keeps_its_fields(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile/edit")
+
+        assert b'name="first_name"' in response.data
+        assert b'name="last_name"' in response.data
+        assert b'autocomplete="given-name"' in response.data
+        assert b'autocomplete="family-name"' in response.data
+        assert b'type="submit"' in response.data
+
+    def test_edit_shows_the_field_error_beside_the_field(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.post("/profile/edit", data={"first_name": "x" * 101, "last_name": "Name"})
+
+        assert response.status_code == 200
+        assert b"Field cannot be longer than 100 characters" in response.data
+        assert b'aria-invalid="true"' in response.data
+
+    def test_successful_edit_flashes_on_the_profile_page(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.post(
+            "/profile/edit", data={"first_name": "Updated", "last_name": "Name"}, follow_redirects=True
+        )
+
+        assert response.status_code == 200
+        assert b"Profile updated successfully" in response.data
+        assert b"Updated" in response.data
 
 
 class TestPasswordChange:
@@ -86,15 +244,16 @@ class TestPasswordChange:
 
         response = client.get("/profile/change-password", follow_redirects=True)
         assert response.status_code == 200
-        assert b"Set Password" in response.data
+        assert b"Set password" in response.data
         assert b"You need to set a password first" in response.data
 
     def test_change_password_get(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/profile/change-password")
         assert response.status_code == 200
-        assert b"Change Password" in response.data
-        assert b"Current Password" in response.data
-        assert b"New Password" in response.data
+        assert b"Change password" in response.data
+        assert b"Current password" in response.data
+        assert b"New password" in response.data
+        assert b"Confirm new password" in response.data
 
     def test_change_password_with_wrong_current_password(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.post(
