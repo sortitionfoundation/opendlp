@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-06 10:16+0000\n"
+"POT-Creation-Date: 2026-11-06 17:41+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -65,7 +65,7 @@ msgid "Processing…"
 msgstr "Feldolgozás…"
 
 #: src/opendlp/domain/assembly_export_gsheet.py:17
-#: src/opendlp/entrypoints/blueprints/backoffice.py:278
+#: src/opendlp/entrypoints/blueprints/backoffice.py:281
 #: src/opendlp/service_layer/dashboard_stats.py:354
 #: templates/backoffice/assembly_dashboard.html:111
 #: templates/backoffice/assembly_dashboard.html:112
@@ -634,7 +634,7 @@ msgid "Pool"
 msgstr "Jelentkezők"
 
 #: src/opendlp/domain/value_objects.py:237
-#: src/opendlp/entrypoints/blueprints/backoffice.py:283
+#: src/opendlp/entrypoints/blueprints/backoffice.py:286
 #: src/opendlp/entrypoints/blueprints/respondents.py:516
 #: src/opendlp/service_layer/dashboard_stats.py:357
 #: src/opendlp/service_layer/selection_report.py:212
@@ -648,7 +648,7 @@ msgid "Selected"
 msgstr "Kiválasztva"
 
 #: src/opendlp/domain/value_objects.py:238
-#: src/opendlp/entrypoints/blueprints/backoffice.py:288
+#: src/opendlp/entrypoints/blueprints/backoffice.py:291
 #: src/opendlp/entrypoints/blueprints/respondents.py:517
 #: src/opendlp/service_layer/dashboard_stats.py:359
 #: templates/backoffice/assembly_dashboard.html:115
@@ -1770,24 +1770,24 @@ msgstr ""
 "Hiba történt a Microsoft-fiókkal való bejelentkezés során. Kérjük, "
 "próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:126
+#: src/opendlp/entrypoints/blueprints/backoffice.py:127
 #, python-format
 msgid "Project '%(title)s' created successfully"
 msgstr "A '%(title)s' projekt sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:130
+#: src/opendlp/entrypoints/blueprints/backoffice.py:133
 msgid "You don't have permission to create projects"
 msgstr "Nincs jogosultságod projekt létrehozására"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:134
-#: src/opendlp/entrypoints/blueprints/backoffice.py:138
+#: src/opendlp/entrypoints/blueprints/backoffice.py:137
+#: src/opendlp/entrypoints/blueprints/backoffice.py:141
 msgid "An error occurred while creating the project"
 msgstr "Hiba történt a projekt létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:205
-#: src/opendlp/entrypoints/blueprints/backoffice.py:398
-#: src/opendlp/entrypoints/blueprints/backoffice.py:783
-#: src/opendlp/entrypoints/blueprints/backoffice.py:844
+#: src/opendlp/entrypoints/blueprints/backoffice.py:208
+#: src/opendlp/entrypoints/blueprints/backoffice.py:401
+#: src/opendlp/entrypoints/blueprints/backoffice.py:788
+#: src/opendlp/entrypoints/blueprints/backoffice.py:849
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:229
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:366
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:93
@@ -1808,14 +1808,14 @@ msgstr "Hiba történt a projekt létrehozásakor"
 msgid "You don't have permission to view this project"
 msgstr "Nincs jogosultságod a projekt megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:211
-#: src/opendlp/entrypoints/blueprints/backoffice.py:389
-#: src/opendlp/entrypoints/blueprints/backoffice.py:427
-#: src/opendlp/entrypoints/blueprints/backoffice.py:473
-#: src/opendlp/entrypoints/blueprints/backoffice.py:578
-#: src/opendlp/entrypoints/blueprints/backoffice.py:625
-#: src/opendlp/entrypoints/blueprints/backoffice.py:774
-#: src/opendlp/entrypoints/blueprints/backoffice.py:835
+#: src/opendlp/entrypoints/blueprints/backoffice.py:214
+#: src/opendlp/entrypoints/blueprints/backoffice.py:392
+#: src/opendlp/entrypoints/blueprints/backoffice.py:430
+#: src/opendlp/entrypoints/blueprints/backoffice.py:476
+#: src/opendlp/entrypoints/blueprints/backoffice.py:583
+#: src/opendlp/entrypoints/blueprints/backoffice.py:630
+#: src/opendlp/entrypoints/blueprints/backoffice.py:779
+#: src/opendlp/entrypoints/blueprints/backoffice.py:840
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:235
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:372
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:607
@@ -1885,16 +1885,16 @@ msgstr "Nincs jogosultságod a projekt megtekintéséhez"
 msgid "Project not found"
 msgstr "A projekt nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:215
+#: src/opendlp/entrypoints/blueprints/backoffice.py:218
 msgid "An error occurred while loading the project"
 msgstr "Hiba történt a projekt betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:272
+#: src/opendlp/entrypoints/blueprints/backoffice.py:275
 #: templates/backoffice/assembly_dashboard.html:109
 msgid "Population"
 msgstr "Népesség"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:274
+#: src/opendlp/entrypoints/blueprints/backoffice.py:277
 msgid ""
 "Shows the population split once every value has a population share set in"
 " the targets."
@@ -1902,7 +1902,7 @@ msgstr ""
 "A népesség megoszlása akkor jelenik meg, ha a célszámoknál minden "
 "értékhez meg van adva a népességi arány."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:276
+#: src/opendlp/entrypoints/blueprints/backoffice.py:279
 #: src/opendlp/service_layer/dashboard_stats.py:343
 #: src/opendlp/service_layer/selection_report.py:206
 #: templates/backoffice/components/db_replacement_modal.html:130
@@ -1910,46 +1910,46 @@ msgstr ""
 msgid "Target"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:280
+#: src/opendlp/entrypoints/blueprints/backoffice.py:283
 msgid "Shows respondent data once registration starts."
 msgstr "A regisztráció megkezdése után megjeleníti a jelentkezők adatait."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:285
+#: src/opendlp/entrypoints/blueprints/backoffice.py:288
 msgid "Shows selected data once selection has happened."
 msgstr "A kiválasztás megtörténte után megjeleníti a kiválasztottak adatait."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:290
+#: src/opendlp/entrypoints/blueprints/backoffice.py:293
 msgid "Shows confirmed data once at least one selected respondent is confirmed."
 msgstr ""
 "Legalább egy kiválasztott jelentkező megerősítése után megjeleníti a "
 "megerősítettek adatait."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:404
+#: src/opendlp/entrypoints/blueprints/backoffice.py:407
 msgid "An error occurred while loading the dashboard"
 msgstr "Hiba történt az irányítópult betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:424
-#: src/opendlp/entrypoints/blueprints/backoffice.py:469
+#: src/opendlp/entrypoints/blueprints/backoffice.py:427
+#: src/opendlp/entrypoints/blueprints/backoffice.py:472
 msgid "You don't have permission to export the dashboard"
 msgstr "Nincs jogosultságod az irányítópult exportálásához"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:449
+#: src/opendlp/entrypoints/blueprints/backoffice.py:452
 #: src/opendlp/entrypoints/blueprints/targets.py:748
 msgid "Only CSV and Google Sheets exports are available for now"
 msgstr "Jelenleg csak CSV-be és Google Táblázatba lehet exportálni"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:510
+#: src/opendlp/entrypoints/blueprints/backoffice.py:513
 msgid "Dashboard exported to Google Sheets."
 msgstr "A statisztikák exportálva a Google Táblázatba."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:542
+#: src/opendlp/entrypoints/blueprints/backoffice.py:545
 #, python-format
 msgid "Project '%(title)s' updated successfully"
 msgstr "A '%(title)s' projekt sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:551
-#: src/opendlp/entrypoints/blueprints/backoffice.py:587
-#: src/opendlp/entrypoints/blueprints/backoffice.py:619
+#: src/opendlp/entrypoints/blueprints/backoffice.py:556
+#: src/opendlp/entrypoints/blueprints/backoffice.py:592
+#: src/opendlp/entrypoints/blueprints/backoffice.py:624
 #: src/opendlp/entrypoints/blueprints/target_sources.py:734
 #: src/opendlp/entrypoints/blueprints/target_sources.py:778
 #: src/opendlp/entrypoints/blueprints/target_sources.py:805
@@ -1960,65 +1960,65 @@ msgstr "A '%(title)s' projekt sikeresen frissült"
 msgid "You don't have permission to edit this project"
 msgstr "Nincs jogosultságod a projekt szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:560
-#: src/opendlp/entrypoints/blueprints/backoffice.py:566
+#: src/opendlp/entrypoints/blueprints/backoffice.py:565
+#: src/opendlp/entrypoints/blueprints/backoffice.py:571
 msgid "An error occurred while updating the project"
 msgstr "Hiba történt a projekt frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:598
+#: src/opendlp/entrypoints/blueprints/backoffice.py:603
 msgid "Please enter a valid positive number"
 msgstr "Adj meg egy érvényes pozitív számot"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:610
+#: src/opendlp/entrypoints/blueprints/backoffice.py:615
 #, python-format
 msgid "Panel size updated to %(number)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:789
+#: src/opendlp/entrypoints/blueprints/backoffice.py:794
 msgid "An error occurred while loading project data"
 msgstr "Hiba történt a projekt adatainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:850
+#: src/opendlp/entrypoints/blueprints/backoffice.py:855
 msgid "An error occurred while loading team members"
 msgstr "Hiba történt a csapattagok betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:889
+#: src/opendlp/entrypoints/blueprints/backoffice.py:894
 #, python-format
 msgid "%(user)s added to project with role %(role)s"
 msgstr "%(user)s hozzáadva a projekthez %(role)s szerepkörrel"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:896
+#: src/opendlp/entrypoints/blueprints/backoffice.py:901
 msgid "Please select a user and role"
 msgstr "Válassz ki egy felhasználót és egy szerepkört"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:902
+#: src/opendlp/entrypoints/blueprints/backoffice.py:907
 #, python-format
 msgid "Could not add user to project: %(error)s"
 msgstr "Nem sikerült hozzáadni a felhasználót a projekthez: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:911
+#: src/opendlp/entrypoints/blueprints/backoffice.py:916
 msgid "You don't have permission to add users to this project"
 msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a projekthez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:920
+#: src/opendlp/entrypoints/blueprints/backoffice.py:925
 msgid "An error occurred while adding the user to the project"
 msgstr "Hiba történt a felhasználó projekthez adása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:940
+#: src/opendlp/entrypoints/blueprints/backoffice.py:945
 #, python-format
 msgid "%(user)s removed from project"
 msgstr "%(user)s eltávolítva a projektből"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:956
+#: src/opendlp/entrypoints/blueprints/backoffice.py:961
 #, python-format
 msgid "Could not remove user from project: %(error)s"
 msgstr "Nem sikerült eltávolítani a felhasználót a projektből: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:965
+#: src/opendlp/entrypoints/blueprints/backoffice.py:970
 msgid "You don't have permission to remove users from this project"
 msgstr "Nincs jogosultságod felhasználókat eltávolítani ebből a projektből"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:974
+#: src/opendlp/entrypoints/blueprints/backoffice.py:979
 msgid "An error occurred while removing the user from the project"
 msgstr "Hiba történt a felhasználó projektből való eltávolítása közben"
 
@@ -2484,10 +2484,10 @@ msgstr "Hiba történt a jelentkezői állapot visszaállítása közben"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1043
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1113
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1438
-#: src/opendlp/entrypoints/blueprints/main.py:90
-#: src/opendlp/entrypoints/blueprints/main.py:146
-#: src/opendlp/entrypoints/blueprints/main.py:191
-#: src/opendlp/entrypoints/blueprints/main.py:308
+#: src/opendlp/entrypoints/blueprints/main.py:91
+#: src/opendlp/entrypoints/blueprints/main.py:147
+#: src/opendlp/entrypoints/blueprints/main.py:192
+#: src/opendlp/entrypoints/blueprints/main.py:313
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -2510,10 +2510,10 @@ msgstr "A közösségi gyűlés nem található"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1052
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1122
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1447
-#: src/opendlp/entrypoints/blueprints/main.py:100
-#: src/opendlp/entrypoints/blueprints/main.py:155
-#: src/opendlp/entrypoints/blueprints/main.py:200
-#: src/opendlp/entrypoints/blueprints/main.py:317
+#: src/opendlp/entrypoints/blueprints/main.py:101
+#: src/opendlp/entrypoints/blueprints/main.py:156
+#: src/opendlp/entrypoints/blueprints/main.py:201
+#: src/opendlp/entrypoints/blueprints/main.py:322
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:115
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:791
@@ -2775,72 +2775,72 @@ msgstr "A feladatfuttatás nem található"
 msgid "Unknown task type"
 msgstr "Ismeretlen feladattípus"
 
-#: src/opendlp/entrypoints/blueprints/main.py:230
+#: src/opendlp/entrypoints/blueprints/main.py:231
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/main.py:234
+#: src/opendlp/entrypoints/blueprints/main.py:237
 msgid "You don't have permission to create assemblies"
 msgstr "Nincs jogosultságod közösségi gyűlés létrehozására"
 
-#: src/opendlp/entrypoints/blueprints/main.py:238
 #: src/opendlp/entrypoints/blueprints/main.py:241
+#: src/opendlp/entrypoints/blueprints/main.py:244
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:270
+#: src/opendlp/entrypoints/blueprints/main.py:273
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/main.py:279
+#: src/opendlp/entrypoints/blueprints/main.py:284
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:288
-#: src/opendlp/entrypoints/blueprints/main.py:296
+#: src/opendlp/entrypoints/blueprints/main.py:293
+#: src/opendlp/entrypoints/blueprints/main.py:301
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a közösségi gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:361
+#: src/opendlp/entrypoints/blueprints/main.py:366
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr "%(user)s hozzáadva a közösségi gyűléshez %(role)s szerepkörrel"
 
-#: src/opendlp/entrypoints/blueprints/main.py:368
+#: src/opendlp/entrypoints/blueprints/main.py:373
 msgid "Please check the form and try again"
 msgstr "Ellenőrizd az űrlapot, és próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:374
+#: src/opendlp/entrypoints/blueprints/main.py:379
 msgid "Invalid user selection"
 msgstr "Érvénytelen felhasználóválasztás"
 
-#: src/opendlp/entrypoints/blueprints/main.py:383
+#: src/opendlp/entrypoints/blueprints/main.py:388
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:392
+#: src/opendlp/entrypoints/blueprints/main.py:397
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűléshez adása közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:412
+#: src/opendlp/entrypoints/blueprints/main.py:417
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr "%(user)s eltávolítva a közösségi gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/main.py:428
+#: src/opendlp/entrypoints/blueprints/main.py:433
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr "Nem sikerült eltávolítani a felhasználót a közösségi gyűlésből: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/main.py:437
+#: src/opendlp/entrypoints/blueprints/main.py:442
 msgid "You don't have permission to remove users from this assembly"
 msgstr ""
 "Nincs jogosultságod felhasználókat eltávolítani ebből a közösségi "
 "gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/main.py:446
+#: src/opendlp/entrypoints/blueprints/main.py:451
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
 
@@ -4310,50 +4310,59 @@ msgstr "Túllépted %(operation)s művelet gyakorisági korlátját"
 msgid "Rate limit exceeded. Please try again later"
 msgstr "Túllépted a gyakorisági korlátot. Próbáld újra később"
 
-#: src/opendlp/service_layer/exceptions.py:271
+#: src/opendlp/service_layer/exceptions.py:224
+#, python-format
+msgid "You already have a project called %(title)s"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:226
+msgid "You already have a project with that title"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:283
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s images"
 msgstr "Ezen a regisztrációs oldalon már megvan a maximális %(limit)s kép"
 
-#: src/opendlp/service_layer/exceptions.py:278
+#: src/opendlp/service_layer/exceptions.py:290
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s documents"
 msgstr "Ezen a regisztrációs oldalon már megvan a maximális %(limit)s dokumentum"
 
-#: src/opendlp/service_layer/exceptions.py:294
+#: src/opendlp/service_layer/exceptions.py:306
 #, python-format
 msgid "OAuth authentication failed for %(provider)s: %(reason)s"
 msgstr "Az OAuth-hitelesítés sikertelen a következőnél: %(provider)s: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:296
+#: src/opendlp/service_layer/exceptions.py:308
 #, python-format
 msgid "OAuth authentication failed for %(provider)s"
 msgstr "Az OAuth-hitelesítés sikertelen a következőnél: %(provider)s"
 
-#: src/opendlp/service_layer/exceptions.py:298
+#: src/opendlp/service_layer/exceptions.py:310
 #, python-format
 msgid "OAuth authentication failed: %(reason)s"
 msgstr "Az OAuth-hitelesítés sikertelen: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:300
+#: src/opendlp/service_layer/exceptions.py:312
 msgid "OAuth authentication failed"
 msgstr "Az OAuth-hitelesítés sikertelen"
 
-#: src/opendlp/service_layer/exceptions.py:310
+#: src/opendlp/service_layer/exceptions.py:322
 msgid "Invalid OAuth state parameter"
 msgstr "Érvénytelen OAuth state paraméter"
 
-#: src/opendlp/service_layer/exceptions.py:317
+#: src/opendlp/service_layer/exceptions.py:329
 msgid "Cannot remove last authentication method. Add another method first."
 msgstr ""
 "Az utolsó bejelentkezési mód nem távolítható el. Előbb adj hozzá egy "
 "másikat."
 
-#: src/opendlp/service_layer/exceptions.py:324
+#: src/opendlp/service_layer/exceptions.py:336
 msgid "You cannot disable your own account"
 msgstr "A saját fiókodat nem tilthatod le"
 
-#: src/opendlp/service_layer/exceptions.py:338
+#: src/opendlp/service_layer/exceptions.py:350
 msgid ""
 "A project must keep at least one Project Manager. Add another one before "
 "removing this one."

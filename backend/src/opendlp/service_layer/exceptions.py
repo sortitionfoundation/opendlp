@@ -216,6 +216,18 @@ class RateLimitExceeded(CuratedMessage, ServiceLayerError):
         self.retry_after_seconds = retry_after_seconds
 
 
+class AssemblyTitleTaken(CuratedMessage, ServiceLayerError):
+    """Raised when a project title matches an unarchived project the user can see."""
+
+    def __init__(self, title: str = "") -> None:
+        if title:
+            message = _("You already have a project called %(title)s", title=title)
+        else:
+            message = _("You already have a project with that title")
+        super().__init__(message)
+        self.title = title
+
+
 class InvalidSelection(ServiceLayerError):
     """Error for when we can't do selection because something is invalid"""
 

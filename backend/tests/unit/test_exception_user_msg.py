@@ -10,6 +10,7 @@ from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
+    AssemblyTitleTaken,
     CannotDisableSelf,
     CannotRemoveLastAssemblyManager,
     CannotRemoveLastAuthMethod,
@@ -78,6 +79,7 @@ CURATED = [
     ContentBlockInvalidError("Add a heading, some text, or both"),
     SelectionAlreadyRunning(_RUNNING_SELECTION),
     TabularDataError([TableProblem(kind="empty", message="The file is empty or has no header row.")]),
+    AssemblyTitleTaken("Climate Assembly"),
 ]
 
 UNCURATED = [
