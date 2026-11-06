@@ -9,7 +9,7 @@ ABOUTME: The form idiom of the create and edit project pages; posts back to prof
 {% block title %}{{ _("Edit profile") }}{% endblock %}
 
 {% block page_content %}
-    <h1 class="text-display-lg mb-8" style="color: var(--color-headings);">{{ _("Edit profile") }}</h1>
+    <h1 class="text-display-lg mb-8" style="color: var(--color-display-text);">{{ _("Edit profile") }}</h1>
 
     <form method="POST" novalidate class="max-w-2xl">
         {{ form.hidden_tag() }}

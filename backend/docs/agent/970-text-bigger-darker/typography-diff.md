@@ -84,27 +84,48 @@ all equal to `static/backoffice/tokens/primitive.css`. (Node 1276-155 still uses
 a `neutral-500_` variable, #646a78, one step darker than the repo's #6F7482.)
 
 The code has one colour alias per role, not one per type token. Which alias the
-templates pair with each class (counted over `templates/`): display, heading,
-label, table-header and numeric classes with `--color-headings`; body, input and
+templates pair with each class (counted over `templates/`): heading, label,
+table-header and numeric classes with `--color-headings`; body, input and
 table-cell with `--color-body-text`; caption and overline with
-`--color-secondary-text`.
+`--color-secondary-text`. Display classes were paired with `--color-headings`
+too; they now have their own alias, `--color-display-text`, which the 40 tags
+with a `text-display-*` class and that colour use (the one brand-coloured public
+page heading keeps `--color-primary-action`).
 
-| Text | 6316-7169 | 1276-155 | Branch (before = after) | `origin/main` |
-| --- | --- | --- | --- | --- |
-| display-* | neutral-800 | neutral-800 | `--color-headings` neutral-900 #12141C | neutral-700 |
-| heading-*, label-*, table-header, numeric | neutral-700 | neutral-700 | `--color-headings` neutral-900 | neutral-700 |
-| body-* | neutral-700 | neutral-700 | `--color-body-text` neutral-800 #1F2330 | neutral-600 |
-| input-text | neutral-800 | neutral-800 | `--color-body-text` neutral-800 | neutral-600 |
-| table-cell | neutral-600 | neutral-700 | `--color-body-text` neutral-800 | neutral-600 |
-| caption, overline | neutral-600 | neutral-600 | `--color-secondary-text` neutral-600 #4E5361 | neutral-500 |
-| placeholder | neutral-500 #6f7482 | neutral-500_ #646a78 | `--color-placeholder-text` neutral-500 #6F7482 | neutral-400 |
-| button-lg | none written; sample #4e5361 | white on brand-400 | per button variant | per button variant |
+The branch follows the frames' colours wherever the code has an alias for the
+role. "Before" is the branch up to the Lato 2.0 switch, "now" is with this
+change:
 
-The branch is one or two steps darker than both frames for headings, labels and
-body text, and equal for input text, captions and placeholders. Following the
-frames exactly would need more aliases than the code has: display and heading
-colours differ in Figma but share `--color-headings`, and body, input and
-table-cell colours differ but share `--color-body-text`.
+| Text | 6316-7169 | 1276-155 | Branch before | Branch now | `origin/main` |
+| --- | --- | --- | --- | --- | --- |
+| display-* | neutral-800 | neutral-800 | `--color-headings` neutral-900 #12141C | `--color-display-text` **neutral-800** #1F2330 | neutral-700 |
+| heading-*, label-*, table-header, numeric | neutral-700 | neutral-700 | `--color-headings` neutral-900 | `--color-headings` **neutral-700** #2F3442 | neutral-700 |
+| body-* | neutral-700 | neutral-700 | `--color-body-text` neutral-800 | `--color-body-text` **neutral-700** | neutral-600 |
+| input-text | neutral-800 | neutral-800 | `--color-body-text` neutral-800 | `--color-body-text` neutral-700 (no own alias) | neutral-600 |
+| table-cell | neutral-600 | neutral-700 | `--color-body-text` neutral-800 | `--color-body-text` neutral-700 (no own alias) | neutral-600 |
+| caption, overline | neutral-600 | neutral-600 | `--color-secondary-text` neutral-600 #4E5361 | unchanged | neutral-500 |
+| placeholder | neutral-500 #6f7482 | neutral-500_ #646a78 | `--color-placeholder-text` neutral-500 #6F7482 | unchanged | neutral-400 |
+| button-lg | none written; sample #4e5361 | white on brand-400 | per button variant | unchanged | per button variant |
+
+Against `origin/main`, body text, captions, placeholders and display titles are
+one step darker; headings, labels, table headers and numbers are back on
+`origin/main`'s neutral-700, the same colour as body text, as in both frames.
+
+Where a frame's colour has no counterpart in the code, the code is unchanged:
+
+- **Input values** are neutral-800 in both frames. The code has no input-text
+  alias: 62 `<input>`, `<textarea>` and `<select>` tags in 20 templates (the
+  `input.html` macros among them) colour their text with `--color-body-text`, so
+  input values follow body text to neutral-700. Before this change they matched
+  the frames by coincidence, both being neutral-800.
+- **Table cells** are neutral-600 in 6316-7169 and neutral-700 in 1276-155. The
+  code has no table-cell alias; cells use `--color-body-text`, so they are
+  neutral-700, as in 1276-155.
+- **The button-lg sample** carries a colour in each frame, but buttons take
+  their colours from the button tokens (`--color-button-*`) per variant, which
+  neither frame describes.
+- **neutral-500**: the repo and 6316-7169 have #6F7482; 1276-155's
+  `neutral-500_` variable is #646a78. The primitive is unchanged.
 
 ## 3. Node 1276-155 ("Typography - revised") against the branch
 

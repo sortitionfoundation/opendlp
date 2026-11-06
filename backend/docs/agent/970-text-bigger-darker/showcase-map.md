@@ -34,7 +34,7 @@ the scale without a template change.
 | # | Section (nav label) | Partial | Why it is on the agenda |
 | --- | --- | --- | --- |
 | 1 | Typography | `typography.html` | The table of the 21 classes (lines 17–37) is hand-written and must be regenerated whenever the scale changes; its description (line 11) names the four Lato 2.0 files, one per weight (see `fonts.md`); until the switch it called 500/600 "browser-synthesised", which they never were. The use-case rows (45–63) are the visual check. |
-| 2 | Semantic Tokens | `semantic_tokens.html` | Text colour aliases: the branch darkened `--color-body-text`/`--color-headings` to neutral-800/900; Klára's node uses neutral-700/800. |
+| 2 | Semantic Tokens | `semantic_tokens.html` | Text colour aliases, now as the Figma typography pairs them: `--color-body-text` and `--color-headings` neutral-700, the new `--color-display-text` neutral-800, `--color-secondary-text` neutral-600, `--color-placeholder-text` neutral-500; the swatch captions show that mapping. |
 | 3 | Primitive Tokens | `primitive_tokens.html` | `--color-neutral-500` is #6F7482 in the repo and #646a78 in the Figma node. |
 | 4 | Spacing Conventions | `spacing.html` | Uses body/heading/code classes; line-height changes alter the rhythm shown. |
 | 5 | Responsive Layout | `responsive.html` | Uses body-md/sm, button-md, heading-sm, code. |

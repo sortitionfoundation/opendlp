@@ -9,7 +9,7 @@ ABOUTME: Lists added / absent columns and id-column changes; user confirms or ca
 {% block title %}{{ _("Confirm upload") }} - {{ assembly.title }}{% endblock %}
 
 {% block page_content %}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Confirm CSV upload") }}</h1>
+    <h1 class="text-display-lg mb-2" style="color: var(--color-display-text);">{{ _("Confirm CSV upload") }}</h1>
     <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
         {{ _("This upload will change which fields exist in the respondent schema for") }}
         <strong>{{ assembly.title }}</strong>.
@@ -37,7 +37,7 @@ ABOUTME: Lists added / absent columns and id-column changes; user confirms or ca
 
     {% if new_keys %}
         <section class="mb-8">
-            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-display-text);">
                 {{ _("New columns") }} ({{ new_keys|length }})
             </h2>
             <p class="text-body-md mb-4">
@@ -53,7 +53,7 @@ ABOUTME: Lists added / absent columns and id-column changes; user confirms or ca
 
     {% if diff.absent_keys %}
         <section class="mb-8">
-            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">
+            <h2 class="text-display-sm mb-4" style="color: var(--color-display-text);">
                 {{ _("Columns no longer in CSV") }} ({{ diff.absent_keys|length }})
             </h2>
             <p class="text-body-md mb-4">

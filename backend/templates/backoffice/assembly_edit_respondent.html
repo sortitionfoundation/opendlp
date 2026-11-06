@@ -57,7 +57,7 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
 
             {% for schema_section in ordered_sections %}
                 {% call section(classes="mb-6") %}
-                    <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ schema_section.label }}</h2>
+                    <h2 class="text-display-sm mb-4" style="color: var(--color-display-text);">{{ schema_section.label }}</h2>
                     <div class="flex flex-col gap-4">
                         {% for field in schema_section.fields %}
                             {% if field.is_fixed %}
@@ -169,7 +169,7 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
             {% endfor %}
 
             {% call section(classes="mb-6") %}
-                <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Change note") }}</h2>
+                <h2 class="text-display-sm mb-4" style="color: var(--color-display-text);">{{ _("Change note") }}</h2>
                 {{ textarea(name="comment", label=_("Why are you making this change?") , value=form.comment.data or "", required=true, rows=3, error=first_error(form.comment.errors) | trim) }}
             {% endcall %}
 

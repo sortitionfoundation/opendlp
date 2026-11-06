@@ -73,9 +73,9 @@ ABOUTME: Renders a Chart.js pie (built-in legend + hover tooltips) from segment 
         {# Header. Static tags (not <{{ title_tag }}>) so the template indenter can parse them. #}
         <div class="w-full">
             {% if title_tag == "h4" %}
-                <h4 class="text-display-sm" style="color: var(--color-headings); word-break: break-word;">{{ title }}</h4>
+                <h4 class="text-display-sm" style="color: var(--color-display-text); word-break: break-word;">{{ title }}</h4>
             {% else %}
-                <p class="text-display-sm" style="color: var(--color-headings); word-break: break-word;">{{ title }}</p>
+                <p class="text-display-sm" style="color: var(--color-display-text); word-break: break-word;">{{ title }}</p>
             {% endif %}
         </div>
         {% if segments and total > 0 %}
