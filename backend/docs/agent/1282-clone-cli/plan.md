@@ -613,7 +613,7 @@ Each step is its own commit, with its tests, and leaves `just test` and
 2. ✅ **`list_assemblies`** - the `list_filtered` repository method (abstract,
    SQL, fake) and the service function.
 3. ✅ **`projects list`** - the `projects` CLI group and the `list` command.
-4. **The HTML URL rewrite** - the pure function and its unit tests.
+4. ✅ **The HTML URL rewrite** - the pure function and its unit tests.
 5. **`clone_assembly`** - options and their validation, then each part in
    dependency order: project and settings, targets, questions and derived
    fields, registration, respondents, team. `_generated_url_slug` made public
