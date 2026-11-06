@@ -591,14 +591,14 @@ class EditOwnProfileForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for users to edit their own profile."""
 
     first_name = StringField(
-        _l("First Name"),
+        _l("First name"),
         validators=[Length(max=100)],
         description=_l("Your first name"),
         render_kw={"autocomplete": "given-name"},
     )
 
     last_name = StringField(
-        _l("Last Name"),
+        _l("Last name"),
         validators=[Length(max=100)],
         description=_l("Your last name"),
         render_kw={"autocomplete": "family-name"},
@@ -609,19 +609,19 @@ class ChangeOwnPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for users to change their own password."""
 
     current_password = PasswordField(
-        _l("Current Password"),
+        _l("Current password"),
         validators=[DataRequired()],
         render_kw={"autocomplete": "current-password"},
     )
 
     new_password = PasswordField(
-        _l("New Password"),
+        _l("New password"),
         validators=[DataRequired(), Length(min=8)],
         render_kw={"autocomplete": "new-password"},
     )
 
     new_password_confirm = PasswordField(
-        _l("Confirm New Password"),
+        _l("Confirm new password"),
         validators=[DataRequired(), EqualTo("new_password", message=_l("Passwords must match"))],
         render_kw={"autocomplete": "new-password"},
     )
@@ -635,7 +635,7 @@ class SetPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     new_password_confirm = PasswordField(
-        _l("Confirm Password"),
+        _l("Confirm password"),
         validators=[DataRequired(), EqualTo("new_password", message=_l("Passwords must match"))],
         render_kw={"autocomplete": "new-password"},
     )

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 16:31+0000\n"
+"POT-Creation-Date: 2026-11-03 18:25+0100\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -546,8 +546,9 @@ msgstr "Megtekintő – Megtekintheti a projektet, de nem módosíthat"
 #: src/opendlp/domain/value_objects.py:74 templates/admin/invite_view.html:64
 #: templates/admin/invites.html:89 templates/admin/user_view.html:58
 #: templates/admin/users.html:91 templates/admin/users.html:140
-#: templates/profile/view.html:44 templates/profile/view.html:77
-#: templates/profile/view.html:128
+#: templates/backoffice/profile/view.html:62
+#: templates/backoffice/profile/view.html:90
+#: templates/backoffice/profile/view.html:125
 msgid "Active"
 msgstr "Aktív"
 
@@ -735,9 +736,10 @@ msgstr "Nem"
 #: templates/backoffice/assembly_edit_respondent.html:95
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:164
+#: templates/backoffice/profile/view.html:38
+#: templates/backoffice/profile/view.html:43
+#: templates/backoffice/profile/view.html:64
 #: templates/gsheets/components/view_config.html:41
-#: templates/profile/view.html:19 templates/profile/view.html:25
-#: templates/profile/view.html:46
 msgid "Not set"
 msgstr "Nincs beállítva"
 
@@ -797,13 +799,13 @@ msgstr "Adj meg egy teljes http:// vagy https:// című webcímet"
 
 #: src/opendlp/entrypoints/forms.py:132 src/opendlp/entrypoints/forms.py:261
 #: src/opendlp/entrypoints/forms.py:302 src/opendlp/entrypoints/forms.py:313
-#: templates/profile/view.html:11 templates/public/register.html:79
+#: templates/backoffice/profile/view.html:33 templates/public/register.html:79
 msgid "Email address"
 msgstr "E-mail cím"
 
 #: src/opendlp/entrypoints/forms.py:136 src/opendlp/entrypoints/forms.py:267
 #: src/opendlp/entrypoints/forms.py:628 templates/admin/user_view.html:70
-#: templates/profile/view.html:41
+#: templates/backoffice/profile/view.html:59
 msgid "Password"
 msgstr "Jelszó"
 
@@ -832,18 +834,16 @@ msgid "Enter your invite code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
 #: src/opendlp/entrypoints/forms.py:249 src/opendlp/entrypoints/forms.py:516
-#: src/opendlp/entrypoints/forms.py:588 templates/admin/user_view.html:29
-#: templates/profile/view.html:17
+#: templates/admin/user_view.html:29
 msgid "First Name"
 msgstr "Keresztnév"
 
 #: src/opendlp/entrypoints/forms.py:255 src/opendlp/entrypoints/forms.py:523
-#: src/opendlp/entrypoints/forms.py:595 templates/admin/user_view.html:39
-#: templates/profile/view.html:23
+#: templates/admin/user_view.html:39
 msgid "Last Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:271 src/opendlp/entrypoints/forms.py:632
+#: src/opendlp/entrypoints/forms.py:271
 msgid "Confirm Password"
 msgstr "Jelszó megerősítése"
 
@@ -874,11 +874,11 @@ msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 msgid "Enter your email address and we will send you a new confirmation link"
 msgstr "Add meg az e-mail címed, és küldünk egy új megerősítő linket"
 
-#: src/opendlp/entrypoints/forms.py:324 src/opendlp/entrypoints/forms.py:612
+#: src/opendlp/entrypoints/forms.py:324
 msgid "New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:328 src/opendlp/entrypoints/forms.py:618
+#: src/opendlp/entrypoints/forms.py:328
 msgid "Confirm New Password"
 msgstr "Új jelszó megerősítése"
 
@@ -1155,17 +1155,45 @@ msgstr "Szerepkör a projektben"
 msgid "Select the role this user will have on the project"
 msgstr "Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a projektben"
 
+#: src/opendlp/entrypoints/forms.py:588
+#: templates/backoffice/profile/view.html:36
+#, fuzzy
+msgid "First name"
+msgstr "Keresztnév"
+
 #: src/opendlp/entrypoints/forms.py:590
 msgid "Your first name"
 msgstr "Keresztnév"
+
+#: src/opendlp/entrypoints/forms.py:595
+#: templates/backoffice/profile/view.html:41
+#, fuzzy
+msgid "Last name"
+msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py:597
 msgid "Your last name"
 msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py:606
-msgid "Current Password"
+#, fuzzy
+msgid "Current password"
+msgstr "Jelenlegi jelszó"
+
+#: src/opendlp/entrypoints/forms.py:612
+#, fuzzy
+msgid "New password"
 msgstr "Új jelszó"
+
+#: src/opendlp/entrypoints/forms.py:618
+#, fuzzy
+msgid "Confirm new password"
+msgstr "Új jelszó megerősítése"
+
+#: src/opendlp/entrypoints/forms.py:632
+#, fuzzy
+msgid "Confirm password"
+msgstr "Jelszó megerősítése"
 
 #: src/opendlp/entrypoints/forms.py:642 src/opendlp/entrypoints/forms.py:727
 #: templates/backoffice/assembly_data.html:362
@@ -5071,8 +5099,7 @@ msgstr "Sortition Lab"
 msgid "Help"
 msgstr "Súgó"
 
-#: templates/base.html:77 templates/profile/view.html:3
-#: templates/profile/view.html:7
+#: templates/base.html:77
 msgid "My Account"
 msgstr "Fiókom"
 
@@ -5107,7 +5134,7 @@ msgstr "Fiók létrehozása"
 msgid "There is a problem"
 msgstr "Probléma merült fel"
 
-#: templates/base.html:144 templates/profile/2fa_backup_codes.html:9
+#: templates/base.html:144
 msgid "Success"
 msgstr "Sikerült"
 
@@ -5191,9 +5218,9 @@ msgstr "Meghívók kezelése"
 #: templates/backoffice/assembly_respondents.html:23
 #: templates/backoffice/assembly_selection.html:19
 #: templates/backoffice/assembly_targets.html:20
+#: templates/backoffice/profile/view.html:20
 #: templates/backoffice/respondent_field_schema/view.html:17
 #: templates/backoffice/target_sources/view.html:16
-#: templates/profile/view.html:206
 msgid "Back to Your projects"
 msgstr "Vissza a projektjeidhez"
 
@@ -5220,6 +5247,10 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:88
 #: templates/backoffice/dashboard_export_modal.html:62
+#: templates/backoffice/profile/2fa_setup.html:67
+#: templates/backoffice/profile/change_password.html:53
+#: templates/backoffice/profile/edit.html:38
+#: templates/backoffice/profile/set_password.html:48
 #: templates/backoffice/registration/_assets.html:256
 #: templates/backoffice/registration/_assets.html:312
 #: templates/backoffice/registration/_modals.html:96
@@ -5244,9 +5275,6 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/gsheets/edit_config.html:234 templates/gsheets/manage_tabs.html:63
 #: templates/gsheets/replace.html:46 templates/gsheets/select.html:68
 #: templates/main/create_assembly.html:96 templates/main/edit_assembly.html:82
-#: templates/profile/2fa_setup.html:85
-#: templates/profile/change_password.html:19 templates/profile/edit.html:41
-#: templates/profile/set_password.html:21
 #: templates/targets/components/category_block.html:43
 #: templates/targets/components/category_block.html:169
 #: templates/targets/components/category_block.html:298
@@ -5284,7 +5312,8 @@ msgstr "URL másolása"
 
 #: templates/admin/invite_view.html:53 templates/admin/invites.html:68
 #: templates/admin/users.html:117 templates/backoffice/assembly_members.html:49
-#: templates/main/view_assembly_members.html:12 templates/profile/view.html:29
+#: templates/backoffice/profile/view.html:46
+#: templates/main/view_assembly_members.html:12
 msgid "Role"
 msgstr "Szerepkör"
 
@@ -5340,8 +5369,6 @@ msgstr "Ismeretlen"
 #: templates/db_selection/components/progress.html:91
 #: templates/db_selection/select.html:24 templates/db_selection/select.html:54
 #: templates/gsheets/components/progress.html:101
-#: templates/profile/2fa_backup_codes.html:19
-#: templates/profile/2fa_setup.html:37
 #: templates/targets/components/category_block.html:185
 #: templates/targets/view_targets.html:28
 #: templates/targets/view_targets.html:222
@@ -5493,14 +5520,16 @@ msgid "Details"
 msgstr "Részletek"
 
 #: templates/admin/user_2fa_audit_log.html:45 templates/admin/user_view.html:80
-#: templates/admin/users.html:149 templates/profile/2fa_settings.html:25
-#: templates/profile/view.html:185
+#: templates/admin/users.html:149
+#: templates/backoffice/profile/2fa_settings.html:38
+#: templates/backoffice/profile/view.html:167
 msgid "Enabled"
 msgstr "Bekapcsolva"
 
 #: templates/admin/user_2fa_audit_log.html:47 templates/admin/user_view.html:91
-#: templates/admin/users.html:151 templates/profile/2fa_settings.html:27
-#: templates/profile/view.html:187
+#: templates/admin/users.html:151
+#: templates/backoffice/profile/2fa_settings.html:40
+#: templates/backoffice/profile/view.html:169
 msgid "Disabled"
 msgstr "Kikapcsolva"
 
@@ -5631,9 +5660,7 @@ msgstr "Bejelentkezési mód"
 msgid "OAuth"
 msgstr "OAuth"
 
-#: templates/admin/user_view.html:75 templates/profile/2fa_settings.html:2
-#: templates/profile/2fa_settings.html:6 templates/profile/2fa_settings.html:22
-#: templates/profile/view.html:178 templates/public/verify_2fa.html:9
+#: templates/admin/user_view.html:75 templates/public/verify_2fa.html:9
 #: templates/public/verify_2fa.html:12
 msgid "Two-Factor Authentication"
 msgstr "Kétlépcsős azonosítás"
@@ -5642,7 +5669,8 @@ msgstr "Kétlépcsős azonosítás"
 msgid "Not applicable (OAuth user)"
 msgstr "Nem értelmezhető (OAuth-felhasználó)"
 
-#: templates/admin/user_view.html:84 templates/profile/2fa_settings.html:33
+#: templates/admin/user_view.html:84
+#: templates/backoffice/profile/2fa_settings.html:45
 msgid "Enabled on"
 msgstr "Bekapcsolva ekkor"
 
@@ -5953,11 +5981,12 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:78
 #: templates/backoffice/assembly_members.html:83
+#: templates/backoffice/profile/view.html:73
 #: templates/backoffice/respondent_field_schema/_editor.html:149
 #: templates/backoffice/respondent_field_schema/_field_modal.html:155
 #: templates/backoffice/target_sources/_setup_modal.html:298
 #: templates/backoffice/target_sources/_setup_modal.html:324
-#: templates/main/view_assembly_members.html:31 templates/profile/view.html:61
+#: templates/main/view_assembly_members.html:31
 msgid "Remove"
 msgstr "Eltávolítás"
 
@@ -6385,7 +6414,7 @@ msgid "Why are you making this change?"
 msgstr "Miért végzed el ezt a módosítást?"
 
 #: templates/backoffice/assembly_edit_respondent.html:177
-#: templates/profile/edit.html:40
+#: templates/backoffice/profile/edit.html:37
 msgid "Save changes"
 msgstr "Módosítások mentése"
 
@@ -6982,6 +7011,8 @@ msgid "Help (knowledge hub)"
 msgstr "Súgó (tudástár)"
 
 #: templates/backoffice/base_page.html:39
+#: templates/backoffice/profile/view.html:13
+#: templates/backoffice/profile/view.html:18
 msgid "My account"
 msgstr "Fiókom"
 
@@ -8168,6 +8199,346 @@ msgstr "Elfogadva. A módosítás megtartásához mentsd el."
 msgid "Copied to clipboard"
 msgstr "Vágólapra másolva"
 
+#: templates/backoffice/profile/2fa_backup_codes.html:11
+#: templates/backoffice/profile/2fa_backup_codes.html:14
+#, fuzzy
+msgid "New backup codes"
+msgstr "Új tartalék kódok"
+
+#: templates/backoffice/profile/2fa_backup_codes.html:19
+msgid "Your backup codes have been regenerated"
+msgstr "A tartalék kódjaid újragenerálva"
+
+#: templates/backoffice/profile/2fa_backup_codes.html:20
+msgid "Your old backup codes are no longer valid."
+msgstr "A régi tartalék kódjaid már nem érvényesek."
+
+#: templates/backoffice/profile/2fa_backup_codes.html:24
+msgid ""
+"Save these backup codes in a safe place. Each code can only be used once."
+" This is the only time you'll see these codes."
+msgstr ""
+"Őrizd meg ezeket a tartalék kódokat biztonságos helyen. Minden kód csak "
+"egyszer használható fel. Most látod őket utoljára."
+
+#: templates/backoffice/profile/2fa_backup_codes.html:26
+#: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:79
+msgid "Done"
+msgstr "Kész"
+
+#: templates/backoffice/profile/2fa_settings.html:14
+#: templates/backoffice/profile/2fa_settings.html:19
+#: templates/backoffice/profile/2fa_settings.html:35
+#: templates/backoffice/profile/view.html:161
+#, fuzzy
+msgid "Two-factor authentication"
+msgstr "Kétlépcsős azonosítás"
+
+#: templates/backoffice/profile/2fa_settings.html:21
+msgid "Back to profile"
+msgstr "Vissza a profilhoz"
+
+#: templates/backoffice/profile/2fa_settings.html:29
+msgid ""
+"Two-factor authentication is not available for users who sign in with "
+"Google or Microsoft. Your OAuth provider already provides strong "
+"authentication security."
+msgstr ""
+"A kétlépcsős azonosítás nem érhető el azoknak, akik Google- vagy "
+"Microsoft-fiókkal jelentkeznek be. Az OAuth szolgáltatód már erős "
+"hitelesítési védelmet nyújt."
+
+#: templates/backoffice/profile/2fa_settings.html:33
+#, fuzzy
+msgid "Current status"
+msgstr "Jelenlegi állapot"
+
+#: templates/backoffice/profile/2fa_settings.html:50
+msgid "Backup codes remaining"
+msgstr "Fennmaradó tartalék kódok"
+
+#: templates/backoffice/profile/2fa_settings.html:52
+msgid "of 8"
+msgstr "a 8-ból"
+
+#: templates/backoffice/profile/2fa_settings.html:62
+#, fuzzy
+msgid "Enable two-factor authentication"
+msgstr "Kétlépcsős azonosítás bekapcsolása"
+
+#: templates/backoffice/profile/2fa_settings.html:64
+msgid ""
+"Two-factor authentication adds an extra layer of security to your "
+"account. When enabled, you'll need to enter a code from your "
+"authenticator app in addition to your password."
+msgstr ""
+"A kétlépcsős azonosítás további védelmi réteget ad a fiókodhoz. Ha "
+"bekapcsolod, a jelszavad mellett a hitelesítő alkalmazásod kódját is meg "
+"kell adnod."
+
+#: templates/backoffice/profile/2fa_settings.html:66
+msgid "What you'll need:"
+msgstr "Amire szükséged lesz:"
+
+#: templates/backoffice/profile/2fa_settings.html:68
+msgid ""
+"An authenticator app such as Google Authenticator, Authy, or Microsoft "
+"Authenticator"
+msgstr ""
+"Egy hitelesítő alkalmazás, például a Google Authenticator, az Authy vagy "
+"a Microsoft Authenticator"
+
+#: templates/backoffice/profile/2fa_settings.html:69
+msgid "A safe place to store backup codes for account recovery"
+msgstr "Egy biztonságos hely a fiók-helyreállító tartalék kódok tárolásához"
+
+#: templates/backoffice/profile/2fa_settings.html:71
+#: templates/backoffice/profile/2fa_setup.html:12
+#: templates/backoffice/profile/2fa_setup.html:15
+msgid "Set up two-factor authentication"
+msgstr "Kétlépcsős azonosítás beállítása"
+
+#: templates/backoffice/profile/2fa_settings.html:79
+#, fuzzy
+msgid "Manage two-factor authentication"
+msgstr "Kétlépcsős azonosítás kezelése"
+
+#: templates/backoffice/profile/2fa_settings.html:82
+#: templates/backoffice/profile/2fa_settings.html:88
+msgid "Regenerate backup codes"
+msgstr "Tartalék kódok újragenerálása"
+
+#: templates/backoffice/profile/2fa_settings.html:84
+msgid ""
+"If you've used some of your backup codes, you can generate a new set. "
+"This will invalidate all existing backup codes."
+msgstr ""
+"Ha már felhasználtál néhányat a tartalék kódjaidból, generálhatsz egy új "
+"készletet. Ezzel az összes meglévő tartalék kód érvénytelenné válik."
+
+#: templates/backoffice/profile/2fa_settings.html:95
+#: templates/backoffice/profile/2fa_settings.html:118
+#: templates/backoffice/profile/2fa_setup.html:61
+#: templates/public/verify_2fa.html:22
+msgid "Verification code"
+msgstr "Ellenőrző kód"
+
+#: templates/backoffice/profile/2fa_settings.html:96
+#: templates/backoffice/profile/2fa_settings.html:119
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Add meg a hitelesítő alkalmazásod 6 jegyű kódját"
+
+#: templates/backoffice/profile/2fa_settings.html:99
+msgid "Regenerate codes"
+msgstr "Kódok újragenerálása"
+
+#: templates/backoffice/profile/2fa_settings.html:104
+#: templates/backoffice/profile/2fa_settings.html:110
+msgid "Disable two-factor authentication"
+msgstr "Kétlépcsős azonosítás kikapcsolása"
+
+#: templates/backoffice/profile/2fa_settings.html:106
+msgid "Disabling two-factor authentication will make your account less secure."
+msgstr "A kétlépcsős azonosítás kikapcsolásával a fiókod kevésbé lesz biztonságos."
+
+#: templates/backoffice/profile/2fa_settings.html:114
+msgid ""
+"Are you sure you want to disable two-factor authentication? This will "
+"make your account less secure."
+msgstr ""
+"Biztosan kikapcsolod a kétlépcsős azonosítást? Ezzel a fiókod kevésbé "
+"lesz biztonságos."
+
+#: templates/backoffice/profile/2fa_settings.html:122
+msgid "Disable"
+msgstr "Kikapcsolás"
+
+#: templates/backoffice/profile/2fa_setup.html:20
+#, fuzzy
+msgid "Step 1: Scan QR code"
+msgstr "1. lépés: olvasd be a QR-kódot"
+
+#: templates/backoffice/profile/2fa_setup.html:22
+msgid "Open your authenticator app and scan this QR code:"
+msgstr "Nyisd meg a hitelesítő alkalmazásodat, és olvasd be ezt a QR-kódot:"
+
+#: templates/backoffice/profile/2fa_setup.html:25
+msgid "QR code for two-factor authentication setup"
+msgstr "QR-kód a kétlépcsős azonosítás beállításához"
+
+#: templates/backoffice/profile/2fa_setup.html:31
+msgid "Can't scan the QR code?"
+msgstr "Nem tudod beolvasni a QR-kódot?"
+
+#: templates/backoffice/profile/2fa_setup.html:33
+msgid "You can enter this code manually in your authenticator app:"
+msgstr "Ezt a kódot kézzel is beírhatod a hitelesítő alkalmazásodba:"
+
+#: templates/backoffice/profile/2fa_setup.html:44
+#, fuzzy
+msgid "Step 2: Save backup codes"
+msgstr "2. lépés: mentsd el a tartalék kódokat"
+
+#: templates/backoffice/profile/2fa_setup.html:45
+msgid ""
+"Save these backup codes in a safe place. Each code can only be used once."
+" If you lose access to your authenticator app, you'll need these codes to"
+" sign in."
+msgstr ""
+"Őrizd meg ezeket a tartalék kódokat biztonságos helyen. Minden kód csak "
+"egyszer használható fel. Ha elveszíted a hozzáférést a hitelesítő "
+"alkalmazásodhoz, ezekkel a kódokkal tudsz bejelentkezni."
+
+#: templates/backoffice/profile/2fa_setup.html:53
+#, fuzzy
+msgid "Step 3: Verify setup"
+msgstr "3. lépés: ellenőrizd a beállítást"
+
+#: templates/backoffice/profile/2fa_setup.html:55
+msgid "Enter the 6-digit code from your authenticator app to complete setup:"
+msgstr ""
+"A beállítás befejezéséhez add meg a hitelesítő alkalmazásod 6 jegyű "
+"kódját:"
+
+#: templates/backoffice/profile/2fa_setup.html:66
+msgid "Verify and enable"
+msgstr "Ellenőrzés és bekapcsolás"
+
+#: templates/backoffice/profile/_backup_codes.html:27
+msgid "Download codes"
+msgstr "Kódok letöltése"
+
+#: templates/backoffice/profile/_backup_codes.html:28
+msgid "Print codes"
+msgstr "Kódok nyomtatása"
+
+#: templates/backoffice/profile/change_password.html:9
+#: templates/backoffice/profile/change_password.html:12
+#: templates/backoffice/profile/change_password.html:52
+#: templates/backoffice/profile/view.html:184
+msgid "Change password"
+msgstr "Jelszó megváltoztatása"
+
+#: templates/backoffice/profile/change_password.html:37
+#: templates/backoffice/profile/set_password.html:32
+msgid "Your password must meet the following requirements:"
+msgstr "A jelszavadnak meg kell felelnie a következő követelményeknek:"
+
+#: templates/backoffice/profile/edit.html:9
+#: templates/backoffice/profile/edit.html:12
+#: templates/backoffice/profile/view.html:182
+msgid "Edit profile"
+msgstr "Profil szerkesztése"
+
+#: templates/backoffice/profile/set_password.html:9
+#: templates/backoffice/profile/set_password.html:12
+#: templates/backoffice/profile/set_password.html:47
+#: templates/backoffice/profile/view.html:79
+msgid "Set password"
+msgstr "Jelszó beállítása"
+
+#: templates/backoffice/profile/set_password.html:14
+#, fuzzy, python-format
+msgid ""
+"Set a password to add it as an additional authentication method. You will"
+" be able to sign in using either your password or %(provider)s OAuth."
+msgstr ""
+"Állíts be jelszót, hogy további bejelentkezési módként használhasd. "
+"Ezután a jelszavaddal vagy %(provider)s OAuth-tal is bejelentkezhetsz."
+
+#: templates/backoffice/profile/view.html:31
+#, fuzzy
+msgid "Profile information"
+msgstr "Profiladatok"
+
+#: templates/backoffice/profile/view.html:57
+#, fuzzy
+msgid "Authentication methods"
+msgstr "Bejelentkezési módok"
+
+#: templates/backoffice/profile/view.html:71
+#, fuzzy, python-format
+msgid ""
+"Are you sure you want to remove password authentication? You will only be"
+" able to sign in with %(provider)s."
+msgstr ""
+"Biztosan eltávolítod a jelszavas bejelentkezést? Ezután csak "
+"%(provider)s-fiókkal tudsz majd bejelentkezni."
+
+#: templates/backoffice/profile/view.html:81
+msgid "No password set"
+msgstr "Nincs beállított jelszó"
+
+#: templates/backoffice/profile/view.html:87
+msgid "Google OAuth"
+msgstr "Google OAuth"
+
+#: templates/backoffice/profile/view.html:92
+#: templates/backoffice/profile/view.html:127
+msgid "Not linked"
+msgstr "Nincs összekapcsolva"
+
+#: templates/backoffice/profile/view.html:100
+msgid ""
+"Are you sure you want to unlink your Google account? You will only be "
+"able to sign in with your password."
+msgstr ""
+"Biztosan leválasztod a Google-fiókodat? Ezután csak a jelszavaddal tudsz "
+"majd bejelentkezni."
+
+#: templates/backoffice/profile/view.html:102
+#: templates/backoffice/profile/view.html:137
+#: templates/backoffice/target_sources/_checklist.html:161
+msgid "Unlink"
+msgstr "Leválasztás"
+
+#: templates/backoffice/profile/view.html:105
+#: templates/backoffice/profile/view.html:140
+msgid "Only authentication method"
+msgstr "Az egyetlen bejelentkezési mód"
+
+#: templates/backoffice/profile/view.html:110
+msgid "Link Google account"
+msgstr "Google-fiók összekapcsolása"
+
+#: templates/backoffice/profile/view.html:116
+#: templates/backoffice/profile/view.html:149
+#, python-format
+msgid "Remove %(provider)s first"
+msgstr "Előbb távolítsd el a következőt: %(provider)s"
+
+#: templates/backoffice/profile/view.html:122
+msgid "Microsoft OAuth"
+msgstr "Microsoft OAuth"
+
+#: templates/backoffice/profile/view.html:135
+msgid ""
+"Are you sure you want to unlink your Microsoft account? You will only be "
+"able to sign in with your password."
+msgstr ""
+"Biztosan leválasztod a Microsoft-fiókodat? Ezután csak a jelszavaddal "
+"tudsz majd bejelentkezni."
+
+#: templates/backoffice/profile/view.html:143
+msgid "Link Microsoft account"
+msgstr "Microsoft-fiók összekapcsolása"
+
+#: templates/backoffice/profile/view.html:159
+msgid "Security"
+msgstr "Biztonság"
+
+#: templates/backoffice/profile/view.html:164
+msgid "Not available"
+msgstr "Nem érhető el"
+
+#: templates/backoffice/profile/view.html:165
+msgid "OAuth users rely on their provider's security"
+msgstr "Az OAuth-felhasználók a szolgáltatójuk biztonságára támaszkodnak"
+
+#: templates/backoffice/profile/view.html:175
+msgid "Manage"
+msgstr "Kezelés"
+
 #: templates/backoffice/registration/_assets.html:291
 msgid "File name"
 msgstr "Fájlnév"
@@ -9117,11 +9488,6 @@ msgstr "Tartalék értéket (%(fallback)s) kapott:"
 msgid "Source values that didn't match anything (up to %(limit)d shown):"
 msgstr "Semmihez sem illő bemeneti értékek (legfeljebb %(limit)d látható):"
 
-#: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:79
-#: templates/profile/2fa_backup_codes.html:45
-msgid "Done"
-msgstr "Kész"
-
 #: templates/backoffice/respondent_field_schema/_editor.html:19
 msgid "Guess question types from data"
 msgstr "Kérdéstípusok becslése az adatokból"
@@ -9546,11 +9912,6 @@ msgstr ""
 #: templates/backoffice/target_sources/_checklist.html:161
 msgid "Delete computed question"
 msgstr "Számított kérdés törlése"
-
-#: templates/backoffice/target_sources/_checklist.html:161
-#: templates/profile/view.html:95 templates/profile/view.html:146
-msgid "Unlink"
-msgstr "Leválasztás"
 
 #: templates/backoffice/target_sources/_checklist.html:174
 msgid "Link it"
@@ -11114,330 +11475,6 @@ msgstr ""
 #: templates/main/view_assembly_members.html:95
 msgid "Add User to Assembly"
 msgstr "Felhasználó hozzáadása a közösségi gyűléshez"
-
-#: templates/profile/2fa_backup_codes.html:2
-#: templates/profile/2fa_backup_codes.html:6
-msgid "New Backup Codes"
-msgstr "Új tartalék kódok"
-
-#: templates/profile/2fa_backup_codes.html:12
-msgid "Your backup codes have been regenerated"
-msgstr "A tartalék kódjaid újragenerálva"
-
-#: templates/profile/2fa_backup_codes.html:13
-msgid "Your old backup codes are no longer valid."
-msgstr "A régi tartalék kódjaid már nem érvényesek."
-
-#: templates/profile/2fa_backup_codes.html:20
-msgid ""
-"Save these backup codes in a safe place. Each code can only be used once."
-" This is the only time you'll see these codes."
-msgstr ""
-"Őrizd meg ezeket a tartalék kódokat biztonságos helyen. Minden kód csak "
-"egyszer használható fel. Most látod őket utoljára."
-
-#: templates/profile/2fa_backup_codes.html:41
-#: templates/profile/2fa_setup.html:59
-msgid "Download codes"
-msgstr "Kódok letöltése"
-
-#: templates/profile/2fa_backup_codes.html:44
-#: templates/profile/2fa_setup.html:62
-msgid "Print codes"
-msgstr "Kódok nyomtatása"
-
-#: templates/profile/2fa_settings.html:11
-msgid "Information"
-msgstr "Információ"
-
-#: templates/profile/2fa_settings.html:12
-msgid ""
-"Two-factor authentication is not available for users who sign in with "
-"Google or Microsoft. Your OAuth provider already provides strong "
-"authentication security."
-msgstr ""
-"A kétlépcsős azonosítás nem érhető el azoknak, akik Google- vagy "
-"Microsoft-fiókkal jelentkeznek be. Az OAuth szolgáltatód már erős "
-"hitelesítési védelmet nyújt."
-
-#: templates/profile/2fa_settings.html:16
-#: templates/profile/2fa_settings.html:123
-msgid "Back to profile"
-msgstr "Vissza a profilhoz"
-
-#: templates/profile/2fa_settings.html:19
-msgid "Current Status"
-msgstr "Jelenlegi állapot"
-
-#: templates/profile/2fa_settings.html:39
-msgid "Backup codes remaining"
-msgstr "Fennmaradó tartalék kódok"
-
-#: templates/profile/2fa_settings.html:41
-msgid "of 8"
-msgstr "a 8-ból"
-
-#: templates/profile/2fa_settings.html:47
-msgid "Enable Two-Factor Authentication"
-msgstr "Kétlépcsős azonosítás bekapcsolása"
-
-#: templates/profile/2fa_settings.html:49
-msgid ""
-"Two-factor authentication adds an extra layer of security to your "
-"account. When enabled, you'll need to enter a code from your "
-"authenticator app in addition to your password."
-msgstr ""
-"A kétlépcsős azonosítás további védelmi réteget ad a fiókodhoz. Ha "
-"bekapcsolod, a jelszavad mellett a hitelesítő alkalmazásod kódját is meg "
-"kell adnod."
-
-#: templates/profile/2fa_settings.html:51
-msgid "What you'll need:"
-msgstr "Amire szükséged lesz:"
-
-#: templates/profile/2fa_settings.html:53
-msgid ""
-"An authenticator app such as Google Authenticator, Authy, or Microsoft "
-"Authenticator"
-msgstr ""
-"Egy hitelesítő alkalmazás, például a Google Authenticator, az Authy vagy "
-"a Microsoft Authenticator"
-
-#: templates/profile/2fa_settings.html:54
-msgid "A safe place to store backup codes for account recovery"
-msgstr "Egy biztonságos hely a fiók-helyreállító tartalék kódok tárolásához"
-
-#: templates/profile/2fa_settings.html:60
-msgid "Set up two-factor authentication"
-msgstr "Kétlépcsős azonosítás beállítása"
-
-#: templates/profile/2fa_settings.html:62
-msgid "Manage Two-Factor Authentication"
-msgstr "Kétlépcsős azonosítás kezelése"
-
-#: templates/profile/2fa_settings.html:63
-#: templates/profile/2fa_settings.html:69
-msgid "Regenerate backup codes"
-msgstr "Tartalék kódok újragenerálása"
-
-#: templates/profile/2fa_settings.html:65
-msgid ""
-"If you've used some of your backup codes, you can generate a new set. "
-"This will invalidate all existing backup codes."
-msgstr ""
-"Ha már felhasználtál néhányat a tartalék kódjaidból, generálhatsz egy új "
-"készletet. Ezzel az összes meglévő tartalék kód érvénytelenné válik."
-
-#: templates/profile/2fa_settings.html:75
-#: templates/profile/2fa_settings.html:105 templates/profile/2fa_setup.html:71
-#: templates/public/verify_2fa.html:22
-msgid "Verification code"
-msgstr "Ellenőrző kód"
-
-#: templates/profile/2fa_settings.html:76
-#: templates/profile/2fa_settings.html:106
-msgid "Enter the 6-digit code from your authenticator app"
-msgstr "Add meg a hitelesítő alkalmazásod 6 jegyű kódját"
-
-#: templates/profile/2fa_settings.html:87
-msgid "Regenerate codes"
-msgstr "Kódok újragenerálása"
-
-#: templates/profile/2fa_settings.html:91
-#: templates/profile/2fa_settings.html:97
-msgid "Disable two-factor authentication"
-msgstr "Kétlépcsős azonosítás kikapcsolása"
-
-#: templates/profile/2fa_settings.html:93
-msgid "Disabling two-factor authentication will make your account less secure."
-msgstr "A kétlépcsős azonosítás kikapcsolásával a fiókod kevésbé lesz biztonságos."
-
-#: templates/profile/2fa_settings.html:102
-msgid ""
-"Are you sure you want to disable two-factor authentication? This will "
-"make your account less secure."
-msgstr ""
-"Biztosan kikapcsolod a kétlépcsős azonosítást? Ezzel a fiókod kevésbé "
-"lesz biztonságos."
-
-#: templates/profile/2fa_settings.html:117
-msgid "Disable"
-msgstr "Kikapcsolás"
-
-#: templates/profile/2fa_setup.html:2 templates/profile/2fa_setup.html:6
-msgid "Set Up Two-Factor Authentication"
-msgstr "Kétlépcsős azonosítás beállítása"
-
-#: templates/profile/2fa_setup.html:7
-msgid "Step 1: Scan QR Code"
-msgstr "1. lépés: olvasd be a QR-kódot"
-
-#: templates/profile/2fa_setup.html:9
-msgid "Open your authenticator app and scan this QR code:"
-msgstr "Nyisd meg a hitelesítő alkalmazásodat, és olvasd be ezt a QR-kódot:"
-
-#: templates/profile/2fa_setup.html:13
-msgid "QR code for two-factor authentication setup"
-msgstr "QR-kód a kétlépcsős azonosítás beállításához"
-
-#: templates/profile/2fa_setup.html:21
-msgid "Can't scan the QR code?"
-msgstr "Nem tudod beolvasni a QR-kódot?"
-
-#: templates/profile/2fa_setup.html:24
-msgid "You can enter this code manually in your authenticator app:"
-msgstr "Ezt a kódot kézzel is beírhatod a hitelesítő alkalmazásodba:"
-
-#: templates/profile/2fa_setup.html:33
-msgid "Step 2: Save Backup Codes"
-msgstr "2. lépés: mentsd el a tartalék kódokat"
-
-#: templates/profile/2fa_setup.html:38
-msgid ""
-"Save these backup codes in a safe place. Each code can only be used once."
-" If you lose access to your authenticator app, you'll need these codes to"
-" sign in."
-msgstr ""
-"Őrizd meg ezeket a tartalék kódokat biztonságos helyen. Minden kód csak "
-"egyszer használható fel. Ha elveszíted a hozzáférést a hitelesítő "
-"alkalmazásodhoz, ezekkel a kódokkal tudsz bejelentkezni."
-
-#: templates/profile/2fa_setup.html:64
-msgid "Step 3: Verify Setup"
-msgstr "3. lépés: ellenőrizd a beállítást"
-
-#: templates/profile/2fa_setup.html:66
-msgid "Enter the 6-digit code from your authenticator app to complete setup:"
-msgstr ""
-"A beállítás befejezéséhez add meg a hitelesítő alkalmazásod 6 jegyű "
-"kódját:"
-
-#: templates/profile/2fa_setup.html:84
-msgid "Verify and enable"
-msgstr "Ellenőrzés és bekapcsolás"
-
-#: templates/profile/change_password.html:2
-#: templates/profile/change_password.html:6
-msgid "Change Password"
-msgstr "Jelszó megváltoztatása"
-
-#: templates/profile/change_password.html:8
-#: templates/profile/set_password.html:11
-msgid "Your password must meet the following requirements:"
-msgstr "A jelszavadnak meg kell felelnie a következő követelményeknek:"
-
-#: templates/profile/change_password.html:18 templates/profile/view.html:202
-msgid "Change password"
-msgstr "Jelszó megváltoztatása"
-
-#: templates/profile/edit.html:2 templates/profile/edit.html:6
-msgid "Edit Profile"
-msgstr "Profil szerkesztése"
-
-#: templates/profile/edit.html:17 templates/profile/edit.html:32
-msgid "Error"
-msgstr "Hiba történt"
-
-#: templates/profile/set_password.html:2 templates/profile/set_password.html:6
-msgid "Set Password"
-msgstr "Jelszó beállítása"
-
-#: templates/profile/set_password.html:8
-msgid ""
-"Set a password to add it as an additional authentication method. You will"
-" be able to sign in using either your password or Google OAuth."
-msgstr ""
-"Állíts be jelszót, hogy további bejelentkezési módként használhasd. "
-"Ezután a jelszavaddal vagy Google OAuth-tal is bejelentkezhetsz."
-
-#: templates/profile/set_password.html:20 templates/profile/view.html:65
-msgid "Set password"
-msgstr "Jelszó beállítása"
-
-#: templates/profile/view.html:8
-msgid "Profile Information"
-msgstr "Profiladatok"
-
-#: templates/profile/view.html:38
-msgid "Authentication Methods"
-msgstr "Bejelentkezési módok"
-
-#: templates/profile/view.html:54
-msgid ""
-"Are you sure you want to remove password authentication? You will only be"
-" able to sign in with Google."
-msgstr ""
-"Biztosan eltávolítod a jelszavas bejelentkezést? Ezután csak Google-"
-"fiókkal tudsz majd bejelentkezni."
-
-#: templates/profile/view.html:67
-msgid "No password set"
-msgstr "Nincs beállított jelszó"
-
-#: templates/profile/view.html:74
-msgid "Google OAuth"
-msgstr "Google OAuth"
-
-#: templates/profile/view.html:79 templates/profile/view.html:130
-msgid "Not linked"
-msgstr "Nincs összekapcsolva"
-
-#: templates/profile/view.html:88
-msgid ""
-"Are you sure you want to unlink your Google account? You will only be "
-"able to sign in with your password."
-msgstr ""
-"Biztosan leválasztod a Google-fiókodat? Ezután csak a jelszavaddal tudsz "
-"majd bejelentkezni."
-
-#: templates/profile/view.html:98 templates/profile/view.html:149
-msgid "Only authentication method"
-msgstr "Az egyetlen bejelentkezési mód"
-
-#: templates/profile/view.html:111 templates/profile/view.html:112
-msgid "Link Google account"
-msgstr "Google-fiók összekapcsolása"
-
-#: templates/profile/view.html:118 templates/profile/view.html:169
-#, python-format
-msgid "Remove %(provider)s first"
-msgstr "Előbb távolítsd el a következőt: %(provider)s"
-
-#: templates/profile/view.html:125
-msgid "Microsoft OAuth"
-msgstr "Microsoft OAuth"
-
-#: templates/profile/view.html:139
-msgid ""
-"Are you sure you want to unlink your Microsoft account? You will only be "
-"able to sign in with your password."
-msgstr ""
-"Biztosan leválasztod a Microsoft-fiókodat? Ezután csak a jelszavaddal "
-"tudsz majd bejelentkezni."
-
-#: templates/profile/view.html:162 templates/profile/view.html:163
-msgid "Link Microsoft account"
-msgstr "Microsoft-fiók összekapcsolása"
-
-#: templates/profile/view.html:175
-msgid "Security"
-msgstr "Biztonság"
-
-#: templates/profile/view.html:181
-msgid "Not available"
-msgstr "Nem érhető el"
-
-#: templates/profile/view.html:183
-msgid "OAuth users rely on their provider's security"
-msgstr "Az OAuth-felhasználók a szolgáltatójuk biztonságára támaszkodnak"
-
-#: templates/profile/view.html:191
-msgid "Manage"
-msgstr "Kezelés"
-
-#: templates/profile/view.html:198
-msgid "Edit profile"
-msgstr "Profil szerkesztése"
 
 #: templates/public/_survey_fields.html:52
 msgid "characters"

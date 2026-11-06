@@ -1,0 +1,41 @@
+{#
+ABOUTME: Edit profile page on the backoffice design system - first and last name
+ABOUTME: The form idiom of the create and edit project pages; posts back to profile.edit
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input %}
+
+{% block title %}{{ _("Edit profile") }}{% endblock %}
+
+{% block page_content %}
+    <h1 class="text-display-lg mb-8" style="color: var(--color-headings);">{{ _("Edit profile") }}</h1>
+
+    <form method="POST" novalidate class="max-w-2xl">
+        {{ form.hidden_tag() }}
+
+        <div class="flex flex-col gap-6">
+            {{ input(form.first_name.name,
+            id=form.first_name.id,
+            label=form.first_name.label.text,
+            value=form.first_name.data or "",
+            hint=form.first_name.description,
+            error=form.first_name.errors | join("\n"),
+            attrs='autocomplete="given-name"')
+            }}
+            {{ input(form.last_name.name,
+            id=form.last_name.id,
+            label=form.last_name.label.text,
+            value=form.last_name.data or "",
+            hint=form.last_name.description,
+            error=form.last_name.errors | join("\n"),
+            attrs='autocomplete="family-name"')
+            }}
+        </div>
+
+        <div class="flex gap-4 mt-8">
+            {{ button(_("Save changes"), type="submit", variant="primary") }}
+            {{ button(_("Cancel"), href=url_for('profile.view'), variant="secondary") }}
+        </div>
+    </form>
+{% endblock %}

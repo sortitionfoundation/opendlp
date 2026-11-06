@@ -34,7 +34,7 @@ def test_view_own_profile(logged_in_user: FlaskClient, regular_user: User) -> No
     response = logged_in_user.get("/profile")
     assert response.status_code == 200
     assert regular_user.email.encode() in response.data
-    assert b"My Account" in response.data
+    assert b"My account" in response.data
     assert b"Edit profile" in response.data
 
 
@@ -101,7 +101,7 @@ def test_oauth_user_can_set_password(client: FlaskClient, oauth_user: User) -> N
 
     response = client.get("/profile/set-password")
     assert response.status_code == 200
-    assert b"Set Password" in response.data
+    assert b"Set password" in response.data
 
     response = client.post(
         "/profile/set-password",

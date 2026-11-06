@@ -1,0 +1,31 @@
+{#
+ABOUTME: Backup codes panel shared by the two-factor setup and the regenerated-codes pages
+ABOUTME: The codes grid keeps id="backup-codes" because the download handler reads the codes out of it
+#}
+{% from "backoffice/components/button.html" import button %}
+
+{% macro backup_codes_panel(codes) %}
+    {#
+    The codes in a two-column grid, with the Download and Print buttons under it.
+    Call it with a block to add a button to that row, e.g. a Done link.
+
+    Args:
+        codes: The backup codes to show, one per cell.
+    #}
+    <div class="rounded-lg p-5 mb-6"
+         style="background-color: var(--color-subtle-background-panels);
+                border: 1px solid var(--color-borders-dividers);">
+        {# Only the codes live in here: downloadBackupCodes() in document-actions.js
+           writes every child's text to the downloaded file. #}
+        <div id="backup-codes"
+             class="grid grid-cols-2 gap-2.5 text-code"
+             style="color: var(--color-body-text);">
+            {% for code in codes %}<div>{{ code }}</div>{% endfor %}
+        </div>
+    </div>
+    <div class="flex flex-wrap gap-4">
+        {{ button(_("Download codes"), variant="secondary", attrs="data-download-backup-codes") }}
+        {{ button(_("Print codes"), variant="secondary", attrs="data-print") }}
+        {% if caller %}{{ caller() }}{% endif %}
+    </div>
+{% endmacro %}
