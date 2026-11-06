@@ -618,7 +618,7 @@ Each step is its own commit, with its tests, and leaves `just test` and
    dependency order: project and settings, targets, questions and derived
    fields, registration, respondents, team. `_generated_url_slug` made public
    on the way.
-6. **`projects clone`** - the CLI command, its admin check, the personal data
+6. ✅ **`projects clone`** - the CLI command, its admin check, the personal data
    flag and confirmation.
 7. **Docs** - `docs/cli.md` and `docs/personal-data.md`.
 
