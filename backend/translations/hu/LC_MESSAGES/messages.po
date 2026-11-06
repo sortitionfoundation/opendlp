@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 14:37+0100\n"
+"POT-Creation-Date: 2026-11-06 09:06+0100\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -6181,10 +6181,10 @@ msgstr "Válassz ki egy kiválasztási szempontokat tartalmazó CSV fájlt."
 #, fuzzy
 msgid ""
 "To run a selection with the example targets, set the number to select to "
-"10 before uploading them."
+"30."
 msgstr ""
-"Ha a példa célszámokkal szeretnél kiválasztást futtatni, feltöltés előtt "
-"állítsd a kiválasztandó emberek számát 10-re."
+"Ha a példa célszámokkal szeretnél kiválasztást futtatni, állítsd a "
+"kiválasztandó emberek számát 30-ra."
 
 #: templates/backoffice/assembly_data.html:389
 #: templates/backoffice/assembly_data.html:471
