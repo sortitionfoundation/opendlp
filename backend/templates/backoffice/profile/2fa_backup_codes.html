@@ -1,0 +1,30 @@
+{#
+ABOUTME: New backup codes page on the backoffice design system, shown once after the codes are regenerated
+ABOUTME: Success and warning alerts, the codes grid with Download and Print, and Done back to the two-factor settings
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/profile/_backup_codes.html" import backup_codes_panel %}
+
+{% block title %}{{ _("New backup codes") }}{% endblock %}
+
+{% block page_content %}
+    <h1 class="text-display-lg mb-8" style="color: var(--color-headings);">{{ _("New backup codes") }}</h1>
+
+    <div class="max-w-3xl">
+        {# The alert keeps newlines, so the heading and the sentence land on their own lines. #}
+        {% call alert(variant="success", use_caller=true) %}
+            <strong>{{ _("Your backup codes have been regenerated") }}</strong>
+            {{ _("Your old backup codes are no longer valid.") }}
+        {% endcall %}
+
+        {% call section() %}
+            {{ alert(_("Save these backup codes in a safe place. Each code can only be used once. This is the only time you'll see these codes."), variant="warning") }}
+            {% call backup_codes_panel(backup_codes) %}
+                {{ button(_("Done"), href=url_for('profile.two_factor_settings'), variant="primary") }}
+            {% endcall %}
+        {% endcall %}
+    </div>
+{% endblock %}

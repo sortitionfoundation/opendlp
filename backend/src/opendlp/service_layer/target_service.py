@@ -547,8 +547,9 @@ def update_target_value(
 
     The rules that matter:
 
-    - min/max supplied and *different* from the stored values breaks the
-      auto-calculate link, via `set_manual_min_max`.
+    - min/max supplied and *different* from both the stored values and the
+      ones the submitted percentage works out to breaks the auto-calculate
+      link, via `set_manual_min_max`.
     - min/max supplied and *identical* to the stored values changes nothing and
       does **not** break the link. Without this a bulk save that round-trips
       every field would break every link in the assembly on first use.
@@ -621,7 +622,10 @@ def _apply_value_numbers(
 
     new_min = submitted_against[0] if min_count is None else min_count
     new_max = submitted_against[1] if max_count is None else max_count
-    if (new_min, new_max) != submitted_against:
+    # The edit form recalculates min/max as the percentage is typed, so numbers
+    # matching the recalculated ones came from the percentage, not from a hand.
+    recalculated = (target_value.min, target_value.max)
+    if (new_min, new_max) not in (submitted_against, recalculated):
         target_value.set_manual_min_max(new_min, new_max)
 
 
@@ -1007,10 +1011,7 @@ def _apply_category_edit(
     except ValueError:
         errors.append(
             TargetEditError(
-                _(
-                    "Enter a full http:// or https:// address, %(limit)s characters or fewer",
-                    limit=MAX_SOURCE_URL_LENGTH,
-                ),
+                _("Source must be %(limit)s characters or fewer", limit=MAX_SOURCE_URL_LENGTH),
                 category_edit.form_id,
                 field="source_url",
             )
@@ -1066,6 +1067,13 @@ def _value_problem(value_edit: TargetValueEdit) -> tuple[str, str] | None:
     """
     if value_edit.deleted or value_edit.relink:
         return None
+    # An empty box is unset, never a guess: half a range is refused rather than
+    # completed from the percentage or the number stored before. All of them
+    # empty is fine - a value can be known before its numbers are.
+    if value_edit.min is not None and value_edit.max is None:
+        return "max", _("Enter a max as well")
+    if value_edit.max is not None and value_edit.min is None:
+        return "min", _("Enter a min as well")
     if value_edit.min is not None and value_edit.min < 0:
         return "min", _("Min cannot be negative")
     if value_edit.max is not None and value_edit.max < 0:
@@ -1116,7 +1124,13 @@ def _write_value_edit(
             percentage_target=value_edit.percentage,
             comment=value_edit.comment,
         )
+        # Min and max typed alongside a percentage keep the numbers they were
+        # given unless they are the ones the percentage works out to.
+        typed = (target_value.min, target_value.max)
         target_value.apply_percentage(number_to_select)
+        all_given = None not in (value_edit.percentage, value_edit.min, value_edit.max)
+        if all_given and typed != (target_value.min, target_value.max):
+            target_value.set_manual_min_max(*typed)
         category.add_value(target_value)
         return
 

@@ -64,6 +64,7 @@ door. The move from "assembly" to "project" is the current example.
 | selection             | Choosing people from the pool by stratified random lottery                    | draw, lottery, sortition           |
 | selection run         | One run of the selection, recorded in the run history                         |                                    |
 | panel                 | One possible line-up of the whole event; a selection picks one                | committee, line-up                 |
+| panel size            | The number of people to select for the event                                  | number to select                   |
 | initial selection     | The selection run that picks the participants, before any replacements        | first selection, main selection    |
 | test selection        | A selection run that is not for real                                          |                                    |
 | replacement selection | A selection run to fill places left by people who withdrew                    | replacements, substitute, reserve  |
@@ -176,9 +177,9 @@ from, such as the census.
 a CSV upload, as chosen on the Data tab. It never means the question behind a
 target, nor where a target's percentages come from.
 
-**source of population figures** is the link a target can carry to the report
-its percentages come from: census tables from the ONS, or an opinion poll for an
-attitudinal target. The code calls it `source_url`. Not "data source", for the
+**source of population figures** is the note a target can carry saying where
+its percentages come from - usually a link to the report, such as census tables
+from the ONS or an opinion poll for an attitudinal target. The code calls it `source_url`. Not "data source", for the
 reasons above, and not "Population % source", which needs its `%` escaped.
 
 **built-in question** is a registration question every project has, such as
@@ -284,6 +285,7 @@ put the code's word on the page.
 | `feature` (sortition-algorithms)              | target                                         |
 | `agent` (sortition-algorithms)                | respondent                                     |
 | `committee` (sortition-algorithms)            | panel                                          |
+| `number_to_select`, `number_people_wanted`    | panel size                                     |
 | `ContentStyle`, `content_style`               | intro style                                    |
 | `rich_editor`, Tiptap                         | visual editor                                  |
 | an `Enum` member's `.value`                   | its label from the labels dict beside the enum |

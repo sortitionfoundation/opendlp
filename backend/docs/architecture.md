@@ -227,6 +227,7 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 | `target_service`             | Target categories and values: CRUD, CSV import, derived percentages, the bulk save                 | SQLAlchemy, `sortition-algorithms`                                          |
 | `respondent_service`         | Respondent CRUD, CSV/row import, attribute analysis                                                | CSV parsing, permissions                                                    |
 | `respondent_export_service`  | Build tabular respondent data and export it to CSV or Google Sheets, with status filtering         | `tabular_export`, `gsheet_export`, permissions                              |
+| `target_export_service`      | Export targets to CSV or Google Sheets in the columns the targets CSV import reads                 | `tabular_export`, `gsheet_export`, permissions                              |
 | `sortition`                  | Celery task dispatch for GSheet + DB selection workflows; run status/cancellation/health           | `celery`, `sortition-algorithms`, `error_translation`, `report_translation` |
 | `replacement_targets`        | Replacement selection over the database: the places still to fill, validation, feasibility check  | `sortition-algorithms`, `sortition_data_adapter`, `error_translation`       |
 | `user_service`               | User lifecycle, authentication, OAuth linking, assembly role management, profile updates           | email adapter, template renderer, URL generator, `security`                 |

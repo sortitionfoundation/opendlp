@@ -607,7 +607,7 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 number_to_select=number_to_select,
             )
 
-        flash(_("Number to select updated to %(number)s", number=updated_assembly.number_to_select), "success")
+        flash(_("Panel size updated to %(number)s", number=updated_assembly.number_to_select), "success")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(

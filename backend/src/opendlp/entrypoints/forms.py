@@ -33,7 +33,7 @@ from wtforms.validators import (
 
 from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
-from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH, validate_source_url
+from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, SignupSurveyQuestion, SurveyFieldType
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.validators import validate_email as domain_validate_email
@@ -110,25 +110,6 @@ class NonNegativeValidator:
     def __call__(self, form: Any, field: Any) -> None:
         if field.data is not None and field.data < 0:
             raise ValidationError(str(self.message))
-
-
-class SourceUrlValidator:
-    """Mirror the domain's http(s)-only rule so the user gets a field error.
-
-    Without this the domain's ValueError would surface as a 500. The domain check
-    is still the one that matters - this is the friendly copy of it, not a
-    replacement.
-    """
-
-    def __call__(self, form: Any, field: Any) -> None:
-        if not field.data:
-            return
-        try:
-            validate_source_url(field.data)
-        except ValueError as e:
-            # A literal rather than str(e): the domain's message is written for a
-            # developer and never passes through gettext.
-            raise ValidationError(_l("Enter a full http:// or https:// address")) from e
 
 
 class LoginForm(FlaskForm):  # type: ignore[no-any-unimported]
@@ -360,7 +341,7 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     number_to_select = IntegerField(
-        _l("Number to Select"),
+        _l("Panel size"),
         validators=[InputRequired(), NonNegativeValidator()],
         description=_l("The number of participants to select for this event"),
         default=0,
@@ -591,14 +572,14 @@ class EditOwnProfileForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for users to edit their own profile."""
 
     first_name = StringField(
-        _l("First Name"),
+        _l("First name"),
         validators=[Length(max=100)],
         description=_l("Your first name"),
         render_kw={"autocomplete": "given-name"},
     )
 
     last_name = StringField(
-        _l("Last Name"),
+        _l("Last name"),
         validators=[Length(max=100)],
         description=_l("Your last name"),
         render_kw={"autocomplete": "family-name"},
@@ -609,19 +590,19 @@ class ChangeOwnPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for users to change their own password."""
 
     current_password = PasswordField(
-        _l("Current Password"),
+        _l("Current password"),
         validators=[DataRequired()],
         render_kw={"autocomplete": "current-password"},
     )
 
     new_password = PasswordField(
-        _l("New Password"),
+        _l("New password"),
         validators=[DataRequired(), Length(min=8)],
         render_kw={"autocomplete": "new-password"},
     )
 
     new_password_confirm = PasswordField(
-        _l("Confirm New Password"),
+        _l("Confirm new password"),
         validators=[DataRequired(), EqualTo("new_password", message=_l("Passwords must match"))],
         render_kw={"autocomplete": "new-password"},
     )
@@ -635,7 +616,7 @@ class SetPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     new_password_confirm = PasswordField(
-        _l("Confirm Password"),
+        _l("Confirm password"),
         validators=[DataRequired(), EqualTo("new_password", message=_l("Passwords must match"))],
         render_kw={"autocomplete": "new-password"},
     )
@@ -680,8 +661,8 @@ class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     source_url = StringField(
         _l("Data Source"),
-        validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH), SourceUrlValidator()],
-        description=_l("Optional — a link to where the percentages came from"),
+        validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH)],
+        description=_l("Optional — where the percentages came from, such as a link to a report"),
     )
 
 

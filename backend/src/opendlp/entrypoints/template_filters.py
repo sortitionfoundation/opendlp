@@ -1,5 +1,5 @@
 """ABOUTME: Jinja filters for rendering user-supplied text safely.
-ABOUTME: linkify turns URLs in free text into links; trim_url shortens link text; date_text formats dates."""
+ABOUTME: linkify turns URLs in free text into links; date_text formats dates."""
 
 import re
 
@@ -61,17 +61,6 @@ def linkify(text: str) -> Markup:
     return Markup(_urlize(text, trim_url_limit=MAX_URL_TEXT_LENGTH, autoescape=True))  # noqa: S704
 
 
-def trim_url(url: str) -> str:
-    """Shorten a URL to the length linkify uses for link text, ending in an ellipsis.
-
-    For a URL that is already a link in the markup, so only the text a reader
-    sees is cut - the href it points at is untouched.
-    """
-    if len(url) <= MAX_URL_TEXT_LENGTH:
-        return url
-    return url[: MAX_URL_TEXT_LENGTH - 1] + "\u2026"
-
-
 def date_text(value: str) -> str:
     """A stored DATE attribute as a date in the viewer's locale, e.g. "3 July 1985".
 
@@ -87,5 +76,4 @@ def date_text(value: str) -> str:
 def register_template_filters(app: Flask) -> None:
     """Register the filters with a Flask app."""
     app.jinja_env.filters["linkify"] = linkify
-    app.jinja_env.filters["trim_url"] = trim_url
     app.jinja_env.filters["date_text"] = date_text

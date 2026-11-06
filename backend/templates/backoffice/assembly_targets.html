@@ -5,6 +5,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/info_card.html" import info_card %}
 {% from "backoffice/components/icons.html" import icon_plus %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
@@ -84,30 +85,42 @@ ABOUTME: Displays target categories and values, with respondent counts and check
            The url goes into a quoted string in x-data below. That is only safe
            because the route accepts run_id only as the UUID of a real run; |tojson is no help
            here, as the CSP build of Alpine does not decode its \u escapes. #}
+        {# The edit form has its own URL, the read-only one plus ?edit=1, so the
+           back button leaves the form for the view. Both stay on the check
+           when that is where the organiser is. #}
         {% if check_result is defined and check_result %}
             {% set discard_url = url_for('targets.check_targets', assembly_id=assembly.id, **provenance) %}
+            {% set edit_url = url_for('targets.check_targets', assembly_id=assembly.id, edit=1, **provenance) %}
+            {% set add_url = url_for('targets.check_targets', assembly_id=assembly.id, edit=1, add=1, **provenance) %}
         {% else %}
             {% set discard_url = url_for('targets.view_assembly_targets', assembly_id=assembly.id) %}
+            {% set edit_url = url_for('targets.view_assembly_targets', assembly_id=assembly.id, edit=1) %}
+            {% set add_url = url_for('targets.view_assembly_targets', assembly_id=assembly.id, edit=1, add=1) %}
         {% endif %}
         <div x-data="targetsPage({
                      editingAll: {{ "true" if editing_all is defined and editing_all else "false" }},
+                     addTargetOnLoad: {{ "true" if add_target_on_load is defined and add_target_on_load else "false" }},
                      discardUrl: '{{ discard_url }}'
                      })">
             {# ── Targets Heading and Actions ──────────────── #}
-            <section class="mb-6 flex items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h2>
+            {# Pinned under the page header as the targets scroll by, so the
+               title and the way into editing are always in reach. #}
+            <div class="sticky-below-header mb-3" x-data="stickyBelowHeader">
+                <section class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h2>
                     {# The seat count, not a category tally: every min and max on this
                        page is a share of it, so it is the number to have in mind. #}
-                    <p class="text-body-md" style="color: var(--color-secondary-text);">
-                        {{ _("Number to select: %(number)s", number=assembly.number_to_select) }}
-                    </p>
-                    {% if not target_categories %}
                         <p class="text-body-md" style="color: var(--color-secondary-text);">
-                            {{ _("No targets defined yet.") }}
+                            {{ _("Panel size: %(number)s", number=assembly.number_to_select) }}
+                            {{ info_icon(_("The number of people to select"), about=_("Panel size")) }}
                         </p>
-                    {% endif %}
-                </div>
+                        {% if not target_categories %}
+                            <p class="text-body-md" style="color: var(--color-secondary-text);">
+                                {{ _("No targets defined yet.") }}
+                            </p>
+                        {% endif %}
+                    </div>
                 {# The actions that get you into a mode, beside the heading. The
                    two that get you out of editing - discard and save - sit in
                    the sticky bar at the foot of the page instead, where they
@@ -115,20 +128,42 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                    targets" button: saving runs the detailed check and lands
                    back here with its annotations, so there is nothing left for
                    a separate button to do. #}
-                {% if can_manage %}
-                    <span class="flex items-center gap-2 shrink-0">
-                        {{ button(_("Add target"),
-                        variant="secondary",
-                        leading_icon=icon_plus(),
-                        attrs='x-ref="addTargetButton" @click="openAddTarget()"') }}
-                        {% if target_categories %}
+                    {% if can_manage %}
+                    {# On the read-only view, "Add target" and "Edit targets" are
+                       links into the edit form's URL, keeping the scroll
+                       position across the reload. In the form, "Add target"
+                       opens its dialog on the spot, as there are edits on the
+                       page that a reload would lose. #}
+                        <span class="flex items-center gap-2 shrink-0" x-scroll-preserve-links>
+                        {# Exports what is saved, so it is no use mid-edit: it goes
+                           with "Edit targets" while the form is open. #}
+                            {% if target_categories %}
+                                <span x-show="!editingAll">
+                                    {{ button(_("Export"), variant="secondary",
+                                    attrs='data-focus-id="targets-export" hx-get="' ~ url_for('targets.export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
+                                </span>
+                            {% endif %}
                             <span x-show="!editingAll">
-                                {{ button(_("Edit targets"), variant="primary", attrs='@click="editingAll = true"') }}
+                                {{ button(_("Add target"), variant="secondary", leading_icon=icon_plus(), href=add_url) }}
                             </span>
-                        {% endif %}
-                    </span>
-                {% endif %}
-            </section>
+                            <span x-show="editingAll" x-cloak>
+                                {{ button(_("Add target"),
+                                variant="secondary",
+                                leading_icon=icon_plus(),
+                                attrs='x-ref="addTargetButton" @click="openAddTarget()"') }}
+                            </span>
+                            {% if target_categories %}
+                                <span x-show="!editingAll">
+                                    {{ button(_("Edit targets"), variant="primary", href=edit_url) }}
+                                </span>
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </section>
+            </div>
+            {% if can_manage %}
+                <div id="export-modal-container" data-fragment-dialog-host></div>
+            {% endif %}
 
             {# ── Check Result Display ────────────────────────── #}
             {% if check_result is defined and check_result %}
