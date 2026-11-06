@@ -102,7 +102,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         {# The same tag, in the same style, as the question's row in the editor behind this dialog. #}
                             <ul class="question-tags">
                                 <li>
-                                    <a href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}">{{ _("Feeds target: %(name)s", name=modal_ctx["linked_target_name"]) }}</a>
+                                    <a href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}" target="_blank">{{ _("Feeds target: %(name)s", name=modal_ctx["linked_target_name"]) }}</a>
                                 </li>
                             </ul>
                             <div class="text-body-sm" style="color: var(--color-secondary-text);">

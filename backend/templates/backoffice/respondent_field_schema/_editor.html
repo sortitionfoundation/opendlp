@@ -229,7 +229,7 @@ ABOUTME: Swapped wholesale over HTMX after dialog saves; included by view.html
                                        One tag per target - a question can feed several, directly or via derived fields. #}
                                     {% for target_name in fed_target_names.get(field.id, []) %}
                                         <li>
-                                            <a href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}">{{ _("Feeds target: %(name)s", name=target_name) }}</a>
+                                            <a href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}" target="_blank">{{ _("Feeds target: %(name)s", name=target_name) }}</a>
                                         </li>
                                     {% endfor %}
                                 </ul>
