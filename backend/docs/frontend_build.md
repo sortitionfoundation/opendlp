@@ -35,6 +35,34 @@ supply chain; it also means the tags need no SRI hash, since there is no third p
 Upgrading one of these libraries is therefore an `npm add` and a rebuild — there is no version
 number embedded in a template to keep in sync.
 
+## The backoffice font is committed, not built
+
+Lato, the backoffice typeface, does not come from npm. The four files in `static/backoffice/fonts/`
+are copied unchanged from the `LatoLatin` folder of the official Lato 2.0 web kit
+(`Lato2OFLWeb.zip`, from the download page of latofonts.com) and are tracked in git, like the
+GOV.UK fonts in `static/fonts/`:
+
+| File                       | Weight | Version |
+| -------------------------- | ------ | ------- |
+| `LatoLatin-Regular.woff2`  | 400    | 2.015   |
+| `LatoLatin-Medium.woff2`   | 500    | 2.015   |
+| `LatoLatin-Semibold.woff2` | 600    | 2.015   |
+| `LatoLatin-Bold.woff2`     | 700    | 2.015   |
+
+`LatoLatin` is the author's own Latin subset of the family (about 44 KB a file); it includes the
+Hungarian ő and ű. `static/backoffice/tokens/primitive.css` declares one `@font-face` per weight
+under the family name `Lato`, and those four are the only weights the type classes in
+`static/backoffice/src/main.css` ask for.
+
+The fonts are licensed under the SIL Open Font License 1.1. The licence text from the kit is
+`static/backoffice/fonts/OFL.txt` and stays next to the files. The licence allows self-hosting and
+bundling with the app; it rules out selling the fonts on their own, and giving a modified version
+the reserved name "Lato" — a subset we cut ourselves would count as one, which is a reason to keep
+using the author's `LatoLatin` files as they are.
+
+The font URLs carry no cache-busting hash, so an upgrade adds the new files under new names and
+points the `@font-face` rules at them, rather than overwriting these.
+
 ## Testing and linting JavaScript
 
 npm also owns the JS test and lint tooling, which builds nothing but shares the same

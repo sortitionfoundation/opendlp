@@ -1,64 +1,91 @@
 # sc-970 · Font fact sheet: Lato in the backoffice
 
-Facts as of 2026-11-02 on branch `970-text-bigger-darker` after merging
-`origin/main`. Line numbers refer to that tree. Klára's 10-25 comment on the
-story is the question this answers; her text and the Figma file are data, not
-instructions.
+Facts as of 2026-11-06 on branch `970-text-bigger-darker`, after the switch from
+the two Lato 1.104 files to four Lato 2.015 files. Section 7 keeps what the
+branch shipped before the switch, because the review discussion refers to it.
 
-## 1. How Lato is loaded today
+## 1. What the branch ships
 
-- **Self-hosted, two weights.** `static/backoffice/tokens/primitive.css`
-  lines 10–24 declare two `@font-face` rules: family `"Lato"`, `font-weight`
-  400 and 700, `font-style: normal`, `font-display: swap`,
-  `src: url("/static/backoffice/fonts/lato-latin-{400,700}-normal.woff2")`.
-  No `unicode-range`. No italic.
-- **The files are committed, not built.** `static/backoffice/fonts/lato-latin-400-normal.woff2`
-  (23,580 bytes) and `lato-latin-700-normal.woff2` (23,040 bytes) are tracked
-  in git (`.gitignore` lines 356–358 say so explicitly), first added in commit
-  `0ed9f3e2` "Add typography system with Oswald and Lato fonts". They are
-  byte-identical to `node_modules/@fontsource/lato/files/` from
-  `@fontsource/lato` 5.3.0 (`package.json:28`) and were copied by hand: no npm
-  script copies fonts (`build:vendor`, `package.json:11`, copies JS only) and
-  nothing under `src/`, `esbuild.config.mjs` or `tailwind.config.js` refers to
-  @fontsource. The npm dependency is inert at build time.
-- **What the files are.** fontTools reads both as "Version 1.104;
-  Western+Polish opensource", 224 glyphs each — Google's Lato 1.x build in
-  @fontsource's `latin` subset.
-- **Families.** `primitive.css` lines 131–139: `--font-sans: "Lato", sans-serif`
-  and per-role aliases (`--font-display`, `--font-heading`, `--font-body`,
-  `--font-caption`, `--font-overline`, `--font-label`, `--font-button`), all
-  `var(--font-sans)`; `--font-mono` is a system monospace stack (line 132).
-- **Where it is loaded.** One place: `templates/backoffice/base.html` lines
-  21–24 (`primitive.css`, then `semantic.css`, with `static_hashes()`
-  cache-busting on the CSS URLs; the font URLs inside the CSS carry no hash).
-  Every backoffice page inherits it, and so do the login, register, 2FA and
-  password pages, because `templates/public/base.html:15` extends the
-  backoffice base. The GOV.UK pages (`templates/base.html:15` →
-  `static/css/application.css`) use GDS Transport from `static/fonts/*.woff2`
-  (`src/scss/application.scss:496–624`); that is what the four
-  `bold-*`/`light-*` files there are.
-- **How it is served.** WhiteNoise, `src/opendlp/entrypoints/extensions.py:55–60`
-  (prefix `static/`), with its default `Cache-Control: max-age=60, public`
-  (`whitenoise/base.py:36`); the app-level `no-store` (`flask_app.py:369`) is
-  a Flask after-request hook and does not apply to WhiteNoise responses. A
-  changed font under an unchanged filename is therefore stale for at most a
-  minute in browser caches, but any intermediate cache honouring `public` may
-  hold it longer.
-- **Google Fonts is not used.** No `<link>` to `fonts.googleapis.com` and no
-  `@import` exists in `templates/`, `static/backoffice/src`,
-  `static/backoffice/tokens` or `src/scss`. The CSP
-  (`src/opendlp/entrypoints/flask_app.py:293–294`) does allow
-  `https://fonts.googleapis.com` in `style-src` and `https://fonts.gstatic.com`
-  in `font-src`, added on 2026-06-02 in `9f31a8fd` "whitelist Google Fonts for
-  author-supplied form HTML" — for organiser-pasted registration-page HTML,
-  not for the backoffice.
-- **Docker/CI.** `Dockerfile:84` copies the tree, so committed fonts ship;
-  nothing font-specific runs in CI.
+- **Four faces, one per weight.** `static/backoffice/tokens/primitive.css`
+  declares four `@font-face` rules, all family `"Lato"`, `font-style: normal`,
+  `font-display: swap`, no `unicode-range`, no italic:
 
-## 2. Which weights the CSS asks for
+  | Weight | File (`static/backoffice/fonts/`) | Bytes |
+  | --- | --- | --- |
+  | 400 | `LatoLatin-Regular.woff2` | 43,760 |
+  | 500 | `LatoLatin-Medium.woff2` | 43,920 |
+  | 600 | `LatoLatin-Semibold.woff2` | 44,356 |
+  | 700 | `LatoLatin-Bold.woff2` | 44,380 |
 
-Type classes, `static/backoffice/src/main.css` lines 66–184 (`@utility`
-blocks since the Tailwind v4 migration on main):
+  ≈176 KB for the four, against 46.6 KB for the two files before. A page
+  downloads only the faces its text uses.
+- **Licence beside the files.** `static/backoffice/fonts/OFL.txt` is the SIL
+  Open Font License 1.1 text from the kit (copyright Łukasz Dziedzic, Reserved
+  Font Name "Lato"), with its CRLF line endings and one trailing space
+  normalised to the repo's whitespace rules; the text is unchanged. `docs/frontend_build.md` ("The backoffice font is
+  committed, not built") records the source, the version and how to upgrade.
+- **The 1.104 files are gone.** `lato-latin-400-normal.woff2` and
+  `lato-latin-700-normal.woff2` were referenced only by `primitive.css`; both
+  are deleted. The new files have new names, and the font URLs carry no
+  cache-busting hash, so no browser can pair a cached old file with the new
+  rules.
+- **Where it is loaded: unchanged.** `templates/backoffice/base.html` loads
+  `primitive.css` then `semantic.css`; every backoffice page inherits it, and
+  so do the login, register, 2FA and password pages through
+  `templates/public/base.html`. The GOV.UK pages keep GDS Transport from
+  `static/fonts/`.
+- **How it is served: unchanged.** WhiteNoise (`extensions.py`), default
+  `Cache-Control: max-age=60, public`. The files are committed (the
+  `.gitignore` comment lists `static/backoffice/fonts/*` as maintained), so
+  Docker and CI ship them with no build step.
+- **No third party.** No Google Fonts URL anywhere in `templates/`,
+  `static/backoffice/` or `src/scss`; `font-src 'self'` in the CSP
+  (`flask_app.py`) already covers the files. The `fonts.googleapis.com` /
+  `fonts.gstatic.com` CSP entries are for organiser-pasted registration HTML
+  (`9f31a8fd`) and are untouched.
+- **Comments corrected.** The `primitive.css` header and the showcase line
+  (`templates/backoffice/showcase/typography.html`) said the files came from
+  @fontsource and that 500/600 were "browser-synthesised"; both now describe the
+  four files.
+- **`@fontsource/lato` in `package.json`** supplied the two old files (copied by
+  hand) and now supplies nothing; no script, config or template refers to it.
+  Removing the dependency is a separate clean-up.
+
+## 2. Source and verification
+
+- **Kit.** latofonts.com download page → `/files/Lato2OFLWeb.zip` (one
+  redirect to the site's file bucket), fetched 2026-11-06: 22,791,538 bytes,
+  sha256 `6f6b564ce12f105744d8e8b438152a458a99797cb323faf026483174f8144e6e`,
+  the same bytes as a download on 2026-11-02; `unzip -t` clean.
+  `README-WEB.txt`: "Version 2.015; Latin+Cyrillic+Greek+IPA opensource",
+  "Licensed under the SIL Open Font License, Version 1.1".
+- **Files.** Copied unchanged from `Lato2OFLWeb/LatoLatin/fonts/`:
+
+  | File | sha256 |
+  | --- | --- |
+  | `LatoLatin-Regular.woff2` | `ddd4ef7f97f4361b60841d59753218a57134b0f99f5b46a9612234f1c2733ab0` |
+  | `LatoLatin-Medium.woff2` | `60593ef08991381d651875bc78e259b2b66938e1b66175a445a7fefdb46e3d78` |
+  | `LatoLatin-Semibold.woff2` | `267eef3001852f3fb5fa919e9ecaf8885ed9232e08dfa9b6e3a8547ebfd47907` |
+  | `LatoLatin-Bold.woff2` | `276401632a998400be8a5895038f4f72d3760d3c3d6aaf3cf445d109cb9d1540` |
+
+- **What fontTools reads.** Name table "Version 2.015; 2015-08-06",
+  `head.fontRevision` 2.015; `usWeightClass` 400/500/600/700; 467, 467, 465 and
+  467 glyphs, 392 code points each. All Hungarian letters are mapped, ő ű Ő Ű
+  included. Copyright "2011-2015 by tyPoland Lukasz Dziedzic ... with Reserved
+  Font Name 'Lato'. Licensed under the SIL Open Font License, Version 1.1".
+- **Licence terms that matter here.** Free for commercial use, self-hosting and
+  bundling; the licence text travels with the files; the fonts may not be sold
+  on their own; a modified version (a self-made subset counts) may not carry
+  the name "Lato". `LatoLatin` is the author's own subset, used unmodified.
+- **Vertical metrics.** The hhea, OS/2 typo and win values are identical in
+  1.104 and 2.015 (ascent 1974, descent 426 on a 2000 em). 2.015 sets the
+  `USE_TYPO_METRICS` bit and 1.104 did not; renderers on Windows honour it, so
+  text may sit slightly differently in its line box there. macOS uses the hhea
+  values either way. Not measured on Windows.
+
+## 3. Which weights the CSS asks for
+
+Type classes, `static/backoffice/src/main.css` (`@utility` blocks):
 
 | Weight | Classes |
 | --- | --- |
@@ -67,131 +94,58 @@ blocks since the Tailwind v4 migration on main):
 | 600 | display-md, display-sm, heading-lg, button-lg, button-md, button-sm, table-header |
 | 700 | display-lg |
 
-Component rules with their own weight: `.btn` 600 (line 223), `.tab-item`
-400 (778), `.tab-item-selected` 700 (796), `.stepper-item-active/.stepper-item-error .stepper-label`
-500 (906, 921), `.target-source-row__unlinked` 600 (1030), `.dialog-title` 500
-(1226), `.dialog-text-stack__title` 700 (1383), `.rich-editor__content`
-h1/h2/h3/th 700 (1703–1757). Twelve rules `@apply` a type class and inherit
-its weight (`.menu-item`, the checkbox/radio/switch labels, the stepper, the
-question table header and tags, the dialog description, the editor's toggle
-buttons, labels and menu items — lines 413–1635).
+Component rules with their own weight: `.btn` 600, `.tab-item` 400,
+`.tab-item-selected` 700, the stepper's active/error label 500,
+`.target-source-row__unlinked` 600, `.dialog-title` 500,
+`.dialog-text-stack__title` 700, the visual editor's h1/h2/h3/th 700,
+`.info-toggletip__bubble` 400. Templates (`templates/backoffice`,
+`templates/public`): Tailwind `font-medium` ×12, `font-semibold` ×30,
+`font-bold` ×12, `font-normal` ×1, inline `font-weight: 700` ×3. No rule or
+template sets 100, 300, 800 or 900, so the four files cover every declared
+weight. (A `<strong>` inside 600 text computes to 900 through `bolder` and gets
+the 700 face, as it did before.)
 
-Templates (`templates/backoffice`, `templates/public`): Tailwind `font-medium`
-(500) ×12, `font-semibold` (600) ×25, `font-bold` (700) ×12, `font-normal` ×1;
-inline `font-weight: 700` three times (`registration/_hub.html:17`,
-`assembly_dashboard.html:44,50`); the email templates use `bold`. The built
-`static/backoffice/dist/main.css` carries 15 rules at 400, 11 at 500, 10 at
-600 and 5 at 700.
+## 4. What each weight renders as now
 
-## 3. What 500 and 600 render as today
+Measured in the running app (headless Chromium, `/backoffice/showcase`, the
+sample "Hamburgefonstiv 0123456789" at 64px in `var(--font-sans)`):
 
-- CSS Fonts Level 4 §5.2 (font matching): a request for 500 tries 500, then
-  the weights below it (400 — present); a request for 600 tries 600 and above
-  (700 — present). Synthetic bold is only applied when a bold request finds no
-  face at or above 600, which is not the case here.
-- Measured with the repo's Playwright (headless Chromium, the two shipped
-  files embedded as data URIs, 64px sample string): widths at 300/400/500 are
-  identical (951.44 px) and at 600/700/900 identical (969.48 px); both faces
-  report `loaded`. Synthesised bold would widen the advances, so identical
-  widths mean the 400 and 700 faces are used as they are.
-- Effect: everything declared 500 looks Regular, everything declared 600
-  looks Bold, on every platform. The showcase line "weights 500 and 600 are
-  browser-synthesised" (`templates/backoffice/showcase/typography.html:11`)
-  and the comment in `primitive.css:7–9` describe the wrong mechanism (the
-  effect they describe is right).
-- Klára's point that ClearType renders Lato lighter than macOS is a
-  rendering observation; nothing in the repo tests Windows rendering, so it is
-  neither confirmed nor contradicted here.
+| Requested | 300 | 400 | 500 | 600 | 700 | 900 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Width (px) | 872.27 | 872.27 | 874.44 | 876.75 | 880.67 | 880.67 |
 
-## 4. The claim "Google Fonts serves Lato only at 100/300/400/700/900"
+400, 500, 600 and 700 each use their own face (`document.fonts` reports all
+four `Lato` faces `loaded`); 300 and 900, which nothing asks for, fall back to
+400 and 700 as CSS font matching prescribes. On screen: everything declared 500
+(heading-md/sm, overline, labels, numeric) is now Medium where it rendered
+Regular, and everything declared 600 (display-md/sm, heading-lg, buttons, table
+headers) is now Semibold where it rendered Bold.
 
-- Checked on 2026-11-02 against the css2 API:
-  `https://fonts.googleapis.com/css2?family=Lato:wght@100|300|400|700|900`
-  each return HTTP 200 with latin and latin-ext `@font-face` rules;
-  `wght@500`, `wght@600` and `wght@500;600` return HTTP 400. The claim holds.
-  latofonts.com says the same: "The older version (1.0) is available on Google
-  Fonts with basic Latin character set."
-- It is moot for this repo, which requests no Google Fonts URL. @fontsource
-  mirrors the same five weights (`node_modules/@fontsource/lato/files/lato-latin-{100,300,400,700,900}-{normal,italic}.woff2`);
-  the repo copied 400 and 700 of them.
+## 5. Hungarian
 
-## 5. Hungarian: the shipped subset has no ő/ű
+ő and ű now come from Lato in every weight. Before, the 1.104 files (an
+@fontsource `latin` subset) had no U+0150/0151/0170/0171, and with no
+`unicode-range` the browser drew those letters from the fallback `sans-serif`,
+one glyph at a time; 530 `msgstr` lines in
+`translations/hu/LC_MESSAGES/messages.po` contain ő or ű.
 
-- @fontsource's `latin` range (`node_modules/@fontsource/lato/unicode.json`)
-  covers U+0000–00FF plus a few code points; ő (U+0151) and ű (U+0171) are in
-  `latin-ext`, which was not copied. fontTools confirms neither shipped woff2
-  maps U+0151 or U+0171 (ö and é are present).
-- With no `unicode-range` in `primitive.css`, the browser takes the missing
-  glyphs from the fallback `sans-serif` per glyph (measured: "őőő" 96 px vs
-  "ooo" 106.8 px in the same test page). 530 `msgstr` lines in
-  `translations/hu/LC_MESSAGES/messages.po` contain ő or ű, so the Hungarian
-  backoffice mixes two typefaces today, in every weight.
+## 6. The claim "Google Fonts serves Lato only at 100/300/400/700/900"
 
-## 6. What self-hosting Lato 2.0 would take
+True (checked against the css2 API on 2026-11-02: `wght@500` and `wght@600`
+return HTTP 400), and moot: this repo requests no Google Fonts URL. Google
+Fonts and @fontsource carry Lato 1.x; Lato 2.0, with Medium, Semibold and the
+wider character set, is what the author distributes at latofonts.com.
 
-- **Source.** `https://www.latofonts.com/files/Lato2OFLWeb.zip` (22.8 MB,
-  fetched 2026-11-02). `README-WEB.txt`: "Version 2.015;
-  Latin+Cyrillic+Greek+IPA opensource", created 2015, "Copyright (c)
-  2010-2015 by tyPoland Lukasz Dziedzic with Reserved Font Name 'Lato'.
-  Licensed under the SIL Open Font License, Version 1.1"; `OFL.txt` is in the
-  kit. Nine weights × two styles (Hairline, Thin, Light, Regular, Medium,
-  Semibold, Bold, Heavy, Black), each as eot/ttf/woff/woff2, in two kits:
-  `Lato/` (3,023 glyphs, ≈182–185 KB per woff2) and `LatoLatin/` (465–467
-  glyphs, ≈44 KB per woff2, includes ő/ű).
-- **Files.** For the current scale: `LatoLatin-Medium.woff2` (43,920 B,
-  usWeightClass 500) and `LatoLatin-Semibold.woff2` (44,356 B, 600). The kit's
-  own CSS declares each weight as its own family ("LatoLatin Medium",
-  `latolatinfonts.css:136–141`, `font-weight: normal`), so the repo's
-  `@font-face` rules would set `font-family: "Lato"` with `font-weight: 500`
-  and `600` itself, following the two existing rules in `primitive.css`.
-- **Versions.** Keeping 1.104 for 400/700 beside 2.015 for 500/600 means two
-  releases of the family on one page (224 vs 467 glyphs; ő/ű only in the new
-  files, so a Regular ő from the fallback font next to a Semibold ő from Lato).
-  Replacing 400/700 with `LatoLatin-Regular.woff2` (43,760 B) and
-  `LatoLatin-Bold.woff2` (44,380 B) keeps one version: ≈176 KB for four
-  weights against 46.6 KB for two today.
-- **Build.** None. Commit the woff2 files under `static/backoffice/fonts/`
-  (tracked), add or replace the rules in `primitive.css:10–24`, use new file
-  names (the font URLs are un-hashed), update `typography.html:11` and the
-  `primitive.css:7–9` comment. `@fontsource/lato` becomes removable from
-  `package.json`. Tailwind never reads the token files, so `just
-  build-backoffice` is unaffected; Docker and CI need nothing.
-- **Tests.** None reference fonts (grep of `tests/` for woff2, font-face,
-  backoffice/fonts, fontsource: nothing). `tests/unit/test_design_tokens.py`
-  checks `var(--…)` names only.
-- **CSP.** `font-src` already has `'self'` (`flask_app.py:294`); a
-  self-hosted file needs no change. No third-party request, so none of the
-  consent conditions in `docs/personal-data.md:247` ("any third-party script
-  or embed — including a font") are touched. The `fonts.googleapis.com` /
-  `fonts.gstatic.com` entries stay what they are: an allowance for pasted
-  registration HTML, independent of this choice.
-- **Licence.** SIL OFL 1.1: free for commercial use and web embedding; the
-  licence text travels with the files (commit `OFL.txt` beside the woff2);
-  the fonts may not be sold on their own; a modified version (a self-made
-  subset counts) may not use the Reserved Font Name "Lato" in its font names.
-  The `LatoLatin` subset in the kit is the author's own, so using those files
-  unmodified raises none of that.
+## 7. Before the switch (for the record)
 
-## 7. If the scale were limited to 400/700 instead
-
-- **Code.** Six type classes 500→400 (heading-md, heading-sm, overline,
-  label-lg, label-md, numeric), seven 600→700 (display-md, display-sm,
-  heading-lg, button-lg/md/sm, table-header), `.btn` 600→700, the stepper's
-  active/error label 500→400, `.target-source-row__unlinked` 600→700,
-  `.dialog-title` 500→400; in templates `font-medium` ×12 → `font-normal` and
-  `font-semibold` ×25 → `font-bold`; the showcase table's Weight column
-  (`typography.html:17–37`); the Figma text styles would drop Medium and
-  SemiBold on Klára's side.
-- **On screen.** No change in any browser: section 3 shows this is what
-  renders now. The declaration would match the rendering, nothing else.
-- **Against Klára's revised scale** (`typography-diff.md` §2): her 600 on
-  every label, heading, overline, button and table header would render Bold
-  and her Medium caption/numeric Regular — heavier than designed.
-- **Hungarian.** ő/ű stay in the fallback font either way unless Latin-ext
-  files (the 2.015 `LatoLatin` kit, or @fontsource's `latin-ext` 1.104 files)
-  come in.
-
-**Cheaper path, one line:** the four `LatoLatin` 2.015 woff2 files (≈176 KB,
-two more `@font-face` rules, no build/CSP/test change) fix 500/600 and the ő/ű
-fallback in one commit; limiting to 400/700 is a CSS-only edit that changes
-nothing on screen and would still leave ő/ű in the fallback font.
+- Two `@font-face` rules, 400 and 700, pointing at
+  `lato-latin-{400,700}-normal.woff2`: Lato "Version 1.104; Western+Polish
+  opensource", 224 glyphs each, byte-identical to `@fontsource/lato` 5.3.0's
+  files.
+- By CSS font matching a request for 500 took the 400 face and a request for
+  600 the 700 face; the measured widths at 300/400/500 were identical, as were
+  those at 600/700/900. The old comment's "browser-synthesised" was the wrong
+  mechanism: synthetic bold applies only when no face at or above 600 exists.
+- Limiting the scale to 400/700 was the alternative considered. It would have
+  changed nothing on screen (the declarations would have matched what rendered)
+  and would have left ő/ű in the fallback font.
