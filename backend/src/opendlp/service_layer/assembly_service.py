@@ -782,6 +782,34 @@ def get_csv_upload_status(
     )
 
 
+@dataclass(frozen=True)
+class AssemblyListing:
+    assembly: Assembly
+    data_source: str
+
+
+def list_assemblies(
+    uow: AbstractUnitOfWork, *, member_user_id: uuid.UUID | None = None, include_archived: bool = False
+) -> list[AssemblyListing]:
+    """Every assembly, newest first, with its data source. Does no permission check.
+
+    A caller serving a user must establish first that they may see every
+    assembly. `member_user_id` keeps only those that user holds a role on.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    listings = []
+    for assembly in uow.assemblies.list_filtered(member_user_id=member_user_id, include_archived=include_archived):
+        csv_status = CSVUploadStatus(
+            targets_count=uow.target_categories.count_by_assembly_id(assembly.id),
+            respondents_count=uow.respondents.count_by_assembly_id(assembly.id),
+            csv_config=None,
+        )
+        data_source, _locked = determine_data_source(assembly.gsheet, csv_status)
+        listings.append(AssemblyListing(assembly=assembly.create_detached_copy(), data_source=data_source))
+    return listings
+
+
 @dataclass(kw_only=True)
 class AssemblyNavContext:
     """Everything the backoffice navigation shell needs for an assembly page.

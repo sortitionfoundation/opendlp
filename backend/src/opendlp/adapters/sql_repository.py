@@ -321,6 +321,19 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
         """Get assemblies by their status."""
         return self.session.query(Assembly).filter_by(status=status).order_by(orm.assemblies.c.created_at.desc()).all()
 
+    def list_filtered(
+        self, member_user_id: uuid.UUID | None = None, include_archived: bool = False
+    ) -> Iterable[Assembly]:
+        query = self.session.query(Assembly)
+        if member_user_id is not None:
+            assembly_ids_subquery = select(orm.user_assembly_roles.c.assembly_id).where(
+                orm.user_assembly_roles.c.user_id == member_user_id
+            )
+            query = query.filter(orm.assemblies.c.id.in_(assembly_ids_subquery))
+        if not include_archived:
+            query = query.filter(orm.assemblies.c.status == AssemblyStatus.ACTIVE)
+        return query.order_by(orm.assemblies.c.created_at.desc()).all()
+
 
 class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository):
     """SQLAlchemy implementation of UserInviteRepository."""
