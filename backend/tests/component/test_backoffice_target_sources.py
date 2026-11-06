@@ -13,7 +13,6 @@ from opendlp.domain.respondent_field_schema import (
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
@@ -41,7 +40,6 @@ def _seed_field(fake_store, assembly, field_key, **kwargs):
             assembly_id=assembly.id,
             field_key=field_key,
             label=kwargs.pop("label", field_key),
-            group=kwargs.pop("group", RespondentFieldGroup.ABOUT_YOU),
             sort_order=kwargs.pop("sort_order", 10),
             **kwargs,
         )
@@ -1442,7 +1440,6 @@ class TestRowActions:
             fake_store,
             existing_assembly,
             "Region",
-            group=RespondentFieldGroup.DERIVED,
             is_derived=True,
             derived_from=["area"],
             derivation_type=DerivationType.SMALL_MAPPING,
@@ -1481,7 +1478,6 @@ class TestRowActions:
             fake_store,
             assembly,
             "Age bracket",
-            group=RespondentFieldGroup.DERIVED,
             is_derived=True,
             derived_from=["year_of_birth"],
             derivation_type=DerivationType.AGE_BRACKET,
@@ -1627,12 +1623,11 @@ class TestRowActions:
 class TestMappingUpload:
     def _linked_large_mapping(self, fake_store, assembly):
         category = _seed_category(fake_store, assembly, "Region", ["North", "South"])
-        _seed_field(fake_store, assembly, "Postcode", field_type=FieldType.TEXT, group=RespondentFieldGroup.ADDRESS)
+        _seed_field(fake_store, assembly, "Postcode", field_type=FieldType.TEXT)
         field = _seed_field(
             fake_store,
             assembly,
             "Region",
-            group=RespondentFieldGroup.DERIVED,
             is_derived=True,
             derived_from=["Postcode"],
             derivation_type=DerivationType.LARGE_MAPPING,

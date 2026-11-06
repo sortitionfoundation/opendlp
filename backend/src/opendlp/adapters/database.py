@@ -233,13 +233,9 @@ def start_mappers() -> None:
         )
 
         # Map RespondentFieldDefinition domain object to respondent_field_definitions table.
-        # The ``field_group`` column maps to the ``group`` attribute on the domain class.
         orm.mapper_registry.map_imperatively(
             respondent_field_schema.RespondentFieldDefinition,
             orm.respondent_field_definitions,
-            properties={
-                "group": orm.respondent_field_definitions.c.field_group,
-            },
         )
 
         # Map RespondentFieldMappingEntry independently — no ORM relationship;

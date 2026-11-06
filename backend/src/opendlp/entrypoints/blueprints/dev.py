@@ -44,7 +44,6 @@ from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldType,
-    RespondentFieldGroup,
 )
 from opendlp.domain.validators import SlugError
 from opendlp.domain.value_objects import ContentStyle, RespondentStatus
@@ -950,19 +949,8 @@ def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     assembly_id = uuid.UUID(params["assembly_id"])
     field_key = params.get("field_key", "")
     label = params.get("label") or None
-    group_str = params.get("group", "GENERAL")
     field_type_str = params.get("field_type", "TEXT")
     options_raw = params.get("options")  # List of option values (strings) or None
-
-    # Parse group enum
-    try:
-        group = RespondentFieldGroup(group_str)
-    except ValueError:
-        return {
-            "status": "error",
-            "error": f"Invalid group: {group_str}. Valid values: {[g.value for g in RespondentFieldGroup]}",
-            "error_type": "ValidationError",
-        }
 
     # Parse field_type enum
     try:
@@ -993,7 +981,6 @@ def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
             assembly_id=assembly_id,
             field_key=field_key,
             label=label,
-            group=group,
             field_type=field_type,
             options=options,
         )
@@ -1003,7 +990,6 @@ def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
                 "id": str(field.id),
                 "field_key": field.field_key,
                 "label": field.label,
-                "group": field.group.value,
                 "field_type": field.field_type.value,
                 "sort_order": field.sort_order,
                 "options": [{"value": o.value, "help_text": o.help_text} for o in (field.options or [])],

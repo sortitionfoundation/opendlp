@@ -57,12 +57,6 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">Human-readable label; defaults to humanised field_key</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers)">group</td>
-                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
-                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
-                                <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">eligibility, name_and_contact, address, about_you, consent, other</td>
-                            </tr>
-                            <tr>
                                 <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers)">field_type</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
@@ -81,7 +75,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block" style="background-color: var(--color-subtle-background-panels)">
-                    RespondentFieldDefinition { id, field_key, label, group, field_type, sort_order, options, is_fixed, is_derived }
+                    RespondentFieldDefinition { id, field_key, label, field_type, sort_order, options, is_fixed, is_derived }
                 </code>
             </div>
             {# Try It Section #}
@@ -108,18 +102,6 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                     <input type="text" x-model="addFieldLabel" placeholder="Human-readable label (defaults to humanised key)"
                            class="w-full px-3 py-2 rounded-lg text-body-md"
                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
-                </div>
-                <div class="mb-4">
-                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Group") }}</label>
-                    <select x-model="addFieldGroup" class="w-full px-3 py-2 rounded-lg text-body-md"
-                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
-                        <option value="eligibility">Eligibility</option>
-                        <option value="name_and_contact">Name and Contact</option>
-                        <option value="address">Address</option>
-                        <option value="about_you">About You</option>
-                        <option value="consent">Consent</option>
-                        <option value="other" selected>Other</option>
-                    </select>
                 </div>
                 <div class="mb-4">
                     <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Field Type") }}</label>
@@ -189,7 +171,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                 <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-info-100); color: var(--color-info-600)">🔍 can_view_assembly()</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Return the schema for an assembly, ordered by GROUP_DISPLAY_ORDER then sort_order.") }}
+                {{ _("Return the schema for an assembly in list order: by sort_order, with derived fields last.") }}
             </p>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -206,33 +188,6 @@ ABOUTME: Lists all field-related service methods with parameters and return type
         {% endcall %}
     {% endcall %}
 
-    {# get_schema_grouped #}
-    {% call card(title="get_schema_grouped()", composed=true) %}
-        {% call card_body() %}
-            <div class="flex items-center justify-between mb-4">
-                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
-                    respondent_field_schema_service.py:87
-                </code>
-                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-info-100); color: var(--color-info-600)">🔍 can_view_assembly()</span>
-            </div>
-            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Return the schema as a map keyed by group, in display order. All groups are present even if empty.") }}
-            </p>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-code" style="color: var(--color-body-text);">
-                        <li>assembly_id: UUID ✅</li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
-                    <code class="text-body-sm">dict[RespondentFieldGroup, list[RespondentFieldDefinition]]</code>
-                </div>
-            </div>
-        {% endcall %}
-    {% endcall %}
-
     {# update_field #}
     {% call card(title="update_field()", composed=true) %}
         {% call card_body() %}
@@ -243,7 +198,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                 <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Update a field's label, group, sort_order, field_type, or options. UI: Edit field row and click Save.") }}
+                {{ _("Update a field's label, sort_order, field_type, or options. UI: Edit field row and click Save.") }}
             </p>
             <div class="mb-4">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
@@ -251,7 +206,6 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                     <li>assembly_id: UUID ✅</li>
                     <li>field_id: UUID ✅</li>
                     <li>label: str | None ❌</li>
-                    <li>group: RespondentFieldGroup | None ❌</li>
                     <li>sort_order: int | None ❌</li>
                     <li>field_type: FieldType | None ❌</li>
                     <li>options: list[ChoiceOption] | None ❌ (sentinel for "leave alone")</li>
@@ -562,7 +516,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                 <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-secondary-text); color: var(--color-page-background)">⚙️ Internal</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Seed a fresh schema from CSV headers. Creates fixed-field rows plus one row per non-fixed, non-id header. Uses heuristics to bucket into groups. Called automatically during CSV import.") }}
+                {{ _("Seed a fresh schema from CSV headers. Creates fixed-field rows plus one row per non-fixed, non-id header, in CSV order. Called automatically during CSV import.") }}
             </p>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -588,17 +542,6 @@ ABOUTME: Lists all field-related service methods with parameters and return type
         {% call card_body() %}
             <div class="grid grid-cols-2 gap-6">
                 <div>
-                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">RespondentFieldGroup</h4>
-                    <ul class="text-code" style="color: var(--color-body-text);">
-                        <li>eligibility</li>
-                        <li>name_and_contact</li>
-                        <li>address</li>
-                        <li>about_you</li>
-                        <li>consent</li>
-                        <li>other</li>
-                    </ul>
-                </div>
-                <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">FieldType</h4>
                     <ul class="text-code" style="color: var(--color-body-text);">
                         <li>text</li>
@@ -620,7 +563,6 @@ ABOUTME: Lists all field-related service methods with parameters and return type
   assembly_id: UUID,
   field_key: str,
   label: str,
-  group: RespondentFieldGroup,
   field_type: FieldType,
   sort_order: int,
   options: list[ChoiceOption] | None,

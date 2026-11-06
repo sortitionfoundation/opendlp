@@ -21,7 +21,6 @@ from opendlp.domain.respondent_field_schema import _UNSET as _UNSET_OPTIONS
 from opendlp.domain.respondent_field_schema import (
     FIXED_FIELD_ON_REGISTRATION_PAGE,
     FIXED_FIELD_TYPES,
-    GROUP_DISPLAY_ORDER,
     IN_SCHEMA_FIXED_FIELDS,
     ChoiceOption,
     DerivationType,
@@ -30,7 +29,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     FixedFieldError,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     TargetLinkedFieldError,
     humanise_field_key,
 )
@@ -54,7 +52,6 @@ from opendlp.service_layer.form_order import (
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_auto_export import request_auto_export
-from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
 from opendlp.service_layer.tabular_data import (
     Column,
     HeaderCheck,
@@ -122,7 +119,7 @@ def get_schema(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> list[RespondentFieldDefinition]:
-    """Return the schema for an assembly, ordered by GROUP_DISPLAY_ORDER then sort_order.
+    """Return the schema for an assembly in list order: by sort_order, derived fields last.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -147,25 +144,6 @@ def get_respondent_sections(
     return sections_at_headings(fields, blocks)
 
 
-def get_schema_grouped(
-    uow: AbstractUnitOfWork,
-    user_id: uuid.UUID,
-    assembly_id: uuid.UUID,
-) -> dict[RespondentFieldGroup, list[RespondentFieldDefinition]]:
-    """Return the schema as a map keyed by group, in display order.
-
-    All groups are present in the map even if empty, so view code can iterate
-    uniformly.
-
-    The caller is expected to manage the `uow` context (`with uow: ...`).
-    """
-    fields = get_schema(uow, user_id, assembly_id)
-    grouped: dict[RespondentFieldGroup, list[RespondentFieldDefinition]] = {group: [] for group in GROUP_DISPLAY_ORDER}
-    for f in fields:
-        grouped.setdefault(f.group, []).append(f)
-    return grouped
-
-
 # Where the built-in questions go in a new schema: eligibility and email ahead
 # of everything else, consent after it. A CSV that has one of these columns
 # puts it where the CSV has it instead.
@@ -174,12 +152,11 @@ _FIXED_FIELDS_LAST = ("consent", "stay_on_db")
 
 
 def _fixed_row(assembly_id: uuid.UUID, key: str, sort_order: int) -> RespondentFieldDefinition:
-    group, label = next((group, label) for k, group, label in IN_SCHEMA_FIXED_FIELDS if k == key)
+    label = next(label for k, label in IN_SCHEMA_FIXED_FIELDS if k == key)
     return RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=key,
         label=label,
-        group=group,
         sort_order=sort_order,
         is_fixed=True,
         field_type=FIXED_FIELD_TYPES.get(key, FieldType.TEXT),
@@ -198,7 +175,6 @@ def populate_schema_from_headers(
     assembly_id: uuid.UUID,
     headers: list[str],
     id_column: str,
-    target_category_names: list[str] | None = None,
 ) -> int:
     """Seed a fresh schema for an assembly from a set of CSV headers.
 
@@ -210,16 +186,12 @@ def populate_schema_from_headers(
     schema. Returns the number of rows inserted. Does not commit — caller owns
     the txn.
 
-    Each custom row still gets a heuristic group, only because the column
-    cannot be empty while it exists; nothing orders or displays by it.
-
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) > 0:
         return 0
 
-    target_names = target_category_names or []
-    fixed_keys = {key for key, _group, _label in IN_SCHEMA_FIXED_FIELDS}
+    fixed_keys = {key for key, _label in IN_SCHEMA_FIXED_FIELDS}
     csv_keys: list[str] = []
     for header in headers:
         key = header.strip()
@@ -242,7 +214,6 @@ def populate_schema_from_headers(
                 assembly_id=assembly_id,
                 field_key=key,
                 label=humanise_field_key(key),
-                group=classify_field_key(key, target_names),
                 sort_order=sort_order,
             )
         )
@@ -282,7 +253,6 @@ def add_field(
     field_key: str,
     *,
     label: str | None = None,
-    group: RespondentFieldGroup = RespondentFieldGroup.OTHER,
     field_type: FieldType = FieldType.TEXT,
     options: list[ChoiceOption] | None = None,
     on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
@@ -301,7 +271,6 @@ def add_field(
         assembly_id: The assembly to add the field to.
         field_key: The unique key for the field (e.g., "age_range", "gender").
         label: Human-readable label; defaults to humanise_field_key(field_key).
-        group: Which section the field belongs to; defaults to GENERAL.
         field_type: The data type; defaults to TEXT.
         options: For choice fields, the list of options.
         help_text: Optional hint shown beneath the field on forms.
@@ -334,7 +303,6 @@ def add_field(
         assembly_id=assembly_id,
         field_key=field_key,
         label=effective_label,
-        group=group,
         sort_order=next_form_sort_order(uow, assembly_id),
         field_type=field_type,
         options=options,
@@ -398,7 +366,6 @@ def update_field(
     assembly_id: uuid.UUID,
     field_id: uuid.UUID,
     label: str | None = None,
-    group: RespondentFieldGroup | None = None,
     sort_order: int | None = None,
     field_type: FieldType | None = None,
     options: list[ChoiceOption] | None = _UNSET_OPTIONS,
@@ -406,7 +373,7 @@ def update_field(
     help_text: str | None = None,
     option_renames: dict[str, str] | None = None,
 ) -> RespondentFieldDefinition:
-    """Update a field's label, group, sort_order, field_type, options,
+    """Update a field's label, sort_order, field_type, options,
     on_registration_page, or help_text.
 
     ``options`` uses a sentinel to distinguish "leave alone" from "set to None".
@@ -424,10 +391,6 @@ def update_field(
     field = uow.respondent_field_definitions.get(field_id)
     if field is None or field.assembly_id != assembly_id:
         raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-    if field.is_derived and group is not None and group != RespondentFieldGroup.DERIVED:
-        # Computed questions are managed on the target data sources step, and
-        # the registration questions editor hides the Derived section.
-        raise FieldDefinitionConflictError(_l("A computed question always stays in the Derived section"))
     if field_type is not None and field_type != field.field_type:
         _refuse_retyping_a_derivation_source(uow, assembly_id, field.field_key)
     removed_values: set[str] = set()
@@ -438,7 +401,6 @@ def update_field(
     try:
         field.update(
             label=label,
-            group=group,
             sort_order=sort_order,
             field_type=field_type,
             options=options,
@@ -999,16 +961,15 @@ class ReconciliationDiff:
     (``email``, ``consent``, ``stay_on_db``, ``eligible``, ``can_attend``) and
     the id column — those are never reconciled.
 
-    ``new_keys`` carries each new key paired with its heuristic-suggested group,
-    which fills the group column while it exists; the new keys go at the end
-    of the list.
+    ``new_keys`` are the new keys in CSV order; applying the diff puts them at
+    the end of the list.
 
     ``has_changes`` returns True iff applying the diff would mutate the schema.
     """
 
     assembly_id: uuid.UUID
     unchanged: list[str] = field(default_factory=list)
-    new_keys: list[tuple[str, RespondentFieldGroup]] = field(default_factory=list)
+    new_keys: list[str] = field(default_factory=list)
     absent_keys: list[str] = field(default_factory=list)
     id_column_changed: tuple[str, str] | None = None
 
@@ -1022,14 +983,13 @@ def compute_reconciliation_diff(
     assembly_id: uuid.UUID,
     headers: list[str],
     id_column: str,
-    target_category_names: list[str] | None = None,
     previous_id_column: str | None = None,
 ) -> ReconciliationDiff:
     """Compare a CSV's headers against the existing schema. Read-only.
 
     Excludes the id column and the in-schema fixed-field keys from comparison
-    (those are always present and not reconciled). New keys are classified via
-    heuristics so the UI can surface the suggested group.
+    (those are always present and not reconciled). New keys are listed in CSV
+    order.
 
     ``previous_id_column`` lets the caller supply the id column from the prior
     upload so a column rename can be flagged. Pass ``None`` to skip that check.
@@ -1040,8 +1000,7 @@ def compute_reconciliation_diff(
     if previous_id_column and previous_id_column != id_column:
         diff.id_column_changed = (previous_id_column, id_column)
 
-    fixed_keys = {key for key, _group, _label in IN_SCHEMA_FIXED_FIELDS}
-    target_names = target_category_names or []
+    fixed_keys = {key for key, _label in IN_SCHEMA_FIXED_FIELDS}
 
     existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
     existing_keys = {f.field_key for f in existing if not f.is_fixed}
@@ -1055,7 +1014,7 @@ def compute_reconciliation_diff(
         if key in existing_keys:
             diff.unchanged.append(key)
         else:
-            diff.new_keys.append((key, classify_field_key(key, target_names)))
+            diff.new_keys.append(key)
 
     diff.absent_keys = sorted(existing_keys - seen_in_csv)
     return diff
@@ -1086,10 +1045,9 @@ def apply_reconciliation(
             assembly_id=assembly_id,
             field_key=key,
             label=humanise_field_key(key),
-            group=group,
             sort_order=start + i * SORT_ORDER_STEP,
         )
-        for i, (key, group) in enumerate(diff.new_keys)
+        for i, key in enumerate(diff.new_keys)
     ]
     uow.respondent_field_definitions.bulk_add(new_rows)
     record_questions_changed(uow, assembly_id)
@@ -1102,7 +1060,6 @@ def update_schema_from_headers(
     assembly_id: uuid.UUID,
     headers: list[str],
     id_column: str,
-    target_category_names: list[str] | None = None,
 ) -> int:
     """Bring the schema in line with a CSV's headers.
 
@@ -1113,12 +1070,8 @@ def update_schema_from_headers(
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
-        return populate_schema_from_headers(
-            uow, assembly_id, headers, id_column, target_category_names=target_category_names
-        )
-    diff = compute_reconciliation_diff(
-        uow, assembly_id, headers, id_column, target_category_names=target_category_names
-    )
+        return populate_schema_from_headers(uow, assembly_id, headers, id_column)
+    diff = compute_reconciliation_diff(uow, assembly_id, headers, id_column)
     return apply_reconciliation(uow, assembly_id, diff)
 
 
@@ -1367,13 +1320,4 @@ def compute_diff_for_pending_csv(
     if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
         return None
 
-    target_category_names = [c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)]
-
-    return compute_reconciliation_diff(
-        uow,
-        assembly_id,
-        headers,
-        id_column,
-        target_category_names=target_category_names,
-        previous_id_column=previous_id_column,
-    )
+    return compute_reconciliation_diff(uow, assembly_id, headers, id_column, previous_id_column=previous_id_column)

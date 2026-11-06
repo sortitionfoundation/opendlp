@@ -126,7 +126,7 @@ class TestComputeDiffForPendingCsv:
         diff = self.diff(uow, admin_user, test_assembly, "id,age,postcode,,\nR2,40,SW1,,\n")
 
         assert diff is not None
-        assert {key for key, _ in diff.new_keys} == {"postcode"}
+        assert diff.new_keys == ["postcode"]
 
     def test_an_unnamed_column_with_data_is_rejected_before_confirming(self, uow, admin_user, test_assembly, seeded):
         """The diff page used to offer a confirmation for a file the import then failed on."""

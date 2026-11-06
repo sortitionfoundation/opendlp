@@ -16,7 +16,6 @@ from opendlp.domain.registration_content_block import (
 from opendlp.domain.respondent_field_schema import (
     DerivationType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 
 ASSEMBLY_ID = uuid.uuid4()
@@ -27,7 +26,6 @@ def _field(key: str, sort_order: int, **kwargs) -> RespondentFieldDefinition:
         assembly_id=ASSEMBLY_ID,
         field_key=key,
         label=key,
-        group=kwargs.pop("group", RespondentFieldGroup.OTHER),
         sort_order=sort_order,
         **kwargs,
     )
@@ -37,7 +35,6 @@ def _derived(key: str, sort_order: int) -> RespondentFieldDefinition:
     return _field(
         key,
         sort_order,
-        group=RespondentFieldGroup.DERIVED,
         is_derived=True,
         derived_from=["source"],
         derivation_type=DerivationType.SMALL_MAPPING,

@@ -12,7 +12,7 @@ from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.registration_page import RegistrationPage
-from opendlp.domain.respondent_field_schema import DerivationType, RespondentFieldDefinition, RespondentFieldGroup
+from opendlp.domain.respondent_field_schema import DerivationType, RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentSourceType, RespondentStatus
@@ -71,7 +71,6 @@ def _field(field_key: str, *, is_fixed: bool = False, is_derived: bool = False) 
         assembly_id=uuid.uuid4(),
         field_key=field_key,
         label=field_key.replace("_", " ").title(),
-        group=RespondentFieldGroup.OTHER,
         sort_order=10,
         is_fixed=is_fixed,
         is_derived=is_derived,

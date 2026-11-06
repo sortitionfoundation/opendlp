@@ -14,7 +14,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
@@ -35,7 +34,6 @@ def _email_field(assembly_id, on_page: FieldOnRegistrationPage) -> RespondentFie
         assembly_id=assembly_id,
         field_key="email",
         label="Email",
-        group=RespondentFieldGroup.NAME_AND_CONTACT,
         sort_order=10,
         field_type=FieldType.EMAIL,
         is_fixed=True,
@@ -299,7 +297,6 @@ class TestAutoReplyReadiness:
                 assembly_id=assembly.id,
                 field_key="contact_address",
                 label="Your email",
-                group=RespondentFieldGroup.NAME_AND_CONTACT,
                 sort_order=20,
                 field_type=FieldType.EMAIL,
                 on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
