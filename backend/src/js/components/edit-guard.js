@@ -28,6 +28,7 @@ export function editGuard(options) {
     editDirty: false,
     leaveModalOpen: false,
     leaveUrl: "",
+    leaveReplaces: false,
     leaveGuardSuppressed: false,
 
     /**
@@ -114,9 +115,18 @@ export function editGuard(options) {
       this.openLeaveModal(event.currentTarget.href);
     },
 
-    openLeaveModal: function (url) {
+    /**
+     * Ask before leaving for the given url.
+     *
+     * @param {string} url - where discarding goes
+     * @param {boolean} [replace=false] - discard by replacing this page's
+     *   history entry rather than adding one, for a way out that is going back
+     *   rather than on - so the back button does not return to the edits
+     */
+    openLeaveModal: function (url, replace) {
       var self = this;
       self.leaveUrl = url;
+      self.leaveReplaces = Boolean(replace);
       self.leaveModalOpen = true;
       self.$nextTick(function () {
         if (self.$refs.keepEditingBtn) self.$refs.keepEditingBtn.focus();
@@ -126,12 +136,17 @@ export function editGuard(options) {
     closeLeaveModal: function () {
       this.leaveModalOpen = false;
       this.leaveUrl = "";
+      this.leaveReplaces = false;
     },
 
     discardAndLeave: function () {
       if (!this.leaveUrl) return;
       this.leaveGuardSuppressed = true;
-      window.location.assign(this.leaveUrl);
+      if (this.leaveReplaces) {
+        window.location.replace(this.leaveUrl);
+      } else {
+        window.location.assign(this.leaveUrl);
+      }
     },
   };
 }

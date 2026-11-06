@@ -26,7 +26,7 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
            main and footer are then inert — invisible to keyboard and assistive tech — so
            the overlay's dialog is the only interactive surface. The floating alerts stay
            outside the inert regions: flash messages must remain live above the dialog. #}
-        <header class="sticky top-0 z-40" style="background-color: var(--color-bg-secondary);" {% if page_takeover %}inert{% endif %}>
+        <header class="sticky top-0 z-40" style="background-color: var(--color-bg-secondary);" data-sticky-header {% if page_takeover %}inert{% endif %}>
             {# "Switch to Site Admin" is an old-design page; its target="new" opens
                it in one shared tab rather than stacking tabs. #}
             {{ navigation(

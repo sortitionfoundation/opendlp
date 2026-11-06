@@ -97,6 +97,14 @@ class TestBackofficeAssemblyDetails:
         response = logged_in_admin.get("/backoffice/project/00000000-0000-0000-0000-000000000000")
         assert response.status_code == 302
 
+    def test_the_panel_size_says_what_it_means(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
+
+        html = response.data.decode()
+        assert "Panel size" in html
+        assert "Number to Select" not in html
+        assert 'title="The number of people to select"' in html
+
     def test_view_assembly_shows_key_fields(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that assembly details shows key fields."""
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")

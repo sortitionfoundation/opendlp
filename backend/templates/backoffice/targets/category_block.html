@@ -5,7 +5,8 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
 {% from "backoffice/components/icons.html" import icon_hand, icon_sparkles %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/targets/value_suggestions.html" import value_suggestion_rows %}
-{% from "backoffice/targets/missing_values.html" import missing_values_summary %}
+{% from "backoffice/targets/missing_values.html" import missing_values_summary, no_respondent_column_note %}
+{% from "backoffice/targets/table_cells.html" import count_cell, count_headings, count_total_cell, heading, total_cell %}
 {% macro provenance_icon(manual) %}
     {% if manual %}
         <span class="inline-flex shrink-0"
@@ -43,9 +44,15 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
         </span>
     </td>
 {% endmacro %}
-{% set has_counts = respondent_counts is defined and respondent_counts %}
-{% set show_selected = has_selected is defined and has_selected and selected_counts is defined and selected_counts %}
-{% set col_count = 5 + (1 if has_counts else 0) + (1 if show_selected else 0) %}
+{# The count columns are there whenever the project has respondents, so every
+   target lines up the same way. A target with no respondent data column of the
+   same name still gets them, empty, with a note saying why. #}
+{% set show_counts = has_respondents is defined and has_respondents %}
+{% set show_selected = has_selected is defined and has_selected %}
+{% set respondent_counts = respondent_counts if respondent_counts is defined else none %}
+{% set selected_counts = selected_counts if selected_counts is defined else none %}
+{% set has_counts = respondent_counts is not none and respondent_counts %}
+{% set col_count = 5 + (1 if show_counts else 0) + (1 if show_selected else 0) %}
 {% set percentage_total = category.percentage_total() %}
 {% set percentages_plausible = category.percentage_total_is_plausible() %}
 <div class="mb-8 rounded-lg overflow-hidden"
@@ -61,18 +68,18 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
     {% if category.source_url or category.comment %}
         <div class="px-6 pt-4">
             {% if category.source_url %}
+                {# Free text, so linkify: it may be a link, a sentence with one in
+                   it, or no link at all. #}
                 <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
                     {{ _("Source of population figures:") }}
-                    {{ info_icon(_("A link to the report the percentages come from, such as census tables or a poll."), about=_("Source of population figures")) }}
-                    <a href="{{ category.source_url }}"
-                       class="underline"
-                       style="color: var(--color-links)"
-                       target="_blank"
-                       rel="noopener noreferrer">{{ category.source_url | trim_url }}</a>
+                    {{ info_icon(_("Where the percentages came from: a link to the report, such as census tables or a poll, or a note that a council sent the numbers by email."), about=_("Source of population figures")) }}
+                    {{ category.source_url | linkify }}
                 </p>
             {% endif %}
             {% if category.comment %}
-                <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ category.comment | linkify }}</p>
+                <p class="text-body-sm"
+                   style="color: var(--color-secondary-text);
+                          white-space: pre-line">{{ category.comment | linkify }}</p>
             {% endif %}
         </div>
     {% endif %}
@@ -114,7 +121,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                 <col />
                 <col style="width: 8rem;" />
                 {# Wide enough for "Respondents" and the icon beside it on one line. #}
-                {% if has_counts %}<col style="width: 9rem;" />{% endif %}
+                {% if show_counts %}<col style="width: 9rem;" />{% endif %}
                 {% if show_selected %}<col style="width: 8rem;" />{% endif %}
                 <col style="width: 8rem;" />
                 <col style="width: 8rem;" />
@@ -122,34 +129,12 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             </colgroup>
             <thead>
                 <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                    <th class="py-3 pr-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Value") }}</th>
-                    <th class="py-3 px-4 text-right text-label-md"
-                        style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
-                    {% if has_counts %}
-                        <th class="py-3 px-4 text-right text-label-md"
-                            style="color: var(--color-headings)">
-                            <span class="inline-flex items-center justify-end gap-1">
-                                {{ _("Respondents") }}
-                                {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted."), about=_("Respondents")) }}
-                            </span>
-                        </th>
-                    {% endif %}
-                    {% if show_selected %}
-                        <th class="py-3 px-4 text-right text-label-md"
-                            style="color: var(--color-headings)">
-                            <span class="inline-flex items-center justify-end gap-1">
-                                {{ _("Selected") }}
-                                {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place."), about=_("Selected")) }}
-                            </span>
-                        </th>
-                    {% endif %}
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Min") }}</th>
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Max") }}</th>
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Comment") }}</th>
+                    {{ heading(_("Value"), edge="first") }}
+                    {{ heading(_("Population (%%)"), align="right") }}
+                    {{ count_headings(show_counts, show_selected, align="right") }}
+                    {{ heading(_("Min")) }}
+                    {{ heading(_("Max")) }}
+                    {{ heading(_("Comment")) }}
                 </tr>
             </thead>
             {# Each value is a row group of its own, holding the value and the notes
@@ -169,19 +154,17 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                                 <span style="color: var(--color-secondary-text);">&mdash;</span>
                             {% endif %}
                         </td>
-                        {% if has_counts %}
-                            <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ respondent_counts.get(val.value, 0) }}</td>
-                        {% endif %}
-                        {% if show_selected %}
-                            <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ selected_counts.get(val.value, 0) }}</td>
-                        {% endif %}
+                        {% if show_counts %}{{ count_cell(respondent_counts, val.value, align="right") }}{% endif %}
+                        {% if show_selected %}{{ count_cell(selected_counts, val.value, align="right") }}{% endif %}
                         {% set has_percentage = val.percentage_target is not none %}
                         {{ minmax_cell(val.min, val.minmax_manual, has_percentage, suggested="min" in suggested_fields) }}
                         {{ minmax_cell(val.max, val.minmax_manual, has_percentage, suggested="max" in suggested_fields) }}
                         <td class="py-3 px-4 text-body-sm"
                             style="color: var(--color-secondary-text);
                                    overflow-wrap: anywhere">
-                            {% if val.comment %}{{ val.comment | linkify }}{% endif %}
+                            {# pre-line on a span of its own: on the cell it would also
+                               keep the line breaks this template is indented with. #}
+                            {% if val.comment %}<span style="white-space: pre-line">{{ val.comment | linkify }}</span>{% endif %}
                         </td>
                     </tr>
                     {# ── Value Annotations Rows ── #}
@@ -220,32 +203,26 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             {% endif %}
             <tfoot>
                 <tr style="border-top: 2px solid var(--color-borders-dividers);">
-                    <th class="py-3 pr-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Total") }}</th>
-                    <td class="py-3 px-4 text-right text-label-md font-bold"
-                        style="color: {{ 'var(--color-warning-600) ' if not percentages_plausible else 'var(--color-headings)' }}">
+                    {{ heading(_("Total"), edge="first") }}
+                    {% call total_cell(align="right", classes="" if percentages_plausible else "targets-total--implausible") %}
                         {% if percentage_total is not none %}
                             {{ percentage_total }}%
                         {% else %}
                             <span style="color: var(--color-secondary-text);">&mdash;</span>
                         {% endif %}
-                    </td>
-                    {% if has_counts %}
-                        <td class="py-3 px-4 text-right text-label-md font-bold"
-                            style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
-                    {% endif %}
-                    {% if show_selected %}
-                        <td class="py-3 px-4 text-right text-label-md font-bold"
-                            style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
-                    {% endif %}
-                    <td class="py-3 px-4 text-left text-label-md font-bold"
-                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
-                    <td class="py-3 px-4 text-left text-label-md font-bold"
-                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='max') }}</td>
+                    {% endcall %}
+                    {% if show_counts %}{{ count_total_cell(respondent_counts, align="right") }}{% endif %}
+                    {% if show_selected %}{{ count_total_cell(selected_counts, align="right") }}{% endif %}
+                    {% call total_cell() %}{{ (category.values or []) | sum(attribute='min') }}{% endcall %}
+                    {% call total_cell() %}{{ (category.values or []) | sum(attribute='max') }}{% endcall %}
                     <td class="py-3 px-4"></td>
                 </tr>
             </tfoot>
         </table>
+        {# ── No Respondent Data Column ─────────────────────── #}
+        {% if show_counts and respondent_counts is none %}
+            {{ no_respondent_column_note(category.name) }}
+        {% endif %}
         {# ── Missing Respondent Values ─────────────────────── #}
         {% if has_counts and can_manage %}
             {% set target_value_names = category.values | map(attribute='value') | list %}

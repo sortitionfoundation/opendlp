@@ -16,6 +16,7 @@ from opendlp.translations import lazy_gettext as _l
 DEFAULT_WORKSHEET_NAMES = {
     GSheetExportKind.RESPONDENTS: _l("Respondents"),
     GSheetExportKind.DASHBOARD: _l("Results"),
+    GSheetExportKind.TARGETS: _l("Targets"),
 }
 
 

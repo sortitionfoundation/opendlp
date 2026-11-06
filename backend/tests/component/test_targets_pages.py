@@ -17,6 +17,7 @@ from opendlp.domain.respondent_field_schema import (
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
+from opendlp.domain.targets import MAX_SOURCE_URL_LENGTH
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, RespondentStatus
 from opendlp.entrypoints.template_filters import MAX_URL_TEXT_LENGTH
@@ -114,6 +115,22 @@ class TestViewTargetsPage:
         assert "Import from CSV" not in html
         assert "Respondent data columns" not in html
         assert "add-from-columns" not in html
+
+
+class TestStickyHeading:
+    def test_the_heading_and_its_buttons_are_pinned_under_the_page_header(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        sticky = html_text.split('class="sticky-below-header')[1].split('id="export-modal-container"')[0]
+        assert 'x-data="stickyBelowHeader"' in sticky
+        assert ">Targets</h2>" in sticky
+        assert "Add target" in sticky
+        assert "Edit targets" in sticky
+        assert "data-sticky-header" in html_text, "the header it sits under must be marked for it"
 
 
 class TestUploadTargetsCsv:
@@ -260,22 +277,27 @@ class TestCheckTargets:
         assert "login" in response.location
 
 
+def _give_user_a_role(fake_store, assembly_id):
+    """Let the regular user see the assembly, without the right to manage it."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        regular = uow.users.get_by_email("user@example.com")
+        if regular:
+            role = UserAssemblyRole(
+                user_id=regular.id,
+                assembly_id=assembly_id,
+                role=AssemblyRole.CONFIRMATION_CALLER,
+            )
+            regular.assembly_roles.append(role)
+            uow.commit()
+
+
 class TestViewerPermissions:
     def test_viewer_sees_targets_without_edit_controls(self, logged_in_user, existing_assembly, admin_user, fake_store):
         _import_targets(
             fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\n"
         )
 
-        with FakeUnitOfWork(store=fake_store) as uow:
-            regular = uow.users.get_by_email("user@example.com")
-            if regular:
-                role = UserAssemblyRole(
-                    user_id=regular.id,
-                    assembly_id=existing_assembly.id,
-                    role=AssemblyRole.CONFIRMATION_CALLER,
-                )
-                regular.assembly_roles.append(role)
-                uow.commit()
+        _give_user_a_role(fake_store, existing_assembly.id)
 
         response = logged_in_user.get(_targets_url(existing_assembly.id))
         assert response.status_code == 200
@@ -283,6 +305,91 @@ class TestViewerPermissions:
         assert b"Male" in response.data
         assert b"Add target" not in response.data
         assert b"Add value" not in response.data
+
+    def test_viewer_asking_for_the_edit_form_gets_the_read_only_view(
+        self, logged_in_user, existing_assembly, admin_user, fake_store
+    ):
+        _import_targets(fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nGender,Male,3,7\n")
+        _give_user_a_role(fake_store, existing_assembly.id)
+
+        response = logged_in_user.get(_targets_url(existing_assembly.id, "?edit=1&add=1"))
+
+        assert response.status_code == 200
+        assert b"editingAll: false" in response.data
+        assert b"addTargetOnLoad: false" in response.data
+
+
+class TestEditFormUrl:
+    """The edit form is the read-only page's URL plus ?edit=1, so back leaves it for the view."""
+
+    def test_the_page_opens_read_only_by_default(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "editingAll: false" in html_text
+        assert "addTargetOnLoad: false" in html_text
+
+    def test_the_edit_flag_opens_the_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id, "?edit=1")).data.decode()
+
+        assert "editingAll: true" in html_text
+        assert "addTargetOnLoad: false" in html_text
+
+    def test_the_add_flag_opens_the_add_target_dialog_in_the_form(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id, "?edit=1&add=1")).data.decode()
+
+        assert "editingAll: true" in html_text
+        assert "addTargetOnLoad: true" in html_text
+
+    def test_the_add_flag_alone_does_not_open_the_dialog(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The dialog adds into the form, so it means nothing on the read-only view."""
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id, "?add=1")).data.decode()
+
+        assert "editingAll: false" in html_text
+        assert "addTargetOnLoad: false" in html_text
+
+    def test_edit_targets_links_to_the_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert re.search(
+            r'<a href="' + re.escape(_targets_url(existing_assembly.id, "?edit=1")) + r'"(?:(?!</a>).)*Edit targets',
+            html_text,
+            re.DOTALL,
+        )
+
+    def test_add_target_on_the_view_links_to_the_form_with_the_dialog_open(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert f'<a href="{_targets_url(existing_assembly.id, "?edit=1&amp;add=1")}"' in html_text
+        # In the form it opens the dialog on the spot, with no reload to lose edits to.
+        assert 'x-ref="addTargetButton" @click="openAddTarget()"' in html_text
+
+    def test_the_links_into_the_form_keep_the_scroll_position(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+        heading_section = html_text[html_text.index("<h2") : html_text.index("</section>", html_text.index("<h2"))]
+
+        assert "x-scroll-preserve-links" in heading_section
 
 
 class TestPercentageColumn:
@@ -297,6 +404,22 @@ class TestPercentageColumn:
         assert response.status_code == 200
         assert b"48.5%" in response.data
         assert b"100.0%" in response.data
+
+    @pytest.mark.parametrize(("second", "implausible"), [(51.5, False), (30.0, True)])
+    def test_a_total_far_from_100_is_marked_as_a_warning(
+        self, second, implausible, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=48.5)
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Female", percentage=second)
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        foot = re.search(r"<tfoot>(.*?)</tfoot>", html_text, re.DOTALL).group(1)
+        percentage_total = re.findall(r"<td[^>]*>", foot)[0]
+        assert "targets-total " in percentage_total
+        assert ("targets-total--implausible" in percentage_total) is implausible
 
     def test_a_hand_set_value_keeps_its_note_and_offers_relinking(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -325,6 +448,7 @@ class TestPercentageColumn:
             _edit_form_html(response.data.decode()), "Male", "Recalculate min and max from the percentage"
         )
         assert not _is_disabled(relink)
+        assert ':disabled="!canRelink"' in relink
 
     def test_the_column_heading_reads_population(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """The heading is escaped as `%%` for gettext, so check what actually reaches the page."""
@@ -403,7 +527,10 @@ class TestCategorySourceAndComment:
 
         assert "Source of population figures:" in html_text
         assert "Data Source" not in html_text
-        assert 'title="A link to the report the percentages come from, such as census tables or a poll."' in html_text
+        assert (
+            'title="Where the percentages came from: a link to the report, such as census tables or a poll, or a note that a council sent the numbers by email."'
+            in html_text
+        )
 
     def test_the_edit_form_describes_the_source_field_with_its_info_icon(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -417,9 +544,49 @@ class TestCategorySourceAndComment:
         assert re.search(rf'<label for="{source_id}"[^>]*>\s*Source of population figures\s*</label>', html_text)
         assert f'aria-describedby="{source_id}-info"' in html_text
         assert re.search(
-            rf'id="{source_id}-info">A link to the report the percentages come from, such as census tables or a poll\.',
+            rf'id="{source_id}-info">Where the percentages came from: a link to the report',
             html_text,
         )
+
+    def test_the_edit_form_does_not_ask_for_a_url(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """The source may be a sentence with no link in it, so the field must not suggest one."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 1, 2)
+
+        html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        source_input = re.search(rf'<input[^>]*id="bulk-source-{category.id}"[^>]*>', html_text)
+        assert source_input
+        assert "placeholder" not in source_input.group(0)
+
+    def test_a_url_in_the_source_is_a_link(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,source_url\nGender,Male,3,7,Census 2021 https://www.ons.gov.uk/dataset\n",
+        )
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "Census 2021" in html_text
+        assert 'href="https://www.ons.gov.uk/dataset"' in html_text
+
+    def test_a_source_that_is_not_a_url_is_shown_as_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A `javascript:` source is stored as typed and must never become a link."""
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,source_url\nGender,Male,3,7,javascript:alert(1)\n",
+        )
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "javascript:alert(1)" in html_text
+        assert 'href="javascript' not in html_text
 
 
 # Nine values in the respondent data, one of them targeted, so the eight that
@@ -497,10 +664,28 @@ class TestMissingRespondentValues:
         self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS)
 
         html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
-        add_value = re.search(r'<button[^>]*class="([^"]*)"[^>]*>\s*<span>Add value</span>', html_text)
+        add_value = re.search(
+            r'<button[^>]*class="([^"]*)"[^>]*>(?:(?!</button>).)*<span>Add value</span>', html_text, re.DOTALL
+        )
 
         assert add_value is not None, "the Add value button was not found"
         assert "btn--tertiary" in add_value.group(1)
+
+    def test_add_value_carries_a_plus_like_add_target(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """Both buttons add something, so both say so the same way."""
+        self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS)
+
+        html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+        add_value = re.search(r"<button[^>]*>((?:(?!</button>).)*)<span>Add value</span>", html_text, re.DOTALL)
+
+        assert add_value is not None, "the Add value button was not found"
+        assert re.search(r'<span class="btn-icon">\s*<svg', add_value.group(1))
+
+
+def _block_html(html_text, id_marker, name):
+    """One category block's markup, picked out by its id prefix and the name it shows."""
+    blocks = html_text.split(id_marker)[1:]
+    return next(b for b in blocks if f">{name}<" in b or f'value="{name}"' in b)
 
 
 def _read_only_row_cells(html_text, value):
@@ -529,6 +714,87 @@ class TestValueCommentColumn:
         assert len(cells) == 5
         assert "boosted by 2" not in cells[0]
         assert "boosted by 2" in cells[4]
+
+    def test_the_edit_form_comment_suggests_no_particular_note(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A value's comment holds any note about it, not only why min and max were set by hand."""
+        _import_targets(fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nGender,Woman,3,7\n")
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        comment = re.search(r"<[^>]*name=\"cat\[[^\]]+\]\[values\]\[[^\]]+\]\[comment\]\"[^>]*>", html_text)
+        assert comment is not None, "the value comment field was not found"
+        assert "placeholder" not in comment.group(0)
+
+    def test_the_edit_form_comments_are_boxes_that_grow_while_written_in(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A note can run to several lines, so it gets a box that shows them all while it has focus.
+
+        Out of focus the box is one line, to sit in a row of inputs, and the title
+        around it holds the whole note for a hover - around it, not on it, or a
+        screen reader would read the note twice.
+        """
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,comment,category_comment\nGender,Woman,3,7,boosted by 2,from the census\n",
+        )
+
+        edit_form = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        for field, note in (("[values]", "boosted by 2"), ("[comment]", "from the census")):
+            box = re.search(
+                rf'<textarea[^>]*name="cat\[[^\]]+\]{re.escape(field)}[^"]*"[^>]*>([^<]*)</textarea>', edit_form
+            )
+            assert box is not None, f"no comment textarea for {field}"
+            tag = box.group(0)
+            assert box.group(1) == note
+            holders = re.findall(r'<div data-hover-title title="([^"]*)">', edit_form[: box.start()])
+            assert holders and holders[-1] == note, f"no hover title around the {field} box"
+            assert 'rows="1"' in tag
+            assert 'x-data="autoGrowTextarea"' in tag
+            assert '@focus="grow()"' in tag
+            assert '@blur="shrink()"' in tag
+            assert "title=" not in tag
+            assert "resize-none" in tag
+
+    def test_the_value_comment_box_is_named_for_its_row(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _import_targets(fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nGender,Woman,3,7\n")
+
+        edit_form = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert re.search(r'<textarea[^>]*aria-label="Comment on Woman"', edit_form)
+
+    def test_the_read_only_view_keeps_the_line_breaks_in_a_comment(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        value_id = (
+            _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Woman", 3, 7).values[0].value_id
+        )
+        prefix = f"cat[{category.id}]"
+        # A browser sends the line breaks in a textarea as CRLF.
+        logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[comment]": "census 2021\r\nrounded",
+                f"{prefix}[values][{value_id}][value]": "Woman",
+                f"{prefix}[values][{value_id}][min]": "3",
+                f"{prefix}[values][{value_id}][max]": "7",
+                f"{prefix}[values][{value_id}][comment]": "first line\r\nsecond line",
+            },
+        )
+
+        read_only = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert re.search(r'<span style="white-space: pre-line">first line\r?\nsecond line</span>', read_only)
+        assert re.search(r'white-space: pre-line">census 2021\r?\nrounded</p>', read_only)
 
 
 def _edit_form_html(html_text):
@@ -751,9 +1017,113 @@ class TestRespondentCountColumns:
 
         html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
-        count_cell = _edit_form_row_cells(_edit_form_html(html_text), "Man")[2]
-        assert "&mdash;" in count_cell
-        assert "0" not in count_cell
+        for count_cell in (
+            _edit_form_row_cells(_edit_form_html(html_text), "Man")[2],
+            _read_only_row_cells(_read_only_html(html_text), "Man")[2],
+        ):
+            assert "&mdash;" in count_cell
+            assert "0" not in count_cell
+
+    def _unmatched_target(self, fake_store, admin_user, assembly_id):
+        """Gender matches the respondent data; Region has no column of its name."""
+        _import_targets(
+            fake_store,
+            admin_user,
+            assembly_id,
+            "feature,value,min,max\nGender,Woman,3,7\nGender,Man,3,7\nRegion,North,3,7\nRegion,South,3,7\n",
+        )
+
+    def test_a_target_with_no_respondent_column_still_gets_the_count_columns(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Every target lines up the same way once the project has respondents."""
+        self._unmatched_target(fake_store, admin_user, existing_assembly.id)
+        _add_respondents(fake_store, existing_assembly.id, [("r1", {"Gender": "Woman"})])
+        _add_respondents(
+            fake_store, existing_assembly.id, [("r2", {"Gender": "Man"})], status=RespondentStatus.SELECTED
+        )
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        read_only = _block_html(_read_only_html(html_text), 'id="category-', "Region")
+        assert _column_headings(read_only) == [
+            "Value",
+            "Population (%)",
+            "Respondents",
+            "Selected",
+            "Min",
+            "Max",
+            "Comment",
+        ]
+        edit_form = _block_html(_edit_form_html(html_text), 'id="bulk-category-', "Region")
+        assert _column_headings(edit_form) == [
+            "Value",
+            "Population (%)",
+            "Respondents",
+            "Selected",
+            "Min",
+            "Max",
+            "Comment",
+            "Actions",
+        ]
+
+    def test_a_target_with_no_respondent_column_counts_nothing(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Dashes, not zeros, and a dash for the total too: there was nothing to count."""
+        self._unmatched_target(fake_store, admin_user, existing_assembly.id)
+        _add_respondents(fake_store, existing_assembly.id, [("r1", {"Gender": "Woman"})])
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        read_only = _block_html(_read_only_html(html_text), 'id="category-', "Region")
+        edit_form = _block_html(_edit_form_html(html_text), 'id="bulk-category-', "Region")
+        assert "&mdash;" in _read_only_row_cells(read_only, "North")[2]
+        assert "&mdash;" in _edit_form_row_cells(edit_form, "North")[2]
+        for block in (read_only, edit_form):
+            foot = re.search(r"<tfoot>(.*?)</tfoot>", block, re.DOTALL).group(1)
+            assert "&mdash;" in re.findall(r"<td[^>]*>(.*?)</td>", foot, re.DOTALL)[1]
+
+    def test_a_target_with_no_respondent_column_says_why_it_counts_nothing(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._unmatched_target(fake_store, admin_user, existing_assembly.id)
+        _add_respondents(fake_store, existing_assembly.id, [("r1", {"Gender": "Woman"})])
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        note = "The respondent data has no column called 'Region'"
+        for view, marker in (
+            (_read_only_html(html_text), 'id="category-'),
+            (_edit_form_html(html_text), 'id="bulk-category-'),
+        ):
+            assert note in _block_html(view, marker, "Region")
+            assert "data-no-respondent-column" not in _block_html(view, marker, "Gender")
+
+    def test_a_viewer_is_told_why_a_target_counts_nothing(
+        self, logged_in_user, existing_assembly, admin_user, fake_store
+    ):
+        """Not an editing hint: it explains the numbers, so anyone reading them gets it."""
+        self._unmatched_target(fake_store, admin_user, existing_assembly.id)
+        _add_respondents(fake_store, existing_assembly.id, [("r1", {"Gender": "Woman"})])
+        _give_user_a_role(fake_store, existing_assembly.id)
+
+        html_text = logged_in_user.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "The respondent data has no column called 'Region'" in html_text
+
+    def test_a_target_added_in_the_editor_gets_the_count_columns(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Its block is cloned from a template, which must line up with the blocks around it."""
+        self._gender_targets(fake_store, admin_user, existing_assembly.id)
+        self._gender_respondents(fake_store, existing_assembly.id)
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        template = re.search(r'<template x-ref="categoryTemplate">(.*?)</form>', html_text, re.DOTALL).group(1)
+        assert "Respondents" in _column_headings(template)
+        assert "data-no-respondent-column" not in template
 
     def test_a_category_with_no_respondent_data_gets_no_count_columns(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -847,6 +1217,87 @@ class TestMinMaxProvenance:
             assert "Auto calculated" not in cell
             assert "Manually modified" not in cell
 
+    def test_the_edit_form_starts_a_hand_set_row_as_manual(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The row's own state decides which icon its min and max boxes show."""
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        edit_form = _edit_form_html(response.data.decode())
+        row = re.search(r'<tr data-value-row="true".*?</tr>', edit_form, re.DOTALL).group(0)
+        assert "manual: true, relink: false" in row
+        assert "Set by hand" not in edit_form
+        assert "will be recalculated" not in edit_form
+
+    def test_the_edit_form_starts_a_calculated_row_as_automatic(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        row = re.search(r'<tr data-value-row="true".*?</tr>', _edit_form_html(response.data.decode()), re.DOTALL)
+        assert "manual: false, relink: false" in row.group(0)
+
+    def test_the_edit_form_puts_both_icons_in_each_min_and_max_box(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Both are rendered and the row shows one, as typing can switch between them."""
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        min_cell, max_cell = _edit_form_row_cells(_edit_form_html(response.data.decode()), "Male")[2:4]
+        for cell in (min_cell, max_cell):
+            assert 'x-show="showsCalculated"' in cell
+            assert 'x-show="showsManual"' in cell
+            assert '@input="minMaxEdited()"' in cell
+            assert ":disabled" not in cell
+
+    def test_the_edit_form_min_and_max_boxes_are_described_by_their_icon(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The icon's meaning is read with the input, not only to a reader who finds it."""
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        min_cell, max_cell = _edit_form_row_cells(_edit_form_html(response.data.decode()), "Male")[2:4]
+        for cell in (min_cell, max_cell):
+            described_by = re.search(r'<input[^>]*aria-describedby="([^"]+)"', cell).group(1)
+            provenance = re.search(
+                rf'<span id="{re.escape(described_by)}" class="sr-only">(.*?)</span>\s*</span>', cell, re.DOTALL
+            )
+            assert provenance is not None, "the input is not described by its icon's text"
+            assert "Auto calculated" in provenance.group(1)
+            assert "Manually modified" in provenance.group(1)
+
+    def test_the_edit_form_tells_a_screen_reader_when_min_and_max_are_recalculated(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The message comes from the template so it is translated; the row fills in the numbers."""
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        edit_form = _edit_form_html(response.data.decode())
+        assert 'data-recalculated-message="Min {min} and max {max}, from the percentage"' in edit_form
+        percentage_cell = _edit_form_row_cells(edit_form, "Male")[1]
+        assert '<span class="sr-only" aria-live="polite" x-text="announcement"></span>' in percentage_cell
+
+    def test_the_edit_form_carries_the_panel_size_for_the_calculation(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert f'data-number-to-select="{existing_assembly.number_to_select}"' in response.data.decode()
+
 
 class TestViewIsReadOnly:
     def test_the_page_shows_the_number_to_select(self, logged_in_admin, existing_assembly, admin_user, fake_store):
@@ -861,7 +1312,8 @@ class TestViewIsReadOnly:
 
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
-        assert b"Number to select: 42" in response.data
+        assert b"Panel size: 42" in response.data
+        assert b'title="The number of people to select"' in response.data
         assert b"categories defined" not in response.data
 
     def test_the_page_offers_editing_and_adding_a_target(
@@ -929,7 +1381,7 @@ class TestViewIsReadOnly:
 
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
         heading_section = html[html.index("<h2") : html.index("</section>", html.index("<h2"))]
-        edit_button = heading_section[: heading_section.index("Edit targets")].rsplit("<button", 1)[-1]
+        edit_button = heading_section[: heading_section.index("Edit targets")].rsplit("<a", 1)[-1]
 
         assert "btn--primary" in edit_button
 
@@ -998,10 +1450,10 @@ class TestSaveAllValidationErrors:
             },
         )
 
-    def test_an_invalid_source_url_comes_back_as_the_form(
+    def test_an_over_long_source_comes_back_as_the_form(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """A scheme the domain refuses must reach the user as a field error, not a 500."""
+        """A source the domain refuses must reach the user as a field error, not a 500."""
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
         cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
         prefix = f"cat[{category.id}]"
@@ -1010,7 +1462,7 @@ class TestSaveAllValidationErrors:
             _targets_url(existing_assembly.id, "/save-all"),
             data={
                 f"{prefix}[name]": "Gender",
-                f"{prefix}[source_url]": "javascript:alert(1)",
+                f"{prefix}[source_url]": "x" * (MAX_SOURCE_URL_LENGTH + 1),
                 f"{prefix}[values][{cat.values[0].value_id}][value]": "Male",
                 f"{prefix}[values][{cat.values[0].value_id}][min]": "3",
                 f"{prefix}[values][{cat.values[0].value_id}][max]": "7",
@@ -1020,7 +1472,7 @@ class TestSaveAllValidationErrors:
         assert response.status_code == 200, "a rejected save should re-render, not redirect"
         with FakeUnitOfWork(store=fake_store) as uow:
             stored = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
-        assert stored.source_url == "", "the refused URL must not have been saved"
+        assert stored.source_url == "", "the refused source must not have been saved"
 
     def test_a_min_above_max_comes_back_as_the_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
@@ -1044,7 +1496,7 @@ class TestSaveAllValidationErrors:
         row = _bulk_row_for(html, "Male")
         assert 'value="9"' in row, "the min they typed is gone"
         assert 'value="2"' in row, "the max they typed is gone"
-        assert 'value="from the census"' in html, "the category comment they typed is gone"
+        assert ">from the census</textarea>" in html, "the category comment they typed is gone"
 
     def test_the_error_sits_on_the_field_that_caused_it(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1057,6 +1509,28 @@ class TestSaveAllValidationErrors:
 
         row = _bulk_row_for(response.data.decode(), "Male")
         assert "Max must be at least the min" in row
+
+    def test_an_emptied_max_box_is_asked_for(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """An empty box is not given back its old number: the form asks for one."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+        value_prefix = f"cat[{category.id}][values][{cat.values[0].value_id}]"
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                f"cat[{category.id}][name]": "Gender",
+                f"{value_prefix}[value]": "Male",
+                f"{value_prefix}[min]": "3",
+                f"{value_prefix}[max]": "",
+            },
+        )
+
+        assert response.status_code == 200, "a rejected save should re-render, not redirect"
+        assert "Enter a max as well" in _bulk_row_for(response.data.decode(), "Male")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
+        assert (stored.min, stored.max) == (3, 7)
 
     def test_the_redisplayed_form_still_counts_the_respondents(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

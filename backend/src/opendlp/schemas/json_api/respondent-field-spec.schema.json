@@ -272,7 +272,7 @@
         },
         "source_url": {
           "type": "string",
-          "description": "Where the figures came from, e.g. a census table. Empty when none was given; when set it is a full http:// or https:// address."
+          "description": "Where the figures came from, e.g. a census table. Free text, empty when none was given: a link, a sentence with a link in it, or a note. Not guaranteed to be a URL, so never put it in an href as it stands."
         },
         "values": {
           "type": "array",

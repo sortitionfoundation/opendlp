@@ -1,0 +1,75 @@
+{#
+ABOUTME: Cells shared by the targets values tables, read-only and edit form alike
+ABOUTME: Column headings, respondent and selected counts, and the Total row's cells
+#}
+{% from "backoffice/components/info_icon.html" import info_icon %}
+{#
+    The Value column sits at the table's left edge and the edit form's Actions
+    column at its right, so each keeps its padding on the inside only.
+#}
+{% macro edge_padding(edge) %}{{ "pr-4" if edge == "first" else "pl-4" if edge == "last" else "px-4" }}{% endmacro %}
+{#
+    A column heading, or the Total row's label. `info` puts a note beside
+    the label, for a column one word at the top cannot explain.
+#}
+{% macro heading(label, align="left", edge="", info="") %}
+    <th class="py-3 {{ edge_padding(edge) }} text-{{ align }} text-label-md"
+        style="color: var(--color-headings)">
+        {% if info %}
+            <span class="inline-flex items-center {{ 'justify-end' if align == 'right' else '' }} gap-1">
+                {{ label }}
+                {{ info_icon(info, about=label) }}
+            </span>
+        {% else %}
+            {{ label }}
+        {% endif %}
+    </th>
+{% endmacro %}
+{% macro count_headings(show_counts, show_selected, align="left") %}
+    {% if show_counts %}
+        {{ heading(_("Respondents"), align=align,
+        info=_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
+    {% endif %}
+    {% if show_selected %}
+        {{ heading(_("Selected"), align=align,
+        info=_("Counts people who have been selected, including those who have since confirmed their place.")) }}
+    {% endif %}
+{% endmacro %}
+{#
+    A respondent or selected count for one value. A dash where there is nothing
+    to count: no respondent holds the value, or no respondent data column has
+    the target's name. Zero would claim the value was asked about and nobody
+    chose it.
+
+    The numbers describe the respondent data, which the edit form never
+    changes, so there they are what they were when the page loaded - and a row
+    whose value is still blank has nothing to count.
+#}
+{% macro count_cell(counts, value, align="left") %}
+    {% set count = counts.get(value) if counts and value else none %}
+    <td class="py-3 px-4 text-{{ align }}" style="color: var(--color-body-text)">
+        {% if count is not none %}
+            {{ count }}
+        {% else %}
+            <span style="color: var(--color-secondary-text);">&mdash;</span>
+        {% endif %}
+    </td>
+{% endmacro %}
+{#
+    A cell of the Total row. Coloured by .targets-total rather than inline, so
+    a class - .targets-total--implausible, set on the server or by Alpine - can
+    turn it to a warning.
+#}
+{% macro total_cell(align="left", edge="", classes="", attrs="") %}
+    <td class="py-3 {{ edge_padding(edge) }} text-{{ align }} text-label-md font-bold targets-total {{ classes }}"
+        {% if attrs %}{{ attrs | safe }}{% endif %}>{{ caller() if caller else "" }}</td>
+{% endmacro %}
+{% macro count_total_cell(counts, align="left") %}
+    {% call total_cell(align=align) %}
+        {% if counts is not none %}
+            {{ counts.values() | sum }}
+        {% else %}
+            <span style="color: var(--color-secondary-text);">&mdash;</span>
+        {% endif %}
+    {% endcall %}
+{% endmacro %}

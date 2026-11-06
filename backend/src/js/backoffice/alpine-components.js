@@ -4,6 +4,7 @@
 import { ageBracketSetup } from "../components/age-bracket-setup.js";
 import { autocomplete } from "../components/autocomplete.js";
 import { autoDismissAlert } from "../components/auto-dismiss-alert.js";
+import { autoGrowTextarea } from "../components/auto-grow-textarea.js";
 import { bulkTargetsCategory } from "../components/bulk-targets-category.js";
 import { bulkTargetsValueRow } from "../components/bulk-targets-value-row.js";
 import { charCount } from "../components/char-count.js";
@@ -19,6 +20,7 @@ import {
   progressModalDemo,
 } from "../components/showcase-demos.js";
 import { showcaseNav } from "../components/showcase-nav.js";
+import { stickyBelowHeader } from "../components/sticky-below-header.js";
 import { suggestionRow } from "../components/suggestion-row.js";
 import { tabsKeyboard } from "../components/tabs-keyboard.js";
 import { targetsPage } from "../components/targets-page.js";
@@ -36,6 +38,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("ageBracketSetup", ageBracketSetup);
   Alpine.data("autocomplete", autocomplete);
   Alpine.data("autoDismissAlert", autoDismissAlert);
+  Alpine.data("autoGrowTextarea", autoGrowTextarea);
   Alpine.data("bulkTargetsCategory", bulkTargetsCategory);
   Alpine.data("bulkTargetsValueRow", bulkTargetsValueRow);
   Alpine.data("buttonLoadingDemo", buttonLoadingDemo);
@@ -49,6 +52,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("replacementSuggestions", replacementSuggestions);
   Alpine.data("menuButton", menuButton);
   Alpine.data("showcaseNav", showcaseNav);
+  Alpine.data("stickyBelowHeader", stickyBelowHeader);
   Alpine.data("suggestionRow", suggestionRow);
   Alpine.data("tabsKeyboard", tabsKeyboard);
   Alpine.data("targetsPage", targetsPage);

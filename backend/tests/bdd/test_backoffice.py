@@ -1729,7 +1729,7 @@ def click_edit_number_to_select(page: Page):
     edit_link = (
         page
         .locator("a[href*='edit_number=1'], a:has-text('Edit')")
-        .filter(has=page.locator(":scope").locator("xpath=./ancestor::*[contains(., 'Number to Select')]"))
+        .filter(has=page.locator(":scope").locator("xpath=./ancestor::*[contains(., 'Panel size')]"))
         .first
     )
     if edit_link.count() == 0:

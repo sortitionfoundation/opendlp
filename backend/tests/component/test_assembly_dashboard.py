@@ -24,7 +24,7 @@ def _members_url(assembly) -> str:
 
 
 def _indicator_values(html: str) -> list[str]:
-    """The bold numbers in the "Number to select / Number of respondents" row."""
+    """The bold numbers in the "Panel size / Number of respondents" row."""
     return re.findall(r'font-weight: 700;">(\d+)</span>', html)
 
 
@@ -97,7 +97,7 @@ class TestTheDashboardPage:
     def test_renders_indicators_and_sections(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
 
-        assert "Number to select:" in html
+        assert "Panel size:" in html
         assert "Number of respondents:" in html
         # one section per target category
         assert ">Gender<" in html
@@ -105,7 +105,7 @@ class TestTheDashboardPage:
     def test_an_assembly_with_no_targets_shows_the_empty_state(self, logged_in_admin, existing_assembly):
         html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
 
-        assert "Number to select:" in html
+        assert "Panel size:" in html
         # no charts or tables, and the empty-state copy instead
         assert "data-pie-chart" not in html
         assert "conic-gradient(" not in html

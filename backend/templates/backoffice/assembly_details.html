@@ -3,6 +3,7 @@ ABOUTME: Backoffice assembly details page
 ABOUTME: Displays assembly information with question, metadata, and edit action
 #}
 {% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/section.html" import section %}
@@ -68,9 +69,12 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                     </div>
                 {% endif %}
 
-                {# Number to Select #}
+                {# Panel size #}
                 <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Number to Select") }}</dt>
+                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">
+                        {{ _("Panel size") }}
+                        {{ info_icon(_("The number of people to select"), about=_("Panel size")) }}
+                    </dt>
                     <dd class="text-body-md" style="color: var(--color-body-text);">
                         {{ assembly.number_to_select }}
                     </dd>

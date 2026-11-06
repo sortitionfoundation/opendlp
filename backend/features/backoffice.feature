@@ -55,20 +55,20 @@ Feature: Backoffice Dashboard
     Then I should see "Initial Selection"
     And I should see "Replacement Selection"
     And I should see "Manage Generated Tabs"
-    And I should see "Number to select:"
+    And I should see "Panel size:"
 
   Scenario: User can edit number to select from selection tab
     Given I am logged in as an admin user
     And there is an assembly called "Edit Number Assembly" with number_to_select 50
     And the assembly "Edit Number Assembly" has a gsheet configuration
     When I visit the assembly selection page for "Edit Number Assembly"
-    Then I should see "Number to select:"
+    Then I should see "Panel size:"
     And I should see "50"
     When I click the "Edit" link
-    Then I should see "Edit Number to Select"
+    Then I should see "Edit panel size"
     When I fill in "number_to_select" with "75"
     And I click the "Save" button
-    Then I should see "Number to select updated to 75"
+    Then I should see "Panel size updated to 75"
     And I should see "75"
 
   Scenario: Selection tab is accessible from all assembly tabs
