@@ -299,12 +299,11 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
             counts_by_page = uow.respondents.count_by_registration_page_and_status(assembly_id)
 
-            # The authored HTML doesn't follow the field schema automatically, so
-            # warn when any field changed after this HTML was last saved.
-            fields_changed_after_save = any(
-                f.updated_at > html.form_updated_at
-                for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)
-            )
+            # The authored HTML doesn't follow the questions automatically, so warn
+            # when they, or the headings and text among them, changed after this
+            # HTML was last saved - a removal included, which leaves no row behind.
+            questions_updated_at = nav.assembly.questions_updated_at if nav.assembly else None
+            fields_changed_after_save = questions_updated_at is not None and questions_updated_at > html.form_updated_at
         page_rows = registration_page_rows(all_pages, assembly_id, deletable_ids, counts_by_page)
 
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages

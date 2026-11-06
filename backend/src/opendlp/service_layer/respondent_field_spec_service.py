@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 # Bumped when the shape changes in a way a consumer has to notice. Consumers are
 # outside this repo, so they cannot be updated in the same commit as the change.
-SPEC_VERSION = 5
+SPEC_VERSION = 6
 
 
 def _target_value_payload(value: TargetValue) -> dict[str, Any]:
@@ -68,7 +68,6 @@ def _field_payload(
         "id": str(field.id),
         "field_key": field.field_key,
         "label": field.label,
-        "group": field.group.value,
         "sort_order": field.sort_order,
         "is_fixed": field.is_fixed,
         "is_derived": field.is_derived,

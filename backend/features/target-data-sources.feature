@@ -146,6 +146,7 @@ Feature: Target data sources
     And I choose the "exact" method from the keyboard
     And I press Escape
     Then I should be asked whether to discard my changes
+    And the set-up dialog should be dimmed behind the dialog over it
     When I choose "Keep editing"
     Then the set-up dialog should still have the "exact" method chosen
     When I press Escape

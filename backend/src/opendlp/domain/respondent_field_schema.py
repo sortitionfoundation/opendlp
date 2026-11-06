@@ -7,8 +7,9 @@ module-agnostic: modules read from it, they do not each build a parallel one.
 
 Current and anticipated consumers:
 
-- The grouped view_registrant detail page (current): renders fields in the order
-  and groups defined here.
+- The view_registrant detail page (current): renders fields in the order defined
+  here, in sections at the headings placed among them (see
+  ``registration_content_block``).
 - The registration form module (planned): will read the schema as its field
   catalogue when rendering the public form — see docs/agent/module_design.md.
 - The targets module (potential): could eventually reference schema fields
@@ -150,7 +151,7 @@ ON_REGISTRATION_PAGE_LABELS: dict[FieldOnRegistrationPage, str] = {
 
 
 FIELD_TYPE_LABELS: dict[FieldType, str] = {
-    FieldType.TEXT: _l("Text"),
+    FieldType.TEXT: _l("Short text"),
     FieldType.LONGTEXT: _l("Long text"),
     # Both bool types are a checkbox to whoever answers the question — they differ
     # only in whether it may be left unanswered, which the Required tag already says.
@@ -474,6 +475,16 @@ IN_SCHEMA_FIXED_FIELDS: list[tuple[str, RespondentFieldGroup, str]] = [
     ("consent", RespondentFieldGroup.CONSENT, "Consent"),
     ("stay_on_db", RespondentFieldGroup.CONSENT, "Stay on database"),
 ]
+
+
+def field_list_order(field: RespondentFieldDefinition) -> tuple[bool, int, str]:
+    """Sort key for an assembly's fields: by sort_order, with derived fields after the rest.
+
+    Derived fields are never on the questions list, so their sort_order only
+    orders them among themselves; keeping them last keeps computed columns at
+    the end of the export.
+    """
+    return field.is_derived, field.sort_order, field.field_key
 
 
 def normalise_field_key(raw: str) -> str:

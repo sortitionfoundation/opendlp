@@ -37,9 +37,9 @@ class TestViewSchemaPage:
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
-        # Group headings surface.
-        assert b"Name and contact" in body
-        assert b"About you" in body
+        # One list: the old section headings are gone unless someone adds them as headings.
+        assert b"Name and contact" not in body
+        assert b"Add a heading or text" in body
         # Custom CSV column appears somewhere on the page.
         assert b"custom_notes" in body
         # Built-in fields carry no "Fixed" tag: "fixed" is the code's word, not the user's.
@@ -132,6 +132,40 @@ class TestMoveField:
             schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
             after = [f.field_key for f in schema if f.group == RespondentFieldGroup.OTHER]
             assert after == ["b", "a", "c"]
+
+
+class TestContentBlocks:
+    def test_add_a_heading_then_move_it_to_the_top(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+        page = f"/backoffice/project/{existing_assembly.id}/respondent-schema"
+
+        response = logged_in_admin.post(
+            f"{page}/blocks/add",
+            data={
+                "heading": "About you",
+                "body_html": "<p>Tell us a little about yourself.</p>",
+                "csrf_token": get_csrf_token(logged_in_admin, page),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b'<div class="content-block-row__heading">About you</div>' in response.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            block = uow.registration_content_blocks.list_by_assembly(existing_assembly.id)[0]
+            block_id = block.id
+        logged_in_admin.post(
+            f"{page}/blocks/{block_id}/move",
+            data={"direction": "top", "csrf_token": get_csrf_token(logged_in_admin, page)},
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            items = respondent_field_schema_service.get_form_items(uow, admin_user.id, existing_assembly.id)
+            assert items[0].id == block_id
+            assert uow.assemblies.get(existing_assembly.id).questions_updated_at is not None
 
 
 class TestAddField:

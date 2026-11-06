@@ -72,9 +72,19 @@ class TestSpecEnvelope:
             "number_to_select": 40,
         }
 
-    def test_spec_version_is_5(self):
-        """feeds_target on the field payload bumped the spec to version 5."""
-        assert SPEC_VERSION == 5
+    def test_spec_version_is_6(self):
+        """Dropping group from the field payload bumped the spec to version 6."""
+        assert SPEC_VERSION == 6
+
+    def test_field_payload_has_no_group(self):
+        """Questions are one list now; a field's place is its sort_order."""
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_field(uow, assembly, "gender")
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        assert "group" not in _field_by_key(spec, "gender")
 
     def test_field_payload_carries_help_text(self):
         """A field's help_text is serialised; empty string when unset."""

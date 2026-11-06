@@ -10,6 +10,7 @@ import msgspec
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.registration_content_block import form_item_ref
 from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule
 from opendlp.domain.respondent_field_schema import FieldType
 from opendlp.domain.respondents import Respondent
@@ -19,7 +20,12 @@ from opendlp.service_layer import csv_upload_stash
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.csv_upload_stash import StashedUpload
 from opendlp.service_layer.derivation_service import create_derived_field
-from opendlp.service_layer.respondent_field_schema_service import get_schema, initialise_empty_schema, update_field
+from opendlp.service_layer.respondent_field_schema_service import (
+    add_content_block,
+    get_schema,
+    initialise_empty_schema,
+    update_field,
+)
 from opendlp.service_layer.respondent_service import (
     create_respondent,
     delete_respondent,
@@ -457,6 +463,24 @@ class TestUploadDiffConfirmation:
         assert re.search(r"var\(--color-warning-background\)[^>]*>ID column changed</strong>", body)
         assert re.search(r"var\(--color-error-background\)[^>]*>Destructive action</strong>", body)
 
+    def test_new_columns_are_listed_without_a_section(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """New columns go at the end of the questions list; there is no section to suggest."""
+        _upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        _upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "person_ref,first_name,postcode\nP001,Bob,E1\n",
+            id_column="person_ref",
+        )
+
+        body = self._confirm_diff_page(logged_in_admin, existing_assembly.id)
+
+        assert "<code>postcode</code>" in body
+        assert "Suggested group" not in body
+        assert "at the end of the registration questions" in body
+
     def test_id_column_change_escapes_the_column_names(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
@@ -729,16 +753,20 @@ class TestBackofficeViewSingleRespondent:
         assert response.status_code == 200
         assert b"sarah.jones" in response.data
 
-    def test_view_respondent_renders_grouped_sections_after_csv_import(
+    def test_view_respondent_renders_sections_at_the_headings_after_csv_import(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
     ) -> None:
-        """Schema-driven group headings and attribute values render after a CSV import."""
+        """The questions list's headings section the record; questions before the first go under Answers."""
         csv_content = (
             "external_id,first_name,last_name,gender,postcode,custom_notes\n"
             "R001,Alice,Jones,Female,SW1A 1AA,extra-info\n"
         )
         with FakeUnitOfWork(store=fake_store) as uow:
             import_respondents_from_csv(uow, admin_user.id, existing_assembly.id, csv_content)
+            last_name = uow.respondent_field_definitions.get_by_assembly_and_key(existing_assembly.id, "last_name")
+            add_content_block(
+                uow, admin_user.id, existing_assembly.id, heading="About you", after=form_item_ref(last_name)
+            )
             respondent = uow.respondents.get_by_external_id(existing_assembly.id, "R001")
             assert respondent is not None
             respondent_id = respondent.id
@@ -749,9 +777,8 @@ class TestBackofficeViewSingleRespondent:
         assert b"R001" in body
         assert b"background-color: var(--color-subtle-background-panels)" in body
         assert b">Pool</strong>" in body
-        assert b"Name and contact" in body
-        assert b"About you" in body
-        assert b"Address" in body
+        assert body.index(b"Answers") < body.index(b"Alice") < body.index(b"About you") < body.index(b"Female")
+        assert b"Name and contact" not in body
         assert b"Alice" in body
         assert b"Jones" in body
         assert b"Female" in body

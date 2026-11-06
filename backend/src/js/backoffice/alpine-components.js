@@ -14,12 +14,14 @@ import { modal } from "../components/modal.js";
 import { registrationMethod } from "../components/registration-method.js";
 import { registrationPageRow } from "../components/registration-page-row.js";
 import { replacementSuggestions } from "../components/replacement-suggestions.js";
+import { richEditorLinkHost } from "../components/rich-editor-link-host.js";
 import { menuButton } from "../components/menu-button.js";
 import {
   buttonLoadingDemo,
   progressModalDemo,
 } from "../components/showcase-demos.js";
 import { showcaseNav } from "../components/showcase-nav.js";
+import { sortableRows } from "../components/sortable-rows.js";
 import { stickyBelowHeader } from "../components/sticky-below-header.js";
 import { suggestionRow } from "../components/suggestion-row.js";
 import { tabsKeyboard } from "../components/tabs-keyboard.js";
@@ -50,8 +52,10 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("registrationMethod", registrationMethod);
   Alpine.data("registrationPageRow", registrationPageRow);
   Alpine.data("replacementSuggestions", replacementSuggestions);
+  Alpine.data("richEditorLinkHost", richEditorLinkHost);
   Alpine.data("menuButton", menuButton);
   Alpine.data("showcaseNav", showcaseNav);
+  Alpine.data("sortableRows", sortableRows);
   Alpine.data("stickyBelowHeader", stickyBelowHeader);
   Alpine.data("suggestionRow", suggestionRow);
   Alpine.data("tabsKeyboard", tabsKeyboard);

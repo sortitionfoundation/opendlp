@@ -380,7 +380,8 @@ def create_derived_field(
     assert source is not None  # _validate_source raised otherwise
 
     schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    next_sort_order = max((f.sort_order for f in schema if f.group == group), default=0) + SORT_ORDER_STEP
+    # Derived fields are ordered only among themselves, after every question.
+    next_sort_order = max((f.sort_order for f in schema if f.is_derived), default=0) + SORT_ORDER_STEP
     field = RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=field_key,

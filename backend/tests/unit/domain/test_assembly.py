@@ -423,3 +423,25 @@ class TestFailedOnInfeasibleTargets:
 
     def test_a_run_that_has_not_failed(self):
         assert self._record(SelectionRunStatus.RUNNING, self._infeasible()).failed_on_infeasible_targets is False
+
+
+class TestQuestionsUpdatedAt:
+    def test_a_new_assembly_has_no_question_changes(self):
+        assembly = Assembly(title="Test")
+
+        assert assembly.questions_updated_at is None
+
+    def test_marking_questions_changed_records_the_time(self):
+        assembly = Assembly(title="Test")
+        before = datetime.now(UTC)
+
+        assembly.mark_questions_changed()
+
+        assert assembly.questions_updated_at is not None
+        assert assembly.questions_updated_at >= before
+
+    def test_the_detached_copy_keeps_the_time(self):
+        assembly = Assembly(title="Test")
+        assembly.mark_questions_changed()
+
+        assert assembly.create_detached_copy().questions_updated_at == assembly.questions_updated_at

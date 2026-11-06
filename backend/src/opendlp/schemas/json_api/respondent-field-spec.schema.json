@@ -18,7 +18,7 @@
     },
     "fields": {
       "type": "array",
-      "description": "The whole field schema, in the order the schema page and the CSV export use: GROUP_DISPLAY_ORDER, then sort_order within each group.",
+      "description": "The whole field schema, in the order the questions list and the CSV export use: by sort_order, with derived fields last.",
       "items": {
         "$ref": "#/$defs/field"
       }
@@ -111,18 +111,6 @@
           "type": "string",
           "minLength": 1,
           "description": "Organiser-facing display label. Not translated - it is typed by the organiser."
-        },
-        "group": {
-          "type": "string",
-          "enum": [
-            "eligibility",
-            "name_and_contact",
-            "address",
-            "about_you",
-            "consent",
-            "other",
-            "derived"
-          ]
         },
         "sort_order": {
           "type": "integer",
@@ -226,7 +214,6 @@
         "id",
         "field_key",
         "label",
-        "group",
         "sort_order",
         "is_fixed",
         "is_derived",

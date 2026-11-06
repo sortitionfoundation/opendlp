@@ -343,6 +343,14 @@ class FieldDefinitionNotFoundError(NotFoundError):
     """Raised when a RespondentFieldDefinition cannot be found."""
 
 
+class ContentBlockNotFoundError(NotFoundError):
+    """Raised when a heading/text block on the registration questions list cannot be found."""
+
+
+class ContentBlockInvalidError(CuratedMessage, ServiceLayerError):
+    """Raised when a heading/text block would have nothing in it. The message is for the organiser."""
+
+
 class FieldDefinitionConflictError(CuratedMessage, ServiceLayerError):
     """Raised when adding a field that already exists, or attempting a disallowed edit.
 
