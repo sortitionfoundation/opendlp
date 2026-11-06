@@ -1,6 +1,7 @@
 # 1282 - Clone a project from the CLI
 
-Status: agreed after three rounds of review, not yet implemented. The
+Status: implemented on branch `1282-clone-cli` - every step of
+[Implementation order](#implementation-order) is done. The
 decisions are recorded in [Decisions](#decisions); the order of work is in
 [Implementation order](#implementation-order).
 
@@ -620,7 +621,7 @@ Each step is its own commit, with its tests, and leaves `just test` and
    on the way.
 6. ✅ **`projects clone`** - the CLI command, its admin check, the personal data
    flag and confirmation.
-7. **Docs** - `docs/cli.md` and `docs/personal-data.md`.
+7. ✅ **Docs** - `docs/cli.md` and `docs/personal-data.md`.
 
 ## Open questions
 
