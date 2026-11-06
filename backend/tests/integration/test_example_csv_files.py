@@ -20,7 +20,26 @@ from opendlp.service_layer.target_csv_import import TargetImportResult, import_t
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 # The number the Targets card tells organisers to set to use the example targets.
-NUMBER_TO_SELECT = 10
+NUMBER_TO_SELECT = 30
+
+# The demo data's columns after the ID column, which is the first one.
+RESPONDENT_ATTRIBUTES = {
+    "first_name",
+    "last_name",
+    "age_bucket",
+    "economic_stability",
+    "gender",
+    "age",
+    "ethnicity",
+    "address_line_1",
+    "province",
+    "town",
+    "education",
+    "money_fairness",
+    "env_daily_life",
+    "belong_shared_space",
+    "education_next_gen",
+}
 
 
 def _read_example(filename: str) -> str:
@@ -40,12 +59,16 @@ def user_id(postgres_session_factory) -> uuid.UUID:
         return user.id
 
 
-@pytest.fixture
-def assembly_id(postgres_session_factory) -> uuid.UUID:
-    assembly = Assembly(title="Trying the examples", number_to_select=NUMBER_TO_SELECT)
+def _add_assembly(postgres_session_factory, number_to_select: int) -> uuid.UUID:
+    assembly = Assembly(title="Trying the examples", number_to_select=number_to_select)
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         uow.assemblies.add(assembly)
         return assembly.id
+
+
+@pytest.fixture
+def assembly_id(postgres_session_factory) -> uuid.UUID:
+    return _add_assembly(postgres_session_factory, NUMBER_TO_SELECT)
 
 
 def _import_targets(postgres_session_factory, user_id: uuid.UUID, assembly_id: uuid.UUID) -> TargetImportResult:
@@ -63,19 +86,35 @@ class TestExampleTargets:
         result = _import_targets(postgres_session_factory, user_id, assembly_id)
 
         assert result.warnings == []
-        assert [category.name for category in result.categories] == ["Gender", "Age", "Region"]
+        assert [category.name for category in result.categories] == ["gender", "ethnicity", "province", "education"]
 
-    def test_percentages_add_up_to_100_for_every_target(self, postgres_session_factory, user_id, assembly_id):
-        """Otherwise the targets page greets a first upload with a warning about the example."""
+    @pytest.mark.parametrize("number_at_upload", [0, NUMBER_TO_SELECT], ids=["not_set_yet", "already_set"])
+    def test_percentages_add_up_to_100_for_every_target(self, postgres_session_factory, user_id, number_at_upload):
+        """Otherwise the targets page greets a first upload with a warning about the example.
+
+        The demo data's midpoints do not add up to the number to select, so percentages
+        worked out at upload would not total 100. The file gives its own, which makes the
+        order of setting the number and uploading the file irrelevant.
+        """
+        assembly_id = _add_assembly(postgres_session_factory, number_at_upload)
+
         result = _import_targets(postgres_session_factory, user_id, assembly_id)
 
         for category in result.categories:
-            assert category.percentage_total() == pytest.approx(100), category.name
+            assert category.percentage_total_is_plausible(), (category.name, category.percentage_total())
 
-    def test_carry_only_the_columns_every_targets_file_needs(self):
+    def test_percentages_are_what_the_min_and_max_imply(self, postgres_session_factory, user_id, assembly_id):
+        """The percentage column adds no numbers of its own, so it cannot disagree with min and max."""
+        result = _import_targets(postgres_session_factory, user_id, assembly_id)
+
+        for category in result.categories:
+            given = [value.percentage_target for value in category.values]
+            assert given == category.percentages_from_minmax(), category.name
+
+    def test_carry_the_columns_every_targets_file_needs_and_the_percentages(self):
         header = _read_example("example-targets.csv").splitlines()[0]
 
-        assert header == "feature,value,min,max"
+        assert header == "feature,value,min,max,percentage"
 
 
 class TestExampleRespondents:
@@ -83,19 +122,22 @@ class TestExampleRespondents:
         respondents, errors, id_column = _import_respondents(postgres_session_factory, user_id, assembly_id)
 
         assert errors == []
-        assert id_column == "ID"
-        assert len(respondents) == 20
+        assert id_column == "unique_id"
+        assert len(respondents) == 100
 
-    def test_use_addresses_that_cannot_reach_anyone(self, postgres_session_factory, user_id, assembly_id):
+    def test_carry_no_contact_details(self, postgres_session_factory, user_id, assembly_id):
+        """A file anyone can download holds nothing that reaches a person."""
         respondents, _errors, _id_column = _import_respondents(postgres_session_factory, user_id, assembly_id)
+        header = _read_example("example-respondents.csv").splitlines()[0].lower().split(",")
 
-        assert all(respondent.email.endswith("@example.com") for respondent in respondents)
+        assert all(respondent.email == "" for respondent in respondents)
+        assert not [name for name in header if "mail" in name or "phone" in name]
 
     def test_every_other_column_becomes_an_attribute(self, postgres_session_factory, user_id, assembly_id):
         respondents, _errors, _id_column = _import_respondents(postgres_session_factory, user_id, assembly_id)
 
         for respondent in respondents:
-            assert set(respondent.attributes) == {"First name", "Last name", "Gender", "Age", "Region"}
+            assert set(respondent.attributes) == RESPONDENT_ATTRIBUTES
 
 
 class TestExamplePair:
@@ -124,10 +166,10 @@ class TestExamplePair:
 
         assert result.errors == []
         assert result.success is True
-        assert result.num_features == 3
-        assert result.num_people == 20
+        assert result.num_features == 4
+        assert result.num_people == 100
 
-    def test_a_selection_finds_ten_people_within_the_targets(self, postgres_session_factory, user_id, assembly_id):
+    def test_a_selection_finds_thirty_people_within_the_targets(self, postgres_session_factory, user_id, assembly_id):
         """Something to play with: the pair has to run a selection, not only load."""
         categories = _import_targets(postgres_session_factory, user_id, assembly_id).categories
         respondents, _errors, _id_column = _import_respondents(postgres_session_factory, user_id, assembly_id)

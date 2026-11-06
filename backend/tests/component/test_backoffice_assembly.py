@@ -798,7 +798,7 @@ class TestDataTabExampleCsvFiles:
 
         form = _upload_form(html, existing_assembly.id, "targets/upload")
 
-        assert "set the number to select to 10 before uploading" in form
+        assert "set the number to select to 30." in form
 
     def test_targets_example_goes_with_the_targets_upload_form(
         self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly
@@ -825,14 +825,14 @@ class TestDataTabExampleCsvFiles:
                 "targets/upload",
                 "example-targets.csv",
                 "csv_file",
-                "Successfully imported 3 targets with 10 values from example-targets.csv",
+                "Successfully imported 4 targets with 18 values from example-targets.csv",
                 id="targets",
             ),
             pytest.param(
                 "data/upload-respondents",
                 "example-respondents.csv",
                 "file",
-                "Respondents uploaded successfully: 20 imported",
+                "Respondents uploaded successfully: 100 imported",
                 id="respondents",
             ),
         ],
