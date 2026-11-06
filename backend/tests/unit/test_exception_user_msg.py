@@ -10,6 +10,8 @@ from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
+    AssemblyTitleTaken,
+    CannotCloneGSheetAssembly,
     CannotDisableSelf,
     CannotRemoveLastAssemblyManager,
     CannotRemoveLastAuthMethod,
@@ -25,6 +27,7 @@ from opendlp.service_layer.exceptions import (
     GoogleSheetConfigNotFoundError,
     ImageQuotaExceeded,
     InsufficientPermissions,
+    InvalidCloneOptions,
     InvalidConfirmationToken,
     InvalidCredentials,
     InvalidInvite,
@@ -78,6 +81,9 @@ CURATED = [
     ContentBlockInvalidError("Add a heading, some text, or both"),
     SelectionAlreadyRunning(_RUNNING_SELECTION),
     TabularDataError([TableProblem(kind="empty", message="The file is empty or has no header row.")]),
+    AssemblyTitleTaken("Climate Assembly"),
+    CannotCloneGSheetAssembly(),
+    InvalidCloneOptions("Respondents need the registration questions. Clone the questions too."),
 ]
 
 UNCURATED = [

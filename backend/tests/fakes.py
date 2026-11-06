@@ -269,6 +269,16 @@ class FakeAssemblyRepository(FakeRepository, AssemblyRepository):
         """Get assemblies by their status."""
         return [assembly for assembly in self._items if assembly.status == status]
 
+    def list_filtered(
+        self, member_user_id: uuid.UUID | None = None, include_archived: bool = False
+    ) -> Iterable[Assembly]:
+        assemblies = [a for a in self._items if include_archived or a.is_active()]
+        if member_user_id is not None:
+            user = self._users.get(member_user_id)
+            assembly_ids = {role.assembly_id for role in user.assembly_roles} if user else set()
+            assemblies = [a for a in assemblies if a.id in assembly_ids]
+        return self._newest_first(assemblies)
+
     def search_by_title(self, search_term: str) -> Iterable[Assembly]:
         """Search assemblies by title (case-insensitive partial match)."""
         search_term = search_term.lower()

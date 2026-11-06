@@ -21,6 +21,7 @@ from opendlp.service_layer.assembly_service import (
     update_assembly,
 )
 from opendlp.service_layer.exceptions import (
+    AssemblyTitleTaken,
     CannotRemoveLastAssemblyManager,
     InsufficientPermissions,
     NotFoundError,
@@ -229,6 +230,8 @@ def create_assembly_page() -> ResponseReturnValue:
 
             flash(_("Assembly '%(title)s' created successfully", title=assembly.title), "success")
             return redirect(url_for("main.view_assembly", assembly_id=assembly.id))
+        except AssemblyTitleTaken as e:
+            form.title.errors.append(e.user_msg())  # type: ignore[attr-defined]
         except InsufficientPermissions as e:
             logger.warning("Insufficient permissions to create assembly", user_id=str(current_user.id), error=str(e))
             flash(_("You don't have permission to create assemblies"), "error")
@@ -269,6 +272,8 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
                 flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")
                 return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
+            except AssemblyTitleTaken as e:
+                form.title.errors.append(e.user_msg())  # type: ignore[attr-defined]
             except InsufficientPermissions as e:
                 logger.warning(
                     "Insufficient permissions to edit assembly",

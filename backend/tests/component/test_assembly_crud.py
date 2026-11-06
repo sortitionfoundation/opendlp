@@ -7,6 +7,7 @@ from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
+from opendlp.service_layer.assembly_service import create_assembly
 from tests.component.conftest import expected_timestamp
 from tests.fakes import FakeStore, FakeUnitOfWork
 
@@ -276,3 +277,33 @@ class TestAssemblyPermissions:
         """Test that permission restrictions are properly enforced."""
         response = logged_in_user.get("/dashboard")
         assert response.status_code == 200
+
+
+class TestAssemblyTitleClash:
+    """The create and edit forms refuse a title matching another project the user can see."""
+
+    def test_create_with_taken_title_shows_error(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_admin.post("/assemblies/new", data={"title": "Existing Assembly", "number_to_select": "0"})
+
+        assert response.status_code == 200
+        assert b"You already have a project called Existing Assembly" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert len(list(uow.assemblies.all())) == 1
+
+    def test_rename_to_taken_title_shows_error(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, admin_user: User, existing_assembly: Assembly
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            other = create_assembly(uow=uow, title="Other Assembly", created_by_user_id=admin_user.id)
+            uow.commit()
+
+        response = logged_in_admin.post(
+            f"/assemblies/{other.id}/edit", data={"title": "Existing Assembly", "number_to_select": "0"}
+        )
+
+        assert response.status_code == 200
+        assert b"You already have a project called Existing Assembly" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.assemblies.get(other.id).title == "Other Assembly"

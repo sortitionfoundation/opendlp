@@ -363,6 +363,9 @@ class RegistrationPage:
     def record_create(self, author_id: uuid.UUID) -> None:
         self._append_activity(RegistrationPageAction.CREATE, author_id, "Registration page created")
 
+    def record_clone(self, author_id: uuid.UUID, source_title: str) -> None:
+        self._append_activity(RegistrationPageAction.CREATE, author_id, f"Registration page cloned from {source_title}")
+
     def record_edit(self, author_id: uuid.UUID, text: str) -> None:
         self._append_activity(RegistrationPageAction.EDIT, author_id, text)
 
