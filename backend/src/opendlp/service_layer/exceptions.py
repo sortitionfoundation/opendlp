@@ -369,3 +369,14 @@ class FieldDefinitionConflictError(CuratedMessage, ServiceLayerError):
     Every message is written for the organiser editing the schema, so the
     blueprint shows it as-is.
     """
+
+
+class CannotCloneGSheetAssembly(CuratedMessage, ServiceLayerError):
+    """Raised when asked to clone a project whose data lives in a Google Sheet."""
+
+    def __init__(self) -> None:
+        super().__init__(_("A project that uses a Google Sheet cannot be cloned"))
+
+
+class InvalidCloneOptions(CuratedMessage, ServiceLayerError):
+    """Raised when the parts asked for in a clone do not fit together. The message is for the person cloning."""
