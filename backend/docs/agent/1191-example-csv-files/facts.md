@@ -190,7 +190,8 @@ Sheet data source reads by default (`adapters/orm.py`: `Respondents` and
 - The two tabs agree: every target value occurs among the respondents and every
   respondent value of a target column is a target value. Against 30, the mins
   and maxes sum to 26–33 for gender, 24–37 for ethnicity, 28–38 for province and
-  27–37 for education, and every value has at least its min among the 100
+  27–37 for education, so only a number to select from 28 to 33 fits every
+  target's sums; and every value has at least its min among the 100
   people, with room to spare: the smallest groups are Forian (3 people, min 0),
   Mixed Ethnic (5, min 1) and Non-binary (8, min 0).
 - The midpoints sum to 29.5, 30.5, 33 and 32, not 30, which is why the example

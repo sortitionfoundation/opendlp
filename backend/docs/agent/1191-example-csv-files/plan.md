@@ -64,13 +64,15 @@ upload controls themselves, not the documentation site.
   in a screen reader's list of links, where the two would otherwise be
   identical. The existing hint msgids are left alone so their translations
   survive.
-- **The Targets link says what the example needs.** The targets only work with
-  the number to select at 30, and that number can be anything, 0 by default, when
-  the organiser arrives here. So one line under the link says "To run a selection
-  with the example targets, set the number to select to 30." Without it, trying
-  the files on a project of another size ends in a min/max error that reads as the
-  example being broken. The order does not matter: the file gives its own
-  percentages, so the number can be set before or after uploading.
+- **The Targets link says what the example needs.** The targets are made for a
+  selection of 30, the demo's number of participants; their mins and maxes leave
+  only 28 to 33 that every target's sums allow. The number to select can be
+  anything, 0 by default, when the organiser arrives here. So one line under the
+  link says "To run a selection with the example targets, set the number to
+  select to 30." Without it, trying the files on a project of another size
+  mostly ends in a min/max error that reads as the example being broken. The
+  order does not matter: the file gives its own percentages, so the number can be
+  set before or after uploading.
 - **No example in the lookup-table dialog** (Link targets to questions). Its
   two-column format depends on the linked question, the dialog already states it
   with the question's keys filled in, and a generic file would be refused until
