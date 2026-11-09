@@ -14,6 +14,11 @@ changed, and the demo data the example files come from. The plan is in
 | Legacy targets page | `templates/targets/view_targets.html:247` | `targets_legacy.upload_targets_csv`, `/assemblies/<id>/targets/upload` | `import_targets_from_csv` |
 | Legacy respondents page | `templates/respondents/view_respondents.html:29` | `respondents_legacy.upload_respondents_csv`, `/assemblies/<id>/respondents/upload` | `import_respondents_from_csv` |
 
+Of these five, the example links go under the first two only, the Data tab's
+uploads. The lookup-table dialog gets none, because its format is set by the
+linked question ([below](#what-the-lookup-table-parser-accepts)), and neither do
+the legacy pages, which are out of scope, as the paragraph on them below says.
+
 `templates/backoffice/patterns/_file_upload.html` and
 `templates/backoffice/showcase/input_component.html` are the pattern library
 and the component showcase: demonstrations, not uploads. The only other file
@@ -130,7 +135,8 @@ and the second the output. Output values must already be options of the
 computed question unless "Allow new output values" is ticked. The dialog text
 states this format with the question's own keys filled in. An example file for
 it would therefore be specific to one project's questions, and a generic one
-would be refused until the organiser ticks the box. This upload stays as it is.
+would be refused until the organiser ticks the box. This upload stays as it is,
+with no example link.
 
 ## Sample files already in the repository
 

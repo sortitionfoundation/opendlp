@@ -5,9 +5,9 @@ Status: implemented — all phases below are done. Facts measured first, in
 
 ## Goal
 
-Give organisers an example file to download beside each CSV upload on the Data
-tab, so the format can be seen rather than described, and so there is
-something to upload when trying the product out. The story is about the
+Give organisers an example file to download under each of the two CSV uploads
+on the Data tab, so the format can be seen rather than described, and so there
+is something to upload when trying the product out. The story is about the
 upload controls themselves, not the documentation site.
 
 ## Decisions
@@ -55,13 +55,15 @@ upload controls themselves, not the documentation site.
   Docker image already ships `static/`. The links carry `v=static_hashes(...)`
   like the stylesheets, because WhiteNoise caches for a year, and the
   `download` attribute, so the browser saves the file instead of opening it.
-- **One link under each file input**, text "Download an example CSV", in the
-  Data tab's Targets and People cards. It sits in the field's own column,
-  directly under the input, because that is where the organiser is deciding
-  which file to choose. The card heading gives each link its context; a visually
-  hidden suffix reusing the "Targets" and "People" strings does the same in a
-  screen reader's list of links, where the two would otherwise be identical. The
-  existing hint msgids are left alone so their translations survive.
+- **One link under each upload, not one link for the tab.** The text is
+  "Download an example CSV", once in the Data tab's Targets card and once in its
+  People card, each linking the file that upload takes. It sits in the field's
+  own column, directly under the input, because that is where the organiser is
+  deciding which file to choose. The card heading gives each link its context; a
+  visually hidden suffix reusing the "Targets" and "People" strings does the same
+  in a screen reader's list of links, where the two would otherwise be
+  identical. The existing hint msgids are left alone so their translations
+  survive.
 - **The Targets link says what the example needs.** The targets only work with
   the number to select at 30, and that number can be anything, 0 by default, when
   the organiser arrives here. So one line under the link says "To run a selection
@@ -69,12 +71,14 @@ upload controls themselves, not the documentation site.
   the files on a project of another size ends in a min/max error that reads as the
   example being broken. The order does not matter: the file gives its own
   percentages, so the number can be set before or after uploading.
-- **Left out, deliberately.** The lookup-table dialog (Link targets to
-  questions): its two-column format depends on the linked question, the dialog
-  already states it with the question's keys filled in, and a generic file
-  would be refused until "Allow new output values" is ticked. The legacy
-  targets and respondents pages, which are due to be retired. The
-  documentation site.
+- **No example in the lookup-table dialog** (Link targets to questions). Its
+  two-column format depends on the linked question, the dialog already states it
+  with the question's keys filled in, and a generic file would be refused until
+  "Allow new output values" is ticked. See
+  [facts.md](facts.md#what-the-lookup-table-parser-accepts).
+- **Left out as well.** The legacy targets and respondents pages, which
+  [docs/language.md](../../language.md) lists among the legacy screens that are
+  due to be retired, and the documentation site, which the story rules out.
 
 ## Phases
 
@@ -103,7 +107,9 @@ upload controls themselves, not the documentation site.
 - `tests/component/test_backoffice_assembly.py` — each upload form links its own
   example with a hash and the `download` attribute, a link goes when its form
   goes, and the bytes a link serves upload cleanly through the route.
-- A manual pass on the Data tab: download both files, upload them in turn, read
-  the targets check, save the selection settings and see the Run buttons enabled.
-  Running the selection from the page needs Celery, so that step is covered by the
-  integration test, which runs the task in-process.
+- A manual pass in the browser, on a project with the number to select at 30:
+  both links serve their files, which upload cleanly (4 targets with 18 values,
+  each target's percentages totalling 100.0 or 100.1 with no warning; 100
+  respondents); once the selection settings are saved, Run Selection on the
+  Selection tab, with Celery running, selects 30 people with every target value
+  within its min and max. The integration test runs the same task in-process.
