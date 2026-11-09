@@ -873,9 +873,7 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             # The fields in sections at each heading on the questions list.
             schema_sections = get_respondent_sections(uow, current_user.id, assembly_id)
 
-        allowed_transitions = [
-            s.value for s in ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
-        ]
+        allowed_transitions = ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
 
         return render_template(
             "backoffice/assembly_view_respondent.html",
@@ -1046,9 +1044,7 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         fields_in_display_order = [field for section in ordered_sections for field in section.fields]
         error_summary = build_error_summary(form, fields_in_display_order)
 
-        allowed_transitions = [
-            s.value for s in ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
-        ]
+        allowed_transitions = ALLOWED_SELECTION_STATUS_TRANSITIONS.get(respondent.selection_status, [])
 
         return render_template(
             "backoffice/assembly_edit_respondent.html",

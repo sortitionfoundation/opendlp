@@ -284,10 +284,17 @@ SELECTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
 # Manual transitions allowed from the backoffice view-respondent page.
 # Any move between the four active statuses is permitted; moves to or from
 # DELETED are excluded (DELETED is reached only via the GDPR delete form).
-# TEST_SUBMISSION can only be promoted to POOL (one-way).
+# TEST_SUBMISSION moves only to and from POOL, so a real registration marked
+# as a test can be promoted, and a test registration left in the pool can be
+# marked as a test.
 ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentStatus"]] = {
     RespondentStatus.TEST_SUBMISSION: [RespondentStatus.POOL],
-    RespondentStatus.POOL: [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
+    RespondentStatus.POOL: [
+        RespondentStatus.SELECTED,
+        RespondentStatus.CONFIRMED,
+        RespondentStatus.WITHDRAWN,
+        RespondentStatus.TEST_SUBMISSION,
+    ],
     RespondentStatus.SELECTED: [RespondentStatus.POOL, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN],
     RespondentStatus.CONFIRMED: [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN],
     RespondentStatus.WITHDRAWN: [RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.CONFIRMED],

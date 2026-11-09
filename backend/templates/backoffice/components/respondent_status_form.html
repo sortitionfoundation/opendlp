@@ -10,8 +10,8 @@ ABOUTME: Shared between the view-respondent and edit-respondent pages
 Args:
   assembly: Assembly the respondent belongs to (used for url_for).
   respondent: The respondent being displayed.
-  allowed_transitions: List of RespondentStatus enum *values* (strings) the
-                      current user may transition this respondent to. Pass
+  allowed_transitions: List of RespondentStatus members the current user
+                      may transition this respondent to. Pass
                       an empty list to show only the read-only status block.
 #}
 {% macro respondent_status_form(assembly, respondent, allowed_transitions) %}
@@ -23,7 +23,7 @@ Args:
         <div class="flex items-baseline gap-3">
             <dt class="text-label-lg">{{ _("Current status:") }}</dt>
             <dd>
-                {{ tag(status_key|title, colour=status_colour) }}
+                {{ tag(respondent_status_labels[respondent.selection_status], colour=status_colour) }}
             </dd>
         </div>
         {% if respondent.selection_run_id %}
@@ -48,28 +48,32 @@ Args:
         #}
         <div x-data="{ open_target: '' }">
             <div class="flex flex-wrap gap-3 items-start">
-                {% for target in allowed_transitions %}
+                {% for target_status in allowed_transitions %}
+                    {% set target = target_status.value %}
+                    {% set target_label = respondent_status_labels[target_status] %}
                     {{ button(
-                    _("Change to %(status)s", status=target|title),
+                    _("Change to %(status)s", status=target_label),
                     variant="secondary",
                     aria_pressed="false",
                     attrs='x-show="open_target !== \'' + target + '\'" @click="open_target = \'' + target + '\'"'
                     ) }}
                     {{ button(
-                    _("Change to %(status)s", status=target|title),
+                    _("Change to %(status)s", status=target_label),
                     variant="primary",
                     aria_pressed="true",
                     attrs='x-cloak x-show="open_target === \'' + target + '\'" @click="open_target = \'\'"'
                     ) }}
                 {% endfor %}
             </div>
-            {% for target in allowed_transitions %}
+            {% for target_status in allowed_transitions %}
+                {% set target = target_status.value %}
+                {% set target_label = respondent_status_labels[target_status] %}
                 <div x-cloak
                      x-show="open_target === '{{ target }}'"
                      class="mt-4 p-4 border border-gray-300 rounded bg-white"
                      style="max-width: 36rem">
                     <p class="text-body-md mb-3">
-                        {{ _("This will mark the respondent as <strong>%(status)s</strong>. The change is logged with your comment.", status=target|title) }}
+                        {{ _("This will mark the respondent as <strong>%(status)s</strong>. The change is logged with your comment.", status=target_label) }}
                     </p>
                     <form method="post"
                           action="{{ url_for('respondents.transition_status', assembly_id=assembly.id, respondent_id=respondent.id) }}"
