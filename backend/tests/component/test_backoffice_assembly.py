@@ -801,12 +801,12 @@ class TestDataTabExampleCsvFiles:
     def test_targets_form_says_what_the_example_targets_need(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        """The number the integration test of the example files runs a selection with."""
+        """The panel size the integration test of the example files runs a selection with."""
         html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
 
         form = _upload_form(html, existing_assembly.id, "targets/upload")
 
-        assert "set the number to select to 30." in form
+        assert "set the panel size to 30." in form
 
     def test_targets_example_goes_with_the_targets_upload_form(
         self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly

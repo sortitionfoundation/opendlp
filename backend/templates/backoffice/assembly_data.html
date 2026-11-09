@@ -379,12 +379,12 @@ ABOUTME: Displays data source selection and data management for assemblies
                         hint=_("Select a CSV file with targets."),
                         error=e(targets_upload_errors.get("csv_file", []))
                         ) }}
-                        {# The example's numbers only suit one project size, and this project may be any.
-                           The file gives its own percentages, so the number can be set before or after
+                        {# The example's numbers only suit one panel size, and this project's may be any.
+                           The file gives its own percentages, so the panel size can be set before or after
                            uploading: the import has nothing left to work out from it. #}
                         {{ example_csv_link("examples/example-targets.csv",
                         about=_("Targets"),
-                        note=_("To run a selection with the example targets, set the number to select to 30.")
+                        note=_("To run a selection with the example targets, set the panel size to 30.")
                         ) }}
                         <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary") }}</div>
                     </form>

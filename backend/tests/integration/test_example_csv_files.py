@@ -19,7 +19,7 @@ from opendlp.service_layer.sortition import check_db_selection_data
 from opendlp.service_layer.target_csv_import import TargetImportResult, import_targets_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
-# The number the Targets card tells organisers to set to use the example targets.
+# The panel size the Targets card tells organisers to set to use the example targets.
 NUMBER_TO_SELECT = 30
 
 # The demo data's columns after the ID column, which is the first one.
@@ -92,9 +92,9 @@ class TestExampleTargets:
     def test_percentages_add_up_to_100_for_every_target(self, postgres_session_factory, user_id, number_at_upload):
         """Otherwise the targets page greets a first upload with a warning about the example.
 
-        The demo data's midpoints do not add up to the number to select, so percentages
+        The demo data's midpoints do not add up to the panel size, so percentages
         worked out at upload would not total 100. The file gives its own, which makes the
-        order of setting the number and uploading the file irrelevant.
+        order of setting the panel size and uploading the file irrelevant.
         """
         assembly_id = _add_assembly(postgres_session_factory, number_at_upload)
 
