@@ -105,7 +105,8 @@ restyled (`main/dashboard.html` + old dashboard behind `FF_OLD_DEFAULT_DASHBOARD
 3. **Password flows** (forgot/reset) and **email confirmation pages** — small forms,
    mostly `input()` + primary button. `govuk_password_input.html` cannot be retired
    with them: `profile/change_password.html` and `profile/set_password.html` still
-   use it, and they leave GOV.UK with the legacy authenticated pages.
+   use it, and they leave GOV.UK with the legacy authenticated pages (they did, in
+   `869-profile-backoffice`, and the macro went with them).
 4. **Public landing** (`main/index.html`).
 5. ~~Error pages~~ — **stay GOV.UK** (decided 2026-10-08): respondents see them,
    so the same widest-audience argument applies as for the registration forms.

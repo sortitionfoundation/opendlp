@@ -8,12 +8,14 @@ ABOUTME: Bound to the names that slice exposes - leaveModalOpen, closeLeaveModal
 {# Opened by guardLeave(), or by the click the guard caught on its way to
    another page. Keep editing is the primary (safe) action on the right and
    receives initial focus; Discard changes is a plain text button so the
-   destructive path never looks like the default. #}
+   destructive path never looks like the default. Stacked, as it is often
+   opened over a dialog holding the unsaved changes. #}
 {% call controlled_alert_dialog(id="leave-modal",
 title=_("Discard changes?"),
 description=_("You have unsaved changes. If you leave this page, your changes will be lost."),
 open_expr="leaveModalOpen",
-close_expr="closeLeaveModal()") %}
+close_expr="closeLeaveModal()",
+stacked=true) %}
 {{ button(_("Discard changes"), variant="tertiary", attrs='type="button" @click="discardAndLeave()"') }}
 {{ button(_("Keep editing"), variant="primary", attrs='type="button" x-ref="keepEditingBtn" @click="closeLeaveModal()"') }}
 {% endcall %}

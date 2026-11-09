@@ -59,6 +59,7 @@ class Assembly:
         reply_to_name: str = "",
         reply_to_email: str = "",
         created_by_user_id: uuid.UUID | None = None,
+        questions_updated_at: datetime | None = None,
     ):
         if not title or not title.strip():
             raise ValueError("Assembly title is required")
@@ -82,6 +83,10 @@ class Assembly:
         # Null for assemblies created before the creator was recorded, and for
         # any whose creator's account is later deleted outright.
         self.created_by_user_id = created_by_user_id
+        # When the registration questions, or the headings and text among
+        # them, last changed. Null until they first do. A registration page's
+        # form HTML saved before this is behind the questions.
+        self.questions_updated_at = questions_updated_at
         # An assembly may have a RegistrationPage (domain.registration_page).
         # It is deliberately not wired here as an ORM relationship - it is
         # loaded via RegistrationPageRepository.get_by_assembly_id. A
@@ -165,6 +170,9 @@ class Assembly:
     def __hash__(self) -> int:
         return hash(self.id)
 
+    def mark_questions_changed(self) -> None:
+        self.questions_updated_at = datetime.now(UTC)
+
     def create_detached_copy(self) -> "Assembly":
         """Create a detached copy of this assembly for use outside SQLAlchemy sessions"""
         detached_assembly = Assembly(
@@ -182,6 +190,7 @@ class Assembly:
             reply_to_name=self.reply_to_name,
             reply_to_email=self.reply_to_email,
             created_by_user_id=self.created_by_user_id,
+            questions_updated_at=self.questions_updated_at,
         )
         detached_assembly.target_categories = [c.create_detached_copy() for c in self.target_categories]
         detached_assembly.respondents = [r.create_detached_copy() for r in self.respondents]

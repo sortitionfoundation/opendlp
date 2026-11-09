@@ -51,7 +51,7 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                         {% endif %}
                         <div class="flex-1 min-w-0">
                             <p class="text-body-sm">
-                                {{ _("Number to select:") }}
+                                {{ _("Panel size:") }}
                                 <span class="text-heading-sm">{{ assembly.number_to_select }}</span>
                                 <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, edit_number=1) }}"
                                    class="text-label-md hover:underline ml-2"

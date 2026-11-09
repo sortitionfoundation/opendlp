@@ -200,6 +200,7 @@ class GSheetExportKind(Enum):
 
     RESPONDENTS = "RESPONDENTS"
     DASHBOARD = "DASHBOARD"
+    TARGETS = "TARGETS"
 
 
 class RespondentStatus(Enum):

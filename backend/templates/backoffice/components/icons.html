@@ -204,6 +204,25 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
     </svg>
 {% endmacro %}
 
+{# Lucide "grip-vertical": the handle a row is dragged by. #}
+{% macro icon_grip_vertical(classes="w-5 h-5", style="") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="9" cy="12" r="1"/>
+        <circle cx="9" cy="5" r="1"/>
+        <circle cx="9" cy="19" r="1"/>
+        <circle cx="15" cy="12" r="1"/>
+        <circle cx="15" cy="5" r="1"/>
+        <circle cx="15" cy="19" r="1"/>
+    </svg>
+{% endmacro %}
+
+{# Lucide "a-large-small": marks a heading or text among the registration questions. #}
+{% macro icon_a_large_small(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 16L17.536 8.67203C17.6053 8.47154 17.7354 8.29765 17.9082 8.17457C18.081 8.05149 18.2879 7.98535 18.5 7.98535C18.7121 7.98535 18.919 8.05149 19.0918 8.17457C19.2646 8.29765 19.3947 8.47154 19.464 8.67203L22 16M15.697 14H21.303M2 16L6.039 6.31004C6.07698 6.21895 6.14107 6.14113 6.22319 6.08639C6.30532 6.03165 6.4018 6.00244 6.5005 6.00244C6.5992 6.00244 6.69568 6.03165 6.77781 6.08639C6.85993 6.14113 6.92402 6.21895 6.962 6.31004L11 16M3.30402 13H9.69602"/>
+    </svg>
+{% endmacro %}
+
 {% macro icon_more_vert(classes="w-5 h-5", style="") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z"/>

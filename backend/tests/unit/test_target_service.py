@@ -43,8 +43,11 @@ class TestValueProblem:
     @pytest.mark.parametrize(
         ("edit", "expected_field"),
         [
-            (TargetValueEdit(value="Male", min=-1), "min"),
-            (TargetValueEdit(value="Male", max=-1), "max"),
+            (TargetValueEdit(value="Male", min=-1, max=3), "min"),
+            (TargetValueEdit(value="Male", min=0, max=-1), "max"),
+            (TargetValueEdit(value="Male", min=3), "max"),
+            (TargetValueEdit(value="Male", max=3), "min"),
+            (TargetValueEdit(value="Male", min=3, percentage=50.0), "max"),
             (TargetValueEdit(value="Male", min=9, max=2), "max"),
             (TargetValueEdit(value="Male", percentage=101.0), "percentage"),
             (TargetValueEdit(value="Male", percentage=-1.0), "percentage"),
@@ -58,6 +61,10 @@ class TestValueProblem:
 
     def test_a_sound_row_has_no_problem(self):
         assert _value_problem(TargetValueEdit(value="Male", min=3, max=7, percentage=50.0)) is None
+
+    def test_a_row_with_no_numbers_yet_has_no_problem(self):
+        """The buckets are often known before any numbers are."""
+        assert _value_problem(TargetValueEdit(value="Male")) is None
 
     def test_a_deleted_row_is_not_checked(self):
         """Numbers on a row that is going away are nobody's problem."""

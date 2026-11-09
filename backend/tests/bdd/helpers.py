@@ -1,4 +1,4 @@
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, Page, expect
 
 
 def wait_for_page_with_text(page: Page, text: str) -> None:
@@ -62,3 +62,73 @@ def assert_step_dialog_dimmed(page: Page, host_selector: str) -> None:
         [x, y, host_selector],
     )
     assert covered_by_host_backdrop, "the step dialog behind the fragment dialog is not dimmed"
+
+
+def assert_dialog_dimmed_by_stacked_dialog(page: Page, covered_panel: Locator) -> None:
+    """
+    A dialog opened over another dialog - the link dialog, "Discard changes?" -
+    must grey out the dialog underneath, not only the page. Checks that, at the
+    top-left corner of the covered dialog's panel (its header, clear of the
+    narrower dialog centred over it), the topmost element is the stacked
+    dialog's backdrop.
+    """
+    expect(page.locator(".dialog-stacked > .dialog-positioner")).to_be_visible()
+    box = covered_panel.bounding_box()
+    assert box is not None
+    # Empty when the stacked dialog's backdrop is on top, else what is
+    top_element = page.evaluate(
+        """([x, y]) => {
+            const top = document.elementFromPoint(x, y);
+            return top && top.matches(".dialog-stacked > .dialog-backdrop") ? "" : (top ? top.outerHTML.slice(0, 300) : "nothing");
+        }""",
+        [box["x"] + 10, box["y"] + 10],
+    )
+    assert not top_element, f"the dialog behind the stacked dialog is not dimmed - on top is {top_element}"
+
+
+# Probes the top-left corner of every open dialog's panel. A dialog with a
+# backdrop over its corner is dimmed; one whose own panel is on top is not. Hit
+# testing passes straight through inert elements - and a dialog that has opened
+# another one is often inert - so each probe lifts the inert attributes above the
+# panel and puts them back. It all runs in one synchronous call, so nothing else
+# sees the change.
+_UNDIMMED_DIALOGS_JS = """() => {
+    const open = [...document.querySelectorAll(".dialog-positioner")].filter(
+        (positioner) => positioner.querySelector(".dialog-panel") && positioner.getClientRects().length > 0
+    );
+    if (open.length < 2) return [];
+    const undimmed = [];
+    for (const positioner of open) {
+        const panel = positioner.querySelector(".dialog-panel");
+        const box = panel.getBoundingClientRect();
+        const inert = [];
+        for (let el = panel; el; el = el.parentElement) {
+            if (el.hasAttribute("inert")) inert.push(el);
+        }
+        inert.forEach((el) => el.removeAttribute("inert"));
+        const top = document.elementFromPoint(box.left + 10, box.top + 10);
+        inert.forEach((el) => el.setAttribute("inert", ""));
+        if (top && panel.contains(top)) {
+            const title = positioner.querySelector(".dialog-title, .dialog-text-stack__title");
+            undimmed.push(title ? title.textContent.trim() : positioner.outerHTML.slice(0, 120));
+        }
+    }
+    return undimmed;
+}"""
+
+
+def assert_only_the_top_dialog_is_undimmed(page: Page) -> None:
+    """
+    With dialogs open over one another, every one but the topmost must sit under
+    a backdrop - so the dialogs beneath read as out of reach, as the page does.
+    Runs after every BDD step (see pytest_bdd_after_step in conftest.py), so any
+    scenario that opens one dialog over another checks the stacking for free.
+
+    A corner covered by something other than a backdrop or the dialog's own panel
+    - a flash alert, say - counts as neither, so it cannot fail the check.
+    """
+    undimmed = page.evaluate(_UNDIMMED_DIALOGS_JS)
+    assert len(undimmed) <= 1, (
+        f"more than one open dialog is drawn above every backdrop: {undimmed} - a dialog that "
+        "opens over another needs stacked=true (see .dialog-stacked in main.css)"
+    )

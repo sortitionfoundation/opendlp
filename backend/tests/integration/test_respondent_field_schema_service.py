@@ -4,6 +4,7 @@ ABOUTME: Covers populate, read, edit, reorder, delete, and initialise flows."""
 import pytest
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.registration_content_block import form_item_ref
 from opendlp.domain.respondent_field_schema import (
     IN_SCHEMA_FIXED_FIELDS,
     ChoiceOption,
@@ -523,30 +524,31 @@ class TestUpdateChoiceOption:
             )
 
 
-class TestReorderGroup:
-    def test_reorders_within_group(self, uow, admin_user, test_assembly):
+class TestFormItems:
+    def test_a_block_and_a_reorder_persist(self, uow, admin_user, test_assembly):
+        """Questions and blocks share one numbering, which survives a fresh read."""
         respondent_service.import_respondents_from_csv(
             uow,
             admin_user.id,
             test_assembly.id,
-            "external_id,a,b,c\nR001,1,2,3\n",
+            "external_id,a,b\nR001,1,2\n",
         )
-        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
-        other_fields = [f for f in schema if f.group == RespondentFieldGroup.OTHER]
-        assert [f.field_key for f in other_fields] == ["a", "b", "c"]
-
-        # Reverse the order.
-        respondent_field_schema_service.reorder_group(
-            uow,
-            admin_user.id,
-            test_assembly.id,
-            RespondentFieldGroup.OTHER,
-            [other_fields[2].id, other_fields[1].id, other_fields[0].id],
+        block = respondent_field_schema_service.add_content_block(
+            uow, admin_user.id, test_assembly.id, heading="About you", body_html="<p>Tell us</p>"
         )
+        items = respondent_field_schema_service.get_form_items(uow, admin_user.id, test_assembly.id)
+        refs = [form_item_ref(item) for item in items]
+        block_ref = form_item_ref(block)
+        reordered = [block_ref, *(ref for ref in refs if ref != block_ref)]
 
-        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
-        reordered = [f.field_key for f in schema if f.group == RespondentFieldGroup.OTHER]
-        assert reordered == ["c", "b", "a"]
+        respondent_field_schema_service.reorder_form_items(uow, admin_user.id, test_assembly.id, reordered)
+        uow.commit()
+
+        items = respondent_field_schema_service.get_form_items(uow, admin_user.id, test_assembly.id)
+        assert form_item_ref(items[0]) == block_ref
+        assert items[0].body_html == "<p>Tell us</p>"
+        assert [item.sort_order for item in items] == [10 * (i + 1) for i in range(len(items))]
+        assert uow.assemblies.get(test_assembly.id).questions_updated_at is not None
 
 
 class TestDeleteField:

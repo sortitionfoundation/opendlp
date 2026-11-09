@@ -15,6 +15,7 @@ from opendlp.domain import (
     email_send_record,
     email_template,
     password_reset,
+    registration_content_block,
     registration_document,
     registration_image,
     registration_page,
@@ -246,6 +247,11 @@ def start_mappers() -> None:
         orm.mapper_registry.map_imperatively(
             respondent_field_schema.RespondentFieldMappingEntry,
             orm.respondent_field_mapping_entries,
+        )
+
+        orm.mapper_registry.map_imperatively(
+            registration_content_block.RegistrationContentBlock,
+            orm.registration_content_blocks,
         )
 
         # Map RegistrationPage and RegistrationPageHtml domain objects. These are

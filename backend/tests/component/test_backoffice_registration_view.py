@@ -23,6 +23,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import ContentStyle, RespondentStatus
 from opendlp.entrypoints.blueprints.backoffice_registration import IMAGE_WIDTH_MAX, IMAGE_WIDTH_MIN
+from opendlp.service_layer import respondent_field_schema_service
 from tests.fakes import FakeUnitOfWork
 
 
@@ -88,6 +89,13 @@ def _count_cell(body: str, page_name: str) -> str:
     row = body.split(page_name, 1)[1].split("</tr>", 1)[0]
     cell = row.split('data-cell="registration-count"', 1)[1].split("</td>", 1)[0]
     return cell.split(">", 1)[1].strip()
+
+
+def _published_at_cell(body: str, page_name: str) -> str:
+    """The text of a page's Date published cell in the pages list: a formatted date, or the em dash."""
+    row = body.split(page_name, 1)[1].split("</tr>", 1)[0]
+    cell = row.split('data-cell="published-at"', 1)[1].split("</td>", 1)[0]
+    return re.sub(r"<[^>]+>", "", cell.split(">", 1)[1]).strip()
 
 
 def _total(body: str, key: str) -> str:
@@ -1420,9 +1428,36 @@ class TestRegistrationListView:
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         # The publish date renders through the babel dateformat filter (not the em dash placeholder)
-        row = body.split("Live", 1)[1].split("</tr>", 1)[0]
-        date_cell = row.split('data-cell="published-at"', 1)[1].split("</td>", 1)[0]
-        assert "\u2014" not in date_cell
+        assert "\u2014" not in _published_at_cell(body, "Live")
+
+    def test_never_published_page_shows_no_publish_date(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="new-slug", name="Fresh")
+
+        body = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration").get_data(as_text=True)
+
+        assert _published_at_cell(body, "Fresh") == "\u2014"
+
+    def test_unpublished_page_shows_no_publish_date(self, logged_in_admin, fake_store, assembly_id):
+        """sc-969: after Unpublish the row kept the last publish date. The database keeps it; the list does not."""
+        page = _seed_page(
+            fake_store,
+            assembly_id,
+            RegistrationPageStatus.TEST,
+            url_slug="back-slug",
+            name="Pulled",
+            form_html="<form>{{ csrf_form_element }} {{ form_action }}</form>",
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+            stored.publish(uow.registration_page_html_sources.get_by_page_id(page.id), author_id=uuid.uuid4())
+            stored.unpublish(author_id=uuid.uuid4())
+            uow.commit()
+
+        body = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration").get_data(as_text=True)
+
+        assert _published_at_cell(body, "Pulled") == "\u2014"
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id).last_published_at() is not None
 
     def test_each_page_shows_its_registration_count(self, logged_in_admin, fake_store, assembly_id):
         busy = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="busy-slug", name="Busy")
@@ -1920,19 +1955,39 @@ class TestSetupTaskList:
 
 
 class TestFieldsChangedWarning:
-    """The form editor warns when the field schema changed after the HTML was last saved."""
+    """The form editor warns when the questions, or the headings among them, changed after the HTML was saved."""
+
+    @pytest.fixture(autouse=True)
+    def _admin(self, admin_user):
+        self.admin = admin_user
 
     def _seed_field(self, fake_store, assembly_id):
         with FakeUnitOfWork(store=fake_store) as uow:
-            uow.respondent_field_definitions.add(
-                RespondentFieldDefinition(
-                    assembly_id=assembly_id,
-                    field_key="gender",
-                    label="Gender",
-                    group=RespondentFieldGroup.ABOUT_YOU,
-                    sort_order=10,
-                )
-            )
+            field = respondent_field_schema_service.add_field(uow, self.admin.id, assembly_id, "gender")
+            uow.commit()
+        return field
+
+    def test_warns_when_a_heading_postdates_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.add_content_block(uow, self.admin.id, assembly_id, heading="About you")
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration/my-slug?section=form")
+
+        assert b"registration questions have changed" in response.data
+
+    def test_warns_when_a_question_is_removed_after_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
+        """A deleted question leaves no row behind, but the form may still ask for it."""
+        field = self._seed_field(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.delete_field(uow, self.admin.id, assembly_id, field.id)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration/my-slug?section=form")
+
+        assert b"registration questions have changed" in response.data
 
     def test_warns_when_a_field_postdates_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)

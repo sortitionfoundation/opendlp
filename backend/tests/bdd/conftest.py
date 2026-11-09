@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, expect, sync_playwright
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -45,6 +46,29 @@ from .config import (
     PLAYWRIGHT_TIMEOUT,
     Urls,
 )
+from .helpers import assert_only_the_top_dialog_is_undimmed
+
+# A step that ends by clicking a link can leave a navigation in flight, and the
+# dialog check then has no page to look at. Nothing is open on a page that is
+# going away, so the check is skipped rather than failed.
+_PAGE_GOING_AWAY_ERRORS = ("Execution context was destroyed", "has been closed")
+
+
+def pytest_bdd_after_step(request, feature, scenario, step, step_func, step_func_args):
+    """After every step, check that open dialogs are stacked with only the top one undimmed.
+
+    Only for a scenario that has a page - asking for one here would open a browser for
+    scenarios that never do.
+    """
+    if "page" not in request.fixturenames:
+        return
+    page = request.getfixturevalue("page")
+    try:
+        assert_only_the_top_dialog_is_undimmed(page)
+    except PlaywrightError as e:
+        if not any(message in str(e) for message in _PAGE_GOING_AWAY_ERRORS):
+            raise
+
 
 # Maximum age in hours before a reused server is considered stale
 _MAX_SERVER_AGE_HOURS = 24
@@ -575,6 +599,7 @@ def delete_all_except_standard_users(session: Session) -> None:
     session.execute(orm.respondent_email_send_records.delete())
     session.execute(orm.respondents.delete())
     session.execute(orm.respondent_field_mapping_entries.delete())
+    session.execute(orm.registration_content_blocks.delete())
     session.execute(orm.respondent_field_definitions.delete())
     session.execute(orm.registration_documents.delete())
     session.execute(orm.registration_images.delete())

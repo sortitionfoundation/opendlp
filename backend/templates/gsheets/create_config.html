@@ -170,7 +170,8 @@
                     </p>
                 {% endif %}
                 <div class="govuk-radios" data-module="govuk-radios">
-                    {% for value, label in form.team.choices %}
+                    {% for choice in form.team.choices %}
+                        {% set value, label = choice.value, choice.label %}
                         <div class="govuk-radios__item">
                             <input class="govuk-radios__input"
                                    id="{{ form.team.id }}-{{ value }}"

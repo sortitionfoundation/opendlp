@@ -169,7 +169,7 @@ def _annotations_from_cross_feature_issues(
                 TargetAnnotation(
                     level="error",
                     message=_(
-                        "Sum of minimums (%(sum)s) exceeds number to select (%(limit)s)",
+                        "Sum of minimums (%(sum)s) exceeds the panel size (%(limit)s)",
                         sum=issue.feature_sum,
                         limit=issue.limit,
                     ),
@@ -182,7 +182,7 @@ def _annotations_from_cross_feature_issues(
                 TargetAnnotation(
                     level="error",
                     message=_(
-                        "Sum of maximums (%(sum)s) is less than number to select (%(limit)s)",
+                        "Sum of maximums (%(sum)s) is less than the panel size (%(limit)s)",
                         sum=issue.feature_sum,
                         limit=issue.limit,
                     ),

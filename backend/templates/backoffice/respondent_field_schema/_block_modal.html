@@ -1,0 +1,84 @@
+{#
+ABOUTME: Add/edit heading or text dialog fragment — served over HTMX or rendered open on a full page load
+ABOUTME: A plain-text heading and a rich-text body; the link dialog is hosted inside so it sits above it
+#}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
+{% from "backoffice/components/input.html" import input, textarea %}
+{% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
+{% set values = modal_ctx["values"] %}
+{# What was typed survives a stray Escape: the close links ask first once anything
+   has changed - see components/dialog-leave-guard.js. The link dialog lives inside
+   this fragment rather than beside it, because the host's siblings go inert while
+   a dialog is open. #}
+<div x-data="dialogLeaveGuard">
+    <div x-data="richEditorLinkHost"
+         @rich-editor-link-request.document="openLinkDialog($event)">
+        <a href="{{ close_url }}"
+           @click="guardLeave($event)"
+           class="dialog-backdrop dialog-backdrop--clickable block"
+           tabindex="-1"
+           aria-hidden="true"></a>
+        <div class="dialog-positioner"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="block-modal-title">
+            <div class="dialog-panel dialog-panel--default">
+                {% set dialog_title %}{% if modal_ctx["mode"] == "new" %}{{ _("Add a heading or text") }}{% else %}{{ _("Edit heading or text") }}{% endif %}{% endset %}
+                {% call dialog_header(dialog_title, title_id="block-modal-title") %}
+                    <a href="{{ close_url }}"
+                       @click="guardLeave($event)"
+                       class="dialog-close-btn"
+                       aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
+                {% endcall %}
+                <form method="post"
+                      action="{{ modal_ctx['action_url'] }}"
+                      hx-post="{{ modal_ctx['action_url'] }}"
+                      hx-target="#field-modal-container"
+                      hx-swap="innerHTML"
+                      @input="markDialogDirty()"
+                      @change="markDialogDirty()">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden"
+                           name="dirty"
+                           value="{{ '1' if request.values.get('dirty') == '1' else '' }}"
+                           x-ref="dirtyInput">
+                    <input type="hidden" name="after" value="{{ values['after'] }}">
+                    {% call dialog_body() %}
+                        {% if modal_ctx["error"] %}
+                            {{ alert(modal_ctx["error"], variant="error") }}
+                        {% endif %}
+                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                            {{ _("Shown on the registration page between the questions. Fill in a heading, some text, or both.") }}
+                        </p>
+                        <div class="mb-4">
+                            {{ input("heading", label=_("Heading (optional)"), value=values["heading"], id="block-modal-heading") }}
+                        </div>
+                        <div class="mb-4">
+                            {{ textarea("body_html",
+                            label=_("Text (optional)"),
+                            value=values["body_html"],
+                            rows=6,
+                            id="block-modal-body",
+                            rich_editor=true,
+                            rich_editor_label=_("Text"),
+                            rich_editor_compact=true) }}
+                        </div>
+                    {% endcall %}
+                    {% call dialog_footer() %}
+                        {{ button(_("Cancel") , variant="secondary", href=close_url, attrs='@click="guardLeave($event)"') }}
+                        {{ button(_("Save") , type="submit", variant="primary") }}
+                    {% endcall %}
+                </form>
+            </div>
+        </div>
+        {% include "backoffice/components/rich_editor_link_modal.html" %}
+        <script type="application/json" id="rich-editor-link-data" nonce="{{ csp_nonce }}">{{ {"messages": {
+            "linkUrlRequired": _("Enter a link address"),
+            "linkUrlNotAllowed": _("A link address must start with https://, http://, mailto: or tel:, or be an address on this site"),
+            "linkUrlNotAbsolute": _("Enter a full address, such as https://example.org, so the link works in an email"),
+        }}|tojson }}</script>
+    </div>
+    {% include "backoffice/components/leave_guard_modal.html" %}
+</div>

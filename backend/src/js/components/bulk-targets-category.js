@@ -136,9 +136,8 @@ export function bulkTargetsCategory(options) {
     /**
      * Redo the totals row from what is currently typed into the table.
      *
-     * A preview of the numbers, not a prediction of them: values re-linked to
-     * their percentage still show the min/max they hold now, because the seat
-     * counts they will be recalculated to are the server's to work out.
+     * Rows whose min and max follow their percentage have already filled the
+     * new numbers in by the time this runs, so the totals include them.
      */
     recalculate: function () {
       var rows = this.$refs.rows.querySelectorAll("[data-value-row]");

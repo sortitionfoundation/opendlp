@@ -41,6 +41,17 @@ class TestAddAndGet:
         assert a1.id in ids
         assert a2.id in ids
 
+    def test_questions_updated_at_round_trips(self, assembly_repo_backend: ContractBackend):
+        assembly = make_assembly()
+        assembly.mark_questions_changed()
+        assembly_repo_backend.repo.add(assembly)
+        assembly_repo_backend.commit()
+
+        retrieved = assembly_repo_backend.repo.get(assembly.id)
+
+        assert retrieved is not None
+        assert retrieved.questions_updated_at == assembly.questions_updated_at
+
 
 class TestGetActiveAssemblies:
     def test_returns_only_active(self, assembly_repo_backend: ContractBackend):

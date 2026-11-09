@@ -17,6 +17,7 @@ Feature: Organiser assemblies
   Scenario: An organiser adds a colleague to their own assembly by exact email
     Given I am logged in as an organiser
     And there is an assembly called "Lilliput Housing Assembly" created by the organiser
+    And there is a user "normal@opendlp.example"
     When I visit the assembly members page for "Lilliput Housing Assembly"
     Then I should see "Add user to project"
     When I type "normal@opendlp.example" into the user search dropdown
@@ -25,6 +26,7 @@ Feature: Organiser assemblies
   Scenario: An organiser cannot fish for accounts with a partial address
     Given I am logged in as an organiser
     And there is an assembly called "Lilliput Energy Assembly" created by the organiser
+    And there is a user "normal@opendlp.example"
     When I visit the assembly members page for "Lilliput Energy Assembly"
     And I type "normal" into the user search dropdown
     Then I should see "No results found" after searching

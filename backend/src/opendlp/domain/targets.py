@@ -7,7 +7,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import urlsplit
 
 from sortition_algorithms.features import MAX_FLEX_UNSET
 
@@ -22,8 +21,6 @@ PERCENTAGE_TOLERANCE = 1.0
 # at 1 and misleading above it - to widen further, express it as a minimum range
 # instead: high = min(max(high, low + MIN_SEAT_RANGE), number_to_select).
 SLACK_SEATS = 1
-
-ALLOWED_URL_SCHEMES = ("http", "https")
 
 
 def min_max_for_percentage(percentage: float, number_to_select: int) -> tuple[int, int]:
@@ -63,6 +60,17 @@ def percentage_of(numerator: int, denominator: int) -> float:
     return round(numerator / denominator * 100, 1)
 
 
+def flex_is_set_on_all(flex_pairs: Sequence[tuple[int, int]]) -> bool:
+    """Whether every (min_flex, max_flex) pair was set rather than left at its default.
+
+    The sortition library wants flex on every row or none. Where any value has
+    been left unset, it is given no flex columns at all and works out safe
+    defaults itself, so anything handing targets to it - or writing them out to
+    be handed to it later - leaves flex out unless every value has it.
+    """
+    return bool(flex_pairs) and all(min_flex != 0 or max_flex != MAX_FLEX_UNSET for min_flex, max_flex in flex_pairs)
+
+
 def validate_comment(comment: str) -> str:
     """Strip a free-text comment and reject one that is implausibly long."""
     stripped = comment.strip()
@@ -72,21 +80,17 @@ def validate_comment(comment: str) -> str:
 
 
 def validate_source_url(source_url: str) -> str:
-    """Strip and validate a source URL, allowing only http(s).
+    """Strip a source of population figures and reject one that is implausibly long.
 
-    Restricting the scheme here is a security invariant, not a formatting nicety:
-    it is what makes the value safe to render as an `<a href>` later, ruling out
-    `javascript:` and `data:` at the point of entry rather than trusting the
-    template to do it.
+    Free text rather than a URL: it may be a link to a report, a sentence with
+    a link in it, or a note that the numbers came from a council by email. It is
+    never put into an `href` as it stands - templates show it through `linkify`,
+    which escapes it and links only http(s) URLs, so `javascript:` and `data:`
+    stay inert text.
     """
     stripped = source_url.strip()
-    if not stripped:
-        return ""
     if len(stripped) > MAX_SOURCE_URL_LENGTH:
-        raise ValueError(f"source URL must be {MAX_SOURCE_URL_LENGTH} characters or fewer")
-    parts = urlsplit(stripped)
-    if parts.scheme not in ALLOWED_URL_SCHEMES or not parts.netloc:
-        raise ValueError("source URL must be a full http:// or https:// address")
+        raise ValueError(f"source must be {MAX_SOURCE_URL_LENGTH} characters or fewer")
     return stripped
 
 

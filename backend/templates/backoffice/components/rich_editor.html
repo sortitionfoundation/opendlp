@@ -3,7 +3,7 @@ ABOUTME: Server-rendered controls for the visual HTML editor: the Visual/HTML sw
 ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaScript the plain textarea shows
 #}
 {% from "backoffice/components/icons.html" import icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_text_quote, icon_separator_horizontal, icon_table, icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_list, icon_list_ordered, icon_list_indent_increase, icon_list_indent_decrease, icon_link, icon_image, icon_scaling, icon_undo_2, icon_redo_2, icon_text_align_left, icon_text_align_center, icon_text_align_right %}
-{% macro rich_editor_controls(for_id, label, images=false, image_min_width="", tables=false, editable=true, content_style="", variable_example="") %}
+{% macro rich_editor_controls(for_id, label, images=false, image_min_width="", tables=false, editable=true, content_style="", variable_example="", compact=false) %}
     {#
     Controls for a textarea enhanced with the visual editor. Rendered by the textarea macro
     when rich_editor=true; every string is here so it is translated with the rest of the page.
@@ -19,6 +19,8 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
             data-rich-editor-style-for="{for_id}" switch it live
         variable_example: a variable this box offers, named in the hint. Without one
             the hint is left out, bar the keyboard tip, which only a screen reader hears
+        compact: a shorter toolbar for a few lines of text under a heading of their own -
+            no heading levels 1 and 2, underline, strikethrough, quote or horizontal line
     #}
     {# The causes are one msgid of their own, so translators do the long sentence once. #}
     {% set common_causes = _("Common causes are comments, headings smaller than level 3, text outside a paragraph, and tables with set column widths.") %}
@@ -51,7 +53,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
             {% else %}
                 <p class="sr-only">{{ _("Press Alt+F10 to move from the text to the toolbar.") }}</p>
             {% endif %}
-            {{ rich_editor_toolbar(for_id, images=images, tables=tables) }}
+            {{ rich_editor_toolbar(for_id, images=images, tables=tables, compact=compact) }}
         {% endif %}
         <p class="rich-editor__notice text-body-sm"
            data-rich-editor-notice
@@ -76,7 +78,7 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         <span class="rich-editor__label">{{ label }}</span>
     </button>
 {% endmacro %}
-{% macro rich_editor_toolbar(for_id, images=false, tables=false) %}
+{% macro rich_editor_toolbar(for_id, images=false, tables=false, compact=false) %}
     {#
     The formatting toolbar, following the WAI-ARIA toolbar pattern: one Tab stop, arrow keys
     (and Home/End) move between buttons, toggles carry aria-pressed. Unavailable commands use
@@ -90,14 +92,18 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
          aria-controls="{{ for_id }}-visual"
          data-rich-editor-toolbar>
         {{ rich_editor_tool("paragraph", _("Text"), icon_pilcrow(), pressable=true) }}
-        {{ rich_editor_tool("heading1", _("Heading 1"), icon_heading_1(), pressable=true) }}
-        {{ rich_editor_tool("heading2", _("Heading 2"), icon_heading_2(), pressable=true) }}
+        {% if not compact %}
+            {{ rich_editor_tool("heading1", _("Heading 1"), icon_heading_1(), pressable=true) }}
+            {{ rich_editor_tool("heading2", _("Heading 2"), icon_heading_2(), pressable=true) }}
+        {% endif %}
         {{ rich_editor_tool("heading3", _("Heading 3"), icon_heading_3(), pressable=true) }}
         <span class="rich-editor__separator" aria-hidden="true"></span>
         {{ rich_editor_tool("bold", _("Bold"), icon_bold(), pressable=true) }}
         {{ rich_editor_tool("italic", _("Italic"), icon_italic(), pressable=true) }}
-        {{ rich_editor_tool("underline", _("Underline"), icon_underline(), pressable=true) }}
-        {{ rich_editor_tool("strike", _("Strikethrough"), icon_strikethrough(), pressable=true) }}
+        {% if not compact %}
+            {{ rich_editor_tool("underline", _("Underline"), icon_underline(), pressable=true) }}
+            {{ rich_editor_tool("strike", _("Strikethrough"), icon_strikethrough(), pressable=true) }}
+        {% endif %}
         <span class="rich-editor__separator" aria-hidden="true"></span>
         {{ rich_editor_tool("alignLeft", _("Align left"), icon_text_align_left(), pressable=true) }}
         {{ rich_editor_tool("alignCenter", _("Align centre"), icon_text_align_center(), pressable=true) }}
@@ -107,14 +113,18 @@ ABOUTME: Hidden until src/js/backoffice/rich-editor.js mounts it; without JavaSc
         {{ rich_editor_tool("orderedList", _("Numbered list"), icon_list_ordered(), pressable=true) }}
         {{ rich_editor_tool("sinkListItem", _("Indent list item"), icon_list_indent_increase(), extra_attrs='aria-disabled="true"') }}
         {{ rich_editor_tool("liftListItem", _("Outdent list item"), icon_list_indent_decrease(), extra_attrs='aria-disabled="true"') }}
-        {{ rich_editor_tool("blockquote", _("Quote"), icon_text_quote(), pressable=true) }}
+        {% if not compact %}
+            {{ rich_editor_tool("blockquote", _("Quote"), icon_text_quote(), pressable=true) }}
+        {% endif %}
         <span class="rich-editor__separator" aria-hidden="true"></span>
         {{ rich_editor_tool("link", _("Link"), icon_link(), extra_attrs='aria-haspopup="dialog"') }}
         {% if images %}
             {{ rich_editor_tool("image", _("Image"), icon_image(), extra_attrs='aria-haspopup="dialog"') }}
             {{ rich_editor_tool("imageSize", _("Image size"), icon_scaling(), extra_attrs='aria-haspopup="dialog" aria-disabled="true"') }}
         {% endif %}
-        {{ rich_editor_tool("horizontalRule", _("Horizontal line"), icon_separator_horizontal()) }}
+        {% if not compact %}
+            {{ rich_editor_tool("horizontalRule", _("Horizontal line"), icon_separator_horizontal()) }}
+        {% endif %}
         {% if tables %}
             <div class="rich-editor__menu-anchor">
                 {{ rich_editor_tool("table", _("Table"), icon_table(), extra_attrs='aria-haspopup="menu" aria-expanded="false" aria-controls="' ~ for_id ~ '-table-menu"') }}

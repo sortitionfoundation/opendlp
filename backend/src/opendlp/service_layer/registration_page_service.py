@@ -466,6 +466,10 @@ def delete_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_i
     source = uow.registration_page_html_sources.get_by_page_id(page.id)
     if source is not None:
         uow.registration_page_html_sources.delete(source)
+        # The mapping has no relationship between the two, so SQLAlchemy could
+        # delete the page first - and the FK cascade would remove the source
+        # under it. Flushing here makes the order explicit.
+        uow.flush()
     uow.registration_pages.delete(page)
 
 
@@ -722,8 +726,9 @@ def fill_empty_registration_form_html(
     if source.form_html.strip():
         raise ValueError(_("The form already has HTML, so it was left as it is"))
     fields = list(uow.respondent_field_definitions.list_by_assembly(page.assembly_id))
+    blocks = uow.registration_content_blocks.list_by_assembly(page.assembly_id)
     build = _build_starter_html_govuk if style == ContentStyle.GOVUK else _build_starter_html
-    return update_registration_page_html(uow, user_id, page_id, build(fields))
+    return update_registration_page_html(uow, user_id, page_id, build(fields, blocks))
 
 
 def update_registration_page_intro_html(
@@ -1056,7 +1061,8 @@ def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, asse
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
     fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    return _build_starter_html(list(fields))
+    blocks = uow.registration_content_blocks.list_by_assembly(assembly_id)
+    return _build_starter_html(list(fields), blocks)
 
 
 @dataclass(frozen=True)
@@ -1072,7 +1078,8 @@ def generate_starter_form_html_variants(
 ) -> StarterFormHtmlVariants:
     """Generate the unstyled and GOV.UK-styled starter form HTML.
 
-    The form comes from the assembly's respondent field schema.
+    The form comes from the assembly's respondent field schema and the
+    headings and text placed among its questions.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -1080,7 +1087,8 @@ def generate_starter_form_html_variants(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
     fields = list(uow.respondent_field_definitions.list_by_assembly(assembly_id))
+    blocks = uow.registration_content_blocks.list_by_assembly(assembly_id)
     return StarterFormHtmlVariants(
-        plain=_build_starter_html(fields),
-        govuk=_build_starter_html_govuk(fields),
+        plain=_build_starter_html(fields, blocks),
+        govuk=_build_starter_html_govuk(fields, blocks),
     )

@@ -1,5 +1,5 @@
-"""ABOUTME: Service layer for the per-assembly RespondentFieldDefinition schema.
-ABOUTME: Read, populate, edit, and initialise field schemas."""
+"""ABOUTME: Service layer for the per-assembly RespondentFieldDefinition schema and the blocks among it.
+ABOUTME: Read, populate, edit, order and initialise the questions, and add, edit and remove content blocks."""
 
 from __future__ import annotations
 
@@ -8,6 +8,15 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from opendlp.config import to_bool
+from opendlp.domain.registration_content_block import (
+    FieldSection,
+    FormItem,
+    FormItemKind,
+    FormItemRef,
+    RegistrationContentBlock,
+    form_item_ref,
+    sections_at_headings,
+)
 from opendlp.domain.respondent_field_schema import _UNSET as _UNSET_OPTIONS
 from opendlp.domain.respondent_field_schema import (
     FIXED_FIELD_ON_REGISTRATION_PAGE,
@@ -30,10 +39,18 @@ from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD, SO
 from opendlp.service_layer.derivation_service import derivations_depending_on
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
+    ContentBlockInvalidError,
+    ContentBlockNotFoundError,
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
     InsufficientPermissions,
     UserNotFoundError,
+)
+from opendlp.service_layer.form_order import (
+    current_form_items,
+    next_form_sort_order,
+    record_questions_changed,
+    renumber,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_auto_export import request_auto_export
@@ -114,6 +131,22 @@ def get_schema(
     return [f.create_detached_copy() for f in fields]
 
 
+def get_respondent_sections(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> list[FieldSection]:
+    """The fields split into sections at each heading on the questions list, for a respondent's record.
+
+    See ``sections_at_headings``. Returns detached copies.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    fields = get_schema(uow, user_id, assembly_id)
+    blocks = [b.create_detached_copy() for b in uow.registration_content_blocks.list_by_assembly(assembly_id)]
+    return sections_at_headings(fields, blocks)
+
+
 def get_schema_grouped(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -133,39 +166,31 @@ def get_schema_grouped(
     return grouped
 
 
+# Where the built-in questions go in a new schema: eligibility and email ahead
+# of everything else, consent after it. A CSV that has one of these columns
+# puts it where the CSV has it instead.
+_FIXED_FIELDS_FIRST = ("eligible", "can_attend", "email")
+_FIXED_FIELDS_LAST = ("consent", "stay_on_db")
+
+
+def _fixed_row(assembly_id: uuid.UUID, key: str, sort_order: int) -> RespondentFieldDefinition:
+    group, label = next((group, label) for k, group, label in IN_SCHEMA_FIXED_FIELDS if k == key)
+    return RespondentFieldDefinition(
+        assembly_id=assembly_id,
+        field_key=key,
+        label=label,
+        group=group,
+        sort_order=sort_order,
+        is_fixed=True,
+        field_type=FIXED_FIELD_TYPES.get(key, FieldType.TEXT),
+        on_registration_page=FIXED_FIELD_ON_REGISTRATION_PAGE.get(key, FieldOnRegistrationPage.YES_REQUIRED),
+    )
+
+
 def _build_fixed_rows(assembly_id: uuid.UUID) -> list[RespondentFieldDefinition]:
-    """Construct the in-schema fixed-field rows at their default positions.
-
-    Per-group ordering here is fixed: rows are emitted in the order they appear
-    in IN_SCHEMA_FIXED_FIELDS.
-    """
-    per_group_counter: dict[RespondentFieldGroup, int] = {}
-    rows: list[RespondentFieldDefinition] = []
-    for key, group, label in IN_SCHEMA_FIXED_FIELDS:
-        idx = per_group_counter.get(group, 0)
-        per_group_counter[group] = idx + 1
-        rows.append(
-            RespondentFieldDefinition(
-                assembly_id=assembly_id,
-                field_key=key,
-                label=label,
-                group=group,
-                sort_order=(idx + 1) * SORT_ORDER_STEP,
-                is_fixed=True,
-                field_type=FIXED_FIELD_TYPES.get(key, FieldType.TEXT),
-                on_registration_page=FIXED_FIELD_ON_REGISTRATION_PAGE.get(key, FieldOnRegistrationPage.YES_REQUIRED),
-            )
-        )
-    return rows
-
-
-def _next_sort_order(
-    per_group_next: dict[RespondentFieldGroup, int],
-    group: RespondentFieldGroup,
-) -> int:
-    idx = per_group_next.get(group, 0)
-    per_group_next[group] = idx + 1
-    return (idx + 1) * SORT_ORDER_STEP
+    """Construct the in-schema fixed-field rows, in their default order."""
+    keys = [*_FIXED_FIELDS_FIRST, *_FIXED_FIELDS_LAST]
+    return [_fixed_row(assembly_id, key, (i + 1) * SORT_ORDER_STEP) for i, key in enumerate(keys)]
 
 
 def populate_schema_from_headers(
@@ -178,9 +203,15 @@ def populate_schema_from_headers(
     """Seed a fresh schema for an assembly from a set of CSV headers.
 
     Creates the in-schema fixed-field rows plus one row per non-fixed, non-id
-    header, using heuristics to bucket each into a group. Preserves CSV header
-    order within each group. No-op if the assembly already has a schema.
-    Returns the number of rows inserted. Does not commit — caller owns the txn.
+    header, in CSV header order. A fixed field the CSV has goes where the CSV
+    has it; one it lacks goes in its default place (``_FIXED_FIELDS_FIRST`` /
+    ``_FIXED_FIELDS_LAST``). No headings are added: a CSV usually has its
+    similar columns together already. No-op if the assembly already has a
+    schema. Returns the number of rows inserted. Does not commit — caller owns
+    the txn.
+
+    Each custom row still gets a heuristic group, only because the column
+    cannot be empty while it exists; nothing orders or displays by it.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -189,30 +220,35 @@ def populate_schema_from_headers(
 
     target_names = target_category_names or []
     fixed_keys = {key for key, _group, _label in IN_SCHEMA_FIXED_FIELDS}
-
-    rows = _build_fixed_rows(assembly_id)
-    # Start per-group counters from where the fixed-field seeding left off so
-    # heuristic-classified rows append after fixed rows in the same group.
-    per_group_next: dict[RespondentFieldGroup, int] = {}
-    for row in rows:
-        per_group_next[row.group] = max(per_group_next.get(row.group, 0), row.sort_order // SORT_ORDER_STEP)
-
+    csv_keys: list[str] = []
     for header in headers:
-        header_stripped = header.strip()
-        if not header_stripped or header_stripped == id_column or header_stripped in fixed_keys:
+        key = header.strip()
+        if key and key != id_column and key not in csv_keys:
+            csv_keys.append(key)
+    ordered = [
+        *(k for k in _FIXED_FIELDS_FIRST if k not in csv_keys),
+        *csv_keys,
+        *(k for k in _FIXED_FIELDS_LAST if k not in csv_keys),
+    ]
+
+    rows: list[RespondentFieldDefinition] = []
+    for i, key in enumerate(ordered, start=1):
+        sort_order = i * SORT_ORDER_STEP
+        if key in fixed_keys:
+            rows.append(_fixed_row(assembly_id, key, sort_order))
             continue
-        group = classify_field_key(header_stripped, target_names)
         rows.append(
             RespondentFieldDefinition(
                 assembly_id=assembly_id,
-                field_key=header_stripped,
-                label=humanise_field_key(header_stripped),
-                group=group,
-                sort_order=_next_sort_order(per_group_next, group),
+                field_key=key,
+                label=humanise_field_key(key),
+                group=classify_field_key(key, target_names),
+                sort_order=sort_order,
             )
         )
 
     uow.respondent_field_definitions.bulk_add(rows)
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
     return len(rows)
 
@@ -234,6 +270,7 @@ def initialise_empty_schema(
         return 0
     rows = _build_fixed_rows(assembly_id)
     uow.respondent_field_definitions.bulk_add(rows)
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
     return len(rows)
 
@@ -250,6 +287,7 @@ def add_field(
     options: list[ChoiceOption] | None = None,
     on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
     help_text: str = "",
+    after: FormItemRef | None = None,
 ) -> RespondentFieldDefinition:
     """Add a single field to an assembly's schema.
 
@@ -267,6 +305,8 @@ def add_field(
         field_type: The data type; defaults to TEXT.
         options: For choice fields, the list of options.
         help_text: Optional hint shown beneath the field on forms.
+        after: The question or block to put it below; the end of the list when
+            None or when no such item is on the list.
 
     Returns:
         The newly created RespondentFieldDefinition.
@@ -288,11 +328,6 @@ def add_field(
     if any(f.field_key == field_key for f in existing):
         raise FieldDefinitionConflictError(_l("Field '%(key)s' already exists in this project", key=field_key))
 
-    # Compute next sort_order for this group
-    per_group_next: dict[RespondentFieldGroup, int] = {}
-    for f in existing:
-        per_group_next[f.group] = max(per_group_next.get(f.group, 0), f.sort_order // SORT_ORDER_STEP)
-
     effective_label = label.strip() if label else humanise_field_key(field_key)
 
     field = RespondentFieldDefinition(
@@ -300,15 +335,31 @@ def add_field(
         field_key=field_key,
         label=effective_label,
         group=group,
-        sort_order=_next_sort_order(per_group_next, group),
+        sort_order=next_form_sort_order(uow, assembly_id),
         field_type=field_type,
         options=options,
         on_registration_page=on_registration_page,
         help_text=help_text,
     )
+    _place_after(uow, assembly_id, field, after)
     uow.respondent_field_definitions.add(field)
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
     return field.create_detached_copy()
+
+
+def _place_after(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, new_item: FormItem, after: FormItemRef | None
+) -> None:
+    """Renumber the list so ``new_item`` sits just below ``after``; leave it at the end otherwise."""
+    if after is None:
+        return
+    items = current_form_items(uow, assembly_id)
+    refs = [form_item_ref(item) for item in items]
+    if after not in refs:
+        return
+    items.insert(refs.index(after) + 1, new_item)
+    renumber(items)
 
 
 def _refuse_retyping_a_derivation_source(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, field_key: str) -> None:
@@ -414,6 +465,7 @@ def update_field(
         # Options replaced wholesale drop mapping keys the same way removing
         # them one at a time does; a key that can never match again is stale.
         _drop_small_mapping_keys(uow, assembly_id, field.field_key, removed_values)
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
@@ -506,6 +558,8 @@ def guess_field_types(
             changed[f.field_key] = new_type
             continue
 
+    if changed:
+        record_questions_changed(uow, assembly_id)
     return changed
 
 
@@ -535,6 +589,7 @@ def add_choice_option(
         raise FieldDefinitionConflictError(_l("Option '%(value)s' already exists", value=value))
     new_options.append(ChoiceOption(value=value, help_text=help_text))
     field.update(options=new_options)
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
@@ -575,6 +630,7 @@ def update_choice_option(
         # A small mapping keyed on the old option value would go silently stale,
         # producing wrong derived data with no visible symptom — rename in step.
         _rename_small_mapping_keys(uow, assembly_id, field.field_key, old_value, new_value)
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
@@ -673,38 +729,172 @@ def remove_choice_option(
     # A mapping entry keyed on the removed option can never match again; drop
     # it so the config mirrors the source's real option set.
     _drop_small_mapping_keys(uow, assembly_id, field.field_key, {value})
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
 
-def reorder_group(
+_MOVE_DIRECTIONS = frozenset({"up", "down", "top", "bottom"})
+
+
+def get_form_items(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
-    group: RespondentFieldGroup,
-    ordered_field_ids: list[uuid.UUID],
-) -> None:
-    """Re-issue sort_order values for every field in a group.
+) -> list[FormItem]:
+    """The questions and content blocks in the one order the questions step shows them.
 
-    ``ordered_field_ids`` must contain all field_ids currently in the group,
-    in the desired display order. Fields are re-numbered 10, 20, 30, ...
+    Derived fields are not on the list. Returns detached copies.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _ensure_view_permission(uow, user_id, assembly_id)
+    return [item.create_detached_copy() for item in current_form_items(uow, assembly_id)]
+
+
+def _list_changed_error() -> FieldDefinitionConflictError:
+    return FieldDefinitionConflictError(
+        _l("The questions have changed since this page was loaded. Reload the page and try again.")
+    )
+
+
+def reorder_form_items(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    ordered: list[FormItemRef],
+) -> None:
+    """Put the questions and blocks in the given order, numbering them 10, 20, 30...
+
+    ``ordered`` must name every item on the list exactly once, so a browser
+    that missed someone else's change is refused rather than half-applied.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     _ensure_manage_permission(uow, user_id, assembly_id)
-    existing = [f for f in uow.respondent_field_definitions.list_by_assembly(assembly_id) if f.group == group]
-    existing_by_id = {f.id: f for f in existing}
-    if set(ordered_field_ids) != set(existing_by_id.keys()):
-        raise FieldDefinitionConflictError(
-            "reorder_group requires the complete set of field_ids currently in the group"
-        )
-    now = datetime.now(UTC)
-    for i, field_id in enumerate(ordered_field_ids, start=1):
-        field = existing_by_id[field_id]
-        field.sort_order = i * SORT_ORDER_STEP
-        field.updated_at = now
+    items = current_form_items(uow, assembly_id)
+    by_ref = {form_item_ref(item): item for item in items}
+    if len(ordered) != len(set(ordered)) or set(ordered) != set(by_ref):
+        raise _list_changed_error()
+    renumber([by_ref[ref] for ref in ordered])
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
+
+
+def move_form_item(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    ref: FormItemRef,
+    direction: str,
+) -> tuple[int, int]:
+    """Move one question or block up or down a place, or to the top or bottom of the list.
+
+    Moving past either end changes nothing. Returns where the item now is, as
+    a 1-based position, and how many items the list has.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    if direction not in _MOVE_DIRECTIONS:
+        raise ValueError(f"Unknown direction {direction!r}")
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    items = current_form_items(uow, assembly_id)
+    refs = [form_item_ref(item) for item in items]
+    if ref not in refs:
+        if ref.kind == FormItemKind.BLOCK:
+            raise ContentBlockNotFoundError(f"Block {ref.item_id} not found in assembly {assembly_id}")
+        raise FieldDefinitionNotFoundError(f"Field {ref.item_id} not found in assembly {assembly_id}")
+    index = refs.index(ref)
+    item = items.pop(index)
+    destination = {"up": max(index - 1, 0), "down": min(index + 1, len(items)), "top": 0, "bottom": len(items)}[
+        direction
+    ]
+    items.insert(destination, item)
+    if destination != index:
+        renumber(items)
+        record_questions_changed(uow, assembly_id)
+        request_auto_export(uow, assembly_id)
+    return destination + 1, len(items)
+
+
+def _block_invalid_error() -> ContentBlockInvalidError:
+    return ContentBlockInvalidError(_l("Add a heading, some text, or both"))
+
+
+def _load_block(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, block_id: uuid.UUID) -> RegistrationContentBlock:
+    block: RegistrationContentBlock | None = uow.registration_content_blocks.get(block_id)
+    if block is None or block.assembly_id != assembly_id:
+        raise ContentBlockNotFoundError(f"Block {block_id} not found in assembly {assembly_id}")
+    return block
+
+
+def add_content_block(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    heading: str = "",
+    body_html: str = "",
+    after: FormItemRef | None = None,
+) -> RegistrationContentBlock:
+    """Add a heading, some text, or both to the questions list.
+
+    It goes below ``after``, or at the end when that is None or not on the list.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    try:
+        block = RegistrationContentBlock(
+            assembly_id=assembly_id,
+            sort_order=next_form_sort_order(uow, assembly_id),
+            heading=heading,
+            body_html=body_html,
+        )
+    except ValueError as exc:
+        raise _block_invalid_error() from exc
+    _place_after(uow, assembly_id, block, after)
+    uow.registration_content_blocks.add(block)
+    record_questions_changed(uow, assembly_id)
+    return block.create_detached_copy()
+
+
+def update_content_block(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    block_id: uuid.UUID,
+    heading: str = "",
+    body_html: str = "",
+) -> RegistrationContentBlock:
+    """Replace a block's heading and text.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    block = _load_block(uow, assembly_id, block_id)
+    try:
+        block.update(heading=heading, body_html=body_html)
+    except ValueError as exc:
+        raise _block_invalid_error() from exc
+    record_questions_changed(uow, assembly_id)
+    return block.create_detached_copy()
+
+
+def delete_content_block(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    block_id: uuid.UUID,
+) -> None:
+    """Remove a block from the questions list.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    block = _load_block(uow, assembly_id, block_id)
+    uow.registration_content_blocks.delete(block)
+    record_questions_changed(uow, assembly_id)
 
 
 def delete_derived_field(
@@ -792,6 +982,7 @@ def delete_field(
             )
         )
     uow.respondent_field_definitions.delete(field)
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
 
 
@@ -808,8 +999,9 @@ class ReconciliationDiff:
     (``email``, ``consent``, ``stay_on_db``, ``eligible``, ``can_attend``) and
     the id column — those are never reconciled.
 
-    ``new_keys`` carries each new key paired with its heuristic-suggested group
-    so the UI can show where it will land if applied.
+    ``new_keys`` carries each new key paired with its heuristic-suggested group,
+    which fills the group column while it exists; the new keys go at the end
+    of the list.
 
     ``has_changes`` returns True iff applying the diff would mutate the schema.
     """
@@ -874,7 +1066,7 @@ def apply_reconciliation(
     assembly_id: uuid.UUID,
     diff: ReconciliationDiff,
 ) -> int:
-    """Insert schema rows for new keys discovered by the reconciliation.
+    """Insert schema rows for new keys discovered by the reconciliation, at the end of the list in CSV order.
 
     Absent keys are intentionally left in place — their data is gone but the
     schema row is preserved so the layout sticks if the column reappears, and
@@ -888,23 +1080,19 @@ def apply_reconciliation(
     if not diff.new_keys:
         return 0
 
-    existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    per_group_next: dict[RespondentFieldGroup, int] = {}
-    for f in existing:
-        per_group_next[f.group] = max(per_group_next.get(f.group, 0), f.sort_order // SORT_ORDER_STEP)
-
-    new_rows: list[RespondentFieldDefinition] = []
-    for key, group in diff.new_keys:
-        new_rows.append(
-            RespondentFieldDefinition(
-                assembly_id=assembly_id,
-                field_key=key,
-                label=humanise_field_key(key),
-                group=group,
-                sort_order=_next_sort_order(per_group_next, group),
-            )
+    start = next_form_sort_order(uow, assembly_id)
+    new_rows = [
+        RespondentFieldDefinition(
+            assembly_id=assembly_id,
+            field_key=key,
+            label=humanise_field_key(key),
+            group=group,
+            sort_order=start + i * SORT_ORDER_STEP,
         )
+        for i, (key, group) in enumerate(diff.new_keys)
+    ]
     uow.respondent_field_definitions.bulk_add(new_rows)
+    record_questions_changed(uow, assembly_id)
     request_auto_export(uow, assembly_id)
     return len(new_rows)
 

@@ -6,6 +6,7 @@ import {
   highestNewIndex,
   renumberSortOrder,
 } from "../lib/bulk-targets-dom.js";
+import { urlRemoveParam } from "../lib/url-utils.js";
 import { editGuard } from "./edit-guard.js";
 
 // The blank row the template carries. addValue() issues new-1 onwards, so the
@@ -18,12 +19,16 @@ var NEW_CATEGORY_ID = /^cat\[new-(\d+)\]/;
 /**
  * Build the state for the targets page.
  *
- * The read-only view and the edit form are the same page: `editingAll` decides
- * which of them is on screen, and both are already in the DOM. So "Add target"
- * is one button with one handler wherever it is clicked from - it names the
- * target in a dialog, clones a blank block into the form, and switches to it.
- * Nothing is sent to the server, so no unsaved edit elsewhere on the page is
- * lost, and the target exists only once the form is saved.
+ * The read-only view and the edit form are rendered by the same template:
+ * `editingAll` decides which of them is on screen. They are different URLs -
+ * the form is the view plus ?edit=1 - so the server sets `editingAll`, and the
+ * back button leaves the form for the view.
+ *
+ * In the form, "Add target" names the target in a dialog and clones a blank
+ * block into the form. Nothing is sent to the server, so no unsaved edit
+ * elsewhere on the page is lost, and the target exists only once the form is
+ * saved. On the read-only view it is a link to the form with ?add=1, which
+ * opens the same dialog as the form loads.
  *
  * That last part is what the edit guard is here for. The edits live only in
  * this page until it is saved, and every link on it - the assembly tabs, the
@@ -33,13 +38,16 @@ var NEW_CATEGORY_ID = /^cat\[new-(\d+)\]/;
  *
  * @param {Object} [options] - configuration
  * @param {boolean} [options.editingAll=false] - whether the page opens in edit mode,
- *   as it does when a rejected save redisplays the form
+ *   as it does at ?edit=1 and when a rejected save redisplays the form
+ * @param {boolean} [options.addTargetOnLoad=false] - open the "Add target" dialog
+ *   as the page loads, as it does at ?add=1
  * @param {string} [options.discardUrl=""] - where "Discard changes" reloads from
  * @returns {Object} Alpine component state
  */
 export function targetsPage(options) {
   return Object.assign({}, editGuard({ guardLinks: true }), {
     editingAll: Boolean(options && options.editingAll),
+    addTargetOnLoad: Boolean(options && options.addTargetOnLoad),
     discardUrl: (options && options.discardUrl) || "",
     addTargetOpen: false,
     newCategoryName: "",
@@ -53,26 +61,42 @@ export function targetsPage(options) {
         NEW_CATEGORY_ID,
       );
       this.initEditGuard();
+      if (this.addTargetOnLoad) this.openAddTargetOnLoad();
+    },
+
+    /**
+     * Open the "Add target" dialog the read-only view's link asked for.
+     *
+     * ?add=1 comes off the address bar first, so that reloading the form, or
+     * coming back to it, does not open the dialog again.
+     */
+    openAddTargetOnLoad: function () {
+      window.history.replaceState(
+        window.history.state,
+        "",
+        urlRemoveParam(window.location.href, "add"),
+      );
+      this.openAddTarget();
     },
 
     /**
      * Throw the unsaved edits away and go back to the read-only page.
      *
-     * Discarding really discards: the edits live only in this page, so
-     * fetching it again is what removes them. Hiding the form would leave them
-     * in the DOM to reappear the next time edit mode was opened.
+     * The read-only page is its own URL, and it takes this page's place in the
+     * history rather than going after it, so the back button from there does
+     * not return to the form.
      *
-     * A clean form has nothing to lose, so it just closes. A dirty one asks
+     * A clean form has nothing to lose, so it just goes. A dirty one asks
      * first, through the same dialog every other way off this page goes
      * through - the button is on screen the whole time the form is open, which
      * makes it easy to reach by accident as well as on purpose.
      */
     discardEdits: function () {
       if (!this.editDirty) {
-        this.editingAll = false;
+        window.location.replace(this.discardUrl);
         return;
       }
-      this.openLeaveModal(this.discardUrl);
+      this.openLeaveModal(this.discardUrl, true);
     },
 
     /**
@@ -108,9 +132,7 @@ export function targetsPage(options) {
       var block = this.addCategory(name);
       this.addTargetOpen = false;
       this.newCategoryName = "";
-      // The new target only exists in the edit form, so that is where we go -
-      // and it exists only in the page, so leaving now would lose it.
-      this.editingAll = true;
+      // The new target exists only in the page, so leaving now would lose it.
       this.markEditDirty();
       this.revealCategory(block);
     },

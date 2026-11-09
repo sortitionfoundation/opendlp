@@ -1,11 +1,11 @@
-"""ABOUTME: Unit tests for the linkify, trim_url and date_text Jinja filters
+"""ABOUTME: Unit tests for the linkify and date_text Jinja filters
 ABOUTME: The escaping and the restriction to http(s) are the security-relevant parts"""
 
 import pytest
 from flask import Flask
 from flask_babel import Babel
 
-from opendlp.entrypoints.template_filters import MAX_URL_TEXT_LENGTH, date_text, linkify, trim_url
+from opendlp.entrypoints.template_filters import MAX_URL_TEXT_LENGTH, date_text, linkify
 
 
 class TestLinkify:
@@ -94,28 +94,6 @@ class TestLinkify:
 
     def test_empty_text(self):
         assert str(linkify("")) == ""
-
-
-class TestTrimUrl:
-    def test_a_long_url_is_cut_to_the_length_linkify_uses(self):
-        long_url = "https://www.ons.gov.uk/peoplepopulationandcommunity/" + "a" * 120
-
-        result = trim_url(long_url)
-
-        assert len(result) == MAX_URL_TEXT_LENGTH
-        assert result.endswith("\u2026")
-        assert long_url.startswith(result[:-1])
-
-    def test_a_short_url_is_left_alone(self):
-        assert trim_url("https://ons.gov.uk/data") == "https://ons.gov.uk/data"
-
-    def test_a_url_of_exactly_the_limit_is_left_alone(self):
-        url = "h" * MAX_URL_TEXT_LENGTH
-
-        assert trim_url(url) == url
-
-    def test_empty_text(self):
-        assert trim_url("") == ""
 
 
 class TestDateText:

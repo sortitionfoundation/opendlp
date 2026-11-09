@@ -31,7 +31,6 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
     humanise_field_key,
 )
-from opendlp.service_layer.constants import SORT_ORDER_STEP
 from opendlp.service_layer.derivation_service import (
     RecomputeReport,
     compatible_source_fields,
@@ -46,6 +45,7 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
     UserNotFoundError,
 )
+from opendlp.service_layer.form_order import next_form_sort_order, record_questions_changed
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
@@ -214,10 +214,6 @@ def choice_type_for(n_options: int) -> FieldType:
     return FieldType.CHOICE_RADIO if n_options <= _MAX_RADIO_OPTIONS else FieldType.CHOICE_DROPDOWN
 
 
-def _next_sort_order_in_group(existing: list[RespondentFieldDefinition], group: RespondentFieldGroup) -> int:
-    return max((f.sort_order for f in existing if f.group == group), default=0) + SORT_ORDER_STEP
-
-
 def _require_target_values_covered(field: RespondentFieldDefinition, category: TargetCategory) -> None:
     """Refuse a field whose options cannot represent every target value."""
     option_values = {option.value for option in field.options or []}
@@ -293,14 +289,13 @@ def _resolve_source_field(
                 key=field_key,
             )
         )
-    existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
     group = spec.group or classify_field_key(field_key, [category.name])
     field = RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=field_key,
         label=spec.label.strip() or humanise_field_key(field_key),
         group=group,
-        sort_order=_next_sort_order_in_group(existing, group),
+        sort_order=next_form_sort_order(uow, assembly_id),
         field_type=spec.field_type,
         options=list(spec.options) if spec.options else None,
         on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
@@ -311,6 +306,7 @@ def _resolve_source_field(
             _l("A '%(type)s' field cannot feed this kind of derivation", type=FIELD_TYPE_LABELS[spec.field_type])
         )
     uow.respondent_field_definitions.add(field)
+    record_questions_changed(uow, assembly_id)
     return field
 
 
@@ -348,20 +344,20 @@ def _configure_exact_copy(
                 key=category.name,
             )
         )
-    existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
     group = spec.source.group or classify_field_key(category.name, [category.name])
     field = RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=category.name,
         label=spec.source.label.strip() or humanise_field_key(category.name),
         group=group,
-        sort_order=_next_sort_order_in_group(existing, group),
+        sort_order=next_form_sort_order(uow, assembly_id),
         field_type=choice_type_for(len(target_values)),
         options=[ChoiceOption(value=value) for value in target_values],
         on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
         help_text=spec.source.help_text,
     )
     uow.respondent_field_definitions.add(field)
+    record_questions_changed(uow, assembly_id)
     return field
 
 
@@ -665,6 +661,7 @@ def resync_from_target(
         linked.resync_options([
             ChoiceOption(value=value, help_text=help_texts.get(value, "")) for value in _target_option_values(category)
         ])
+        record_questions_changed(uow, assembly_id)
         return linked.create_detached_copy(), None
 
     if linked.derivation_type == DerivationType.AGE_BRACKET:

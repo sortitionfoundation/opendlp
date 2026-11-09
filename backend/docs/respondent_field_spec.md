@@ -77,6 +77,10 @@ Version 5 added `feeds_target` to each field: the name of the target category
 the field explicitly feeds (directly for an exact copy of the target's values,
 or via its derivation), `null` when the field is not linked to a target.
 
+Version 6 dropped `group` from each field. Registration questions are one
+ordered list, with headings and text placed among them; a field's place is its
+`sort_order`. The headings are not in the spec, which describes CSV columns.
+
 ### `csv`
 
 - **`id_column`** — the assembly's configured `csv_id_column`, else
@@ -93,15 +97,14 @@ or via its derivation), `null` when the field is not linked to a target.
 
 ### `fields`
 
-Every field in the schema, in the order the schema page and the CSV export use:
-`GROUP_DISPLAY_ORDER`, then `sort_order` within each group.
+Every field in the schema, in the order the questions list and the CSV export
+use: by `sort_order`, with derived fields after the rest.
 
 | Key                    | Meaning                                                                                 |
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | `field_key`            | The CSV column header, and the `Respondent.attributes` key                                |
 | `label`                | Organiser-facing display label. Typed by an organiser, so not translated                  |
-| `group`                | One of `eligibility`, `name_and_contact`, `address`, `about_you`, `consent`, `other`, `derived` |
-| `sort_order`           | Position within the group                                                                 |
+| `sort_order`           | Position in the list; derived fields are ordered only among themselves                    |
 | `is_fixed`             | A reserved top-level `Respondent` field; its type and options cannot be edited            |
 | `is_derived`           | Computed from other fields, never collected — **excluded from `csv.columns`**             |
 | `derived_from`         | Field keys it is computed from; `null` unless `is_derived`                                |
@@ -174,8 +177,10 @@ can disagree deliberately.
 `comment` is the organiser's free-text note on the value, empty when none was
 written. On a category, `comment` plays the same role and `source_url` records
 where the figures came from — a census table, say. Both are notes for people, not
-data to generate from. `source_url` is empty or a full `http://`/`https://`
-address; nothing else is stored.
+data to generate from. `source_url` is free text, empty when none was given: a
+link to a report, a sentence with a link in it, or a note such as "from the
+council by email". It is not guaranteed to be a URL, so never put it in an
+`href` as it stands.
 
 **The join is exact.** A category is attached to the field whose `field_key`
 equals its `name` character for character. This mirrors selection: the data

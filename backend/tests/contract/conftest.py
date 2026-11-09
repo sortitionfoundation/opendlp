@@ -17,6 +17,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyEmailTemplateRepository,
     SqlAlchemyPasswordResetTokenRepository,
+    SqlAlchemyRegistrationContentBlockRepository,
     SqlAlchemyRegistrationDocumentRepository,
     SqlAlchemyRegistrationImageRepository,
     SqlAlchemyRegistrationPageHtmlRepository,
@@ -54,6 +55,7 @@ from tests.fakes import (
     FakeEmailConfirmationTokenRepository,
     FakeEmailTemplateRepository,
     FakePasswordResetTokenRepository,
+    FakeRegistrationContentBlockRepository,
     FakeRegistrationDocumentRepository,
     FakeRegistrationImageRepository,
     FakeRegistrationPageHtmlRepository,
@@ -485,6 +487,15 @@ def respondent_field_definition_backend(request, postgres_session, postgres_sess
         repo=SqlAlchemyRespondentFieldDefinitionRepository(postgres_session),
         session=postgres_session,
         session_factory=postgres_session_factory,
+    )
+
+
+@pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
+def registration_content_block_backend(request, postgres_session) -> ContractBackend:
+    if request.param == "fake":
+        return FakeContractBackend(repo=FakeRegistrationContentBlockRepository(), commit=lambda: None)
+    return SqlContractBackend(
+        repo=SqlAlchemyRegistrationContentBlockRepository(postgres_session), session=postgres_session
     )
 
 

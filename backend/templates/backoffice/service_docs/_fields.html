@@ -292,30 +292,115 @@ ABOUTME: Lists all field-related service methods with parameters and return type
         {% endcall %}
     {% endcall %}
 
-    {# reorder_group #}
-    {% call card(title="reorder_group()", composed=true) %}
+    {# get_form_items #}
+    {% call card(title="get_form_items()", composed=true) %}
         {% call card_body() %}
             <div class="flex items-center justify-between mb-4">
                 <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
-                    respondent_field_schema_service.py:487
+                    respondent_field_schema_service.py
                 </code>
-                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-info-100); color: var(--color-info-600)">🔍 can_view_assembly()</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Re-issue sort_order values for every field in a group. UI: Use ↑/↓ buttons on field rows.") }}
+                {{ _("The questions and the headings and text among them, in the one order the questions step shows them. Derived fields are not on the list.") }}
             </p>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
                     <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
-                        <li>group: RespondentFieldGroup ✅</li>
-                        <li>ordered_field_ids: list[UUID] ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">list[RespondentFieldDefinition | RegistrationContentBlock]</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# reorder_form_items #}
+    {% call card(title="reorder_form_items()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Put every question and block in the given order, numbering them 10, 20, 30. The list must name every item exactly once. UI: drag a row on the questions step.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-code" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>ordered: list[FormItemRef] ✅</li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                     <code class="text-body-sm">None</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# move_form_item #}
+    {% call card(title="move_form_item()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Move one question or block up or down a place, or to the top or bottom. UI: the row's More actions menu.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-code" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>ref: FormItemRef ✅</li>
+                        <li>direction: up | down | top | bottom ✅</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">None</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# add_content_block #}
+    {% call card(title="add_content_block()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    respondent_field_schema_service.py
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Add a heading, some text, or both, at the end of the list or below a given item.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-code" style="color: var(--color-body-text);">
+                        <li>assembly_id: UUID ✅</li>
+                        <li>heading: str ❌</li>
+                        <li>body_html: str ❌</li>
+                        <li>after: FormItemRef | None ❌</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">RegistrationContentBlock</code>
                 </div>
             </div>
         {% endcall %}
