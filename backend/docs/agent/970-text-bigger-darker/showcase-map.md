@@ -24,7 +24,7 @@ at is the **component showcase**:
 
 ## Agenda for the walkthrough, in index order
 
-Sizes are the branch's (`main.css` lines 66–184 after the merge); "type
+Sizes are the branch's (`main.css` lines 66–184); "type
 classes" are the `text-*` utilities a partial renders; "CSS consumers" are
 component rules in `main.css` that `@apply` a type class, so they move with
 the scale without a template change.
@@ -47,15 +47,15 @@ the scale without a template change.
 | 7 | Button | `button_component.html` | `.btn` sets `font: 600 0.875rem/1rem` directly (line 223) = button-lg; Figma revised button-lg is 16/20 | body-md, caption, heading-sm, label-md |
 | 8 | Split Button | `split_button_component.html` | shares `.btn` | body-sm |
 | 9 | Input | `input_component.html` | input macro uses label-lg, body-md/sm, button-md; placeholders via `input::placeholder` (line 44) | body-md/sm, heading-md, label-lg/md |
-| 10 | Checkbox | `checkbox_component.html` | `.checkbox-label` `@apply text-label-lg` (line 548) | caption, label-md |
-| 11 | Radio Button | `radio_component.html` | `.radio-label` `@apply text-label-lg` (line 645) | label-md |
-| 12 | Switch | `switch_component.html` | `.switch-label` `@apply text-label-lg` (line 733) | caption, label-md |
+| 10 | Checkbox | `checkbox_component.html` | `.checkbox-label` `@apply text-label-lg` (line 555) | caption, label-md |
+| 11 | Radio Button | `radio_component.html` | `.radio-label` `@apply text-label-lg` (line 652) | label-md |
+| 12 | Switch | `switch_component.html` | `.switch-label` `@apply text-label-lg` (line 740) | caption, label-md |
 | 13 | Search Dropdown | `search_dropdown_component.html` | `.menu-item` `@apply text-body-md` (line 413) | body-md/sm, heading-sm, label-lg/md |
 | 14 | Select Dropdown | `select_dropdown_component.html` | `.menu-item` | body-md/sm, heading-sm, label-lg/md |
-| 15 | Modal | `modal_component.html` | `.dialog-text-stack__description` `@apply text-body-md` (line 1390); `.dialog-title` 500 · 20/28 (line 1226) and `.dialog-text-stack__title` 700 · 18/28 (line 1383) are outside the scale | body-md/sm, caption, label-lg |
-| 16 | Table | `table_component.html` | `.question-table thead th` `@apply text-table-header` (line 1072); table macro uses body-sm, label-md | — (all in the macro) |
-| 17 | Tabs | `tabs_component.html` | `.tab-item` 400 / `.tab-item-selected` 700 (lines 778, 796) — weights outside the scale | body-md/sm, label-md |
-| 18 | Stepper | `stepper_component.html` | `.stepper-number` `@apply text-label-lg`, `.stepper-label` `@apply text-body-md` (lines 886, 895); active/error labels force 500 (906, 921) | body-sm, label-md |
+| 15 | Modal | `modal_component.html` | `.dialog-text-stack__description` `@apply text-body-md` (line 1482); `.dialog-title` 500 · 20/28 (line 1298) and `.dialog-text-stack__title` 700 · 18/28 (line 1475) are outside the scale | body-md/sm, caption, label-lg |
+| 16 | Table | `table_component.html` | none: the questions list's header row is for screen readers only (`.question-table thead th` sets just `padding: 0`), so no rule in `main.css` applies `text-table-header`; table macro uses body-sm, label-md | — (all in the macro) |
+| 17 | Tabs | `tabs_component.html` | `.tab-item` 400 / `.tab-item-selected` 700 (lines 785, 803) — weights outside the scale | body-md/sm, label-md |
+| 18 | Stepper | `stepper_component.html` | `.stepper-number` `@apply text-label-lg`, `.stepper-label` `@apply text-body-md` (lines 893, 902); active/error labels force 500 (913, 928) | body-sm, label-md |
 | 19 | Account Menu | `account_menu_component.html` | `.menu-item` | — |
 
 ### Components whose typography comes only from the type classes in their macro
@@ -85,8 +85,8 @@ also in `assembly_details.html` and `service_docs/_macros.html`),
 `respondent_status_form.html` (display-sm, label-*), `selection_steps.html`,
 the selection/replacement/db-replacement/manage-tabs progress modals,
 `gsheet_*`, `prefixed_url_input.html`, `rich_editor.html` (toggle buttons and
-menu items `@apply` body-md/caption, lines 1521–1635; editor content h1–h3/th
-hardcode 700, lines 1703–1757), the registration wizard footer, and the bulk
+menu items `@apply` body-md/caption, lines 1645–1759; editor content h1–h3/th
+hardcode 700, lines 1827–1881), the registration wizard footer, and the bulk
 targets editor (`font-bold` ×11 in `targets/bulk_edit_form.html` and
 `targets/category_block.html`).
 
