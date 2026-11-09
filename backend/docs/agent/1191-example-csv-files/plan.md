@@ -41,13 +41,13 @@ upload controls themselves, not the documentation site.
 - **One optional column added: `percentage`.** The demo's midpoints sum to 29.5
   (gender), 30.5 (ethnicity), 33 (province) and 32 (education). A targets file
   without percentages gets them worked out at upload as each value's midpoint
-  over the number to select at that moment, so on a project of 30 the four
+  over the panel size at that moment, so on a project of 30 the four
   targets would total 98.3%, 101.6%, 110.1% and 106.6%, and the targets page would
   greet the upload with four "Percentages for this target add up to…" warnings.
   The column gives each value the percentage its min and max imply within its
-  target, by the rule the app itself uses when there is no number to select
+  target, by the rule the app itself uses when there is no panel size
   (`percentages_from_minmax`, one decimal place). Every target then totals 100
-  within the page's one-point tolerance, whatever the number to select was at
+  within the page's one-point tolerance, whatever the panel size was at
   upload. The column adds no numbers of its own, and a test holds it to the min
   and max.
 - **Static files, not a route.** The files hold no project data and nothing is
@@ -66,13 +66,13 @@ upload controls themselves, not the documentation site.
   survive.
 - **The Targets link says what the example needs.** The targets are made for a
   selection of 30, the demo's number of participants; their mins and maxes leave
-  only 28 to 33 that every target's sums allow. The number to select can be
+  only 28 to 33 that every target's sums allow. The panel size can be
   anything, 0 by default, when the organiser arrives here. So one line under the
-  link says "To run a selection with the example targets, set the number to
-  select to 30." Without it, trying the files on a project of another size
+  link says "To run a selection with the example targets, set the panel size to
+  30." Without it, trying the files on a project of another size
   mostly ends in a min/max error that reads as the example being broken. The
-  order does not matter: the file gives its own percentages, so the number can be
-  set before or after uploading.
+  order does not matter: the file gives its own percentages, so the panel size
+  can be set before or after uploading.
 - **No example in the lookup-table dialog** (Link targets to questions). Its
   two-column format depends on the linked question, the dialog already states it
   with the question's keys filled in, and a generic file would be refused until
@@ -102,14 +102,14 @@ upload controls themselves, not the documentation site.
 
 - `tests/integration/test_example_csv_files.py` — the files, through the
   service layer, against the database: no warnings; every target's percentages
-  total 100 whether the number to select was set before the upload or not, and
+  total 100 whether the panel size was set before the upload or not, and
   are what its min and max imply; every value present among the respondents; no
   contact details; the selection check passes in either upload order; and the
   selection task finds 30 people within the targets.
 - `tests/component/test_backoffice_assembly.py` — each upload form links its own
   example with a hash and the `download` attribute, a link goes when its form
   goes, and the bytes a link serves upload cleanly through the route.
-- A manual pass in the browser, on a project with the number to select at 30:
+- A manual pass in the browser, on a project with a panel size of 30:
   both links serve their files, which upload cleanly (4 targets with 18 values,
   each target's percentages totalling 100.0 or 100.1 with no warning; 100
   respondents); once the selection settings are saved, Run Selection on the

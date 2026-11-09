@@ -68,28 +68,28 @@ tolerated. The respondents route also refuses files over `MAX_CSV_UPLOAD_MB`.
    default to 0 and to the largest sum of maxes across the targets, which gives
    relaxation its full range. No backoffice screen shows them; only the dev-only
    `service_docs/_targets.html` mentions them.
-5. The import does not compare the numbers with the project's number to select:
+5. The import does not compare the numbers with the project's panel size:
    `read_in_features` is called without it, so it only checks min against max
    for each value and that the targets do not contradict each other. The
    comparison happens later, in `check_db_selection_data` and the selection
    itself (`load_features(assembly.number_to_select)`).
 6. Every imported value is stored with `minmax_manual=True`. A percentage that
-   is not given is derived. With a number to select, it is the midpoint of min
-   and max over that number, so a target whose midpoints do not sum to the number
-   to select shows "Percentages for this target add up to %(total)s%%, not 100%%"
+   is not given is derived. With a panel size, it is the midpoint of min
+   and max over that number, so a target whose midpoints do not sum to the panel
+   size shows "Percentages for this target add up to %(total)s%%, not 100%%"
    on the targets page (`target_checking.py`, tolerance one percentage point).
    Without one, it is normalised within the target and always totals 100.
-   Changing the number to select later does not redo them. Measured with a
+   Changing the panel size later does not redo them. Measured with a
    targets file whose midpoints sum to 10: uploaded at 10, or at 0 and then set
    to 10, each total is 100%; uploaded at 30 and then set to 10, the totals stay
    at 33.3%. Measured with the demo targets without their percentage column
    (below): uploaded at 30 the totals are 98.3%, 101.6%, 110.1% and 106.6%, each
    a warning; uploaded at 0 they are 100.0% to 100.1%. A percentage that is given
-   is stored as given, whatever the number to select.
+   is stored as given, whatever the panel size.
 7. The upload replaces whatever targets exist (`replace_existing=True`); the
    form itself only shows while the project has none.
 
-The number to select defaults to 0 on the project form
+The panel size defaults to 0 on the project form
 (`entrypoints/forms.py`), and a selection refuses to start below 1. On the Selection
 tab the Run buttons stay disabled until the selection settings on the Data tab have
 been saved once. The backoffice's own check of targets against respondents is
@@ -151,7 +151,7 @@ with no example link.
 
 The 453 pair is small and its values match each other, but `sample_targets.csv`
 has two problems for an example. Its midpoints sum to 10 for Gender, 11 for Age
-and 12 for Region, so no number to select avoids the percentage warning on every
+and 12 for Region, so no panel size avoids the percentage warning on every
 target. And its flex equals its min and max, which allows a selection no
 relaxation at all. The monitoring pair loads through both imports, and it is the
 demo data below.
@@ -174,7 +174,7 @@ Sheet data source reads by default (`adapters/orm.py`: `Respondents` and
 | Categories | 18 rows, 7 columns | `category,name,suggest min,suggest max,Current #,min,max`, the middle three empty | the targets file |
 | Replacement Categories | empty | — | no |
 | Remaining | empty | — | no |
-| Specification | one row | `Number of participants`, 30 | the number to select |
+| Specification | one row | `Number of participants`, 30 | the panel size |
 | Question Details | 16 rows, 4 columns | `Category,Key Question,Answer,Attitude Match` | no; the wording behind the four opinion columns' codes |
 
 - The Respondents and Categories tabs are, cell for cell, the monitoring
@@ -190,7 +190,7 @@ Sheet data source reads by default (`adapters/orm.py`: `Respondents` and
 - The two tabs agree: every target value occurs among the respondents and every
   respondent value of a target column is a target value. Against 30, the mins
   and maxes sum to 26–33 for gender, 24–37 for ethnicity, 28–38 for province and
-  27–37 for education, so only a number to select from 28 to 33 fits every
+  27–37 for education, so only a panel size from 28 to 33 fits every
   target's sums; and every value has at least its min among the 100
   people, with room to spare: the smallest groups are Forian (3 people, min 0),
   Mixed Ethnic (5, min 1) and Non-binary (8, min 0).
