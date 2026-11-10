@@ -30,12 +30,14 @@
     --color-borders-dividers: var(--color-neutral-200);
     --color-disabled-borders: var(--color-neutral-300);
     /* Text colours, as the Figma typography pairs them with the type
-       classes: display titles one step darker than headings and body text. */
+       classes: display titles and the values typed into form fields one
+       step darker than headings and body text. */
     --color-placeholder-text: var(--color-neutral-500);
     --color-secondary-text: var(--color-neutral-600);
     --color-body-text: var(--color-neutral-700);
     --color-headings: var(--color-neutral-700);
     --color-display-text: var(--color-neutral-800);
+    --color-input-text: var(--color-neutral-800);
     --color-navigation-bars: var(--color-neutral-800);
     --color-dark-mode-base: var(--color-neutral-900);
     --color-table-row-alt: var(--color-neutral-50);

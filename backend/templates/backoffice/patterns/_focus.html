@@ -51,7 +51,7 @@ ABOUTME: Partial template included by patterns.html
                                 @change="window.location.href = $focusUrl('{{ url_for('dev.patterns', tab='focus') }}?demo_focus=' + selected)"
                                 data-focus-id="demo-focus-select"
                                 class="px-3 py-2 rounded-lg text-body-md w-full"
-                                style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                                style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text);">
                             <option value="">{{ _("Choose...") }}</option>
                             <option value="option1">{{ _("Option 1") }}</option>
                             <option value="option2">{{ _("Option 2") }}</option>

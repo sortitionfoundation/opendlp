@@ -177,7 +177,7 @@ ABOUTME: Partial template included by patterns.html
                         <div>
                             <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("Without scroll preservation") }}</label>
                             <select class="px-3 py-2 rounded-lg text-body-md"
-                                    style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                    style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text);"
                                     data-navigate-base-url="{{ url_for('dev.patterns', tab='scroll') }}"
                                     data-navigate-param="filter_no_scroll">
                                 <option value="" {% if not request.args.get('filter_no_scroll') %}selected{% endif %}>{{ _("All") }}</option>
@@ -188,7 +188,7 @@ ABOUTME: Partial template included by patterns.html
                         <div>
                             <label class="text-label-md block mb-1" style="color: var(--color-headings);">{{ _("With scroll preservation") }}</label>
                             <select class="px-3 py-2 rounded-lg text-body-md"
-                                    style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                                    style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text);"
                                     data-navigate-base-url="{{ url_for('dev.patterns', tab='scroll') }}"
                                     data-navigate-param="filter_with_scroll"
                                     data-navigate-preserve-scroll>

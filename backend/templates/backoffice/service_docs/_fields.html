@@ -92,7 +92,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                 <div class="mb-4">
                     <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
                     <select x-model="addFieldAssemblyId" class="w-full px-3 py-2 rounded-lg text-body-md"
-                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text)">
                         <option value="">{{ _("Select an assembly...") }}</option>
                         {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
                     </select>
@@ -101,18 +101,18 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                     <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Field Key") }}</label>
                     <input type="text" x-model="addFieldKey" placeholder="e.g., age_range, gender, district"
                            class="w-full px-3 py-2 rounded-lg text-body-md"
-                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text)">
                 </div>
                 <div class="mb-4">
                     <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Label (optional)") }}</label>
                     <input type="text" x-model="addFieldLabel" placeholder="Human-readable label (defaults to humanised key)"
                            class="w-full px-3 py-2 rounded-lg text-body-md"
-                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text)">
                 </div>
                 <div class="mb-4">
                     <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Group") }}</label>
                     <select x-model="addFieldGroup" class="w-full px-3 py-2 rounded-lg text-body-md"
-                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text)">
                         <option value="eligibility">Eligibility</option>
                         <option value="name_and_contact">Name and Contact</option>
                         <option value="address">Address</option>
@@ -124,7 +124,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                 <div class="mb-4">
                     <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Field Type") }}</label>
                     <select x-model="addFieldType" class="w-full px-3 py-2 rounded-lg text-body-md"
-                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text)">
                         <option value="text" selected>Text</option>
                         <option value="email">Email</option>
                         <option value="integer">Integer</option>
@@ -140,7 +140,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                     <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Options (for choice fields, comma-separated)") }}</label>
                     <input type="text" x-model="addFieldOptions" placeholder="e.g., 18-30, 31-50, 51-65, 65+"
                            class="w-full px-3 py-2 rounded-lg text-body-md"
-                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text)">
                     <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
                         {{ _("Required for choice_radio and choice_dropdown field types") }}
                     </p>
