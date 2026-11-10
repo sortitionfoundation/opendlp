@@ -535,9 +535,9 @@ msgstr "Megtekintő – Megtekintheti a projektet, de nem módosíthat"
 #: src/opendlp/domain/value_objects.py:74 templates/admin/invite_view.html:64
 #: templates/admin/invites.html:89 templates/admin/user_view.html:58
 #: templates/admin/users.html:91 templates/admin/users.html:140
-#: templates/backoffice/profile/view.html:62
-#: templates/backoffice/profile/view.html:90
-#: templates/backoffice/profile/view.html:125
+#: templates/backoffice/profile/view.html:64
+#: templates/backoffice/profile/view.html:92
+#: templates/backoffice/profile/view.html:127
 msgid "Active"
 msgstr "Aktív"
 
@@ -722,9 +722,8 @@ msgstr "Nem"
 #: templates/backoffice/assembly_edit_respondent.html:95
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:164
-#: templates/backoffice/profile/view.html:38
-#: templates/backoffice/profile/view.html:43
-#: templates/backoffice/profile/view.html:64
+#: templates/backoffice/profile/_name_row.html:80
+#: templates/backoffice/profile/view.html:66
 #: templates/gsheets/components/view_config.html:41
 msgid "Not set"
 msgstr "Nincs beállítva"
@@ -781,13 +780,13 @@ msgstr "A szám nem lehet negatív"
 
 #: src/opendlp/entrypoints/forms.py:119 src/opendlp/entrypoints/forms.py:248
 #: src/opendlp/entrypoints/forms.py:289 src/opendlp/entrypoints/forms.py:300
-#: templates/backoffice/profile/view.html:33 templates/public/register.html:79
+#: templates/backoffice/profile/view.html:37 templates/public/register.html:79
 msgid "Email address"
 msgstr "E-mail cím"
 
 #: src/opendlp/entrypoints/forms.py:123 src/opendlp/entrypoints/forms.py:254
 #: src/opendlp/entrypoints/forms.py:615 templates/admin/user_view.html:70
-#: templates/backoffice/profile/view.html:59
+#: templates/backoffice/profile/view.html:61
 msgid "Password"
 msgstr "Jelszó"
 
@@ -1140,7 +1139,7 @@ msgid "Select the role this user will have on the project"
 msgstr "Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a projektben"
 
 #: src/opendlp/entrypoints/forms.py:575
-#: templates/backoffice/profile/view.html:36
+#: templates/backoffice/profile/_name_row.html:32
 #, fuzzy
 msgid "First name"
 msgstr "Keresztnév"
@@ -1150,7 +1149,7 @@ msgid "Your first name"
 msgstr "Keresztnév"
 
 #: src/opendlp/entrypoints/forms.py:582
-#: templates/backoffice/profile/view.html:41
+#: templates/backoffice/profile/_name_row.html:37
 #, fuzzy
 msgid "Last name"
 msgstr "Vezetéknév"
@@ -1673,7 +1672,7 @@ msgstr "Sikeres regisztráció! Nézd meg az e-mailjeidet a fiókod megerősít�
 
 #: src/opendlp/entrypoints/blueprints/auth.py:450
 #: src/opendlp/entrypoints/blueprints/auth.py:673
-#: src/opendlp/entrypoints/blueprints/profile.py:326
+#: src/opendlp/entrypoints/blueprints/profile.py:433
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
@@ -1715,7 +1714,7 @@ msgid "Your password has been reset successfully. You can now sign in."
 msgstr "A jelszavad visszaállítása sikerült. Most már bejelentkezhetsz."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:719
-#: src/opendlp/entrypoints/blueprints/profile.py:158
+#: src/opendlp/entrypoints/blueprints/profile.py:265
 msgid "Failed to get user information from Google"
 msgstr "Nem sikerült lekérni a felhasználói adatokat a Google-tól"
 
@@ -1731,7 +1730,7 @@ msgstr ""
 "újra."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:812
-#: src/opendlp/entrypoints/blueprints/profile.py:222
+#: src/opendlp/entrypoints/blueprints/profile.py:329
 msgid "Failed to get user information from Microsoft"
 msgstr "Nem sikerült lekérni a felhasználói adatokat a Microsofttól"
 
@@ -2815,129 +2814,130 @@ msgstr ""
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:65
-msgid "Profile updated successfully"
-msgstr "A profil sikeresen frissítve"
-
-#: src/opendlp/entrypoints/blueprints/profile.py:70
+#: src/opendlp/entrypoints/blueprints/profile.py:131
+#: src/opendlp/entrypoints/blueprints/profile.py:140
 msgid "An error occurred while updating your profile"
 msgstr "Hiba történt a profilod frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:82
+#: src/opendlp/entrypoints/blueprints/profile.py:133
+msgid "Profile updated successfully"
+msgstr "A profil sikeresen frissítve"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:177
 msgid "You need to set a password first"
 msgstr "Előbb be kell állítanod egy jelszót"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:102
-msgid "Password changed successfully"
-msgstr "A jelszó sikeresen megváltoztatva"
-
-#: src/opendlp/entrypoints/blueprints/profile.py:106
+#: src/opendlp/entrypoints/blueprints/profile.py:200
 msgid "Current password is incorrect"
 msgstr "A jelenlegi jelszó helytelen"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:108
+#: src/opendlp/entrypoints/blueprints/profile.py:202
 #, python-format
 msgid "New password is too weak: %(error)s"
 msgstr "Az új jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:111
+#: src/opendlp/entrypoints/blueprints/profile.py:205
 msgid "An error occurred while changing your password"
 msgstr "Hiba történt a jelszavad megváltoztatása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:143
-#: src/opendlp/entrypoints/blueprints/profile.py:206
+#: src/opendlp/entrypoints/blueprints/profile.py:207
+msgid "Password changed successfully"
+msgstr "A jelszó sikeresen megváltoztatva"
+
+#: src/opendlp/entrypoints/blueprints/profile.py:250
+#: src/opendlp/entrypoints/blueprints/profile.py:313
 msgid "Invalid OAuth linking request"
 msgstr "Érvénytelen OAuth-összekapcsolási kérés"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:169
+#: src/opendlp/entrypoints/blueprints/profile.py:276
 msgid "Google account linked successfully"
 msgstr "A Google-fiók sikeresen összekapcsolva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:177
+#: src/opendlp/entrypoints/blueprints/profile.py:284
 msgid "An error occurred while linking your Google account"
 msgstr "Hiba történt a Google-fiókod összekapcsolása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:233
+#: src/opendlp/entrypoints/blueprints/profile.py:340
 msgid "Microsoft account linked successfully"
 msgstr "A Microsoft-fiók sikeresen összekapcsolva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:241
+#: src/opendlp/entrypoints/blueprints/profile.py:348
 msgid "An error occurred while linking your Microsoft account"
 msgstr "Hiba történt a Microsoft-fiókod összekapcsolása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:254
+#: src/opendlp/entrypoints/blueprints/profile.py:361
 msgid "Password authentication removed successfully"
 msgstr "A jelszavas bejelentkezés sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:259
+#: src/opendlp/entrypoints/blueprints/profile.py:366
 msgid "An error occurred while removing password authentication"
 msgstr "Hiba történt a jelszavas bejelentkezés eltávolítása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:273
+#: src/opendlp/entrypoints/blueprints/profile.py:380
 msgid "OAuth authentication removed successfully"
 msgstr "Az OAuth-bejelentkezés sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:278
+#: src/opendlp/entrypoints/blueprints/profile.py:385
 msgid "An error occurred while removing OAuth authentication"
 msgstr "Hiba történt az OAuth-bejelentkezés eltávolítása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:290
+#: src/opendlp/entrypoints/blueprints/profile.py:397
 msgid "You already have a password. Use 'Change password' instead."
 msgstr "Már van jelszavad. Használd inkább a „Jelszó megváltoztatása” lehetőséget."
 
-#: src/opendlp/entrypoints/blueprints/profile.py:295
+#: src/opendlp/entrypoints/blueprints/profile.py:402
 msgid "Cannot set password without another authentication method"
 msgstr "Másik bejelentkezési mód nélkül nem állítható be jelszó"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:322
+#: src/opendlp/entrypoints/blueprints/profile.py:429
 msgid "Password set successfully"
 msgstr "A jelszó sikeresen beállítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:329
+#: src/opendlp/entrypoints/blueprints/profile.py:436
 msgid "An error occurred while setting your password"
 msgstr "Hiba történt a jelszavad beállítása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:349
+#: src/opendlp/entrypoints/blueprints/profile.py:456
 msgid "An error occurred while loading 2FA settings"
 msgstr "Hiba történt a kétlépcsős azonosítás beállításainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:378
+#: src/opendlp/entrypoints/blueprints/profile.py:485
 msgid "An error occurred while setting up 2FA"
 msgstr "Hiba történt a kétlépcsős azonosítás beállítása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:389
+#: src/opendlp/entrypoints/blueprints/profile.py:496
 msgid "Please enter the verification code from your authenticator app"
 msgstr "Add meg a hitelesítő alkalmazásod ellenőrző kódját"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:397
+#: src/opendlp/entrypoints/blueprints/profile.py:504
 msgid "Setup session expired. Please start over."
 msgstr "A beállítási munkamenet lejárt. Kezdd elölről."
 
-#: src/opendlp/entrypoints/blueprints/profile.py:409
+#: src/opendlp/entrypoints/blueprints/profile.py:516
 msgid "Two-factor authentication has been enabled successfully"
 msgstr "A kétlépcsős azonosítás sikeresen bekapcsolva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:417
+#: src/opendlp/entrypoints/blueprints/profile.py:524
 msgid "An error occurred while enabling 2FA"
 msgstr "Hiba történt a kétlépcsős azonosítás bekapcsolása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:428
+#: src/opendlp/entrypoints/blueprints/profile.py:535
 msgid "Please enter your verification code to disable 2FA"
 msgstr "Add meg az ellenőrző kódot a kétlépcsős azonosítás kikapcsolásához"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:436
+#: src/opendlp/entrypoints/blueprints/profile.py:543
 msgid "Two-factor authentication has been disabled"
 msgstr "A kétlépcsős azonosítás kikapcsolva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:444
+#: src/opendlp/entrypoints/blueprints/profile.py:551
 msgid "An error occurred while disabling 2FA"
 msgstr "Hiba történt a kétlépcsős azonosítás kikapcsolása közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:455
+#: src/opendlp/entrypoints/blueprints/profile.py:562
 msgid "Please enter your verification code to regenerate backup codes"
 msgstr "Add meg az ellenőrző kódot a tartalék kódok újragenerálásához"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:470
+#: src/opendlp/entrypoints/blueprints/profile.py:577
 msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a tartalék kódok újragenerálása közben"
 
@@ -4187,6 +4187,7 @@ msgstr ""
 "Google-táblázatként lehetőséget, majd használd az így létrejött új fájlt."
 
 #: src/opendlp/service_layer/exceptions.py:87
+#: templates/backoffice/profile/_name_row.html:90
 msgid "Something went wrong. Please try again."
 msgstr "Valami hiba történt. Kérjük, próbáld újra."
 
@@ -5262,7 +5263,7 @@ msgstr "Meghívók kezelése"
 #: templates/backoffice/assembly_respondents.html:23
 #: templates/backoffice/assembly_selection.html:19
 #: templates/backoffice/assembly_targets.html:21
-#: templates/backoffice/profile/view.html:20
+#: templates/backoffice/profile/view.html:21
 #: templates/backoffice/respondent_field_schema/view.html:25
 #: templates/backoffice/target_sources/view.html:16
 msgid "Back to Your projects"
@@ -5293,8 +5294,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/components/rich_editor_link_modal.html:52
 #: templates/backoffice/dashboard_export_modal.html:62
 #: templates/backoffice/profile/2fa_setup.html:67
-#: templates/backoffice/profile/change_password.html:53
-#: templates/backoffice/profile/edit.html:38
+#: templates/backoffice/profile/_change_password_dialog.html:61
 #: templates/backoffice/profile/set_password.html:48
 #: templates/backoffice/registration/_assets.html:256
 #: templates/backoffice/registration/_assets.html:312
@@ -5358,7 +5358,7 @@ msgstr "URL másolása"
 
 #: templates/admin/invite_view.html:53 templates/admin/invites.html:68
 #: templates/admin/users.html:117 templates/backoffice/assembly_members.html:49
-#: templates/backoffice/profile/view.html:46
+#: templates/backoffice/profile/view.html:48
 #: templates/main/view_assembly_members.html:12
 msgid "Role"
 msgstr "Szerepkör"
@@ -5568,14 +5568,14 @@ msgstr "Részletek"
 #: templates/admin/user_2fa_audit_log.html:45 templates/admin/user_view.html:80
 #: templates/admin/users.html:149
 #: templates/backoffice/profile/2fa_settings.html:38
-#: templates/backoffice/profile/view.html:167
+#: templates/backoffice/profile/view.html:169
 msgid "Enabled"
 msgstr "Bekapcsolva"
 
 #: templates/admin/user_2fa_audit_log.html:47 templates/admin/user_view.html:91
 #: templates/admin/users.html:151
 #: templates/backoffice/profile/2fa_settings.html:40
-#: templates/backoffice/profile/view.html:169
+#: templates/backoffice/profile/view.html:171
 msgid "Disabled"
 msgstr "Kikapcsolva"
 
@@ -6033,7 +6033,7 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:78
 #: templates/backoffice/assembly_members.html:83
-#: templates/backoffice/profile/view.html:73
+#: templates/backoffice/profile/view.html:75
 #: templates/backoffice/respondent_field_schema/_editor.html:81
 #: templates/backoffice/respondent_field_schema/_field_modal.html:158
 #: templates/backoffice/target_sources/_setup_modal.html:298
@@ -6475,7 +6475,6 @@ msgid "Why are you making this change?"
 msgstr "Miért végzed el ezt a módosítást?"
 
 #: templates/backoffice/assembly_edit_respondent.html:177
-#: templates/backoffice/profile/edit.html:37
 msgid "Save changes"
 msgstr "Módosítások mentése"
 
@@ -7079,8 +7078,8 @@ msgid "Help (knowledge hub)"
 msgstr "Súgó (tudástár)"
 
 #: templates/backoffice/base_page.html:39
-#: templates/backoffice/profile/view.html:13
-#: templates/backoffice/profile/view.html:18
+#: templates/backoffice/profile/view.html:14
+#: templates/backoffice/profile/view.html:19
 msgid "My account"
 msgstr "Fiókom"
 
@@ -8328,7 +8327,7 @@ msgstr "Kész"
 #: templates/backoffice/profile/2fa_settings.html:14
 #: templates/backoffice/profile/2fa_settings.html:19
 #: templates/backoffice/profile/2fa_settings.html:35
-#: templates/backoffice/profile/view.html:161
+#: templates/backoffice/profile/view.html:163
 #, fuzzy
 msgid "Two-factor authentication"
 msgstr "Kétlépcsős azonosítás"
@@ -8511,28 +8510,41 @@ msgstr "Kódok letöltése"
 msgid "Print codes"
 msgstr "Kódok nyomtatása"
 
-#: templates/backoffice/profile/change_password.html:9
-#: templates/backoffice/profile/change_password.html:12
-#: templates/backoffice/profile/change_password.html:52
-#: templates/backoffice/profile/view.html:184
+#: templates/backoffice/profile/_change_password_dialog.html:39
+#: templates/backoffice/profile/_change_password_dialog.html:62
+#: templates/backoffice/profile/view.html:186
 msgid "Change password"
 msgstr "Jelszó megváltoztatása"
 
-#: templates/backoffice/profile/change_password.html:37
+#: templates/backoffice/profile/_change_password_dialog.html:54
 #: templates/backoffice/profile/set_password.html:32
 msgid "Your password must meet the following requirements:"
 msgstr "A jelszavadnak meg kell felelnie a következő követelményeknek:"
 
-#: templates/backoffice/profile/edit.html:9
-#: templates/backoffice/profile/edit.html:12
-#: templates/backoffice/profile/view.html:182
-msgid "Edit profile"
-msgstr "Profil szerkesztése"
+#: templates/backoffice/profile/_name_row.html:33
+#, fuzzy
+msgid "Edit first name"
+msgstr "Keresztnév szerkesztése"
+
+#: templates/backoffice/profile/_name_row.html:34
+#, fuzzy
+msgid "Save first name"
+msgstr "Keresztnév mentése"
+
+#: templates/backoffice/profile/_name_row.html:38
+#, fuzzy
+msgid "Edit last name"
+msgstr "Vezetéknév szerkesztése"
+
+#: templates/backoffice/profile/_name_row.html:39
+#, fuzzy
+msgid "Save last name"
+msgstr "Vezetéknév mentése"
 
 #: templates/backoffice/profile/set_password.html:9
 #: templates/backoffice/profile/set_password.html:12
 #: templates/backoffice/profile/set_password.html:47
-#: templates/backoffice/profile/view.html:79
+#: templates/backoffice/profile/view.html:81
 msgid "Set password"
 msgstr "Jelszó beállítása"
 
@@ -8545,17 +8557,17 @@ msgstr ""
 "Állíts be jelszót, hogy további bejelentkezési módként használhasd. "
 "Ezután a jelszavaddal vagy %(provider)s OAuth-tal is bejelentkezhetsz."
 
-#: templates/backoffice/profile/view.html:31
+#: templates/backoffice/profile/view.html:35
 #, fuzzy
 msgid "Profile information"
 msgstr "Profiladatok"
 
-#: templates/backoffice/profile/view.html:57
+#: templates/backoffice/profile/view.html:59
 #, fuzzy
 msgid "Authentication methods"
 msgstr "Bejelentkezési módok"
 
-#: templates/backoffice/profile/view.html:71
+#: templates/backoffice/profile/view.html:73
 #, fuzzy, python-format
 msgid ""
 "Are you sure you want to remove password authentication? You will only be"
@@ -8564,20 +8576,20 @@ msgstr ""
 "Biztosan eltávolítod a jelszavas bejelentkezést? Ezután csak "
 "%(provider)s-fiókkal tudsz majd bejelentkezni."
 
-#: templates/backoffice/profile/view.html:81
+#: templates/backoffice/profile/view.html:83
 msgid "No password set"
 msgstr "Nincs beállított jelszó"
 
-#: templates/backoffice/profile/view.html:87
+#: templates/backoffice/profile/view.html:89
 msgid "Google OAuth"
 msgstr "Google OAuth"
 
-#: templates/backoffice/profile/view.html:92
-#: templates/backoffice/profile/view.html:127
+#: templates/backoffice/profile/view.html:94
+#: templates/backoffice/profile/view.html:129
 msgid "Not linked"
 msgstr "Nincs összekapcsolva"
 
-#: templates/backoffice/profile/view.html:100
+#: templates/backoffice/profile/view.html:102
 msgid ""
 "Are you sure you want to unlink your Google account? You will only be "
 "able to sign in with your password."
@@ -8585,32 +8597,32 @@ msgstr ""
 "Biztosan leválasztod a Google-fiókodat? Ezután csak a jelszavaddal tudsz "
 "majd bejelentkezni."
 
-#: templates/backoffice/profile/view.html:102
-#: templates/backoffice/profile/view.html:137
+#: templates/backoffice/profile/view.html:104
+#: templates/backoffice/profile/view.html:139
 #: templates/backoffice/target_sources/_checklist.html:161
 msgid "Unlink"
 msgstr "Leválasztás"
 
-#: templates/backoffice/profile/view.html:105
-#: templates/backoffice/profile/view.html:140
+#: templates/backoffice/profile/view.html:107
+#: templates/backoffice/profile/view.html:142
 msgid "Only authentication method"
 msgstr "Az egyetlen bejelentkezési mód"
 
-#: templates/backoffice/profile/view.html:110
+#: templates/backoffice/profile/view.html:112
 msgid "Link Google account"
 msgstr "Google-fiók összekapcsolása"
 
-#: templates/backoffice/profile/view.html:116
-#: templates/backoffice/profile/view.html:149
+#: templates/backoffice/profile/view.html:118
+#: templates/backoffice/profile/view.html:151
 #, python-format
 msgid "Remove %(provider)s first"
 msgstr "Előbb távolítsd el a következőt: %(provider)s"
 
-#: templates/backoffice/profile/view.html:122
+#: templates/backoffice/profile/view.html:124
 msgid "Microsoft OAuth"
 msgstr "Microsoft OAuth"
 
-#: templates/backoffice/profile/view.html:135
+#: templates/backoffice/profile/view.html:137
 msgid ""
 "Are you sure you want to unlink your Microsoft account? You will only be "
 "able to sign in with your password."
@@ -8618,23 +8630,23 @@ msgstr ""
 "Biztosan leválasztod a Microsoft-fiókodat? Ezután csak a jelszavaddal "
 "tudsz majd bejelentkezni."
 
-#: templates/backoffice/profile/view.html:143
+#: templates/backoffice/profile/view.html:145
 msgid "Link Microsoft account"
 msgstr "Microsoft-fiók összekapcsolása"
 
-#: templates/backoffice/profile/view.html:159
+#: templates/backoffice/profile/view.html:161
 msgid "Security"
 msgstr "Biztonság"
 
-#: templates/backoffice/profile/view.html:164
+#: templates/backoffice/profile/view.html:166
 msgid "Not available"
 msgstr "Nem érhető el"
 
-#: templates/backoffice/profile/view.html:165
+#: templates/backoffice/profile/view.html:167
 msgid "OAuth users rely on their provider's security"
 msgstr "Az OAuth-felhasználók a szolgáltatójuk biztonságára támaszkodnak"
 
-#: templates/backoffice/profile/view.html:175
+#: templates/backoffice/profile/view.html:177
 msgid "Manage"
 msgstr "Kezelés"
 
