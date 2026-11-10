@@ -3,14 +3,17 @@
 
 import re
 import uuid
+from typing import Any
 
 import pytest
 from flask import Flask, url_for
 from flask.testing import FlaskClient
+from werkzeug.test import TestResponse
 
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.blueprints import profile as profile_blueprint
+from opendlp.service_layer.security import verify_password
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeStore, FakeUnitOfWork
 
@@ -266,10 +269,11 @@ class TestNamesEditedInPlace:
         assert 'aria-invalid="true"' in _tag(html, "input", 'name="first_name"')
 
 
-# Each page a password user can open, and the name its <title> and <h1> carry
+# Each page a password user can open, and the name its <title> and <h1> carry. Change
+# password is a dialog over My account.
 PASSWORD_USER_PAGES = {
     "/profile": "My account",
-    "/profile/change-password": "Change password",  # pragma: allowlist secret
+    "/profile/change-password": "My account",  # pragma: allowlist secret
     "/profile/2fa": "Two-factor authentication",
     "/profile/2fa/setup": "Set up two-factor authentication",
 }
@@ -331,9 +335,9 @@ class TestProfilePagesOnTheBackofficeDesign:
         assert b"Confirm password" in response.data
 
     def test_change_password_form_keeps_its_fields(self, logged_in_user: FlaskClient) -> None:
-        response = logged_in_user.get("/profile/change-password")
+        response = logged_in_user.get("/profile/change-password", headers=_HTMX)
 
-        assert b'<form method="POST" novalidate' in response.data
+        assert 'action="/profile/change-password"' in _tag(response.data.decode(), "form", "novalidate")
         assert b'name="current_password"' in response.data
         assert b'autocomplete="current-password"' in response.data
         assert b'name="new_password"' in response.data
@@ -438,6 +442,169 @@ class TestPasswordChange:
 
         assert response.status_code == 200
         assert b"Field must be at least 8 characters long" in response.data
+
+
+class TestChangePasswordDialog:
+    """Change password opens in a dialog over My account: a fragment dialog loaded over htmx
+    into the page's dialog host (docs/agent/component_accessibility.md), whose focus handling,
+    inert page and Escape are init/fragment-dialog-focus.js and the modal() component's.
+    """
+
+    def _post(
+        self, client: FlaskClient, new_password: str, current: str = "userpass123", **kwargs: Any
+    ) -> TestResponse:
+        return client.post(
+            "/profile/change-password",
+            data={
+                "current_password": current,
+                "new_password": new_password,
+                "new_password_confirm": new_password,
+            },
+            **kwargs,
+        )
+
+    def test_my_account_opens_the_dialog_from_a_button(self, logged_in_user: FlaskClient) -> None:
+        html = logged_in_user.get("/profile").data.decode()
+
+        opener = _tag(html, "button", 'hx-get="/profile/change-password"')
+        assert 'aria-haspopup="dialog"' in opener
+        assert 'hx-target="#profile-dialog-host"' in opener
+        # Focus comes back to it, found by this, when the dialog closes
+        assert 'data-focus-id="change-password"' in opener
+        assert re.search(r'<div id="profile-dialog-host" data-fragment-dialog-host>\s*</div>', html)
+
+    def test_my_account_offers_no_change_without_a_password(self, client: FlaskClient, oauth_user: User) -> None:
+        _login_session(client, oauth_user)
+
+        html = client.get("/profile").data.decode()
+
+        assert not _tag(html, "button", 'hx-get="/profile/change-password"')
+
+    def test_over_htmx_the_address_answers_with_the_dialog(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/profile/change-password", headers=_HTMX)
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "<html" not in html
+        dialog = _tag(html, "div", 'role="dialog"')
+        assert 'aria-modal="true"' in dialog
+        assert 'aria-labelledby="change-password-dialog-title"' in dialog
+        assert re.search(r'<h2 class="dialog-title" id="change-password-dialog-title">Change password</h2>', html)
+        # Closing hides it in place, and the host hands focus back to the button
+        assert 'x-data="modal({ initialOpen: true })"' in html
+        form = _tag(html, "form", 'hx-post="/profile/change-password"')
+        assert 'hx-target="#profile-dialog-host"' in form
+        assert 'hx-swap="innerHTML"' in form
+        assert "data-dialog-initial-focus" not in html
+        assert _tag(html, "button", '@click="close()"')
+
+    def test_without_htmx_the_address_is_my_account_with_the_dialog_open(self, logged_in_user: FlaskClient) -> None:
+        """Where /.well-known/change-password sends a password manager."""
+        response = logged_in_user.get("/profile/change-password")
+
+        assert response.status_code == 200
+        _assert_page_is_named(response.data, "My account")
+        html = response.data.decode()
+        host = html[html.index('id="profile-dialog-host"') :]
+        assert 'role="dialog"' in host
+        # Closing goes to My account, so the address stops opening the dialog
+        assert "x-data=\"modal({ initialOpen: true, closeUrl: '/profile' })\"" in host
+
+    def test_a_refused_change_comes_back_as_the_dialog_with_the_reason(self, logged_in_user: FlaskClient) -> None:
+        response = self._post(logged_in_user, "weak", headers=_HTMX)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert 'role="dialog"' in html
+        new_password = _tag(html, "input", 'name="new_password"')
+        assert 'aria-describedby="new_password-error"' in new_password
+        assert "data-dialog-initial-focus" in new_password
+        assert "Field must be at least 8 characters long" in html
+        # A password is never sent back to the page
+        assert 'value="weak"' not in html
+
+    def test_a_wrong_current_password_is_said_beside_its_field(self, logged_in_user: FlaskClient) -> None:
+        response = self._post(logged_in_user, "NewPassword456!", current="WrongPassword123!", headers=_HTMX)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        current = _tag(html, "input", 'name="current_password"')
+        assert 'aria-invalid="true"' in current
+        assert "data-dialog-initial-focus" in current
+        assert re.search(r'<p id="current_password-error"[^>]*>Current password is incorrect</p>', html)
+        # Not flashed: the page's alerts sit beneath an open dialog, and would surface on the next page
+        assert b"Current password is incorrect" not in logged_in_user.get("/profile").data
+
+    def test_a_password_the_strength_rules_refuse_is_said_beside_the_new_password(
+        self, logged_in_user: FlaskClient
+    ) -> None:
+        response = self._post(logged_in_user, "1234567890", headers=_HTMX)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert "New password is too weak:" in html
+        assert 'aria-invalid="true"' in _tag(html, "input", 'name="new_password"')
+
+    def test_a_change_that_breaks_is_said_in_the_dialog(
+        self, logged_in_user: FlaskClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def broken(**kwargs: object) -> None:
+            raise RuntimeError("connection to server at db:5432 lost")
+
+        monkeypatch.setattr(profile_blueprint, "change_own_password", broken)
+
+        response = self._post(logged_in_user, "NewPassword456!", headers=_HTMX)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert 'role="dialog"' in html
+        assert "An error occurred while changing your password" in html
+        assert "db:5432" not in html
+
+    def test_a_change_closes_the_dialog_and_says_so(
+        self, logged_in_user: FlaskClient, fake_store: FakeStore, regular_user: User
+    ) -> None:
+        response = self._post(logged_in_user, "NewPassword456!", headers=_HTMX)
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        # Nothing left for the host, which closes the dialog; the flash joins the page's alerts
+        assert 'role="dialog"' not in html
+        assert re.search(r'id="floating-alerts"\s+hx-swap-oob="beforeend"', html)
+        assert "Password changed successfully" in html
+        stored = _stored_user(fake_store, regular_user)
+        assert stored.password_hash is not None
+        assert verify_password("NewPassword456!", stored.password_hash)  # pragma: allowlist secret
+
+    def test_without_htmx_a_change_goes_back_to_my_account(self, logged_in_user: FlaskClient) -> None:
+        response = self._post(logged_in_user, "NewPassword456!", follow_redirects=True)
+
+        assert response.status_code == 200
+        assert response.request.path == "/profile"
+        assert b"Password changed successfully" in response.data
+        assert b'role="dialog"' not in response.data
+
+    def test_without_htmx_a_refused_change_renders_my_account_with_the_dialog_open(
+        self, logged_in_user: FlaskClient
+    ) -> None:
+        response = self._post(logged_in_user, "weak")
+
+        assert response.status_code == 200
+        _assert_page_is_named(response.data, "My account")
+        html = response.data.decode()
+        assert 'role="dialog"' in html
+        assert "Field must be at least 8 characters long" in html
+
+    def test_over_htmx_an_account_without_a_password_is_sent_to_set_one(
+        self, client: FlaskClient, oauth_user: User
+    ) -> None:
+        """A redirect answered over htmx would load the set-password page into the dialog host."""
+        _login_session(client, oauth_user)
+
+        response = client.get("/profile/change-password", headers=_HTMX)
+
+        assert response.status_code == 200
+        assert response.headers["HX-Redirect"] == "/profile/set-password"
 
 
 class TestSetPassword:

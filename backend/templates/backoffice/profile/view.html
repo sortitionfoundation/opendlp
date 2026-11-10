@@ -181,9 +181,24 @@ ABOUTME: The names are edited in place; the actions change or set a password and
         {% endcall %}
 
         {% if has_password %}
+            {# Opens the dialog in place, into the host below; focus comes back here when it closes. #}
             <div class="flex flex-wrap gap-4">
-                {{ button(_("Change password"), href=url_for('profile.change_password'), variant="secondary") }}
+                {{ button(_("Change password"),
+                variant="secondary",
+                aria_haspopup="dialog",
+                attrs='data-focus-id="change-password" hx-get="' ~ url_for('profile.change_password') ~ '" hx-target="#profile-dialog-host" hx-swap="innerHTML"') }}
             </div>
+        {% endif %}
+    </div>
+
+    {# Where the Change password dialog opens. It is rendered here already open
+       when the address itself was /profile/change-password, or a change was
+       refused without htmx. #}
+    <div id="profile-dialog-host" data-fragment-dialog-host>
+        {% if change_password_form %}
+            {% with form=change_password_form %}
+                {% include "backoffice/profile/_change_password_dialog.html" %}
+            {% endwith %}
         {% endif %}
     </div>
 {% endblock %}

@@ -4,7 +4,18 @@ ABOUTME: Handles profile viewing, editing, and password changes for self-service
 from typing import Any
 
 import structlog
-from flask import Blueprint, abort, flash, redirect, render_template, render_template_string, request, session, url_for
+from flask import (
+    Blueprint,
+    abort,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    render_template_string,
+    request,
+    session,
+    url_for,
+)
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from werkzeug.wrappers import Response
@@ -48,9 +59,24 @@ _NAME_ROW_RESPONSE = (
     "{{ floating_alerts(oob=true) }}"
 )
 
+# Nothing for the dialog host, which closes the dialog, and the flash appended
+# out of band to the page's floating alerts.
+_DIALOG_CLOSED_RESPONSE = (
+    '{% from "backoffice/components/floating_alerts.html" import floating_alerts %}{{ floating_alerts(oob=true) }}'
+)
+
 
 def _is_htmx() -> bool:
     return request.headers.get("HX-Request") == "true"
+
+
+def _redirect(location: str) -> ResponseReturnValue:
+    """Redirect, telling htmx to load the page rather than swap it into the dialog host."""
+    if _is_htmx():
+        response = make_response("", 200)
+        response.headers["HX-Redirect"] = location
+        return response
+    return redirect(location)
 
 
 def _view_context() -> dict[str, Any]:
@@ -135,14 +161,24 @@ def _name_row_response(
 @profile_bp.route("/profile/change-password", methods=["GET", "POST"])
 @login_required
 def change_password() -> ResponseReturnValue:
-    """Change own password."""
+    """Change own password, in a dialog over My account.
+
+    Over htmx, a GET answers with the dialog, which My account swaps into its
+    dialog host; a refused change with the dialog again, each reason beside its
+    field (422); a change with an empty host, which closes the dialog, and the
+    flash appended to the page's alerts. A reason is never flashed: the alerts
+    sit beneath an open dialog. Without htmx this address is My account with
+    the dialog open - where /.well-known/change-password sends a password
+    manager - and a change goes back to My account.
+    """
     # OAuth users without a usable password should use set-password instead -
     # there is no current password for them to type into this form.
     if current_user.oauth_provider and not current_user.has_usable_password():
         flash(_("You need to set a password first"), "info")
-        return redirect(url_for("profile.set_password"))
+        return _redirect(url_for("profile.set_password"))
 
     form = ChangeOwnPasswordForm()
+    form_error = ""
 
     if form.validate_on_submit():
         try:
@@ -158,20 +194,31 @@ def change_password() -> ResponseReturnValue:
                     current_password=form.current_password.data,
                     new_password=form.new_password.data,
                 )
-
-            flash(_("Password changed successfully"), "success")
-            return redirect(url_for("profile.view"))
-
         except InvalidCredentials:
-            flash(_("Current password is incorrect"), "error")
+            # The form validated, so the field has no errors of its own: the
+            # service's refusal is the reason shown beside it.
+            form.current_password.errors = [_("Current password is incorrect")]
         except PasswordTooWeak as e:
-            flash(_("New password is too weak: %(error)s", error=str(e)), "error")
+            form.new_password.errors = [_("New password is too weak: %(error)s", error=str(e))]
         except Exception as e:
             logger.error("Unexpected password change error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while changing your password"), "error")
+            form_error = _("An error occurred while changing your password")
+        else:
+            flash(_("Password changed successfully"), "success")
+            if _is_htmx():
+                return render_template_string(_DIALOG_CLOSED_RESPONSE), 200
+            return redirect(url_for("profile.view"))
 
+    dialog_context = {"password_help": password_validators_help_text_html(), "form_error": form_error}
+    if _is_htmx():
+        status = 422 if request.method == "POST" else 200
+        return render_template("backoffice/profile/_change_password_dialog.html", form=form, **dialog_context), status
     return render_template(
-        "backoffice/profile/change_password.html", form=form, password_help=password_validators_help_text_html()
+        "backoffice/profile/view.html",
+        change_password_form=form,
+        dialog_close_url=url_for("profile.view"),
+        **dialog_context,
+        **_view_context(),
     ), 200
 
 
