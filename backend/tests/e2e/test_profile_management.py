@@ -35,25 +35,41 @@ def test_view_own_profile(logged_in_user: FlaskClient, regular_user: User) -> No
     assert response.status_code == 200
     assert regular_user.email.encode() in response.data
     assert b"My account" in response.data
-    assert b"Edit profile" in response.data
+    assert b'aria-label="Edit first name"' in response.data
 
 
 def test_edit_profile_post_success(logged_in_user: FlaskClient) -> None:
-    """Successfully updating profile information persists to the database."""
+    """Each name saved in place persists to the database, the other one untouched."""
     response = logged_in_user.post(
         "/profile/edit",
         data={
+            "field": "first_name",
             "first_name": "Updated",
-            "last_name": "Name",
-            "csrf_token": get_csrf_token(logged_in_user, "/profile/edit"),
+            "csrf_token": get_csrf_token(logged_in_user, "/profile"),
         },
         follow_redirects=True,
     )
 
     assert response.status_code == 200
     assert b"Profile updated successfully" in response.data
-    assert b"Updated" in response.data
-    assert b"Name" in response.data
+    assert b">Updated</p>" in response.data
+
+    response = logged_in_user.post(
+        "/profile/edit",
+        data={
+            "field": "last_name",
+            "last_name": "Name",
+            "csrf_token": get_csrf_token(logged_in_user, "/profile"),
+        },
+        headers={"HX-Request": "true"},
+    )
+
+    assert response.status_code == 200
+    assert b">Name</p>" in response.data
+
+    response = logged_in_user.get("/profile")
+    assert b">Updated</p>" in response.data
+    assert b">Name</p>" in response.data
 
 
 def test_change_password_success(client: FlaskClient, regular_user: User) -> None:

@@ -1,8 +1,10 @@
 """ABOUTME: Profile management routes for users to view and edit their own account
 ABOUTME: Handles profile viewing, editing, and password changes for self-service"""
 
+from typing import Any
+
 import structlog
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, render_template_string, request, session, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from werkzeug.wrappers import Response
@@ -33,43 +35,101 @@ profile_bp = Blueprint("profile", __name__)
 
 logger = structlog.get_logger(__name__)
 
+# The names on My account, each edited in place in a row of its own
+# (templates/backoffice/profile/_name_row.html).
+NAME_FIELDS = ("first_name", "last_name")
+
+# One name's row on its own, as htmx swaps it in for the row on the page, with
+# any flash appended out of band to the page's floating alerts.
+_NAME_ROW_RESPONSE = (
+    '{% from "backoffice/profile/_name_row.html" import name_row %}'
+    '{% from "backoffice/components/floating_alerts.html" import floating_alerts %}'
+    "{{ name_row(field, value, submitted=submitted, error=error, return_focus=return_focus) }}"
+    "{{ floating_alerts(oob=true) }}"
+)
+
+
+def _is_htmx() -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def _view_context() -> dict[str, Any]:
+    """What My account renders from, besides current_user."""
+    return {
+        "role_label": global_role_labels[current_user.global_role],
+        "role_description": global_role_descriptions[current_user.global_role],
+    }
+
 
 @profile_bp.route("/profile")
 @login_required
 def view() -> ResponseReturnValue:
     """View own profile."""
-    return render_template(
-        "backoffice/profile/view.html",
-        role_label=global_role_labels[current_user.global_role],
-        role_description=global_role_descriptions[current_user.global_role],
-    ), 200
+    return render_template("backoffice/profile/view.html", **_view_context()), 200
 
 
 @profile_bp.route("/profile/edit", methods=["GET", "POST"])
 @login_required
 def edit() -> ResponseReturnValue:
-    """Edit own profile."""
-    form = EditOwnProfileForm(obj=current_user)
+    """Save one name, edited in place on My account.
 
+    Each name's row posts its own field, named by `field`. Over htmx the answer
+    is that row again: at rest with the saved name, the success flash appended
+    to the page's alerts, or still open with the reason under the field (422).
+    Without htmx a save goes back to My account, and a refusal renders My
+    account with that row open. There is no edit page, so a GET goes to My
+    account.
+    """
+    if request.method == "GET":
+        return redirect(url_for("profile.view"))
+
+    field = request.form.get("field", "")
+    if field not in NAME_FIELDS:
+        abort(400)
+
+    # Built over the stored user, so the name this row did not post keeps its stored value.
+    form = EditOwnProfileForm(obj=current_user)
     if form.validate_on_submit():
+        value = form[field].data or ""
         try:
             uow = bootstrap.get_flask_uow()
             with uow:
-                update_own_profile(
+                user = update_own_profile(
                     uow=uow,
                     user_id=current_user.id,
-                    first_name=form.first_name.data or "",
-                    last_name=form.last_name.data or "",
+                    first_name=value if field == "first_name" else None,
+                    last_name=value if field == "last_name" else None,
                 )
-
-            flash(_("Profile updated successfully"), "success")
-            return redirect(url_for("profile.view"))
-
         except Exception as e:
             logger.error("Unexpected profile update error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while updating your profile"), "error")
+            error = _("An error occurred while updating your profile")
+        else:
+            flash(_("Profile updated successfully"), "success")
+            if _is_htmx():
+                return _name_row_response(
+                    field, getattr(user, field), return_focus=request.form.get("return_focus") == "1"
+                ), 200
+            return redirect(url_for("profile.view"))
+    else:
+        error = "\n".join(form[field].errors) or _("An error occurred while updating your profile")
 
-    return render_template("backoffice/profile/edit.html", form=form), 200
+    submitted = request.form.get(field, "")
+    if _is_htmx():
+        return _name_row_response(field, getattr(current_user, field), submitted=submitted, error=error), 422
+    return render_template(
+        "backoffice/profile/view.html",
+        name_errors={field: error},
+        name_submitted={field: submitted},
+        **_view_context(),
+    ), 200
+
+
+def _name_row_response(
+    field: str, value: str, submitted: str | None = None, error: str = "", return_focus: bool = False
+) -> str:
+    return render_template_string(
+        _NAME_ROW_RESPONSE, field=field, value=value, submitted=submitted, error=error, return_focus=return_focus
+    )
 
 
 @profile_bp.route("/profile/change-password", methods=["GET", "POST"])
