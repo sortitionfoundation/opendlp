@@ -76,9 +76,11 @@ ABOUTME: The names are edited in place; the actions change or set a password and
                             </form>
                         {% elif not has_password %}
                             {% if provider %}
-                                <a href="{{ url_for('profile.set_password') }}"
-                                   class="text-body-md underline font-semibold"
-                                   style="color: var(--color-links);">{{ _("Set password") }}</a>
+                                {# Opens the Set password dialog in place, as Change password does. #}
+                                {{ button(_("Set password"),
+                                variant="tertiary",
+                                aria_haspopup="dialog",
+                                attrs='data-focus-id="set-password" hx-get="' ~ url_for('profile.set_password') ~ '" hx-target="#profile-dialog-host" hx-swap="innerHTML"') }}
                             {% else %}
                                 <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("No password set") }}</span>
                             {% endif %}
@@ -191,13 +193,14 @@ ABOUTME: The names are edited in place; the actions change or set a password and
         {% endif %}
     </div>
 
-    {# Where the Change password dialog opens. It is rendered here already open
-       when the address itself was /profile/change-password, or a change was
+    {# Where the password dialogs open, Change password or Set password. One is
+       rendered here already open when the address itself was
+       /profile/change-password or /profile/set-password, or a password was
        refused without htmx. #}
     <div id="profile-dialog-host" data-fragment-dialog-host>
-        {% if change_password_form %}
-            {% with form=change_password_form %}
-                {% include "backoffice/profile/_change_password_dialog.html" %}
+        {% if password_form %}
+            {% with form=password_form %}
+                {% include "backoffice/profile/_password_dialog.html" %}
             {% endwith %}
         {% endif %}
     </div>

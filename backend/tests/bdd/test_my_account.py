@@ -4,6 +4,8 @@ ABOUTME: Covers what only a browser shows - focus across the htmx swap, Escape, 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
 from .config import DISPOSABLE_EMAIL, DISPOSABLE_PASSWORD, Urls
 
 scenarios("../../features/my-account.feature")
@@ -26,6 +28,17 @@ def signed_in_with_a_password(page: Page, disposable_user) -> None:
 def on_my_account(page: Page) -> None:
     page.goto(f"{Urls.base}/profile")
     expect(page.get_by_role("heading", name="My account", level=1)).to_be_visible()
+
+
+@given("my account signs in only with Google")
+def signs_in_only_with_google(page: Page, test_database, disposable_user) -> None:
+    """The disposable user, signed in already, loses its password for a Google sign-in."""
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        user = uow.users.get(disposable_user.id)
+        user.switch_to_oauth("google", "bdd-google-id")
+        uow.commit()
+    page.reload()
+    expect(page.get_by_role("button", name="Set password", exact=True)).to_be_visible()
 
 
 @when(parsers.parse('I edit my first name to "{name}" and press Enter'))
@@ -84,7 +97,8 @@ def dialog_is_open(page: Page, name: str) -> None:
 
 @then(parsers.parse('the "{label}" field has focus'))
 def field_has_focus(page: Page, label: str) -> None:
-    expect(page.get_by_label(label)).to_be_focused()
+    # By id: the labels overlap ("Password" is in "Confirm password") and carry the required asterisk.
+    expect(page.locator(f"#{PASSWORD_FIELDS[label]}")).to_be_focused()
 
 
 @then("no dialog is open")
@@ -107,7 +121,7 @@ def change_password_with_a_wrong_current_password(page: Page) -> None:
 
 @then(parsers.parse('the dialog says "{reason}"'))
 def dialog_says(page: Page, reason: str) -> None:
-    expect(page.get_by_role("dialog", name="Change password").get_by_text(reason)).to_be_visible()
+    expect(page.get_by_role("dialog").get_by_text(reason)).to_be_visible()
 
 
 # The password fields of the Change password dialog, by their labels.
@@ -115,13 +129,15 @@ PASSWORD_FIELDS = {
     "Current password": "current_password",  # pragma: allowlist secret
     "New password": "new_password",  # pragma: allowlist secret
     "Confirm new password": "new_password_confirm",  # pragma: allowlist secret
+    # The Set password dialog's labels for the same two fields
+    "Password": "new_password",  # pragma: allowlist secret
+    "Confirm password": "new_password_confirm",  # pragma: allowlist secret
 }
 
 
 @when(parsers.parse('I press Show beside "{label}"'))
 def press_show_beside(page: Page, label: str) -> None:
-    dialog = page.get_by_role("dialog", name="Change password")
-    dialog.locator(f'[data-toggle-password="{PASSWORD_FIELDS[label]}"]').click()
+    page.get_by_role("dialog").locator(f'[data-toggle-password="{PASSWORD_FIELDS[label]}"]').click()
 
 
 @then(parsers.parse('the "{label}" field shows what is typed'))
@@ -132,3 +148,30 @@ def field_shows_what_is_typed(page: Page, label: str) -> None:
 @then(parsers.parse('the "{label}" field hides what is typed'))
 def field_hides_what_is_typed(page: Page, label: str) -> None:
     expect(page.locator(f"#{PASSWORD_FIELDS[label]}")).to_have_attribute("type", "password")
+
+
+def _fill_the_set_password_dialog(page: Page, password: str, confirm: str) -> None:
+    dialog = page.get_by_role("dialog", name="Set password")
+    # The dialog puts focus in its first field a frame after it shows; typing waits for that.
+    expect(dialog.locator("#new_password")).to_be_focused()
+    dialog.locator("#new_password").fill(password)
+    dialog.locator("#new_password_confirm").fill(confirm)
+    with page.expect_response(lambda response: response.url.endswith("/profile/set-password")):
+        dialog.get_by_role("button", name="Set password").click()
+
+
+@when("I try to set a password with a confirmation that does not match")
+def set_a_password_with_a_mismatched_confirmation(page: Page) -> None:
+    _fill_the_set_password_dialog(page, "Another-Passphrase-42", "Another-Passphrase-43")
+
+
+@when("I set my password")
+def set_my_password(page: Page) -> None:
+    _fill_the_set_password_dialog(page, "Another-Passphrase-42", "Another-Passphrase-42")
+    # The answer sends the browser to My account afresh, with focus on Change password.
+    page.wait_for_load_state("load")
+
+
+@then(parsers.parse('I see "{text}"'))
+def i_see(page: Page, text: str) -> None:
+    expect(page.get_by_text(text)).to_be_visible()

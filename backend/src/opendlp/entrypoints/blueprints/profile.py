@@ -158,6 +158,37 @@ def _name_row_response(
     )
 
 
+def _password_dialog_response(
+    form: ChangeOwnPasswordForm | SetPasswordForm, form_error: str = "", refused: bool = False
+) -> ResponseReturnValue:
+    """The password dialog on My account: Change password, or Set password for a SetPasswordForm.
+
+    Over htmx the dialog alone, which My account swaps into its dialog host, a
+    refusal answered 422. Without htmx My account with the dialog open, closing
+    to /profile so the address stops opening it.
+    """
+    dialog_context = {
+        "setting": isinstance(form, SetPasswordForm),
+        "password_help": password_validators_help_text_html(),
+        "form_error": form_error,
+    }
+    if _is_htmx():
+        status = 422 if refused else 200
+        return render_template("backoffice/profile/_password_dialog.html", form=form, **dialog_context), status
+    return render_template(
+        "backoffice/profile/view.html",
+        password_form=form,
+        dialog_close_url=url_for("profile.view"),
+        **dialog_context,
+        **_view_context(),
+    ), 200
+
+
+def _signs_in_only_with_oauth() -> bool:
+    """An account with no password it can sign in with, only Google or Microsoft."""
+    return bool(current_user.oauth_provider) and not current_user.has_usable_password()
+
+
 @profile_bp.route("/profile/change-password", methods=["GET", "POST"])
 @login_required
 def change_password() -> ResponseReturnValue:
@@ -170,12 +201,12 @@ def change_password() -> ResponseReturnValue:
     sit beneath an open dialog. Without htmx this address is My account with
     the dialog open - where /.well-known/change-password sends a password
     manager - and a change goes back to My account.
+
+    An account that signs in only with Google or Microsoft has no current
+    password to type, so for it this address opens the Set password dialog.
     """
-    # OAuth users without a usable password should use set-password instead -
-    # there is no current password for them to type into this form.
-    if current_user.oauth_provider and not current_user.has_usable_password():
-        flash(_("You need to set a password first"), "info")
-        return _redirect(url_for("profile.set_password"))
+    if _signs_in_only_with_oauth():
+        return _password_dialog_response(SetPasswordForm(formdata=None))
 
     form = ChangeOwnPasswordForm()
     form_error = ""
@@ -209,17 +240,7 @@ def change_password() -> ResponseReturnValue:
                 return render_template_string(_DIALOG_CLOSED_RESPONSE), 200
             return redirect(url_for("profile.view"))
 
-    dialog_context = {"password_help": password_validators_help_text_html(), "form_error": form_error}
-    if _is_htmx():
-        status = 422 if request.method == "POST" else 200
-        return render_template("backoffice/profile/_change_password_dialog.html", form=form, **dialog_context), status
-    return render_template(
-        "backoffice/profile/view.html",
-        change_password_form=form,
-        dialog_close_url=url_for("profile.view"),
-        **dialog_context,
-        **_view_context(),
-    ), 200
+    return _password_dialog_response(form, form_error=form_error, refused=request.method == "POST")
 
 
 @profile_bp.route("/profile/link-google")
@@ -390,19 +411,27 @@ def remove_oauth() -> ResponseReturnValue:
 @profile_bp.route("/profile/set-password", methods=["GET", "POST"])
 @login_required
 def set_password() -> ResponseReturnValue:
-    """Set password for OAuth users who don't have one."""
-    # Redirect if user already has a password they can sign in with. One made
-    # unusable by a lockout does not count - setting a new one is the point.
+    """Set a password for an account that signs in only with Google or Microsoft, in a dialog over My account.
+
+    The dialog and its answers are Change password's. A password set changes
+    the page behind the dialog - the password row, the Change password button
+    - so instead of closing the dialog, My account loads afresh with the flash
+    and focus on Change password.
+
+    An account with a password it can sign in with changes it instead, so for
+    it this address opens the Change password dialog. One made unusable by a
+    lockout does not count - setting a new one is the point.
+    """
     if current_user.has_usable_password():
-        flash(_("You already have a password. Use 'Change password' instead."), "info")
-        return redirect(url_for("profile.view"))
+        return _password_dialog_response(ChangeOwnPasswordForm(formdata=None))
 
     # Require OAuth provider (can't have no auth methods)
     if not current_user.oauth_provider:
         flash(_("Cannot set password without another authentication method"), "error")
-        return redirect(url_for("profile.view"))
+        return _redirect(url_for("profile.view"))
 
     form = SetPasswordForm()
+    form_error = ""
 
     if form.validate_on_submit():
         try:
@@ -425,19 +454,18 @@ def set_password() -> ResponseReturnValue:
                 user.password_hash = hash_password(form.new_password.data)
 
                 uow.commit()
-
-            flash(_("Password set successfully"), "success")
-            return redirect(url_for("profile.view"))
-
         except PasswordTooWeak as e:
-            flash(_("Password is too weak: %(error)s", error=str(e)), "error")
+            # The form validated, so the field has no errors of its own: the
+            # strength rules' refusal is the reason shown beside it.
+            form.new_password.errors = [_("Password is too weak: %(error)s", error=str(e))]
         except Exception as e:
             logger.error("Unexpected set password error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while setting your password"), "error")
+            form_error = _("An error occurred while setting your password")
+        else:
+            flash(_("Password set successfully"), "success")
+            return _redirect(url_for("profile.view", _anchor="focus=change-password"))
 
-    return render_template(
-        "backoffice/profile/set_password.html", form=form, password_help=password_validators_help_text_html()
-    ), 200
+    return _password_dialog_response(form, form_error=form_error, refused=request.method == "POST")
 
 
 @profile_bp.route("/profile/2fa")

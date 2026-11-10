@@ -342,6 +342,7 @@ class TestProfilePagesOnTheBackofficeDesign:
         assert b"Two-factor authentication" in response.data
 
     def test_set_password_page_is_on_the_backoffice_design(self, client: FlaskClient, oauth_user: User) -> None:
+        """Set password is a dialog over My account, as Change password is."""
         _login_session(client, oauth_user)
 
         response = client.get("/profile/set-password")
@@ -352,7 +353,8 @@ class TestProfilePagesOnTheBackofficeDesign:
         assert b'name="new_password"' in response.data
         assert b'name="new_password_confirm"' in response.data
         assert response.data.count(b'autocomplete="new-password"') == 2
-        _assert_page_is_named(response.data, "Set password")
+        _assert_page_is_named(response.data, "My account")
+        assert re.search(rb'<h2 class="dialog-title" id="set-password-dialog-title">Set password</h2>', response.data)
         assert b"Confirm password" in response.data
 
     def test_change_password_form_keeps_its_fields(self, logged_in_user: FlaskClient) -> None:
@@ -420,13 +422,18 @@ class TestPasswordChange:
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
-    def test_oauth_user_redirected_from_change_password(self, client: FlaskClient, oauth_user: User) -> None:
+    def test_an_account_without_a_password_gets_the_set_password_dialog(
+        self, client: FlaskClient, oauth_user: User
+    ) -> None:
+        """It has no current password to type, so the address opens the dialog that sets one."""
         _login_session(client, oauth_user)
 
-        response = client.get("/profile/change-password", follow_redirects=True)
+        response = client.get("/profile/change-password")
+
         assert response.status_code == 200
-        assert b"Set password" in response.data
-        assert b"You need to set a password first" in response.data
+        _assert_page_is_named(response.data, "My account")
+        assert re.search(rb'<h2 class="dialog-title" id="set-password-dialog-title">Set password</h2>', response.data)
+        assert b'name="current_password"' not in response.data
 
     def test_change_password_get(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/profile/change-password")
@@ -616,16 +623,16 @@ class TestChangePasswordDialog:
         assert 'role="dialog"' in html
         assert "Field must be at least 8 characters long" in html
 
-    def test_over_htmx_an_account_without_a_password_is_sent_to_set_one(
+    def test_over_htmx_an_account_without_a_password_gets_the_set_password_dialog(
         self, client: FlaskClient, oauth_user: User
     ) -> None:
-        """A redirect answered over htmx would load the set-password page into the dialog host."""
         _login_session(client, oauth_user)
 
         response = client.get("/profile/change-password", headers=_HTMX)
 
         assert response.status_code == 200
-        assert response.headers["HX-Redirect"] == "/profile/set-password"
+        assert "HX-Redirect" not in response.headers
+        assert b'id="set-password-dialog-title">Set password</h2>' in response.data
 
 
 class TestSetPassword:
@@ -634,10 +641,14 @@ class TestSetPassword:
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
-    def test_set_password_redirects_user_with_existing_password(self, logged_in_user: FlaskClient) -> None:
-        response = logged_in_user.get("/profile/set-password", follow_redirects=True)
+    def test_an_account_with_a_password_gets_the_change_password_dialog(self, logged_in_user: FlaskClient) -> None:
+        """It has a password to change, so the address opens the dialog that changes it."""
+        response = logged_in_user.get("/profile/set-password")
+
         assert response.status_code == 200
-        assert b"You already have a password" in response.data
+        _assert_page_is_named(response.data, "My account")
+        assert b'id="change-password-dialog-title">Change password</h2>' in response.data
+        assert b'name="current_password"' in response.data
 
     def test_set_password_validates_strength(self, client: FlaskClient, oauth_user: User) -> None:
         _login_session(client, oauth_user)
@@ -684,3 +695,134 @@ class TestSetPassword:
 
         assert response.status_code == 200
         assert b"OAuth authentication removed successfully" in response.data
+
+
+class TestSetPasswordDialog:
+    """Set password, for an account that signs in only with Google or Microsoft, opens in the
+    dialog Change password uses: the same fragment dialog host, focus handling and answers,
+    except that a password set reloads My account, whose password row it changes.
+    """
+
+    def _post(self, client: FlaskClient, password: str, confirm: str = "", **kwargs: Any) -> TestResponse:
+        return client.post(
+            "/profile/set-password",
+            data={"new_password": password, "new_password_confirm": confirm or password},
+            **kwargs,
+        )
+
+    def test_my_account_opens_the_dialog_from_the_password_row(self, client: FlaskClient, oauth_user: User) -> None:
+        _login_session(client, oauth_user)
+
+        html = client.get("/profile").data.decode()
+
+        opener = _tag(html, "button", 'hx-get="/profile/set-password"')
+        assert 'aria-haspopup="dialog"' in opener
+        assert 'hx-target="#profile-dialog-host"' in opener
+        # Focus comes back to it, found by this, when the dialog closes
+        assert 'data-focus-id="set-password"' in opener
+        assert re.search(r'<div id="profile-dialog-host" data-fragment-dialog-host>\s*</div>', html)
+
+    def test_over_htmx_the_address_answers_with_the_dialog(self, client: FlaskClient, oauth_user: User) -> None:
+        _login_session(client, oauth_user)
+
+        response = client.get("/profile/set-password", headers=_HTMX)
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "<html" not in html
+        dialog = _tag(html, "div", 'role="dialog"')
+        assert 'aria-modal="true"' in dialog
+        assert 'aria-labelledby="set-password-dialog-title"' in dialog
+        assert "You will be able to sign in using either your password or Google OAuth." in html
+        assert 'name="current_password"' not in html
+        assert html.count('autocomplete="new-password"') == 2
+        # The Show toggles beside both fields
+        assert html.count("data-toggle-password=") == 2
+        form = _tag(html, "form", 'hx-post="/profile/set-password"')
+        assert 'hx-target="#profile-dialog-host"' in form
+        assert 'x-data="modal({ initialOpen: true })"' in html
+
+    def test_without_htmx_the_address_is_my_account_with_the_dialog_open(
+        self, client: FlaskClient, oauth_user: User
+    ) -> None:
+        _login_session(client, oauth_user)
+
+        response = client.get("/profile/set-password")
+
+        assert response.status_code == 200
+        _assert_page_is_named(response.data, "My account")
+        html = response.data.decode()
+        host = html[html.index('id="profile-dialog-host"') :]
+        assert 'aria-labelledby="set-password-dialog-title"' in host
+        assert "x-data=\"modal({ initialOpen: true, closeUrl: '/profile' })\"" in host
+
+    def test_a_refused_password_comes_back_as_the_dialog_with_the_reason(
+        self, client: FlaskClient, oauth_user: User
+    ) -> None:
+        _login_session(client, oauth_user)
+
+        response = self._post(client, "NewSecurePass123!", confirm="DifferentPass456!", headers=_HTMX)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert 'aria-labelledby="set-password-dialog-title"' in html
+        confirm = _tag(html, "input", 'name="new_password_confirm"')
+        assert 'aria-describedby="new_password_confirm-error"' in confirm
+        assert "data-dialog-initial-focus" in confirm
+        assert "Passwords must match" in html
+        # Not flashed: the page's alerts sit beneath an open dialog
+        assert b"Passwords must match" not in client.get("/profile").data
+
+    def test_a_password_the_strength_rules_refuse_is_said_beside_it(
+        self, client: FlaskClient, oauth_user: User
+    ) -> None:
+        _login_session(client, oauth_user)
+
+        response = self._post(client, "1234567890", headers=_HTMX)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert "Password is too weak:" in html
+        assert 'aria-invalid="true"' in _tag(html, "input", 'name="new_password"')
+
+    def test_a_password_that_breaks_is_said_in_the_dialog(
+        self, client: FlaskClient, oauth_user: User, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def broken(password: str) -> str:
+            raise RuntimeError("connection to server at db:5432 lost")
+
+        monkeypatch.setattr(profile_blueprint, "hash_password", broken)
+        _login_session(client, oauth_user)
+
+        response = self._post(client, "Another-Passphrase-42", headers=_HTMX)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert "An error occurred while setting your password" in html
+        assert "db:5432" not in html
+
+    def test_a_password_set_reloads_my_account_with_focus_on_change_password(
+        self, client: FlaskClient, oauth_user: User, fake_store: FakeStore
+    ) -> None:
+        """The page behind changes - the password row, the Change password button - so it loads afresh."""
+        _login_session(client, oauth_user)
+
+        response = self._post(client, "Another-Passphrase-42", headers=_HTMX)
+
+        assert response.status_code == 200
+        assert response.headers["HX-Redirect"] == "/profile#focus=change-password"
+        stored = _stored_user(fake_store, oauth_user)
+        assert stored.has_usable_password()
+        html = client.get("/profile").data.decode()
+        assert "Password set successfully" in html
+        assert 'data-focus-id="change-password"' in _tag(html, "button", 'hx-get="/profile/change-password"')
+
+    def test_without_htmx_a_password_set_goes_back_to_my_account(self, client: FlaskClient, oauth_user: User) -> None:
+        _login_session(client, oauth_user)
+
+        response = self._post(client, "Another-Passphrase-42", follow_redirects=True)
+
+        assert response.status_code == 200
+        assert response.request.path == "/profile"
+        assert b"Password set successfully" in response.data
+        assert b'role="dialog"' not in response.data

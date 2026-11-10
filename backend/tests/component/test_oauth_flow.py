@@ -449,6 +449,8 @@ class TestOAuthProfileDisplay:
 
         response = client.get("/profile/set-password")
 
+        # The dialog opens over My account, whose rows name both providers, so the
+        # sentence itself is what must name the right one.
         assert response.status_code == 200
         assert f"either your password or {name} OAuth.".encode() in response.data
-        assert f"{other_name} OAuth".encode() not in response.data
+        assert f"either your password or {other_name} OAuth".encode() not in response.data

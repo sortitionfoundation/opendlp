@@ -51,3 +51,32 @@ Feature: My account
     Then the "Current password" field shows what is typed
     When I press Show beside "Current password"
     Then the "Current password" field hides what is typed
+
+  Scenario: Setting a password opens a dialog over My account
+    Given my account signs in only with Google
+    When I press "Set password"
+    Then the "Set password" dialog is open
+    And the "Password" field has focus
+    When I press Escape
+    Then no dialog is open
+    And the "Set password" button has focus
+
+  Scenario: A refused new password is said beside its field
+    Given my account signs in only with Google
+    When I press "Set password"
+    And I try to set a password with a confirmation that does not match
+    Then the dialog says "Passwords must match"
+    And the "Confirm password" field has focus
+
+  Scenario: Show reveals a password in the Set password dialog
+    Given my account signs in only with Google
+    When I press "Set password"
+    And I press Show beside "Password"
+    Then the "Password" field shows what is typed
+
+  Scenario: Setting a password reloads My account
+    Given my account signs in only with Google
+    When I press "Set password"
+    And I set my password
+    Then I see "Password set successfully"
+    And the "Change password" button has focus
