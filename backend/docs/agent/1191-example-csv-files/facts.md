@@ -14,7 +14,7 @@ changed, and the demo data the example files come from. The plan is in
 | Legacy targets page | `templates/targets/view_targets.html:247` | `targets_legacy.upload_targets_csv`, `/assemblies/<id>/targets/upload` | `import_targets_from_csv` |
 | Legacy respondents page | `templates/respondents/view_respondents.html:29` | `respondents_legacy.upload_respondents_csv`, `/assemblies/<id>/respondents/upload` | `import_respondents_from_csv` |
 
-Of these five, the example links go under the first two only, the Data tab's
+Of these five, the example links go with the first two only, the Data tab's
 uploads. The lookup-table dialog gets none, because its format is set by the
 linked question ([below](#what-the-lookup-table-parser-accepts)), and neither do
 the legacy pages, which are out of scope, as the paragraph on them below says.
@@ -216,8 +216,29 @@ Sheet data source reads by default (`adapters/orm.py`: `Respondents` and
   Inline links use `underline` (or `hover:underline`) with
   `color: var(--color-links)` (`static/backoffice/tokens/semantic.css`).
 - `file_input` (`components/input.html:535`) renders label, hint, input and
-  error in a `flex flex-col gap-1.5` column. A link placed below the field leaves
+  error in a `flex flex-col gap-1.5` column. A link outside the field leaves
   the existing hint msgids, and so their Hungarian translations, as they are.
+
+## The two upload cards
+
+- The Targets and People cards are the two children of
+  `grid grid-cols-1 md:grid-cols-2 gap-6` in `assembly_data.html`: side by side
+  from `md` (768px) up, stacked below it. A grid stretches the items of a row,
+  so side by side the two cards are already equal in height; each card's
+  content runs down from its top.
+- The People form is taller than the Targets form by its ID Column field, so the
+  two Upload buttons sit at different heights: 126px apart at 1440 wide on a
+  project with an earlier upload, whose two-line hint names the column used last
+  time. Whatever follows the last field of each card therefore starts at a
+  different height in each, unless the cards share rows.
+- The card component's way of putting content at the bottom of grid cards
+  (`components/card.html`: `flex flex-col` on the card, an `mt-auto` block) lines
+  up the bottoms of the two blocks. The Targets example, with its note under the
+  link, is taller than the People one, so the two links themselves would not
+  line up. No backoffice template used `subgrid` before this change.
+- At phone width the Data tab is wider than the screen because of the tab bar:
+  its last tab, Team Members, ends at 789px, so the page scrolls sideways by 399px
+  at 390 wide and by 21px at 768. The cards themselves fit at both widths.
 
 ## Translations
 

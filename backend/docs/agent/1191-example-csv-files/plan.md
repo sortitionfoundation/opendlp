@@ -5,7 +5,7 @@ Status: implemented — all phases below are done. Facts measured first, in
 
 ## Goal
 
-Give organisers an example file to download under each of the two CSV uploads
+Give organisers an example file to download in each of the two CSV upload cards
 on the Data tab, so the format can be seen rather than described, and so there
 is something to upload when trying the product out. The story is about the
 upload controls themselves, not the documentation site.
@@ -55,15 +55,29 @@ upload controls themselves, not the documentation site.
   Docker image already ships `static/`. The links carry `v=static_hashes(...)`
   like the stylesheets, because WhiteNoise caches for a year, and the
   `download` attribute, so the browser saves the file instead of opening it.
-- **One link under each upload, not one link for the tab.** The text is
+- **One link in each upload card, not one link for the tab.** The text is
   "Download an example CSV", once in the Data tab's Targets card and once in its
-  People card, each linking the file that upload takes. It sits in the field's
-  own column, directly under the input, because that is where the organiser is
-  deciding which file to choose. The card heading gives each link its context; a
-  visually hidden suffix reusing the "Targets" and "People" strings does the same
-  in a screen reader's list of links, where the two would otherwise be
-  identical. The existing hint msgids are left alone so their translations
-  survive.
+  People card, each linking the file that upload takes, and shown while that
+  upload is. The card heading gives each link its context; a visually hidden
+  suffix reusing the "Targets" and "People" strings does the same in a screen
+  reader's list of links, where the two would otherwise be identical. The
+  existing hint msgids are left alone so their translations survive.
+- **At the bottom of the card, the two links on one line.** Each link is its
+  card's last row, below the Upload button: choosing a file and uploading it come
+  first, and the example, for looking at the format or trying the product out,
+  stays out of their way. Once respondent data is in, the Targets card also
+  offers "Create from respondent data", and the example sits below that too.
+  Where the cards sit side by side (`md` and wider), the two links start on one
+  line, although only the Targets link has a note under it and the People card's
+  form is taller (it has the ID Column field). That holds by construction rather
+  than by fixed heights: each card is a subgrid over the same two rows of the
+  cards' grid, the first holding its upload or status and the second its example.
+  The second row is as tall as the Targets example with its note, wrapped or not,
+  so both links start at its top, and the cards are equal in height. The grid
+  has no row gap from `md` up because the example row brings its own spacing; with
+  both files uploaded the row is empty and adds nothing. Stacked (below `md`),
+  each example is simply its card's last row. Subgrid is in every current
+  browser (Chrome and Edge 117, Firefox 71, Safari 16).
 - **The Targets link says what the example needs.** The targets are made for a
   selection of 30, the demo's number of participants; their mins and maxes leave
   only 28 to 33 that every target's sums allow. The panel size can be
@@ -97,6 +111,9 @@ upload controls themselves, not the documentation site.
 - [x] P5. The examples replaced by the demo data (its Categories and
   Respondents tabs), the note under the Targets link from 10 to 30, the tests and
   the catalogue to match
+- [x] P6. The links moved from under the file inputs to the bottom of their
+  cards, on one line where the cards sit side by side; component tests of the
+  placement, and a BDD scenario that measures it in a browser
 
 ## Testing
 
@@ -106,9 +123,20 @@ upload controls themselves, not the documentation site.
   are what its min and max imply; every value present among the respondents; no
   contact details; the selection check passes in either upload order; and the
   selection task finds 30 people within the targets.
-- `tests/component/test_backoffice_assembly.py` — each upload form links its own
-  example with a hash and the `download` attribute, a link goes when its form
-  goes, and the bytes a link serves upload cleanly through the route.
+- `tests/component/test_backoffice_assembly.py` — each upload card links its own
+  example with a hash and the `download` attribute, as the card's last row below
+  the Upload button (also once "Create from respondent data" is offered), the
+  note follows the Targets link, both cards are subgrids over the same two rows,
+  a link goes when its form goes, and the bytes a link serves upload cleanly
+  through the route.
+- `features/backoffice-csv-upload.feature`, "The example links line up at the
+  foot of the two upload cards" — in a browser at 1280 wide: each link below its
+  card's Upload button, the two links starting level, the cards equal in height.
+- Measured in Chromium on the Data tab of a project with neither file uploaded:
+  at 1440, 1024 and 768 wide the two links start on one line and the cards are
+  equal in height (the note takes one line at 1440 and 1024, two at 768); at 390
+  the cards stack and each link is its card's last row. With both files uploaded,
+  the cards keep their 24px bottom padding.
 - A manual pass in the browser, on a project with a panel size of 30:
   both links serve their files, which upload cleanly (4 targets with 18 values,
   each target's percentages totalling 100.0 or 100.1 with no warning; 100
