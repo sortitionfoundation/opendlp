@@ -115,10 +115,16 @@ The keyboard and screen reader behaviour is in the "Edit in place" row of
   request.
 - `tests/e2e/test_profile_management.py`: both names saved against PostgreSQL,
   one of them over htmx.
-- In a browser (Chromium, 1440 and 390 wide): the pencil, Escape, Enter, the
-  tick, a click outside, Tab out of the row, focus after each; the dialog's
-  focus on open, the inert page, Escape, Cancel, the X, a refused change, the
-  address opening My account with the dialog open.
+- `features/my-account.feature` (`tests/bdd/test_my_account.py`), what only a
+  browser shows: Enter saves and focus comes back to the pencil across the
+  swap, Escape leaves the name, a click outside saves, the dialog opens with
+  focus in the current password and gives it back to the button on Escape, a
+  wrong current password is said beside its field. The scenarios sign in as the
+  disposable user, so the shared accounts keep their names and passwords.
+- By hand in a browser (Chromium, 1440 and 390 wide), beyond the scenarios: the
+  tick, Tab out of the row, an unchanged name sending nothing, the inert page
+  behind the dialog, Cancel, the X, the address opening My account with the
+  dialog open.
 
 ## Session log
 
