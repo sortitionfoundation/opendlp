@@ -1,4 +1,4 @@
-# 869 — My account: names edited in place, Change password in a dialog
+# 869 — My account: names edited in place, the password in a dialog
 
 Shortcut [sc-869](https://app.shortcut.com/sortitionfoundation/story/869), the
 follow-up to the move of the profile pages onto the backoffice design
@@ -9,11 +9,10 @@ follow-up to the move of the profile pages onto the backoffice design
    the project details design in the OpenDLP - UI Figma file: node 6025-7120 at
    rest, 6676-15096 editing. The separate Edit profile page is gone.
 2. Change password opens in a dialog over My account instead of a page of its
-   own.
+   own, and so does Set password, for an account that signs in only with
+   Google or Microsoft.
 
-Two-factor authentication is unchanged; its flow is a separate question. Set
-password, for an account that signs in with Google or Microsoft only, stays a
-page of its own.
+Two-factor authentication is unchanged; its flow is a separate question.
 
 ## The design, and what the codebase had
 
@@ -80,9 +79,14 @@ Two departures from the design, both small:
 The keyboard and screen reader behaviour is in the "Edit in place" row of
 `../component_accessibility.md`.
 
-## How the password is changed
+## How the password is changed or set
 
-`templates/backoffice/profile/_change_password_dialog.html`, `profile.change_password`.
+`templates/backoffice/profile/_password_dialog.html`, `profile.change_password`,
+`profile.set_password`. One dialog template serves both forms: Change password
+asks for the current password as well; Set password, for an account that signs
+in only with Google or Microsoft, has none to ask for and opens with a sentence
+naming the linked provider. What follows holds for both unless it says
+otherwise.
 
 - The Change password button (`aria-haspopup="dialog"`) loads the dialog over
   htmx into `#profile-dialog-host`, a `data-fragment-dialog-host`, as the export
@@ -106,13 +110,25 @@ The keyboard and screen reader behaviour is in the "Edit in place" row of
   That is where `/.well-known/change-password` sends a password manager. Closing
   the dialog there goes to `/profile`, so the address stops opening it. A
   refusal without htmx renders the same; a change redirects to My account.
-- An account without a password is sent to Set password, with `HX-Redirect`
-  over htmx so the set-password page is not swapped into the host.
+- **Each address opens the dialog that fits the account.** For an account that
+  signs in only with Google or Microsoft, `/profile/change-password` opens Set
+  password, since there is no current password to type; for an account with a
+  password it can sign in with, `/profile/set-password` opens Change password.
+  Over htmx and without it alike, so `/.well-known/change-password` lands either
+  kind of account on the right form. Nothing else links to
+  `/profile/set-password`: no sign-in flow, email or well-known address. On My
+  account, Set password is a button in the Password row.
+- **A password set reloads My account.** It changes the page behind the dialog
+  - the Password row, Remove, the Change password button - so instead of
+  closing the dialog it answers `HX-Redirect: /profile#focus=change-password`
+  (a redirect without htmx), and the page loads afresh with the flash and focus
+  on Change password (`init/focus-restore.js`).
+- The messages the old routing flashed ("You need to set a password first",
+  "You already have a password...") are gone with it.
 
 ## Not changed
 
 - The two-factor pages and their flow.
-- Set password stays a page.
 - The avatar initials in the top bar follow a name change on the next page
   load: the row swap does not reach the top bar.
 
@@ -122,8 +138,11 @@ The keyboard and screen reader behaviour is in the "Edit in place" row of
   markup the component needs, each answer of `profile.edit`, focus return,
   refusals, a broken save, without htmx) and `TestChangePasswordDialog` (the
   opener and host, each answer of `profile.change_password`, the reasons beside
-  their fields, the full page with the dialog open, `HX-Redirect`), and the X's
-  markup: a plain button that cancels, red, never taking focus when pressed.
+  their fields, the full page with the dialog open), the X's markup (a plain
+  button that cancels, red, never taking focus when pressed), and
+  `TestSetPasswordDialog`: the opener in the Password row, each answer of
+  `profile.set_password`, the reload after a password set, each address
+  opening the dialog that fits the account.
 - `src/js/components/inline-edit.test.js`: opening, Escape, the X, the tick,
   Enter, leaving the row by Tab, click and window switch, the unchanged value, a
   failed request.
@@ -136,8 +155,12 @@ The keyboard and screen reader behaviour is in the "Edit in place" row of
   swap, Escape and the X leave the name (still there after a reload), a click
   outside saves, the dialog opens with focus in the current password and gives
   it back to the button on Escape, Show reveals a password in the dialog, a
-  wrong current password is said beside its field. The scenarios sign in as the
-  disposable user, so the shared accounts keep their names and passwords.
+  wrong current password is said beside its field; and for an account that
+  signs in only with Google, the Set password dialog's focus on open and close,
+  a mismatched confirmation beside its field, Show, and the reload with focus
+  on Change password after a password set. The scenarios sign in as the
+  disposable user, so the shared accounts keep their names and passwords; the
+  Google-only ones then take its password away (`User.switch_to_oauth`).
 - By hand in a browser (Chromium, 1440 and 390 wide), beyond the scenarios: the
   tick, Tab out of the row, an unchanged name sending nothing, the inert page
   behind the dialog, Cancel, the close button, the address opening My account
@@ -154,3 +177,8 @@ The keyboard and screen reader behaviour is in the "Edit in place" row of
   click before the toggle's document listener heard it, which now listens in
   the capture phase. A red X beside the tick cancels an edit for a mouse user,
   as Escape does. Two new msgids (the X's names), Hungarian proposals fuzzy.
+- **2026-11-10** — Set password opens in the same dialog as Change password
+  (`_change_password_dialog.html` became `_password_dialog.html`, for both);
+  `profile/set_password.html` deleted. Each password address opens the dialog
+  that fits the account, which replaces the old redirects and their two flash
+  messages. A password set reloads My account with focus on Change password.
