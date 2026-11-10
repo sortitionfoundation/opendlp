@@ -1907,6 +1907,48 @@ def people_upload_button_enabled(page: Page):
     expect(upload_button).to_be_enabled()
 
 
+def _upload_card(page: Page, heading: str) -> Locator:
+    """A Data tab upload card ("Targets" or "People"): the nearest rounded box around its heading."""
+    return page.get_by_role("heading", name=heading, exact=True).locator(
+        "xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' rounded-lg ')][1]"
+    )
+
+
+def _box(locator: Locator) -> dict[str, float]:
+    expect(locator).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    box = locator.bounding_box()
+    assert box is not None
+    return dict(box)
+
+
+def _example_link_box(page: Page, heading: str, name: str) -> dict[str, float]:
+    # The hidden suffix that tells the two links apart in a list of links names the card.
+    return _box(_upload_card(page, heading).get_by_role("link", name=f"{name} ({heading})", exact=True))
+
+
+@then(parsers.parse('each "{name}" link should sit below its card\'s Upload button'))
+def example_links_below_upload(page: Page, name: str):
+    for heading in ("Targets", "People"):
+        upload = _box(_upload_card(page, heading).get_by_role("button", name="Upload", exact=True))
+        assert _example_link_box(page, heading, name)["y"] >= upload["y"] + upload["height"], heading
+
+
+@then(parsers.parse('the two "{name}" links should start level with each other'))
+def example_links_level(page: Page, name: str):
+    """Side by side, the note under the Targets link must not put the People link out of line."""
+    targets = _example_link_box(page, "Targets", name)
+    people = _example_link_box(page, "People", name)
+    assert targets["x"] < people["x"], (targets, people)  # side by side, not stacked
+    assert abs(targets["y"] - people["y"]) < 1, (targets, people)
+
+
+@then("the two upload cards should be the same height")
+def upload_cards_same_height(page: Page):
+    targets = _box(_upload_card(page, "Targets"))
+    people = _box(_upload_card(page, "People"))
+    assert abs(targets["height"] - people["height"]) < 1, (targets, people)
+
+
 @when("I open the dialog to create targets from respondent data")
 def open_create_targets_from_columns_dialog(page: Page):
     page.get_by_role("button", name="Create from respondent data").click()
