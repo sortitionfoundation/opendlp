@@ -24,15 +24,18 @@ the field.
 
 Nothing in the codebase edited a value in place, so the row is built from the
 design system's parts: `input()` for the field, `button(variant="icon")` for
-the pencil and the tick, `icon_check` in `--color-success-text`, and
-`icon_pencil`, Lucide's pencil from the Icons sheet (node 5032:10151), added to
-`icons.html` and the icons showcase. `icon_edit` is Lucide's square-pen, a
+the pencil, the tick and the X, `icon_check` in `--color-success-text`,
+`icon_close` in `--color-error-text` (it takes a `style`, as `icon_check` does),
+and `icon_pencil`, Lucide's pencil from the Icons sheet (node 5032:10151), added
+to `icons.html` and the icons showcase. `icon_edit` is Lucide's square-pen, a
 pencil over a square; the design draws the plain pencil.
 
 Two departures from the design, both small:
 
-- **Escape puts the stored value back.** The design shows no way back; Escape is
-  the keyboard's undo, and it returns focus to the pencil.
+- **A way back without saving.** The design shows none, and leaving the row
+  saves. Escape puts the stored value back, and so does a red X beside the
+  tick ("Cancel editing first name"), for a mouse user; both return focus to
+  the pencil.
 - **The row keeps the page's geometry.** The design sets a 112px label column
   and 40px rows; My account's other rows have a 192px label column and
   dividers, so the two name rows follow them. The text at rest takes the
@@ -53,6 +56,11 @@ Two departures from the design, both small:
   - **422**: the row still open, the field focused, the reason under it
     (`aria-invalid`, `aria-describedby`), the refused value in the field and the
     stored one kept apart for Escape.
+- **The X never saves.** The tick and the X cancel their `mousedown`, so
+  pressing either keeps focus in the field. Safari focuses no pressed button:
+  without that, the field would blur to the page on the way to the X, which
+  counts as leaving the row, and leaving the row saves. From the keyboard, Tab
+  reaches the X inside the row, so that is no leaving either.
 - **Focus.** A save made from inside the row (the tick or Enter) sends
   `return_focus=1`, and the row comes back with `autofocus` on the pencil, which
   htmx focuses after the swap: a keyboard user keeps their place. A save made by
@@ -80,7 +88,12 @@ The keyboard and screen reader behaviour is in the "Edit in place" row of
   htmx into `#profile-dialog-host`, a `data-fragment-dialog-host`, as the export
   dialogs do. `init/fragment-dialog-focus.js` moves focus to the current
   password, makes the page behind inert, and returns focus to the button when
-  the dialog closes (Escape, the X, Cancel, the backdrop).
+  the dialog closes (Escape, the close button, Cancel, the backdrop).
+- **Show** beside each password works in the dialog because the password
+  toggle (`init/document-actions.js`) listens on the document in the capture
+  phase. Every dialog panel stops clicks from bubbling out of it (`@click.stop`
+  in `components/modal.html`), so a bubbling listener never heard them; the
+  sign-in and sign-up pages, with no dialog, always worked.
 - The form posts over htmx back into the host:
   - a refusal is the dialog again (**422**), each reason beside its field and
     `data-dialog-initial-focus` on the first refused field. A wrong current
@@ -109,22 +122,26 @@ The keyboard and screen reader behaviour is in the "Edit in place" row of
   markup the component needs, each answer of `profile.edit`, focus return,
   refusals, a broken save, without htmx) and `TestChangePasswordDialog` (the
   opener and host, each answer of `profile.change_password`, the reasons beside
-  their fields, the full page with the dialog open, `HX-Redirect`).
-- `src/js/components/inline-edit.test.js`: opening, Escape, the tick, Enter,
-  leaving the row by Tab, click and window switch, the unchanged value, a failed
-  request.
+  their fields, the full page with the dialog open, `HX-Redirect`), and the X's
+  markup: a plain button that cancels, red, never taking focus when pressed.
+- `src/js/components/inline-edit.test.js`: opening, Escape, the X, the tick,
+  Enter, leaving the row by Tab, click and window switch, the unchanged value, a
+  failed request.
+- `src/js/init/document-actions.test.js`: the password toggle, including a click
+  inside an element that stops propagation, as a dialog panel does.
 - `tests/e2e/test_profile_management.py`: both names saved against PostgreSQL,
   one of them over htmx.
 - `features/my-account.feature` (`tests/bdd/test_my_account.py`), what only a
   browser shows: Enter saves and focus comes back to the pencil across the
-  swap, Escape leaves the name, a click outside saves, the dialog opens with
-  focus in the current password and gives it back to the button on Escape, a
+  swap, Escape and the X leave the name (still there after a reload), a click
+  outside saves, the dialog opens with focus in the current password and gives
+  it back to the button on Escape, Show reveals a password in the dialog, a
   wrong current password is said beside its field. The scenarios sign in as the
   disposable user, so the shared accounts keep their names and passwords.
 - By hand in a browser (Chromium, 1440 and 390 wide), beyond the scenarios: the
   tick, Tab out of the row, an unchanged name sending nothing, the inert page
-  behind the dialog, Cancel, the X, the address opening My account with the
-  dialog open.
+  behind the dialog, Cancel, the close button, the address opening My account
+  with the dialog open.
 
 ## Session log
 
@@ -132,3 +149,8 @@ The keyboard and screen reader behaviour is in the "Edit in place" row of
   edited in place, Change password in a dialog; `profile/edit.html` and
   `profile/change_password.html` deleted. Four new msgids (the pencil and tick
   names), Hungarian proposals flagged fuzzy.
+- **2026-11-10** — Review. Show did nothing beside the dialog's password fields,
+  over htmx and with the page alike: the panel's `@click.stop` swallowed the
+  click before the toggle's document listener heard it, which now listens in
+  the capture phase. A red X beside the tick cancels an edit for a mouse user,
+  as Escape does. Two new msgids (the X's names), Hungarian proposals fuzzy.
