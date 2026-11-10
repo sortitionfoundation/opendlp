@@ -44,11 +44,13 @@ ABOUTME: Rendered with the page, and on its own by profile.edit, whose answer ht
     {% set row_id = "profile-" ~ field ~ "-row" %}
     {% set edit_url = url_for('profile.edit') %}
     {% set field_attrs = 'x-ref="field" maxlength="100" autocomplete="' ~ autocomplete ~ '"' ~ (' autofocus' if editing else '') %}
+    {# Padded so the row is as tall as its neighbours with the text on the same
+       line, the field taking the room the text at rest leaves around it. #}
     <div id="{{ row_id }}"
-         class="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-1.5 border-b last:border-b-0"
+         class="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-0.5 border-b last:border-b-0"
          style="border-color: var(--color-borders-dividers);">
         {# The label names the field while it is open; at rest it is the row's term. #}
-        <dt class="text-label-lg sm:w-48 shrink-0 sm:py-3" style="color: var(--color-secondary-text);">
+        <dt class="text-label-lg sm:w-48 shrink-0 sm:pt-3" style="color: var(--color-secondary-text);">
             <label for="{{ field }}">{{ label }}</label>
         </dt>
         <dd class="flex-1 min-w-0">
@@ -74,7 +76,7 @@ ABOUTME: Rendered with the page, and on its own by profile.edit, whose answer ht
                 {# The text at rest takes the field's height, so opening it moves nothing. #}
                 <p x-show="!editing"
                    {% if editing %}x-cloak{% endif %}
-                   class="flex-1 min-w-0 text-body-md py-2.5 border border-transparent break-words"
+                   class="flex-1 min-w-0 text-body-md py-2.5 border-y border-transparent break-words"
                    style="color: var(--color-body-text);">{{ value if value else _("Not set") }}</p>
                 <div x-show="editing" {% if not editing %}x-cloak{% endif %} class="flex-1 min-w-0">
                     {{ input(field,
