@@ -18,6 +18,7 @@ function row({ saved = "Ada", typed = saved, editing = false } = {}) {
       <input id="field" name="first_name">
       <button type="button" id="edit">Edit first name</button>
       <button type="submit" id="tick">Save first name</button>
+      <button type="button" id="cancel">Cancel editing first name</button>
     </form>
     <button type="button" id="elsewhere">Change password</button>`;
   const el = (id) => document.getElementById(id);
@@ -108,6 +109,37 @@ describe("inlineEdit", () => {
       state.cancel();
 
       expect(document.activeElement).toBe(el("elsewhere"));
+    });
+  });
+
+  describe("the X", () => {
+    it("puts the stored name back and sends nothing, with focus on it from the keyboard", () => {
+      const { state, el, sent } = row();
+      edit(state, el, "Grace");
+      // Tab takes focus from the field past the tick to the X: still inside the row.
+      el("cancel").focus();
+      state.leave({ relatedTarget: el("cancel") });
+      vi.runAllTimers();
+
+      state.cancel();
+
+      expect(sent).not.toHaveBeenCalled();
+      expect(el("field").value).toBe("Ada");
+      expect(state.editing).toBe(false);
+      expect(document.activeElement).toBe(el("edit"));
+    });
+
+    it("sends nothing when pressed with a pointer, which leaves focus in the field", () => {
+      // The X cancels its mousedown, so the field keeps focus and never blurs.
+      const { state, el, sent } = row();
+      edit(state, el, "Grace");
+
+      state.cancel();
+      vi.runAllTimers();
+
+      expect(sent).not.toHaveBeenCalled();
+      expect(el("field").value).toBe("Ada");
+      expect(document.activeElement).toBe(el("edit"));
     });
   });
 

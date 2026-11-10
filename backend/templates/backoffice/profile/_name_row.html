@@ -1,16 +1,22 @@
 {#
-ABOUTME: One name on My account, edited in place: the value with a pencil, or a field with a tick
+ABOUTME: One name on My account, edited in place: the value with a pencil, or a field with a tick and an X
 ABOUTME: Rendered with the page, and on its own by profile.edit, whose answer htmx swaps in for the row
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_check, icon_pencil %}
+{% from "backoffice/components/icons.html" import icon_check, icon_close, icon_pencil %}
 {% from "backoffice/components/input.html" import input %}
 {#
     A row of the Profile information list whose value is edited where it is
     shown, as on the project details design: the pencil at the end of the row
-    turns the value into a field and itself into a tick. The tick, Enter or
-    leaving the row saves; Escape puts the stored value back. The behaviour is
-    the inlineEdit component (src/js/components/inline-edit.js).
+    turns the value into a field and itself into a tick, with a red X beside
+    it. The tick, Enter or leaving the row saves; the X or Escape puts the
+    stored value back. The behaviour is the inlineEdit component
+    (src/js/components/inline-edit.js).
+
+    Neither the tick nor the X takes focus from the field when pressed
+    (@mousedown.prevent). Safari does not focus a pressed button at all, so
+    otherwise the field would blur to the page, which counts as leaving the
+    row - and leaving the row saves, even on the way to the X.
 
     The row is a form posting to profile.edit. htmx sends it on the
     component's "inline-edit-save" event rather than on submit, so an
@@ -32,11 +38,13 @@ ABOUTME: Rendered with the page, and on its own by profile.edit, whose answer ht
         {% set label = _("First name") %}
         {% set edit_label = _("Edit first name") %}
         {% set save_label = _("Save first name") %}
+        {% set cancel_label = _("Cancel editing first name") %}
         {% set autocomplete = "given-name" %}
     {% else %}
         {% set label = _("Last name") %}
         {% set edit_label = _("Edit last name") %}
         {% set save_label = _("Save last name") %}
+        {% set cancel_label = _("Cancel editing last name") %}
         {% set autocomplete = "family-name" %}
     {% endif %}
     {% set value = value or "" %}
@@ -98,7 +106,12 @@ ABOUTME: Rendered with the page, and on its own by profile.edit, whose answer ht
                 icon=icon_check(classes="", style="color: var(--color-success-text);"),
                 aria_label=save_label,
                 alpine_loading="saving",
-                attrs='x-show="editing"' ~ ('' if editing else ' x-cloak')) }}
+                attrs='x-show="editing" @mousedown.prevent' ~ ('' if editing else ' x-cloak')) }}
+                {{ button(variant="icon",
+                icon=icon_close(style="color: var(--color-error-text);"),
+                aria_label=cancel_label,
+                alpine_disabled="saving",
+                attrs='x-show="editing" @mousedown.prevent @click="cancel()"' ~ ('' if editing else ' x-cloak')) }}
             </form>
         </dd>
     </div>

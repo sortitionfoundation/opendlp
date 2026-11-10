@@ -133,6 +133,27 @@ class TestNamesEditedInPlace:
         assert 'x-ref="edit"' in _tag(html, "button", f'aria-label="Edit {name}"')
         assert 'type="submit"' in _tag(html, "button", f'aria-label="Save {name}"')
 
+    @pytest.mark.parametrize("name", ["first name", "last name"])
+    def test_an_x_beside_the_tick_cancels_without_saving(self, logged_in_user: FlaskClient, name: str) -> None:
+        """A mouse user's Escape: the stored name back, nothing sent."""
+        html = logged_in_user.get("/profile").data.decode()
+
+        cancel = _tag(html, "button", f'aria-label="Cancel editing {name}"')
+        assert 'type="button"' in cancel
+        assert '@click="cancel()"' in cancel
+        assert 'x-show="editing"' in cancel
+        assert "x-cloak" in cancel
+        # Pressing it must not take focus from the field: in Safari the field would blur
+        # to the page, which counts as leaving the row, and leaving the row saves.
+        assert "@mousedown.prevent" in cancel
+        assert "@mousedown.prevent" in _tag(html, "button", f'aria-label="Save {name}"')
+        # Red, as the tick is green
+        assert re.search(
+            rf'aria-label="Cancel editing {name}"[^>]*>\s*<span class="btn-icon">\s*'
+            r'<svg[^>]*style="color: var\(--color-error-text\);"',
+            html,
+        )
+
     def test_the_names_show_at_rest(self, logged_in_user: FlaskClient) -> None:
         html = logged_in_user.get("/profile").data.decode()
 

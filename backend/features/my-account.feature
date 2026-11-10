@@ -18,6 +18,14 @@ Feature: My account
     Then my first name reads "Dis"
     And the "Edit first name" button has focus
 
+  Scenario: The X leaves my name as it was
+    When I start editing my first name and type "Grace"
+    And I press "Cancel editing first name"
+    Then my first name reads "Dis"
+    And the "Edit first name" button has focus
+    When I reload the page
+    Then my first name reads "Dis"
+
   Scenario: Leaving the row saves the name where it is
     When I start editing my last name and type "Lovelace"
     And I click the page heading

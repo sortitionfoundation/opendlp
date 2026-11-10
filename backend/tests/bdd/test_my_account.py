@@ -51,6 +51,12 @@ def press_escape(page: Page) -> None:
     page.keyboard.press("Escape")
 
 
+@when("I reload the page")
+def reload_the_page(page: Page) -> None:
+    page.reload()
+    expect(page.get_by_role("heading", name="My account", level=1)).to_be_visible()
+
+
 @when("I click the page heading")
 def click_the_page_heading(page: Page) -> None:
     page.get_by_role("heading", name="My account", level=1).click()
