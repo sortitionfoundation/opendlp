@@ -1,0 +1,45 @@
+# ABOUTME: Component tests for the draft home page served at /newhome
+# ABOUTME: Checks it renders for every visitor, links to the account pages, and is not linked from the live home page
+
+from flask.testing import FlaskClient
+
+
+class TestNewHome:
+    def test_renders_for_anonymous_visitor(self, client: FlaskClient) -> None:
+        response = client.get("/newhome")
+        assert response.status_code == 200
+        assert "Bringing" in response.text
+        assert "simplicity" in response.text
+        assert "How it works?" in response.text
+        assert "Key benefits" in response.text
+        assert "Who OpenDLP is for?" in response.text
+
+    def test_does_not_redirect_signed_in_user(self, logged_in_user: FlaskClient) -> None:
+        """Reviewers are signed in, so unlike / the draft must not send them to the dashboard."""
+        response = logged_in_user.get("/newhome")
+        assert response.status_code == 200
+        assert "Bringing" in response.text
+
+    def test_links_to_sign_in_and_registration(self, client: FlaskClient) -> None:
+        response = client.get("/newhome")
+        assert 'href="/auth/login"' in response.text
+        assert 'href="/auth/register"' in response.text
+
+    def test_uses_the_opendlp_logo_files(self, client: FlaskClient) -> None:
+        response = client.get("/newhome")
+        assert "img/opendlp-logo-light.svg" in response.text
+        assert "img/opendlp-small-sized-logo.svg" in response.text
+        assert "img/opendlp-favicon.svg" in response.text
+
+    def test_footer_links_to_known_destinations(self, client: FlaskClient, app) -> None:
+        response = client.get("/newhome")
+        assert 'href="#how-it-works"' in response.text
+        assert 'id="how-it-works"' in response.text
+        assert 'href="/.well-known/security.txt"' in response.text
+        assert f'href="mailto:{app.config["SUPPORT_EMAIL"]}"' in response.text
+        assert "https://github.com/sortition-foundation/opendlp" in response.text
+
+    def test_is_not_linked_from_the_live_home_page(self, client: FlaskClient) -> None:
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "/newhome" not in response.text

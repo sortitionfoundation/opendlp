@@ -51,6 +51,15 @@ def index() -> ResponseReturnValue:
     return render_template("main/index.html"), 200
 
 
+@main_bp.route("/newhome")
+def newhome() -> ResponseReturnValue:
+    """Draft of the redesigned home page, unlinked, so the wider team can review it.
+
+    Unlike index() it does not redirect signed-in users, as the reviewers will be.
+    """
+    return render_template("public/home.html"), 200
+
+
 @main_bp.route("/dashboard")
 @login_required
 def dashboard() -> ResponseReturnValue:
