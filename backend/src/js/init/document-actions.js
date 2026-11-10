@@ -80,19 +80,27 @@ export function initDocumentActions() {
     }
   });
 
-  // Toggle password visibility via data-toggle-password
-  document.addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-toggle-password]");
-    if (!btn) return;
-    var targetId = btn.dataset.togglePassword;
-    var input = document.getElementById(targetId);
-    if (!input) return;
-    var isPassword = input.type === "password";
-    input.type = isPassword ? "text" : "password";
-    btn.textContent = isPassword ? "Hide" : "Show";
-    btn.setAttribute(
-      "aria-label",
-      isPassword ? "Hide password" : "Show password",
-    );
-  });
+  // Toggle password visibility via data-toggle-password. Listened for in the
+  // capture phase, on the way down rather than up: every dialog panel stops
+  // clicks from bubbling out of it (@click.stop in components/modal.html), so a
+  // bubbling listener never heard the Show buttons of a password field in a
+  // dialog. Being on the document, it also covers fields htmx swaps in later.
+  document.addEventListener(
+    "click",
+    function (e) {
+      var btn = e.target.closest("[data-toggle-password]");
+      if (!btn) return;
+      var targetId = btn.dataset.togglePassword;
+      var input = document.getElementById(targetId);
+      if (!input) return;
+      var isPassword = input.type === "password";
+      input.type = isPassword ? "text" : "password";
+      btn.textContent = isPassword ? "Hide" : "Show";
+      btn.setAttribute(
+        "aria-label",
+        isPassword ? "Hide password" : "Show password",
+      );
+    },
+    true,
+  );
 }

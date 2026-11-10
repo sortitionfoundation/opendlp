@@ -102,3 +102,27 @@ def change_password_with_a_wrong_current_password(page: Page) -> None:
 @then(parsers.parse('the dialog says "{reason}"'))
 def dialog_says(page: Page, reason: str) -> None:
     expect(page.get_by_role("dialog", name="Change password").get_by_text(reason)).to_be_visible()
+
+
+# The password fields of the Change password dialog, by their labels.
+PASSWORD_FIELDS = {
+    "Current password": "current_password",  # pragma: allowlist secret
+    "New password": "new_password",  # pragma: allowlist secret
+    "Confirm new password": "new_password_confirm",  # pragma: allowlist secret
+}
+
+
+@when(parsers.parse('I press Show beside "{label}"'))
+def press_show_beside(page: Page, label: str) -> None:
+    dialog = page.get_by_role("dialog", name="Change password")
+    dialog.locator(f'[data-toggle-password="{PASSWORD_FIELDS[label]}"]').click()
+
+
+@then(parsers.parse('the "{label}" field shows what is typed'))
+def field_shows_what_is_typed(page: Page, label: str) -> None:
+    expect(page.locator(f"#{PASSWORD_FIELDS[label]}")).to_have_attribute("type", "text")
+
+
+@then(parsers.parse('the "{label}" field hides what is typed'))
+def field_hides_what_is_typed(page: Page, label: str) -> None:
+    expect(page.locator(f"#{PASSWORD_FIELDS[label]}")).to_have_attribute("type", "password")

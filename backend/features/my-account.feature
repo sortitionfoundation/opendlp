@@ -36,3 +36,10 @@ Feature: My account
     And I try to change my password with a wrong current password
     Then the dialog says "Current password is incorrect"
     And the "Current password" field has focus
+
+  Scenario: Show reveals a password in the dialog
+    When I press "Change password"
+    And I press Show beside "Current password"
+    Then the "Current password" field shows what is typed
+    When I press Show beside "Current password"
+    Then the "Current password" field hides what is typed

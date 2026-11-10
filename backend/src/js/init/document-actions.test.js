@@ -1,5 +1,5 @@
 // ABOUTME: Unit tests for the document-level action handlers
-// ABOUTME: Covers data-confirm on buttons (click, including inner elements) and on forms (submit)
+// ABOUTME: Covers data-confirm, print, the backup codes download and the password toggle, inside dialogs too
 
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -183,5 +183,59 @@ describe("initDocumentActions data-print and data-download-backup-codes", () => 
     expect(blob.size).toBe("AAAA-1111\nBBBB-2222".length);
     expect(anchorClick).toHaveBeenCalledTimes(1);
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:codes");
+  });
+});
+
+describe("initDocumentActions data-toggle-password", () => {
+  // The listeners registered by the first describe's beforeAll are still on the
+  // shared window; registering again would run each handler twice.
+
+  const FIELD =
+    '<input type="password" id="new_password">' +
+    '<button type="button" data-toggle-password="new_password" aria-label="Show password">Show</button>'; // pragma: allowlist secret
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("shows the password, then hides it again", () => {
+    document.body.innerHTML = FIELD;
+    const input = document.getElementById("new_password");
+    const toggle = document.querySelector("[data-toggle-password]");
+
+    click(toggle);
+
+    expect(input.type).toBe("text");
+    expect(toggle.textContent).toBe("Hide");
+    expect(toggle.getAttribute("aria-label")).toBe("Hide password");
+
+    click(toggle);
+
+    expect(input.type).toBe("password");
+    expect(toggle.textContent).toBe("Show");
+  });
+
+  it("works inside an element that stops clicks, as every dialog panel does", () => {
+    // The dialog macros put @click.stop on the panel, so a click inside a dialog
+    // never bubbles up to the document.
+    document.body.innerHTML = `<div class="dialog-panel">${FIELD}</div>`;
+    document
+      .querySelector(".dialog-panel")
+      .addEventListener("click", (event) => event.stopPropagation());
+
+    click(document.querySelector("[data-toggle-password]"));
+
+    expect(document.getElementById("new_password").type).toBe("text");
+  });
+
+  it("works for a field put in the page after the listeners were set up", () => {
+    // As htmx swaps a dialog or a form fragment in.
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    host.innerHTML = FIELD;
+
+    click(host.querySelector("[data-toggle-password]"));
+
+    expect(document.getElementById("new_password").type).toBe("text");
   });
 });
