@@ -244,3 +244,7 @@ headings and hints, and any illustration or avatar on the page.
   Hungarian for the 18 new msgids is flagged fuzzy for review: the old
   translations carried over, except *Current password*, whose old entry said
   "new password", and the two strings with the provider placeholder.
+- **2026-11-10** — Follow-up on `869-profile-inline-edit`: on My account the
+  first and last name are edited in place, and Change password opens in a
+  dialog. The edit and change-password page templates described above are
+  gone. See `../869-profile-inline-edit/plan.md`.
