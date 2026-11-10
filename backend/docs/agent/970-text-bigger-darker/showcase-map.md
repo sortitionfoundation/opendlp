@@ -24,7 +24,7 @@ at is the **component showcase**:
 
 ## Agenda for the walkthrough, in index order
 
-Sizes are the branch's (`main.css` lines 66–184); "type
+Sizes are the branch's (`main.css` lines 71–190, the revised scale of `typography-diff.md` section 5); "type
 classes" are the `text-*` utilities a partial renders; "CSS consumers" are
 component rules in `main.css` that `@apply` a type class, so they move with
 the scale without a template change.
@@ -34,7 +34,7 @@ the scale without a template change.
 | # | Section (nav label) | Partial | Why it is on the agenda |
 | --- | --- | --- | --- |
 | 1 | Typography | `typography.html` | The table of the 21 classes (lines 17–37) is hand-written and must be regenerated whenever the scale changes; its description (line 11) names the four Lato 2.0 files, one per weight (see `fonts.md`); until the switch it called 500/600 "browser-synthesised", which they never were. The use-case rows (45–63) are the visual check. |
-| 2 | Semantic Tokens | `semantic_tokens.html` | Text colour aliases, now as the Figma typography pairs them: `--color-body-text` and `--color-headings` neutral-700, the new `--color-display-text` neutral-800, `--color-secondary-text` neutral-600, `--color-placeholder-text` neutral-500; the swatch captions show that mapping. |
+| 2 | Semantic Tokens | `semantic_tokens.html` | Text colour aliases, now as the Figma typography pairs them: `--color-body-text` and `--color-headings` neutral-700, the new `--color-display-text` and `--color-input-text` neutral-800, `--color-secondary-text` neutral-600, `--color-placeholder-text` neutral-500; the swatch captions show that mapping. |
 | 3 | Primitive Tokens | `primitive_tokens.html` | `--color-neutral-500` is #6F7482 in the repo and #646a78 in the Figma node. |
 | 4 | Spacing Conventions | `spacing.html` | Uses body/heading/code classes; line-height changes alter the rhythm shown. |
 | 5 | Responsive Layout | `responsive.html` | Uses body-md/sm, button-md, heading-sm, code. |
@@ -44,18 +44,18 @@ the scale without a template change.
 
 | # | Section | Partial | CSS consumers in `main.css` | Type classes in the partial |
 | --- | --- | --- | --- | --- |
-| 7 | Button | `button_component.html` | `.btn` sets `font: 600 0.875rem/1rem` directly (line 223) = button-lg; Figma revised button-lg is 16/20 | body-md, caption, heading-sm, label-md |
+| 7 | Button | `button_component.html` | `.btn` `@apply text-button-lg` (line 229): 16/20 · 600 · 0.2px | body-md, caption, heading-sm, label-md |
 | 8 | Split Button | `split_button_component.html` | shares `.btn` | body-sm |
-| 9 | Input | `input_component.html` | input macro uses label-lg, body-md/sm, button-md; placeholders via `input::placeholder` (line 44) | body-md/sm, heading-md, label-lg/md |
-| 10 | Checkbox | `checkbox_component.html` | `.checkbox-label` `@apply text-label-lg` (line 555) | caption, label-md |
-| 11 | Radio Button | `radio_component.html` | `.radio-label` `@apply text-label-lg` (line 652) | label-md |
-| 12 | Switch | `switch_component.html` | `.switch-label` `@apply text-label-lg` (line 740) | caption, label-md |
-| 13 | Search Dropdown | `search_dropdown_component.html` | `.menu-item` `@apply text-body-md` (line 413) | body-md/sm, heading-sm, label-lg/md |
+| 9 | Input | `input_component.html` | input macro uses label-lg, body-md/sm, button-md; the typed values take `--color-input-text`; placeholders via `input::placeholder` (line 44) | body-md/sm, heading-md, label-lg/md |
+| 10 | Checkbox | `checkbox_component.html` | `.checkbox-label` `@apply text-label-lg` (line 560) | caption, label-md |
+| 11 | Radio Button | `radio_component.html` | `.radio-label` `@apply text-label-lg` (line 657) | label-md |
+| 12 | Switch | `switch_component.html` | `.switch-label` `@apply text-label-lg` (line 745) | caption, label-md |
+| 13 | Search Dropdown | `search_dropdown_component.html` | `.menu-item` `@apply text-body-md` (line 418) | body-md/sm, heading-sm, label-lg/md |
 | 14 | Select Dropdown | `select_dropdown_component.html` | `.menu-item` | body-md/sm, heading-sm, label-lg/md |
-| 15 | Modal | `modal_component.html` | `.dialog-text-stack__description` `@apply text-body-md` (line 1482); `.dialog-title` 500 · 20/28 (line 1298) and `.dialog-text-stack__title` 700 · 18/28 (line 1475) are outside the scale | body-md/sm, caption, label-lg |
+| 15 | Modal | `modal_component.html` | `.dialog-text-stack__description` `@apply text-body-md` (line 1487); `.dialog-title` 500 · 20/28 (line 1303) and `.dialog-text-stack__title` 700 · 18/28 (line 1480) are outside the scale | body-md/sm, caption, label-lg |
 | 16 | Table | `table_component.html` | none: the questions list's header row is for screen readers only (`.question-table thead th` sets just `padding: 0`), so no rule in `main.css` applies `text-table-header`; table macro uses body-sm, label-md | — (all in the macro) |
-| 17 | Tabs | `tabs_component.html` | `.tab-item` 400 / `.tab-item-selected` 700 (lines 785, 803) — weights outside the scale | body-md/sm, label-md |
-| 18 | Stepper | `stepper_component.html` | `.stepper-number` `@apply text-label-lg`, `.stepper-label` `@apply text-body-md` (lines 893, 902); active/error labels force 500 (913, 928) | body-sm, label-md |
+| 17 | Tabs | `tabs_component.html` | `.tab-item` 400 / `.tab-item-selected` 700 (lines 790, 808) — weights outside the scale | body-md/sm, label-md |
+| 18 | Stepper | `stepper_component.html` | `.stepper-number` `@apply text-label-lg`, `.stepper-label` `@apply text-body-md` (lines 898, 907); active/error labels force 500 (918, 933) | body-sm, label-md |
 | 19 | Account Menu | `account_menu_component.html` | `.menu-item` | — |
 
 ### Components whose typography comes only from the type classes in their macro
@@ -79,14 +79,16 @@ the scale without a template change.
 
 These render on real pages only, so a walkthrough of the showcase does not
 show them: `tag.html` (label-md), `info_card.html` (heading-md, body-md),
-`footer.html`, `url_display.html` and `registration_page_list.html` (both use
-`text-body-xs`, which is **defined nowhere** in `main.css` — pre-existing,
-also in `assembly_details.html` and `service_docs/_macros.html`),
+`footer.html`, `url_display.html` and `registration_page_list.html` (their
+uppercase caption and language badge are `text-overline`, as is the badge in
+`assembly_details.html`; all three used `text-body-xs`, a class defined
+nowhere, as did the field hints in `service_docs/_macros.html`, now
+`text-body-sm`),
 `respondent_status_form.html` (display-sm, label-*), `selection_steps.html`,
 the selection/replacement/db-replacement/manage-tabs progress modals,
 `gsheet_*`, `prefixed_url_input.html`, `rich_editor.html` (toggle buttons and
-menu items `@apply` body-md/caption, lines 1645–1759; editor content h1–h3/th
-hardcode 700, lines 1827–1881), the registration wizard footer, and the bulk
+menu items `@apply` body-md/caption, lines 1650–1764; editor content h1–h3/th
+hardcode 700, lines 1832–1886), the registration wizard footer, and the bulk
 targets editor (`font-bold` ×11 in `targets/bulk_edit_form.html` and
 `targets/category_block.html`).
 
@@ -108,3 +110,6 @@ backoffice bundle).
    display (neutral-800) vs heading (neutral-700).
 5. The demo environment: is `FF_SHOWCASE` set on the staging server, and is
    staging what she means by "demo"?
+
+How the branch now handles 2–4 (the rules outside the scale, the code-only
+styles, neutral-500) is in `typography-diff.md`, section 5.

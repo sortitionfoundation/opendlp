@@ -6,8 +6,10 @@ holds two frames side by side, both read through the Figma MCP
 
 - node `6316-7167` "Typography", with its content frame `6316-7169`, read on
   2026-11-06 (section 1);
-- node `1276-155` "Typography - revised", read on 2026-11-02 and again on
-  2026-11-06 (section 3).
+- node `1276-155` "Typography - revised", read on 2026-11-02, 2026-11-06 and
+  2026-11-10 (section 3).
+
+Section 5 is what the branch ships: the scale of `1276-155`.
 
 Each frame writes every token out as
 "Category/Size/Line height/Weight/Letter spacing (px)/color/usage" and sets a
@@ -61,8 +63,7 @@ Reading of the table:
   label, input, table and numeric classes). Weights and letter spacing are the
   same as the branch's. Taking the frame's sizes would therefore return every
   changed size to `origin/main`'s, and the branch would no longer make text
-  bigger. The branch keeps its sizes; whether it should take the frame's is an
-  open question for the design.
+  bigger. The branch does not take them; it follows `1276-155` (section 5).
 - **The frame's samples disagree with its written spec in seven tokens**:
   display-md is set Bold (written 600); heading-md, heading-sm, label-lg and
   label-md are set SemiBold (written 500); input-text and placeholder are set
@@ -85,9 +86,10 @@ a `neutral-500_` variable, #646a78, one step darker than the repo's #6F7482.)
 
 The code has one colour alias per role, not one per type token. Which alias the
 templates pair with each class (counted over `templates/`): heading, label,
-table-header and numeric classes with `--color-headings`; body, input and
-table-cell with `--color-body-text`; caption and overline with
-`--color-secondary-text`. Display classes were paired with `--color-headings`
+table-header and numeric classes with `--color-headings`; body and table-cell
+with `--color-body-text`; caption and overline with `--color-secondary-text`.
+Form fields took `--color-body-text` as well; they now have
+`--color-input-text` (section 5). Display classes were paired with `--color-headings`
 too; they now have their own alias, `--color-display-text`, which the 40 tags
 with a `text-display-*` class and that colour use (the one brand-coloured public
 page heading keeps `--color-primary-action`).
@@ -101,23 +103,19 @@ change:
 | display-* | neutral-800 | neutral-800 | `--color-headings` neutral-900 #12141C | `--color-display-text` **neutral-800** #1F2330 | neutral-700 |
 | heading-*, label-*, table-header, numeric | neutral-700 | neutral-700 | `--color-headings` neutral-900 | `--color-headings` **neutral-700** #2F3442 | neutral-700 |
 | body-* | neutral-700 | neutral-700 | `--color-body-text` neutral-800 | `--color-body-text` **neutral-700** | neutral-600 |
-| input-text | neutral-800 | neutral-800 | `--color-body-text` neutral-800 | `--color-body-text` neutral-700 (no own alias) | neutral-600 |
+| input-text | neutral-800 | neutral-800 | `--color-body-text` neutral-800 | `--color-input-text` **neutral-800** (section 5) | neutral-600 |
 | table-cell | neutral-600 | neutral-700 | `--color-body-text` neutral-800 | `--color-body-text` neutral-700 (no own alias) | neutral-600 |
 | caption, overline | neutral-600 | neutral-600 | `--color-secondary-text` neutral-600 #4E5361 | unchanged | neutral-500 |
 | placeholder | neutral-500 #6f7482 | neutral-500_ #646a78 | `--color-placeholder-text` neutral-500 #6F7482 | unchanged | neutral-400 |
 | button-lg | none written; sample #4e5361 | white on brand-400 | per button variant | unchanged | per button variant |
 
 Against `origin/main`, body text, captions, placeholders and display titles are
-one step darker; headings, labels, table headers and numbers are back on
-`origin/main`'s neutral-700, the same colour as body text, as in both frames.
+one step darker, and input values two; headings, labels, table headers and
+numbers are back on `origin/main`'s neutral-700, the same colour as body text,
+as in both frames.
 
 Where a frame's colour has no counterpart in the code, the code is unchanged:
 
-- **Input values** are neutral-800 in both frames. The code has no input-text
-  alias: 62 `<input>`, `<textarea>` and `<select>` tags in 20 templates (the
-  `input.html` macros among them) colour their text with `--color-body-text`, so
-  input values follow body text to neutral-700. Before this change they matched
-  the frames by coincidence, both being neutral-800.
 - **Table cells** are neutral-600 in 6316-7169 and neutral-700 in 1276-155. The
   code has no table-cell alias; cells use `--color-body-text`, so they are
   neutral-700, as in 1276-155.
@@ -165,10 +163,55 @@ So the branch sits between the two frames: 6316-7169 is `origin/main`'s scale,
 - No `button-md`, `button-sm` or `code` style; the CSS and the showcase have
   them.
 - No italic, no 300 or 900.
-- Component rules outside the scale (`main.css`): `.btn` (600 · 14/16, a copy
-  of button-lg), `.dialog-title` (500 · 20/28), `.dialog-text-stack__title`
-  (700 · 18/28), `.tab-item` 400 and `.tab-item-selected` 700,
-  `.target-source-row__unlinked` 600, the stepper's active/error labels 500,
-  the visual editor's h1–h3/th 700.
-- Whether `overline` is meant lowercase (both frames' samples) or uppercase (the
-  CSS).
+- Component rules outside the scale (`main.css`): `.dialog-title` (500 ·
+  20/28), `.dialog-text-stack__title` (700 · 18/28), `.tab-item` 400 and
+  `.tab-item-selected` 700, `.target-source-row__unlinked` 600, the stepper's
+  active/error labels 500, the visual editor's h1–h3/th 700. (`.btn` was a copy
+  of button-lg's values; it now applies the class, section 5.)
+- `overline` is uppercase in the CSS; both frames' samples are lowercase.
+
+## 5. What the branch ships: the scale of 1276-155
+
+The type classes follow node `1276-155`: the 19 named text styles of its
+content frame (`1276:157`, read again on 2026-11-10 through
+`get_variable_defs`) value for value, which is the "1276-155" column of
+section 3 with every letter spacing in px. They use 400, 500, 600 and 700, the
+four Lato 2.0 files that already ship (`fonts.md`); no font file was added.
+The showcase's typography table shows the new values.
+
+Where the frame is silent, or says it differently from the code:
+
+- **button-md and button-sm** are not in the frame. They step down from
+  button-lg (16/20) a pixel at a time: button-md 15/18, button-sm 14/16, both
+  600 · 0.2px.
+- **`.btn`** no longer copies button-lg's values; it applies `text-button-lg`,
+  so buttons are 16/20 · 600 · 0.2px and follow the class from now on.
+- **code** is not in the frame and stays 14/20 · 400 · monospace, like
+  `.code-inline`.
+- **overline** stays uppercase (`text-transform` in the class); the frame's
+  sample is lowercase.
+- **Input values** have their own colour alias, `--color-input-text`, at
+  neutral-800 as in the frame. The 62 `<input>`, `<textarea>` and `<select>`
+  tags in 20 templates that coloured their text with `--color-body-text` (the
+  `input.html` macros among them) use it, and the showcase lists it with the
+  other text colours. Fields that set no colour of their own still inherit
+  their container's. The visual editor's content area and the HTML code editor
+  are editors rather than form fields and keep body text.
+- **Placeholders** stay `--color-placeholder-text`, neutral-500 #6F7482; the
+  frame's `neutral-500_` #646a78 is not a colour of the code.
+- **Letter spacing held in per cent**: the table-header and numeric styles
+  hold 0.2 % and 0.1 %. The classes read both as px, like every other style:
+  table-header 0.2px, numeric 0.1px.
+- **Rules outside the scale** keep their values: `.dialog-title` (500 ·
+  20/28), `.dialog-text-stack__title` (700 · 18/28), `.tab-item` (400 · 15/22,
+  700 when selected), the stepper's active and error labels (500),
+  `.content-block-row__heading` (600 · 18/24) and the visual editor's content
+  h1–h3/th (700). The component rules that `@apply` a type class (menu items,
+  the checkbox, radio and switch labels, the stepper's number and label, the
+  dialog description, the editor's toggles, menu and tooltips) move with it.
+- **`text-body-xs`**, used five times and defined nowhere, is gone. The frame
+  has no style for it, so each use takes the nearest class for what the text
+  is: the language badge beside a registration page's name (in the pages list
+  and on the project details page) and the caption of the compact URL display
+  are uppercase micro-labels, `text-overline`; the two field hints in the
+  service docs are `text-body-sm`, as every hint in the `input.html` macros is.
