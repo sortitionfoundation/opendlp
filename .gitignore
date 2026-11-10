@@ -355,6 +355,7 @@ backend/tests/manual/reports/
 
 # a lot of /static/ is generated, but note that the following are maintained and need to be tracked by git
 # static/backoffice/fonts/*
+# static/examples/*
 # static/fonts/*
 # static/img/*
 # static/well-known/*

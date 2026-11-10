@@ -322,6 +322,8 @@ extend-exclude = [
   "*.pot",
   # There are some odd words in this sample data set
   "backend/docs/fixtures/monitoring/",
+  # the example CSV files offered for download are the same sample data
+  "backend/static/examples/",
 ]
 
 [tool.typos.default]
