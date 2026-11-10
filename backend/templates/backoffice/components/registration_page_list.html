@@ -9,7 +9,7 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
 {% macro registration_page_list(assembly, page_rows) %}
     <div>
         {# Header row: section title + create CTA, per the Figma list view #}
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration page") }}</h2>
             <form method="post"
                   action="{{ url_for('backoffice_registration.create_assembly_registration_page', assembly_id=assembly.id) }}">
