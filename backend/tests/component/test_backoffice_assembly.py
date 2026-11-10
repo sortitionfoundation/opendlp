@@ -3,7 +3,9 @@
 
 import re
 import uuid
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
+from html.parser import HTMLParser
 from io import BytesIO
 
 import pytest
@@ -762,51 +764,180 @@ def _data_url(assembly_id: uuid.UUID) -> str:
     return f"/backoffice/project/{assembly_id}/data?source=csv"
 
 
-def _upload_form(html: str, assembly_id: uuid.UUID, action: str) -> str:
-    """The body of the form on the page that posts to this project's ``action``."""
-    url = f"/backoffice/project/{assembly_id}/{action}"
-    match = re.search(r'<form[^>]*action="' + re.escape(url) + r'"[^>]*>(.*?)</form>', html, re.DOTALL)
-    assert match, f"No form posting to {url}"
-    return match.group(1)
+_VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 
-def _example_href(form_body: str, filename: str) -> str:
+class _Element:
+    """An element of a parsed page: enough of a tree to ask what is inside what, and in which order."""
+
+    def __init__(self, tag: str, attrs: dict[str, str], parent: "_Element | None") -> None:
+        self.tag = tag
+        self.attrs = attrs
+        self.parent = parent
+        self.children: list[_Element] = []
+        self.content: list[_Element | str] = []
+
+    @property
+    def classes(self) -> set[str]:
+        return set(self.attrs.get("class", "").split())
+
+    def walk(self) -> Iterator["_Element"]:
+        yield self
+        for child in self.children:
+            yield from child.walk()
+
+    def _raw_text(self) -> str:
+        return "".join(part if isinstance(part, str) else part._raw_text() for part in self.content)
+
+    def text(self) -> str:
+        return " ".join(self._raw_text().split())
+
+
+class _PageTree(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.root = _Element("#document", {}, None)
+        self.current = self.root
+
+    def _add(self, tag: str, attrs: list[tuple[str, str | None]]) -> _Element:
+        element = _Element(tag, {name: value or "" for name, value in attrs}, self.current)
+        self.current.children.append(element)
+        self.current.content.append(element)
+        return element
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        element = self._add(tag, attrs)
+        if tag not in _VOID_ELEMENTS:
+            self.current = element
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._add(tag, attrs)
+
+    def handle_endtag(self, tag: str) -> None:
+        open_element: _Element | None = self.current
+        while open_element is not None and open_element.tag != tag:
+            open_element = open_element.parent
+        if open_element is not None and open_element.parent is not None:
+            self.current = open_element.parent
+
+    def handle_data(self, data: str) -> None:
+        self.current.content.append(data)
+
+
+def _upload_cards(html: str) -> dict[str, _Element]:
+    """The data page's Targets and People cards, by heading: each the child of a grid that holds it."""
+    tree = _PageTree()
+    tree.feed(html)
+    tree.close()
+    cards = {}
+    for heading in ("Targets", "People"):
+        found = [e for e in tree.root.walk() if e.tag == "h3" and e.text() == heading]
+        assert found, f"No {heading} card on the page"
+        card = found[0]
+        while card.parent is not None and "grid" not in card.parent.classes:
+            card = card.parent
+        assert card.parent is not None, f"The {heading} card is not in a grid"
+        cards[heading] = card
+    return cards
+
+
+def _download_links(element: _Element) -> list[_Element]:
+    return [e for e in element.walk() if e.tag == "a" and "download" in e.attrs]
+
+
+def _example_href(element: _Element, filename: str) -> str:
     """The href of the download link to ``filename``. The hash is empty if the path names no file."""
-    pattern = r'<a href="([^"]*/static/examples/' + re.escape(filename) + r'\?v=[0-9a-f]{8})"[^>]*\sdownload>'
-    match = re.search(pattern, form_body)
-    assert match, f"No download link to {filename} in:\n{form_body[:800]}"
-    return match.group(1)
+    pattern = r"[^\"]*/static/examples/" + re.escape(filename) + r"\?v=[0-9a-f]{8}"
+    hrefs = [link.attrs["href"] for link in _download_links(element) if re.fullmatch(pattern, link.attrs["href"])]
+    assert hrefs, f"No download link to {filename} in the {element.tag} element: {element.text()[:300]}"
+    return hrefs[0]
 
 
 EXAMPLE_UPLOADS = [
-    pytest.param("targets/upload", "example-targets.csv", "Targets", id="targets"),
-    pytest.param("data/upload-respondents", "example-respondents.csv", "People", id="respondents"),
+    pytest.param("Targets", "targets/upload", "example-targets.csv", id="targets"),
+    pytest.param("People", "data/upload-respondents", "example-respondents.csv", id="respondents"),
 ]
 
 
 class TestDataTabExampleCsvFiles:
-    """Beside each CSV upload on the data page, an example to download, read and upload."""
+    """At the foot of each CSV upload card on the data page, an example to download, read and upload."""
 
-    @pytest.mark.parametrize(("action", "filename", "card"), EXAMPLE_UPLOADS)
-    def test_each_upload_form_links_its_own_example(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, action: str, filename: str, card: str
+    @pytest.mark.parametrize(("card", "action", "filename"), EXAMPLE_UPLOADS)
+    def test_each_upload_card_links_its_own_example(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, card: str, action: str, filename: str
     ) -> None:
         html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
 
-        form = _upload_form(html, existing_assembly.id, action)
+        upload_card = _upload_cards(html)[card]
 
-        _example_href(form, filename)
-        assert f'Download an example CSV<span class="sr-only"> ({card})</span>' in form
+        _example_href(upload_card, filename)
+        (link,) = _download_links(upload_card)
+        assert link.text() == f"Download an example CSV ({card})"
+        hidden = [e.text() for e in link.walk() if "sr-only" in e.classes]
+        assert hidden == [f"({card})"]
 
-    def test_targets_form_says_what_the_example_targets_need(
+    @pytest.mark.parametrize(("card", "action", "filename"), EXAMPLE_UPLOADS)
+    def test_the_example_is_the_last_row_of_its_card_below_the_upload(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, card: str, action: str, filename: str
+    ) -> None:
+        """Choosing a file and uploading it come first, the example after them, at the very bottom."""
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+
+        upload, example = _upload_cards(html)[card].children
+
+        form_action = f"/backoffice/project/{existing_assembly.id}/{action}"
+        (form,) = [e for e in upload.walk() if e.tag == "form" and e.attrs.get("action") == form_action]
+        assert [e.text() for e in form.walk() if e.tag == "button"] == ["Upload"]
+        assert _download_links(upload) == []
+        _example_href(example, filename)
+
+    def test_the_targets_note_sits_under_its_link(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         """The panel size the integration test of the example files runs a selection with."""
         html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
 
-        form = _upload_form(html, existing_assembly.id, "targets/upload")
+        link_line, note = _upload_cards(html)["Targets"].children[-1].children
 
-        assert "set the panel size to 30." in form
+        assert _download_links(link_line)
+        assert note.text() == "To run a selection with the example targets, set the panel size to 30."
+
+    def test_the_two_cards_share_the_rows_their_examples_sit_in(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Side by side, the two links start on one line, however tall the content above them.
+
+        From md up, each card is a subgrid over the same two rows of the grid: the
+        first holds its upload, the second its example. The second row is as tall
+        as the Targets example with its note, so the People link, which has no
+        note, still starts level with the Targets link, and the cards are equal in
+        height. Measured in a browser by the "example links line up" scenario in
+        backoffice-csv-upload.feature.
+        """
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+
+        cards = _upload_cards(html)
+        targets, people = cards["Targets"], cards["People"]
+
+        grid = targets.parent
+        assert grid is not None
+        assert grid.children == [targets, people]
+        assert {"md:grid-cols-2", "md:gap-y-0"} <= grid.classes
+        for upload_card in (targets, people):
+            assert {"md:grid", "md:grid-rows-subgrid", "md:row-span-2"} <= upload_card.classes
+            assert len(upload_card.children) == 2
+
+    def test_the_targets_example_stays_below_building_from_respondent_data(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        """With respondent data in, the card offers a second way to targets; the example still comes last."""
+        _seed_respondents(fake_store, existing_assembly.id, [("1", {"Gender": "Female"})])
+
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+
+        upload, example = _upload_cards(html)["Targets"].children
+        assert "Create from respondent data" in upload.text()
+        _example_href(example, "example-targets.csv")
 
     def test_targets_example_goes_with_the_targets_upload_form(
         self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly
@@ -827,9 +958,10 @@ class TestDataTabExampleCsvFiles:
         assert "example-targets.csv" in html
 
     @pytest.mark.parametrize(
-        ("action", "filename", "field", "message"),
+        ("card", "action", "filename", "field", "message"),
         [
             pytest.param(
+                "Targets",
                 "targets/upload",
                 "example-targets.csv",
                 "csv_file",
@@ -837,6 +969,7 @@ class TestDataTabExampleCsvFiles:
                 id="targets",
             ),
             pytest.param(
+                "People",
                 "data/upload-respondents",
                 "example-respondents.csv",
                 "file",
@@ -849,6 +982,7 @@ class TestDataTabExampleCsvFiles:
         self,
         logged_in_admin: FlaskClient,
         existing_assembly: Assembly,
+        card: str,
         action: str,
         filename: str,
         field: str,
@@ -856,7 +990,7 @@ class TestDataTabExampleCsvFiles:
     ) -> None:
         """Download, then upload: the whole of what the links are for."""
         html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
-        href = _example_href(_upload_form(html, existing_assembly.id, action), filename)
+        href = _example_href(_upload_cards(html)[card], filename)
 
         downloaded = logged_in_admin.get(href)
 

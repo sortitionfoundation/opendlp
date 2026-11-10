@@ -70,6 +70,14 @@ Feature: Backoffice CSV Upload
     Then the Target upload button should be enabled
     And the People upload button should be enabled
 
+  Scenario: The example links line up at the foot of the two upload cards
+    Given I am logged in as an admin user
+    And there is an assembly called "CSV Example Links"
+    When I visit the assembly data page for "CSV Example Links" with source "csv"
+    Then each "Download an example CSV" link should sit below its card's Upload button
+    And the two "Download an example CSV" links should start level with each other
+    And the two upload cards should be the same height
+
   Scenario: After uploading targets, People upload becomes active
     Given I am logged in as an admin user
     And there is an assembly called "CSV With Targets"
