@@ -2393,6 +2393,9 @@ def _visual_intro_image(page: Page, alt: str):
 @when(parsers.parse('I drag the bottom-right corner of the image "{alt}" {distance:d} pixels to the left'))
 def drag_image_corner(page: Page, alt: str, distance: int):
     image = _visual_intro_image(page, alt)
+    # The wizard footer sticks to the bottom of the panel, over whatever scrolls under it,
+    # so bring the image to the middle of the panel first, as a person would scroll to it.
+    image.evaluate("(img) => img.scrollIntoView({block: 'center'})")
     image.hover()
     handle = page.locator(f'{VISUAL_INTRO} [data-resize-handle="bottom-right"]')
     expect(handle).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
@@ -2402,6 +2405,15 @@ def drag_image_corner(page: Page, alt: str, distance: int):
     _widths_before_drag[alt] = image_box["width"]
     x = handle_box["x"] + handle_box["width"] / 2
     y = handle_box["y"] + handle_box["height"] / 2
+    # Something drawn over the handle would take the press, and the drag would do nothing.
+    covering = page.evaluate(
+        """([x, y]) => {
+            const el = document.elementFromPoint(x, y);
+            return el && el.closest("[data-resize-handle]") ? "" : (el ? el.outerHTML.slice(0, 80) : "nothing");
+        }""",
+        [x, y],
+    )
+    assert not covering, f"the corner handle is covered by {covering}"
     page.mouse.move(x, y)
     page.mouse.down()
     page.mouse.move(x - distance / 2, y, steps=5)
