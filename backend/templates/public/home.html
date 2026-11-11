@@ -3,12 +3,8 @@ ABOUTME: Draft public home page on the OpenDLP design system, served at /newhome
 ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6517-17690
 #}
 {#
-   The copy on this page is placeholder text taken straight from the Figma
-   frame, and final copy is on its way. It is deliberately NOT wrapped in _()
-   yet, so translators are not asked to translate text that is about to be
-   replaced. Wrap every string in _() when the final copy lands. Strings that
-   already exist elsewhere in the catalogue (Sign in, Create an account,
-   Cookies...) are wrapped now.
+   The bracketed placeholders in the footer's bottom row stand in for details
+   we do not have yet, so they are not wrapped in _().
 
    Colours and fonts follow the backoffice design system rather than the
    Figma file: Lato throughout, headings in --color-brand-700 (nearest token
@@ -23,25 +19,29 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
 {% block title %}{{ _("Open Democratic Lottery Platform") }}{% endblock %}
 {% set heading_style = "color: var(--color-brand-700); font-family: var(--font-display);" %}
 {% set body_style = "color: var(--color-body-text);" %}
+{% set intro = [
+_("A democratic lottery – a “sortition” – is a gold standard foundation for citizen engagement and deliberation."),
+_("Democratic lotteries can be technically complex to implement, and there are few public resources available to support them."),
+_("We are changing that with OpenDLP."),
+] %}
 {% set steps = [
-("Set targets", ["Decide what the panel should look like before anyone is drawn;", "key message: representation is defined upfront, not adjusted afterwards."]),
-("Register", ["Anyone who wants to take part registers, sharing basic demographic details —", "key message: participation stays voluntary and accessible."]),
-("Select", ["OpenDLP selects a final panel that mirrors the population on age, gender, geography, education and more.", "key message: the result looks like the community it represents."]),
-("Report", ["Every step is logged and the method is open-source.", "key message: anyone can check the draw was fair."]),
+("Set targets", _("Decide what the panel should look like, in terms of age, gender, education level, opinion, etc. The room is diverse and broadly reflects the wider population.")),
+("Register interest", _("Create a registration page that matches your targets and also collects contact and consent details. Anyone invited can then register their interest.")),
+("Select and replace", _("OpenDLP selects a group of people that matches your targets in a fair way. If anyone drops out, it’s easy to select replacements. OpenDLP will help you make changes if it’s not possible to hit your targets.")),
+("Reporting and transparency", _("OpenDLP logs key activity, prompts users to explain project changes, and produces reports. The software is open-source.")),
 ] %}
 {% set benefits_top = [
-("Fair by design", "Selection that gives people a fair chance to take part."),
-("Reduces workload", "Less juggling of spreadsheets and tools, so fewer opportunities for error."),
-("Transparent", "Dashboards and a log of what was done, so you can show your process was sound."),
+("Fair by design", _("Selection of diverse, representative groups rather than “the usual suspects”, in a way that gives people a fair chance to take part.")),
+("Reduces workload", _("Less juggling of spreadsheets and tools, so fewer opportunities for error.")),
+("Transparent", _("Dashboards and a log of what was done, so you can show your process was sound.")),
 ] %}
 {% set benefits_bottom = [
-("Proven", "Built by the Sortition Foundation and Sortition Europe, who have delivered 300+ lotteries around the world. OpenDLP has already been used for 30+ lotteries and counting."),
-("Keeps your data secure", "OpenDLP is GDPR compliant and stores its data in Europe. You can choose to use anonymised data, and only use the parts of OpenDLP that you want to."),
+("Proven", _("Built by the Sortition Foundation and Sortition Europe, who have delivered 300+ lotteries around the world. OpenDLP has already been used for 30+ lotteries and counting.")),
+("Keeps your data secure", _("OpenDLP is GDPR compliant and stores its data in Europe. You can choose to use anonymised data, and only use the parts of OpenDLP that you want to.")),
 ] %}
 {% set audiences = [
-("Local and national governments", "Commissioning a citizens’ assembly"),
-("Assembly delivery organisations", "Running recruitment on behalf of a client"),
-("Researchers and civic-tech teams", "Who want to self-host or contribute to the code"),
+("Local and national governments", _("You are embedding and institutionalising your own deliberative engagement processes with citizens, and want to take ownership of the whole lottery process.")),
+("Practitioners", _("You regularly run deliberative engagement processes on behalf of commissioners, and may already run the democratic lottery component yourself, or want to move into this space.")),
 ] %}
 {% macro benefit_card(title, text) %}
     <div class="flex flex-col gap-4 p-8 md:p-10"
@@ -91,21 +91,23 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                     {# The full logo carries the "OpenDLP / Democratic Lottery Platform"
                        wordmark, so its alt text names the product. #}
                     <img src="{{ url_for('static', filename='img/opendlp-logo-light.svg') }}"
-                         alt="OpenDLP - Democratic Lottery Platform"
+                         alt="{{ _('OpenDLP - Democratic Lottery Platform') }}"
                          width="400"
                          height="196"
                          class="w-72 md:w-[400px] h-auto">
                     <h1 class="text-4xl md:text-5xl font-bold leading-tight tracking-wide"
                         style="{{ heading_style }}">
-                        Bringing
-                        <span class="px-3 inline-block"
-                              style="background-color: var(--color-primary-action);
-                                     color: var(--color-neutral-0)">simplicity</span>
-                        to sortition
+                        {# The slogan is title case by design. The highlighted word is passed in
+                           marked safe, so the translator can move it within the sentence. #}
+                        {% set highlight %}<span class="px-3 inline-block" style="background-color: var(--color-primary-action); color: var(--color-neutral-0)">{{ _("Simplicity") }}</span>{% endset %}
+                        {{ _("Bringing %(highlight)s to Sortition", highlight=highlight) }}
                     </h1>
                     <div class="flex flex-wrap justify-center gap-4 md:gap-10">
-                        {{ button("Contact us", variant="secondary", href="mailto:" ~ support_email_address, leading_icon=icon_send(classes="")) }}
-                        {{ button("Create account", variant="secondary", href=url_for('auth.register'), leading_icon=icon_plus(classes="")) }}
+                        {{ button(_(_("Contact us")), variant="secondary", href="mailto:" ~ support_email_address, leading_icon=icon_send(classes="")) }}
+                        {{ button(_("Create account"), variant="secondary", href=url_for('auth.register'), leading_icon=icon_plus(classes="")) }}
+                    </div>
+                    <div class="flex flex-col gap-4 text-lg md:text-xl leading-relaxed" style="{{ body_style }}">
+                        {% for paragraph in intro %}<p>{{ paragraph }}</p>{% endfor %}
                     </div>
                 </div>
             </section>
@@ -123,13 +125,13 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                 <div class="relative mx-auto max-w-screen-xl flex flex-col gap-8">
                     <h2 id="how-it-works-heading"
                         class="text-3xl md:text-4xl font-bold tracking-wide"
-                        style="{{ heading_style }}">How it works?</h2>
+                        style="{{ heading_style }}">{{ _("How does OpenDLP work?") }}</h2>
                     <p class="text-xl md:text-2xl leading-relaxed" style="{{ heading_style }} font-family: var(--font-body); font-weight: 400;">
-                        The free, open-source tool that selects a representative random sample of people for a citizens’ assembly — transparent, auditable, and built for democratic institutions.
+                        {{ _("OpenDLP is an online service that makes it easier to run democratic lotteries for deliberative processes. It is transparent, auditable, and built for democratic institutions.") }}
                     </p>
                     <div class="flex flex-col lg:flex-row gap-8">
                         <ol class="flex-1 flex flex-col">
-                            {% for title, lines in steps %}
+                            {% for title, text in steps %}
                                 <li class="flex gap-4 pl-4">
                                     <div class="flex flex-col items-center shrink-0" aria-hidden="true">
                                         <span class="w-px h-2.5 {{ 'invisible' if loop.first else '' }}"
@@ -142,12 +144,7 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                                     </div>
                                     <div class="flex-1 flex flex-col gap-4 px-6 py-4">
                                         <h3 class="text-2xl font-bold" style="{{ heading_style }}">{{ title }}</h3>
-                                        <p class="text-lg leading-relaxed" style="{{ body_style }}">
-                                            {% for line in lines %}
-                                                {{ line }}
-                                                {% if not loop.last %}<br>{% endif %}
-                                            {% endfor %}
-                                        </p>
+                                        <p class="text-lg leading-relaxed" style="{{ body_style }}">{{ text }}</p>
                                     </div>
                                 </li>
                             {% endfor %}
@@ -161,9 +158,9 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                                 <span class="w-px flex-1" style="background-color: var(--color-brand-300)"></span>
                             </div>
                             <div class="flex flex-col justify-center gap-4 px-6 py-4">
-                                <h3 class="text-2xl font-bold" style="{{ heading_style }}">Support from experts</h3>
+                                <h3 class="text-2xl font-bold" style="{{ heading_style }}">{{ _("Support from experts") }}</h3>
                                 <p class="text-lg leading-relaxed max-w-xs" style="{{ body_style }}">
-                                    Experienced Sortition Foundation staff are available to support you at every stage of your process.
+                                    {{ _("Experienced Sortition Foundation staff are available to support you at every stage of your process.") }}
                                 </p>
                             </div>
                         </div>
@@ -177,7 +174,7 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                 <div class="mx-auto max-w-screen-xl flex flex-col gap-10">
                     <h2 id="benefits-heading"
                         class="text-3xl md:text-4xl font-bold tracking-wide"
-                        style="{{ heading_style }}">Key benefits</h2>
+                        style="{{ heading_style }}">{{ _("Key benefits") }}</h2>
                     <div class="flex flex-col gap-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {% for title, text in benefits_top %}{{ benefit_card(title, text) }}{% endfor %}
@@ -201,8 +198,11 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                 <div class="relative mx-auto max-w-screen-xl flex flex-col gap-10">
                     <h2 id="audience-heading"
                         class="text-3xl md:text-4xl font-bold tracking-wide"
-                        style="{{ heading_style }}">Who OpenDLP is for?</h2>
-                    <ul class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
+                        style="{{ heading_style }}">{{ _("Who is OpenDLP for?") }}</h2>
+                    <p class="text-xl md:text-2xl leading-relaxed" style="{{ heading_style }} font-family: var(--font-body); font-weight: 400;">
+                        {{ _("OpenDLP can be used by any organisation that wants to run its own citizen engagement processes. Or, Sortition Foundation can use OpenDLP on your behalf to run your democratic lotteries.") }}
+                    </p>
+                    <ul class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                         {% for title, text in audiences %}
                             <li class="flex flex-col gap-4 p-8 md:p-10"
                                 style="background-color: var(--color-neutral-100)">
@@ -218,8 +218,8 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                      aria-label="{{ _('Sign in') }}"
                      style="background-color: var(--color-neutral-100)">
                 <div class="mx-auto max-w-screen-xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-20">
-                    {{ inset_panel(_("Create an account"), "If you are a first time visitor, create an account.", _("Create an account"), url_for('auth.register')) }}
-                    {{ inset_panel(_("Sign in"), "Use your existing credentials to sign in.", _("Sign in"), url_for('auth.login')) }}
+                    {{ inset_panel(_("Create an account"), _("If you are a first time visitor, create a free account."), _("Create an account"), url_for('auth.register')) }}
+                    {{ inset_panel(_("Sign in"), _("Use your existing credentials to sign in."), _("Sign in"), url_for('auth.login')) }}
                 </div>
             </section>
         </main>
@@ -232,7 +232,7 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                 <div class="flex flex-col gap-3">
                     <a href="{{ url_for('main.newhome') }}" class="self-start">
                         <img src="{{ url_for('static', filename='img/opendlp-small-sized-logo.svg') }}"
-                             alt="OpenDLP"
+                             alt="{{ _('OpenDLP') }}"
                              width="107"
                              height="48"
                              class="h-12 w-auto">
@@ -250,45 +250,45 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
                            style="color: var(--color-links)">{{ _("Create an account") }}</a>
                     </p>
                 </div>
-                {{ footer_column("Product", [
-                ("How it works", "#how-it-works", false),
-                ("Documentation", help_site_home, true),
-                ("Source code on GitHub", "https://github.com/sortition-foundation/opendlp", true),
-                ("Release notes", "#", false),
+                {{ footer_column(_("Product"), [
+                (_("How it works"), "#how-it-works", false),
+                (_("Documentation"), help_site_home, true),
+                (_("Source code on GitHub"), "https://github.com/sortition-foundation/opendlp", true),
+                (_("Release notes"), "#", false),
                 ]) }}
-                {{ footer_column("Support", [
-                ("Help and support", "#", false),
-                ("Knowledge Hub", knowledge_hub_url, true),
-                ("Contact us", "mailto:" ~ support_email_address, false),
-                ("Report a vulnerability", url_for('wellknown.security_txt'), false),
+                {{ footer_column(_("Support"), [
+                (_("Help and support"), "#", false),
+                (_("Knowledge Hub"), knowledge_hub_url, true),
+                (_("Contact us"), "mailto:" ~ support_email_address, false),
+                (_("Report a vulnerability"), url_for('wellknown.security_txt'), false),
                 ]) }}
-                {{ footer_column("Legal", [
-                ("Privacy policy", "#", false),
-                ("Terms of use", "#", false),
+                {{ footer_column(_("Legal"), [
+                (_("Privacy policy"), "#", false),
+                (_("Terms of use"), "#", false),
                 (_("Cookies"), help_site_cookies, true),
                 (_("User Data Agreement"), help_site_data_agreement, true),
                 ]) }}
                 <div class="flex flex-col gap-3">
-                    <h2 class="text-overline uppercase" style="color: var(--color-headings);">Developed by</h2>
+                    <h2 class="text-overline uppercase" style="color: var(--color-headings);">{{ _("Developed by") }}</h2>
                     <a href="https://www.sortitionfoundation.org"
                        target="_blank"
                        rel="noopener"
                        class="self-start">
                         <img src="{{ url_for('static', filename='img/logosortition.svg') }}"
-                             alt="Sortition Foundation"
+                             alt="{{ _('Sortition Foundation') }}"
                              width="107"
                              height="36"
                              class="h-9 w-auto">
                     </a>
                     <p class="text-body-sm" style="color: var(--color-body-text)">
-                        We’re democratic lottery experts and we campaign for permanent and powerful citizens’ assemblies
+                        {{ _("We’re democratic lottery experts and we campaign for permanent and powerful citizens’ assemblies") }}
                     </p>
                 </div>
             </div>
             <p class="flex flex-wrap items-center gap-3 pt-4 text-caption"
                style="color: var(--color-headings)">
                 <span class="inline-flex items-center gap-1">{{ icon_copyright(classes="w-4 h-4") }}
-                    <span class="sr-only">Copyright</span>(LEGAL ENTITY NAME)</span>
+                    <span class="sr-only">{{ _("Copyright") }}</span>(LEGAL ENTITY NAME)</span>
                 <span aria-hidden="true">•</span>
                 <span>(REGISTRATION NUMBER)</span>
                 <span aria-hidden="true">•</span>

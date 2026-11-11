@@ -9,10 +9,10 @@ class TestNewHome:
         response = client.get("/newhome")
         assert response.status_code == 200
         assert "Bringing" in response.text
-        assert "simplicity" in response.text
-        assert "How it works?" in response.text
+        assert "Simplicity" in response.text
+        assert "How does OpenDLP work?" in response.text
         assert "Key benefits" in response.text
-        assert "Who OpenDLP is for?" in response.text
+        assert "Who is OpenDLP for?" in response.text
 
     def test_does_not_redirect_signed_in_user(self, logged_in_user: FlaskClient) -> None:
         """Reviewers are signed in, so unlike / the draft must not send them to the dashboard."""
