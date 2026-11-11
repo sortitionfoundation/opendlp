@@ -83,6 +83,9 @@ sortition-algorithms = "0 days"
 certifi = "3 days"
 cryptography = "3 days"
 oauthlib = "4 days"
+# 3.3 stubs know SelectChoice, which wtforms 3.3 wants instead of choice tuples -
+# type-only package, so lower risk - this can be removed after 2026-11-11
+types-wtforms = "5 day"
 
 [tool.mypy]
 files = ["src"]
