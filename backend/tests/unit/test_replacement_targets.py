@@ -394,7 +394,7 @@ class TestValidateReplacementForm:
         form[male.min_field] = "2"
         form[male.max_field] = "1"
         result = validate_replacement_form(uow, assembly.id, plan, form)
-        assert list(result.value_errors) == [male.value_id]
+        assert result.value_errors == {male.value_id: ["Max must be greater than or equal to min"]}
 
     def test_missing_cell_means_the_targets_changed(self, uow):
         admin, assembly, _, _ = _seed(uow)

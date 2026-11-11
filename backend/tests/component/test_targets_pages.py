@@ -1508,7 +1508,7 @@ class TestSaveAllValidationErrors:
         response = self._post_min_above_max(logged_in_admin, existing_assembly.id, category.id, value_id)
 
         row = _bulk_row_for(response.data.decode(), "Male")
-        assert "Max must be at least the min" in row
+        assert "Max must be greater than or equal to min" in row
 
     def test_an_emptied_max_box_is_asked_for(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """An empty box is not given back its old number: the form asks for one."""

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-12 12:03+0000\n"
+"POT-Creation-Date: 2026-11-12 12:15+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -4455,8 +4455,9 @@ msgid "Enter whole numbers of zero or more"
 msgstr "Nullát vagy annál nagyobb egész számot adj meg"
 
 #: src/opendlp/service_layer/replacement_targets.py:355
-msgid "Maximum must be at least the minimum"
-msgstr "A maximum nem lehet kisebb a minimumnál"
+#: src/opendlp/service_layer/target_service.py:1082
+msgid "Max must be greater than or equal to min"
+msgstr ""
 
 #: src/opendlp/service_layer/replacement_targets.py:402
 #, python-format
@@ -4989,10 +4990,6 @@ msgstr "A minimum nem lehet negatív"
 #: src/opendlp/service_layer/target_service.py:1080
 msgid "Max cannot be negative"
 msgstr "A maximum nem lehet negatív"
-
-#: src/opendlp/service_layer/target_service.py:1082
-msgid "Max must be at least the min"
-msgstr "A maximumnak legalább akkorának kell lennie, mint a minimum"
 
 #: src/opendlp/service_layer/target_service.py:1084
 msgid "Population share must be between 0 and 100"

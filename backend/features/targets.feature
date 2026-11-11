@@ -98,7 +98,7 @@ Feature: Target percentages, notes and ordering
     And I save all targets
     Then I should see the bulk edit form
     And the "Male" edit row should show min "9" and max "2"
-    And the "Male" edit row should show the error "Max must be at least the min"
+    And the "Male" edit row should show the error "Max must be greater than or equal to min"
 
   Scenario: Saving the targets runs the detailed check
     Given there is an assembly with targets called "Check On Save Demo"
