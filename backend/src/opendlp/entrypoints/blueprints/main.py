@@ -56,8 +56,10 @@ def newhome() -> ResponseReturnValue:
     """Draft of the redesigned home page, unlinked, so the wider team can review it.
 
     Unlike index() it does not redirect signed-in users, as the reviewers will be.
+    Instead its header offers them a link to the dashboard index() would send them to.
     """
-    return render_template("public/home.html"), 200
+    dashboard_url = url_for(default_dashboard_endpoint()) if current_user.is_authenticated else ""
+    return render_template("public/home.html", dashboard_url=dashboard_url), 200
 
 
 @main_bp.route("/dashboard")

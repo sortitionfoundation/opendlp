@@ -85,7 +85,11 @@ _("We are changing that with OpenDLP."),
            style="background-color: var(--color-tables-cards);
                   color: var(--color-body-text)">{{ _("Skip to main content") }}</a>
         {% call navigation(logo_href=url_for('main.newhome'), help_href=help_site_home) %}
-            {{ button(_("Sign in"), variant="secondary", href=url_for('auth.login')) }}
+            {% if dashboard_url %}
+                {{ button(_("Dashboard"), variant="secondary", href=dashboard_url) }}
+            {% else %}
+                {{ button(_("Sign in"), variant="secondary", href=url_for('auth.login')) }}
+            {% endif %}
         {% endcall %}
         <main id="main-content" class="flex-1">
             {# Hero #}

@@ -1,7 +1,10 @@
 # ABOUTME: Component tests for the draft home page served at /newhome
 # ABOUTME: Checks it renders for every visitor, links to the account pages, and is not linked from the live home page
 
+from flask import Flask, url_for
 from flask.testing import FlaskClient
+
+from opendlp.feature_flags import default_dashboard_endpoint
 
 
 class TestNewHome:
@@ -31,7 +34,7 @@ class TestNewHome:
         assert "img/opendlp-small-sized-logo.svg" in response.text
         assert "img/opendlp-favicon.svg" in response.text
 
-    def test_footer_links_to_known_destinations(self, client: FlaskClient, app) -> None:
+    def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/newhome")
         assert 'href="#how-it-works"' in response.text
         assert 'id="how-it-works"' in response.text
@@ -44,10 +47,22 @@ class TestNewHome:
         assert response.status_code == 200
         assert "/newhome" not in response.text
 
-    def test_header_has_home_link_sign_in_and_help(self, client: FlaskClient, app) -> None:
+    def test_header_has_home_link_sign_in_and_help(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/newhome")
         header_start = response.text.index("<section")
         header = response.text[header_start : response.text.index("</section>", header_start)]
         assert 'href="/newhome"' in header
         assert 'href="/auth/login"' in header
         assert f'href="{app.config["HELP_SITE_HOME"]}' in header
+
+    def test_header_offers_dashboard_to_signed_in_user(self, logged_in_user: FlaskClient, app: Flask) -> None:
+        """The button goes where / would redirect a signed-in user, in place of Sign in."""
+        response = logged_in_user.get("/newhome")
+        header_start = response.text.index("<section")
+        header = response.text[header_start : response.text.index("</section>", header_start)]
+        with app.test_request_context():
+            dashboard_url = url_for(default_dashboard_endpoint())
+        assert f'href="{dashboard_url}"' in header
+        assert "Dashboard" in header
+        assert 'href="/auth/login"' not in header
+        assert logged_in_user.get("/").location == dashboard_url
