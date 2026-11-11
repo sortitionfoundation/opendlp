@@ -40,7 +40,7 @@ class TestNewHome:
         assert 'id="how-it-works"' in response.text
         assert 'href="/.well-known/security.txt"' in response.text
         assert f'href="mailto:{app.config["SUPPORT_EMAIL"]}"' in response.text
-        assert "https://github.com/sortition-foundation/opendlp" in response.text
+        assert "https://github.com/sortitionfoundation/opendlp" in response.text
 
     def test_is_not_linked_from_the_live_home_page(self, client: FlaskClient) -> None:
         response = client.get("/")
