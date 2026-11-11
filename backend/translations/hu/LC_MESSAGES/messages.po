@@ -5142,25 +5142,21 @@ msgstr "Ebbe a projektbe már ír egy másik feladat: %(task)s"
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
 
-#: templates/base.html:23 templates/base_public.html:25
+#: templates/base.html:22 templates/base_public.html:24
 #: templates/public/base.html:25
 msgid "Skip to main content"
 msgstr "Ugrás a fő tartalomra"
 
-#: templates/base.html:37
-msgid "Sortition Foundation Logo"
-msgstr "Sortition Foundation Logo"
-
-#: templates/base.html:46 templates/base.html:91
+#: templates/base.html:47 templates/base.html:92
 msgid "Menu"
 msgstr "Menü"
 
-#: templates/base.html:52 templates/base.html:97
+#: templates/base.html:53 templates/base.html:98
 msgid "Close menu"
 msgstr "Menü bezárása"
 
 #: templates/backoffice/dashboard.html:9 templates/backoffice/dashboard.html:13
-#: templates/base.html:57 templates/errors/400.html:25
+#: templates/base.html:58 templates/errors/400.html:25
 #: templates/errors/403.html:23 templates/errors/404.html:24
 #: templates/errors/413.html:20 templates/errors/500.html:24
 msgid "Your projects"
@@ -5170,28 +5166,28 @@ msgstr "Projektjeid"
 #: templates/admin/invite_create.html:10 templates/admin/invite_view.html:11
 #: templates/admin/invites.html:8 templates/admin/user_2fa_audit_log.html:10
 #: templates/admin/user_edit.html:10 templates/admin/user_view.html:11
-#: templates/admin/users.html:8 templates/base.html:62
+#: templates/admin/users.html:8 templates/base.html:63
 msgid "Site Admin"
 msgstr "Oldal adminisztráció"
 
-#: templates/base.html:68 templates/base.html:111
+#: templates/base.html:69 templates/base.html:112
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
-#: templates/backoffice/components/navigation.html:54 templates/base.html:73
-#: templates/base.html:116
+#: templates/backoffice/components/navigation.html:42 templates/base.html:74
+#: templates/base.html:117
 msgid "Help"
 msgstr "Súgó"
 
-#: templates/base.html:77
+#: templates/base.html:78
 msgid "My Account"
 msgstr "Fiókom"
 
-#: templates/backoffice/base_page.html:44 templates/base.html:81
+#: templates/backoffice/base_page.html:44 templates/base.html:82
 msgid "Sign out"
 msgstr "Kilépés"
 
-#: templates/base.html:102 templates/errors/400.html:29
+#: templates/base.html:103 templates/errors/400.html:29
 #: templates/errors/403.html:27 templates/errors/404.html:28
 #: templates/errors/413.html:24 templates/errors/500.html:28
 #: templates/main/index.html:17 templates/public/forgot_password.html:33
@@ -5201,7 +5197,7 @@ msgstr "Kilépés"
 msgid "Sign in"
 msgstr "Bejelentkezés"
 
-#: templates/base.html:106 templates/main/index.html:31
+#: templates/base.html:107 templates/main/index.html:31
 #: templates/public/register.html:188
 msgid "Create Account"
 msgstr "Fiók létrehozása"
@@ -5209,7 +5205,7 @@ msgstr "Fiók létrehozása"
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_data.html:349
 #: templates/backoffice/assembly_edit_respondent.html:30
-#: templates/backoffice/assembly_form.html:21 templates/base.html:131
+#: templates/backoffice/assembly_form.html:21 templates/base.html:132
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -5218,34 +5214,34 @@ msgstr "Fiók létrehozása"
 msgid "There is a problem"
 msgstr "Probléma merült fel"
 
-#: templates/base.html:144
+#: templates/base.html:145
 msgid "Success"
 msgstr "Sikerült"
 
-#: templates/base.html:146
+#: templates/base.html:147
 msgid "Important"
 msgstr "Fontos"
 
 #: templates/backoffice/base_page.html:42
-#: templates/backoffice/components/footer.html:18 templates/base.html:175
-#: templates/base_public.html:40
+#: templates/backoffice/components/footer.html:18 templates/base.html:176
+#: templates/base_public.html:39
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
-#: templates/backoffice/components/footer.html:22 templates/base.html:180
-#: templates/base_public.html:45
+#: templates/backoffice/components/footer.html:22 templates/base.html:181
+#: templates/base_public.html:44
 msgid "Cookies"
 msgstr "Sütik"
 
-#: templates/base.html:185
+#: templates/base.html:186
 msgid "New Dashboard"
 msgstr "Új felület"
 
-#: templates/base.html:194
+#: templates/base.html:195
 msgid "OpenDLP Version"
 msgstr "OpenDLP verzió"
 
-#: templates/backoffice/components/footer.html:38 templates/base.html:199
+#: templates/backoffice/components/footer.html:38 templates/base.html:200
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -5253,7 +5249,7 @@ msgstr ""
 "Az OpenDLP egy nyílt forráskódú platform közösségi gyűlések szervezésére "
 "és a résztvevők véletlenszerű kiválasztására."
 
-#: templates/base_public.html:35
+#: templates/base_public.html:34
 msgid "Support links"
 msgstr "Súgó linkek"
 
