@@ -122,3 +122,32 @@ describe("modal close side effects", () => {
     expect(reload).not.toHaveBeenCalled();
   });
 });
+
+describe("modal closeAfterSubmit", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("closes once the submit event has finished, not during it", () => {
+    const state = modal({ initialOpen: true });
+
+    state.closeAfterSubmit(true);
+
+    expect(state.isOpen).toBe(true);
+    vi.runAllTimers();
+    expect(state.isOpen).toBe(false);
+  });
+
+  it("stays open when told the submit does not end in a download", () => {
+    const state = modal({ initialOpen: true });
+
+    state.closeAfterSubmit(false);
+    vi.runAllTimers();
+
+    expect(state.isOpen).toBe(true);
+  });
+});

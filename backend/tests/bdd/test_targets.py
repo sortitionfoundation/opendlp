@@ -604,6 +604,11 @@ def run_targets_export_download(admin_logged_in_page: Page) -> str:
     return pathlib.Path(download_info.value.path()).read_text(encoding="utf-8-sig")
 
 
+@then("the targets export should be closed")
+def targets_export_closed(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.locator("#targets-export-modal")).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then(parsers.parse('the downloaded targets CSV has a row for each of "{first}" and "{second}" under "{feature}"'))
 def targets_csv_rows(downloaded_targets_csv: str, first: str, second: str, feature: str) -> None:
     rows = list(csv.DictReader(StringIO(downloaded_targets_csv)))

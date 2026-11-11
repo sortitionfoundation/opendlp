@@ -320,6 +320,8 @@ Feature: Target percentages, notes and ordering
     Then keyboard focus should be inside the targets export
     And a targets CSV download starts when I run the export
     And the downloaded targets CSV has a row for each of "Male" and "Female" under "Gender"
+    And the targets export should be closed
+    And keyboard focus should be on the targets Export button
 
   Scenario: Cancelling the targets export puts focus back on its button
     Given there is an assembly with targets called "Export Cancel Demo"
