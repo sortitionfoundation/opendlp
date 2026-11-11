@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "alembic>=1.20.1",
-  "authlib>=1.9.1",
+  "authlib>=1.9.3",
   "babel>=2.18.0",
   "cachelib>=0.13.0",
   "celery>=5.5.3",
