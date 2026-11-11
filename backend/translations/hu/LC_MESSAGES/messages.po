@@ -5138,7 +5138,6 @@ msgid "Another task is already writing to this project: %(task)s"
 msgstr "Ebbe a projektbe már ír egy másik feladat: %(task)s"
 
 #: templates/base.html:5 templates/public/base.html:19
-#: templates/public/login.html:15 templates/public/register.html:17
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
 
@@ -5174,7 +5173,7 @@ msgstr "Oldal adminisztráció"
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
-#: templates/backoffice/components/navigation.html:42 templates/base.html:74
+#: templates/backoffice/components/navigation.html:43 templates/base.html:74
 #: templates/base.html:117
 msgid "Help"
 msgstr "Súgó"
@@ -11655,14 +11654,14 @@ msgstr "Eszedbe jutott a jelszavad?"
 
 #: templates/public/login.html:15
 #, fuzzy
-msgid "Sign in to OpenDLP"
-msgstr "Bejelentkezés az OpenDLP-be"
+msgid "Sign in to"
+msgstr "Bejelentkezés"
 
 #: templates/public/login.html:17
 msgid "Don't have an account?"
 msgstr "Még nincs fiókod?"
 
-#: templates/public/login.html:20 templates/public/register.html:17
+#: templates/public/login.html:20
 msgid "Create an account"
 msgstr "Fiók létrehozása"
 
@@ -11692,6 +11691,11 @@ msgstr "Bejelentkezés Microsoft-fiókkal"
 
 #: templates/public/register.html:11
 msgid "Create an Account"
+msgstr "Fiók létrehozása"
+
+#: templates/public/register.html:17
+#, fuzzy
+msgid "Create an account on"
 msgstr "Fiók létrehozása"
 
 #: templates/public/register.html:19
