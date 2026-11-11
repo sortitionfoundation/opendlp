@@ -292,7 +292,7 @@ The `docs/agent/` folder contains documentation for AI agents. See [docs/agent/A
 
 - [Code Quality Rules](docs/agent/code_quality_rules.md) - Exception handling, complexity, and formatting rules
 - [Component Accessibility](docs/agent/component_accessibility.md) - WAI-ARIA, keyboard navigation, focus management
-- [Frontend Design System](docs/agent/frontend_design_system.md) - GOV.UK styling and build pipeline
+- [Frontend Design System](docs/agent/frontend_design_system.md) - GOV.UK styling, build pipeline, and which OpenDLP logo files to use
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
 - [Frontend JS Testing](docs/agent/frontend_js_testing.md) - Vitest, ESLint/Prettier, and where JS tests live

@@ -67,7 +67,6 @@ def _page_row(
         )
         if page_short_url and page.url_slug
         else "",
-        "published_at": page.published_at_if_live(),
         "registration_count": headline_registration_count(status_counts),
         "test_submission_count": status_counts.get(RespondentStatus.TEST_SUBMISSION, 0),
     }
