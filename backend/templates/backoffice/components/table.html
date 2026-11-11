@@ -15,6 +15,7 @@ Args:
 Features:
   - Hover effect on rows (neutral-100 background)
   - Header background in neutral-50
+  - Lines between rows in --color-borders-dividers, like the outer border
   - Responsive with horizontal scrolling
 
 Usage:
@@ -38,9 +39,7 @@ Usage:
       <div class="inline-block min-w-full">
         <div class="overflow-hidden rounded-lg"
              style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-          <table {% if id %}id="{{ id }}"{% endif %}
-                 class="min-w-full divide-y {{ classes }}"
-                 style="--table-divide-color: var(--color-borders-dividers);">
+          <table {% if id %}id="{{ id }}"{% endif %} class="min-w-full divide-y {{ classes }}">
             {{ caller() }}
           </table>
         </div>
@@ -67,7 +66,7 @@ Usage:
     {"label": "Actions", "align": "right"}
   ]) }}
     #}
-  <thead style="background-color: var(--color-neutral-50);">
+  <thead style="background-color: var(--color-neutral-50); border-color: var(--color-borders-dividers);">
     <tr>
       {% for col in columns %}
         {% set align = col.align | default("left") %}
@@ -93,7 +92,11 @@ Usage:
     {% endcall %}
   {% endcall %}
     #}
-  <tbody class="divide-y" style="--tw-divide-opacity: 1; --tw-divide-color: var(--color-borders-dividers);">
+  {# divide-y, here and on the table, draws the lines between the rows and
+     under the head, but sets only their width. A border without a colour
+     takes the text colour in Tailwind v4, so the rows and the head name the
+     divider colour themselves. #}
+  <tbody class="divide-y">
     {{ caller() }}
   </tbody>
 {% endmacro %}
@@ -119,7 +122,7 @@ Usage:
     #}
   <tr class="table-row-hover {{ 'cursor-pointer' if row_url else '' }} {{ classes }}"
       {% if row_url %}data-row-url="{{ row_url }}"{% endif %}
-      style="color: var(--color-body-text);">
+      style="color: var(--color-body-text); border-color: var(--color-borders-dividers);">
     {{ caller() }}
   </tr>
 {% endmacro %}
