@@ -1,6 +1,6 @@
 {#
 ABOUTME: Draft public home page on the OpenDLP design system, served at /newhome for team review
-ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6517-17690
+ABOUTME: Header, hero, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6517-17690
 #}
 {#
    The bracketed placeholders in the footer's bottom row stand in for details
@@ -15,6 +15,7 @@ ABOUTME: Hero, how it works, key benefits, who it is for, sign-in/sign-up panels
 #}
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/navigation.html" import navigation %}
 {% from "backoffice/components/icons.html" import icon_send, icon_plus, icon_circle_check_big, icon_users, icon_copyright %}
 {% block title %}{{ _("Open Democratic Lottery Platform") }}{% endblock %}
 {% set heading_style = "color: var(--color-brand-700); font-family: var(--font-display);" %}
@@ -83,6 +84,9 @@ _("We are changing that with OpenDLP."),
            class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md"
            style="background-color: var(--color-tables-cards);
                   color: var(--color-body-text)">{{ _("Skip to main content") }}</a>
+        {% call navigation(logo_href=url_for('main.newhome'), help_href=help_site_home) %}
+            {{ button(_("Sign in"), variant="secondary", href=url_for('auth.login')) }}
+        {% endcall %}
         <main id="main-content" class="flex-1">
             {# Hero #}
             <section class="px-4 pt-10 pb-14 md:pb-16"

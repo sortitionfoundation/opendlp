@@ -43,3 +43,11 @@ class TestNewHome:
         response = client.get("/")
         assert response.status_code == 200
         assert "/newhome" not in response.text
+
+    def test_header_has_home_link_sign_in_and_help(self, client: FlaskClient, app) -> None:
+        response = client.get("/newhome")
+        header_start = response.text.index("<section")
+        header = response.text[header_start : response.text.index("</section>", header_start)]
+        assert 'href="/newhome"' in header
+        assert 'href="/auth/login"' in header
+        assert f'href="{app.config["HELP_SITE_HOME"]}' in header
