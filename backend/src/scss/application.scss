@@ -299,24 +299,6 @@ button.govuk-link {
     }
 }
 
-// Hero section styling
-.hero-section {
-    background-color: $burnt-orange;
-    color: $white;
-    padding: 30px;
-
-    .btn-light {
-        background-color: $white;
-        color: $dark-grey;
-        border: none;
-
-        &:hover {
-            background-color: $buttermilk;
-            color: $dark-grey;
-        }
-    }
-}
-
 // Custom button styling
 .btn-sortition {
     background-color: $purple-red;

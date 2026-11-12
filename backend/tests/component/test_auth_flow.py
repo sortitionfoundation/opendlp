@@ -197,7 +197,7 @@ class TestLogin:
 
 
 class TestProtectedPagesAndSession:
-    """Auth-decorator, render branches, root redirect and session persistence."""
+    """Auth-decorator, render branches, root page and session persistence."""
 
     def test_dashboard_view_access(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/dashboard")
@@ -207,14 +207,12 @@ class TestProtectedPagesAndSession:
     def test_root_page_shows_text_when_not_logged_in(self, client: FlaskClient) -> None:
         response = client.get("/")
         assert response.status_code == 200
-        assert "Ready to participate" in response.text
+        assert "Bringing" in response.text
 
-    def test_root_page_redirects_when_logged_in(self, logged_in_user: FlaskClient) -> None:
+    def test_root_page_offers_dashboard_when_logged_in(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/")
-        assert response.status_code == 302
-        assert "dashboard" in response.location
-        response = logged_in_user.get("/", follow_redirects=True)
-        assert "Your projects" in response.text
+        assert response.status_code == 200
+        assert "Dashboard" in response.text
 
     def test_protected_page_redirects_when_not_logged_in(self, client: FlaskClient) -> None:
         response = client.get("/dashboard")

@@ -20,7 +20,7 @@ Feature: User Sign in and Registration
   Scenario: Sign out
     Given the user is signed in
     When the user signs out
-    Then the user should see the default view for an anonymous user
+    Then the user should be told they are signed out on the sign in page
 
   Scenario: Successful Sign in with valid credentials
     Given the user is signing in

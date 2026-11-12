@@ -337,7 +337,7 @@ def logout() -> ResponseReturnValue:
     """User logout."""
     logout_user()
     flash(_("You have been signed out"), "info")
-    return redirect(url_for("main.index"))
+    return redirect(url_for("auth.login"))
 
 
 def _complete_registration(user: User, token: EmailConfirmationToken | None) -> ResponseReturnValue:

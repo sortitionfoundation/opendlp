@@ -15,7 +15,6 @@ ALLOWED: dict[str, str] = {
     "components/brand_marks.html": "vendor trademarks, reproduced to their own brand guidelines",
     "backoffice/components/button.html": "an <svg> inside a macro docstring, not markup",
     "backoffice/service_docs/_registration.html": "arrows drawn as parts of a flow diagram",
-    "main/index.html": "decorative shapes in the public landing page banner",
     # GOV.UK Frontend prescribes this pagination markup, arrows included. Three
     # templates hand-roll it instead of using components/pagination.html, which
     # is worth fixing on its own terms - but not by restyling GOV.UK's arrows.

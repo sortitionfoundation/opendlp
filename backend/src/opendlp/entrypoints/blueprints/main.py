@@ -45,18 +45,9 @@ logger = structlog.get_logger(__name__)
 
 @main_bp.route("/")
 def index() -> ResponseReturnValue:
-    """Home page - redirects to dashboard if logged in, otherwise shows landing page."""
-    if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
-    return render_template("main/index.html"), 200
+    """Public home page, shown to every visitor.
 
-
-@main_bp.route("/newhome")
-def newhome() -> ResponseReturnValue:
-    """Draft of the redesigned home page, unlinked, so the wider team can review it.
-
-    Unlike index() it does not redirect signed-in users, as the reviewers will be.
-    Instead its header offers them a link to the dashboard index() would send them to.
+    A signed-in user sees it too, with a link to their dashboard in place of Sign in.
     """
     dashboard_url = url_for(default_dashboard_endpoint()) if current_user.is_authenticated else ""
     return render_template("public/home.html", dashboard_url=dashboard_url), 200

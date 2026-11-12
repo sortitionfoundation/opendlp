@@ -1,5 +1,5 @@
 {#
-ABOUTME: Draft public home page on the OpenDLP design system, served at /newhome for team review
+ABOUTME: Public home page on the OpenDLP design system, served at /
 ABOUTME: Header, hero, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6517-17690
 #}
 {#
@@ -80,7 +80,7 @@ _("We are changing that with OpenDLP."),
            class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md"
            style="background-color: var(--color-tables-cards);
                   color: var(--color-body-text)">{{ _("Skip to main content") }}</a>
-        {% call navigation(logo_href=url_for('main.newhome'), help_href=help_site_home) %}
+        {% call navigation(logo_href=url_for('main.index'), help_href=help_site_home) %}
             {% if dashboard_url %}
                 {{ button(_("Dashboard"), variant="secondary", href=dashboard_url) }}
             {% else %}
@@ -244,7 +244,7 @@ _("We are changing that with OpenDLP."),
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 py-6"
                  style="border-bottom: 1px solid var(--color-borders-dividers)">
                 <div class="flex flex-col gap-3">
-                    <a href="{{ url_for('main.newhome') }}" class="self-start">
+                    <a href="{{ url_for('main.index') }}" class="self-start">
                         <img src="{{ url_for('static', filename='img/opendlp-small-sized-logo.svg') }}"
                              alt="{{ _('OpenDLP') }}"
                              width="107"

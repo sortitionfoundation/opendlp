@@ -151,7 +151,8 @@ def _(page: Page):
     expect(page).to_have_url(Urls.any_dashboard)
 
 
-@then("the user should see the default view for an anonymous user")
+@then("the user should be told they are signed out on the sign in page")
 def _(page: Page):
-    """the user should see the default view for an anonymous user."""
-    expect(page).to_have_url(Urls.front_page)
+    """the user should be told they are signed out on the sign in page."""
+    expect(page).to_have_url(Urls.login)
+    expect(page.get_by_text("You have been signed out")).to_be_visible()

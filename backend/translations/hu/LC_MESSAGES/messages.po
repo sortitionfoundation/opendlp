@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-12 12:34+0000\n"
+"POT-Creation-Date: 2026-11-12 12:43+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -2455,10 +2455,10 @@ msgstr "Hiba történt a jelentkezői állapot visszaállítása közben"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1043
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1113
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1438
-#: src/opendlp/entrypoints/blueprints/main.py:101
-#: src/opendlp/entrypoints/blueprints/main.py:157
-#: src/opendlp/entrypoints/blueprints/main.py:202
-#: src/opendlp/entrypoints/blueprints/main.py:319
+#: src/opendlp/entrypoints/blueprints/main.py:92
+#: src/opendlp/entrypoints/blueprints/main.py:148
+#: src/opendlp/entrypoints/blueprints/main.py:193
+#: src/opendlp/entrypoints/blueprints/main.py:310
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -2481,10 +2481,10 @@ msgstr "A közösségi gyűlés nem található"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1052
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1122
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1447
-#: src/opendlp/entrypoints/blueprints/main.py:111
-#: src/opendlp/entrypoints/blueprints/main.py:166
-#: src/opendlp/entrypoints/blueprints/main.py:211
-#: src/opendlp/entrypoints/blueprints/main.py:328
+#: src/opendlp/entrypoints/blueprints/main.py:102
+#: src/opendlp/entrypoints/blueprints/main.py:157
+#: src/opendlp/entrypoints/blueprints/main.py:202
+#: src/opendlp/entrypoints/blueprints/main.py:319
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:115
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:791
@@ -2746,72 +2746,72 @@ msgstr "A feladatfuttatás nem található"
 msgid "Unknown task type"
 msgstr "Ismeretlen feladattípus"
 
-#: src/opendlp/entrypoints/blueprints/main.py:241
+#: src/opendlp/entrypoints/blueprints/main.py:232
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/main.py:245
+#: src/opendlp/entrypoints/blueprints/main.py:236
 msgid "You don't have permission to create assemblies"
 msgstr "Nincs jogosultságod közösségi gyűlés létrehozására"
 
-#: src/opendlp/entrypoints/blueprints/main.py:249
-#: src/opendlp/entrypoints/blueprints/main.py:252
+#: src/opendlp/entrypoints/blueprints/main.py:240
+#: src/opendlp/entrypoints/blueprints/main.py:243
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:281
+#: src/opendlp/entrypoints/blueprints/main.py:272
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/main.py:290
+#: src/opendlp/entrypoints/blueprints/main.py:281
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:299
-#: src/opendlp/entrypoints/blueprints/main.py:307
+#: src/opendlp/entrypoints/blueprints/main.py:290
+#: src/opendlp/entrypoints/blueprints/main.py:298
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a közösségi gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:372
+#: src/opendlp/entrypoints/blueprints/main.py:363
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr "%(user)s hozzáadva a közösségi gyűléshez %(role)s szerepkörrel"
 
-#: src/opendlp/entrypoints/blueprints/main.py:379
+#: src/opendlp/entrypoints/blueprints/main.py:370
 msgid "Please check the form and try again"
 msgstr "Ellenőrizd az űrlapot, és próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:385
+#: src/opendlp/entrypoints/blueprints/main.py:376
 msgid "Invalid user selection"
 msgstr "Érvénytelen felhasználóválasztás"
 
-#: src/opendlp/entrypoints/blueprints/main.py:394
+#: src/opendlp/entrypoints/blueprints/main.py:385
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:403
+#: src/opendlp/entrypoints/blueprints/main.py:394
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűléshez adása közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:423
+#: src/opendlp/entrypoints/blueprints/main.py:414
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr "%(user)s eltávolítva a közösségi gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/main.py:439
+#: src/opendlp/entrypoints/blueprints/main.py:430
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr "Nem sikerült eltávolítani a felhasználót a közösségi gyűlésből: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/main.py:448
+#: src/opendlp/entrypoints/blueprints/main.py:439
 msgid "You don't have permission to remove users from this assembly"
 msgstr ""
 "Nincs jogosultságod felhasználókat eltávolítani ebből a közösségi "
 "gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/main.py:457
+#: src/opendlp/entrypoints/blueprints/main.py:448
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
 
@@ -5156,17 +5156,15 @@ msgstr "Kilépés"
 #: templates/base.html:103 templates/errors/400.html:29
 #: templates/errors/403.html:27 templates/errors/404.html:28
 #: templates/errors/413.html:24 templates/errors/500.html:28
-#: templates/main/index.html:17 templates/public/forgot_password.html:33
-#: templates/public/home.html:87 templates/public/home.html:232
-#: templates/public/home.html:236 templates/public/home.html:260
-#: templates/public/login.html:10 templates/public/login.html:47
-#: templates/public/register.html:22
+#: templates/public/forgot_password.html:33 templates/public/home.html:87
+#: templates/public/home.html:232 templates/public/home.html:236
+#: templates/public/home.html:260 templates/public/login.html:10
+#: templates/public/login.html:47 templates/public/register.html:22
 #: templates/public/resend_confirmation.html:33
 msgid "Sign in"
 msgstr "Bejelentkezés"
 
-#: templates/base.html:107 templates/main/index.html:31
-#: templates/public/register.html:188
+#: templates/base.html:107 templates/public/register.html:188
 msgid "Create Account"
 msgstr "Fiók létrehozása"
 
@@ -11382,105 +11380,6 @@ msgstr "Közösségi gyűlés szerkesztése"
 #: templates/main/edit_assembly.html:24
 msgid "Update the details for this citizens' assembly."
 msgstr "Frissítsd a közösségi gyűlés adatait."
-
-#: templates/main/index.html:2
-msgid "Welcome"
-msgstr "Üdvözlünk"
-
-#: templates/main/index.html:10
-msgid "Open Democratic Lottery Platform for Citizens' Assemblies"
-msgstr ""
-"Nyílt, demokratikus és véletlenszerű kiválasztási platform közösségi "
-"gyűlések szervezéséhez"
-
-#: templates/main/index.html:12
-msgid ""
-"OpenDLP supports democratic participation through stratified selection "
-"processes,\n"
-"                        enabling fair and representative Citizens' "
-"Assemblies worldwide."
-msgstr ""
-"Az OpenDLP rétegzett kiválasztási folyamatokon keresztül támogatja a "
-"demokratikus részvételt, világszerte lehetővé téve az igazságos és "
-"reprezentatív közösségi gyűléseket."
-
-#: templates/main/index.html:54
-msgid "Stratified Selection"
-msgstr "Rétegzett kiválasztás"
-
-#: templates/main/index.html:56
-msgid ""
-"Fair and representative selection algorithms ensure diverse participation"
-"\n"
-"                        across demographic groups."
-msgstr ""
-"A méltányos és reprezentatív kiválasztási algoritmusok biztosítják a "
-"demográfiai csoportokat átfogó, sokszínű részvételt."
-
-#: templates/main/index.html:63
-msgid "Secure &amp; Transparent"
-msgstr "Biztonságos &amp; átlátható"
-
-#: templates/main/index.html:65
-msgid ""
-"Role-based access control and audit trails maintain security while\n"
-"                        ensuring transparency in the democratic process."
-msgstr ""
-"A szerepköralapú hozzáférés-szabályozás és az eseménynaplók fenntartják a"
-" biztonságot, miközben biztosítják a demokratikus folyamat "
-"átláthatóságát."
-
-#: templates/main/index.html:72
-msgid "Citizens' Assemblies"
-msgstr "Közösségi gyűlések"
-
-#: templates/main/index.html:74
-msgid ""
-"Purpose-built for managing Citizens' Assemblies from registration\n"
-"                        through to selection and coordination."
-msgstr ""
-"Kifejezetten a közösségi gyűlések kezelésére készült, a regisztrációtól a"
-" kiválasztáson át a koordinációig."
-
-#: templates/main/index.html:86
-msgid "Ready to participate in democratic decision-making?"
-msgstr "Készen állsz, hogy részt vegyél a demokratikus döntéshozásban?"
-
-#: templates/main/index.html:88
-#, python-format
-msgid ""
-"Contact <a href=\"mailto:%(email)s\">OpenDLP Support</a> for an invite "
-"code."
-msgstr ""
-"Meghívókódért fordulj az <a href=\"mailto:%(email)s\">OpenDLP "
-"ügyfélszolgálatához</a>."
-
-#: templates/main/index.html:91
-msgid ""
-"OpenDLP is an open-source platform supporting democratic participation "
-"worldwide.\n"
-"                        It is a project of"
-msgstr ""
-"Az OpenDLP egy nyílt forráskódú platform, amely világszerte támogatja a "
-"demokratikus részvételt. Ez a következő projektje:"
-
-#: templates/main/index.html:95
-msgid ""
-"If you would like to be kept up to date with the development process for "
-"OpenDLP and potentially help us shape this unique platform please "
-"register your email on the"
-msgstr ""
-"Ha szeretnél naprakész maradni az OpenDLP fejlesztésével kapcsolatban, és"
-" esetleg segítenél nekünk alakítani ezt az egyedülálló platformot, add "
-"meg az e-mail címed itt:"
-
-#: templates/main/index.html:96
-msgid "page"
-msgstr "oldal"
-
-#: templates/main/index.html:97
-msgid "You can also email us at"
-msgstr "E-mailt is írhatsz nekünk ide:"
 
 #: templates/main/search_user_results.html:31
 msgid "No users match your search"
