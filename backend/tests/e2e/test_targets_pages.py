@@ -391,7 +391,7 @@ class TestSaveAll:
         )
 
         assert response.status_code == 200
-        assert b"Max must be at least the min" in response.data
+        assert b"Max must be greater than or equal to min" in response.data
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             saved = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
@@ -428,7 +428,7 @@ class TestSaveAll:
         )
 
         html = response.data.decode()
-        assert html.count("Max must be at least the min") == 2
+        assert html.count("Max must be greater than or equal to min") == 2
         # The message the form shows, not the domain's own - that one is written
         # for a developer and never passes through gettext.
         assert f"Source must be {MAX_SOURCE_URL_LENGTH} characters or fewer" in html

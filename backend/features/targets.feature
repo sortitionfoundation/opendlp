@@ -98,7 +98,7 @@ Feature: Target percentages, notes and ordering
     And I save all targets
     Then I should see the bulk edit form
     And the "Male" edit row should show min "9" and max "2"
-    And the "Male" edit row should show the error "Max must be at least the min"
+    And the "Male" edit row should show the error "Max must be greater than or equal to min"
 
   Scenario: Saving the targets runs the detailed check
     Given there is an assembly with targets called "Check On Save Demo"
@@ -320,6 +320,8 @@ Feature: Target percentages, notes and ordering
     Then keyboard focus should be inside the targets export
     And a targets CSV download starts when I run the export
     And the downloaded targets CSV has a row for each of "Male" and "Female" under "Gender"
+    And the targets export should be closed
+    And keyboard focus should be on the targets Export button
 
   Scenario: Cancelling the targets export puts focus back on its button
     Given there is an assembly with targets called "Export Cancel Demo"
@@ -339,3 +341,20 @@ Feature: Target percentages, notes and ordering
     When I press Escape
     Then the note "Counts people in the pool" should not be showing
     And the focus should be back on "More about Respondents"
+
+  Scenario: The targets page fits on a phone
+    Given there is an assembly with targets called "Phone Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Phone Demo" on a phone
+    Then the "Edit targets" button should be wholly in view
+    And the targets heading should scroll with the page
+    And the "Max" column can be scrolled into view
+
+  Scenario: The targets edit form fits on a phone
+    Given there is an assembly with targets called "Phone Edit Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Phone Edit Demo" on a phone
+    And I choose to edit all targets
+    Then the "Add target" button should be wholly in view
+    And the "Save" button should be wholly in view
+    And the "Max" column can be scrolled into view

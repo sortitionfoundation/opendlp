@@ -352,7 +352,7 @@ def _parse_cells(
                 result.add_value_error(row.value_id, _("Enter whole numbers of zero or more"))
                 continue
             if high < low:
-                result.add_value_error(row.value_id, _("Maximum must be at least the minimum"))
+                result.add_value_error(row.value_id, _("Max must be greater than or equal to min"))
                 continue
             submitted[row.value_id] = (low, high)
     return submitted

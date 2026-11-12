@@ -1079,7 +1079,7 @@ def _value_problem(value_edit: TargetValueEdit) -> tuple[str, str] | None:
     if value_edit.max is not None and value_edit.max < 0:
         return "max", _("Max cannot be negative")
     if value_edit.min is not None and value_edit.max is not None and value_edit.max < value_edit.min:
-        return "max", _("Max must be at least the min")
+        return "max", _("Max must be greater than or equal to min")
     if value_edit.percentage is not None and not 0 <= value_edit.percentage <= 100:
         return "percentage", _("Population share must be between 0 and 100")
     return None

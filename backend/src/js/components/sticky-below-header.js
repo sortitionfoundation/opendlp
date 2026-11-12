@@ -26,8 +26,11 @@ export function stickyBelowHeader() {
       var element = this.$el;
       var place = function () {
         element.style.top = header.offsetHeight + "px";
+        // A page can stop the element sticking, as the targets page does on a
+        // phone; then it scrolls away and leaves the header alone to clear.
+        var sticks = window.getComputedStyle(element).position === "sticky";
         document.documentElement.style.scrollPaddingTop =
-          header.offsetHeight + element.offsetHeight + "px";
+          header.offsetHeight + (sticks ? element.offsetHeight : 0) + "px";
       };
       place();
       if (typeof ResizeObserver === "undefined") return;

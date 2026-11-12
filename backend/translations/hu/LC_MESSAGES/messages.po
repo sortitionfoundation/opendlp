@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-12 12:43+0000\n"
+"POT-Creation-Date: 2026-11-12 16:48+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -72,7 +72,7 @@ msgstr "Feldolgozás…"
 #: templates/backoffice/assembly_respondents.html:16
 #: templates/backoffice/assembly_respondents.html:71
 #: templates/backoffice/components/assembly_tabs.html:58
-#: templates/backoffice/respondents/export_modal.html:64
+#: templates/backoffice/respondents/export_modal.html:68
 #: templates/backoffice/targets/table_cells.html:30
 #: templates/db_selection/select.html:43
 #: templates/main/view_assembly_base.html:42
@@ -89,7 +89,7 @@ msgstr "Eredmények"
 #: templates/backoffice/assembly_data.html:337
 #: templates/backoffice/assembly_data.html:419
 #: templates/backoffice/assembly_targets.html:14
-#: templates/backoffice/assembly_targets.html:111
+#: templates/backoffice/assembly_targets.html:116
 #: templates/backoffice/components/assembly_tabs.html:45
 #: templates/main/view_assembly_base.html:36
 #: templates/targets/view_targets.html:2
@@ -895,7 +895,7 @@ msgstr "Nem kötelező – az esemény első ülésének időpontja"
 #: src/opendlp/entrypoints/forms.py:344
 #: templates/backoffice/assembly_details.html:75
 #: templates/backoffice/assembly_details.html:76
-#: templates/backoffice/assembly_targets.html:116
+#: templates/backoffice/assembly_targets.html:121
 #: templates/main/view_assembly_details.html:27
 msgid "Panel size"
 msgstr ""
@@ -1231,8 +1231,8 @@ msgstr ""
 #: templates/backoffice/components/db_replacement_modal.html:129
 #: templates/backoffice/components/db_selection_progress_modal.html:84
 #: templates/backoffice/components/db_selection_progress_modal.html:92
-#: templates/backoffice/targets/bulk_edit_form.html:300
-#: templates/backoffice/targets/category_block.html:132
+#: templates/backoffice/targets/bulk_edit_form.html:306
+#: templates/backoffice/targets/category_block.html:145
 #: templates/targets/components/category_block.html:69
 #: templates/targets/components/category_block.html:136
 #: templates/targets/components/category_block.html:263
@@ -1254,8 +1254,8 @@ msgstr "Nem kötelező – a minimum és a maximum ebből adódik"
 #: src/opendlp/entrypoints/forms.py:686
 #: src/opendlp/service_layer/selection_report.py:221
 #: templates/backoffice/components/db_selection_progress_modal.html:93
-#: templates/backoffice/targets/bulk_edit_form.html:303
-#: templates/backoffice/targets/category_block.html:135
+#: templates/backoffice/targets/bulk_edit_form.html:309
+#: templates/backoffice/targets/category_block.html:148
 #: templates/targets/components/category_block.html:70
 #: templates/targets/components/category_block.html:147
 #: templates/targets/components/category_block.html:275
@@ -1265,8 +1265,8 @@ msgstr "Min."
 #: src/opendlp/entrypoints/forms.py:691
 #: src/opendlp/service_layer/selection_report.py:222
 #: templates/backoffice/components/db_selection_progress_modal.html:94
-#: templates/backoffice/targets/bulk_edit_form.html:304
-#: templates/backoffice/targets/category_block.html:136
+#: templates/backoffice/targets/bulk_edit_form.html:310
+#: templates/backoffice/targets/category_block.html:149
 #: templates/targets/components/category_block.html:71
 #: templates/targets/components/category_block.html:158
 #: templates/targets/components/category_block.html:286
@@ -4425,8 +4425,9 @@ msgid "Enter whole numbers of zero or more"
 msgstr "Nullát vagy annál nagyobb egész számot adj meg"
 
 #: src/opendlp/service_layer/replacement_targets.py:355
-msgid "Maximum must be at least the minimum"
-msgstr "A maximum nem lehet kisebb a minimumnál"
+#: src/opendlp/service_layer/target_service.py:1082
+msgid "Max must be greater than or equal to min"
+msgstr ""
 
 #: src/opendlp/service_layer/replacement_targets.py:402
 #, python-format
@@ -4956,10 +4957,6 @@ msgstr "A minimum nem lehet negatív"
 msgid "Max cannot be negative"
 msgstr "A maximum nem lehet negatív"
 
-#: src/opendlp/service_layer/target_service.py:1082
-msgid "Max must be at least the min"
-msgstr "A maximumnak legalább akkorának kell lennie, mint a minimum"
-
 #: src/opendlp/service_layer/target_service.py:1084
 msgid "Population share must be between 0 and 100"
 msgstr "A népességi aránynak 0 és 100 között kell lennie"
@@ -5311,12 +5308,12 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/respondent_field_schema/_block_modal.html:70
 #: templates/backoffice/respondent_field_schema/_field_modal.html:199
 #: templates/backoffice/respondents/confirm_upload_diff.html:88
-#: templates/backoffice/respondents/export_modal.html:75
+#: templates/backoffice/respondents/export_modal.html:79
 #: templates/backoffice/target_sources/_setup_modal.html:354
 #: templates/backoffice/target_sources/_upload_modal.html:84
 #: templates/backoffice/targets/add_target_modal.html:29
 #: templates/backoffice/targets/create_from_columns_modal.html:87
-#: templates/backoffice/targets/export_modal.html:58
+#: templates/backoffice/targets/export_modal.html:62
 #: templates/backoffice/targets_force_unlink_confirm.html:59
 #: templates/db_selection/select.html:113
 #: templates/db_selection/settings.html:76
@@ -5375,7 +5372,7 @@ msgstr "Szerepkör"
 #: templates/backoffice/components/db_selection_progress_modal.html:120
 #: templates/backoffice/components/registration_page_list.html:29
 #: templates/backoffice/components/selection_progress_modal.html:49
-#: templates/backoffice/respondents/export_modal.html:49
+#: templates/backoffice/respondents/export_modal.html:53
 #: templates/main/view_assembly_data.html:54
 #: templates/main/view_assembly_details.html:13
 #: templates/respondents/view_respondents.html:164
@@ -5414,7 +5411,7 @@ msgid "Unknown"
 msgstr "Ismeretlen"
 
 #: templates/admin/invite_view.html:105 templates/admin/user_edit.html:108
-#: templates/backoffice/targets/category_block.html:182
+#: templates/backoffice/targets/category_block.html:195
 #: templates/db_selection/components/progress.html:91
 #: templates/db_selection/select.html:24 templates/db_selection/select.html:54
 #: templates/gsheets/components/progress.html:101
@@ -5502,7 +5499,7 @@ msgstr "Lejárat"
 #: templates/backoffice/components/db_selection_progress_modal.html:124
 #: templates/backoffice/components/registration_page_list.html:37
 #: templates/backoffice/respondent_field_schema/_editor.html:154
-#: templates/backoffice/targets/bulk_edit_form.html:306
+#: templates/backoffice/targets/bulk_edit_form.html:312
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
 #: templates/targets/components/category_block.html:76
@@ -5956,11 +5953,11 @@ msgstr "Táblázat"
 
 #: templates/backoffice/assembly_dashboard.html:72
 #: templates/backoffice/assembly_respondents.html:118
-#: templates/backoffice/assembly_targets.html:142
+#: templates/backoffice/assembly_targets.html:147
 #: templates/backoffice/dashboard_export_modal.html:14
 #: templates/backoffice/dashboard_export_modal.html:63
-#: templates/backoffice/respondents/export_modal.html:76
-#: templates/backoffice/targets/export_modal.html:59
+#: templates/backoffice/respondents/export_modal.html:80
+#: templates/backoffice/targets/export_modal.html:63
 msgid "Export"
 msgstr "Exportálás"
 
@@ -5987,10 +5984,10 @@ msgstr "Adatok"
 #: templates/backoffice/assembly_data.html:41
 #: templates/backoffice/dashboard_export_modal.html:40
 #: templates/backoffice/dashboard_export_modal.html:47
-#: templates/backoffice/respondents/export_modal.html:34
-#: templates/backoffice/respondents/export_modal.html:41
-#: templates/backoffice/targets/export_modal.html:36
-#: templates/backoffice/targets/export_modal.html:43
+#: templates/backoffice/respondents/export_modal.html:38
+#: templates/backoffice/respondents/export_modal.html:45
+#: templates/backoffice/targets/export_modal.html:40
+#: templates/backoffice/targets/export_modal.html:47
 #: templates/main/view_assembly_data.html:4
 msgid "Google Sheets"
 msgstr "Google Táblázat"
@@ -6377,7 +6374,7 @@ msgid "Edit Settings"
 msgstr "Beállítások szerkesztése"
 
 #: templates/backoffice/assembly_details.html:76
-#: templates/backoffice/assembly_targets.html:116
+#: templates/backoffice/assembly_targets.html:121
 msgid "The number of people to select"
 msgstr ""
 
@@ -6774,8 +6771,8 @@ msgstr "Befejezve"
 #: templates/backoffice/assembly_selection.html:231
 #: templates/backoffice/assembly_view_respondent.html:242
 #: templates/backoffice/targets/bulk_edit_form.html:277
-#: templates/backoffice/targets/bulk_edit_form.html:305
-#: templates/backoffice/targets/category_block.html:137
+#: templates/backoffice/targets/bulk_edit_form.html:311
+#: templates/backoffice/targets/category_block.html:150
 #: templates/main/view_assembly_data.html:59
 msgid "Comment"
 msgstr "Megjegyzés"
@@ -6850,28 +6847,28 @@ msgstr "Kezdeti kiválasztás kiválasztási szempontok munkalapja:"
 msgid "Replacement Categories Tab:"
 msgstr "Pótláshoz tartozó kiválasztási szempontok munkalapja:"
 
-#: templates/backoffice/assembly_targets.html:115
+#: templates/backoffice/assembly_targets.html:120
 #, python-format
 msgid "Panel size: %(number)s"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:120
+#: templates/backoffice/assembly_targets.html:125
 #: templates/targets/view_targets.html:8
 msgid "No targets defined yet."
 msgstr "Még nincsenek meghatározva kiválasztási szempontok."
 
-#: templates/backoffice/assembly_targets.html:147
-#: templates/backoffice/assembly_targets.html:150
+#: templates/backoffice/assembly_targets.html:152
+#: templates/backoffice/assembly_targets.html:155
 #: templates/backoffice/targets/add_target_modal.html:14
 #: templates/targets/components/add_category_form.html:28
 msgid "Add target"
 msgstr "Célszám hozzáadása"
 
-#: templates/backoffice/assembly_targets.html:157
+#: templates/backoffice/assembly_targets.html:162
 msgid "Edit targets"
 msgstr "Célszámok szerkesztése"
 
-#: templates/backoffice/assembly_targets.html:179
+#: templates/backoffice/assembly_targets.html:184
 #, python-format
 msgid ""
 "All checks passed. Found %(num_features)s targets and %(num_people)s "
@@ -6881,14 +6878,14 @@ msgstr ""
 "%(num_people)s jogosult jelentkező található. A célszámok készen állnak a"
 " kiválasztásra."
 
-#: templates/backoffice/assembly_targets.html:188
+#: templates/backoffice/assembly_targets.html:193
 #: templates/targets/view_targets.html:51
 #: templates/targets/view_targets.html:62
 #: templates/targets/view_targets.html:71
 msgid "Target check found problems"
 msgstr "A célszámok ellenőrzése problémákat talált"
 
-#: templates/backoffice/assembly_targets.html:196
+#: templates/backoffice/assembly_targets.html:201
 msgid ""
 "Target check found problems. See details below next to the affected "
 "targets."
@@ -6896,7 +6893,7 @@ msgstr ""
 "A célszámok ellenőrzése problémákat talált. A részleteket alább, az "
 "érintett célszámok mellett találod."
 
-#: templates/backoffice/assembly_targets.html:214
+#: templates/backoffice/assembly_targets.html:219
 msgid ""
 "The algorithm has recommended target changes. Accept them individually "
 "below, or all at once here."
@@ -6904,33 +6901,33 @@ msgstr ""
 "Az algoritmus módosításokat javasolt a célszámokhoz. Fogadd el őket alább"
 " egyenként, vagy itt egyszerre."
 
-#: templates/backoffice/assembly_targets.html:217
-#: templates/backoffice/assembly_targets.html:228
+#: templates/backoffice/assembly_targets.html:222
+#: templates/backoffice/assembly_targets.html:233
 msgid "Accept all suggestions"
 msgstr "Minden javaslat elfogadása"
 
-#: templates/backoffice/assembly_targets.html:237
+#: templates/backoffice/assembly_targets.html:242
 msgid "Accept all and re-run test selection"
 msgstr "Minden elfogadása és a tesztkiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:237
+#: templates/backoffice/assembly_targets.html:242
 msgid "Accept all and re-run selection"
 msgstr "Minden elfogadása és a kiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:280
+#: templates/backoffice/assembly_targets.html:285
 #: templates/backoffice/components/leave_guard_modal.html:19
 msgid "Discard changes"
 msgstr "Módosítások elvetése"
 
-#: templates/backoffice/assembly_targets.html:282
+#: templates/backoffice/assembly_targets.html:287
 msgid "Save and re-run test selection"
 msgstr "Mentés és a tesztkiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:282
+#: templates/backoffice/assembly_targets.html:287
 msgid "Save and re-run selection"
 msgstr "Mentés és a kiválasztás újrafuttatása"
 
-#: templates/backoffice/assembly_targets.html:284
+#: templates/backoffice/assembly_targets.html:289
 #: templates/backoffice/components/edit_number_to_select_modal.html:41
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:23
@@ -7142,12 +7139,12 @@ msgid "Export includes only the data currently displayed in the table view."
 msgstr "Az exportálás csak a táblázatnézetben éppen látható adatokat tartalmazza."
 
 #: templates/backoffice/dashboard_export_modal.html:27
-#: templates/backoffice/targets/export_modal.html:27
+#: templates/backoffice/targets/export_modal.html:31
 msgid "File type"
 msgstr "Fájltípus"
 
 #: templates/backoffice/dashboard_export_modal.html:31
-#: templates/backoffice/targets/export_modal.html:31
+#: templates/backoffice/targets/export_modal.html:35
 msgid "CSV"
 msgstr "CSV"
 
@@ -7156,8 +7153,8 @@ msgid "Xls"
 msgstr "Xls"
 
 #: templates/backoffice/dashboard_export_modal.html:48
-#: templates/backoffice/respondents/export_modal.html:42
-#: templates/backoffice/targets/export_modal.html:44
+#: templates/backoffice/respondents/export_modal.html:46
+#: templates/backoffice/targets/export_modal.html:48
 msgid "Available when a Google service account is configured."
 msgstr "Akkor érhető el, ha be van állítva Google szolgáltatásfiók."
 
@@ -8287,7 +8284,7 @@ msgid "Comment saved with this change"
 msgstr "A módosítással együtt mentett megjegyzés"
 
 #: templates/backoffice/components/suggestion_row.html:73
-#: templates/backoffice/targets/category_block.html:108
+#: templates/backoffice/targets/category_block.html:110
 #: templates/targets/components/category_block.html:59
 #: templates/targets/components/category_block.html:183
 msgid "Suggestion"
@@ -9875,23 +9872,23 @@ msgstr ""
 msgid "Confirm and import"
 msgstr "Megerősítés és importálás"
 
-#: templates/backoffice/respondents/export_modal.html:16
+#: templates/backoffice/respondents/export_modal.html:19
 msgid "Export respondents"
 msgstr "Jelentkezők exportálása"
 
-#: templates/backoffice/respondents/export_modal.html:25
+#: templates/backoffice/respondents/export_modal.html:29
 msgid "Destination"
 msgstr "Célhely"
 
-#: templates/backoffice/respondents/export_modal.html:29
+#: templates/backoffice/respondents/export_modal.html:33
 msgid "CSV download"
 msgstr "CSV letöltés"
 
-#: templates/backoffice/respondents/export_modal.html:67
+#: templates/backoffice/respondents/export_modal.html:71
 msgid "Automatically export when respondents change"
 msgstr "Automatikus exportálás, ha a jelentkezők változnak"
 
-#: templates/backoffice/respondents/export_modal.html:69
+#: templates/backoffice/respondents/export_modal.html:73
 msgid ""
 "The tab is rewritten shortly after any respondent is added or changed, "
 "using the status chosen above. Anything typed into the tab is lost, so "
@@ -10395,12 +10392,12 @@ msgid "'%(name)s' and all its values will be deleted when you save."
 msgstr "\"%(name)s\" és az összes értéke törlődik, amikor mentesz."
 
 #: templates/backoffice/targets/bulk_edit_form.html:270
-#: templates/backoffice/targets/category_block.html:75
+#: templates/backoffice/targets/category_block.html:77
 msgid "Source of population figures"
 msgstr "Népességi adatok forrása"
 
 #: templates/backoffice/targets/bulk_edit_form.html:271
-#: templates/backoffice/targets/category_block.html:75
+#: templates/backoffice/targets/category_block.html:77
 msgid ""
 "Where the percentages came from: a link to the report, such as census "
 "tables or a poll, or a note that a council sent the numbers by email."
@@ -10418,52 +10415,52 @@ msgstr "Célszám mozgatása felfelé"
 msgid "Delete target"
 msgstr "Célszám törlése"
 
-#: templates/backoffice/targets/bulk_edit_form.html:301
-#: templates/backoffice/targets/category_block.html:133
+#: templates/backoffice/targets/bulk_edit_form.html:307
+#: templates/backoffice/targets/category_block.html:146
 #, python-format
 msgid "Population (%%)"
 msgstr "Népesség (%%)"
 
-#: templates/backoffice/targets/bulk_edit_form.html:346
+#: templates/backoffice/targets/bulk_edit_form.html:352
 #: templates/targets/components/category_block.html:247
 msgid "Add value"
 msgstr "Érték hozzáadása"
 
-#: templates/backoffice/targets/bulk_edit_form.html:351
+#: templates/backoffice/targets/bulk_edit_form.html:357
 msgid "Add values found in respondent data"
 msgstr "A jelentkezői adatokban talált értékek hozzáadása"
 
-#: templates/backoffice/targets/bulk_edit_form.html:356
+#: templates/backoffice/targets/bulk_edit_form.html:362
 #, python-format
 msgid "Not yet targeted: %(values)s"
 msgstr "Még nincs hozzájuk célszám: %(values)s"
 
-#: templates/backoffice/targets/bulk_edit_form.html:365
-#: templates/backoffice/targets/category_block.html:206
+#: templates/backoffice/targets/bulk_edit_form.html:371
+#: templates/backoffice/targets/category_block.html:219
 #: templates/targets/components/category_block.html:195
 msgid "Total"
 msgstr "Összesen"
 
-#: templates/backoffice/targets/bulk_edit_form.html:399
+#: templates/backoffice/targets/bulk_edit_form.html:406
 #, python-format
 msgid "Min %(min)s and max %(max)s, from the percentage"
 msgstr ""
 
-#: templates/backoffice/targets/category_block.html:74
+#: templates/backoffice/targets/category_block.html:76
 msgid "Source of population figures:"
 msgstr "Népességi adatok forrása:"
 
-#: templates/backoffice/targets/category_block.html:200
+#: templates/backoffice/targets/category_block.html:213
 #: templates/targets/components/category_block.html:208
 msgid "No values defined."
 msgstr "Nincsenek meghatározott értékek."
 
-#: templates/backoffice/targets/category_block.html:240
+#: templates/backoffice/targets/category_block.html:253
 #: templates/targets/components/category_block.html:223
 msgid "Values in respondent data not yet targeted:"
 msgstr "A jelentkezői adatokban szereplő, még célszám nélküli értékek:"
 
-#: templates/backoffice/targets/category_block.html:242
+#: templates/backoffice/targets/category_block.html:255
 msgid "Add them under \"Edit targets\"."
 msgstr "Add hozzá őket a „Célszámok szerkesztése” alatt."
 
@@ -10524,11 +10521,11 @@ msgstr ""
 msgid "Add selected targets"
 msgstr "Kijelölt kiválasztási szempontok hozzáadása"
 
-#: templates/backoffice/targets/export_modal.html:14
+#: templates/backoffice/targets/export_modal.html:17
 msgid "Export targets"
 msgstr ""
 
-#: templates/backoffice/targets/export_modal.html:22
+#: templates/backoffice/targets/export_modal.html:26
 msgid ""
 "The export has the same columns as a targets upload, so it can be edited "
 "and uploaded again."
@@ -12386,8 +12383,8 @@ msgstr "Üres %(value_column_name)s ebben: %(feature_column_name)s %(feature_nam
 
 #: .venv/lib/python3.14/site-packages/sortition_algorithms/error_messages.py:103
 #, python-format
-msgid "Minimum (%(min)s) should not be greater than maximum (%(max)s)"
-msgstr "A minimum (%(min)s) nem lehet nagyobb a maximumnál (%(max)s)"
+msgid "Max (%(max)s) must be greater than or equal to min (%(min)s)"
+msgstr ""
 
 #: .venv/lib/python3.14/site-packages/sortition_algorithms/error_messages.py:104
 #, python-format

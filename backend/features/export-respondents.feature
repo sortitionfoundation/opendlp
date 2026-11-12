@@ -10,6 +10,8 @@ Feature: Export respondents
     And I open the export modal
     Then a CSV download starts when I run the export
     And the downloaded CSV contains the respondent ids
+    And the export modal is no longer visible
+    And keyboard focus should be on the Export button
 
   Scenario: Organiser dismisses the export modal
     Given there is an assembly with respondents ready to export called "Dismiss Demo"

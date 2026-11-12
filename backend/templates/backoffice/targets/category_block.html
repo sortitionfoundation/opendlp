@@ -62,7 +62,9 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
     {# ── Category Header ──────────────────────────────── #}
     <div class="px-6 py-4"
          style="border-bottom: 1px solid var(--color-borders-dividers)">
-        <h3 class="text-heading-lg" style="color: var(--color-headings);">{{ category.name }}</h3>
+        <h3 class="text-heading-lg"
+            id="category-{{ category.id }}-name"
+            style="color: var(--color-headings);">{{ category.name }}</h3>
     </div>
     {# ── Source of Population Figures and Comment ──────────── #}
     {% if category.source_url or category.comment %}
@@ -113,10 +115,21 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
         </div>
     {% endif %}
     {# ── Values Table ─────────────────────────────────── #}
-    <div class="px-6 py-4">
+    {# On a narrow screen the table scrolls sideways inside the card rather
+       than being cut off. Its fixed-width columns would otherwise leave Value
+       and Comment no room at all, so the table is never narrower than those
+       columns plus some room for the two flexible ones. The scrolling box
+       takes keyboard focus, so it can be scrolled without a mouse; nothing
+       in the Min, Max or Comment columns would bring them into view. #}
+    {% set fixed_rem = 24 + (9 if show_counts else 0) + (8 if show_selected else 0) %}
+    <div class="px-6 py-4 overflow-x-auto"
+         tabindex="0"
+         role="region"
+         aria-labelledby="category-{{ category.id }}-name">
         <table class="w-full text-body-md"
                style="border-collapse: collapse;
-                      table-layout: fixed">
+                      table-layout: fixed;
+                      min-width: {{ fixed_rem + 20 }}rem">
             <colgroup>
                 <col />
                 <col style="width: 8rem;" />

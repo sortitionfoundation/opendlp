@@ -9,13 +9,17 @@ ABOUTME: Choose CSV download or Google Sheets; the file has the columns a target
 {# The shared modal() component supplies the isOpen/canClose/close/closeIfAllowed
    contract the modal() macro expects (see the respondents export modal). The
    CSV-vs-gsheet toggle lives in a nested data-only scope, as the CSP Alpine
-   build does not register methods defined inline in an x-data object literal. #}
+   build does not register methods defined inline in an x-data object literal.
+   A CSV export is a download that leaves the page where it is, so the modal
+   closes itself once the form is sent; a Google Sheets export loads the page
+   again, which closes it. #}
 <div x-data="modal({ initialOpen: true })">
     {% call modal(id="targets-export-modal", title=_("Export targets")) %}
         <form method="post"
               action="{{ url_for('targets.run_export', assembly_id=assembly_id) }}"
               class="flex flex-col gap-4"
-              x-data="{ fileType: 'csv' }">
+              x-data="{ fileType: 'csv' }"
+              @submit="closeAfterSubmit(fileType === 'csv')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <p class="text-body-sm" style="color: var(--color-secondary-text);">

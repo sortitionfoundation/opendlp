@@ -5,10 +5,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { stickyBelowHeader } from "./sticky-below-header.js";
 
-function setUp({ withHeader = true, headerHeight = 120, ownHeight = 60 } = {}) {
+// The page's stylesheet makes the heading sticky, or not on a phone; there is
+// no stylesheet here, so the position is set on the element instead.
+function setUp({
+  withHeader = true,
+  headerHeight = 120,
+  ownHeight = 60,
+  position = "sticky",
+} = {}) {
   document.body.innerHTML = `
     ${withHeader ? '<header id="header" data-sticky-header></header>' : ""}
-    <section id="heading"></section>`;
+    <section id="heading" style="position: ${position}"></section>`;
   if (withHeader) {
     Object.defineProperty(document.getElementById("header"), "offsetHeight", {
       configurable: true,
@@ -41,6 +48,16 @@ describe("stickyBelowHeader", () => {
     const state = setUp({ headerHeight: 120, ownHeight: 60 });
     state.init();
     expect(document.documentElement.style.scrollPaddingTop).toBe("180px");
+  });
+
+  it("leaves itself out of the scroll padding when it does not stick", () => {
+    const state = setUp({
+      headerHeight: 120,
+      ownHeight: 60,
+      position: "static",
+    });
+    state.init();
+    expect(document.documentElement.style.scrollPaddingTop).toBe("120px");
   });
 
   it("moves when the header changes height", () => {

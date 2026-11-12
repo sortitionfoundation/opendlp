@@ -104,9 +104,14 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                      })">
             {# ── Targets Heading and Actions ──────────────── #}
             {# Pinned under the page header as the targets scroll by, so the
-               title and the way into editing are always in reach. #}
-            <div class="sticky-below-header mb-3" x-data="stickyBelowHeader">
-                <section class="flex items-start justify-between gap-4">
+               title and the way into editing are always in reach. Not on a
+               phone: there the actions wrap under the title, and pinned with
+               the header and the save bar they would take up too much of a
+               small screen. #}
+            <div class="sticky-below-header max-sm:static mb-3" x-data="stickyBelowHeader">
+                {# The actions wrap under the heading when there is no room
+                   beside it, as on a phone. #}
+                <section class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h2>
                     {# The seat count, not a category tally: every min and max on this
@@ -134,7 +139,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                        position across the reload. In the form, "Add target"
                        opens its dialog on the spot, as there are edits on the
                        page that a reload would lose. #}
-                        <span class="flex items-center gap-2 shrink-0" x-scroll-preserve-links>
+                        <span class="flex flex-wrap items-center gap-2" x-scroll-preserve-links>
                         {# Exports what is saved, so it is no use mid-edit: it goes
                            with "Edit targets" while the form is open. #}
                             {% if target_categories %}

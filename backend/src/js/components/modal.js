@@ -63,6 +63,24 @@ export function modal(options) {
       this.close();
     },
 
+    /**
+     * Close after a form in the modal is submitted, when its response will be
+     * a file download. The browser stays on the page for a download, so
+     * nothing else would close the modal. Call it from the form's submit
+     * event, passing whether this submit downloads (false leaves the modal
+     * open, for a submit that loads a page instead).
+     *
+     * The close waits a tick: closing empties a fragment dialog host, and a
+     * form taken out of the page during its own submit event is never sent.
+     */
+    closeAfterSubmit: function (downloads) {
+      if (!downloads) return;
+      var self = this;
+      setTimeout(function () {
+        self.close();
+      }, 0);
+    },
+
     setCanClose: function (value) {
       this.canClose = value;
     },
