@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-11 14:10+0100\n"
+"POT-Creation-Date: 2026-11-12 12:03+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -2485,10 +2485,10 @@ msgstr "Hiba történt a jelentkezői állapot visszaállítása közben"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1043
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1113
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1438
-#: src/opendlp/entrypoints/blueprints/main.py:90
-#: src/opendlp/entrypoints/blueprints/main.py:146
-#: src/opendlp/entrypoints/blueprints/main.py:191
-#: src/opendlp/entrypoints/blueprints/main.py:308
+#: src/opendlp/entrypoints/blueprints/main.py:101
+#: src/opendlp/entrypoints/blueprints/main.py:157
+#: src/opendlp/entrypoints/blueprints/main.py:202
+#: src/opendlp/entrypoints/blueprints/main.py:319
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -2511,10 +2511,10 @@ msgstr "A közösségi gyűlés nem található"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1052
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1122
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1447
-#: src/opendlp/entrypoints/blueprints/main.py:100
-#: src/opendlp/entrypoints/blueprints/main.py:155
-#: src/opendlp/entrypoints/blueprints/main.py:200
-#: src/opendlp/entrypoints/blueprints/main.py:317
+#: src/opendlp/entrypoints/blueprints/main.py:111
+#: src/opendlp/entrypoints/blueprints/main.py:166
+#: src/opendlp/entrypoints/blueprints/main.py:211
+#: src/opendlp/entrypoints/blueprints/main.py:328
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:115
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:791
@@ -2776,72 +2776,72 @@ msgstr "A feladatfuttatás nem található"
 msgid "Unknown task type"
 msgstr "Ismeretlen feladattípus"
 
-#: src/opendlp/entrypoints/blueprints/main.py:230
+#: src/opendlp/entrypoints/blueprints/main.py:241
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/main.py:234
+#: src/opendlp/entrypoints/blueprints/main.py:245
 msgid "You don't have permission to create assemblies"
 msgstr "Nincs jogosultságod közösségi gyűlés létrehozására"
 
-#: src/opendlp/entrypoints/blueprints/main.py:238
-#: src/opendlp/entrypoints/blueprints/main.py:241
+#: src/opendlp/entrypoints/blueprints/main.py:249
+#: src/opendlp/entrypoints/blueprints/main.py:252
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/main.py:270
+#: src/opendlp/entrypoints/blueprints/main.py:281
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/main.py:279
+#: src/opendlp/entrypoints/blueprints/main.py:290
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:288
-#: src/opendlp/entrypoints/blueprints/main.py:296
+#: src/opendlp/entrypoints/blueprints/main.py:299
+#: src/opendlp/entrypoints/blueprints/main.py:307
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a közösségi gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:361
+#: src/opendlp/entrypoints/blueprints/main.py:372
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr "%(user)s hozzáadva a közösségi gyűléshez %(role)s szerepkörrel"
 
-#: src/opendlp/entrypoints/blueprints/main.py:368
+#: src/opendlp/entrypoints/blueprints/main.py:379
 msgid "Please check the form and try again"
 msgstr "Ellenőrizd az űrlapot, és próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:374
+#: src/opendlp/entrypoints/blueprints/main.py:385
 msgid "Invalid user selection"
 msgstr "Érvénytelen felhasználóválasztás"
 
-#: src/opendlp/entrypoints/blueprints/main.py:383
+#: src/opendlp/entrypoints/blueprints/main.py:394
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/main.py:392
+#: src/opendlp/entrypoints/blueprints/main.py:403
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűléshez adása közben"
 
-#: src/opendlp/entrypoints/blueprints/main.py:412
+#: src/opendlp/entrypoints/blueprints/main.py:423
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr "%(user)s eltávolítva a közösségi gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/main.py:428
+#: src/opendlp/entrypoints/blueprints/main.py:439
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr "Nem sikerült eltávolítani a felhasználót a közösségi gyűlésből: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/main.py:437
+#: src/opendlp/entrypoints/blueprints/main.py:448
 msgid "You don't have permission to remove users from this assembly"
 msgstr ""
 "Nincs jogosultságod felhasználókat eltávolítani ebből a közösségi "
 "gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/main.py:446
+#: src/opendlp/entrypoints/blueprints/main.py:457
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
 
@@ -5138,29 +5138,25 @@ msgid "Another task is already writing to this project: %(task)s"
 msgstr "Ebbe a projektbe már ír egy másik feladat: %(task)s"
 
 #: templates/base.html:5 templates/public/base.html:19
-#: templates/public/login.html:15 templates/public/register.html:17
+#: templates/public/home.html:15
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
 
-#: templates/base.html:23 templates/base_public.html:25
-#: templates/public/base.html:25
+#: templates/base.html:22 templates/base_public.html:24
+#: templates/public/base.html:25 templates/public/home.html:82
 msgid "Skip to main content"
 msgstr "Ugrás a fő tartalomra"
 
-#: templates/base.html:37
-msgid "Sortition Foundation Logo"
-msgstr "Sortition Foundation Logo"
-
-#: templates/base.html:46 templates/base.html:91
+#: templates/base.html:47 templates/base.html:92
 msgid "Menu"
 msgstr "Menü"
 
-#: templates/base.html:52 templates/base.html:97
+#: templates/base.html:53 templates/base.html:98
 msgid "Close menu"
 msgstr "Menü bezárása"
 
 #: templates/backoffice/dashboard.html:9 templates/backoffice/dashboard.html:13
-#: templates/base.html:57 templates/errors/400.html:25
+#: templates/base.html:58 templates/errors/400.html:25
 #: templates/errors/403.html:23 templates/errors/404.html:24
 #: templates/errors/413.html:20 templates/errors/500.html:24
 msgid "Your projects"
@@ -5170,38 +5166,40 @@ msgstr "Projektjeid"
 #: templates/admin/invite_create.html:10 templates/admin/invite_view.html:11
 #: templates/admin/invites.html:8 templates/admin/user_2fa_audit_log.html:10
 #: templates/admin/user_edit.html:10 templates/admin/user_view.html:11
-#: templates/admin/users.html:8 templates/base.html:62
+#: templates/admin/users.html:8 templates/base.html:63
 msgid "Site Admin"
 msgstr "Oldal adminisztráció"
 
-#: templates/base.html:68 templates/base.html:111
+#: templates/base.html:69 templates/base.html:112
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
-#: templates/backoffice/components/navigation.html:54 templates/base.html:73
-#: templates/base.html:116
+#: templates/backoffice/components/navigation.html:47 templates/base.html:74
+#: templates/base.html:117
 msgid "Help"
 msgstr "Súgó"
 
-#: templates/base.html:77
+#: templates/base.html:78
 msgid "My Account"
 msgstr "Fiókom"
 
-#: templates/backoffice/base_page.html:44 templates/base.html:81
+#: templates/backoffice/base_page.html:44 templates/base.html:82
 msgid "Sign out"
 msgstr "Kilépés"
 
-#: templates/base.html:102 templates/errors/400.html:29
+#: templates/base.html:103 templates/errors/400.html:29
 #: templates/errors/403.html:27 templates/errors/404.html:28
 #: templates/errors/413.html:24 templates/errors/500.html:28
 #: templates/main/index.html:17 templates/public/forgot_password.html:33
+#: templates/public/home.html:87 templates/public/home.html:232
+#: templates/public/home.html:236 templates/public/home.html:260
 #: templates/public/login.html:10 templates/public/login.html:47
 #: templates/public/register.html:22
 #: templates/public/resend_confirmation.html:33
 msgid "Sign in"
 msgstr "Bejelentkezés"
 
-#: templates/base.html:106 templates/main/index.html:31
+#: templates/base.html:107 templates/main/index.html:31
 #: templates/public/register.html:188
 msgid "Create Account"
 msgstr "Fiók létrehozása"
@@ -5209,7 +5207,7 @@ msgstr "Fiók létrehozása"
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_data.html:349
 #: templates/backoffice/assembly_edit_respondent.html:30
-#: templates/backoffice/assembly_form.html:21 templates/base.html:131
+#: templates/backoffice/assembly_form.html:21 templates/base.html:132
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -5218,34 +5216,35 @@ msgstr "Fiók létrehozása"
 msgid "There is a problem"
 msgstr "Probléma merült fel"
 
-#: templates/base.html:144
+#: templates/base.html:145
 msgid "Success"
 msgstr "Sikerült"
 
-#: templates/base.html:146
+#: templates/base.html:147
 msgid "Important"
 msgstr "Fontos"
 
 #: templates/backoffice/base_page.html:42
-#: templates/backoffice/components/footer.html:18 templates/base.html:175
-#: templates/base_public.html:40
+#: templates/backoffice/components/footer.html:18 templates/base.html:176
+#: templates/base_public.html:39 templates/public/home.html:278
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
-#: templates/backoffice/components/footer.html:22 templates/base.html:180
-#: templates/base_public.html:45
+#: templates/backoffice/components/footer.html:22 templates/base.html:181
+#: templates/base_public.html:44 templates/public/home.html:277
 msgid "Cookies"
 msgstr "Sütik"
 
-#: templates/base.html:185
+#: templates/base.html:186
 msgid "New Dashboard"
 msgstr "Új felület"
 
-#: templates/base.html:194
+#: templates/base.html:195
 msgid "OpenDLP Version"
 msgstr "OpenDLP verzió"
 
-#: templates/backoffice/components/footer.html:38 templates/base.html:199
+#: templates/backoffice/components/footer.html:38 templates/base.html:200
+#: templates/public/home.html:255
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -5253,7 +5252,7 @@ msgstr ""
 "Az OpenDLP egy nyílt forráskódú platform közösségi gyűlések szervezésére "
 "és a résztvevők véletlenszerű kiválasztására."
 
-#: templates/base_public.html:35
+#: templates/base_public.html:34
 msgid "Support links"
 msgstr "Súgó linkek"
 
@@ -5968,6 +5967,7 @@ msgstr "Felhasználók exportálása CSV-be"
 #: templates/backoffice/assembly_dashboard.html:40
 #: templates/backoffice/components/assembly_tabs.html:74
 #: templates/main/dashboard.html:2 templates/main/dashboard.html:7
+#: templates/public/home.html:85
 msgid "Dashboard"
 msgstr "Vezérlőpult"
 
@@ -11657,18 +11657,227 @@ msgstr "Visszaállító link küldése"
 msgid "Remember your password?"
 msgstr "Eszedbe jutott a jelszavad?"
 
+#: templates/public/home.html:19
+msgid ""
+"A democratic lottery – a “sortition” – is a gold standard foundation for "
+"citizen engagement and deliberation."
+msgstr ""
+
+#: templates/public/home.html:20
+msgid "Democratic lotteries can be technically complex to implement."
+msgstr ""
+
+#: templates/public/home.html:21
+msgid "There are few public resources available to support them."
+msgstr ""
+
+#: templates/public/home.html:22
+msgid "We are changing that with OpenDLP."
+msgstr ""
+
+#: templates/public/home.html:25
+msgid ""
+"Decide what the panel should look like, in terms of age, gender, "
+"education level, opinion, etc. The room is diverse and broadly reflects "
+"the wider population."
+msgstr ""
+
+#: templates/public/home.html:26
+msgid ""
+"Create a registration page that matches your targets and also collects "
+"contact and consent details. Anyone invited can then register their "
+"interest."
+msgstr ""
+
+#: templates/public/home.html:27
+msgid ""
+"OpenDLP selects a group of people that matches your targets in a fair "
+"way. If anyone drops out, it’s easy to select replacements. OpenDLP will "
+"help you make changes if it’s not possible to hit your targets."
+msgstr ""
+
+#: templates/public/home.html:28
+msgid ""
+"OpenDLP logs key activity, prompts users to explain project changes, and "
+"produces reports. The software is open-source."
+msgstr ""
+
+#: templates/public/home.html:31
+msgid ""
+"Selection of diverse, representative groups rather than “the usual "
+"suspects”, in a way that gives people a fair chance to take part."
+msgstr ""
+
+#: templates/public/home.html:32
+msgid "Less juggling of spreadsheets and tools, so fewer opportunities for error."
+msgstr ""
+
+#: templates/public/home.html:33
+msgid ""
+"Dashboards and a log of what was done, so you can show your process was "
+"sound."
+msgstr ""
+
+#: templates/public/home.html:36
+msgid ""
+"Built by the Sortition Foundation and Sortition Europe, who have "
+"delivered 300+ lotteries around the world. OpenDLP has already been used "
+"for 30+ lotteries and counting."
+msgstr ""
+
+#: templates/public/home.html:37
+msgid ""
+"OpenDLP is GDPR compliant and stores its data in Europe. You can choose "
+"to use anonymised data, and only use the parts of OpenDLP that you want "
+"to."
+msgstr ""
+
+#: templates/public/home.html:40
+msgid ""
+"You are embedding and institutionalising your own deliberative engagement"
+" processes with citizens, and want to take ownership of the whole lottery"
+" process."
+msgstr ""
+
+#: templates/public/home.html:41
+msgid ""
+"You regularly run deliberative engagement processes on behalf of "
+"commissioners, and may already run the democratic lottery component "
+"yourself, or want to move into this space."
+msgstr ""
+
+#: templates/public/home.html:98
+msgid "OpenDLP - Democratic Lottery Platform"
+msgstr ""
+
+#: templates/public/home.html:110
+#, python-format
+msgid "Bringing %(highlight)s to sortition"
+msgstr ""
+
+#: templates/public/home.html:116
+msgid "simplicity"
+msgstr ""
+
+#: templates/public/home.html:120 templates/public/home.html:274
+msgid "Contact us"
+msgstr ""
+
+#: templates/public/home.html:121
+msgid "Create account"
+msgstr ""
+
+#: templates/public/home.html:142
+msgid "How does OpenDLP work?"
+msgstr ""
+
+#: templates/public/home.html:144
+msgid ""
+"OpenDLP is an online service that makes it easier to run democratic "
+"lotteries for deliberative processes. It is transparent, auditable, and "
+"built for democratic institutions."
+msgstr ""
+
+#: templates/public/home.html:175
+msgid "Support from experts"
+msgstr ""
+
+#: templates/public/home.html:177
+msgid ""
+"Experienced Sortition Foundation staff are available to support you at "
+"every stage of your process."
+msgstr ""
+
+#: templates/public/home.html:191
+msgid "Key benefits"
+msgstr ""
+
+#: templates/public/home.html:215
+msgid "Who is OpenDLP for?"
+msgstr ""
+
+#: templates/public/home.html:217
+msgid ""
+"OpenDLP can be used by any organisation that wants to run its own citizen"
+" engagement processes. Or, Sortition Foundation can use OpenDLP on your "
+"behalf to run your democratic lotteries."
+msgstr ""
+
+#: templates/public/home.html:235 templates/public/home.html:264
+#: templates/public/login.html:20
+msgid "Create an account"
+msgstr "Fiók létrehozása"
+
+#: templates/public/home.html:235
+msgid "If you are a first time visitor, create a free account."
+msgstr ""
+
+#: templates/public/home.html:236
+msgid "Use your existing credentials to sign in."
+msgstr ""
+
+#: templates/public/home.html:249
+msgid "OpenDLP"
+msgstr ""
+
+#: templates/public/home.html:267
+msgid "Product"
+msgstr ""
+
+#: templates/public/home.html:268
+msgid "How it works"
+msgstr ""
+
+#: templates/public/home.html:269
+msgid "Source code on GitHub"
+msgstr ""
+
+#: templates/public/home.html:271
+msgid "Support"
+msgstr ""
+
+#: templates/public/home.html:272
+msgid "Help and support"
+msgstr ""
+
+#: templates/public/home.html:273
+msgid "Knowledge Hub"
+msgstr ""
+
+#: templates/public/home.html:276
+msgid "Legal"
+msgstr ""
+
+#: templates/public/home.html:281
+msgid "Developed by"
+msgstr ""
+
+#: templates/public/home.html:287
+msgid "Sortition Foundation"
+msgstr ""
+
+#: templates/public/home.html:293
+msgid ""
+"We’re democratic lottery experts and we campaign for permanent and "
+"powerful citizens’ assemblies"
+msgstr ""
+
+#: templates/public/home.html:300
+msgid "Copyright"
+msgstr ""
+
+#: templates/public/home.html:302
+msgid "Open source under the Apache License 2.0"
+msgstr ""
+
 #: templates/public/login.html:15
 #, fuzzy
-msgid "Sign in to OpenDLP"
-msgstr "Bejelentkezés az OpenDLP-be"
+msgid "Sign in to"
+msgstr "Bejelentkezés"
 
 #: templates/public/login.html:17
 msgid "Don't have an account?"
 msgstr "Még nincs fiókod?"
-
-#: templates/public/login.html:20 templates/public/register.html:17
-msgid "Create an account"
-msgstr "Fiók létrehozása"
 
 #: templates/public/login.html:45
 msgid "Forgot your password?"
@@ -11696,6 +11905,11 @@ msgstr "Bejelentkezés Microsoft-fiókkal"
 
 #: templates/public/register.html:11
 msgid "Create an Account"
+msgstr "Fiók létrehozása"
+
+#: templates/public/register.html:17
+#, fuzzy
+msgid "Create an account on"
 msgstr "Fiók létrehozása"
 
 #: templates/public/register.html:19

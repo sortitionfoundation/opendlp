@@ -183,6 +183,10 @@ The OpenDLP logo files live in `static/img/`. Use these for the product logo and
 | `opendlp-favicon.svg`          | Favicon / browser tab icon (16×16 viewBox)                             |
 
 - "Light" and "dark" name the **background** the logo sits on, not the colour of the logo.
+- The arch alone, without the words, is `opendlp-favicon.svg`: the set has no separate
+  arch file. Above the sign in and sign up titles (`public/_page_heading.html`) it is
+  scaled up and cut to the arch with `object-cover`, as the favicon's square frame leaves
+  space above and below it.
 - For general OpenDLP branding - headers, the favicon, anywhere the product identifies
   itself - use the OpenDLP logo. `favicon.ico` is the older favicon; do not use it for new
   work.

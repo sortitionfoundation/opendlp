@@ -5,6 +5,7 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
 {% from "backoffice/components/icons.html" import icon_a_large_small, icon_about, icon_arrow_back, icon_arrow_forward, icon_check, icon_check_12, icon_check_20, icon_chevron_down, icon_chevron_right, icon_chevron_up, icon_close, icon_code, icon_copy, icon_data_agreement, icon_download, icon_edit, icon_grip_vertical, icon_hand, icon_info, icon_logout, icon_more_vert, icon_pie_chart, icon_plus, icon_question_circle, icon_spinner, icon_sparkles, icon_switch, icon_trash, icon_undo, icon_user, icon_warning, icon_warning_20 %}
 {% from "backoffice/components/icons.html" import icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_list, icon_list_ordered, icon_list_indent_increase, icon_list_indent_decrease, icon_text_quote, icon_link, icon_image, icon_scaling, icon_separator_horizontal, icon_table, icon_undo_2, icon_redo_2, icon_text_align_left, icon_text_align_center, icon_text_align_right %}
+{% from "backoffice/components/icons.html" import icon_send, icon_circle_check_big, icon_users, icon_copyright %}
 
 {#
     A glyph and everything a reader needs to use it: how it looks small, how
@@ -159,6 +160,20 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
         {{ glyph("icon_pie_chart", "Lucide", "24",
         icon_pie_chart(classes="w-4 h-4"), icon_pie_chart(classes="w-6 h-6"),
         ["backoffice/assembly_dashboard.html"]) }}
+
+        {{ showcase_subtitle("Public home page") }}
+        {{ glyph("icon_send", "Lucide", "24",
+        icon_send(classes="w-4 h-4"), icon_send(classes="w-6 h-6"),
+        ["public/home.html"]) }}
+        {{ glyph("icon_circle_check_big", "Lucide", "24",
+        icon_circle_check_big(classes="w-4 h-4"), icon_circle_check_big(classes="w-6 h-6"),
+        ["public/home.html"]) }}
+        {{ glyph("icon_users", "Lucide", "24",
+        icon_users(classes="w-4 h-4"), icon_users(classes="w-6 h-6"),
+        ["public/home.html"]) }}
+        {{ glyph("icon_copyright", "Lucide", "24",
+        icon_copyright(classes="w-4 h-4"), icon_copyright(classes="w-6 h-6"),
+        ["public/home.html"]) }}
 
         {{ showcase_subtitle("Text editing") }}
         {{ glyph("icon_pilcrow", "Lucide", "24",

@@ -14,7 +14,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
     {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
     {% set sso_enabled = google_enabled or microsoft_enabled %}
     <div class="flex flex-col gap-8">
-        {% call page_heading(_("Create an account"), subtitle=_("Open Democratic Lottery Platform")) %}
+        {% call page_heading(_("Create an account on"), logo=true) %}
             <p class="text-body-md" style="color: var(--color-body-text);">
                 {{ _("Already have an account?") }}
                 <a href="{{ url_for('auth.login') }}"

@@ -1008,7 +1008,7 @@ def footer_has_github_link(page: Page):
     footer = page.locator("footer")
     github_link = footer.locator("a", has_text="GitHub")
     expect(github_link).to_be_visible()
-    expect(github_link).to_have_attribute("href", "https://github.com/sortition-foundation/opendlp")
+    expect(github_link).to_have_attribute("href", "https://github.com/sortitionfoundation/opendlp")
     expect(github_link).to_have_attribute("target", "_blank")
 
 
