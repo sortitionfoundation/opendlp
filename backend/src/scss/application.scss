@@ -29,10 +29,13 @@ $govuk-assets-path: "/static/";
     background-color: $burnt-orange;
 }
 
-// Logo styling for Sortition Foundation SVG logo
+// The compact OpenDLP logo at its own size, 142x64. Its frame keeps 12px of
+// space around the mark; the negative margins take that space back, so the mark
+// lines up with the page's left edge and the header keeps its 40px logo row.
 .govuk-header__logo img {
-    height: 40px;
+    height: 64px;
     width: auto;
+    margin: -12px 0 -12px -12px;
 }
 
 // Images in authored HTML, such as a registration intro, never overflow the page.

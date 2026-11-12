@@ -13,7 +13,6 @@ SVG_RE = re.compile(r"<svg\b")
 ALLOWED: dict[str, str] = {
     "backoffice/components/icons.html": "the shared icon set itself",
     "components/brand_marks.html": "vendor trademarks, reproduced to their own brand guidelines",
-    "backoffice/components/navigation.html": "the Sortition Foundation logo, drawn once",
     "backoffice/components/button.html": "an <svg> inside a macro docstring, not markup",
     "backoffice/service_docs/_registration.html": "arrows drawn as parts of a flow diagram",
     "main/index.html": "decorative shapes in the public landing page banner",
