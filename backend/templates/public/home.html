@@ -91,7 +91,7 @@ _("We are changing that with OpenDLP."),
             {# Hero #}
             <section class="px-4 pt-10 pb-14 md:pb-16"
                      style="background-color: var(--color-neutral-100)">
-                <div class="mx-auto max-w-3xl flex flex-col items-center gap-8 text-center">
+                <div class="mx-auto max-w-5xl flex flex-col items-center gap-8 text-center">
                     {# The full logo carries the "OpenDLP / Democratic Lottery Platform"
                        wordmark, so its alt text names the product. #}
                     <img src="{{ url_for('static', filename='img/opendlp-logo-light.svg') }}"
@@ -99,18 +99,28 @@ _("We are changing that with OpenDLP."),
                          width="400"
                          height="196"
                          class="w-72 md:w-[400px] h-auto">
-                    <h1 class="text-4xl md:text-5xl font-bold leading-tight tracking-wide"
+                    {# The highlighted word sits centred under the logo. The translator sees
+                       one sentence and can move the placeholder anywhere in it; we split the
+                       translation at the placeholder into the text before and after the word.
+                       Below lg the three parts stack, each on its own centred line. From lg up
+                       they go in a grid whose outer columns are always equal, so the middle
+                       column - the word - is centred whatever the lengths either side, and
+                       even when one side is empty. The whitespace between the spans keeps
+                       the sentence's spaces in the heading's text. #}
+                    {% set slogan_parts = _("Bringing %(highlight)s to sortition", highlight="\x00").split("\x00") %}
+                    <h1 class="w-full flex flex-col items-center lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-baseline lg:gap-x-3 text-4xl md:text-5xl font-bold leading-tight tracking-wide"
                         style="{{ heading_style }}">
-                        {# The highlighted word is passed in marked safe, so the translator can
-                           move it within the sentence. #}
-                        {% set highlight %}<span class="px-3 inline-block" style="background-color: var(--color-primary-action); color: var(--color-neutral-0)">{{ _("simplicity") }}</span>{% endset %}
-                        {{ _("Bringing %(highlight)s to sortition", highlight=highlight) }}
+                        <span class="lg:text-right">{{ slogan_parts[0] | trim }}</span>
+                        <span class="px-3 inline-block"
+                              style="background-color: var(--color-primary-action);
+                                     color: var(--color-neutral-0)">{{ _("simplicity") }}</span>
+                        <span class="lg:text-left">{{ slogan_parts[1:] | join | trim }}</span>
                     </h1>
                     <div class="flex flex-wrap justify-center gap-4 md:gap-10">
                         {{ button(_("Contact us"), variant="primary", href="mailto:" ~ support_email_address, leading_icon=icon_send(classes="")) }}
                         {{ button(_("Create account"), variant="primary", href=url_for('auth.register'), leading_icon=icon_plus(classes="")) }}
                     </div>
-                    <div class="flex flex-col gap-4 text-lg md:text-xl leading-relaxed" style="{{ body_style }}">
+                    <div class="max-w-3xl flex flex-col gap-4 text-lg md:text-xl leading-relaxed" style="{{ body_style }}">
                         {% for paragraph in intro %}<p>{{ paragraph }}</p>{% endfor %}
                     </div>
                 </div>

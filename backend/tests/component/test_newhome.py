@@ -1,10 +1,37 @@
 # ABOUTME: Component tests for the draft home page served at /newhome
 # ABOUTME: Checks it renders for every visitor, links to the account pages, and is not linked from the live home page
 
+import re
+from typing import Any
+
+import flask_babel
+import pytest
 from flask import Flask, url_for
 from flask.testing import FlaskClient
 
 from opendlp.feature_flags import default_dashboard_endpoint
+
+SLOGAN_MSGID = "Bringing %(highlight)s to sortition"
+
+
+def slogan_parts(html: str) -> list[str]:
+    """The text of the heading's three spans: before the word, the word, after it."""
+    heading = html[html.index("<h1") : html.index("</h1>")]
+    return [part.strip() for part in re.findall(r"<span[^>]*>(.*?)</span>", heading, re.DOTALL)]
+
+
+class SloganTranslations:
+    """Wraps the real translations, swapping in one translation of the slogan."""
+
+    def __init__(self, real: Any, slogan: str) -> None:
+        self.real = real
+        self.slogan = slogan
+
+    def ugettext(self, message: str) -> str:
+        return self.slogan if message == SLOGAN_MSGID else str(self.real.ugettext(message))
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.real, name)
 
 
 class TestNewHome:
@@ -69,6 +96,28 @@ class TestNewHome:
         hero = response.text[hero_start : response.text.index("</section>", hero_start)]
         assert hero.count("btn--primary") == 2
         assert "btn--secondary" not in hero
+
+    def test_slogan_splits_around_the_highlighted_word(self, client: FlaskClient) -> None:
+        response = client.get("/newhome")
+        assert slogan_parts(response.text) == ["Bringing", "simplicity", "to sortition"]
+
+    @pytest.mark.parametrize(
+        ("translation", "expected"),
+        [
+            ("%(highlight)s for sortition", ["", "simplicity", "for sortition"]),
+            ("Sortition with %(highlight)s", ["Sortition with", "simplicity", ""]),
+            ("A %(highlight)s B", ["A", "simplicity", "B"]),
+        ],
+    )
+    def test_slogan_split_follows_where_a_translation_puts_the_word(
+        self, client: FlaskClient, monkeypatch: pytest.MonkeyPatch, translation: str, expected: list[str]
+    ) -> None:
+        real_get_translations = flask_babel.get_translations
+        monkeypatch.setattr(
+            flask_babel, "get_translations", lambda: SloganTranslations(real_get_translations(), translation)
+        )
+        response = client.get("/newhome")
+        assert slogan_parts(response.text) == expected
 
     def test_is_not_linked_from_the_live_home_page(self, client: FlaskClient) -> None:
         response = client.get("/")

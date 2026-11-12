@@ -1,5 +1,5 @@
 """ABOUTME: BDD tests for the draft home page served at /newhome
-ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, and it fits a phone screen"""
+ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, its word lines up, and it fits a phone"""
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, scenarios, then, when
@@ -19,6 +19,13 @@ def open_draft_home_page(logged_out_page: Page) -> None:
 @given("an anonymous visitor opens the draft home page on a phone")
 def open_draft_home_page_on_phone(logged_out_page: Page) -> None:
     logged_out_page.set_viewport_size({"width": 375, "height": 800})
+    logged_out_page.goto(NEWHOME_URL)
+    logged_out_page.wait_for_load_state("networkidle")
+
+
+@given("an anonymous visitor opens the draft home page on a wide screen")
+def open_draft_home_page_on_wide_screen(logged_out_page: Page) -> None:
+    logged_out_page.set_viewport_size({"width": 1440, "height": 900})
     logged_out_page.goto(NEWHOME_URL)
     logged_out_page.wait_for_load_state("networkidle")
 
@@ -44,3 +51,14 @@ def on_sign_in_page(logged_out_page: Page) -> None:
 def no_horizontal_scroll(logged_out_page: Page) -> None:
     overflow = logged_out_page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
     assert overflow == 0
+
+
+@then("the highlighted word should be centred under the logo")
+def highlighted_word_centred(logged_out_page: Page) -> None:
+    logo = logged_out_page.get_by_role("img", name="OpenDLP - Democratic Lottery Platform").bounding_box()
+    word = logged_out_page.get_by_role("heading", level=1).get_by_text("simplicity", exact=True).bounding_box()
+    assert logo is not None
+    assert word is not None
+    logo_centre = logo["x"] + logo["width"] / 2
+    word_centre = word["x"] + word["width"] / 2
+    assert abs(logo_centre - word_centre) < 1

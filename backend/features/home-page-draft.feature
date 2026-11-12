@@ -12,3 +12,11 @@ Feature: Draft home page
   Scenario: Draft home page fits a phone screen
     Given an anonymous visitor opens the draft home page on a phone
     Then the draft home page should not scroll sideways
+
+  Scenario: The highlighted word sits centred under the logo on a wide screen
+    Given an anonymous visitor opens the draft home page on a wide screen
+    Then the highlighted word should be centred under the logo
+
+  Scenario: The highlighted word sits centred under the logo on a phone
+    Given an anonymous visitor opens the draft home page on a phone
+    Then the highlighted word should be centred under the logo
