@@ -13,7 +13,6 @@ from opendlp.domain.respondent_field_schema import (
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
@@ -1766,7 +1765,6 @@ class TestForceUnlinkConfirmation:
                 assembly_id=assembly.id,
                 field_key="Gender",
                 label="Gender",
-                group=RespondentFieldGroup.ABOUT_YOU,
                 sort_order=10,
                 field_type=FieldType.CHOICE_RADIO,
                 options=[ChoiceOption(value="Male")],
@@ -1833,7 +1831,6 @@ class TestForceUnlinkConfirmation:
                     assembly_id=assembly.id,
                     field_key="postcode",
                     label="Postcode",
-                    group=RespondentFieldGroup.ADDRESS,
                     sort_order=10,
                     field_type=FieldType.TEXT,
                 )
@@ -1842,7 +1839,6 @@ class TestForceUnlinkConfirmation:
                 assembly_id=assembly.id,
                 field_key="Region",
                 label="Region",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=20,
                 is_derived=True,
                 derived_from=["postcode"],

@@ -266,14 +266,7 @@ def import_respondents_from_rows(
 
     # Seed the field schema on first import; reconcile (add new keys,
     # preserve absent ones) on subsequent imports.
-    target_category_names = [cat.name for cat in uow.target_categories.get_by_assembly_id(assembly_id)]
-    update_schema_from_headers(
-        uow,
-        assembly_id,
-        list(headers),
-        id_column,
-        target_category_names=target_category_names,
-    )
+    update_schema_from_headers(uow, assembly_id, list(headers), id_column)
     request_auto_export(uow, assembly_id)
 
     return [r.create_detached_copy() for r in respondents], errors, id_column

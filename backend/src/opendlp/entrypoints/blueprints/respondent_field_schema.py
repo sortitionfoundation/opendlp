@@ -32,7 +32,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     duplicate_option_value,
     normalise_field_key,
 )
@@ -123,22 +122,6 @@ def _valid_after(raw: str) -> str:
     """The submitted item to add below, if it names one; "" (the end of the list) otherwise."""
     ref = FormItemRef.parse(raw)
     return ref.form_value if ref is not None else ""
-
-
-def _parse_registration_group(raw: str | None) -> RespondentFieldGroup | None:
-    """Parse a section a question can be placed in; derived fields have their own group, never chosen."""
-    group = _parse_group(raw)
-    return None if group == RespondentFieldGroup.DERIVED else group
-
-
-def _parse_group(raw: str | None) -> RespondentFieldGroup | None:
-    """Parse a submitted group value; returns None if empty or unrecognised."""
-    if not raw:
-        return None
-    try:
-        return RespondentFieldGroup(raw)
-    except ValueError:
-        return None
 
 
 def _parse_field_type(raw: str | None) -> FieldType | None:
@@ -333,7 +316,6 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
     values = {
         "label": source.get("label", ""),
         "field_key": source.get("field_key", ""),
-        "group": source.get("group", ""),
         "type_choice": source.get("type_choice", "free_text"),
         "free_text_subtype": source.get("free_text_subtype", "text"),
         "choice_style": source.get("choice_style", "choice_radio"),
@@ -364,7 +346,6 @@ def _modal_values_from_field(field: RespondentFieldDefinition) -> dict[str, Any]
     values.update({
         "label": field.label,
         "field_key": field.field_key,
-        "group": field.group.value,
         "help_text": field.help_text,
         "on_registration_page": field.on_registration_page.value,
         "options": [{"value": o.value, "help_text": o.help_text, "original": o.value} for o in field.options or []],
@@ -377,7 +358,6 @@ def _default_modal_values() -> dict[str, Any]:
     return {
         "label": "",
         "field_key": "",
-        "group": RespondentFieldGroup.OTHER.value,
         # No type until one is chosen from the dropdown.
         "type_choice": "",
         "free_text_subtype": "text",
@@ -824,7 +804,6 @@ def _new_field_kwargs(values: dict[str, Any], is_modal: bool) -> tuple[dict[str,
     field_key = normalise_field_key(values["field_key"] or label or request.form.get("field_key", ""))
     if not field_key:
         return {}, _("A label or field key is required (letters, numbers and underscores)")
-    group = _parse_group(request.form.get("group")) or RespondentFieldGroup.OTHER
     if is_modal:
         # An unrecognised type would otherwise fall through to a text question.
         if values["type_choice"] not in _TYPE_CHOICES:
@@ -844,7 +823,6 @@ def _new_field_kwargs(values: dict[str, Any], is_modal: bool) -> tuple[dict[str,
     return {
         "field_key": field_key,
         "label": label or None,
-        "group": group,
         "field_type": field_type,
         "options": options,
         "on_registration_page": on_registration_page,
@@ -944,9 +922,9 @@ def _edit_dialog(
 def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
     """Update a field — from the edit modal, or a plain form post.
 
-    Modal submissions carry the type taxonomy, section and a wholesale options
-    list. A plain post with ``group`` or ``field_type`` (the pre-modal shape)
-    still works so scripted callers don't break.
+    Modal submissions carry the type taxonomy and a wholesale options list. A
+    plain post with ``label``, ``field_type`` or ``on_registration_page`` (the
+    pre-modal shape) still works so scripted callers don't break.
     """
     form_action = request.form.get("form_action", "save")
     is_modal = request.form.get("modal") == "1"
@@ -1001,7 +979,6 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
     }
     if not field.is_derived:
         update_kwargs["on_registration_page"] = _parse_on_registration_page(values["on_registration_page"])
-        update_kwargs["group"] = _parse_registration_group(values["group"])
     if not field.is_fixed and not field.is_derived:
         if not values["type_choice"]:
             return {}, _("Choose a question type")
@@ -1021,14 +998,12 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
 def _legacy_update_kwargs() -> tuple[dict[str, Any], str]:
     """The update_field kwargs for a plain (non-modal) post; empty dict means nothing was submitted."""
     label = request.form.get("label", "").strip() or None
-    group = _parse_group(request.form.get("group"))
     field_type = _parse_field_type(request.form.get("field_type"))
     on_registration_page = _parse_on_registration_page(request.form.get("on_registration_page"))
-    if label is None and group is None and field_type is None and on_registration_page is None:
+    if label is None and field_type is None and on_registration_page is None:
         return {}, ""
     return {
         "label": label,
-        "group": group,
         "field_type": field_type,
         "on_registration_page": on_registration_page,
     }, ""

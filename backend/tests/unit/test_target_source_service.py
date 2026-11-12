@@ -14,7 +14,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     RespondentFieldMappingEntry,
 )
 from opendlp.domain.respondents import Respondent
@@ -76,7 +75,6 @@ def _add_field(uow: FakeUnitOfWork, assembly: Assembly, field_key: str, **kwargs
         assembly_id=assembly.id,
         field_key=field_key,
         label=kwargs.pop("label", field_key.replace("_", " ").capitalize()),
-        group=kwargs.pop("group", RespondentFieldGroup.ABOUT_YOU),
         sort_order=kwargs.pop("sort_order", 10),
         **kwargs,
     )
@@ -232,7 +230,6 @@ class TestConfigureAgeBracket:
         assert source.target_category_id is None
         assert derived.field_key == "Age bracket"
         assert derived.is_derived is True
-        assert derived.group == RespondentFieldGroup.DERIVED
         assert derived.on_registration_page == FieldOnRegistrationPage.NO
         assert derived.target_category_id == category.id
         assert [o.value for o in derived.options] == ["16-29", "30-99", "UNKNOWN"]
@@ -455,12 +452,11 @@ class TestTargetSourceStatus:
             target_category_id=linked_cat.id,
         )
         derived_cat = _add_category(uow, assembly, "Region", ["North", "South"])
-        _add_field(uow, assembly, "postcode", group=RespondentFieldGroup.ADDRESS)
+        _add_field(uow, assembly, "postcode")
         derived = _add_field(
             uow,
             assembly,
             "Region",
-            group=RespondentFieldGroup.DERIVED,
             is_derived=True,
             derived_from=["postcode"],
             derivation_type=DerivationType.LARGE_MAPPING,
@@ -518,12 +514,11 @@ class TestTargetSourceStatus:
     def test_a_derived_field_ignores_its_fallback_when_checking_staleness(self, uow):
         user, assembly = _seed(uow)
         category = _add_category(uow, assembly, "Region", ["North", "South"])
-        _add_field(uow, assembly, "postcode", group=RespondentFieldGroup.ADDRESS)
+        _add_field(uow, assembly, "postcode")
         _add_field(
             uow,
             assembly,
             "Region",
-            group=RespondentFieldGroup.DERIVED,
             is_derived=True,
             derived_from=["postcode"],
             derivation_type=DerivationType.LARGE_MAPPING,
@@ -623,7 +618,6 @@ class TestResyncFromTarget:
             uow,
             assembly,
             "Age group",
-            group=RespondentFieldGroup.DERIVED,
             is_derived=True,
             derived_from=["age_band"],
             derivation_type=DerivationType.SMALL_MAPPING,
@@ -648,7 +642,6 @@ class TestResyncFromTarget:
             uow,
             assembly,
             "Age bracket",
-            group=RespondentFieldGroup.DERIVED,
             is_derived=True,
             derived_from=["date_of_birth"],
             derivation_type=DerivationType.AGE_BRACKET,

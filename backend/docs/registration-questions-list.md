@@ -34,8 +34,9 @@ renumbers the whole list 10, 20, 30… (`renumber` in
 export keeps computed columns at the end. A derived field's `sort_order` only
 orders it among the other derived fields.
 
-The `field_group` column still exists, and new rows still get a guessed group
-so that it has a value, but nothing orders or displays by it.
+There is no section or group on a question: the `field_group` column, and the
+heuristic that guessed it from a CSV header, were dropped once the sections had
+become headings.
 
 ### Changing the order
 

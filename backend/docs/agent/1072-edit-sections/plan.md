@@ -1,6 +1,6 @@
 # 1072 — Replace fixed sections with headings and text in the question list
 
-Status: agreed; being implemented. All questions settled over two rounds
+Status: implemented - all phases below are done. All questions settled over two rounds
 of review; round 2 chose B for Q1, dropped headings from the CSV seed (Q2) and
 dropped tag rejection on save (Q4). Phases are ticked below as they land.
 
@@ -306,7 +306,7 @@ nothing changes for erasure.
 - [x] P7. Docs (`targets-and-registration-questions.md` "Sections are a fixed
   enum", `respondent_field_spec.md`, the field-schema design note, a short
   note on the manual clear-and-refill), translation catalogues.
-- [ ] P8. Separate PR: drop `field_group`, `RespondentFieldGroup`,
+- [x] P8. Separate PR: drop `field_group`, `RespondentFieldGroup`,
   `GROUP_DISPLAY_ORDER`, `GROUP_LABELS`, `reorder_group`, `get_schema_grouped`,
   and the heuristics module (`classify_field_key`).
 
@@ -350,3 +350,14 @@ nothing changes for erasure.
   "heading or text" to the glossary in `docs/language.md`. The Hungarian
   catalogue has the new strings untranslated; they show in English until they
   are translated.
+- P8 is on its own branch, `1072-drop-field-group`, stacked on
+  `1072-edit-sections`, so it can go out as a second PR once the first is
+  deployed. Its migration (`a62d0a510eee`) drops `field_group` and swaps its
+  index for one on `(assembly_id, sort_order)`; a downgrade puts the column
+  back filled with "other" or "derived". It also removed the unused
+  `target_category_names` parameter from the CSV seeding functions, which only
+  fed the heuristic, and edited the original `38e2fb249cdd` migration to type
+  the column as a plain `String(50)` instead of importing the removed enum -
+  the DDL is the same.
+- The flatten migration's test now adds `field_group` back for its own
+  duration, as the ORM no longer has it.

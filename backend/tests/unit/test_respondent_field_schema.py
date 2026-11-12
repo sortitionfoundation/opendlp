@@ -11,8 +11,6 @@ from opendlp.domain.respondent_field_schema import (
     FIELD_TYPE_LABELS,
     FIXED_FIELD_ON_REGISTRATION_PAGE,
     FIXED_FIELD_TYPES,
-    GROUP_DISPLAY_ORDER,
-    GROUP_LABELS,
     IN_SCHEMA_FIXED_FIELDS,
     ON_REGISTRATION_PAGE_LABELS,
     ChoiceOption,
@@ -22,7 +20,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     FixedFieldError,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
     RespondentFieldMappingEntry,
     TargetLinkedFieldError,
     humanise_field_key,
@@ -38,14 +35,12 @@ class TestRespondentFieldDefinition:
             assembly_id=assembly_id,
             field_key="first_name",
             label="First name",
-            group=RespondentFieldGroup.NAME_AND_CONTACT,
             sort_order=10,
         )
 
         assert field.assembly_id == assembly_id
         assert field.field_key == "first_name"
         assert field.label == "First name"
-        assert field.group == RespondentFieldGroup.NAME_AND_CONTACT
         assert field.sort_order == 10
         assert field.is_fixed is False
         assert field.is_derived is False
@@ -59,7 +54,6 @@ class TestRespondentFieldDefinition:
             assembly_id=uuid.uuid4(),
             field_key="  first_name  ",
             label="First name",
-            group=RespondentFieldGroup.NAME_AND_CONTACT,
             sort_order=10,
         )
         assert field.field_key == "first_name"
@@ -70,7 +64,6 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="   ",
                 label="whatever",
-                group=RespondentFieldGroup.OTHER,
                 sort_order=10,
             )
 
@@ -80,7 +73,6 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="x",
                 label="",
-                group=RespondentFieldGroup.OTHER,
                 sort_order=10,
             )
 
@@ -90,7 +82,6 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="x",
                 label="X",
-                group=RespondentFieldGroup.OTHER,
                 sort_order=-1,
             )
 
@@ -100,7 +91,6 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="age_bracket",
                 label="Age bracket",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=10,
                 is_derived=True,
                 derivation_type=DerivationType.AGE_BRACKET,
@@ -113,7 +103,6 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="age_bracket",
                 label="Age bracket",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=10,
                 is_derived=True,
                 derived_from=["date_of_birth"],
@@ -126,7 +115,6 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="age_bracket",
                 label="Age bracket",
-                group=RespondentFieldGroup.DERIVED,
                 sort_order=10,
                 is_derived=True,
                 derived_from=["date_of_birth"],
@@ -139,7 +127,6 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="postcode",
                 label="Postcode",
-                group=RespondentFieldGroup.ADDRESS,
                 sort_order=10,
                 derivation_type=DerivationType.LARGE_MAPPING,
             )
@@ -150,7 +137,6 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="postcode",
                 label="Postcode",
-                group=RespondentFieldGroup.ADDRESS,
                 sort_order=10,
                 derivation_config={"fallback": "UNKNOWN"},
             )
@@ -160,7 +146,6 @@ class TestRespondentFieldDefinition:
             assembly_id=uuid.uuid4(),
             field_key="age_bracket",
             label="Age bracket",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["date_of_birth"],
@@ -177,7 +162,6 @@ class TestRespondentFieldDefinition:
             assembly_id=uuid.uuid4(),
             field_key="age_bracket",
             label="Age bracket",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["date_of_birth"],
@@ -197,7 +181,6 @@ class TestRespondentFieldDefinition:
             assembly_id=uuid.uuid4(),
             field_key="age_bracket",
             label="Age bracket",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["date_of_birth"],
@@ -212,7 +195,6 @@ class TestRespondentFieldDefinition:
             assembly_id=uuid.uuid4(),
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
         original_updated_at = field.updated_at
@@ -222,16 +204,14 @@ class TestRespondentFieldDefinition:
         assert field.label == "Xylophone"
         assert field.updated_at > original_updated_at
 
-    def test_update_moves_to_new_group(self) -> None:
+    def test_update_moves_to_new_sort_order(self) -> None:
         field = RespondentFieldDefinition(
             assembly_id=uuid.uuid4(),
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
-        field.update(group=RespondentFieldGroup.ABOUT_YOU, sort_order=20)
-        assert field.group == RespondentFieldGroup.ABOUT_YOU
+        field.update(sort_order=20)
         assert field.sort_order == 20
 
     def test_update_rejects_empty_label(self) -> None:
@@ -239,7 +219,6 @@ class TestRespondentFieldDefinition:
             assembly_id=uuid.uuid4(),
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
         with pytest.raises(ValueError, match="The label cannot be empty"):
@@ -252,7 +231,6 @@ class TestRespondentFieldDefinition:
             assembly_id=assembly_id,
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
             field_id=field_id,
         )
@@ -260,7 +238,6 @@ class TestRespondentFieldDefinition:
             assembly_id=assembly_id,
             field_key="y",
             label="Y",
-            group=RespondentFieldGroup.OTHER,
             sort_order=20,
             field_id=field_id,
         )
@@ -272,7 +249,6 @@ class TestRespondentFieldDefinition:
             assembly_id=uuid.uuid4(),
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             is_fixed=True,
             is_derived=True,
@@ -285,7 +261,6 @@ class TestRespondentFieldDefinition:
         assert copy.id == original.id
         assert copy.field_key == original.field_key
         assert copy.label == original.label
-        assert copy.group == original.group
         assert copy.sort_order == original.sort_order
         assert copy.is_fixed is True
         assert copy.is_derived is True
@@ -302,22 +277,6 @@ class TestDerivationType:
         assert DerivationType.SMALL_MAPPING.value == "small_mapping"
         assert DerivationType.LARGE_MAPPING.value == "large_mapping"
         assert len(list(DerivationType)) == 3
-
-
-class TestDerivedGroup:
-    def test_derived_group_exists_and_sorts_last(self) -> None:
-        assert RespondentFieldGroup.DERIVED.value == "derived"
-        assert GROUP_DISPLAY_ORDER[-1] == RespondentFieldGroup.DERIVED
-        assert GROUP_DISPLAY_ORDER.index(RespondentFieldGroup.DERIVED) > GROUP_DISPLAY_ORDER.index(
-            RespondentFieldGroup.OTHER
-        )
-
-    def test_derived_group_has_label(self) -> None:
-        assert str(GROUP_LABELS[RespondentFieldGroup.DERIVED]) == "Derived"
-
-    def test_every_group_is_in_display_order_and_labels(self) -> None:
-        assert set(GROUP_DISPLAY_ORDER) == set(RespondentFieldGroup)
-        assert set(GROUP_LABELS) == set(RespondentFieldGroup)
 
 
 class TestRespondentFieldMappingEntry:
@@ -357,7 +316,6 @@ class TestFieldOnRegistrationPage:
             assembly_id=uuid.uuid4(),
             field_key="first_name",
             label="First name",
-            group=RespondentFieldGroup.NAME_AND_CONTACT,
             sort_order=10,
         )
         assert field.on_registration_page == FieldOnRegistrationPage.YES_REQUIRED
@@ -367,7 +325,6 @@ class TestFieldOnRegistrationPage:
             assembly_id=uuid.uuid4(),
             field_key="nickname",
             label="Nickname",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
             on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL,
         )
@@ -378,7 +335,6 @@ class TestFieldOnRegistrationPage:
             assembly_id=uuid.uuid4(),
             field_key="age_bracket",
             label="Age bracket",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             is_derived=True,
             derived_from=["dob"],
@@ -393,7 +349,6 @@ class TestFieldOnRegistrationPage:
             assembly_id=uuid.uuid4(),
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
         original_updated_at = field.updated_at
@@ -406,7 +361,6 @@ class TestFieldOnRegistrationPage:
             assembly_id=uuid.uuid4(),
             field_key="can_attend",
             label="Can attend",
-            group=RespondentFieldGroup.ELIGIBILITY,
             sort_order=10,
             is_fixed=True,
         )
@@ -418,7 +372,6 @@ class TestFieldOnRegistrationPage:
             assembly_id=uuid.uuid4(),
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
             on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL,
         )
@@ -430,7 +383,6 @@ class TestFieldOnRegistrationPage:
             assembly_id=uuid.uuid4(),
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
             on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL,
         )
@@ -451,7 +403,6 @@ class TestHelpText:
             "assembly_id": uuid.uuid4(),
             "field_key": "x",
             "label": "X",
-            "group": RespondentFieldGroup.OTHER,
             "sort_order": 10,
         }
         defaults.update(kwargs)
@@ -507,16 +458,9 @@ class TestHelpText:
         assert copy.help_text == "a hint"
 
 
-class TestGroupMetadata:
-    def test_display_order_contains_every_group_exactly_once(self) -> None:
-        assert set(GROUP_DISPLAY_ORDER) == set(RespondentFieldGroup)
-        assert len(GROUP_DISPLAY_ORDER) == len(RespondentFieldGroup)
-
-    def test_group_labels_cover_every_group(self) -> None:
-        assert set(GROUP_LABELS) == set(RespondentFieldGroup)
-
+class TestFixedFieldMetadata:
     def test_in_schema_fixed_fields_have_unique_keys(self) -> None:
-        keys = [key for key, _group, _label in IN_SCHEMA_FIXED_FIELDS]
+        keys = [key for key, _label in IN_SCHEMA_FIXED_FIELDS]
         assert len(keys) == len(set(keys))
 
 
@@ -591,7 +535,6 @@ class TestRespondentFieldDefinitionTyping:
             assembly_id=uuid.uuid4(),
             field_key="x",
             label="X",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
         base.update(overrides)
@@ -733,7 +676,6 @@ class TestSetDerivation:
             assembly_id=uuid.uuid4(),
             field_key="age_bracket",
             label="Age bracket",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["date_of_birth"],
@@ -758,7 +700,6 @@ class TestSetDerivation:
             assembly_id=uuid.uuid4(),
             field_key="plain",
             label="Plain",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
         with pytest.raises(DerivedFieldError):
@@ -786,7 +727,6 @@ class TestTargetLinkedField:
             assembly_id=uuid.uuid4(),
             field_key="Gender",
             label="Gender",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=field_type,
             options=[ChoiceOption(value="Male"), ChoiceOption(value="Female"), ChoiceOption(value="Other")],
@@ -798,7 +738,6 @@ class TestTargetLinkedField:
             assembly_id=uuid.uuid4(),
             field_key="plain",
             label="Plain",
-            group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
         assert field.target_category_id is None
@@ -814,18 +753,16 @@ class TestTargetLinkedField:
         copy = field.create_detached_copy()
         assert copy.target_category_id == field.target_category_id
 
-    def test_allows_label_help_group_order_required_edits(self) -> None:
+    def test_allows_label_help_order_required_edits(self) -> None:
         field = self._linked_field()
         field.update(
             label="Your gender",
             help_text="As you describe it",
-            group=RespondentFieldGroup.OTHER,
             sort_order=99,
             on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL,
         )
         assert field.label == "Your gender"
         assert field.help_text == "As you describe it"
-        assert field.group == RespondentFieldGroup.OTHER
         assert field.sort_order == 99
         assert field.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
 
@@ -884,7 +821,6 @@ class TestTargetLinkedField:
             assembly_id=uuid.uuid4(),
             field_key="Region",
             label="Region",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["postcode"],
@@ -913,7 +849,6 @@ class TestResyncOptions:
             assembly_id=uuid.uuid4(),
             field_key="Region",
             label="Region",
-            group=RespondentFieldGroup.ABOUT_YOU,
             sort_order=10,
             field_type=FieldType.CHOICE_RADIO,
             options=[ChoiceOption(value="North"), ChoiceOption(value="South")],
@@ -936,7 +871,6 @@ class TestResyncOptions:
             assembly_id=uuid.uuid4(),
             field_key="Region",
             label="Region",
-            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
             derived_from=["postcode"],
@@ -960,7 +894,6 @@ def _email_candidate(key, field_type=FieldType.EMAIL, on_page=FieldOnRegistratio
         assembly_id=uuid.uuid4(),
         field_key=key,
         label=key,
-        group=RespondentFieldGroup.NAME_AND_CONTACT,
         sort_order=10,
         field_type=field_type,
         on_registration_page=on_page,

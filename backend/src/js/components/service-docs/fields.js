@@ -11,7 +11,6 @@ export function serviceDocsFields() {
     addFieldAssemblyId: "",
     addFieldKey: "",
     addFieldLabel: "",
-    addFieldGroup: "other",
     addFieldType: "text",
     addFieldOptions: "",
 
@@ -35,7 +34,6 @@ export function serviceDocsFields() {
         field_key: this.addFieldKey,
         // An empty label means "derive one from the key", which the service spells as null.
         label: this.addFieldLabel || null,
-        group: this.addFieldGroup,
         field_type: this.addFieldType,
         options: options,
       });

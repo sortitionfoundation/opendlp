@@ -1,32 +1,37 @@
 """ABOUTME: Tests the data migration that turns the fixed question sections into heading blocks.
-ABOUTME: Seeds grouped fields through the repositories, then runs the migration's data step."""
+ABOUTME: Puts back the since-dropped field_group column, seeds grouped fields, then runs the data step."""
 
 import importlib
 import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from sqlalchemy import text
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.registration_content_block import RegistrationContentBlock, form_items
-from opendlp.domain.respondent_field_schema import (
-    DerivationType,
-    RespondentFieldDefinition,
-    RespondentFieldGroup,
-)
+from opendlp.domain.respondent_field_schema import DerivationType, RespondentFieldDefinition
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 migration = importlib.import_module("migrations.versions.4a7c0b3d443b_add_registration_content_blocks")
 
 LONG_AGO = datetime(2026, 1, 1, tzinfo=UTC)
 
+# The section each seeded question was in, as the field_group column held it.
+SECTIONS = {
+    "consent": "consent",
+    "first_name": "name_and_contact",
+    "email": "name_and_contact",
+    "eligible": "eligibility",
+    "region": "derived",
+}
 
-def _field(assembly_id: uuid.UUID, key: str, group: RespondentFieldGroup, sort_order: int, **kwargs):
+
+def _field(assembly_id: uuid.UUID, key: str, sort_order: int, **kwargs):
     return RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=key,
         label=key,
-        group=group,
         sort_order=sort_order,
         created_at=LONG_AGO,
         updated_at=kwargs.pop("updated_at", LONG_AGO),
@@ -35,7 +40,19 @@ def _field(assembly_id: uuid.UUID, key: str, group: RespondentFieldGroup, sort_o
 
 
 @pytest.fixture
-def seeded(postgres_session_factory):
+def field_group_column(postgres_session_factory):
+    """The field_group column, which a later migration drops, put back for the length of a test."""
+    with postgres_session_factory() as session:
+        session.execute(text("ALTER TABLE respondent_field_definitions ADD COLUMN field_group VARCHAR(50)"))
+        session.commit()
+    yield
+    with postgres_session_factory() as session:
+        session.execute(text("ALTER TABLE respondent_field_definitions DROP COLUMN field_group"))
+        session.commit()
+
+
+@pytest.fixture
+def seeded(postgres_session_factory, field_group_column):
     """One assembly with questions in three sections and a computed one; another with no questions."""
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         grouped = Assembly(title="Grouped", question="?", number_to_select=10)
@@ -47,23 +64,14 @@ def seeded(postgres_session_factory):
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         add = uow.respondent_field_definitions.add
         # Sort orders restart in each section, as they did while sections existed.
-        add(_field(grouped_id, "consent", RespondentFieldGroup.CONSENT, 10))
-        add(_field(grouped_id, "first_name", RespondentFieldGroup.NAME_AND_CONTACT, 20))
-        add(_field(grouped_id, "email", RespondentFieldGroup.NAME_AND_CONTACT, 10))
-        add(
-            _field(
-                grouped_id,
-                "eligible",
-                RespondentFieldGroup.ELIGIBILITY,
-                10,
-                updated_at=LONG_AGO + timedelta(days=3),
-            )
-        )
+        add(_field(grouped_id, "consent", 10))
+        add(_field(grouped_id, "first_name", 20))
+        add(_field(grouped_id, "email", 10))
+        add(_field(grouped_id, "eligible", 10, updated_at=LONG_AGO + timedelta(days=3)))
         add(
             _field(
                 grouped_id,
                 "region",
-                RespondentFieldGroup.DERIVED,
                 10,
                 is_derived=True,
                 derived_from=["postcode"],
@@ -73,6 +81,13 @@ def seeded(postgres_session_factory):
             )
         )
         uow.commit()
+    with postgres_session_factory() as session:
+        for key, section in SECTIONS.items():
+            session.execute(
+                text("UPDATE respondent_field_definitions SET field_group = :section WHERE field_key = :key"),
+                {"section": section, "key": key},
+            )
+        session.commit()
     return {"grouped": grouped_id, "empty": empty_id}
 
 

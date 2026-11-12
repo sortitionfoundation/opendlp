@@ -38,7 +38,6 @@ from opendlp.domain.respondent_field_schema import (
     DerivationType,
     FieldOnRegistrationPage,
     FieldType,
-    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import RespondentComment
 from opendlp.domain.targets import TargetValue
@@ -637,7 +636,6 @@ respondent_field_definitions = Table(
     ),
     Column("field_key", String(255), nullable=False),
     Column("label", String(255), nullable=False),
-    Column("field_group", EnumAsString(RespondentFieldGroup, 50), nullable=False),
     Column("sort_order", Integer, nullable=False, default=0),
     Column("is_fixed", Boolean, nullable=False, default=False),
     Column("is_derived", Boolean, nullable=False, default=False),
@@ -667,8 +665,8 @@ respondent_field_definitions = Table(
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Unique field_key per assembly
     Index("ix_respondent_field_definitions_assembly_key", "assembly_id", "field_key", unique=True),
-    # Composite index for grouped display (ordered read path)
-    Index("ix_respondent_field_definitions_assembly_group_order", "assembly_id", "field_group", "sort_order"),
+    # Composite index for the ordered read path
+    Index("ix_respondent_field_definitions_assembly_order", "assembly_id", "sort_order"),
 )
 
 # Headings and text an organiser places among the registration questions.

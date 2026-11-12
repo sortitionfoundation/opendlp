@@ -14,7 +14,6 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 
 from opendlp.adapters import orm
-from opendlp.domain.respondent_field_schema import RespondentFieldGroup
 
 # revision identifiers, used by Alembic.
 revision: str = "38e2fb249cdd"  # pragma: allowlist secret
@@ -34,7 +33,8 @@ def upgrade() -> None:
         sa.Column("assembly_id", PostgresUUID(as_uuid=True), nullable=False),
         sa.Column("field_key", sa.String(length=255), nullable=False),
         sa.Column("label", sa.String(length=255), nullable=False),
-        sa.Column("field_group", orm.EnumAsString(RespondentFieldGroup, 50), nullable=False),
+        # A plain VARCHAR(50), as EnumAsString stores it; the enum it held is gone.
+        sa.Column("field_group", sa.String(length=50), nullable=False),
         sa.Column("sort_order", sa.Integer(), nullable=False),
         sa.Column("is_fixed", sa.Boolean(), nullable=False),
         sa.Column("is_derived", sa.Boolean(), nullable=False),

@@ -15,7 +15,6 @@ from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
-    RespondentFieldGroup,
 )
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.feature_flags import reload_flags
@@ -102,7 +101,6 @@ def _build_published_page_with_auto_reply(
                     assembly_id=assembly_id,
                     field_key=key,
                     label=key.capitalize(),
-                    group=RespondentFieldGroup.OTHER,
                     sort_order=(sort + 1) * 10,
                     field_type=ftype,
                     is_fixed=is_fixed,
