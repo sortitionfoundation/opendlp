@@ -494,6 +494,33 @@ class TestSelectionStatusTransition:
             retrieved = uow.respondents.get(resp.id)
             assert retrieved.selection_status == RespondentStatus.CONFIRMED
 
+    def test_post_pool_to_test_submission(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T8",
+                attributes={},
+                selection_status=RespondentStatus.POOL,
+            )
+
+        response = logged_in_admin.post(
+            self._transition_url(existing_assembly.id, resp.id),
+            data={
+                "new_status": RespondentStatus.TEST_SUBMISSION.value,
+                "comment": "this was us testing the form",
+                "csrf_token": get_csrf_token(logged_in_admin, self._view_url(existing_assembly.id, resp.id)),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            retrieved = uow.respondents.get(resp.id)
+            assert retrieved.selection_status == RespondentStatus.TEST_SUBMISSION
+
 
 class TestEditRespondentPage:
     """POST /backoffice/project/<id>/respondents/<id>/edit smoke."""

@@ -171,6 +171,30 @@ same layer, and the second one's backdrop ends up beneath the first one's panel.
 This has gone wrong three times. Two ways to make the layer follow opening
 order instead are written up in `docs/agent/future_work/dialog_stacking.md`.
 
+## Logo
+
+The OpenDLP logo files live in `static/img/`. Use these for the product logo and favicon:
+
+| File                           | Use                                                                    |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `opendlp-logo-light.svg`       | Full logo for **light** backgrounds (dark burgundy wordmark)           |
+| `opendlp-logo-dark.svg`        | Full logo for **dark** backgrounds (pale pink wordmark)                |
+| `opendlp-small-sized-logo.svg` | Compact logo for tight spaces such as a header bar (light backgrounds) |
+| `opendlp-favicon.svg`          | Favicon / browser tab icon (16×16 viewBox)                             |
+
+- "Light" and "dark" name the **background** the logo sits on, not the colour of the logo.
+- The arch alone, without the words, is `opendlp-favicon.svg`: the set has no separate
+  arch file. Above the sign in and sign up titles (`public/_page_heading.html`) it is
+  scaled up and cut to the arch with `object-cover`, as the favicon's square frame leaves
+  space above and below it.
+- For general OpenDLP branding - headers, the favicon, anywhere the product identifies
+  itself - use the OpenDLP logo. `favicon.ico` is the older favicon; do not use it for new
+  work.
+- `logosortition.svg`/`logosortition.png` is the **Sortition Foundation** logo. Show it only
+  where the page is talking about, or linking to, the Sortition Foundation - never as the
+  OpenDLP product logo.
+- The logo is not an icon - it does not go in `icons.html` (see Icons below).
+
 ## Icons
 
 - Every UI icon lives in `templates/backoffice/components/icons.html`, one macro per glyph.

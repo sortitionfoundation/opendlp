@@ -302,7 +302,7 @@ HELP_SITE_COOKIES=https://docs.democraticlottery.org/data-and-legal/cookies/
 
 # Knowledge hub, the target of the top-bar help icon. Not live yet - the URL is
 # a placeholder until the hub is published.
-KNOWLEDGE_HUB_URL=https://democraticlottery.org/knowledge-hub
+KNOWLEDGE_HUB_URL=https://docs.democraticlottery.org/
 ```
 
 ### Session and cookie lifetimes

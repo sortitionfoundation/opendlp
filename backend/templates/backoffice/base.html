@@ -10,10 +10,9 @@
         <title>
             {% block title %}Backoffice{% endblock %}
             - OpenDLP</title>
-        <link rel="shortcut icon"
-              sizes="16x16 32x32 48x48"
-              href="/static/img/favicon.ico"
-              type="image/x-icon">
+        <link rel="icon"
+              href="{{ url_for('static', filename='img/opendlp-favicon.svg', v=static_hashes('img/opendlp-favicon.svg')) }}"
+              type="image/svg+xml">
         <!-- Tailwind CSS (compiled) -->
         <link rel="stylesheet"
               href="{{ url_for('static', filename='backoffice/dist/main.css', v=static_hashes('backoffice/dist/main.css') ) }}">

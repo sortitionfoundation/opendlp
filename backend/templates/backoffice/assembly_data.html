@@ -3,7 +3,7 @@ ABOUTME: Backoffice assembly data page
 ABOUTME: Displays data source selection and data management for assemblies
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/icons.html" import icon_check %}
+{% from "backoffice/components/icons.html" import icon_check, icon_download %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, checkbox, radio_group, file_input, first_error as e %}
@@ -288,6 +288,23 @@ ABOUTME: Displays data source selection and data management for assemblies
         </div>
     </section>
 {% endmacro %}
+{# An example file to download, with an optional note under the link: the last row
+   of a CSV upload card. The hidden suffix is for a screen reader's list of links,
+   where this page's two would otherwise read the same. #}
+{% macro example_csv_link(path, about, note="") %}
+    <div class="mt-6">
+        <p class="text-body-sm">
+            <a href="{{ url_for('static', filename=path, v=static_hashes(path)) }}"
+               class="inline-flex items-center gap-1.5 underline"
+               style="color: var(--color-links);"
+               download>
+                {{ icon_download(classes="w-4 h-4") }}
+                <span>{{ _("Download an example CSV") }}<span class="sr-only"> ({{ about }})</span></span>
+            </a>
+        </p>
+        {% if note %}<p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ note }}</p>{% endif %}
+    </div>
+{% endmacro %}
 {# CSV file content macro #}
 {% macro render_csv_content() %}
     {% set has_targets = csv_status.has_targets if csv_status else false %}
@@ -299,153 +316,178 @@ ABOUTME: Displays data source selection and data management for assemblies
         <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
             {{ _("Upload CSV files to import targets and people data.") }}
         </p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {# Where the cards sit side by side (md and wider), each is a subgrid over the
+           same two rows of this grid: the first holds the card's upload or status, the
+           second its example file. So the two "Download an example CSV" links start on
+           one line however tall the content above them, with the Targets note under its
+           link, and the cards are equal in height. The example row brings its own
+           spacing, hence no row gap there: once both files are uploaded the row is
+           empty and adds nothing. Stacked, each example is simply its card's last row. #}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-y-0">
             {# Target Upload Card #}
             {# The respondent columns are only worth offering once there is
                respondent data to read them from. x-data is on the card because
                the button that opens the dialog lives in it. #}
             {% set can_create_from_respondents = has_respondents and respondent_attribute_columns %}
-            <div class="rounded-lg p-6"
+            <div class="rounded-lg p-6 md:grid md:grid-rows-subgrid md:row-span-2"
                  style="background-color: var(--color-tables-cards);
                         border: 1px solid var(--color-borders-dividers)"
                  {% if can_create_from_respondents %}x-data="modal({ initialOpen: false })"{% endif %}>
-                <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h3>
-                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                    {{ _("Upload the targets for selection.") }}
-                </p>
-                {# A rejected upload re-renders this page with the form that
-                   rejected it, so the reason sits beside the file field rather
-                   than in a flash message at the top of the page. #}
-                {% set targets_upload_errors = targets_upload_form.errors if targets_upload_form else {} %}
-                {% if targets_upload_errors %}
-                    <div class="mb-4 rounded-lg p-4"
-                         style="background-color: var(--color-error-100);
-                                border: 1px solid var(--color-error-400)">
-                        <h4 class="text-heading-sm mb-2" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h4>
-                        <ul class="list-disc pl-5">
-                            {% for field_errors in targets_upload_errors.values() %}
-                                {% for error in field_errors %}
-                                    {# pre-line renders the newlines in multi-line errors (e.g. CSV parse failures) #}
-                                    <li class="text-body-sm"
-                                        style="color: var(--color-error-600);
-                                               white-space: pre-line">{{ error }}</li>
+                <div>
+                    <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h3>
+                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                        {{ _("Upload the targets for selection.") }}
+                    </p>
+                    {# A rejected upload re-renders this page with the form that
+                       rejected it, so the reason sits beside the file field rather
+                       than in a flash message at the top of the page. #}
+                    {% set targets_upload_errors = targets_upload_form.errors if targets_upload_form else {} %}
+                    {% if targets_upload_errors %}
+                        <div class="mb-4 rounded-lg p-4"
+                             style="background-color: var(--color-error-100);
+                                    border: 1px solid var(--color-error-400)">
+                            <h4 class="text-heading-sm mb-2" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h4>
+                            <ul class="list-disc pl-5">
+                                {% for field_errors in targets_upload_errors.values() %}
+                                    {% for error in field_errors %}
+                                        {# pre-line renders the newlines in multi-line errors (e.g. CSV parse failures) #}
+                                        <li class="text-body-sm"
+                                            style="color: var(--color-error-600);
+                                                   white-space: pre-line">{{ error }}</li>
+                                    {% endfor %}
                                 {% endfor %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-                {% if has_targets %}
-                    {# Show uploaded status #}
-                    <div class="flex items-center gap-2 mb-4 p-3 rounded-lg"
-                         style="background-color: var(--color-subtle-background-panels)">
-                        {{ icon_check(style="color: var(--color-success-600)") }}
-                        <span class="text-body-sm" style="color: var(--color-body-text);">
-                            {{ _("%(count)d targets uploaded", count=targets_count) }}
-                        </span>
-                    </div>
-                    {# Delete button #}
-                    <form method="post"
-                          action="{{ url_for('targets.delete_targets', assembly_id=assembly.id) }}"
-                          x-data
-                          data-preserve-scroll
-                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete all targets? This action cannot be undone.") }}', $el)">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        {{ button(_("Delete Targets") , type="submit", variant="danger") }}
-                    </form>
-                {% else %}
-                    {# Upload form #}
-                    <form method="post"
-                          action="{{ url_for('targets.upload_targets_csv', assembly_id=assembly.id) }}"
-                          enctype="multipart/form-data">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        {{ file_input(name="csv_file",
-                        label=_("CSV File") ,
-                        accept=".csv",
-                        required=true,
-                        hint=_("Select a CSV file with targets."),
-                        error=e(targets_upload_errors.get("csv_file", []))
-                        ) }}
-                        <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary") }}</div>
-                    </form>
-                {% endif %}
-                {# Offered alongside the CSV whether or not targets exist: a column
-                   missed the first time round can be added later, and the dialog
-                   shows the ones already covered as such. #}
-                {% if can_create_from_respondents %}
-                    <div class="mt-4 pt-4"
-                         style="border-top: 1px solid var(--color-borders-dividers)">
-                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                            {{ _("Or build the targets from the columns in your respondent data.") }}
-                        </p>
-                        {{ button(_("Create from respondent data"),
-                        variant="secondary",
-                        attrs='@click="open()"',
-                        aria_haspopup="dialog") }}
-                    </div>
-                    {% include "backoffice/targets/create_from_columns_modal.html" %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    {% if has_targets %}
+                        {# Show uploaded status #}
+                        <div class="flex items-center gap-2 mb-4 p-3 rounded-lg"
+                             style="background-color: var(--color-subtle-background-panels)">
+                            {{ icon_check(style="color: var(--color-success-600)") }}
+                            <span class="text-body-sm" style="color: var(--color-body-text);">
+                                {{ _("%(count)d targets uploaded", count=targets_count) }}
+                            </span>
+                        </div>
+                        {# Delete button #}
+                        <form method="post"
+                              action="{{ url_for('targets.delete_targets', assembly_id=assembly.id) }}"
+                              x-data
+                              data-preserve-scroll
+                              @submit.prevent="$confirm('{{ _("Are you sure you want to delete all targets? This action cannot be undone.") }}', $el)">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            {{ button(_("Delete Targets") , type="submit", variant="danger") }}
+                        </form>
+                    {% else %}
+                        {# Upload form #}
+                        <form method="post"
+                              action="{{ url_for('targets.upload_targets_csv', assembly_id=assembly.id) }}"
+                              enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            {{ file_input(name="csv_file",
+                            label=_("CSV File") ,
+                            accept=".csv",
+                            required=true,
+                            hint=_("Select a CSV file with targets."),
+                            error=e(targets_upload_errors.get("csv_file", []))
+                            ) }}
+                            <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary") }}</div>
+                        </form>
+                    {% endif %}
+                    {# Offered alongside the CSV whether or not targets exist: a column
+                       missed the first time round can be added later, and the dialog
+                       shows the ones already covered as such. #}
+                    {% if can_create_from_respondents %}
+                        <div class="mt-4 pt-4"
+                             style="border-top: 1px solid var(--color-borders-dividers)">
+                            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                {{ _("Or build the targets from the columns in your respondent data.") }}
+                            </p>
+                            {{ button(_("Create from respondent data"),
+                            variant="secondary",
+                            attrs='@click="open()"',
+                            aria_haspopup="dialog") }}
+                        </div>
+                        {% include "backoffice/targets/create_from_columns_modal.html" %}
+                    {% endif %}
+                </div>
+                {# With the upload form, below everything else in the card. The example's
+                   numbers only suit one panel size, and this project's may be any. The file
+                   gives its own percentages, so the panel size can be set before or after
+                   uploading: the import has nothing left to work out from it. #}
+                {% if not has_targets %}
+                    {{ example_csv_link("examples/example-targets.csv",
+                    about=_("Targets"),
+                    note=_("To run a selection with the example targets, set the panel size to 30.")
+                    ) }}
                 {% endif %}
             </div>
             {# People Upload Card #}
-            <div class="rounded-lg p-6"
+            <div class="rounded-lg p-6 md:grid md:grid-rows-subgrid md:row-span-2"
                  style="background-color: var(--color-tables-cards);
                         border: 1px solid var(--color-borders-dividers)">
-                <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("People") }}</h3>
-                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                    {{ _("Upload respondent data for selection.") }}
-                </p>
-                {% if has_respondents %}
-                    {# Show uploaded status #}
-                    <div class="flex items-center gap-2 mb-4 p-3 rounded-lg"
-                         style="background-color: var(--color-subtle-background-panels)">
-                        {{ icon_check(style="color: var(--color-success-600)") }}
-                        <span class="text-body-sm" style="color: var(--color-body-text);">
-                            {{ _("%(count)d respondents uploaded", count=respondents_count) }}
-                        </span>
-                    </div>
-                    {# Delete button #}
-                    <form method="post"
-                          action="{{ url_for('respondents.delete_respondents', assembly_id=assembly.id) }}"
-                          x-data
-                          data-preserve-scroll
-                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete all respondents? This action cannot be undone.") }}', $el)">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        {{ button(_("Delete Respondents") , type="submit", variant="danger") }}
-                    </form>
-                {% else %}
-                    {# Upload form #}
-                    <form method="post"
-                          action="{{ url_for('respondents.upload_respondents_csv', assembly_id=assembly.id) }}"
-                          enctype="multipart/form-data"
-                          class="flex flex-col gap-4"
-                          x-data
-                          x-preserve-scroll-on-submit>
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        {{ file_input(name="file",
-                        label=_("CSV File") ,
-                        accept=".csv",
-                        required=true,
-                        hint=_("Select a CSV file with respondent data.")
-                        ) }}
-                        {# Prefilled from the last upload so a file whose id column isn't the
-                        first one works without retyping, and the hint says where the value
-                        came from so a leftover doesn't read as something they typed.
-                        Gated on last_import_timestamp, not on csv_id_column: that defaults to
-                        "external_id" the moment a config row exists, and prefilling it before
-                        any upload fails files that have no column of that name. #}
-                        {% set has_previous_upload = csv_config and csv_config.last_import_timestamp and csv_config.csv_id_column %}
-                        {% if has_previous_upload %}
-                            {% set id_column_hint = _("Using '%(id_column)s' from your last upload. Change it if this file uses a different column, or clear it to use the first column.", id_column=csv_config.csv_id_column) %}
-                        {% else %}
-                            {% set id_column_hint = _("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.") %}
-                        {% endif %}
-                        {{ input(name="id_column",
-                        label=_("ID Column") ,
-                        value=csv_config.csv_id_column if has_previous_upload else "",
-                        placeholder=_("e.g., ID"),
-                        hint=id_column_hint
-                        ) }}
-                        <div>{{ button(_("Upload") , type="submit", variant="primary") }}</div>
-                    </form>
+                <div>
+                    <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("People") }}</h3>
+                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                        {{ _("Upload respondent data for selection.") }}
+                    </p>
+                    {% if has_respondents %}
+                        {# Show uploaded status #}
+                        <div class="flex items-center gap-2 mb-4 p-3 rounded-lg"
+                             style="background-color: var(--color-subtle-background-panels)">
+                            {{ icon_check(style="color: var(--color-success-600)") }}
+                            <span class="text-body-sm" style="color: var(--color-body-text);">
+                                {{ _("%(count)d respondents uploaded", count=respondents_count) }}
+                            </span>
+                        </div>
+                        {# Delete button #}
+                        <form method="post"
+                              action="{{ url_for('respondents.delete_respondents', assembly_id=assembly.id) }}"
+                              x-data
+                              data-preserve-scroll
+                              @submit.prevent="$confirm('{{ _("Are you sure you want to delete all respondents? This action cannot be undone.") }}', $el)">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            {{ button(_("Delete Respondents") , type="submit", variant="danger") }}
+                        </form>
+                    {% else %}
+                        {# Upload form #}
+                        <form method="post"
+                              action="{{ url_for('respondents.upload_respondents_csv', assembly_id=assembly.id) }}"
+                              enctype="multipart/form-data"
+                              class="flex flex-col gap-4"
+                              x-data
+                              x-preserve-scroll-on-submit>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            {{ file_input(name="file",
+                            label=_("CSV File") ,
+                            accept=".csv",
+                            required=true,
+                            hint=_("Select a CSV file with respondent data.")
+                            ) }}
+                            {# Prefilled from the last upload so a file whose id column isn't the
+                            first one works without retyping, and the hint says where the value
+                            came from so a leftover doesn't read as something they typed.
+                            Gated on last_import_timestamp, not on csv_id_column: that defaults to
+                            "external_id" the moment a config row exists, and prefilling it before
+                            any upload fails files that have no column of that name. #}
+                            {% set has_previous_upload = csv_config and csv_config.last_import_timestamp and csv_config.csv_id_column %}
+                            {% if has_previous_upload %}
+                                {% set id_column_hint = _("Using '%(id_column)s' from your last upload. Change it if this file uses a different column, or clear it to use the first column.", id_column=csv_config.csv_id_column) %}
+                            {% else %}
+                                {% set id_column_hint = _("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.") %}
+                            {% endif %}
+                            {{ input(name="id_column",
+                            label=_("ID Column") ,
+                            value=csv_config.csv_id_column if has_previous_upload else "",
+                            placeholder=_("e.g., ID"),
+                            hint=id_column_hint
+                            ) }}
+                            <div>{{ button(_("Upload") , type="submit", variant="primary") }}</div>
+                        </form>
+                    {% endif %}
+                </div>
+                {# With the upload form, below everything else in the card #}
+                {% if not has_respondents %}
+                    {{ example_csv_link("examples/example-respondents.csv", about=_("People")) }}
                 {% endif %}
             </div>
         </div>

@@ -198,6 +198,9 @@ RUN <<EOT
 /app/bin/python -V
 /app/bin/python -Im site
 /app/bin/python -Ic 'import opendlp'
+# The celery worker loads the Redis transport, but importing opendlp does not.
+# Import it here so a dependency missing from the transport fails the build.
+/app/bin/python -Ic 'import kombu.transport.redis'
 EOT
 
 ENV FLASK_APP=opendlp.entrypoints.flask_app

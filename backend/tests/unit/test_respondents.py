@@ -518,6 +518,7 @@ class TestApplyStatusTransition:
                 RespondentStatus.SELECTED,
                 RespondentStatus.CONFIRMED,
                 RespondentStatus.WITHDRAWN,
+                RespondentStatus.TEST_SUBMISSION,
             ],
             RespondentStatus.SELECTED: [
                 RespondentStatus.POOL,
@@ -602,6 +603,26 @@ class TestApplyStatusTransition:
         )
         assert resp.selection_status == RespondentStatus.CONFIRMED
         assert resp.selection_run_id == run_id
+
+    def test_pool_to_test_submission_allowed_and_clears_run(self):
+        run_id = uuid.uuid4()
+        resp = self._at(RespondentStatus.POOL, selection_run_id=run_id)
+        resp.apply_status_transition(
+            new_status=RespondentStatus.TEST_SUBMISSION,
+            author_id=uuid.uuid4(),
+            comment="this was us testing the form",
+        )
+        assert resp.selection_status == RespondentStatus.TEST_SUBMISSION
+        assert resp.selection_run_id is None
+
+    def test_selected_to_test_submission_not_allowed(self):
+        resp = self._at(RespondentStatus.SELECTED)
+        with pytest.raises(ValueError, match="not allowed"):
+            resp.apply_status_transition(
+                new_status=RespondentStatus.TEST_SUBMISSION,
+                author_id=uuid.uuid4(),
+                comment="try",
+            )
 
     def test_no_transitions_out_of_deleted(self):
         resp = self._at(RespondentStatus.DELETED)

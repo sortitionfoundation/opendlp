@@ -1016,6 +1016,47 @@ class TestSelectionStatusTransition:
         assert b"CONFIRMED" in response.data
         assert b"WITHDRAWN" in response.data
 
+    def test_view_page_offers_test_submission_from_pool(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        """A pool respondent can be marked as a test submission, with a readable label."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T6",
+                attributes={},
+                selection_status=RespondentStatus.POOL,
+            )
+
+        response = logged_in_admin.get(self._view_url(existing_assembly.id, resp.id))
+        assert response.status_code == 200
+        assert b'name="new_status" value="TEST_SUBMISSION"' in response.data
+        assert b"Change to Test submission" in response.data
+        assert b"Test_Submission" not in response.data
+
+    def test_view_page_labels_a_test_submission_and_offers_only_pool(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        """A test submission shows its readable label and can only move to the pool."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            resp = create_respondent(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                external_id="R-T7",
+                attributes={},
+                selection_status=RespondentStatus.TEST_SUBMISSION,
+            )
+
+        response = logged_in_admin.get(self._view_url(existing_assembly.id, resp.id))
+        assert response.status_code == 200
+        assert b"Test submission" in response.data
+        assert b"Test_Submission" not in response.data
+        assert b"Change to Pool" in response.data
+        assert b"Change to Selected" not in response.data
+
     def test_view_page_hides_buttons_on_terminal_status(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
     ) -> None:
