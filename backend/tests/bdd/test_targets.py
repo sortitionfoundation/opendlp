@@ -192,6 +192,12 @@ def open_targets_page_short(admin_logged_in_page: Page, title: str) -> None:
     admin_logged_in_page.goto(_targets_url(_target_assembly_ids[title]))
 
 
+@when(parsers.parse('I open the targets page for "{title}" on a phone'))
+def open_targets_page_phone(admin_logged_in_page: Page, title: str) -> None:
+    admin_logged_in_page.set_viewport_size({"width": 390, "height": 844})
+    admin_logged_in_page.goto(_targets_url(_target_assembly_ids[title]))
+
+
 @when("I scroll to the bottom of the page")
 def scroll_to_bottom(admin_logged_in_page: Page) -> None:
     admin_logged_in_page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -202,6 +208,29 @@ def scroll_to_bottom(admin_logged_in_page: Page) -> None:
 def button_in_view(admin_logged_in_page: Page, name: str) -> None:
     button = admin_logged_in_page.get_by_role("button", name=name, exact=True).filter(visible=True)
     expect(button).to_be_in_viewport(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{name}" button should be wholly in view'))
+def button_wholly_in_view(admin_logged_in_page: Page, name: str) -> None:
+    button = admin_logged_in_page.get_by_role("button", name=name, exact=True).filter(visible=True)
+    expect(button).to_be_in_viewport(ratio=1, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the targets heading should scroll with the page")
+def targets_heading_not_sticky(admin_logged_in_page: Page) -> None:
+    heading = admin_logged_in_page.locator(".sticky-below-header")
+    expect(heading).to_have_css("position", "static", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{name}" column can be scrolled into view'))
+def column_scrolls_into_view(admin_logged_in_page: Page, name: str) -> None:
+    """Every table's heading for the column, not only the first: each target has its own table."""
+    headings = admin_logged_in_page.locator("th").filter(visible=True).filter(has_text=re.compile(rf"^\s*{name}\s*$"))
+    expect(headings.first).to_be_attached(timeout=PLAYWRIGHT_TIMEOUT)
+    for index in range(headings.count()):
+        heading = headings.nth(index)
+        heading.scroll_into_view_if_needed()
+        expect(heading).to_be_in_viewport(ratio=1, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I adjust the targets for "{title}" after a failed test selection'))

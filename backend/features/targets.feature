@@ -341,3 +341,20 @@ Feature: Target percentages, notes and ordering
     When I press Escape
     Then the note "Counts people in the pool" should not be showing
     And the focus should be back on "More about Respondents"
+
+  Scenario: The targets page fits on a phone
+    Given there is an assembly with targets called "Phone Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Phone Demo" on a phone
+    Then the "Edit targets" button should be wholly in view
+    And the targets heading should scroll with the page
+    And the "Max" column can be scrolled into view
+
+  Scenario: The targets edit form fits on a phone
+    Given there is an assembly with targets called "Phone Edit Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Phone Edit Demo" on a phone
+    And I choose to edit all targets
+    Then the "Add target" button should be wholly in view
+    And the "Save" button should be wholly in view
+    And the "Max" column can be scrolled into view

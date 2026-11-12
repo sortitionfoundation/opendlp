@@ -294,85 +294,92 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     {{ button(_("Delete target"), variant="danger", attrs='@click="markDeleted()"') }}
                 </div>
             </div>
-            <table class="w-full text-body-md" style="border-collapse: collapse;">
-                <thead>
-                    <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                        {{ heading(_("Value"), edge="first") }}
-                        {{ heading(_("Population (%%)")) }}
-                        {{ count_headings(show_counts, show_selected) }}
-                        {{ heading(_("Min")) }}
-                        {{ heading(_("Max")) }}
-                        {{ heading(_("Comment")) }}
-                        {{ heading(_("Actions"), align="right", edge="last") }}
-                    </tr>
-                </thead>
-                <tbody x-ref="rows">
-                    {% for val in (category.values if category else []) or [] %}
-                        {% set val_annotations = value_annotations.get(val.value, []) %}
-                        {% set suggested_fields = val_annotations | selectattr("is_applicable") | map(attribute="field") | list %}
-                        {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected, suggested_fields=suggested_fields) }}
+            {# On a narrow screen the table scrolls sideways inside the card rather
+               than squeezing its boxes too narrow to read. Every column holds a
+               field, so tabbing along a row scrolls the next one into view. #}
+            <div class="overflow-x-auto">
+                <table class="w-full text-body-md"
+                       style="border-collapse: collapse;
+                              min-width: {{ 46 + (8 if show_counts else 0) + (8 if show_selected else 0) }}rem">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                            {{ heading(_("Value"), edge="first") }}
+                            {{ heading(_("Population (%%)")) }}
+                            {{ count_headings(show_counts, show_selected) }}
+                            {{ heading(_("Min")) }}
+                            {{ heading(_("Max")) }}
+                            {{ heading(_("Comment")) }}
+                            {{ heading(_("Actions"), align="right", edge="last") }}
+                        </tr>
+                    </thead>
+                    <tbody x-ref="rows">
+                        {% for val in (category.values if category else []) or [] %}
+                            {% set val_annotations = value_annotations.get(val.value, []) %}
+                            {% set suggested_fields = val_annotations | selectattr("is_applicable") | map(attribute="field") | list %}
+                            {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected, suggested_fields=suggested_fields) }}
                         {# The check's suggestions, right under the row they would change.
                            Accept writes into that row's inputs; Save keeps it. #}
-                        {{ value_suggestion_rows(category, val, val_annotations, column_count,
-                        can_manage=true,
-                        field_prefix="bulk-" ~ cat_id ~ "-" ~ val.value_id,
-                        divider=true) }}
-                    {% endfor %}
+                            {{ value_suggestion_rows(category, val, val_annotations, column_count,
+                            can_manage=true,
+                            field_prefix="bulk-" ~ cat_id ~ "-" ~ val.value_id,
+                            divider=true) }}
+                        {% endfor %}
                                                 {# A target with no values is not worth saving, so a block
                        cloned for a new one arrives with the row its author is
                        about to fill in - rather than an empty table and a
                        button to press first. #}
-                    {% if first_row_id %}
-                        {{ value_row(cat_id, first_row_id, is_new=true, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
-                    {% endif %}
+                        {% if first_row_id %}
+                            {{ value_row(cat_id, first_row_id, is_new=true, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                        {% endif %}
                                                 {# Blank rows are cloned from here, so the markup has exactly
                        one definition. __ID__ becomes new-<n> on the way in. #}
-                    <template x-ref="rowTemplate">
-                        {{ value_row(cat_id, "__ID__", is_new=true, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
-                    </template>
-                    {% if missing_values %}
-                        <template x-ref="missingTemplate">
-                            {% for mv in missing_values %}
-                                {{ value_row(cat_id, "__ID__", is_new=true, prefill=mv, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
-                            {% endfor %}
+                        <template x-ref="rowTemplate">
+                            {{ value_row(cat_id, "__ID__", is_new=true, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
                         </template>
-                    {% endif %}
-                </tbody>
+                        {% if missing_values %}
+                            <template x-ref="missingTemplate">
+                                {% for mv in missing_values %}
+                                    {{ value_row(cat_id, "__ID__", is_new=true, prefill=mv, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                                {% endfor %}
+                            </template>
+                        {% endif %}
+                    </tbody>
                                             {# ── Add Value Row ─────────────────────────── #}
-                <tbody>
-                    <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
-                        <td colspan="{{ column_count }}" class="py-3">
-                            <div class="flex items-center gap-3">
-                                {{ button(_("Add value"), variant="tertiary", leading_icon=icon_plus(), attrs='@click="addValue()"') }}
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
+                            <td colspan="{{ column_count }}" class="py-3">
+                                <div class="flex items-center gap-3">
+                                    {{ button(_("Add value"), variant="tertiary", leading_icon=icon_plus(), attrs='@click="addValue()"') }}
                                                             {# Once every missing value is a row in the table there is
                                    nothing left to add, and nothing left to name. #}
-                                {% if missing_values %}
-                                    <span x-show="!missingAdded">
-                                        {{ button(_("Add values found in respondent data"), variant="secondary", attrs='@click="addMissingValues()"') }}
-                                    </span>
-                                    <span class="text-body-sm"
-                                          x-show="!missingAdded"
-                                          style="color: var(--color-secondary-text)">
-                                        {{ _("Not yet targeted: %(values)s", values=missing_values_summary(missing_values)) }}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr style="border-top: 2px solid var(--color-borders-dividers);">
-                        {{ heading(_("Total"), edge="first") }}
-                        {{ total_cell(attrs=':class="percentageTotalClass" x-text="percentageTotal"') }}
-                        {% if show_counts %}{{ count_total_cell(respondent_counts) }}{% endif %}
-                        {% if show_selected %}{{ count_total_cell(selected_counts) }}{% endif %}
-                        {{ total_cell(attrs='x-text="minTotal"') }}
-                        {{ total_cell(attrs='x-text="maxTotal"') }}
-                        <td class="py-3 px-4"></td>
-                        <td class="py-3 pl-4"></td>
-                    </tr>
-                </tfoot>
-            </table>
+                                    {% if missing_values %}
+                                        <span x-show="!missingAdded">
+                                            {{ button(_("Add values found in respondent data"), variant="secondary", attrs='@click="addMissingValues()"') }}
+                                        </span>
+                                        <span class="text-body-sm"
+                                              x-show="!missingAdded"
+                                              style="color: var(--color-secondary-text)">
+                                            {{ _("Not yet targeted: %(values)s", values=missing_values_summary(missing_values)) }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr style="border-top: 2px solid var(--color-borders-dividers);">
+                            {{ heading(_("Total"), edge="first") }}
+                            {{ total_cell(attrs=':class="percentageTotalClass" x-text="percentageTotal"') }}
+                            {% if show_counts %}{{ count_total_cell(respondent_counts) }}{% endif %}
+                            {% if show_selected %}{{ count_total_cell(selected_counts) }}{% endif %}
+                            {{ total_cell(attrs='x-text="minTotal"') }}
+                            {{ total_cell(attrs='x-text="maxTotal"') }}
+                            <td class="py-3 px-4"></td>
+                            <td class="py-3 pl-4"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
             {# Only for a saved target: a new one has no name yet to look for. #}
             {% if category and show_counts and respondent_counts is none %}
                 {{ no_respondent_column_note(category.name) }}
