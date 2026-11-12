@@ -33,7 +33,7 @@ The recommended approach. Separates the GOV.UK identity (logo) from the service-
 
 Inside `<header class="govuk-header" …>`:
 
-- Keep the existing logo block (`govuk-header__logo` containing the Sortition Foundation `<img>`).
+- Keep the existing logo block (`govuk-header__logo` containing the OpenDLP logo `<img>`).
 - Replace the `govuk-header__content` wrapper and its inner `<nav class="govuk-header__navigation">` with a sibling `<div class="govuk-service-navigation" data-module="govuk-service-navigation">` block.
 
 Skeleton (markup only, copy the v6 Service navigation HTML reference for the exact structure):
@@ -83,7 +83,7 @@ The existing `.govuk-service-navigation` background-colour and `.govuk-service-n
 
 ### Step 4 — manual visual test
 
-The header structure is heavily customised (white background, burnt-orange border, Sortition logo) so this needs eyeballing. Test:
+The header structure is heavily customised (white background, burnt-orange border, OpenDLP logo with negative margins in `application.scss`) so this needs eyeballing. Test:
 
 - Logged-out home page (nav items: Sign in, Create Account, Sortition Lab, Help).
 - Logged-in dashboard (full nav including Site Admin when role allows).

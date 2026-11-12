@@ -1,30 +1,63 @@
 {#
-ABOUTME: Heading block shared by the public account pages - dot-arch illustration, title, optional subtitle
+ABOUTME: Heading block shared by the public account pages - the OpenDLP arch, then the title, set into the logo on sign in and sign up
 ABOUTME: Anything passed with {% call %} renders beneath the title, e.g. an explanation or a "Sign in" link
 #}
-{% macro page_heading(title, subtitle="") %}
+{% macro page_heading(title, logo=false) %}
     {#
-    The centred page heading from the Figma sign-in and sign-up frames.
+    The centred heading of the public account pages, after the sign-in layout
+    in the Figma file "OpenDLP - UI" (node 6685-15953).
+
+    Above the title is the arch of the OpenDLP logo, 326px wide, drawn from
+    opendlp-favicon.svg: the favicon is the logo's arch without its words. Its
+    square frame leaves space above and below the arch, so the image sits in a
+    box of the arch's own proportions (326x172) and object-cover cuts it to the
+    arch. The aspect-ratio class holds that shape: without it, the image's
+    square natural size would win.
+
+    With logo=true (sign in, sign up) the title is the first line of the
+    logo's words, as in the layout: the title in small type, then OpenDLP as
+    the wordmark and the tagline DEMOCRATIC LOTTERY PLATFORM. The title reads
+    into the wordmark, so the h1 is "Sign in to OpenDLP". The wordmark and the
+    tagline are the logo's own words and, like the logo, are not translated;
+    their sizes are the layout's, outside the type scale.
 
     Args:
-        title: the page's h1
-        subtitle: a second line under the h1 in heading type (optional)
+        title: the page's h1; with logo=true, the words before OpenDLP
+        logo: set the title above the logo's wordmark and tagline
 
     Usage:
-        {{ page_heading(_("Sign in to OpenDLP"), subtitle=_("Open Democratic Lottery Platform")) }}
+        {{ page_heading(_("Sign in to"), logo=true) }}
         {% call page_heading(_("Reset your password")) %}
             <p class="text-body-md" style="color: var(--color-body-text);">...</p>
         {% endcall %}
     #}
-    <div class="flex flex-col items-center gap-6 text-center">
-        <img src="{{ url_for('static', filename='img/join-arch.svg') }}"
-             alt=""
-             width="322"
-             height="161">
-        <div class="flex flex-col gap-1">
-            <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ title }}</h1>
-            {% if subtitle %}
-                <p class="text-heading-lg" style="color: var(--color-headings);">{{ subtitle }}</p>
+    <div class="flex flex-col items-center gap-4 text-center">
+        <div class="flex flex-col items-center gap-6">
+            <img src="{{ url_for('static', filename='img/opendlp-favicon.svg') }}"
+                 alt=""
+                 width="326"
+                 height="172"
+                 class="object-cover aspect-[326/172]">
+            {% if logo %}
+                <div class="flex flex-col items-center gap-4">
+                    <h1 class="flex flex-col items-center gap-4">
+                        <span class="text-heading-lg opacity-80"
+                              style="color: var(--color-neutral-800)">{{ title }}</span>
+                        {# A space between the two, so the heading reads as one line. #}
+                        <span class="sr-only">&#32;</span>
+                        <span class="opacity-80"
+                              style="color: var(--color-primary-action);
+                                     font-size: 2.25rem;
+                                     line-height: 1.5rem;
+                                     letter-spacing: -2px">Open<span class="font-bold">DLP</span></span>
+                    </h1>
+                    <p class="uppercase"
+                       style="color: var(--color-primary-action);
+                              font-size: 1.25rem;
+                              line-height: 2.5rem">Democratic Lottery Platform</p>
+                </div>
+            {% else %}
+                <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ title }}</h1>
             {% endif %}
         </div>
         {% if caller %}{{ caller() }}{% endif %}

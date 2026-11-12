@@ -12,7 +12,7 @@ ABOUTME: Email and password sign-in, then Google/Microsoft - Figma node 5570-632
     {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
     {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
     <div class="flex flex-col gap-10">
-        {% call page_heading(_("Sign in to OpenDLP"), subtitle=_("Open Democratic Lottery Platform")) %}
+        {% call page_heading(_("Sign in to"), logo=true) %}
             <p class="text-body-md" style="color: var(--color-body-text);">
                 {{ _("Don't have an account?") }}
                 <a href="{{ url_for('auth.register') }}"
