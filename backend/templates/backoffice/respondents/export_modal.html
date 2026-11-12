@@ -11,13 +11,17 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
    contract the modal() macro expects. Its methods must come from a registered
    Alpine.data() component: the CSP Alpine build does not register methods defined
    inline in an x-data object literal, so close()/closeIfAllowed() would be
-   undefined. The CSV-vs-gsheet toggle lives in a nested data-only scope. #}
+   undefined. The CSV-vs-gsheet toggle lives in a nested data-only scope.
+   A CSV export is a download that leaves the page where it is, so the modal
+   closes itself once the form is sent; a Google Sheets export loads the page
+   again, which closes it. #}
 <div x-data="modal({ initialOpen: true })">
     {% call modal(id="export-modal", title=_("Export respondents")) %}
         <form method="post"
               action="{{ url_for('respondents.run_export', assembly_id=assembly_id) }}"
               class="flex flex-col gap-4"
-              x-data="{ destination: 'csv' }">
+              x-data="{ destination: 'csv' }"
+              @submit="closeAfterSubmit(destination === 'csv')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <fieldset class="flex flex-col gap-2">
