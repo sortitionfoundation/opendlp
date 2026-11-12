@@ -3,15 +3,10 @@ ABOUTME: Draft public home page on the OpenDLP design system, served at /newhome
 ABOUTME: Header, hero, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6517-17690
 #}
 {#
-   The bracketed placeholders in the footer's bottom row stand in for details
-   we do not have yet, so they are not wrapped in _().
-
    Colours and fonts follow the backoffice design system rather than the
    Figma file: Lato throughout, headings in --color-brand-700 (nearest token
    to the Figma plum #571845), and the step accents in --color-brand-300
    (the Figma orange #fd5734 has no token, and white text on it fails WCAG AA).
-
-   Footer links that have no destination yet point at "#".
 #}
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/button.html" import button %}
@@ -22,7 +17,8 @@ ABOUTME: Header, hero, how it works, key benefits, who it is for, sign-in/sign-u
 {% set body_style = "color: var(--color-body-text);" %}
 {% set intro = [
 _("A democratic lottery – a “sortition” – is a gold standard foundation for citizen engagement and deliberation."),
-_("Democratic lotteries can be technically complex to implement, and there are few public resources available to support them."),
+_("Democratic lotteries can be technically complex to implement."),
+_("There are few public resources available to support them."),
 _("We are changing that with OpenDLP."),
 ] %}
 {% set steps = [
@@ -105,14 +101,14 @@ _("We are changing that with OpenDLP."),
                          class="w-72 md:w-[400px] h-auto">
                     <h1 class="text-4xl md:text-5xl font-bold leading-tight tracking-wide"
                         style="{{ heading_style }}">
-                        {# The slogan is title case by design. The highlighted word is passed in
-                           marked safe, so the translator can move it within the sentence. #}
-                        {% set highlight %}<span class="px-3 inline-block" style="background-color: var(--color-primary-action); color: var(--color-neutral-0)">{{ _("Simplicity") }}</span>{% endset %}
-                        {{ _("Bringing %(highlight)s to Sortition", highlight=highlight) }}
+                        {# The highlighted word is passed in marked safe, so the translator can
+                           move it within the sentence. #}
+                        {% set highlight %}<span class="px-3 inline-block" style="background-color: var(--color-primary-action); color: var(--color-neutral-0)">{{ _("simplicity") }}</span>{% endset %}
+                        {{ _("Bringing %(highlight)s to sortition", highlight=highlight) }}
                     </h1>
                     <div class="flex flex-wrap justify-center gap-4 md:gap-10">
-                        {{ button(_(_("Contact us")), variant="secondary", href="mailto:" ~ support_email_address, leading_icon=icon_send(classes="")) }}
-                        {{ button(_("Create account"), variant="secondary", href=url_for('auth.register'), leading_icon=icon_plus(classes="")) }}
+                        {{ button(_("Contact us"), variant="primary", href="mailto:" ~ support_email_address, leading_icon=icon_send(classes="")) }}
+                        {{ button(_("Create account"), variant="primary", href=url_for('auth.register'), leading_icon=icon_plus(classes="")) }}
                     </div>
                     <div class="flex flex-col gap-4 text-lg md:text-xl leading-relaxed" style="{{ body_style }}">
                         {% for paragraph in intro %}<p>{{ paragraph }}</p>{% endfor %}
@@ -260,19 +256,14 @@ _("We are changing that with OpenDLP."),
                 </div>
                 {{ footer_column(_("Product"), [
                 (_("How it works"), "#how-it-works", false),
-                (_("Documentation"), help_site_home, true),
                 (_("Source code on GitHub"), "https://github.com/sortitionfoundation/opendlp", true),
-                (_("Release notes"), "#", false),
                 ]) }}
                 {{ footer_column(_("Support"), [
-                (_("Help and support"), "#", false),
+                (_("Help and support"), help_site_home, true),
                 (_("Knowledge Hub"), knowledge_hub_url, true),
                 (_("Contact us"), "mailto:" ~ support_email_address, false),
-                (_("Report a vulnerability"), url_for('wellknown.security_txt'), false),
                 ]) }}
                 {{ footer_column(_("Legal"), [
-                (_("Privacy policy"), "#", false),
-                (_("Terms of use"), "#", false),
                 (_("Cookies"), help_site_cookies, true),
                 (_("User Data Agreement"), help_site_data_agreement, true),
                 ]) }}
@@ -296,11 +287,9 @@ _("We are changing that with OpenDLP."),
             <p class="flex flex-wrap items-center gap-3 pt-4 text-caption"
                style="color: var(--color-headings)">
                 <span class="inline-flex items-center gap-1">{{ icon_copyright(classes="w-4 h-4") }}
-                    <span class="sr-only">{{ _("Copyright") }}</span>(LEGAL ENTITY NAME)</span>
+                    <span class="sr-only">{{ _("Copyright") }}</span>Sortition Europe</span>
                 <span aria-hidden="true">•</span>
-                <span>(REGISTRATION NUMBER)</span>
-                <span aria-hidden="true">•</span>
-                <span>Open source under (Licence)</span>
+                <span>{{ _("Open source under the Apache License 2.0") }}</span>
             </p>
         </footer>
     </div>

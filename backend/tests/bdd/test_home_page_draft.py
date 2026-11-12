@@ -25,7 +25,7 @@ def open_draft_home_page_on_phone(logged_out_page: Page) -> None:
 
 @then("they should see the draft home page hero")
 def see_hero(logged_out_page: Page) -> None:
-    expect(logged_out_page.get_by_role("heading", level=1)).to_contain_text("Bringing Simplicity to Sortition")
+    expect(logged_out_page.get_by_role("heading", level=1)).to_contain_text("Bringing simplicity to sortition")
     expect(logged_out_page.get_by_role("img", name="OpenDLP - Democratic Lottery Platform")).to_be_visible()
 
 

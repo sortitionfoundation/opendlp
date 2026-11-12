@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-12 11:05+0000\n"
+"POT-Creation-Date: 2026-11-12 11:49+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -5138,12 +5138,12 @@ msgid "Another task is already writing to this project: %(task)s"
 msgstr "Ebbe a projektbe már ír egy másik feladat: %(task)s"
 
 #: templates/base.html:5 templates/public/base.html:19
-#: templates/public/home.html:20
+#: templates/public/home.html:15
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
 
 #: templates/base.html:22 templates/base_public.html:24
-#: templates/public/base.html:25 templates/public/home.html:86
+#: templates/public/base.html:25 templates/public/home.html:82
 msgid "Skip to main content"
 msgstr "Ugrás a fő tartalomra"
 
@@ -5191,8 +5191,8 @@ msgstr "Kilépés"
 #: templates/errors/403.html:27 templates/errors/404.html:28
 #: templates/errors/413.html:24 templates/errors/500.html:28
 #: templates/main/index.html:17 templates/public/forgot_password.html:33
-#: templates/public/home.html:91 templates/public/home.html:226
-#: templates/public/home.html:230 templates/public/home.html:254
+#: templates/public/home.html:87 templates/public/home.html:222
+#: templates/public/home.html:226 templates/public/home.html:250
 #: templates/public/login.html:10 templates/public/login.html:47
 #: templates/public/register.html:22
 #: templates/public/resend_confirmation.html:33
@@ -5226,12 +5226,12 @@ msgstr "Fontos"
 
 #: templates/backoffice/base_page.html:42
 #: templates/backoffice/components/footer.html:18 templates/base.html:176
-#: templates/base_public.html:39 templates/public/home.html:277
+#: templates/base_public.html:39 templates/public/home.html:268
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
 #: templates/backoffice/components/footer.html:22 templates/base.html:181
-#: templates/base_public.html:44 templates/public/home.html:276
+#: templates/base_public.html:44 templates/public/home.html:267
 msgid "Cookies"
 msgstr "Sütik"
 
@@ -5244,7 +5244,7 @@ msgid "OpenDLP Version"
 msgstr "OpenDLP verzió"
 
 #: templates/backoffice/components/footer.html:38 templates/base.html:200
-#: templates/public/home.html:249
+#: templates/public/home.html:245
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -5967,7 +5967,7 @@ msgstr "Felhasználók exportálása CSV-be"
 #: templates/backoffice/assembly_dashboard.html:40
 #: templates/backoffice/components/assembly_tabs.html:74
 #: templates/main/dashboard.html:2 templates/main/dashboard.html:7
-#: templates/public/home.html:89
+#: templates/public/home.html:85
 msgid "Dashboard"
 msgstr "Vezérlőpult"
 
@@ -11657,231 +11657,217 @@ msgstr "Visszaállító link küldése"
 msgid "Remember your password?"
 msgstr "Eszedbe jutott a jelszavad?"
 
-#: templates/public/home.html:24
+#: templates/public/home.html:19
 msgid ""
 "A democratic lottery – a “sortition” – is a gold standard foundation for "
 "citizen engagement and deliberation."
 msgstr ""
 
-#: templates/public/home.html:25
-msgid ""
-"Democratic lotteries can be technically complex to implement, and there "
-"are few public resources available to support them."
+#: templates/public/home.html:20
+msgid "Democratic lotteries can be technically complex to implement."
 msgstr ""
 
-#: templates/public/home.html:26
+#: templates/public/home.html:21
+msgid "There are few public resources available to support them."
+msgstr ""
+
+#: templates/public/home.html:22
 msgid "We are changing that with OpenDLP."
 msgstr ""
 
-#: templates/public/home.html:29
+#: templates/public/home.html:25
 msgid ""
 "Decide what the panel should look like, in terms of age, gender, "
 "education level, opinion, etc. The room is diverse and broadly reflects "
 "the wider population."
 msgstr ""
 
-#: templates/public/home.html:30
+#: templates/public/home.html:26
 msgid ""
 "Create a registration page that matches your targets and also collects "
 "contact and consent details. Anyone invited can then register their "
 "interest."
 msgstr ""
 
-#: templates/public/home.html:31
+#: templates/public/home.html:27
 msgid ""
 "OpenDLP selects a group of people that matches your targets in a fair "
 "way. If anyone drops out, it’s easy to select replacements. OpenDLP will "
 "help you make changes if it’s not possible to hit your targets."
 msgstr ""
 
-#: templates/public/home.html:32
+#: templates/public/home.html:28
 msgid ""
 "OpenDLP logs key activity, prompts users to explain project changes, and "
 "produces reports. The software is open-source."
 msgstr ""
 
-#: templates/public/home.html:35
+#: templates/public/home.html:31
 msgid ""
 "Selection of diverse, representative groups rather than “the usual "
 "suspects”, in a way that gives people a fair chance to take part."
 msgstr ""
 
-#: templates/public/home.html:36
+#: templates/public/home.html:32
 msgid "Less juggling of spreadsheets and tools, so fewer opportunities for error."
 msgstr ""
 
-#: templates/public/home.html:37
+#: templates/public/home.html:33
 msgid ""
 "Dashboards and a log of what was done, so you can show your process was "
 "sound."
 msgstr ""
 
-#: templates/public/home.html:40
+#: templates/public/home.html:36
 msgid ""
 "Built by the Sortition Foundation and Sortition Europe, who have "
 "delivered 300+ lotteries around the world. OpenDLP has already been used "
 "for 30+ lotteries and counting."
 msgstr ""
 
-#: templates/public/home.html:41
+#: templates/public/home.html:37
 msgid ""
 "OpenDLP is GDPR compliant and stores its data in Europe. You can choose "
 "to use anonymised data, and only use the parts of OpenDLP that you want "
 "to."
 msgstr ""
 
-#: templates/public/home.html:44
+#: templates/public/home.html:40
 msgid ""
 "You are embedding and institutionalising your own deliberative engagement"
 " processes with citizens, and want to take ownership of the whole lottery"
 " process."
 msgstr ""
 
-#: templates/public/home.html:45
+#: templates/public/home.html:41
 msgid ""
 "You regularly run deliberative engagement processes on behalf of "
 "commissioners, and may already run the democratic lottery component "
 "yourself, or want to move into this space."
 msgstr ""
 
-#: templates/public/home.html:102
+#: templates/public/home.html:98
 msgid "OpenDLP - Democratic Lottery Platform"
 msgstr ""
 
-#: templates/public/home.html:110
-msgid "Simplicity"
+#: templates/public/home.html:106
+msgid "simplicity"
 msgstr ""
 
-#: templates/public/home.html:111
+#: templates/public/home.html:107
 #, python-format
-msgid "Bringing %(highlight)s to Sortition"
+msgid "Bringing %(highlight)s to sortition"
 msgstr ""
 
-#: templates/public/home.html:114 templates/public/home.html:270
+#: templates/public/home.html:110 templates/public/home.html:264
 msgid "Contact us"
 msgstr ""
 
-#: templates/public/home.html:115
+#: templates/public/home.html:111
 msgid "Create account"
 msgstr ""
 
-#: templates/public/home.html:136
+#: templates/public/home.html:132
 msgid "How does OpenDLP work?"
 msgstr ""
 
-#: templates/public/home.html:138
+#: templates/public/home.html:134
 msgid ""
 "OpenDLP is an online service that makes it easier to run democratic "
 "lotteries for deliberative processes. It is transparent, auditable, and "
 "built for democratic institutions."
 msgstr ""
 
-#: templates/public/home.html:169
+#: templates/public/home.html:165
 msgid "Support from experts"
 msgstr ""
 
-#: templates/public/home.html:171
+#: templates/public/home.html:167
 msgid ""
 "Experienced Sortition Foundation staff are available to support you at "
 "every stage of your process."
 msgstr ""
 
-#: templates/public/home.html:185
+#: templates/public/home.html:181
 msgid "Key benefits"
 msgstr ""
 
-#: templates/public/home.html:209
+#: templates/public/home.html:205
 msgid "Who is OpenDLP for?"
 msgstr ""
 
-#: templates/public/home.html:211
+#: templates/public/home.html:207
 msgid ""
 "OpenDLP can be used by any organisation that wants to run its own citizen"
 " engagement processes. Or, Sortition Foundation can use OpenDLP on your "
 "behalf to run your democratic lotteries."
 msgstr ""
 
-#: templates/public/home.html:229 templates/public/home.html:258
+#: templates/public/home.html:225 templates/public/home.html:254
 #: templates/public/login.html:20
 msgid "Create an account"
 msgstr "Fiók létrehozása"
 
-#: templates/public/home.html:229
+#: templates/public/home.html:225
 msgid "If you are a first time visitor, create a free account."
 msgstr ""
 
-#: templates/public/home.html:230
+#: templates/public/home.html:226
 msgid "Use your existing credentials to sign in."
 msgstr ""
 
-#: templates/public/home.html:243
+#: templates/public/home.html:239
 msgid "OpenDLP"
 msgstr ""
 
-#: templates/public/home.html:261
+#: templates/public/home.html:257
 msgid "Product"
 msgstr ""
 
-#: templates/public/home.html:262
+#: templates/public/home.html:258
 msgid "How it works"
 msgstr ""
 
-#: templates/public/home.html:263
-msgid "Documentation"
-msgstr ""
-
-#: templates/public/home.html:264
+#: templates/public/home.html:259
 msgid "Source code on GitHub"
 msgstr ""
 
-#: templates/public/home.html:265
-msgid "Release notes"
-msgstr ""
-
-#: templates/public/home.html:267
+#: templates/public/home.html:261
 msgid "Support"
 msgstr ""
 
-#: templates/public/home.html:268
+#: templates/public/home.html:262
 msgid "Help and support"
 msgstr ""
 
-#: templates/public/home.html:269
+#: templates/public/home.html:263
 msgid "Knowledge Hub"
 msgstr ""
 
-#: templates/public/home.html:271
-msgid "Report a vulnerability"
-msgstr ""
-
-#: templates/public/home.html:273
+#: templates/public/home.html:266
 msgid "Legal"
 msgstr ""
 
-#: templates/public/home.html:274
-msgid "Privacy policy"
-msgstr ""
-
-#: templates/public/home.html:275
-msgid "Terms of use"
-msgstr ""
-
-#: templates/public/home.html:280
+#: templates/public/home.html:271
 msgid "Developed by"
 msgstr ""
 
-#: templates/public/home.html:286
+#: templates/public/home.html:277
 msgid "Sortition Foundation"
 msgstr ""
 
-#: templates/public/home.html:292
+#: templates/public/home.html:283
 msgid ""
 "We’re democratic lottery experts and we campaign for permanent and "
 "powerful citizens’ assemblies"
 msgstr ""
 
-#: templates/public/home.html:299
+#: templates/public/home.html:290
 msgid "Copyright"
+msgstr ""
+
+#: templates/public/home.html:292
+msgid "Open source under the Apache License 2.0"
 msgstr ""
 
 #: templates/public/login.html:15
