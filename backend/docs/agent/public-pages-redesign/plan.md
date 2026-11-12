@@ -77,7 +77,7 @@ Templates still extending a GOV.UK base, grouped by journey:
 - `auth/login.html`, `auth/verify_2fa.html` — **migrated** (phase 2)
 - `auth/forgot_password.html`, `auth/reset_password.html` — **migrated** (phase 3)
 - `auth/confirm_email.html`, `auth/resend_confirmation.html` — **migrated** (phase 3)
-- `main/index.html` (public landing) — still GOV.UK
+- `main/index.html` (public landing) — **migrated** to `public/home.html`
 
 (The error pages `errors/400|403|404|413|500.html` are seen by both audiences and
 **stay GOV.UK** with the respondent journey — decided 2026-10-08.)
@@ -107,7 +107,7 @@ restyled (`main/dashboard.html` + old dashboard behind `FF_OLD_DEFAULT_DASHBOARD
    with them: `profile/change_password.html` and `profile/set_password.html` still
    use it, and they leave GOV.UK with the legacy authenticated pages (they did, in
    `869-profile-backoffice`, and the macro went with them).
-4. **Public landing** (`main/index.html`).
+4. **Public landing** (`main/index.html`) — **done**, replaced by `public/home.html`.
 5. ~~Error pages~~ — **stay GOV.UK** (decided 2026-10-08): respondents see them,
    so the same widest-audience argument applies as for the registration forms.
 6. **Partial teardown** — once the account journey has migrated: delete
