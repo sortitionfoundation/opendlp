@@ -13,12 +13,14 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExportTarget
-from opendlp.config import get_max_csv_upload_bytes, get_max_csv_upload_mb
+from opendlp.config import get_max_csv_upload_mb
 from opendlp.domain.respondent_field_schema import CHOICE_TYPES, FieldType
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import (
     ALLOWED_SELECTION_STATUS_TRANSITIONS,
+    DataSource,
+    RespondentsSource,
     RespondentStatus,
     respondent_status_labels,
 )
@@ -41,12 +43,12 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_tab_enabled_states,
+    set_data_sources,
+    stored_data_source,
     update_csv_config,
 )
-from opendlp.service_layer.csv_upload_stash import StashedUpload
 from opendlp.service_layer.csv_upload_stash import clear as clear_stashed_upload
 from opendlp.service_layer.csv_upload_stash import fetch as fetch_stashed_upload
-from opendlp.service_layer.csv_upload_stash import stash as stash_pending_upload
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     InvalidSelection,
@@ -97,10 +99,11 @@ def _run_csv_import(
     id_column: str | None,
     replace_existing: bool,
 ) -> ResponseReturnValue:
-    """Apply a respondent CSV import and redirect back to the data tab.
+    """Apply a respondent CSV import and redirect to the project details page.
 
-    Shared by the immediate-upload path and the confirm-diff path so both
-    flows emit the same flash messages and saved-config side effects.
+    The import a confirmed diff allows. The data source dialog imports a file
+    whose columns match the project's questions itself; one whose columns
+    differ comes through the confirm-diff page, and then here.
     """
     uow = bootstrap.get_flask_uow()
     with uow:
@@ -124,6 +127,9 @@ def _run_csv_import(
             last_import_filename=filename,
             last_import_timestamp=datetime.now(UTC),
             csv_id_column=resolved_id_column,
+        )
+        set_data_sources(
+            uow, current_user.id, assembly_id, data_source=DataSource.OPENDLP, respondents_source=RespondentsSource.CSV
         )
 
     if errors:
@@ -158,123 +164,7 @@ def _run_csv_import(
             _("Respondents uploaded successfully: %(count)d imported", count=len(respondents)),
             "success",
         )
-    return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
-
-
-@respondents_bp.route("/project/<uuid:assembly_id>/data/upload-respondents", methods=["POST"])
-@login_required
-def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Receive a CSV upload, then either import directly or surface a diff."""
-    try:
-        if "file" not in request.files:
-            flash(_("No file selected"), "error")
-            return redirect_preserving_scroll(
-                url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-            )
-
-        file = request.files["file"]
-        if file.filename == "":
-            flash(_("No file selected"), "error")
-            return redirect_preserving_scroll(
-                url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-            )
-
-        raw = file.read()
-        max_bytes = get_max_csv_upload_bytes()
-        if len(raw) > max_bytes:
-            logger.warning(
-                "Rejected oversized CSV upload",
-                assembly_id=str(assembly_id),
-                size_bytes=len(raw),
-                limit_bytes=max_bytes,
-            )
-            flash(
-                _(
-                    "CSV is too large: limit is %(limit)d MB. Update MAX_CSV_UPLOAD_MB if a larger file is needed.",
-                    limit=get_max_csv_upload_mb(),
-                ),
-                "error",
-            )
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
-        try:
-            csv_content = raw.decode("utf-8-sig")
-        except UnicodeDecodeError:
-            flash(_("Could not read CSV file. Please ensure it is UTF-8 encoded."), "error")
-            return redirect_preserving_scroll(
-                url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-            )
-
-        id_column = request.form.get("id_column", "").strip() or None
-        filename = file.filename or "unknown.csv"
-
-        # If a schema already exists, compute the diff against the new headers.
-        # When the diff has changes the organiser sees a confirmation page first;
-        # otherwise we proceed straight to the import as before.
-        uow_diff = bootstrap.get_flask_uow()
-        with uow_diff:
-            diff = compute_diff_for_pending_csv(
-                uow_diff,
-                current_user.id,
-                assembly_id,
-                csv_content,
-                id_column,
-            )
-        if diff is not None and diff.has_changes:
-            stash_pending_upload(
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                upload=StashedUpload(
-                    csv_content=csv_content,
-                    filename=filename,
-                    id_column=id_column,
-                    replace_existing=True,
-                ),
-            )
-            return redirect(
-                url_for("respondents.confirm_upload_diff", assembly_id=assembly_id),
-                code=303,
-            )
-
-        return _run_csv_import(
-            assembly_id=assembly_id,
-            csv_content=csv_content,
-            filename=filename,
-            id_column=id_column,
-            replace_existing=True,
-        )
-
-    except InvalidSelection as e:
-        logger.warning("Invalid CSV format for respondents upload", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Invalid CSV format: %(error)s", error=e.user_msg()), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions to upload respondents for assembly",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        flash(_("You don't have permission to upload respondents"), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
-    except NotFoundError as e:
-        logger.warning("Assembly not found for respondents upload", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        logger.exception(
-            "Upload respondents error",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        flash(_("An error occurred while uploading respondents"), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+    return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id, _anchor="data-source"))
 
 
 @respondents_bp.route("/project/<uuid:assembly_id>/data/upload-respondents/confirm-diff", methods=["GET"])
@@ -284,7 +174,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     pending = fetch_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
     if pending is None:
         flash(_("Upload session expired. Please upload the CSV again."), "warning")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
 
     try:
         uow = bootstrap.get_flask_uow()
@@ -299,7 +189,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InvalidSelection as e:
         flash(_("Invalid CSV format: %(error)s", error=e.user_msg()), "error")
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to confirm respondents upload",
@@ -309,7 +199,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
         flash(_("You don't have permission to upload respondents"), "error")
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
     except NotFoundError as e:
         logger.warning("Assembly not found confirming respondents upload", assembly_id=str(assembly_id), error=str(e))
         flash(_("Project not found"), "error")
@@ -324,7 +214,7 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
         flash(_("An error occurred while uploading respondents"), "error")
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
 
     # diff should not be None here — we only redirect to this page when the
     # schema exists. Defensive: if it is, treat as empty diff and proceed.
@@ -360,12 +250,12 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
     pending = fetch_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
     if pending is None:
         flash(_("Upload session expired. Please upload the CSV again."), "warning")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
 
     if request.form.get("action") == "cancel":
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
         flash(_("Upload cancelled"), "info")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
 
     try:
         response = _run_csv_import(
@@ -382,7 +272,7 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # discarded the upload the organiser would need to retry.
         logger.warning("Invalid CSV format applying upload diff", assembly_id=str(assembly_id), error=str(e))
         flash(_("Invalid CSV format: %(error)s", error=e.user_msg()), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to apply respondents upload",
@@ -391,7 +281,7 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("You don't have permission to upload respondents"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
     except NotFoundError as e:
         logger.warning("Assembly not found applying respondents upload", assembly_id=str(assembly_id), error=str(e))
         flash(_("Project not found"), "error")
@@ -404,7 +294,7 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("An error occurred while uploading respondents"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(data_source_return_url(assembly_id))
     finally:
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
     return response
@@ -424,7 +314,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Respondents deleted: %(count)d", count=count), "success")
-        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))
 
     except InsufficientPermissions as e:
         logger.warning(
@@ -434,7 +324,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("You don't have permission to delete respondents"), "error")
-        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))
     except NotFoundError as e:
         logger.warning("Assembly not found for respondents deletion", assembly_id=str(assembly_id), error=str(e))
         flash(_("Project not found"), "error")
@@ -447,7 +337,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("An error occurred while deleting respondents"), "error")
-        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))
 
 
 @respondents_bp.route("/project/<uuid:assembly_id>/respondents/export")
@@ -737,11 +627,12 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # the repository reports as None rather than as an error.
             respondent_gsheet = None
             saved = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, RESPONDENT_EXPORT_KIND)
+            stored = stored_data_source(uow, assembly_id)
         if saved is not None:
             respondent_gsheet = saved.create_detached_copy()
 
         # Determine data source
-        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        data_source, _locked = determine_data_source(gsheet, csv_status, stored)
 
         # Tab enabled states
         targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(

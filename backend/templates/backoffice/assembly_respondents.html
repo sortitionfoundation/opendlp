@@ -26,8 +26,6 @@ ABOUTME: Displays respondent data configuration for assemblies
             {{ assembly_tabs(
             assembly=assembly,
             active_tab="respondents",
-            data_source=data_source,
-            gsheet=gsheet,
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled|default(false)
@@ -60,7 +58,7 @@ ABOUTME: Displays respondent data configuration for assemblies
             </dl>
 
             <div class="mt-4">
-                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
+                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, _anchor='data-source'), variant="outline") }}
             </div>
         {% endcall %}
     {% elif data_source == "csv" %}
@@ -174,7 +172,7 @@ ABOUTME: Displays respondent data configuration for assemblies
         <section class="mb-8">
             {{ alert(_("Please configure a data source in the Data tab first."), variant="warning") }}
             <div class="mt-4">
-                {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
+                {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1), variant="primary") }}
             </div>
         </section>
     {% endif %}

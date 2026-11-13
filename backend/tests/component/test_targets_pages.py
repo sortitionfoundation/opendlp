@@ -28,6 +28,7 @@ from opendlp.service_layer.target_service import (
     get_targets_for_assembly,
     update_target_value,
 )
+from opendlp.service_layer.user_service import assign_assembly_role
 from tests.fakes import FakeUnitOfWork
 
 
@@ -46,6 +47,10 @@ PREFIX = "/backoffice/project"
 
 def _targets_url(assembly_id, suffix=""):
     return f"{PREFIX}/{assembly_id}/targets{suffix}"
+
+
+def _upload_targets_url(assembly_id) -> str:
+    return f"/backoffice/project/{assembly_id}/data-source/upload-targets"
 
 
 def _add_respondents(fake_store, assembly_id, respondents_data, status=RespondentStatus.POOL):
@@ -104,15 +109,30 @@ class TestViewTargetsPage:
         response = logged_in_admin.get(_targets_url("00000000-0000-0000-0000-000000000099"))
         assert response.status_code == 302
 
-    def test_getting_data_in_belongs_to_the_data_page(self, logged_in_admin, existing_assembly, fake_store):
-        """Importing a CSV and building categories from respondent columns both
-        set an assembly up rather than tune it, so both live on the data page."""
+    def test_building_from_respondent_columns_is_offered_but_importing_a_csv_is_not(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """Building categories from respondent columns is done here; importing a
+        CSV sets a project up rather than tunes it, so it lives in the data
+        source settings on the project details page."""
         _add_respondents(fake_store, existing_assembly.id, [("1", {"Gender": "Male"})])
 
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
+        assert "Create from respondent data" in html
+        assert "add-from-columns" in html
         assert "Import from CSV" not in html
-        assert "Respondent data columns" not in html
+
+    def test_a_reader_is_not_offered_building_from_respondent_columns(
+        self, logged_in_user, regular_user, existing_assembly, fake_store
+    ):
+        _add_respondents(fake_store, existing_assembly.id, [("1", {"Gender": "Male"})])
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.READ_ONLY)
+
+        html = logged_in_user.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "Create from respondent data" not in html
         assert "add-from-columns" not in html
 
 
@@ -133,18 +153,21 @@ class TestStickyHeading:
 
 
 class TestUploadTargetsCsv:
+    """Targets are imported from a CSV in the data source dialog, which answers with itself."""
+
     def test_upload_always_replaces_existing(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _import_targets(
             fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nAge,Young,2,5\nAge,Old,2,5\n"
         )
 
         response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/upload"),
+            _upload_targets_url(existing_assembly.id),
             data={"csv_file": (io.BytesIO(VALID_TARGETS_CSV), "new_targets.csv")},
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
-        assert response.status_code == 302
+        assert response.status_code == 200
+        assert b"1 target uploaded" in response.data
 
         page_response = logged_in_admin.get(_targets_url(existing_assembly.id))
         assert b"Gender" in page_response.data
@@ -152,47 +175,74 @@ class TestUploadTargetsCsv:
 
     def test_upload_invalid_csv_shows_error(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/upload"),
+            _upload_targets_url(existing_assembly.id),
             data={"csv_file": (io.BytesIO(INVALID_TARGETS_CSV), "bad.csv")},
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
-        assert response.status_code == 200
+        assert response.status_code == 422
         assert b"There is a problem" in response.data
 
     def test_upload_no_file_shows_validation_error(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/upload"),
+            _upload_targets_url(existing_assembly.id),
             data={},
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
-        assert response.status_code == 200
+        assert response.status_code == 422
         assert b"There is a problem" in response.data
 
     def test_upload_non_csv_file_shows_validation_error(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/upload"),
+            _upload_targets_url(existing_assembly.id),
             data={"csv_file": (io.BytesIO(b"not a csv"), "targets.txt")},
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
-        assert response.status_code == 200
+        assert response.status_code == 422
         assert b"Only CSV files are allowed" in response.data
 
-    def test_a_repeated_header_is_shown_on_the_form(self, logged_in_admin, existing_assembly):
+    def test_a_repeated_header_is_shown_in_the_dialog(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/upload"),
+            _upload_targets_url(existing_assembly.id),
             data={"csv_file": (io.BytesIO(b"feature,value,min,MIN,max\nGender,Male,3,3,7\n"), "targets.csv")},
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 422
         assert (
             b"CSV import failed: The header &#39;min&#39; appears in columns C, D. "
             b"Delete the extra columns, or rename them."
         ) in response.data
+
+    def test_a_multiline_reason_keeps_its_line_breaks(self, logged_in_admin, existing_assembly):
+        """The parse failure for bad headers is one message with embedded
+        newlines; without white-space: pre-line the browser runs them together."""
+        response = logged_in_admin.post(
+            _upload_targets_url(existing_assembly.id),
+            data={"csv_file": (io.BytesIO(b"wrong,headers,here\nfoo,bar,baz"), "bad.csv")},
+            content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
+        )
+
+        html = response.data.decode()
+        error_items = re.findall(r"<li\b[^>]*>[^<]*CSV import failed", html)
+        assert error_items, "Expected the import error inside an <li> in the error summary"
+        assert all("pre-line" in tag for tag in error_items)
+
+    def test_a_refused_file_leaves_the_upload_field_to_try_again(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.post(
+            _upload_targets_url(existing_assembly.id),
+            data={"csv_file": (io.BytesIO(INVALID_TARGETS_CSV), "bad.csv")},
+            content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
+        )
+
+        html = response.data.decode()
+        assert 'name="csv_file"' in html
+        assert f'hx-post="{_upload_targets_url(existing_assembly.id)}"' in html
 
 
 class TestAddCategoriesFromColumns:

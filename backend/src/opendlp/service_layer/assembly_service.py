@@ -731,7 +731,6 @@ class CSVUploadStatus:
 
 GSHEET_SOURCE = "gsheet"
 OPENDLP_SOURCE = "csv"
-VALID_DATA_SOURCES = (GSHEET_SOURCE, OPENDLP_SOURCE, "")
 
 _STORED_DATA_SOURCES = {
     DataSource.GSHEET: GSHEET_SOURCE,
@@ -742,7 +741,6 @@ _STORED_DATA_SOURCES = {
 def determine_data_source(
     gsheet: AssemblyGSheet | None,
     csv_status: CSVUploadStatus | None,
-    preferred_source: str = "",
     stored: DataSource = DataSource.UNDECIDED,
 ) -> tuple[str, bool]:
     """Determine the active data source for an assembly and whether it is locked.
@@ -761,9 +759,16 @@ def determine_data_source(
         return GSHEET_SOURCE, True
     if csv_status and csv_status.has_data:
         return OPENDLP_SOURCE, True
-    if preferred_source in (GSHEET_SOURCE, OPENDLP_SOURCE):
-        return preferred_source, False
     return _STORED_DATA_SOURCES.get(stored, OPENDLP_SOURCE), False
+
+
+def stored_data_source(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> DataSource:
+    """What the organiser said about where this assembly's data is managed.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    assembly = uow.assemblies.get(assembly_id)
+    return assembly.data_source if assembly else DataSource.UNDECIDED
 
 
 def get_tab_enabled_states(
@@ -852,7 +857,6 @@ def get_assembly_nav_context(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
-    preferred_source: str = "",
 ) -> AssemblyNavContext:
     """Load an assembly along with everything the backoffice nav shell needs.
 
@@ -864,7 +868,7 @@ def get_assembly_nav_context(
     assembly = get_assembly_with_permissions(uow, assembly_id, user_id)
     gsheet = get_assembly_gsheet(uow, assembly_id, user_id)
     csv_status = get_csv_upload_status(uow, user_id, assembly_id)
-    data_source, locked = determine_data_source(gsheet, csv_status, preferred_source, assembly.data_source)
+    data_source, locked = determine_data_source(gsheet, csv_status, assembly.data_source)
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
     return AssemblyNavContext(
         assembly=assembly,

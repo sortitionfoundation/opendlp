@@ -330,16 +330,22 @@ class TestDeletingFromTheDialog:
         assert 'form="project-delete-targets"' in html
         assert 'id="project-delete-targets"' in html
         assert f'action="/backoffice/project/{existing_assembly.id}/data/delete-targets"' in html
-        assert 'name="return_to" value="dialog"' in html
+
+    def test_there_is_no_delete_form_for_what_is_not_there(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        html = logged_in_admin.get(_base(existing_assembly), headers=HTMX).data.decode()
+
+        assert "delete-targets" not in html
+        assert "delete-respondents" not in html
+        assert "gsheet/delete" not in html
 
     def test_deleting_targets_comes_back_to_the_dialog(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         _upload_targets(logged_in_admin, existing_assembly)
 
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/data/delete-targets", data={"return_to": "dialog"}
-        )
+        response = logged_in_admin.post(f"/backoffice/project/{existing_assembly.id}/data/delete-targets", data={})
 
         assert response.status_code == 302
         assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}?data_source=1")
@@ -349,9 +355,7 @@ class TestDeletingFromTheDialog:
     ) -> None:
         _upload_respondents(logged_in_admin, existing_assembly)
 
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/data/delete-respondents", data={"return_to": "dialog"}
-        )
+        response = logged_in_admin.post(f"/backoffice/project/{existing_assembly.id}/data/delete-respondents", data={})
 
         assert response.status_code == 302
         assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}?data_source=1")
@@ -361,7 +365,7 @@ class TestDeletingFromTheDialog:
     ) -> None:
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly_with_gsheet.id}/gsheet/delete",
-            data={"return_to": "dialog"},
+            data={},
             follow_redirects=True,
         )
 
@@ -373,9 +377,7 @@ class TestDeletingFromTheDialog:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         _upload_targets(logged_in_admin, existing_assembly)
-        logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/data/delete-targets", data={"return_to": "dialog"}
-        )
+        logged_in_admin.post(f"/backoffice/project/{existing_assembly.id}/data/delete-targets", data={})
 
         response = logged_in_admin.post(
             f"{_base(existing_assembly)}/refresh", data={"location": "gsheet"}, headers=HTMX

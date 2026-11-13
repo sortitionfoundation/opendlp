@@ -23,22 +23,17 @@ from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.data_source_urls import data_source_return_url
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import (
-    CreateAssemblyGSheetForm,
     DbSelectionSettingsForm,
-    EditAssemblyGSheetForm,
 )
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
-    add_assembly_gsheet,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
-    get_or_create_selection_settings,
     remove_assembly_gsheet,
-    update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
-from opendlp.service_layer.gsheet_access_check import check_gsheet_access, forget_cached_result, store_cached_result
+from opendlp.service_layer.gsheet_access_check import check_gsheet_access, store_cached_result
 from opendlp.service_layer.replacement_targets import (
     ReplacementPlan,
     ReplacementValidation,
@@ -1071,61 +1066,6 @@ def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
 # --- GSheet config views ---
 
 
-def _get_gsheet_form_data(form: CreateAssemblyGSheetForm | EditAssemblyGSheetForm) -> dict:
-    """Extract gsheet configuration data from form."""
-    return {
-        "url": form.url.data,
-        "team": form.team.data,
-        "select_registrants_tab": form.select_registrants_tab.data,
-        "select_targets_tab": form.select_targets_tab.data,
-        "replace_registrants_tab": form.replace_registrants_tab.data,
-        "replace_targets_tab": form.replace_targets_tab.data,
-        "already_selected_tab": form.already_selected_tab.data,
-        "id_column": form.id_column.data,
-        "check_same_address": form.check_same_address.data,
-        "generate_remaining_tab": form.generate_remaining_tab.data,
-        "check_same_address_cols_string": form.check_same_address_cols_string.data,
-        "columns_to_keep_string": form.columns_to_keep_string.data,
-    }
-
-
-def _handle_gsheet_save_success(
-    uow: AbstractUnitOfWork,
-    assembly_id: uuid.UUID,
-    user_id: uuid.UUID,
-    form: CreateAssemblyGSheetForm | EditAssemblyGSheetForm,
-    is_update: bool,
-) -> ResponseReturnValue:
-    """Handle successful gsheet form validation and save to service layer."""
-    form_data = _get_gsheet_form_data(form)
-
-    if is_update:
-        update_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
-        flash(_("Google Sheets configuration updated successfully"), "success")
-    else:
-        add_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
-        flash(_("Google Sheets configuration created successfully"), "success")
-
-    # Soft validation warning - check if columns_to_keep is empty
-    # Team defaults may have populated columns_to_keep even if the form field was empty
-    team = form.team.data if hasattr(form, "team") and form.team else ""
-    columns_to_keep = form.columns_to_keep_string.data or ""
-    has_team_with_defaults = team and team != "other"
-    if not columns_to_keep.strip() and not has_team_with_defaults:
-        flash(
-            _(
-                "Warning: No columns to keep specified. "
-                "This means the output will only include respondent data columns "
-                "used for the targets and address checking. Is this intentional?"
-            ),
-            "warning",
-        )
-
-    # The URL may have changed, so the cached access check may describe another sheet
-    forget_cached_result(assembly_id)
-    return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet", check=1))
-
-
 @gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/check", methods=["POST"])
 @login_required
 @require_assembly_management
@@ -1184,69 +1124,6 @@ def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
     )
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/save", methods=["POST"])
-@login_required
-def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Save Google Spreadsheet configuration for an assembly."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        is_update = existing_gsheet is not None
-        form = EditAssemblyGSheetForm() if is_update else CreateAssemblyGSheetForm()
-
-        if form.validate_on_submit():
-            try:
-                with uow:
-                    return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
-            except InsufficientPermissions as e:
-                logger.warning("Insufficient permissions for gsheet save", error=str(e))
-                flash(_("You don't have permission to manage Google Sheets for this project"), "error")
-                return redirect(url_for("backoffice.dashboard"))
-            except NotFoundError as e:
-                logger.error("Gsheet save validation error for assembly", assembly_id=str(assembly_id), error=str(e))
-                flash(_("Please check your input and try again"), "error")
-            except Exception as e:
-                logger.error("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
-                flash(_("An error occurred while saving the Google Sheets configuration"), "error")
-
-        # Form validation failed or service error - re-render the page with errors.
-        # Reuse the UnitOfWork from the lookup above.
-        sel_settings = None
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            # selection_settings is optional for the form re-render.
-            with contextlib.suppress(ServiceLayerError):
-                sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
-
-        return render_template(
-            "backoffice/assembly_data.html",
-            assembly=assembly,
-            data_source="gsheet",
-            data_source_locked=is_update,  # Locked if updating existing config
-            gsheet=existing_gsheet,
-            selection_settings=sel_settings,
-            gsheet_mode="edit" if is_update else "new",
-            gsheet_form=form,
-            google_service_account_email=get_service_account_email(),
-        ), 200
-
-    except NotFoundError as e:
-        logger.warning("Assembly not found for gsheet save", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions to save gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
-        )
-        flash(_("You don't have permission to view this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        logger.exception("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("An error occurred while saving the Google Sheets configuration"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
-
-
 @gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
 @login_required
 def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -1256,7 +1133,7 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             remove_assembly_gsheet(uow, assembly_id, current_user.id)
         flash(_("Google Sheets configuration removed successfully"), "success")
-        # Redirect without source param - selector will be unlocked allowing user to choose again
+        # Back to the settings dialog, whose location can be chosen again now the sheet is gone
         return redirect_preserving_scroll(data_source_return_url(assembly_id))
 
     except NotFoundError as e:

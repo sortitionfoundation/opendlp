@@ -37,8 +37,6 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
             active_tab="registration",
-            data_source=data_source|default(""),
-            gsheet=gsheet|default(none),
             targets_enabled=targets_enabled|default(false),
             respondents_enabled=respondents_enabled|default(false),
             selection_enabled=selection_enabled|default(false)) }}

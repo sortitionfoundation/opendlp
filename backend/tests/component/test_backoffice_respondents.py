@@ -1,12 +1,12 @@
 # ABOUTME: Component tests for the backoffice respondents blueprint over a FakeUnitOfWork
 # ABOUTME: Drives the real respondents Flask routes + services against a seeded fake store, no PostgreSQL
 
+import html
 import re
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from io import BytesIO
 
-import msgspec
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
@@ -33,18 +33,29 @@ from opendlp.service_layer.respondent_service import (
 )
 from tests.fakes import FakeStore, FakeUnitOfWork
 
+HTMX = {"HX-Request": "true"}
+
+
+def _upload_url(assembly_id) -> str:
+    return f"/backoffice/project/{assembly_id}/data-source/upload-respondents"
+
 
 def _upload(client, assembly_id, csv_text, id_column="", filename="respondents.csv"):
-    """POST a CSV upload to the respondents upload route."""
+    """Upload a respondents CSV through the data source dialog, which answers with itself."""
     return client.post(
-        f"/backoffice/project/{assembly_id}/data/upload-respondents",
+        _upload_url(assembly_id),
         data={
             "file": (BytesIO(csv_text.encode()), filename),
             "id_column": id_column,
         },
         content_type="multipart/form-data",
-        follow_redirects=False,
+        headers=HTMX,
     )
+
+
+def _text(response) -> str:
+    """The response as the organiser reads it: quotes in a message are escaped in the markup."""
+    return html.unescape(response.data.decode())
 
 
 class TestBackofficeUploadRespondents:
@@ -59,7 +70,7 @@ class TestBackofficeUploadRespondents:
             existing_assembly.id,
             "participant_id,name,city\nID001,Charlie,London\nID002,Diana,Paris",
         )
-        assert response.status_code == 302
+        assert response.status_code == 200
 
         with FakeUnitOfWork(store=fake_store) as uow:
             respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
@@ -72,14 +83,14 @@ class TestBackofficeUploadRespondents:
     def test_upload_with_invalid_id_column_shows_error(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
     ) -> None:
-        """A non-existent id_column shows an error and imports nothing."""
+        """A non-existent id_column is refused in the dialog and imports nothing."""
         response = _upload(
             logged_in_admin,
             existing_assembly.id,
             "name,email,age\nAlice,alice@example.com,30",
             id_column="nonexistent_column",
         )
-        assert response.status_code == 302
+        assert response.status_code == 422
 
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondents.count_by_assembly_id(existing_assembly.id) == 0
@@ -87,80 +98,85 @@ class TestBackofficeUploadRespondents:
     def test_upload_with_invalid_id_column_lists_the_csv_columns(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        """The flash names the columns the file has, so the fix needs no guesswork."""
-        _upload(
+        """The reason names the columns the file has, so the fix needs no guesswork."""
+        response = _upload(
             logged_in_admin,
             existing_assembly.id,
             "name,email,age\nAlice,alice@example.com,30",
             id_column="nonexistent_column",
         )
 
-        with logged_in_admin.session_transaction() as session:
-            messages = [msg[1] for msg in session.get("_flashes", [])]
-        assert any("no column called 'nonexistent_column'" in m for m in messages)
-        assert any("name, email, age" in m for m in messages)
-        assert any("clear it to use the first column ('name')" in m for m in messages)
+        message = _text(response)
+        assert "no column called 'nonexistent_column'" in message
+        assert "name, email, age" in message
+        assert "clear it to use the first column ('name')" in message
 
-    def test_upload_shows_success_message(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
-        """A successful upload flashes a success message."""
-        _upload(logged_in_admin, existing_assembly.id, "id,name\n1,Test User")
-        with logged_in_admin.session_transaction() as session:
-            messages = [msg[1].lower() for msg in session.get("_flashes", [])]
-        assert any("success" in m or "uploaded" in m for m in messages)
-
-    def test_upload_with_warnings_lists_each_error_in_flash(
+    def test_a_refused_upload_keeps_the_id_column_that_was_typed(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        """A partial import flashes the summary plus one line per skipped row."""
-        _upload(
+        """So the organiser corrects what they typed rather than typing it again."""
+        response = _upload(
+            logged_in_admin, existing_assembly.id, "name,email\nAlice,alice@example.com", id_column="nonexistent_column"
+        )
+
+        assert 'value="nonexistent_column"' in response.data.decode()
+
+    def test_upload_shows_success_message(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        """A successful upload says how many respondents there now are."""
+        response = _upload(logged_in_admin, existing_assembly.id, "id,name\n1,Test User")
+
+        assert "1 respondent uploaded" in _text(response)
+
+    def test_upload_says_its_result_in_the_dialog_not_in_a_flash(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """A flash would sit beneath the open dialog, and then turn up on some later page."""
+        _upload(logged_in_admin, existing_assembly.id, "id,name\nID001,Alice\nID001,Bob")
+
+        with logged_in_admin.session_transaction() as session:
+            assert session.get("_flashes", []) == []
+
+    def test_upload_with_warnings_lists_each_skipped_row(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """A partial import lists one line per skipped row, in the respondents panel."""
+        response = _upload(
             logged_in_admin,
             existing_assembly.id,
             "id,name\nID001,Alice\nID001,Bob\n,Carol",
         )
-        with logged_in_admin.session_transaction() as session:
-            warnings = [msg[1] for msg in session.get("_flashes", []) if msg[0] == "warning"]
-        assert len(warnings) == 1
-        message = warnings[0]
+
+        assert response.status_code == 200
+        message = _text(response)
+        assert "1 respondent uploaded" in message
+        assert "Some rows were not imported:" in message
         # Row 3 is the duplicate ID001 (row 2 is the first ID001); row 4 is empty.
         assert "Row 3: skipped duplicate id: ID001" in message
         assert "Row 4: skipped, empty id" in message
-        # Each error sits on its own line: summary + 2 errors = 2 newlines.
-        assert message.count("\n") == 2
+        # Each skipped row sits on its own line of a pre-line block.
+        notice = re.search(r'<div[^>]*role="status"[^>]*>(.*?)</div>', response.data.decode(), re.DOTALL)
+        assert notice is not None
+        assert "pre-line" in notice.group(0)
+        assert notice.group(1).count("\n") == 2
 
-    def test_upload_with_many_warnings_caps_flash_lines(
+    def test_upload_with_many_warnings_caps_the_lines(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        """The flash lists at most 20 errors plus an 'and N more' line."""
+        """The panel lists at most 20 skipped rows plus an 'and N more' line."""
         # One valid row followed by 25 duplicates of it, so 25 rows are skipped.
         rows = "\n".join(["id,name", "ID001,Alice"] + [f"ID001,Dup{i}" for i in range(25)])
-        _upload(logged_in_admin, existing_assembly.id, rows)
-        with logged_in_admin.session_transaction() as session:
-            warnings = [msg[1] for msg in session.get("_flashes", []) if msg[0] == "warning"]
-        assert len(warnings) == 1
-        message = warnings[0]
-        # Summary + 20 capped error lines + the "and N more" line = 21 line breaks.
-        assert message.count("\n") == 21
-        assert "and 5 more" in message
+        response = _upload(logged_in_admin, existing_assembly.id, rows)
 
-    def test_upload_warning_flash_survives_session_serialisation(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
-    ) -> None:
-        """The flashed warning must be msgspec-encodable (flask-session stores it in Redis).
-
-        A Markup value raises "Encoding objects of type Markup is unsupported"
-        when flask-session serialises the session, so the flash must be plain text.
-        """
-        _upload(logged_in_admin, existing_assembly.id, "id,name\nID001,Alice\nID001,Bob")
-        with logged_in_admin.session_transaction() as session:
-            flashes = session.get("_flashes", [])
-        assert flashes
-        # Reproduces exactly what flask-session does when persisting the session.
-        msgspec.msgpack.encode(flashes)
+        notice = re.search(r'<div[^>]*role="status"[^>]*>(.*?)</div>', response.data.decode(), re.DOTALL)
+        assert notice is not None
+        # The heading + 20 capped lines + the "and N more" line = 21 line breaks.
+        assert notice.group(1).count("\n") == 21
+        assert "and 5 more" in notice.group(1)
 
     def test_upload_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Unauthenticated users are redirected to login."""
         response = client.post(
-            f"/backoffice/project/{existing_assembly.id}/data/upload-respondents",
+            _upload_url(existing_assembly.id),
             data={"file": (BytesIO(b"id,name\n1,Test"), "respondents.csv")},
             content_type="multipart/form-data",
         )
@@ -173,15 +189,20 @@ class TestUploadCsvCleaning:
 
     def _upload(self, client: FlaskClient, assembly_id: uuid.UUID, content: bytes, id_column: str = ""):
         return client.post(
-            f"/backoffice/project/{assembly_id}/data/upload-respondents",
+            _upload_url(assembly_id),
             data={"file": (BytesIO(content), "respondents.csv"), "id_column": id_column},
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers=HTMX,
         )
 
     def _flashes(self, client: FlaskClient) -> list[tuple[str, str]]:
         with client.session_transaction() as session:
             return [tuple(flash) for flash in session.get("_flashes", [])]
+
+    def _reasons(self, response) -> list[str]:
+        """The lines of the "There is a problem" list in the respondents panel."""
+        items = re.findall(r"<li\b[^>]*>(.*?)</li>", response.data.decode(), re.DOTALL)
+        return [line for item in items for line in html.unescape(item).strip().split("\n")]
 
     def _respondent_ids(self, fake_store: FakeStore, assembly_id: uuid.UUID) -> set[str]:
         with FakeUnitOfWork(store=fake_store) as uow:
@@ -192,20 +213,19 @@ class TestUploadCsvCleaning:
     ) -> None:
         response = self._upload(logged_in_admin, existing_assembly.id, b"id,age,\nR1,30,\nR2,40,note\n")
 
-        assert response.status_code == 302
+        assert response.status_code == 422
         assert self._respondent_ids(fake_store, existing_assembly.id) == set()
-        [(category, message)] = self._flashes(logged_in_admin)
-        assert category == "error"
-        assert message == (
-            "Invalid CSV format: Column C (after 'age') has no header but has data in it, starting at row 3. "
-            "Delete the column, or give it a header."
-        )
+        assert self._reasons(response) == [
+            (
+                "Invalid CSV format: Column C (after 'age') has no header but has data in it, starting at row 3. "
+                "Delete the column, or give it a header."
+            )
+        ]
 
     def test_every_problem_is_listed(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
-        self._upload(logged_in_admin, existing_assembly.id, b"id,,Email,email\nR1,note,a,b\n")
+        response = self._upload(logged_in_admin, existing_assembly.id, b"id,,Email,email\nR1,note,a,b\n")
 
-        [(_, message)] = self._flashes(logged_in_admin)
-        lines = message.split("\n")
+        lines = self._reasons(response)
         assert lines[0] == "Invalid CSV format: There are 2 problems with this file:"
         assert lines[1].startswith("Column B (between 'id' and 'Email')")
         assert lines[2].startswith("Columns C ('Email'), D ('email') have headers that count as the same field.")
@@ -219,11 +239,10 @@ class TestUploadCsvCleaning:
         assert self._respondent_ids(fake_store, existing_assembly.id) == {"R1"}
 
     def test_a_file_not_in_utf8_says_so(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
-        self._upload(logged_in_admin, existing_assembly.id, "id,name\nR1,café\n".encode("cp1252"))
+        response = self._upload(logged_in_admin, existing_assembly.id, "id,name\nR1,café\n".encode("cp1252"))
 
-        assert self._flashes(logged_in_admin) == [
-            ("error", "Could not read CSV file. Please ensure it is UTF-8 encoded."),
-        ]
+        assert response.status_code == 422
+        assert self._reasons(response) == ["Could not read CSV file. Please ensure it is UTF-8 encoded."]
 
     def _stash(self, user, assembly: Assembly, csv_content: str = "id,age\nR1,30\n") -> None:
         csv_upload_stash.stash(
@@ -334,7 +353,8 @@ class TestUploadFormIdColumnHint:
     organiser typed."""
 
     def _data_page(self, client, assembly_id):
-        response = client.get(f"/backoffice/project/{assembly_id}/data?source=csv")
+        """The data source dialog, which is where the upload field now is."""
+        response = client.get(f"/backoffice/project/{assembly_id}/data-source", headers=HTMX)
         assert response.status_code == 200
         return response.data.decode()
 
@@ -389,9 +409,9 @@ class TestUploadDiffConfirmation:
     ) -> None:
         """An assembly with no schema yet skips the diff page."""
         response = _upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
-        assert response.status_code == 302
-        assert "confirm-diff" not in response.location
-        assert "source=csv" in response.location
+        assert response.status_code == 200
+        assert "HX-Redirect" not in response.headers
+        assert "1 respondent uploaded" in _text(response)
 
     def test_re_upload_with_unchanged_columns_skips_diff(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
@@ -399,8 +419,8 @@ class TestUploadDiffConfirmation:
         """Identical columns mean an empty diff so no confirmation page."""
         _upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
         response = _upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR002,Bob\n")
-        assert response.status_code == 302
-        assert "confirm-diff" not in response.location
+        assert response.status_code == 200
+        assert "HX-Redirect" not in response.headers
 
     def test_re_upload_with_stale_id_column_errors_before_the_diff_page(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
@@ -420,14 +440,13 @@ class TestUploadDiffConfirmation:
             id_column="nationbuilder_id",
         )
 
-        assert response.status_code == 302
-        assert "confirm-diff" not in response.location
+        assert response.status_code == 422
+        assert "HX-Redirect" not in response.headers
 
-        with logged_in_admin.session_transaction() as session:
-            messages = [msg[1] for msg in session.get("_flashes", [])]
-        assert any("no column called 'nationbuilder_id'" in m for m in messages)
-        assert any("person_ref, first_name, postcode" in m for m in messages)
-        assert any("pre-filled from your last upload" in m for m in messages)
+        message = _text(response)
+        assert "no column called 'nationbuilder_id'" in message
+        assert "person_ref, first_name, postcode" in message
+        assert "pre-filled from your last upload" in message
 
     def _confirm_diff_page(self, client: FlaskClient, assembly_id: uuid.UUID) -> str:
         response = client.get(f"/backoffice/project/{assembly_id}/data/upload-respondents/confirm-diff")
@@ -445,7 +464,7 @@ class TestUploadDiffConfirmation:
             "person_ref,first_name\nP001,Bob\n",
             id_column="person_ref",
         )
-        assert "confirm-diff" in response.location
+        assert "confirm-diff" in response.headers["HX-Redirect"]
 
         body = self._confirm_diff_page(logged_in_admin, existing_assembly.id)
         assert "<code>external_id</code>" in body

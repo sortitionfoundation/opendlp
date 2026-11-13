@@ -1,9 +1,9 @@
 {#
-ABOUTME: Dialog on the data page that creates target categories from the respondent data columns
+ABOUTME: Dialog on the Targets tab that creates target categories from the respondent data columns
 ABOUTME: Each chosen column becomes a category; a low-cardinality one also gets a value per answer
 
-Driven by the modal() Alpine component on the Targets card that holds the
-button opening it, so isOpen/close() are in scope here.
+Driven by the modal() Alpine component on the wrapper that holds the button
+opening it, so isOpen/close() are in scope here.
 
 The columns are split by how many distinct answers they hold: the ones worth
 having as a target are offered up front, the rest behind a disclosure. A

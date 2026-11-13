@@ -390,7 +390,7 @@ class TestDeleteField:
 class TestFieldsTab:
     def test_the_tab_bar_carries_no_fields_entry(self, logged_in_admin, existing_assembly):
         """The fields editor is reached through the Registration workflow, not its own tab."""
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code == 200
         assert f"/project/{existing_assembly.id}/respondent-schema".encode() not in response.data
 

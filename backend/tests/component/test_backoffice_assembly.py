@@ -3,9 +3,7 @@
 
 import re
 import uuid
-from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
-from html.parser import HTMLParser
 from io import BytesIO
 
 import pytest
@@ -24,7 +22,6 @@ from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer.assembly_service import create_assembly
-from opendlp.service_layer.permissions import can_view_assembly
 from opendlp.service_layer.user_service import create_user, grant_user_assembly_role
 from tests.component.conftest import expected_timestamp
 from tests.fakes import FakeStore, FakeUnitOfWork
@@ -183,13 +180,15 @@ class TestDetailsShowsWhoCreatedIt:
 
 
 class TestBackofficeAssemblyMembers:
-    """Test backoffice assembly members page."""
+    """Where the Team Members tab was, and the search the Team card's dialog uses."""
 
-    def test_members_page_loads(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
-        """Test that the members page loads successfully."""
+    def test_the_members_address_goes_to_the_team_card(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The Team Members tab is a card on the details page now; old links still land somewhere useful."""
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/members")
-        assert response.status_code == 200
-        assert b"Members" in response.data or b"Team" in response.data
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}#team")
 
     def test_members_page_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that unauthenticated users are redirected to login."""
@@ -202,89 +201,6 @@ class TestBackofficeAssemblyMembers:
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/members/search?q=test")
         assert response.status_code == 200
         assert isinstance(response.get_json(), list)
-
-
-class TestBackofficeAddUserToAssembly:
-    """Test adding users to assemblies via backoffice."""
-
-    def test_add_user_to_assembly_shows_success_message(
-        self,
-        logged_in_admin: FlaskClient,
-        regular_user: User,
-        existing_assembly: Assembly,
-    ) -> None:
-        """Test that adding user shows success message."""
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/members/add",
-            data={"user_id": str(regular_user.id), "role": AssemblyRole.CONFIRMATION_CALLER.name},
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"success" in response.data.lower()
-
-    def test_add_user_with_manager_role(
-        self,
-        logged_in_admin: FlaskClient,
-        regular_user: User,
-        existing_assembly: Assembly,
-        fake_store: FakeStore,
-    ) -> None:
-        """Test adding a user with assembly manager role."""
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/members/add",
-            data={"user_id": str(regular_user.id), "role": AssemblyRole.ASSEMBLY_MANAGER.name},
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-
-        with FakeUnitOfWork(store=fake_store) as uow:
-            refreshed_user = uow.users.get(regular_user.id)
-            refreshed_assembly = uow.assemblies.get(existing_assembly.id)
-            assert can_view_assembly(refreshed_user, refreshed_assembly)
-
-    def test_add_user_not_accessible_to_regular_user(
-        self,
-        logged_in_user: FlaskClient,
-        regular_user: User,
-        existing_assembly: Assembly,
-        fake_store: FakeStore,
-    ) -> None:
-        """Test that regular users cannot add users to assemblies."""
-        with FakeUnitOfWork(store=fake_store) as uow:
-            other_user, _ = create_user(
-                uow=uow,
-                email="other@example.com",
-                global_role=GlobalRole.USER,
-                password="SecurePass123!",  # pragma: allowlist secret
-                accept_data_agreement=True,
-            )
-            other_user_id = other_user.id
-
-        response = logged_in_user.post(
-            f"/backoffice/project/{existing_assembly.id}/members/add",
-            data={"user_id": str(other_user_id), "role": AssemblyRole.CONFIRMATION_CALLER.name},
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"permission" in response.data.lower() or b"error" in response.data.lower()
-
-        with FakeUnitOfWork(store=fake_store) as uow:
-            refreshed_other_user = uow.users.get(other_user_id)
-            refreshed_assembly = uow.assemblies.get(existing_assembly.id)
-            assert not can_view_assembly(refreshed_other_user, refreshed_assembly)
-
-    def test_add_user_with_invalid_user_id(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
-        """Test adding non-existent user to assembly."""
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/members/add",
-            data={
-                "user_id": "00000000-0000-0000-0000-000000000000",
-                "role": AssemblyRole.CONFIRMATION_CALLER.name,
-            },
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"error" in response.data.lower()
 
 
 class TestBackofficeRemoveUserFromAssembly:
@@ -378,132 +294,6 @@ class TestBackofficeSearchUsers:
         assert response.get_json() == []
 
 
-class TestBackofficeCsvUpload:
-    """Test CSV upload functionality in backoffice."""
-
-    def test_upload_targets_csv_shows_success_message(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
-    ) -> None:
-        """Test that successful targets upload shows success flash message."""
-        csv_content = "feature,value,min,max\nRegion,North,5,10\nRegion,South,5,10"
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/targets/upload",
-            data={"csv_file": (BytesIO(csv_content.encode()), "targets.csv")},
-            content_type="multipart/form-data",
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"success" in response.data.lower() or b"uploaded" in response.data.lower()
-
-    def test_data_tab_targets_upload_form_field_name_matches_handler(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
-    ) -> None:
-        """Data-tab targets upload form must use the field name expected by the handler.
-
-        The form posts to targets.upload_targets_csv, which validates with
-        UploadTargetsCsvForm whose file field is named 'csv_file'. If the
-        rendered form uses a different name (e.g. 'file'), validation silently
-        fails and the user lands on the targets tab with a hidden error.
-        """
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
-        assert response.status_code == 200
-        html = response.data.decode()
-
-        target_action = f"/backoffice/project/{existing_assembly.id}/targets/upload"
-        form_pattern = re.compile(
-            r'<form[^>]*action="' + re.escape(target_action) + r'"[^>]*>(.*?)</form>',
-            re.DOTALL,
-        )
-        match = form_pattern.search(html)
-        assert match, f"No form posting to {target_action} found in data tab"
-        form_body = match.group(1)
-        assert 'name="csv_file"' in form_body, (
-            "Targets upload form on data tab must use input name 'csv_file' "
-            "to match UploadTargetsCsvForm. Got form body:\n" + form_body[:400]
-        )
-
-    def test_targets_csv_upload_error_keeps_form_visible(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
-    ) -> None:
-        """A rejected upload re-renders the data page with the form and the reason.
-
-        Redirecting instead would leave the reason in a flash message at the
-        top of the page, away from the field it is about.
-        """
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/targets/upload",
-            data={},
-            content_type="multipart/form-data",
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 200
-        html = response.data.decode()
-        assert b"Please select a CSV file" in response.data, (
-            "Expected the FileRequired error message in the response body"
-        )
-        assert f'action="/backoffice/project/{existing_assembly.id}/targets/upload"' in html, (
-            "Expected the upload form to still be on the page so the user can retry"
-        )
-
-    def test_targets_csv_upload_invalid_format_keeps_form_visible(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
-    ) -> None:
-        """When the CSV passes WTForms validation but the import service rejects it.
-
-        The page must re-render inline (not redirect to a fresh page) so the
-        error is visible alongside the form, rather than just flashing a
-        message at the top of an empty page.
-        """
-        # Headers that don't match feature/value/min/max → InvalidSelection
-        # at read_in_features() inside import_targets_from_csv.
-        csv_content = "wrong,headers,here\nfoo,bar,baz"
-
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/targets/upload",
-            data={"csv_file": (BytesIO(csv_content.encode()), "bad.csv")},
-            content_type="multipart/form-data",
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 200, (
-            f"Expected inline re-render (200); got {response.status_code} location={response.location!r}"
-        )
-
-        html = response.data.decode()
-        assert b"CSV import failed" in response.data or b"Failed to parse CSV" in response.data, (
-            "Expected the import error message in the response body"
-        )
-        assert f'action="/backoffice/project/{existing_assembly.id}/targets/upload"' in html, (
-            "Expected the upload form to still be on the page so the user can retry"
-        )
-
-    def test_targets_csv_multiline_error_renders_line_breaks(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
-    ) -> None:
-        """Multi-line import errors must sit in a pre-line element.
-
-        The parse failure for bad headers is one message with embedded
-        newlines ("Did not find required column name ..." per column); without
-        white-space: pre-line the browser collapses them to spaces.
-        """
-        csv_content = "wrong,headers,here\nfoo,bar,baz"
-
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/targets/upload",
-            data={"csv_file": (BytesIO(csv_content.encode()), "bad.csv")},
-            content_type="multipart/form-data",
-            follow_redirects=False,
-        )
-
-        html = response.data.decode()
-        error_items = re.findall(r"<li\b[^>]*>[^<]*CSV import failed", html)
-        assert error_items, "Expected the import error inside an <li> in the error summary"
-        assert all("pre-line" in tag for tag in error_items), (
-            "Error <li> must have white-space: pre-line so newlines render as line breaks. Found: " + repr(error_items)
-        )
-
-
 class TestBackofficeCsvDelete:
     """Test CSV delete functionality in backoffice."""
 
@@ -594,221 +384,70 @@ def _seed_respondents(fake_store: FakeStore, assembly_id: uuid.UUID, respondents
         uow.commit()
 
 
-def _data_url(assembly_id: uuid.UUID) -> str:
-    return f"/backoffice/project/{assembly_id}/data?source=csv"
+def _targets_url(assembly_id: uuid.UUID) -> str:
+    return f"/backoffice/project/{assembly_id}/targets"
 
 
-_VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+HTMX = {"HX-Request": "true"}
 
 
-class _Element:
-    """An element of a parsed page: enough of a tree to ask what is inside what, and in which order."""
-
-    def __init__(self, tag: str, attrs: dict[str, str], parent: "_Element | None") -> None:
-        self.tag = tag
-        self.attrs = attrs
-        self.parent = parent
-        self.children: list[_Element] = []
-        self.content: list[_Element | str] = []
-
-    @property
-    def classes(self) -> set[str]:
-        return set(self.attrs.get("class", "").split())
-
-    def walk(self) -> Iterator["_Element"]:
-        yield self
-        for child in self.children:
-            yield from child.walk()
-
-    def _raw_text(self) -> str:
-        return "".join(part if isinstance(part, str) else part._raw_text() for part in self.content)
-
-    def text(self) -> str:
-        return " ".join(self._raw_text().split())
+def _dialog_panel(html: str, panel_id: str) -> str:
+    """One panel of the data source dialog: from its section to the next one, or the end of the form."""
+    start = html.index(f'id="{panel_id}"')
+    end = html.find("</section>", start)
+    return html[start:end]
 
 
-class _PageTree(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.root = _Element("#document", {}, None)
-        self.current = self.root
+class TestExampleCsvFiles:
+    """In each CSV panel of the data source dialog, an example to download, read and upload."""
 
-    def _add(self, tag: str, attrs: list[tuple[str, str | None]]) -> _Element:
-        element = _Element(tag, {name: value or "" for name, value in attrs}, self.current)
-        self.current.children.append(element)
-        self.current.content.append(element)
-        return element
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        element = self._add(tag, attrs)
-        if tag not in _VOID_ELEMENTS:
-            self.current = element
-
-    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        self._add(tag, attrs)
-
-    def handle_endtag(self, tag: str) -> None:
-        open_element: _Element | None = self.current
-        while open_element is not None and open_element.tag != tag:
-            open_element = open_element.parent
-        if open_element is not None and open_element.parent is not None:
-            self.current = open_element.parent
-
-    def handle_data(self, data: str) -> None:
-        self.current.content.append(data)
-
-
-def _upload_cards(html: str) -> dict[str, _Element]:
-    """The data page's Targets and People cards, by heading: each the child of a grid that holds it."""
-    tree = _PageTree()
-    tree.feed(html)
-    tree.close()
-    cards = {}
-    for heading in ("Targets", "People"):
-        found = [e for e in tree.root.walk() if e.tag == "h3" and e.text() == heading]
-        assert found, f"No {heading} card on the page"
-        card = found[0]
-        while card.parent is not None and "grid" not in card.parent.classes:
-            card = card.parent
-        assert card.parent is not None, f"The {heading} card is not in a grid"
-        cards[heading] = card
-    return cards
-
-
-def _download_links(element: _Element) -> list[_Element]:
-    return [e for e in element.walk() if e.tag == "a" and "download" in e.attrs]
-
-
-def _example_href(element: _Element, filename: str) -> str:
-    """The href of the download link to ``filename``. The hash is empty if the path names no file."""
-    pattern = r"[^\"]*/static/examples/" + re.escape(filename) + r"\?v=[0-9a-f]{8}"
-    hrefs = [link.attrs["href"] for link in _download_links(element) if re.fullmatch(pattern, link.attrs["href"])]
-    assert hrefs, f"No download link to {filename} in the {element.tag} element: {element.text()[:300]}"
-    return hrefs[0]
-
-
-EXAMPLE_UPLOADS = [
-    pytest.param("Targets", "targets/upload", "example-targets.csv", id="targets"),
-    pytest.param("People", "data/upload-respondents", "example-respondents.csv", id="respondents"),
-]
-
-
-class TestDataTabExampleCsvFiles:
-    """At the foot of each CSV upload card on the data page, an example to download, read and upload."""
-
-    @pytest.mark.parametrize(("card", "action", "filename"), EXAMPLE_UPLOADS)
-    def test_each_upload_card_links_its_own_example(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, card: str, action: str, filename: str
+    @pytest.mark.parametrize(
+        ("panel", "about", "filename"),
+        [
+            pytest.param("project-targets-panel", "Targets", "example-targets.csv", id="targets"),
+            pytest.param("project-respondents-panel", "Respondents", "example-respondents.csv", id="respondents"),
+        ],
+    )
+    def test_each_panel_links_its_own_example(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, panel: str, about: str, filename: str
     ) -> None:
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+        html = logged_in_admin.get(
+            f"/backoffice/project/{existing_assembly.id}/data-source", headers=HTMX
+        ).data.decode()
 
-        upload_card = _upload_cards(html)[card]
+        section = _dialog_panel(html, panel)
 
-        _example_href(upload_card, filename)
-        (link,) = _download_links(upload_card)
-        assert link.text() == f"Download an example CSV ({card})"
-        hidden = [e.text() for e in link.walk() if "sr-only" in e.classes]
-        assert hidden == [f"({card})"]
+        assert section.count("Download an example CSV") == 1
+        assert f"/static/examples/{filename}" in section
+        assert f'<span class="sr-only"> ({about})</span>' in section
 
-    @pytest.mark.parametrize(("card", "action", "filename"), EXAMPLE_UPLOADS)
-    def test_the_example_is_the_last_row_of_its_card_below_the_upload(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, card: str, action: str, filename: str
-    ) -> None:
-        """Choosing a file and uploading it come first, the example after them, at the very bottom."""
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
-
-        upload, example = _upload_cards(html)[card].children
-
-        form_action = f"/backoffice/project/{existing_assembly.id}/{action}"
-        (form,) = [e for e in upload.walk() if e.tag == "form" and e.attrs.get("action") == form_action]
-        assert [e.text() for e in form.walk() if e.tag == "button"] == ["Upload"]
-        assert _download_links(upload) == []
-        _example_href(example, filename)
-
-    def test_the_targets_note_sits_under_its_link(
+    def test_the_targets_note_sits_with_its_link(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        """The panel size the integration test of the example files runs a selection with."""
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+        html = logged_in_admin.get(
+            f"/backoffice/project/{existing_assembly.id}/data-source", headers=HTMX
+        ).data.decode()
 
-        link_line, note = _upload_cards(html)["Targets"].children[-1].children
+        assert "set the panel size to 30" in _dialog_panel(html, "project-targets-panel")
+        assert "set the panel size to 30" not in _dialog_panel(html, "project-respondents-panel")
 
-        assert _download_links(link_line)
-        assert note.text() == "To run a selection with the example targets, set the panel size to 30."
-
-    def test_the_two_cards_share_the_rows_their_examples_sit_in(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
-    ) -> None:
-        """Side by side, the two links start on one line, however tall the content above them.
-
-        From md up, each card is a subgrid over the same two rows of the grid: the
-        first holds its upload, the second its example. The second row is as tall
-        as the Targets example with its note, so the People link, which has no
-        note, still starts level with the Targets link, and the cards are equal in
-        height. Measured in a browser by the "example links line up" scenario in
-        backoffice-csv-upload.feature.
-        """
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
-
-        cards = _upload_cards(html)
-        targets, people = cards["Targets"], cards["People"]
-
-        grid = targets.parent
-        assert grid is not None
-        assert grid.children == [targets, people]
-        assert {"md:grid-cols-2", "md:gap-y-0"} <= grid.classes
-        for upload_card in (targets, people):
-            assert {"md:grid", "md:grid-rows-subgrid", "md:row-span-2"} <= upload_card.classes
-            assert len(upload_card.children) == 2
-
-    def test_the_targets_example_stays_below_building_from_respondent_data(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
-    ) -> None:
-        """With respondent data in, the card offers a second way to targets; the example still comes last."""
-        _seed_respondents(fake_store, existing_assembly.id, [("1", {"Gender": "Female"})])
-
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
-
-        upload, example = _upload_cards(html)["Targets"].children
-        assert "Create from respondent data" in upload.text()
-        _example_href(example, "example-targets.csv")
-
-    def test_targets_example_goes_with_the_targets_upload_form(
+    def test_the_example_goes_once_its_file_is_uploaded(
         self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly
     ) -> None:
-        html = logged_in_admin.get(_data_url(assembly_with_targets.id)).data.decode()
+        """With targets in place there is no upload field for an example to go with."""
+        html = logged_in_admin.get(
+            f"/backoffice/project/{assembly_with_targets.id}/data-source", headers=HTMX
+        ).data.decode()
 
         assert "example-targets.csv" not in html
         assert "example-respondents.csv" in html
 
-    def test_respondents_example_goes_with_the_respondents_upload_form(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
-    ) -> None:
-        _seed_respondents(fake_store, existing_assembly.id, [("1", {"Gender": "Female"})])
-
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
-
-        assert "example-respondents.csv" not in html
-        assert "example-targets.csv" in html
-
     @pytest.mark.parametrize(
-        ("card", "action", "filename", "field", "message"),
+        ("action", "filename", "field", "message"),
         [
+            pytest.param("upload-targets", "example-targets.csv", "csv_file", "4 targets uploaded", id="targets"),
             pytest.param(
-                "Targets",
-                "targets/upload",
-                "example-targets.csv",
-                "csv_file",
-                "Successfully imported 4 targets with 18 values from example-targets.csv",
-                id="targets",
-            ),
-            pytest.param(
-                "People",
-                "data/upload-respondents",
-                "example-respondents.csv",
-                "file",
-                "Respondents uploaded successfully: 100 imported",
-                id="respondents",
+                "upload-respondents", "example-respondents.csv", "file", "100 respondents uploaded", id="respondents"
             ),
         ],
     )
@@ -816,15 +455,16 @@ class TestDataTabExampleCsvFiles:
         self,
         logged_in_admin: FlaskClient,
         existing_assembly: Assembly,
-        card: str,
         action: str,
         filename: str,
         field: str,
         message: str,
     ) -> None:
         """Download, then upload: the whole of what the links are for."""
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
-        href = _example_href(_upload_cards(html)[card], filename)
+        html = logged_in_admin.get(
+            f"/backoffice/project/{existing_assembly.id}/data-source", headers=HTMX
+        ).data.decode()
+        href = re.search(rf'href="(/static/examples/{re.escape(filename)}[^"]*)"', html).group(1)
 
         downloaded = logged_in_admin.get(href)
 
@@ -832,18 +472,20 @@ class TestDataTabExampleCsvFiles:
         assert downloaded.data == (config.get_static_path() / "examples" / filename).read_bytes()
 
         uploaded = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/{action}",
+            f"/backoffice/project/{existing_assembly.id}/data-source/{action}",
             data={field: (BytesIO(downloaded.data), filename)},
             content_type="multipart/form-data",
-            follow_redirects=True,
+            headers=HTMX,
         )
 
         assert uploaded.status_code == 200
-        assert message in uploaded.data.decode()
+        html = uploaded.data.decode()
+        assert message in html
+        assert "Some rows were not imported" not in html
 
 
-class TestDataTabCreateTargetsFromRespondents:
-    """The dialog on the targets card that builds categories from respondent columns."""
+class TestTargetsTabCreateTargetsFromRespondents:
+    """The dialog on the Targets tab that builds categories from respondent columns."""
 
     def test_offers_the_respondent_columns_when_there_is_data(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
@@ -854,7 +496,7 @@ class TestDataTabCreateTargetsFromRespondents:
             [("1", {"Gender": "Male", "Age": "18-25"}), ("2", {"Gender": "Female", "Age": "26-35"})],
         )
 
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
         assert "Create from respondent data" in html
         assert 'value="Gender"' in html
@@ -865,7 +507,7 @@ class TestDataTabCreateTargetsFromRespondents:
         self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly
     ) -> None:
         """Nothing to build the categories from, so the button stays away."""
-        html = logged_in_admin.get(_data_url(assembly_with_targets.id)).data.decode()
+        html = logged_in_admin.get(_targets_url(assembly_with_targets.id)).data.decode()
 
         assert "Create from respondent data" not in html
 
@@ -875,9 +517,8 @@ class TestDataTabCreateTargetsFromRespondents:
         """A column missed the first time round can still be added later."""
         _seed_respondents(fake_store, assembly_with_targets.id, [("1", {"Region": "North"})])
 
-        html = logged_in_admin.get(_data_url(assembly_with_targets.id)).data.decode()
+        html = logged_in_admin.get(_targets_url(assembly_with_targets.id)).data.decode()
 
-        assert "Delete Targets" in html
         assert "Create from respondent data" in html
 
     def test_a_column_already_used_as_a_target_is_shown_as_such(
@@ -886,7 +527,7 @@ class TestDataTabCreateTargetsFromRespondents:
         """assembly_with_targets has a "Gender" category already."""
         _seed_respondents(fake_store, assembly_with_targets.id, [("1", {"Gender": "Male"})])
 
-        html = logged_in_admin.get(_data_url(assembly_with_targets.id)).data.decode()
+        html = logged_in_admin.get(_targets_url(assembly_with_targets.id)).data.decode()
 
         checkbox = next(
             tag for tag in re.findall(r"<input\b[^>]*>", html) if 'value="Gender"' in tag and 'name="columns"' in tag
@@ -905,7 +546,7 @@ class TestDataTabCreateTargetsFromRespondents:
             assembly.csv = AssemblyCSV(assembly_id=existing_assembly.id, csv_id_column="Reference")
             uow.commit()
 
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
         assert 'value="Gender"' in html
         assert 'value="Reference"' not in html
@@ -920,7 +561,7 @@ class TestDataTabCreateTargetsFromRespondents:
             [(str(i), {"Gender": "Male", "Postcode": f"PC{i}"}) for i in range(25)],
         )
 
-        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
         disclosure = html.index("Other columns")
 
         assert html.index('value="Gender"') < disclosure

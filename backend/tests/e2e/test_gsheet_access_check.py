@@ -33,8 +33,10 @@ class TestGSheetAccessCheckEndToEnd:
         )
 
         saved = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/data-source/save",
+            headers={"HX-Request": "true"},
             data={
+                "location": "gsheet",
                 "url": _SHEET_URL,
                 "team": "uk",
                 "select_registrants_tab": "TestRespondents",
@@ -45,9 +47,10 @@ class TestGSheetAccessCheckEndToEnd:
                 "id_column": "test_id_column",
             },
         )
-        assert saved.status_code == 302
-        assert "check=1" in saved.location
-        page = logged_in_admin.get(saved.location).get_data(as_text=True)
+        assert saved.status_code == 200
+        details_url = saved.headers["HX-Redirect"]
+        assert "check=1" in details_url
+        page = logged_in_admin.get(details_url).get_data(as_text=True)
         assert 'hx-trigger="load"' in page
 
         checked = logged_in_admin.post(
@@ -57,5 +60,5 @@ class TestGSheetAccessCheckEndToEnd:
         assert checked.status_code == 200
         assert "Leeds Assembly Respondents" in checked.get_data(as_text=True)
         assert fetch_cached_result(assembly.id, _SHEET_URL) is not None
-        later = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet").get_data(as_text=True)
+        later = logged_in_admin.get(f"/backoffice/project/{assembly.id}").get_data(as_text=True)
         assert "Leeds Assembly Respondents" in later

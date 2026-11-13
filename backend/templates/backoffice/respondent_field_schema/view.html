@@ -27,8 +27,6 @@ ABOUTME: Read-only rows of questions, headings and text with order controls; edi
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
             active_tab="registration",
-            data_source=data_source|default("") ,
-            gsheet=gsheet|default(none),
             targets_enabled=targets_enabled|default(false),
             respondents_enabled=respondents_enabled|default(false),
             selection_enabled=selection_enabled|default(false)
@@ -64,7 +62,7 @@ ABOUTME: Read-only rows of questions, headings and text with order controls; edi
                     </div>
                 </dl>
                 <div class="mt-4">
-                    {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
+                    {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, _anchor='data-source'), variant="outline") }}
                 </div>
             {% endcall %}
         {% elif not schema_has_rows %}

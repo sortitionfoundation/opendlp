@@ -1,6 +1,7 @@
 """ABOUTME: End-to-end tests for backoffice gsheet selection (Celery dispatch + DB semantics)
 ABOUTME: Tests gsheet save/delete smokes, selection_settings round-trip, and selection load/run/cancel"""
 
+import re
 import uuid
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
@@ -12,17 +13,28 @@ from opendlp.service_layer.sortition import InvalidSelection
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
+HTMX = {"HX-Request": "true"}
+
+
+def _sheet_dialog(client, assembly):
+    """The data source dialog showing the Google Sheets settings, whether or not the project has a sheet yet."""
+    return client.post(
+        f"/backoffice/project/{assembly.id}/data-source/refresh", data={"location": "gsheet"}, headers=HTMX
+    )
+
 
 class TestBackofficeGSheetFormSubmission:
     """Smoke and DB-semantics tests for gsheet form submission."""
 
     def test_create_gsheet_config_success(self, logged_in_admin, existing_assembly):
         """Test successfully creating a new gsheet configuration."""
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}")
 
         response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/gsheet/save",
+            f"/backoffice/project/{existing_assembly.id}/data-source/save",
+            headers=HTMX,
             data={
+                "location": "gsheet",
                 "csrf_token": csrf_token,
                 "url": "https://docs.google.com/spreadsheets/d/1abc123/edit",
                 "team": "other",
@@ -37,26 +49,28 @@ class TestBackofficeGSheetFormSubmission:
                 "check_same_address_cols_string": "address1,city,postcode",
                 "columns_to_keep_string": "name,email",
             },
-            follow_redirects=False,
         )
-        # Should redirect to view mode on success
-        assert response.status_code == 302
-        assert "source=gsheet" in response.location
-
-        # Follow redirect and verify success message
-        response = logged_in_admin.get(response.location)
+        # htmx is sent to the details page, to check access to the sheet
         assert response.status_code == 200
-        # Should show success message and be in VIEW mode (config now exists)
-        assert b"created successfully" in response.data or b"View Spreadsheet" in response.data
+        details_url = response.headers["HX-Redirect"]
+        assert "check=1" in details_url
+
+        # The details page says it was saved, and its card shows the sheet
+        response = logged_in_admin.get(details_url)
+        assert response.status_code == 200
+        assert b"Data source settings saved" in response.data
+        assert b"docs.google.com/spreadsheets/d/1abc123" in response.data
 
     def test_update_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
         """Test successfully updating an existing gsheet configuration."""
         assembly, _ = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet&mode=edit")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}")
 
         response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/data-source/save",
+            headers=HTMX,
             data={
+                "location": "gsheet",
                 "csrf_token": csrf_token,
                 "url": "https://docs.google.com/spreadsheets/d/updated123/edit",
                 "team": "uk",
@@ -71,11 +85,12 @@ class TestBackofficeGSheetFormSubmission:
                 "check_same_address_cols_string": "address1,city",
                 "columns_to_keep_string": "first_name,last_name,email",
             },
-            follow_redirects=True,
         )
         assert response.status_code == 200
-        # Should show success message
-        assert b"updated successfully" in response.data
+        response = logged_in_admin.get(response.headers["HX-Redirect"])
+        # Should show success message, and the new URL on the card
+        assert b"Data source settings saved" in response.data
+        assert b"docs.google.com/spreadsheets/d/updated123" in response.data
 
     @pytest.mark.db_semantics
     def test_update_gsheet_config_success_with_team_eu(
@@ -86,8 +101,10 @@ class TestBackofficeGSheetFormSubmission:
         updated_url = "https://docs.google.com/spreadsheets/d/updated_eu_123/edit"
 
         response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/data-source/save",
+            headers=HTMX,
             data={
+                "location": "gsheet",
                 "url": updated_url,
                 "team": "eu",
                 "select_registrants_tab": "UpdatedRespondents",
@@ -96,14 +113,12 @@ class TestBackofficeGSheetFormSubmission:
                 "replace_targets_tab": "Replacement",
                 "already_selected_tab": "Selected",
                 "generate_remaining_tab": "y",
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet&mode=edit"
-                ),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}"),
             },
-            follow_redirects=False,
         )
 
-        assert response.status_code == 302
+        assert response.status_code == 200
+        assert "HX-Redirect" in response.headers
 
         # Verify the changes were saved to the database
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -122,8 +137,10 @@ class TestBackofficeGSheetFormSubmission:
         updated_url = "https://docs.google.com/spreadsheets/d/updated_custom_123/edit"
 
         response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/data-source/save",
+            headers=HTMX,
             data={
+                "location": "gsheet",
                 "url": updated_url,
                 "team": "other",
                 "select_registrants_tab": "CustomRespondents",
@@ -135,14 +152,12 @@ class TestBackofficeGSheetFormSubmission:
                 "check_same_address_cols_string": "address_line, postcode",
                 "columns_to_keep_string": "first_name, last_name, email, phone",
                 "generate_remaining_tab": "y",
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet&mode=edit"
-                ),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}"),
             },
-            follow_redirects=False,
         )
 
-        assert response.status_code == 302
+        assert response.status_code == 200
+        assert "HX-Redirect" in response.headers
 
         # Verify the changes were saved to the database
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -163,38 +178,43 @@ class TestBackofficeGSheetDelete:
     def test_delete_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
         """Test successfully deleting a gsheet configuration."""
         assembly, _ = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet")
+        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}")
 
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly.id}/gsheet/delete",
             data={"csrf_token": csrf_token},
             follow_redirects=False,
         )
-        # Should redirect to data page on success (without source param - selector unlocked)
+        # Back to the details page with the settings dialog open
         assert response.status_code == 302
-        assert "/data" in response.location
+        assert response.location.endswith(f"/backoffice/project/{assembly.id}?data_source=1")
 
         # Follow redirect and verify success message
         response = logged_in_admin.get(response.location)
         assert response.status_code == 200
         assert b"removed successfully" in response.data
 
-        # Selector should now be unlocked (no config exists)
-        assert b"urlSelect" in response.data
+        # The location can be chosen again (no config exists)
+        location = re.search(rb'<select name="location"[^>]*>', response.data)
+        assert location is not None
+        assert b"disabled" not in location.group(0)
 
     def test_gsheet_state_transitions(self, logged_in_admin, existing_assembly):
         """Test state transitions between no gsheet -> has gsheet -> no gsheet."""
         assembly = existing_assembly
 
-        # Initially no gsheet - should show new form
-        initial_response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet")
+        # Initially no gsheet - the dialog offers the form for a new one
+        initial_response = _sheet_dialog(logged_in_admin, assembly)
         assert initial_response.status_code == 200
         assert b'name="url"' in initial_response.data
+        assert b"Remove Google Sheets settings" not in initial_response.data
 
         # Create gsheet
         logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/gsheet/save",
+            f"/backoffice/project/{assembly.id}/data-source/save",
+            headers=HTMX,
             data={
+                "location": "gsheet",
                 "url": "https://docs.google.com/spreadsheets/d/state_transition_123/edit",
                 "team": "uk",
                 "select_registrants_tab": "StateRespondents",
@@ -203,27 +223,29 @@ class TestBackofficeGSheetDelete:
                 "replace_targets_tab": "Replacement",
                 "already_selected_tab": "Selected",
                 "id_column": "state_id",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}"),
             },
         )
 
-        # Now has gsheet - should show view mode
-        view_response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet")
+        # Now has gsheet - the details page shows it, and the dialog offers to remove it
+        view_response = logged_in_admin.get(f"/backoffice/project/{assembly.id}")
         assert view_response.status_code == 200
         assert b"state_transition_123" in view_response.data
+        assert b"Remove Google Sheets settings" in _sheet_dialog(logged_in_admin, assembly).data
 
         # Delete gsheet
         logged_in_admin.post(
             f"/backoffice/project/{assembly.id}/gsheet/delete",
             data={
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/data?source=gsheet"),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}"),
             },
         )
 
-        # Back to no gsheet - should show new form again
-        final_response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=gsheet")
+        # Back to no gsheet - the form for a new one again
+        final_response = _sheet_dialog(logged_in_admin, assembly)
         assert final_response.status_code == 200
         assert b'name="url"' in final_response.data
+        assert b"Remove Google Sheets settings" not in final_response.data
 
 
 class TestBackofficeSelectionTab:

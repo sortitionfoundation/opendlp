@@ -152,7 +152,7 @@ Things the old tab did that need a home:
 | Remove Google Sheet settings (the way to unlock) | In the settings dialog, a destructive link beside the form, like "Delete targets" |
 | Tab names, team settings (view mode) | Only in the settings dialog. The card stays two rows, as Figma. |
 | Example CSV links | In the dialog's CSV panels |
-| "Create targets from respondent data" | Already on the Targets tab; not repeated |
+| "Create targets from respondent data" | **Moved to the Targets tab.** The plan's first draft said it was already there; it was not - it lived only on the Data Source tab. The brief sends people to the Targets tab for it, so the button and its dialog now sit beside "Add target" there, for a manager of a project with respondent data |
 | CSV selection settings | The Select and replace tab — next section |
 
 ### What the two source rows say
@@ -283,7 +283,10 @@ anyone, which would skip the notification email.
 
 - "Data Source" and "Team Members" leave `assembly_tabs`.
 - `GET …/data` and `GET …/members` redirect to the details page (to
-  `#data-source` and `#team`), so bookmarks still work.
+  `#data-source` and `#team`), so bookmarks still work. Because the two
+  endpoints survive as redirects, the legacy templates that link to them are
+  left as they are: nothing 404s, and those pages are due for deletion
+  (`../future_work/delete_legacy_pages.md`).
 - About 50 `url_for('backoffice.view_assembly_data')` calls across
   `respondents.py` (20), `targets.py`, `gsheets.py`, `db_selection_backoffice.py`
   and six templates are re-pointed: error exits to the details page, and the
@@ -352,7 +355,7 @@ After steps 1–3 of the create plan (schema, form partial, settings dialog):
 4. ✅ Selection settings section on the Select and replace tab.
 5. ✅ Registration link card.
 6. ✅ Team card: table, add dialog, remove; then change role with its guard.
-7. Tabs removed, redirects, the ~50 re-pointed links, `?source=` removed.
+7. ✅ Tabs removed, redirects, the ~50 re-pointed links, `?source=` removed.
 8. BDD/e2e sweep, catalogues, docs.
 
 Steps 2–6 each leave a working page with the old tabs still present, so the

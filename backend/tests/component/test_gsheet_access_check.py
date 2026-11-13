@@ -89,8 +89,9 @@ def _check_url(assembly_id) -> str:
     return f"/backoffice/project/{assembly_id}/gsheet/check"
 
 
-def _data_url(assembly_id) -> str:
-    return f"/backoffice/project/{assembly_id}/data?source=gsheet"
+def _details_url(assembly_id) -> str:
+    """The project details page, whose Data source card holds the access check panel."""
+    return f"/backoffice/project/{assembly_id}"
 
 
 _ALL_TABS = ["Respondents", "Categories", "Remaining", "Replacement Categories", "Selected"]
@@ -261,13 +262,13 @@ class TestCheckRouteRefusals:
 
 
 @pytest.mark.usefixtures("cache", "service_account")
-class TestDataPagePanel:
+class TestDetailsPagePanel:
     def test_nothing_cached_offers_check_access_without_calling_google(
         self, logged_in_admin: FlaskClient, assembly_with_gsheet, google
     ):
         client = google(FakeGSpreadClient())
 
-        body = logged_in_admin.get(_data_url(assembly_with_gsheet.id)).get_data(as_text=True)
+        body = logged_in_admin.get(_details_url(assembly_with_gsheet.id)).get_data(as_text=True)
 
         assert "Check access" in body
         assert 'hx-trigger="load' not in body
@@ -279,20 +280,23 @@ class TestDataPagePanel:
         )
         gsheet_access_check.store_cached_result(assembly_with_gsheet.id, result, redis_client=cache)
 
-        body = logged_in_admin.get(_data_url(assembly_with_gsheet.id)).get_data(as_text=True)
+        body = logged_in_admin.get(_details_url(assembly_with_gsheet.id)).get_data(as_text=True)
 
         assert "Cached Title" in body
         assert "Check again" in body
 
     def test_check_param_fires_the_check_on_load(self, logged_in_admin: FlaskClient, assembly_with_gsheet):
-        body = logged_in_admin.get(_data_url(assembly_with_gsheet.id) + "&check=1").get_data(as_text=True)
+        body = logged_in_admin.get(_details_url(assembly_with_gsheet.id) + "?check=1").get_data(as_text=True)
 
         assert 'hx-trigger="load' in body
         assert "Checking access to the spreadsheet" in body
         assert 'aria-live="polite"' in body
 
-    def test_panel_not_shown_in_edit_mode(self, logged_in_admin: FlaskClient, assembly_with_gsheet):
-        body = logged_in_admin.get(_data_url(assembly_with_gsheet.id) + "&mode=edit").get_data(as_text=True)
+    def test_panel_is_on_the_page_not_in_the_settings_dialog(self, logged_in_admin: FlaskClient, assembly_with_gsheet):
+        """Visible without opening anything; the dialog is for changing the settings."""
+        body = logged_in_admin.get(
+            f"/backoffice/project/{assembly_with_gsheet.id}/data-source", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
 
         assert "gsheet-access-status" not in body
 
@@ -306,7 +310,7 @@ class TestDataPagePanel:
         )
         gsheet_access_check.store_cached_result(assembly_with_gsheet.id, result, redis_client=cache)
 
-        body = logged_in_user.get(_data_url(assembly_with_gsheet.id)).get_data(as_text=True)
+        body = logged_in_user.get(_details_url(assembly_with_gsheet.id)).get_data(as_text=True)
 
         assert "Cached Title" in body
         assert "Check again" not in body
@@ -322,8 +326,10 @@ class TestSaveTriggersCheck:
         gsheet_access_check.store_cached_result(assembly_with_gsheet.id, old, redis_client=cache)
 
         response = logged_in_admin.post(
-            f"/backoffice/project/{assembly_with_gsheet.id}/gsheet/save",
+            f"/backoffice/project/{assembly_with_gsheet.id}/data-source/save",
+            headers={"HX-Request": "true"},
             data={
+                "location": "gsheet",
                 "url": _SHEET_URL,
                 "team": "uk",
                 "select_registrants_tab": "Respondents",
@@ -335,8 +341,8 @@ class TestSaveTriggersCheck:
             },
         )
 
-        assert response.status_code == 302
-        assert "check=1" in response.location
+        assert response.status_code == 200
+        assert "check=1" in response.headers["HX-Redirect"]
         assert gsheet_access_check.fetch_cached_result(assembly_with_gsheet.id, _SHEET_URL, cache) is None
 
 

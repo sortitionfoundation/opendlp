@@ -24,8 +24,6 @@ ABOUTME: Displays target categories and values, with respondent counts and check
             {{ assembly_tabs(
             assembly=assembly,
             active_tab="targets",
-            data_source=data_source,
-            gsheet=gsheet,
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled|default(false)
@@ -58,7 +56,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
             </dl>
 
             <div class="mt-4">
-                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="secondary") }}
+                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, _anchor='data-source'), variant="secondary") }}
             </div>
         {% endcall %}
     {% else %}
@@ -146,6 +144,21 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                                 <span x-show="!editingAll">
                                     {{ button(_("Export"), variant="secondary",
                                     attrs='data-focus-id="targets-export" hx-get="' ~ url_for('targets.export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
+                                </span>
+                            {% endif %}
+                        {# Each column of the respondent data can become a target with
+                           a value per answer. Offered whether or not targets exist:
+                           a column missed the first time round can be added later,
+                           and the dialog shows the ones already covered as such.
+                           The dialog's state lives on this wrapper, which holds
+                           the button that opens it. #}
+                            {% if respondent_attribute_columns | default([]) %}
+                                <span x-show="!editingAll" x-data="modal({ initialOpen: false })">
+                                    {{ button(_("Create from respondent data"),
+                                    variant="secondary",
+                                    attrs='@click="open()"',
+                                    aria_haspopup="dialog") }}
+                                    {% include "backoffice/targets/create_from_columns_modal.html" %}
                                 </span>
                             {% endif %}
                             <span x-show="!editingAll">

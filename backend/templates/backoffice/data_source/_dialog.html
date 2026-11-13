@@ -156,23 +156,29 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
             </form>
             {# Deleting is a page load of its own, because deleting targets that
                registration questions are linked to asks first on a page of its
-               own. A button inside the dialog's form names one of these with
+               own. It comes back to the project details page with this dialog
+               open. A button inside the dialog's form names one of these with
                its form attribute; a form cannot sit inside another. #}
             {% if exists %}
-                {% for form_id, action, question in [
-                ("project-delete-targets", ds.urls.delete_targets, _("Are you sure you want to delete all targets? This action cannot be undone.")),
-                ("project-delete-respondents", ds.urls.delete_respondents, _("Are you sure you want to delete all respondents? This action cannot be undone.")),
-                ("project-remove-gsheet", ds.urls.remove_gsheet, _("Are you sure you want to remove this Google Sheets configuration? This action cannot be undone."))
-                ] %}
-                <form id="{{ form_id }}"
-                      method="post"
-                      action="{{ action }}"
-                      x-data
-                      @submit.prevent="$confirm('{{ question }}', $el)">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="return_to" value="dialog">
-                </form>
-            {% endfor %}
+                {% set delete_forms = [] %}
+                {% if ds.targets_count %}
+                    {% set ignored = delete_forms.append(("project-delete-targets", ds.urls.delete_targets, _("Are you sure you want to delete all targets? This action cannot be undone."))) %}
+                {% endif %}
+                {% if ds.respondents_count %}
+                    {% set ignored = delete_forms.append(("project-delete-respondents", ds.urls.delete_respondents, _("Are you sure you want to delete all respondents? This action cannot be undone."))) %}
+                {% endif %}
+                {% if ds.gsheet %}
+                    {% set ignored = delete_forms.append(("project-remove-gsheet", ds.urls.remove_gsheet, _("Are you sure you want to remove this Google Sheets configuration? This action cannot be undone."))) %}
+                {% endif %}
+                {% for form_id, action, question in delete_forms %}
+                    <form id="{{ form_id }}"
+                          method="post"
+                          action="{{ action }}"
+                          x-data
+                          @submit.prevent="$confirm('{{ question }}', $el)">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    </form>
+                {% endfor %}
             {% endif %}
         </div>
     </div>

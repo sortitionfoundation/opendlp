@@ -37,6 +37,7 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_tab_enabled_states,
+    stored_data_source,
 )
 from opendlp.service_layer.derivation_service import (
     UNMATCHED_SAMPLE_SIZE,
@@ -232,7 +233,7 @@ def _page_context(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, with_hub: boo
         gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
     with contextlib.suppress(ServiceLayerError):
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
-    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+    data_source, _locked = determine_data_source(gsheet, csv_status, stored_data_source(uow, assembly_id))
     if with_hub:
         hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
 

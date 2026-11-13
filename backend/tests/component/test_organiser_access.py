@@ -176,15 +176,16 @@ class TestAssemblyManagerManagesMembers:
             uow.commit()
             return user.create_detached_copy()
 
-    def test_the_members_page_offers_the_add_form(
+    def test_the_team_card_offers_to_add_someone(
         self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
     ) -> None:
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
 
-        response = logged_in_organiser.get(f"/backoffice/project/{assembly.id}/members")
+        response = logged_in_organiser.get(f"/backoffice/project/{assembly.id}")
 
         assert response.status_code == 200
-        assert b"Add user to project" in response.data
+        assert b"Add a team member" in response.data
+        assert f"/backoffice/project/{assembly.id}/team/add".encode() in response.data
 
     def test_an_exact_email_finds_the_colleague(
         self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
@@ -249,9 +250,9 @@ class TestAssemblyManagerManagesMembers:
         colleague = self._colleague(fake_store)
 
         response = logged_in_organiser.post(
-            f"/backoffice/project/{assembly.id}/members/add",
+            f"/backoffice/project/{assembly.id}/team/add",
             data={"user_id": str(colleague.id), "role": AssemblyRole.CONFIRMATION_CALLER.name},
-            follow_redirects=True,
+            headers={"HX-Request": "true"},
         )
 
         assert response.status_code == 200
@@ -273,7 +274,7 @@ class TestTheAssemblyKeepsAManager:
     ) -> None:
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
 
-        response = logged_in_organiser.get(f"/backoffice/project/{assembly.id}/members")
+        response = logged_in_organiser.get(f"/backoffice/project/{assembly.id}")
 
         assert response.status_code == 200
         assert b"Last manager" in response.data
@@ -301,7 +302,7 @@ class TestTheAssemblyKeepsAManager:
         """An admin can put a manager back, so they are not stopped."""
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
 
-        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/members")
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}")
 
         assert response.status_code == 200
         assert f"members/{organiser_user.id}/remove".encode() in response.data

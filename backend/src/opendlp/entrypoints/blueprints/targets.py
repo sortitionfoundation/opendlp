@@ -15,7 +15,6 @@ from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExpor
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.assembly_export_gsheet import default_worksheet_name
 from opendlp.domain.value_objects import SelectionTaskType
-from opendlp.entrypoints.blueprints.backoffice import render_assembly_data_page
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.data_source_urls import data_source_return_url
 from opendlp.entrypoints.decorators import require_assembly_management
@@ -30,6 +29,7 @@ from opendlp.service_layer.assembly_service import (
     get_csv_upload_status,
     get_or_create_csv_config,
     get_tab_enabled_states,
+    stored_data_source,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import (
@@ -43,7 +43,6 @@ from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.sortition import get_selection_to_rerun, start_db_select_task
 from opendlp.service_layer.target_checking import check_targets_detailed
-from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_export_service import (
     EXPORT_KIND,
     export_targets,
@@ -73,7 +72,6 @@ from opendlp.translations import gettext as _
 from ..forms import (
     SaveAllTargetsForm,
     TargetValueForm,
-    UploadTargetsCsvForm,
 )
 
 targets_bp = Blueprint("targets", __name__)
@@ -129,7 +127,9 @@ def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
         with contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
-    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        stored = stored_data_source(uow, assembly_id)
+
+    data_source, _locked = determine_data_source(gsheet, csv_status, stored)
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
 
     return {
@@ -150,11 +150,20 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            # The id column identifies a respondent rather than describing
+            # them, so it is never offered as a target.
+            csv_id_column = assembly.csv.csv_id_column if assembly.csv else ""
 
         value_form = TargetValueForm()
         can_manage = _can_manage(assembly_id)
 
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+        # What the "Create from respondent data" dialog needs: the columns it
+        # can offer, and how many distinct answers each holds.
+        creatable_columns = [column for column in attribute_columns if column != csv_id_column]
+        column_distinct_counts = (
+            get_column_distinct_counts(assembly_id, creatable_columns) if can_manage and creatable_columns else {}
+        )
         respondent_counts = build_respondent_counts(assembly_id, target_categories, attribute_columns)
         selected_counts = build_selected_counts(assembly_id, target_categories, attribute_columns)
         has_selected = any(selected_counts.values())
@@ -172,6 +181,8 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             all_selected_counts=selected_counts,
             has_selected=has_selected,
             has_respondents=bool(attribute_columns),
+            respondent_attribute_columns=creatable_columns,
+            column_distinct_counts=column_distinct_counts,
             **_page_mode(can_manage),
             **context,
         ), 200
@@ -196,75 +207,6 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvForm) -> ResponseReturnValue:
-    """Re-render the data page so the user sees their upload error beside the form.
-
-    The form lives on the data page rather than this blueprint's own, so this
-    borrows that page's renderer. Redirecting instead would leave the reason in
-    a flash message at the top of the page, away from the field it is about.
-    """
-    return render_assembly_data_page(assembly_id, targets_upload_form=form, preferred_source="csv"), 200
-
-
-@targets_bp.route("/project/<uuid:assembly_id>/targets/upload", methods=["POST"])
-@login_required
-def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Upload targets CSV file for an assembly."""
-    form = UploadTargetsCsvForm()
-    try:
-        if not form.validate_on_submit():
-            return _render_targets_upload_page(assembly_id, form)
-
-        csv_file = form.csv_file.data
-        csv_content = csv_file.read().decode("utf-8-sig")
-        filename = csv_file.filename or "unknown.csv"
-
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            import_result = import_targets_from_csv(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                csv_content=csv_content,
-                replace_existing=True,
-            )
-            categories = import_result.categories
-            import_warnings = import_result.warnings
-
-        total_values = sum(len(c.values) for c in categories)
-        flash(
-            _(
-                "Successfully imported %(cats)s targets with %(vals)s values from %(file)s",
-                cats=len(categories),
-                vals=total_values,
-                file=filename,
-            ),
-            "success",
-        )
-        for warning in import_warnings:
-            flash(warning, "warning")
-
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except InvalidSelection as e:
-        logger.warning("Invalid targets CSV", assembly_id=str(assembly_id), error=str(e))
-        form.csv_file.errors.append(_("CSV import failed: %(error)s", error=str(e)))
-        return _render_targets_upload_page(assembly_id, form)
-    except NotFoundError:
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions:
-        flash(_("You don't have permission to import targets"), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-    except UnicodeDecodeError:
-        form.csv_file.errors.append(_("Could not read CSV file. Please ensure it is UTF-8 encoded."))
-        return _render_targets_upload_page(assembly_id, form)
-    except Exception as e:
-        logger.exception("Upload targets error", assembly_id=str(assembly_id), error=str(e))
-        form.csv_file.errors.append(_("An unexpected error occurred during import"))
-        return _render_targets_upload_page(assembly_id, form)
-
-
 @targets_bp.route("/project/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
 @login_required
 def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -280,7 +222,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Targets deleted: %(count)d", count=count), "success")
-        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))
 
     except TargetLinkedError as e:
         return _render_force_unlink_confirm(
@@ -288,7 +230,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             request.form,
             e.blocks,
             confirm_url=url_for("targets.delete_targets", assembly_id=assembly_id),
-            cancel_url=data_source_return_url(assembly_id, "csv"),
+            cancel_url=data_source_return_url(assembly_id),
             deleting_all=True,
         )
     except InsufficientPermissions as e:
@@ -299,7 +241,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("You don't have permission to delete targets"), "error")
-        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))
     except NotFoundError as e:
         logger.warning("Assembly not found for targets deletion", assembly_id=str(assembly_id), error=str(e))
         flash(_("Project not found"), "error")
@@ -309,7 +251,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "Delete targets error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
         flash(_("An error occurred while deleting targets"), "error")
-        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))
 
 
 @targets_bp.route(
@@ -323,7 +265,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         selected_columns = request.form.getlist("columns")
         if not selected_columns:
             flash(_("No columns selected"), "warning")
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
         column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
@@ -365,7 +307,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         if not created:
             flash(_("No new targets were created"), "warning")
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
         if values_added_count > 0:
             flash(
@@ -389,7 +331,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 
 @targets_bp.route("/project/<uuid:assembly_id>/targets/check", methods=["GET"])

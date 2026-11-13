@@ -792,3 +792,39 @@ class TestRemovingATeamMember:
 
         assert response.status_code == 302
         assert response.location.endswith("/backoffice/dashboard")
+
+
+class TestProjectTabs:
+    @staticmethod
+    def _tab_bar(html: str) -> str:
+        start = html.index('aria-label="Project sections"')
+        return html[start : html.index("</nav>", start)]
+
+    def test_data_source_and_team_members_are_not_tabs(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """They are cards on the Project Details tab."""
+        tabs = self._tab_bar(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "Project Details" in tabs
+        assert "Targets" in tabs
+        assert "Data Source" not in tabs
+        assert "Team Members" not in tabs
+        assert f"{_details(existing_assembly)}/data" not in tabs
+        assert f"{_details(existing_assembly)}/members" not in tabs
+
+    def test_tab_links_carry_no_source_parameter(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Where the data is managed is stored on the project, not passed from page to page."""
+        tabs = self._tab_bar(logged_in_admin.get(f"{_details(existing_assembly)}?source=gsheet").data.decode())
+
+        assert "source=" not in tabs
+
+    def test_a_new_project_has_its_targets_tab_open(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Held in OpenDLP until someone says otherwise, so targets can be made straight away."""
+        tabs = self._tab_bar(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert f'href="{_details(existing_assembly)}/targets"' in tabs

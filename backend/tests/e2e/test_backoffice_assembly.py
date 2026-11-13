@@ -244,17 +244,19 @@ class TestBackofficeAddUserToAssembly:
         login_as_admin(client, admin_user)
 
         response = client.post(
-            f"/backoffice/project/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/team/add",
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.CONFIRMATION_CALLER.name,
-                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}/members"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}"),
             },
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        assert response.status_code == 302  # Redirect after success
-        assert f"/backoffice/project/{existing_assembly.id}/members" in response.location
+        # The dialog closes and the Team card comes back with the new member in it
+        assert response.status_code == 200
+        assert b'<div id="team" hx-swap-oob="true">' in response.data
+        assert regular_user.email.encode() in response.data
 
         # Reload user from database to get updated assembly_roles
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -275,13 +277,13 @@ class TestBackofficeAddUserToAssembly:
         login_as_admin(client, admin_user)
 
         response = client.post(
-            f"/backoffice/project/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/team/add",
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.ASSEMBLY_MANAGER.name,
-                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}/members"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}"),
             },
-            follow_redirects=True,
+            headers={"HX-Request": "true"},
         )
 
         assert response.status_code == 200
@@ -439,19 +441,17 @@ class TestBackofficeCsvUpload:
         csv_content = "feature,value,min,max\nGender,Male,10,20\nGender,Female,10,20\nAge,18-30,5,15\nAge,31-50,5,15"
 
         response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/targets/upload",
+            f"/backoffice/project/{existing_assembly.id}/data-source/upload-targets",
             data={
                 "csv_file": (BytesIO(csv_content.encode()), "targets.csv"),
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/project/{existing_assembly.id}/data?source=csv"
-                ),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}"),
             },
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        assert response.status_code == 302
-        assert f"/backoffice/project/{existing_assembly.id}/targets" in response.location
+        assert response.status_code == 200
+        assert b"2 targets uploaded" in response.data
 
         # Verify targets were created
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -511,15 +511,13 @@ class TestBackofficeCsvDelete:
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly_with_targets.id}/data/delete-targets",
             data={
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/project/{assembly_with_targets.id}/data?source=csv"
-                ),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly_with_targets.id}"),
             },
             follow_redirects=False,
         )
 
         assert response.status_code == 302
-        assert "source=csv" in response.location
+        assert response.location.endswith(f"/backoffice/project/{assembly_with_targets.id}?data_source=1")
 
         # Verify targets were deleted
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -527,8 +525,8 @@ class TestBackofficeCsvDelete:
             assert len(categories) == 0
 
 
-class TestDataTabCreateTargetsFromRespondents:
-    """The data page dialog that builds target categories from respondent columns."""
+class TestTargetsTabCreateTargetsFromRespondents:
+    """The Targets tab dialog that builds target categories from respondent columns."""
 
     def _add_respondents(self, postgres_session_factory, assembly_id, respondents_data):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -537,7 +535,7 @@ class TestDataTabCreateTargetsFromRespondents:
             uow.commit()
 
     @pytest.mark.db_semantics
-    def test_data_page_offers_the_respondent_columns(
+    def test_targets_page_offers_the_respondent_columns(
         self, logged_in_admin, existing_assembly: Assembly, postgres_session_factory
     ):
         self._add_respondents(
@@ -546,7 +544,7 @@ class TestDataTabCreateTargetsFromRespondents:
             [("1", {"Gender": "Male", "Region": "North"}), ("2", {"Gender": "Female", "Region": "South"})],
         )
 
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/targets")
 
         assert response.status_code == 200
         html = response.data.decode()
@@ -580,7 +578,7 @@ class TestDataTabCreateTargetsFromRespondents:
             assert sorted(v.value for v in categories[0].values) == ["Female", "Male"]
 
     @pytest.mark.db_semantics
-    def test_selecting_nothing_returns_to_the_data_page(
+    def test_selecting_nothing_returns_to_the_targets_page(
         self, logged_in_admin, existing_assembly: Assembly, postgres_session_factory
     ):
         """Nothing was created, so there is nothing to go and set numbers for."""
@@ -593,4 +591,4 @@ class TestDataTabCreateTargetsFromRespondents:
         )
 
         assert response.status_code == 302
-        assert f"/backoffice/project/{existing_assembly.id}/data" in response.location
+        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}/targets")
