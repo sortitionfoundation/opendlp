@@ -9,6 +9,7 @@ ABOUTME: Displays data source selection and data management for assemblies
 {% from "backoffice/components/input.html" import input, checkbox, radio_group, file_input, first_error as e %}
 {% from "backoffice/components/select_dropdown.html" import select_dropdown %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/data_source/_parts.html" import gsheet_fields, example_csv_link, upload_errors with context %}
 {% block title %}{{ _("Data") }} - {{ assembly.title }}{% endblock %}
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
@@ -101,164 +102,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                   action="{{ url_for('gsheets.save_gsheet_config', assembly_id=assembly.id) }}"
                   class="flex flex-col gap-6">
                 {% if not readonly %}{{ gsheet_form.hidden_tag() }}{% endif %}
-                {# Spreadsheet URL #}
-                {{ input(name="url",
-                label=_("Spreadsheet URL") ,
-                type="url",
-                value=gsheet_form.url.data or "",
-                placeholder="https://docs.google.com/spreadsheets/d/...",
-                hint=_("Enter the full URL of your Google Sheets spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email else ""),
-                required=true,
-                readonly=readonly,
-                link_url=gsheet_form.url.data if gsheet and readonly else "",
-                link_text=_("View Spreadsheet"),
-                error=e(gsheet_form.url.errors)
-                ) }}
-                {# Initial/Test Selection Fieldset #}
-                <fieldset class="flex flex-col gap-4">
-                    <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Initial/Test Selection") }}</legend>
-                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
-                        {{ _("Configure the tabs used for the initial selection process.") }}
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {{ input(name="select_registrants_tab",
-                        label=_("Respondents Tab") ,
-                        value=gsheet_form.select_registrants_tab.data or "",
-                        placeholder=_("e.g., Respondents"),
-                        hint=_("Tab containing respondent data for selection."),
-                        readonly=readonly,
-                        error=e(gsheet_form.select_registrants_tab.errors)
-                        ) }}
-                        {{ input(name="select_targets_tab",
-                        label=_("Categories Tab") ,
-                        value=gsheet_form.select_targets_tab.data or "",
-                        placeholder=_("e.g., Categories"),
-                        hint=_("Tab containing selection categories/targets."),
-                        readonly=readonly,
-                        error=e(gsheet_form.select_targets_tab.errors)
-                        ) }}
-                    </div>
-                </fieldset>
-                {# Replacement Fieldset #}
-                <fieldset class="flex flex-col gap-4">
-                    <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Replacement") }}</legend>
-                    <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
-                        {{ _("Configure the tabs used for replacement selections.") }}
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {{ input(name="replace_registrants_tab",
-                        label=_("Respondents Tab") ,
-                        value=gsheet_form.replace_registrants_tab.data or "",
-                        placeholder=_("e.g., Respondents"),
-                        hint=_("Tab containing respondent data for replacements."),
-                        readonly=readonly,
-                        error=e(gsheet_form.replace_registrants_tab.errors)
-                        ) }}
-                        {{ input(name="replace_targets_tab",
-                        label=_("Categories Tab") ,
-                        value=gsheet_form.replace_targets_tab.data or "",
-                        placeholder=_("e.g., Categories"),
-                        hint=_("Tab containing replacement categories/targets."),
-                        readonly=readonly,
-                        error=e(gsheet_form.replace_targets_tab.errors)
-                        ) }}
-                    </div>
-                    {{ input(name="already_selected_tab",
-                    label=_("Already Selected Tab") ,
-                    value=gsheet_form.already_selected_tab.data or "",
-                    placeholder=_("e.g., Selected"),
-                    hint=_("Tab containing previously selected participants (for exclusion during replacement)."),
-                    readonly=readonly,
-                    error=e(gsheet_form.already_selected_tab.errors)
-                    ) }}
-                </fieldset>
-                {# Options #}
-                <fieldset class="flex flex-col gap-4">
-                    <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
-                    {{ checkbox(name="check_same_address",
-                    label=_("Check Same Address") ,
-                    checked=gsheet_form.check_same_address.data,
-                    hint=_("Prevent selecting multiple respondents from the same address."),
-                    readonly=readonly
-                    ) }}
-                    {{ checkbox(name="generate_remaining_tab",
-                    label=_("Generate Remaining Tab") ,
-                    checked=gsheet_form.generate_remaining_tab.data,
-                    hint=_("Automatically generate a tab with the remaining respondents."),
-                    readonly=readonly
-                    ) }}
-                </fieldset>
-                {# Team Selection - only show in edit mode as it's a form helper for autofilling, not a stored value #}
-                {% if not readonly %}
-                    <div x-data="{ selectedTeam: '{{ gsheet_form.team.data or 'other' }}' }">
-                        {{ radio_group(name="team",
-                        label=_("Team Configuration") ,
-                        options=[
-                        {"value": "uk", "label": _("UK Team")},
-                        {"value": "eu", "label": _("EU Team")},
-                        {"value": "aus", "label": _("Australia Team")},
-                        {"value": "other", "label": _("Custom configuration")}
-                        ],
-                        value=gsheet_form.team.data or "other",
-                        hint=_("Choose a preset or configure custom column settings."),
-                        readonly=readonly,
-                        attrs='x-model="selectedTeam"'
-                        ) }}
-                        {# Custom Configuration Fields (shown when team="other") #}
-                        <div x-show="selectedTeam === 'other'"
-                             x-cloak
-                             class="mt-4 flex flex-col gap-4 pl-8"
-                             style="border-left: 2px solid var(--color-borders-dividers)">
-                            {{ input(name="id_column",
-                            label=_("ID Column") ,
-                            value=gsheet_form.id_column.data or "",
-                            placeholder=_("e.g., ID"),
-                            hint=_("Column name containing unique respondent identifiers."),
-                            readonly=readonly,
-                            error=e(gsheet_form.id_column.errors)
-                            ) }}
-                            {{ input(name="check_same_address_cols_string",
-                            label=_("Address Columns") ,
-                            value=gsheet_form.check_same_address_cols_string.data or "",
-                            placeholder=_("e.g., Street, City, PostCode"),
-                            hint=_("Comma-separated column names used for address matching."),
-                            readonly=readonly,
-                            error=e(gsheet_form.check_same_address_cols_string.errors)
-                            ) }}
-                            {{ input(name="columns_to_keep_string",
-                            label=_("Columns to Keep") ,
-                            value=gsheet_form.columns_to_keep_string.data or "",
-                            placeholder=_("e.g., Name, Email, Phone"),
-                            hint=_("Comma-separated column names to include in output."),
-                            readonly=readonly,
-                            error=e(gsheet_form.columns_to_keep_string.errors)
-                            ) }}
-                        </div>
-                    </div>
-                {% else %}
-                    {# In view mode, show the actual saved column configuration values directly #}
-                    <fieldset class="flex flex-col gap-4">
-                        <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Column Configuration") }}</legend>
-                        {{ input(name="id_column",
-                        label=_("ID Column") ,
-                        value=gsheet_form.id_column.data or "",
-                        hint=_("Column name containing unique respondent identifiers."),
-                        readonly=readonly
-                        ) }}
-                        {{ input(name="check_same_address_cols_string",
-                        label=_("Address Columns") ,
-                        value=gsheet_form.check_same_address_cols_string.data or "",
-                        hint=_("Comma-separated column names used for address matching."),
-                        readonly=readonly
-                        ) }}
-                        {{ input(name="columns_to_keep_string",
-                        label=_("Columns to Keep") ,
-                        value=gsheet_form.columns_to_keep_string.data or "",
-                        hint=_("Comma-separated column names to include in output."),
-                        readonly=readonly
-                        ) }}
-                    </fieldset>
-                {% endif %}
+                {{ gsheet_fields(gsheet_form, readonly=readonly, gsheet=gsheet, google_service_account_email=google_service_account_email) }}
                 {# Form Actions #}
                 {% if not readonly %}
                     <div class="flex gap-4 pt-4"
@@ -287,23 +131,6 @@ ABOUTME: Displays data source selection and data management for assemblies
             {% endif %}
         </div>
     </section>
-{% endmacro %}
-{# An example file to download, with an optional note under the link: the last row
-   of a CSV upload card. The hidden suffix is for a screen reader's list of links,
-   where this page's two would otherwise read the same. #}
-{% macro example_csv_link(path, about, note="") %}
-    <div class="mt-6">
-        <p class="text-body-sm">
-            <a href="{{ url_for('static', filename=path, v=static_hashes(path)) }}"
-               class="inline-flex items-center gap-1.5 underline"
-               style="color: var(--color-links);"
-               download>
-                {{ icon_download(classes="w-4 h-4") }}
-                <span>{{ _("Download an example CSV") }}<span class="sr-only"> ({{ about }})</span></span>
-            </a>
-        </p>
-        {% if note %}<p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ note }}</p>{% endif %}
-    </div>
 {% endmacro %}
 {# CSV file content macro #}
 {% macro render_csv_content() %}
@@ -338,27 +165,8 @@ ABOUTME: Displays data source selection and data management for assemblies
                     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                         {{ _("Upload the targets for selection.") }}
                     </p>
-                    {# A rejected upload re-renders this page with the form that
-                       rejected it, so the reason sits beside the file field rather
-                       than in a flash message at the top of the page. #}
                     {% set targets_upload_errors = targets_upload_form.errors if targets_upload_form else {} %}
-                    {% if targets_upload_errors %}
-                        <div class="mb-4 rounded-lg p-4"
-                             style="background-color: var(--color-error-100);
-                                    border: 1px solid var(--color-error-400)">
-                            <h4 class="text-heading-sm mb-2" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h4>
-                            <ul class="list-disc pl-5">
-                                {% for field_errors in targets_upload_errors.values() %}
-                                    {% for error in field_errors %}
-                                        {# pre-line renders the newlines in multi-line errors (e.g. CSV parse failures) #}
-                                        <li class="text-body-sm"
-                                            style="color: var(--color-error-600);
-                                                   white-space: pre-line">{{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
+                    {{ upload_errors(targets_upload_errors) }}
                     {% if has_targets %}
                         {# Show uploaded status #}
                         <div class="flex items-center gap-2 mb-4 p-3 rounded-lg"

@@ -352,7 +352,8 @@ this story, so `docs/language.md` is not changed here.
 ## Order of work
 
 1. ✅ Migration, domain fields, enums and labels, `determine_data_source`.
-2. `_form.html` partial extracted from `assembly_data.html`, rendered by the
+2. ✅ The shared pieces (`data_source/_parts.html`: the Google Sheets fields,
+   the example CSV link, the upload errors) extracted from `assembly_data.html`, rendered by the
    *existing* data source page first — a pure refactor, tests unchanged. The
    selection settings form is left behind on that page for now; the details
    plan moves it.
