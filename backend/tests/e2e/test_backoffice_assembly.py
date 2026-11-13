@@ -29,22 +29,23 @@ class TestBackofficeAssemblyDetails:
         assert response.status_code == 200
         assert existing_assembly.title.encode() in response.data
 
-    def test_registration_url_copy_widget_uses_csp_safe_data_attributes(
+    def test_registration_link_card_shows_the_pages_links(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
-        """The copy-URL button must drive the clipboard through utilities.js
-        data attributes, not an inline navigator.clipboard expression — the
-        latter fails silently under the CSP-safe Alpine build (`@alpinejs/csp`)."""
+        """The card links to the page's URL, its short URL, and the QR code download."""
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
+            page = create_registration_page_with_slugs(
+                uow, admin_user.id, existing_assembly.id, name="Registration page"
+            )
 
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code == 200
-        assert b"Registration Pages" in response.data
-        assert b"data-copy-text=" in response.data
-        assert b'data-copy-feedback="inline"' in response.data
-        # No inline JS expression — incompatible with the CSP-safe build.
-        assert b"navigator.clipboard.writeText(" not in response.data
+        body = response.get_data(as_text=True)
+        assert "Registration link" in body
+        assert f"/register/{page.url_slug}" in body
+        assert f"/r/{page.short_url_slug}" in body
+        assert f"/backoffice/project/{existing_assembly.id}/registration/{page.url_slug}/qr-code.png" in body
+        assert "See details" in body
 
     def test_registration_qr_code_endpoint_returns_png(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory

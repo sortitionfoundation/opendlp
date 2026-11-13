@@ -342,7 +342,7 @@ After steps 1–3 of the create plan (schema, form partial, settings dialog):
 2. ✅ Basic details card with the four fields; old edit page removed.
 3. ✅ Data source card and the cog; access check rehomed.
 4. ✅ Selection settings section on the Select and replace tab.
-5. Registration link card.
+5. ✅ Registration link card.
 6. Team card: table, add dialog, remove; then change role with its guard.
 7. Tabs removed, redirects, the ~50 re-pointed links, `?source=` removed.
 8. BDD/e2e sweep, catalogues, docs.

@@ -1,0 +1,61 @@
+{#
+ABOUTME: The Registration link card on the project details page - one registration page's links
+ABOUTME: The card's own link goes to the Registration tab, and says how many pages there are to see
+#}
+{% from "backoffice/components/icons.html" import icon_download %}
+{% from "backoffice/components/section.html" import section %}
+{% from "backoffice/project_details/_rows.html" import plain_row %}
+{#
+    Context:
+        assembly
+        registration_link: {"registration_url", "short_url", "qr_code_url"} for
+            the page to show, or none when the project has no page
+        registration_tab_link_text: "Create", "See details" or "See all (3)"
+#}
+{% macro url_value(url) %}
+    <dd class="text-body-md flex-1 min-w-0">
+        <a href="{{ url }}"
+           title="{{ url }}"
+           class="block truncate underline"
+           style="color: var(--color-links)">{{ url }}</a>
+    </dd>
+{% endmacro %}
+<div id="registration-link">
+    {% call section() %}
+        <div class="flex items-center justify-between {% if registration_link %}mb-4{% endif %}">
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration link") }}</h2>
+            <a href="{{ url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) }}"
+               class="text-body-md font-semibold hover:underline"
+               style="color: var(--color-headings)">
+                {{ registration_tab_link_text }}<span class="sr-only"> - {{ _("Registration") }}</span>
+            </a>
+        </div>
+        {% if registration_link %}
+            <dl>
+                {% if registration_link.registration_url %}
+                    {% call plain_row(_("URL link")) %}
+                        {{ url_value(registration_link.registration_url) }}
+                    {% endcall %}
+                {% endif %}
+                {% if registration_link.short_url %}
+                    {% call plain_row(_("Short URL link")) %}
+                        {{ url_value(registration_link.short_url) }}
+                    {% endcall %}
+                {% endif %}
+                {% if registration_link.qr_code_url %}
+                    {% call plain_row(_("QR code")) %}
+                        <dd class="text-body-md flex-1">
+                            <a href="{{ registration_link.qr_code_url }}"
+                               class="inline-flex items-center gap-1.5 font-semibold hover:underline"
+                               style="color: var(--color-headings)"
+                               download>
+                                {{ icon_download(classes="w-4 h-4") }}
+                                <span>{{ _("Download") }}<span class="sr-only"> {{ _("QR code") }}</span></span>
+                            </a>
+                        </dd>
+                    {% endcall %}
+                {% endif %}
+            </dl>
+        {% endif %}
+    {% endcall %}
+</div>

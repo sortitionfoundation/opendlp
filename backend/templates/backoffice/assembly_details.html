@@ -8,7 +8,6 @@ ABOUTME: Cards for the project's basic details (edited in place), data source, r
 {% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/tag.html" import tag %}
-{% from "backoffice/components/url_display.html" import readonly_url_display %}
 {% from "backoffice/project_details/_rows.html" import plain_row, project_field_row, updated_row %}
 
 {% block title %}{{ assembly.title }} - {{ _("Project details") }}{% endblock %}
@@ -65,57 +64,8 @@ ABOUTME: Cards for the project's basic details (edited in place), data source, r
         {% endcall %}
 
         {% include "backoffice/project_details/_data_source_card.html" %}
-    </div>
 
-    {# Registration Page Details Section #}
-    <div class="mb-8">
-        {% call section() %}
-            <h2 class="text-heading-lg mb-6" style="color: var(--color-headings);">{{ _("Registration Pages") }}</h2>
-
-            {% if registration_page_rows %}
-                {# Read-only summary: one block per page with its copyable URLs #}
-                <div class="space-y-8 max-w-2xl">
-                    {% for row in registration_page_rows %}
-                        <div {% if not loop.first %}class="pt-6" style="border-top: 1px solid var(--color-borders-dividers);"{% endif %}>
-                            <h3 class="text-heading-sm mb-3" style="color: var(--color-headings);">
-                                {{ row.page.name }}
-                                {% if row.page.language %}
-                                    <span class="ml-1 px-2 py-0.5 rounded text-overline align-middle"
-                                          style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text); border: 1px solid var(--color-borders-dividers);">{{ row.page.language }}</span>
-                                {% endif %}
-                            </h3>
-                            <div class="space-y-4">
-                                {% if row.registration_url %}
-                                    {{ readonly_url_display(
-                                    label=_("Registration URL"),
-                                    hint=_("The URL for this registration page"),
-                                    url=row.registration_url
-                                    ) }}
-                                {% endif %}
-                                {% if row.short_url %}
-                                    {{ readonly_url_display(
-                                    label=_("Short URL"),
-                                    hint=_("A shorter URL for QR codes and paper invitations"),
-                                    url=row.short_url
-                                    ) }}
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
-                    {{ _("No registration page has been created for this project.") }}
-                </p>
-            {% endif %}
-
-            {# Registration pages are managed on the Registration tab; this section is read-only. #}
-            <p class="text-body-md mt-6" style="color: var(--color-secondary-text);">
-                {{ _("To create your first registration page, edit an existing one, or add another (for example a language variant), go to the %(link_start)sRegistration tab%(link_end)s.",
-                link_start=('<a href="' ~ url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) ~ '" class="hover:underline" style="color: var(--color-links);">')|safe,
-                    link_end=("</a>"|safe)) }}
-            </p>
-        {% endcall %}
+        {% include "backoffice/project_details/_registration_card.html" %}
     </div>
 
     {# Where this page's dialogs open. The data source settings dialog is

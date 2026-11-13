@@ -8,6 +8,7 @@ import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet
 from opendlp.service_layer.user_service import assign_assembly_role
@@ -416,3 +417,107 @@ class TestDataSourceCard:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         assert 'id="gsheet-access-status"' not in logged_in_admin.get(_details(existing_assembly)).data.decode()
+
+
+class TestRegistrationLinkCard:
+    def _seed_page(
+        self,
+        fake_store: FakeStore,
+        assembly: Assembly,
+        *,
+        name: str,
+        url_slug: str,
+        short_url_slug: str = "",
+        status=None,
+    ) -> RegistrationPage:
+        page = RegistrationPage(assembly_id=assembly.id, name=name, url_slug=url_slug, short_url_slug=short_url_slug)
+        if status is not None:
+            page.status = status
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.registration_pages.add(page)
+            uow.commit()
+        return page
+
+    @staticmethod
+    def _card(html: str) -> str:
+        """The card's own markup: from its id to the next card, or to the dialog host that ends the page."""
+        start = html.index('id="registration-link"')
+        ends = [html.find(marker, start) for marker in ('id="team"', 'id="project-dialog-host"')]
+        return html[start : min(end for end in ends if end != -1)]
+
+    def test_with_no_page_the_card_is_empty_and_offers_to_create_one(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "Registration link" in card
+        assert "Create" in card
+        assert "<dl>" not in card
+        assert f'href="{_details(existing_assembly)}/registration"' in card
+
+    def test_with_one_page_it_shows_its_links_and_see_details(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        self._seed_page(fake_store, existing_assembly, name="English", url_slug="details-en", short_url_slug="111111")
+
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "See details" in card
+        assert "/register/details-en" in card
+        assert "/r/111111" in card
+        assert "URL link" in card
+        assert "Short URL link" in card
+        assert "QR code" in card
+        assert f"{_details(existing_assembly)}/registration/details-en/qr-code.png" in card
+
+    def test_with_several_pages_it_shows_one_and_counts_them_all(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        self._seed_page(fake_store, existing_assembly, name="English", url_slug="details-en", short_url_slug="111111")
+        self._seed_page(fake_store, existing_assembly, name="Spanish", url_slug="details-es")
+        self._seed_page(fake_store, existing_assembly, name="Welsh", url_slug="details-cy")
+
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "See all (3)" in card
+        assert "/register/details-en" in card
+        assert "details-es" not in card
+        assert "details-cy" not in card
+
+    def test_a_page_with_no_short_url_has_no_short_link_or_qr_code(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The QR code encodes the short URL, so without one there is nothing to download."""
+        self._seed_page(fake_store, existing_assembly, name="Spanish", url_slug="details-es")
+
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "/register/details-es" in card
+        assert "Short URL link" not in card
+        assert "QR code" not in card
+
+    def test_the_published_page_is_shown_ahead_of_an_older_closed_one(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        self._seed_page(
+            fake_store, existing_assembly, name="Last year", url_slug="old-closed", status=RegistrationPageStatus.CLOSED
+        )
+        self._seed_page(
+            fake_store,
+            existing_assembly,
+            name="This year",
+            url_slug="live-now",
+            status=RegistrationPageStatus.PUBLISHED,
+        )
+
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "/register/live-now" in card
+        assert "old-closed" not in card
+        assert "See all (2)" in card
+
+    def test_the_card_has_no_form_to_create_a_page(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Creating a page happens on the Registration tab, which the card's link goes to."""
+        assert "registration/create" not in logged_in_admin.get(_details(existing_assembly)).data.decode()

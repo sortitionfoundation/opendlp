@@ -28,6 +28,7 @@ from opendlp.entrypoints.forms import (
     UploadTargetsCsvForm,
 )
 from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
+from opendlp.entrypoints.registration_link_card import featured_registration_page, registration_tab_link_text
 from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     get_assembly_creator_name,
@@ -127,8 +128,8 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 request.args.get("source", ""),
             )
 
-        # Read-only registration page summary: name, status and copyable URLs per
-        # page. Editing lives on the Registration tab, not here.
+        # One registration page's links, read-only. Every page, and editing
+        # them, lives on the Registration tab.
         uow = bootstrap.get_flask_uow()
         with uow:
             registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
@@ -145,14 +146,22 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             project_dialog = None
             if request.args.get("data_source") == "1" and can_manage_project:
                 project_dialog = project_dialog_context(uow, assembly_id)
-        registration_page_rows = [
-            {
-                "page": page,
-                "registration_url": registration_url(page.url_slug) if page.url_slug else "",
-                "short_url": short_url(page.short_url_slug) if page.short_url_slug else "",
+        featured_page = featured_registration_page(registration_pages)
+        registration_link = None
+        if featured_page is not None:
+            page_short_url = short_url(featured_page.short_url_slug) if featured_page.short_url_slug else ""
+            registration_link = {
+                "registration_url": registration_url(featured_page.url_slug) if featured_page.url_slug else "",
+                "short_url": page_short_url,
+                # The QR code encodes the short URL, so there is none to download without one.
+                "qr_code_url": url_for(
+                    "backoffice_registration.download_registration_qr_code",
+                    assembly_id=assembly_id,
+                    url_slug=featured_page.url_slug,
+                )
+                if page_short_url and featured_page.url_slug
+                else "",
             }
-            for page in registration_pages
-        ]
 
         return render_template(
             "backoffice/assembly_details.html",
@@ -162,7 +171,8 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
-            registration_page_rows=registration_page_rows,
+            registration_link=registration_link,
+            registration_tab_link_text=registration_tab_link_text(len(registration_pages)),
             created_by_name=created_by_name,
             project_dialog=project_dialog,
             can_manage_project=can_manage_project,
