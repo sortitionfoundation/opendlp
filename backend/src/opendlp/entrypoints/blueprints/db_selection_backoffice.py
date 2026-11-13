@@ -13,9 +13,7 @@ from opendlp.bootstrap import get_url_generator
 from opendlp.entrypoints.blueprints.gsheets import redirect_to_running_task, render_selection_page
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
-from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
-    get_assembly_nav_context,
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_or_create_csv_config,
@@ -66,7 +64,9 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         if not csv_config.settings_confirmed:
             flash(_("Please review and save the selection settings before checking data"), "warning")
-            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+            return redirect(
+                url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, _anchor="selection-settings")
+            )
 
         with uow:
             check_result = check_db_selection_data(uow=uow, user_id=current_user.id, assembly_id=assembly_id)
@@ -112,7 +112,9 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
             if not csv_config.settings_confirmed:
                 flash(_("Please review and save the selection settings before running selection"), "warning")
-                return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+                return redirect(
+                    url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, _anchor="selection-settings")
+                )
 
             task_id = start_db_select_task(uow, current_user.id, assembly_id, test_selection=test_mode)
 
@@ -159,7 +161,9 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
             if not csv_config.settings_confirmed:
                 flash(_("Please review and save the selection settings before running selection"), "warning")
-                return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+                return redirect(
+                    url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, _anchor="selection-settings")
+                )
 
             plan = build_replacement_plan(uow, current_user.id, assembly_id)
             validation = validate_replacement_form(uow, assembly_id, plan, request.form, check_feasibility=recheck)
@@ -401,7 +405,7 @@ def download_db_selection_report(assembly_id: uuid.UUID, run_id: uuid.UUID) -> R
 @login_required
 @require_assembly_management
 def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Save DB selection settings."""
+    """Save the selection settings of a project held in OpenDLP, from the Select and replace tab."""
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -412,27 +416,9 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         form = DbSelectionSettingsForm(available_columns=available_columns)
 
         if not form.validate_on_submit():
-            # Re-render the page in edit mode so errors appear under the fields
-            # and the user's input is preserved (mirrors save_gsheet_config).
-            # Reuse the UnitOfWork for the sequential reads below.
-            with uow:
-                nav = get_assembly_nav_context(uow, current_user.id, assembly_id, "csv")
-                csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
-            return render_template(
-                "backoffice/assembly_data.html",
-                assembly=nav.assembly,
-                data_source="csv",
-                data_source_locked=nav.data_source_locked,
-                gsheet=nav.gsheet,
-                targets_enabled=nav.targets_enabled,
-                respondents_enabled=nav.respondents_enabled,
-                selection_enabled=nav.selection_enabled,
-                csv_status=nav.csv_status,
-                csv_settings_form=form,
-                csv_available_columns=available_columns,
-                csv_mode="edit",
-                csv_config=csv_config,
-            ), 200
+            # Re-render the Selection tab with the settings open, so the errors
+            # appear under the fields and what was typed is kept.
+            return render_selection_page(assembly_id, selection_settings_form=form)
 
         # Parse comma-separated columns
         check_same_address_cols = (
@@ -468,9 +454,7 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Selection settings saved successfully"), "success")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
     except NotFoundError:
         flash(_("Project not found"), "error")
@@ -481,9 +465,7 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Save DB settings error", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while saving settings"), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
 @db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/reset", methods=["POST"])

@@ -174,3 +174,14 @@ class TestSelectionPageViewRunningButton:
         assert b"Run Test Selection" in response.data
         assert b"Run Selection" in response.data
         assert b"View Running Selection" not in response.data
+
+
+class TestSelectionSettingsBelongToOpenDlpProjects:
+    def test_a_google_sheets_project_has_no_selection_settings_section(self, logged_in_admin, assembly_with_gsheet):
+        """Its equivalent settings are fields of the sheet's own form."""
+        assembly, _gsheet = assembly_with_gsheet
+
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert 'id="selection-settings"' not in response.data.decode()

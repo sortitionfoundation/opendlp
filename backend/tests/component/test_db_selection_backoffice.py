@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the backoffice DB selection blueprint over a FakeUnitOfWork
 # ABOUTME: Drives the real DB selection routes + services (auth, render, validation, modal fragments, downloads, reset, history)
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
@@ -1034,22 +1035,78 @@ class TestSaveCsvSettings:
 
 
 class TestCsvSelectionSettingsWarning:
-    """Tests for CSV selection settings confirmation warning."""
+    """The selection settings live on the Selection tab: open until saved once, folded away after."""
+
+    @staticmethod
+    def _settings_section(html: str) -> str:
+        start = html.index('<details id="selection-settings"')
+        return html[start : html.index("</form>", start)]
 
     def test_selection_page_shows_warning_when_settings_not_confirmed(
         self, logged_in_admin, assembly_with_csv_config_unconfirmed
     ):
-        """Selection page shows warning when settings are not confirmed."""
+        """Unconfirmed settings are open on the page, saying selection waits for them."""
         assembly = assembly_with_csv_config_unconfirmed
 
         response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
 
         assert response.status_code == 200
-        assert b"review and save the selection settings" in response.data
-        assert b"Go to Data Settings" in response.data
-        assert b"source=csv" in response.data
-        assert b"mode=edit" in response.data
-        assert b"#selection-settings" in response.data
+        html = response.data.decode()
+        section = self._settings_section(html)
+        assert " open" in section[: section.index(">")]
+        assert "To confirm" in section
+        assert "review and save these settings before running selection" in section
+        assert f'action="/backoffice/project/{assembly.id}/data/csv/settings"' in section
+        assert "Go to Data Settings" not in html
+
+    def test_unconfirmed_settings_start_with_the_address_check_off(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        """A project held in OpenDLP has no address columns yet, so the box must not be pre-ticked."""
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config_unconfirmed.id}/selection")
+
+        section = self._settings_section(response.data.decode())
+        checkbox = re.search(r'<input[^>]*name="check_same_address"[^>]*>', section)
+        assert checkbox, "No check_same_address checkbox in the selection settings"
+        assert "checked" not in checkbox.group(0)
+
+    def test_confirmed_settings_are_folded_away(self, logged_in_admin, assembly_with_csv_config):
+        """Once saved they are one line, so they do not push the steps down the page on every visit."""
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config.id}/selection")
+
+        section = self._settings_section(response.data.decode())
+        assert " open" not in section[: section.index(">")]
+        assert "Confirmed" in section
+        assert "Save Settings" in section
+
+    def test_a_refused_save_comes_back_to_the_selection_page_with_the_settings_open(
+        self, logged_in_admin, assembly_with_csv_config
+    ):
+        """Confirmed settings fold away, but not while they hold an error to put right."""
+        assembly = assembly_with_csv_config
+
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly.id}/data/csv/settings",
+            data={"check_same_address": "y", "check_same_address_cols_string": "blabla"},
+        )
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        section = self._settings_section(html)
+        assert " open" in section[: section.index(">")]
+        assert "Unrecognised attribute names: blabla" in section
+        assert "Run Selection" in html
+
+    def test_a_save_goes_back_to_the_selection_page(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly.id}/data/csv/settings",
+            data={"check_same_address_cols_string": "", "columns_to_keep_string": ""},
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/project/{assembly.id}/selection")
 
     def test_selection_page_buttons_disabled_when_settings_not_confirmed(
         self, logged_in_admin, assembly_with_csv_config_unconfirmed

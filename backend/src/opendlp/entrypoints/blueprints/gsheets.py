@@ -24,6 +24,7 @@ from opendlp.entrypoints.data_source_urls import data_source_return_url
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import (
     CreateAssemblyGSheetForm,
+    DbSelectionSettingsForm,
     EditAssemblyGSheetForm,
 )
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
@@ -46,7 +47,7 @@ from opendlp.service_layer.replacement_targets import (
     run_feasibility_check,
 )
 from opendlp.service_layer.report_translation import translate_run_report_to_html
-from opendlp.service_layer.respondent_service import count_held_respondents
+from opendlp.service_layer.respondent_service import count_held_respondents, get_respondent_attribute_columns
 from opendlp.service_layer.selection_history import name_history
 from opendlp.service_layer.sortition import (
     InvalidSelection,
@@ -249,8 +250,13 @@ def render_selection_page(
     *,
     replacement_form: Mapping[str, str] | None = None,
     replacement_validation: ReplacementValidation | None = None,
+    selection_settings_form: DbSelectionSettingsForm | None = None,
 ) -> ResponseReturnValue:
     """Render the selection page for the current user.
+
+    A project held in OpenDLP has its selection settings on this page. A save
+    that was refused re-renders it with ``selection_settings_form`` carrying
+    the reasons; otherwise the form is built from the stored settings.
 
     The database replacement dialog re-renders this page after a rejected
     submission: ``replacement_form`` carries the numbers the organiser typed and
@@ -340,6 +346,7 @@ def render_selection_page(
     # Determine data source and tab enabled states
     csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
+    selection_settings_columns: list[str] = []
     replacement_plan = None
     if gsheet:
         data_source = "gsheet"
@@ -352,6 +359,20 @@ def render_selection_page(
         respondents_enabled = csv_status.has_respondents
         selection_enabled = csv_status.selection_enabled
         csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
+        with uow:
+            selection_settings_columns = get_respondent_attribute_columns(uow, assembly_id)
+            if selection_settings_form is None:
+                stored_assembly = uow.assemblies.get(assembly_id)
+                settings = stored_assembly.selection_settings if stored_assembly else None
+                selection_settings_form = DbSelectionSettingsForm(
+                    formdata=None,
+                    data={
+                        "check_same_address": settings.check_same_address if settings else False,
+                        "check_same_address_cols_string": settings.check_same_address_cols_string if settings else "",
+                        "columns_to_keep_string": settings.columns_to_keep_string if settings else "",
+                    },
+                    available_columns=selection_settings_columns,
+                )
         # Count the respondents holding a place: selected or confirmed
         try:
             with uow:
@@ -422,6 +443,8 @@ def render_selection_page(
         selection_enabled=selection_enabled,
         csv_held_count=csv_held_count,
         csv_settings_confirmed=csv_settings_confirmed,
+        selection_settings_form=selection_settings_form if data_source == "csv" else None,
+        selection_settings_columns=selection_settings_columns,
         active_initial_selection_run_id=active_initial_selection_run_id,
     ), 200
 

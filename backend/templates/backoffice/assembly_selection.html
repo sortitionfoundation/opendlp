@@ -54,13 +54,9 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {% endif %}
     {% if data_source == "csv" %}
         {# CSV/Database source - show selection options #}
-        {% if not csv_settings_confirmed|default(true) %}
-            {# Show warning when selection settings are not confirmed #}
-            {% call alert(variant="warning", use_caller=true) %}
-                {{ _("Please review and save the selection settings before running selection.") }}
-                <a href="{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id, source='csv', mode='edit') }}#selection-settings"
-                   class="underline font-medium">{{ _("Go to Data Settings") }}</a>
-            {% endcall %}
+        {# The settings selection waits for: open until saved once, folded away after. #}
+        {% if selection_settings_form %}
+            {% include "backoffice/components/selection_settings.html" %}
         {% endif %}
         {# The two numbered steps: initial selection and replacement selection #}
         {% include "backoffice/components/selection_steps.html" %}

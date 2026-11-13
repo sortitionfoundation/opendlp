@@ -1,0 +1,82 @@
+{#
+ABOUTME: The selection settings of a project held in OpenDLP, on the Select and replace tab
+ABOUTME: Open until they have been saved once, which selection waits for; folded away to one line after that
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, checkbox, first_error as e %}
+{% from "backoffice/components/tag.html" import tag %}
+{#
+    A <details>, so it needs no script: open while the settings are still to be
+    confirmed or a save was refused, closed to its summary line once they are.
+
+    Context:
+        assembly
+        selection_settings_form: DbSelectionSettingsForm
+        selection_settings_columns: the respondent attributes the form's fields may name
+        csv_settings_confirmed: whether the settings have been saved once
+#}
+{% set form = selection_settings_form %}
+{% set refused = form.errors | length > 0 %}
+<details id="selection-settings"
+         class="rounded-lg mb-8"
+         style="background-color: var(--color-tables-cards);
+                border: 1px solid var(--color-borders-dividers)"
+         {% if refused or not csv_settings_confirmed %}open{% endif %}>
+    <summary class="cursor-pointer p-6 flex flex-wrap items-center gap-3">
+        <h2 class="text-heading-lg inline" style="color: var(--color-headings);">{{ _("Selection settings") }}</h2>
+        {% if csv_settings_confirmed %}
+            {{ tag(_("Confirmed"), colour="green") }}
+        {% else %}
+            {{ tag(_("To confirm"), colour="yellow") }}
+        {% endif %}
+    </summary>
+    <div class="px-6 pb-6">
+        <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
+            {% if csv_settings_confirmed %}
+                {{ _("Configure how the selection algorithm runs for this project.") }}
+            {% else %}
+                {{ _("Please review and save these settings before running selection.") }}
+            {% endif %}
+        </p>
+        <form method="post"
+              action="{{ url_for('db_selection_backoffice.save_db_settings', assembly_id=assembly.id) }}"
+              class="flex flex-col gap-6">
+            {{ form.hidden_tag() }}
+            {# Check Same Address Checkbox #}
+            {{ checkbox(name="check_same_address",
+            label=_("Check Same Address") ,
+            checked=form.check_same_address.data,
+            hint=_("Prevent selecting multiple respondents from the same address.")
+            ) }}
+            {% if selection_settings_columns %}
+                <details class="text-body-sm" style="color: var(--color-secondary-text);">
+                    <summary class="cursor-pointer font-medium" style="color: var(--color-headings)">
+                        {{ _("Available respondent attributes") }}
+                    </summary>
+                    <div class="mt-2 p-3 rounded-lg"
+                         style="background-color: var(--color-subtle-background-panels)">
+                        <p class="mb-2">{{ _("The following attribute names are available from the uploaded respondent data:") }}</p>
+                        <code class="text-body-sm">{{ selection_settings_columns | join(", ") }}</code>
+                    </div>
+                </details>
+            {% endif %}
+            {# Address Columns Input #}
+            {{ input(name="check_same_address_cols_string",
+            label=_("Address Attributes") ,
+            value=form.check_same_address_cols_string.data or "",
+            placeholder=_("e.g., Street, City, PostCode"),
+            hint=_("Comma-separated respondent attribute names used for address matching."),
+            error=e(form.check_same_address_cols_string.errors)
+            ) }}
+            {# Columns to Keep Input #}
+            {{ input(name="columns_to_keep_string",
+            label=_("Attributes to Keep") ,
+            value=form.columns_to_keep_string.data or "",
+            placeholder=_("e.g., Name, Email, Phone"),
+            hint=_("Comma-separated respondent attribute names to include in CSV output."),
+            error=e(form.columns_to_keep_string.errors)
+            ) }}
+            <div>{{ button(_("Save Settings") , type="submit", variant="primary") }}</div>
+        </form>
+    </div>
+</details>

@@ -183,6 +183,11 @@ needed:
   projects once respondents exist. Unconfirmed, it is open and sits above the
   selection steps; confirmed, it is collapsed to a summary with an Edit
   control, so it does not push the steps down the page every visit.
+  *As built:* the section is a native `<details>` (no script). Its summary
+  line - the heading and a "To confirm" or "Confirmed" tag - is the control
+  that opens it, and it holds the form itself rather than a read-only view,
+  so there is no separate Edit step. It is open while unconfirmed, and after
+  a refused save.
 - The tab's existing "confirm your settings" warning
   (`assembly_selection.html:57`) and the step that reports settings missing
   (`selection_steps.html:8`) point at the section on the same page instead of
@@ -336,7 +341,7 @@ After steps 1–3 of the create plan (schema, form partial, settings dialog):
 1. ✅ `inline_edit_row` extracted; My account switched to it.
 2. ✅ Basic details card with the four fields; old edit page removed.
 3. ✅ Data source card and the cog; access check rehomed.
-4. Selection settings section on the Select and replace tab.
+4. ✅ Selection settings section on the Select and replace tab.
 5. Registration link card.
 6. Team card: table, add dialog, remove; then change role with its guard.
 7. Tabs removed, redirects, the ~50 re-pointed links, `?source=` removed.

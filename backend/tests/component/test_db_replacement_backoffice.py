@@ -218,7 +218,7 @@ class TestReplacementDialog:
         )
         html = response.data.decode()
         gender_block, age_block = sorted(
-            (html[i : html.index("</details>", i)] for i in _indexes(html, "<details")),
+            (html[i : html.index("</details>", i)] for i in _indexes(html, '<details class="mb-4 rounded-lg"')),
             key=lambda block: "Gender" not in block[:600],
         )
         assert "Gender" in gender_block and " open" not in gender_block[: gender_block.index(">")]
@@ -366,7 +366,7 @@ class TestStartReplacement:
             data={"number_to_select": "6"},
         )
         assert response.status_code == 302
-        assert "source=csv" in response.headers["Location"]
+        assert response.headers["Location"].endswith("/selection#selection-settings")
 
     def test_requires_login(self, client, assembly_after_withdrawal):
         response = client.post(
