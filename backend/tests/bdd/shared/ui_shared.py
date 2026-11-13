@@ -100,6 +100,15 @@ def _(page: Page):
         checkbox.uncheck()
 
 
+@then("the user should see who to contact for an invite code")
+def _(page: Page):
+    """the invite code field's helper text names who to ask, and links to them."""
+    invite_code = page.get_by_role("textbox", name="Invite Code")
+    expect(invite_code).to_have_accessible_description("If you don't have one, please contact OpenDLP support.")
+    support = page.get_by_role("link", name="OpenDLP support")
+    expect(support).to_have_attribute("href", re.compile(r"^mailto:[^@\s]+@[^@\s]+$"))
+
+
 @then("the user should be directed to try registering again")
 def _(page: Page):
     """the user should be directed to try registering again."""

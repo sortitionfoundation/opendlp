@@ -226,10 +226,11 @@ for _question in SIGNUP_SURVEY_QUESTIONS:
 class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any-unimported]
     """Registration form with invite code, names, email and password."""
 
+    # No description: the sign-up page writes the field's helper text itself,
+    # because it links to the support address and depends on open signup.
     invite_code = StringField(
         _l("Invite Code"),
         validators=[InviteCodeRequiredUnlessOpenSignup(), Length(min=5, max=50)],
-        description=_l("Enter your invite code to register"),
     )
 
     first_name = StringField(

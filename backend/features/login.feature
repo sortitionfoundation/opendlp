@@ -17,6 +17,10 @@ Feature: User Sign in and Registration
     Then the user should be registered
     And the user should see the default view for an authorised user
 
+  Scenario: The invite code field says who to ask for a code
+    Given the user is starting to register
+    Then the user should see who to contact for an invite code
+
   Scenario: Sign out
     Given the user is signed in
     When the user signs out

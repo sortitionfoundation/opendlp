@@ -22,14 +22,6 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                    style="color: var(--color-links);">{{ _("Sign in") }}</a>
             </p>
         {% endcall %}
-        {% if not feature('open_signup') %}
-            <p class="text-body-md px-4 py-3 rounded-lg"
-               style="background-color: var(--color-subtle-background-panels);
-                      border: 1px solid var(--color-borders-dividers);
-                      color: var(--color-body-text)">
-                {{ _("You need an invite code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) }}
-            </p>
-        {% endif %}
         <form method="POST"
               class="flex flex-col gap-6"
               novalidate
@@ -90,14 +82,35 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                (arrived via /auth/register/<code>, was submitted, or errored) -
                the invite-URL flow proper is a follow-up, see
                docs/agent/invite-url-signup/plan.md. #}
-            {% if not feature('open_signup') or form.invite_code.data or form.invite_code.errors %}
-                {{ input(form.invite_code.name,
-                label=form.invite_code.label.text,
-                value=form.invite_code.data or "",
-                hint=_("Optional — if you were given an invite code, enter it here.") if feature('open_signup') else (form.invite_code.description or ""),
-                required=not feature('open_signup'),
-                error=form.invite_code.errors | join("\n"))
-                }}
+            {% if feature('open_signup') %}
+                {% if form.invite_code.data or form.invite_code.errors %}
+                    {{ input(form.invite_code.name,
+                    label=form.invite_code.label.text,
+                    value=form.invite_code.data or "",
+                    hint=_("Optional — if you were given an invite code, enter it here."),
+                    error=form.invite_code.errors | join("\n"))
+                    }}
+                {% endif %}
+            {% else %}
+                {# A code is required, so the helper text under the field says
+                   where to get one. The link is a few words inside the
+                   sentence, which a translation may need to inflect, so it goes
+                   in as start and end markers rather than as a whole. #}
+                {% set support_link_start = ('<a href="mailto:%s" class="underline" style="color: var(--color-links);">' | format(support_email_address | e)) | safe %}
+                <div class="flex flex-col gap-1.5">
+                    {{ input(form.invite_code.name,
+                    label=form.invite_code.label.text,
+                    value=form.invite_code.data or "",
+                    required=true,
+                    error=form.invite_code.errors | join("\n"),
+                    described_by_id="invite_code-help")
+                    }}
+                    <p id="invite_code-help"
+                       class="text-body-sm"
+                       style="color: var(--color-secondary-text);">
+                        {{ _("If you don't have one, please contact %(link_start)sOpenDLP support%(link_end)s.", link_start=support_link_start, link_end="</a>" | safe) }}
+                    </p>
+                </div>
             {% endif %}
             {# Email-only fields - the provider supplies these for Google/Microsoft,
                so they are revealed only for the email method (shown without JS). #}
