@@ -24,16 +24,16 @@ an admin can find the ID to clone.
 
 ## What gets cloned
 
-| Part | Option | Default | Tables |
-|---|---|---|---|
-| Title, question, first date | always | - | `assemblies` |
-| Number to select | always | - | `assemblies` |
-| Selection settings | always | - | `selection_settings`, `assembly_csv` |
-| Targets, and derived fields | `--targets/--no-targets` | yes | `target_categories`, derived rows of `respondent_field_definitions`, `respondent_field_mapping_entries` |
-| Registration questions | `--questions/--no-questions` | yes | non-derived rows of `respondent_field_definitions`, `registration_content_blocks` |
-| Registration form | `--registration/--no-registration` | yes | `registration_pages`, `registration_page_html_sources`, `registration_images`, `registration_documents`, `email_templates` |
-| Respondents | `--respondents` (needs `--for-training-or-demo`) | no | `respondents` |
-| Team members | `--team` | no | `user_assembly_roles` |
+| Part                        | Option                                           | Default | Tables                                                                                                                     |
+| --------------------------- | ------------------------------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Title, question, first date | always                                           | -       | `assemblies`                                                                                                               |
+| Number to select            | always                                           | -       | `assemblies`                                                                                                               |
+| Selection settings          | always                                           | -       | `selection_settings`, `assembly_csv`                                                                                       |
+| Targets, and derived fields | `--targets/--no-targets`                         | yes     | `target_categories`, derived rows of `respondent_field_definitions`, `respondent_field_mapping_entries`                    |
+| Registration questions      | `--questions/--no-questions`                     | yes     | non-derived rows of `respondent_field_definitions`, `registration_content_blocks`                                          |
+| Registration form           | `--registration/--no-registration`               | yes     | `registration_pages`, `registration_page_html_sources`, `registration_images`, `registration_documents`, `email_templates` |
+| Respondents                 | `--respondents` (needs `--for-training-or-demo`) | no      | `respondents`                                                                                                              |
+| Team members                | `--team`                                         | no      | `user_assembly_roles`                                                                                                      |
 
 Never cloned:
 
@@ -162,7 +162,7 @@ The page HTML (intro, form and thank-you) and email template bodies hold
 literal URLs:
 
 - images: `/register-assets/images/<image-id>.png` - by image **ID**. Cloned
-  images get new IDs, so the clone's HTML would keep showing the *original*
+  images get new IDs, so the clone's HTML would keep showing the _original_
   project's images. It works until the original is deleted or its pages stop
   being public (the by-id route only serves publicly when the image's own
   project has a loadable page) - then the clone's images vanish.
@@ -248,13 +248,13 @@ statuses, for a demo that starts from a later point, such as replacements or
 confirmation calling:
 
 | Original status | Default (reset) | `--preserve-respondent-status` |
-|---|---|---|
-| POOL | POOL | POOL |
-| SELECTED | POOL | SELECTED |
-| CONFIRMED | POOL | CONFIRMED |
-| WITHDRAWN | POOL | WITHDRAWN |
-| TEST_SUBMISSION | TEST_SUBMISSION | TEST_SUBMISSION |
-| DELETED | not cloned | not cloned |
+| --------------- | --------------- | ------------------------------ |
+| POOL            | POOL            | POOL                           |
+| SELECTED        | POOL            | SELECTED                       |
+| CONFIRMED       | POOL            | CONFIRMED                      |
+| WITHDRAWN       | POOL            | WITHDRAWN                      |
+| TEST_SUBMISSION | TEST_SUBMISSION | TEST_SUBMISSION                |
+| DELETED         | not cloned      | not cloned                     |
 
 - TEST_SUBMISSION is kept as is even on reset. Resetting it to POOL would
   promote test data into the selection pool, which the app only allows as a
@@ -622,6 +622,7 @@ Each step is its own commit, with its tests, and leaves `just test` and
 6. ✅ **`projects clone`** - the CLI command, its admin check, the personal data
    flag and confirmation.
 7. ✅ **Docs** - `docs/cli.md` and `docs/personal-data.md`.
+8. One the 1024 branch is merged, read `docs/agent/1024-create-project/plan-create-project.md` and search for "title rule" and address accordingly
 
 ## Open questions
 
