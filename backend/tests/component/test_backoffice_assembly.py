@@ -223,64 +223,6 @@ class TestDetailsTabRegistrationSection:
         assert f"/backoffice/project/{existing_assembly.id}/registration" in body
 
 
-class TestBackofficeAssemblyEdit:
-    """Test backoffice assembly editing functionality."""
-
-    def test_edit_assembly_get_form(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
-        """Test edit assembly form is displayed with existing data."""
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/edit")
-        assert response.status_code == 200
-        assert existing_assembly.title.encode() in response.data
-
-    def test_edit_assembly_ignores_posted_registration_slugs(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore, existing_assembly: Assembly
-    ) -> None:
-        """Registration URLs are page-scoped; Edit Assembly must not touch them."""
-        from opendlp.domain.registration_page import RegistrationPage  # noqa: PLC0415
-
-        page = RegistrationPage(assembly_id=existing_assembly.id, name="English", url_slug="keep-this-slug")
-        with FakeUnitOfWork(store=fake_store) as uow:
-            uow.registration_pages.add(page)
-            uow.commit()
-
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/edit",
-            data={
-                "title": existing_assembly.title,
-                "question": existing_assembly.question,
-                "number_to_select": "10",
-                "url_slug": "sneaky-new-slug",
-                "short_url_slug": "999999",
-            },
-        )
-
-        assert response.status_code == 302
-        with FakeUnitOfWork(store=fake_store) as uow:
-            stored = uow.registration_pages.get(page.id)
-        assert stored.url_slug == "keep-this-slug"
-        assert stored.short_url_slug == ""
-
-    def test_edit_assembly_validation_errors(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
-        """Test form validation errors on assembly editing."""
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/edit",
-            data={"title": ""},
-        )
-        assert response.status_code == 200
-        assert b"error" in response.data or b"required" in response.data
-
-    def test_edit_nonexistent_assembly(self, logged_in_admin: FlaskClient) -> None:
-        """Test editing non-existent assembly redirects with error."""
-        response = logged_in_admin.get("/backoffice/project/00000000-0000-0000-0000-000000000000/edit")
-        assert response.status_code == 302
-
-    def test_edit_assembly_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
-        """Test edit assembly redirects to login when not authenticated."""
-        response = client.get(f"/backoffice/project/{existing_assembly.id}/edit")
-        assert response.status_code == 302
-        assert "login" in response.location
-
-
 class TestBackofficeAssemblyMembers:
     """Test backoffice assembly members page."""
 

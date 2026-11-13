@@ -1,0 +1,82 @@
+{#
+ABOUTME: The rows of the Basic details card on the project details page
+ABOUTME: Each editable value is a row of its own, rendered with the page and again by project_details.edit_field
+#}
+{% from "backoffice/components/inline_edit_row.html" import inline_edit_row %}
+{#
+    One of the four values edited in place: the title, the framing question,
+    the panel size or the first event date. The row and its behaviour are
+    inline_edit_row (components/inline_edit_row.html).
+
+    Args:
+        assembly: The project
+        field: "title", "question", "number_to_select" or "first_assembly_date"
+        editable: Whether the viewer may change it
+        submitted, error, return_focus: As inline_edit_row
+#}
+{% macro project_field_row(assembly, field, editable, submitted=none, error="", return_focus=false) %}
+    {% set action = url_for('project_details.edit_field', assembly_id=assembly.id) %}
+    {% set row_id = "project-" ~ field ~ "-row" %}
+    {% if field == "title" %}
+        {{ inline_edit_row(row_id, field, _("Project title"), assembly.title, action,
+        edit_label=_("Edit project title"),
+        save_label=_("Save project title"),
+        cancel_label=_("Cancel editing project title"),
+        submitted=submitted, error=error, return_focus=return_focus,
+        field_attrs='maxlength="200" required',
+        input_id="project-title",
+        editable=editable) }}
+    {% elif field == "question" %}
+        {{ inline_edit_row(row_id, field, _("Framing question"), assembly.question, action,
+        edit_label=_("Edit framing question"),
+        save_label=_("Save framing question"),
+        cancel_label=_("Cancel editing framing question"),
+        kind="textarea",
+        submitted=submitted, error=error, return_focus=return_focus,
+        field_attrs='maxlength="1000"',
+        input_id="project-question",
+        editable=editable) }}
+    {% elif field == "number_to_select" %}
+        {{ inline_edit_row(row_id, field, _("Panel size"), assembly.number_to_select, action,
+        edit_label=_("Edit panel size"),
+        save_label=_("Save panel size"),
+        cancel_label=_("Cancel editing panel size"),
+        kind="number",
+        submitted=submitted, error=error, return_focus=return_focus,
+        field_attrs='min="0" step="1" inputmode="numeric"',
+        input_id="project-number-to-select",
+        editable=editable,
+        label_info=_("The number of people to select")) }}
+    {% elif field == "first_assembly_date" %}
+        {{ inline_edit_row(row_id, field, _("First event date"),
+        assembly.first_assembly_date.isoformat() if assembly.first_assembly_date else "",
+        action,
+        edit_label=_("Edit first event date"),
+        save_label=_("Save first event date"),
+        cancel_label=_("Cancel editing first event date"),
+        kind="date",
+        display=(assembly.first_assembly_date | dateformat('long')) if assembly.first_assembly_date else "",
+        submitted=submitted, error=error, return_focus=return_focus,
+        input_id="project-first-event-date",
+        editable=editable) }}
+    {% endif %}
+{% endmacro %}
+{# A row that is only ever read. The caller supplies the <dd>. #}
+{% macro plain_row(term, row_id="", oob=false) %}
+    <div {% if row_id %}id="{{ row_id }}"{% endif %}
+         {% if oob %}hx-swap-oob="true"{% endif %}
+         class="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-3 border-b last:border-b-0"
+         style="border-color: var(--color-borders-dividers)">
+        <dt class="text-label-lg sm:w-48 shrink-0" style="color: var(--color-secondary-text);">{{ term }}</dt>
+        {{ caller() }}
+    </div>
+{% endmacro %}
+{# When the project last changed. Sent again, out of band, with every saved
+   value, so the page never shows a time older than the save just made. #}
+{% macro updated_row(assembly, oob=false) %}
+    {% call plain_row(_("Last Updated"), row_id="project-updated-row", oob=oob) %}
+        <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
+            {{ assembly.updated_at | datetimeformat('long') }}
+        </dd>
+    {% endcall %}
+{% endmacro %}

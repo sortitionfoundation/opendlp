@@ -4,6 +4,7 @@ ABOUTME: Rendered with its page, and on its own by the route it posts to, whose 
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/icons.html" import icon_check, icon_close, icon_pencil %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input, textarea %}
 {#
     A row of a details list whose value is edited where it is shown, as on the
@@ -51,8 +52,9 @@ ABOUTME: Rendered with its page, and on its own by the route it posts to, whose 
         input_id: The control's id; defaults to the field name
         editable: False for someone who may read the value but not change it:
                the row has no pencil and no form
+        label_info: A sentence about the value, behind an info icon beside the label
 #}
-{% macro inline_edit_row(row_id, field, label, value, action, edit_label="", save_label="", cancel_label="", kind="text", display=none, submitted=none, error="", return_focus=false, field_attrs="", input_id="", editable=true) %}
+{% macro inline_edit_row(row_id, field, label, value, action, edit_label="", save_label="", cancel_label="", kind="text", display=none, submitted=none, error="", return_focus=false, field_attrs="", input_id="", editable=true, label_info="") %}
     {% set value = value if value is not none else "" %}
     {% set shown = display if display is not none else value %}
     {% set editing = error | length > 0 %}
@@ -70,6 +72,7 @@ ABOUTME: Rendered with its page, and on its own by the route it posts to, whose 
             {% else %}
                 {{ label }}
             {% endif %}
+            {% if label_info %}{{ info_icon(label_info, about=label) }}{% endif %}
         </dt>
         <dd class="flex-1 min-w-0">
             {% if not editable %}

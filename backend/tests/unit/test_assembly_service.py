@@ -156,6 +156,44 @@ class TestCreateAssembly:
 class TestUpdateAssembly:
     """Test assembly update functionality."""
 
+    def test_an_update_moves_updated_at(self, uow):
+        """The details page shows when the project last changed, so a change has to record it."""
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Original Title")
+        uow.assemblies.add(assembly)
+        before = assembly.updated_at
+
+        assembly_service.update_assembly(uow, assembly.id, admin_user.id, title="Updated Title")
+
+        assert uow.assemblies.get(assembly.id).updated_at > before
+
+    def test_an_update_that_leaves_the_panel_size_reports_no_moved_targets(self, uow):
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Original Title", number_to_select=20)
+        uow.assemblies.add(assembly)
+
+        updated, changes = assembly_service.update_assembly_reporting_changes(
+            uow, assembly.id, admin_user.id, title="Updated Title", number_to_select=20
+        )
+
+        assert updated.title == "Updated Title"
+        assert changes == []
+
+    def test_a_new_panel_size_with_no_targets_reports_no_moved_targets(self, uow):
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Original Title", number_to_select=20)
+        uow.assemblies.add(assembly)
+
+        updated, changes = assembly_service.update_assembly_reporting_changes(
+            uow, assembly.id, admin_user.id, number_to_select=40
+        )
+
+        assert updated.number_to_select == 40
+        assert changes == []
+
     def test_update_assembly_success_admin(self, uow):
         """Test successful assembly update by admin."""
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")

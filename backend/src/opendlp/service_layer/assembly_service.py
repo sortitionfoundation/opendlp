@@ -96,14 +96,14 @@ def create_assembly(
     return assembly.create_detached_copy()
 
 
-def update_assembly(
+def update_assembly_reporting_changes(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
     user_id: uuid.UUID,
     **updates: Any,
-) -> Assembly:
+) -> tuple[Assembly, list[target_service.TargetValueChange]]:
     """
-    Update an assembly with new data.
+    Update an assembly with new data, and say which target values moved with it.
 
     Args:
         uow: Unit of Work for database operations
@@ -111,7 +111,8 @@ def update_assembly(
         user_id: ID of user performing the update
 
     Returns:
-        Updated Assembly instance
+        The updated Assembly, and the target values whose min/max were
+        recalculated because the panel size changed (empty otherwise)
 
     Raises:
         UserNotFoundError, AssemblyNotFoundError: If assembly or user not found
@@ -136,16 +137,45 @@ def update_assembly(
     for field, value in updates.items():
         if hasattr(assembly, field):
             setattr(assembly, field, value)
+    assembly.updated_at = datetime.now(UTC)
 
     # Targets whose min/max are derived from a percentage depend on the seat
-    # count, so they have to move with it. This is the single funnel for both the
-    # assembly edit form and the dedicated update_number_to_select route.
+    # count, so they have to move with it. This is the single funnel for the
+    # project details page and the dedicated update_number_to_select route.
+    changes: list[target_service.TargetValueChange] = []
     if assembly.number_to_select != previous_number_to_select:
-        target_service.recalculate_minmax_for_assembly(uow, assembly_id)
+        changes = target_service.recalculate_minmax_for_assembly(uow, assembly_id)
 
     # Explicit typing to satisfy mypy
     updated_assembly: Assembly = assembly
-    return updated_assembly
+    return updated_assembly, changes
+
+
+def update_assembly(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+    **updates: Any,
+) -> Assembly:
+    """
+    Update an assembly with new data.
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: ID of assembly to update
+        user_id: ID of user performing the update
+
+    Returns:
+        Updated Assembly instance
+
+    Raises:
+        UserNotFoundError, AssemblyNotFoundError: If assembly or user not found
+        InsufficientPermissions: If user cannot manage this assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    assembly, _changes = update_assembly_reporting_changes(uow, assembly_id, user_id, **updates)
+    return assembly
 
 
 def set_data_sources(

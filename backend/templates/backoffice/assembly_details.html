@@ -1,23 +1,25 @@
 {#
 ABOUTME: Backoffice assembly details page
-ABOUTME: Displays assembly information with question, metadata, and edit action
+ABOUTME: Cards for the project's basic details (edited in place), data source, registration link and team
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/tag.html" import tag %}
 {% from "backoffice/components/url_display.html" import readonly_url_display %}
+{% from "backoffice/project_details/_rows.html" import plain_row, project_field_row, updated_row %}
 
-{% block title %}{{ assembly.title }} - Assembly{% endblock %}
+{% block title %}{{ assembly.title }} - {{ _("Project details") }}{% endblock %}
 
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to Your projects")
+        back_label=_("Back to Your projects"),
+        title_id="project-page-title"
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(
@@ -34,71 +36,31 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 {% endblock %}
 
 {% block page_content %}
-    {# Framing question section #}
-    {% if assembly.question %}
-        <div class="mb-8">
-            {% call section() %}
-                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Framing question") }}</h2>
-                <p class="text-body-lg" style="color: var(--color-body-text);">{{ assembly.question }}</p>
-            {% endcall %}
-        </div>
-    {% endif %}
-
-    {# Assembly Details Summary #}
-    <div class="mb-8">
+    {# One column of cards, the width the design gives them. #}
+    <div class="flex flex-col gap-6 max-w-2xl">
+        {# Basic details: four values edited in place, three only read. #}
         {% call section() %}
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Basic details") }}</h2>
             <dl>
-                {# Status #}
-                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Status") }}</dt>
-                    <dd class="text-body-md" style="color: var(--color-body-text);">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm" style="background-color: var(--color-success-background, #d4edda); color: var(--color-success-text, #155724);">
-                            {{ assembly_status_labels[assembly.status] }}
-                        </span>
+                {{ project_field_row(assembly, "title", can_manage_project) }}
+                {{ project_field_row(assembly, "question", can_manage_project) }}
+                {% call plain_row(_("Status")) %}
+                    <dd class="flex-1">
+                        {{ tag(assembly_status_labels[assembly.status], colour="green" if assembly.is_active() else "grey") }}
                     </dd>
-                </div>
-
-                {# First event date #}
-                {% if assembly.first_assembly_date %}
-                    <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                        <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("First event date") }}</dt>
-                        <dd class="text-body-md" style="color: var(--color-body-text);">
-                            {{ assembly.first_assembly_date|dateformat('long') }}
-                        </dd>
-                    </div>
-                {% endif %}
-
-                {# Panel size #}
-                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">
-                        {{ _("Panel size") }}
-                        {{ info_icon(_("The number of people to select"), about=_("Panel size")) }}
-                    </dt>
-                    <dd class="text-body-md" style="color: var(--color-body-text);">
-                        {{ assembly.number_to_select }}
-                    </dd>
-                </div>
-
-                {# Created #}
-                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Created") }}</dt>
-                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                {% endcall %}
+                {{ project_field_row(assembly, "number_to_select", can_manage_project) }}
+                {{ project_field_row(assembly, "first_assembly_date", can_manage_project) }}
+                {% call plain_row(_("Created")) %}
+                    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
                         {% if created_by_name %}
                             {{ _("By %(name)s at %(timestamp)s", name=created_by_name, timestamp=assembly.created_at|datetimeformat('long')) }}
                         {% else %}
                             {{ assembly.created_at|datetimeformat('long') }}
                         {% endif %}
                     </dd>
-                </div>
-
-                {# Last Updated #}
-                <div class="flex flex-col sm:flex-row sm:gap-4 py-3">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Last Updated") }}</dt>
-                    <dd class="text-body-md" style="color: var(--color-body-text);">
-                        {{ assembly.updated_at|datetimeformat('long') }}
-                    </dd>
-                </div>
+                {% endcall %}
+                {{ updated_row(assembly) }}
             </dl>
         {% endcall %}
     </div>
@@ -153,11 +115,6 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
             </p>
         {% endcall %}
     </div>
-
-    {# Actions #}
-    <section class="flex gap-4">
-        {{ button(_("Edit project"), href=url_for('backoffice.edit_assembly', assembly_id=assembly.id), variant="primary") }}
-    </section>
 
     {# Where this page's dialogs open. The data source settings dialog is
        rendered here already open when the address asked for it

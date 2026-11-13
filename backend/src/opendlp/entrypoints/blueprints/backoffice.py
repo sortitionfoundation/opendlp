@@ -23,7 +23,6 @@ from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
     CreateAssemblyGSheetForm,
     DbSelectionSettingsForm,
-    EditAssemblyForm,
     EditAssemblyGSheetForm,
     UploadTargetsCsvForm,
 )
@@ -32,7 +31,6 @@ from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     get_assembly_creator_name,
     get_assembly_nav_context,
-    get_assembly_with_permissions,
     get_or_create_csv_config,
     get_or_create_selection_settings,
     update_assembly,
@@ -134,8 +132,9 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
             created_by_name = get_assembly_creator_name(uow, nav.assembly)
+            can_manage_project = can_manage_assembly(current_user, nav.assembly)
             project_dialog = None
-            if request.args.get("data_source") == "1" and can_manage_assembly(current_user, nav.assembly):
+            if request.args.get("data_source") == "1" and can_manage_project:
                 project_dialog = project_dialog_context(uow, assembly_id)
         registration_page_rows = [
             {
@@ -157,6 +156,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             registration_page_rows=registration_page_rows,
             created_by_name=created_by_name,
             project_dialog=project_dialog,
+            can_manage_project=can_manage_project,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(
@@ -480,76 +480,8 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
 @backoffice_bp.route("/project/<uuid:assembly_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice edit assembly page."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-        form = EditAssemblyForm(obj=assembly)
-
-        if form.validate_on_submit():
-            try:
-                # Registration page URLs are deliberately NOT handled here — they
-                # are page-scoped settings edited on the Registration tab.
-                with uow:
-                    updated_assembly = update_assembly(
-                        uow=uow,
-                        assembly_id=assembly_id,
-                        user_id=current_user.id,
-                        title=form.title.data,
-                        question=form.question.data or "",
-                        first_assembly_date=form.first_assembly_date.data,
-                        number_to_select=form.number_to_select.data,
-                    )
-
-                flash(_("Project '%(title)s' updated successfully", title=updated_assembly.title), "success")
-                return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
-            except InsufficientPermissions as e:
-                logger.warning(
-                    "Insufficient permissions to edit assembly",
-                    assembly_id=str(assembly_id),
-                    user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("You don't have permission to edit this project"), "error")
-                return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
-            except NotFoundError as e:
-                logger.error(
-                    "Assembly or user not found while editing assembly",
-                    assembly_id=str(assembly_id),
-                    user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("An error occurred while updating the project"), "error")
-                return redirect(url_for("backoffice.dashboard"))
-            except Exception as e:
-                logger.exception(
-                    "Edit assembly error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
-                )
-                flash(_("An error occurred while updating the project"), "error")
-                return redirect(url_for("backoffice.dashboard"))
-
-        return render_template(
-            "backoffice/edit_assembly.html",
-            form=form,
-            assembly=assembly,
-        ), 200
-    except NotFoundError as e:
-        logger.warning(
-            "Assembly not found for edit", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions to access assembly",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        flash(_("You don't have permission to edit this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+    """Where the edit page was. A project's details are edited in place on its details page."""
+    return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/project/<uuid:assembly_id>/update-number-to-select", methods=["POST"])

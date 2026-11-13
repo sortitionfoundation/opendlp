@@ -92,34 +92,52 @@ class TestBackofficeAssemblyCreate:
 
 
 class TestBackofficeAssemblyEdit:
-    """Test backoffice assembly editing functionality."""
+    """A project's details are edited in place on its details page."""
 
     def test_edit_assembly_success(self, logged_in_admin, existing_assembly):
-        """Test successful assembly editing."""
-        updated_title = "Updated Backoffice Assembly"
-        updated_question = "What is the updated question?"
-        future_date = (datetime.now(UTC) + timedelta(days=45)).date()
-
+        """Saving one value answers htmx with its row and flashes the save."""
+        details_url = f"/backoffice/project/{existing_assembly.id}"
         response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/edit",
+            f"{details_url}/edit-field",
             data={
-                "title": updated_title,
-                "question": updated_question,
-                "first_assembly_date": future_date.strftime("%Y-%m-%d"),
-                "number_to_select": "100",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}/edit"),
+                "field": "title",
+                "title": "Updated Backoffice Assembly",
+                "csrf_token": get_csrf_token(logged_in_admin, details_url),
             },
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        # Should redirect to view assembly page
-        assert response.status_code == 302
-        assert f"/backoffice/project/{existing_assembly.id}" in response.location
+        assert response.status_code == 200
+        assert b"Updated Backoffice Assembly" in response.data
+        assert b"Project details saved" in response.data
 
-        # Check flash message
-        with logged_in_admin.session_transaction() as session:
-            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
-            assert any("updated successfully" in msg for msg in flash_messages)
+    def test_a_panel_size_that_moves_targets_says_so(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        """Edited in place, the recalculation happens on leaving the field, so it must not be silent."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.assemblies.get(existing_assembly.id).number_to_select = 20
+            value = TargetValue(value="North", min=0, max=0, percentage_target=50.0)
+            value.apply_percentage(20)
+            uow.target_categories.add(TargetCategory(assembly_id=existing_assembly.id, name="Region", values=[value]))
+            uow.commit()
+        details_url = f"/backoffice/project/{existing_assembly.id}"
+
+        response = logged_in_admin.post(
+            f"{details_url}/edit-field",
+            data={
+                "field": "number_to_select",
+                "number_to_select": "40",
+                "csrf_token": get_csrf_token(logged_in_admin, details_url),
+            },
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200
+        assert b"Panel size saved. Target min and max recalculated." in response.data
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            (category,) = uow.target_categories.get_by_assembly_id(existing_assembly.id)
+            assert category.values[0].max >= 20
 
     def test_complete_create_view_edit_workflow(self, logged_in_admin):
         """Test complete workflow: create -> view -> edit assembly."""
@@ -144,28 +162,20 @@ class TestBackofficeAssemblyEdit:
         assert view_response.status_code == 200
         assert b"Workflow Test Assembly" in view_response.data
 
-        # Step 3: Extract assembly_id and edit
-        assembly_id = assembly_url.rstrip("/").split("/")[-1]
-        updated_date = (datetime.now(UTC) + timedelta(days=90)).date()
-        edit_response = logged_in_admin.post(
-            f"/backoffice/project/{assembly_id}/edit",
-            data={
-                "title": "Updated Workflow Test Assembly",
-                "question": "What should we test after update?",
-                "first_assembly_date": updated_date.strftime("%Y-%m-%d"),
-                "number_to_select": "40",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly_id}/edit"),
-            },
-            follow_redirects=False,
-        )
+        # Step 3: Edit its title and its panel size in place
+        for field, value in (("title", "Updated Workflow Assembly"), ("number_to_select", "40")):
+            edit_response = logged_in_admin.post(
+                f"{assembly_url}/edit-field",
+                data={"field": field, field: value, "csrf_token": get_csrf_token(logged_in_admin, assembly_url)},
+                headers={"HX-Request": "true"},
+            )
+            assert edit_response.status_code == 200
 
-        assert edit_response.status_code == 302
-        assert f"/backoffice/project/{assembly_id}" in edit_response.location
-
-        # Step 4: Verify the update
-        final_view = logged_in_admin.get(f"/backoffice/project/{assembly_id}")
-        assert final_view.status_code == 200
-        assert b"Updated Workflow Test Assembly" in final_view.data
+        # Step 4: The details page shows both
+        final_view_response = logged_in_admin.get(assembly_url)
+        assert final_view_response.status_code == 200
+        assert b"Updated Workflow Assembly" in final_view_response.data
+        assert b'value="40"' in final_view_response.data
 
 
 @pytest.fixture

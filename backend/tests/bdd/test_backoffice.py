@@ -1142,21 +1142,6 @@ def click_link_with_text(page: Page, link_text: str):
     page.wait_for_load_state("networkidle")
 
 
-@when(parsers.parse('I visit the edit assembly page for "{title}"'))
-def visit_edit_assembly_page(page: Page, title: str, admin_user, test_database):
-    """Navigate directly to the edit assembly page."""
-    # Get the assembly ID from the database if not already stored
-    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if assembly_id:
-        page.goto(Urls.backoffice_edit_assembly_url(assembly_id))
-
-
-@then("I should see the edit assembly page")
-def see_edit_assembly_page(page: Page):
-    """Verify we're on the edit assembly page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/project/.*/edit"))
-
-
 @then("I should see the title input field")
 def see_title_input_field(page: Page):
     """Verify the title input field is visible."""
@@ -1183,20 +1168,6 @@ def see_number_to_select_field(page: Page):
     """Verify the number to select field is visible."""
     number_input = page.locator("input[name='number_to_select']")
     expect(number_input).to_be_visible()
-
-
-@then(parsers.parse('the title input should contain "{expected_value}"'))
-def title_input_contains_value(page: Page, expected_value: str):
-    """Verify the title input contains the expected value."""
-    title_input = page.locator("input[name='title']")
-    expect(title_input).to_have_value(expected_value)
-
-
-@then(parsers.parse('the question textarea should contain "{expected_value}"'))
-def question_textarea_contains_value(page: Page, expected_value: str):
-    """Verify the question textarea contains the expected value."""
-    question_textarea = page.locator("textarea[name='question']")
-    expect(question_textarea).to_have_value(expected_value)
 
 
 @when(parsers.parse('I fill in the title with "{new_title}"'))
