@@ -256,9 +256,14 @@ migrate:
 # extract strings to translate from code and templates
 translate-regen:
   @echo "🚀 Extracting translatable strings from app and sortition-algorithms library"
+  @# --add-location=file: the `#:` comments name the file without a line
+  @# number. With line numbers, any edit that moved lines in a template
+  @# rewrote the comments of every string below it, in the diff and in the
+  @# merge conflicts.
   uv run pybabel extract \
     --mapping-file=babel.cfg \
     --keyword=_l --keyword=N_ \
+    --add-location=file \
     --output-file=translations/messages.pot \
     --ignore-dirs=thirdparty \
     --ignore-dirs=.venv \
