@@ -51,7 +51,7 @@ class TestPasswordRequirements:
     def test_the_list_is_the_designs_wording(self):
         assert password_requirements() == [
             "10–256 characters",
-            "Include at least one letter",
+            "Not be numbers only",
             "Not be a commonly used password",
             "Not be too similar to your personal information",
         ]
@@ -85,7 +85,8 @@ class TestPasswordRequirements:
             pytest.param("Kx7#mQ2vLp" * 25 + "Kx7#mQ2", False, id="257 characters"),
             pytest.param("password123", False, id="a commonly used password"),
             pytest.param("ann.smith@example", False, id="too similar to the email address"),
-            pytest.param("4719305826", False, id="digits alone"),
+            pytest.param("4719305826", False, id="numbers only"),
+            pytest.param("4719305826!", True, id="numbers and a symbol, no letter"),
         ],
     )
     def test_each_line_is_enforced_as_written(self, password: str, accepted: bool):

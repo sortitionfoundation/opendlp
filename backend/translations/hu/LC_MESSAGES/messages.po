@@ -4278,8 +4278,8 @@ msgstr "%(min_length)s–%(max_length)s karakter hosszú legyen"
 
 #: src/opendlp/service_layer/security.py
 #, fuzzy
-msgid "Include at least one letter"
-msgstr "Tartalmazzon legalább egy betűt"
+msgid "Not be numbers only"
+msgstr "Ne csak számjegyekből álljon"
 
 #: src/opendlp/service_layer/security.py
 #, fuzzy

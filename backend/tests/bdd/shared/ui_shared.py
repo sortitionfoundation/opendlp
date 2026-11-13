@@ -115,7 +115,7 @@ def _(page: Page):
     password = page.locator('input[name="password"]')
     expect(password).to_have_accessible_description(
         re.compile(
-            r"^Your password must:\s*10–256 characters\s*Include at least one letter\s*"
+            r"^Your password must:\s*10–256 characters\s*Not be numbers only\s*"
             r"Not be a commonly used password\s*Not be too similar to your personal information$"
         )
     )

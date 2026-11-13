@@ -113,10 +113,10 @@ def password_requirements() -> list[str]:
     max_length = next(v.max_length for v in validators if isinstance(v, pv.MaximumLengthValidator))
     return [
         _("%(min_length)s–%(max_length)s characters", min_length=min_length, max_length=max_length),
-        # Stands for NumericPasswordValidator, and asks for more than it does:
-        # the validator refuses only a password made of digits alone, so
-        # "1234567890!" passes. Following the line never gets a password refused.
-        _("Include at least one letter"),
+        # Stands for NumericPasswordValidator and says what it refuses: a
+        # password made of digits alone. The design's "Include at least one
+        # letter" asked for more than that rule does - "1234567890!" passes.
+        _("Not be numbers only"),
         _("Not be a commonly used password"),
         _("Not be too similar to your personal information"),
     ]

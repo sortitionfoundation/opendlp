@@ -79,7 +79,7 @@ class TestPasswordRequirements:
         assert "Your password must:" in rules
         lines = (
             "10–256 characters",
-            "Include at least one letter",
+            "Not be numbers only",
             "Not be a commonly used password",
             "Not be too similar to your personal information",
         )
