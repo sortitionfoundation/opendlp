@@ -109,6 +109,18 @@ def _(page: Page):
     expect(support).to_have_attribute("href", re.compile(r"^mailto:[^@\s]+@[^@\s]+$"))
 
 
+@then("the user should see what their password must be")
+def _(page: Page):
+    """the password field is described by the short list of rules under it."""
+    password = page.locator('input[name="password"]')
+    expect(password).to_have_accessible_description(
+        re.compile(
+            r"^Your password must:\s*10–256 characters\s*Include at least one letter\s*"
+            r"Not be a commonly used password\s*Not be too similar to your personal information$"
+        )
+    )
+
+
 @then("the user should be directed to try registering again")
 def _(page: Page):
     """the user should be directed to try registering again."""

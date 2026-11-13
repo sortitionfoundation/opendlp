@@ -11,6 +11,7 @@ from markupsafe import Markup
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from opendlp.domain.users import UNUSABLE_PASSWORD_PREFIX
+from opendlp.translations import gettext as _
 from opendlp.vendor import password_validation as pv
 
 
@@ -96,3 +97,26 @@ def password_validators_help_text_html() -> Markup:
     """
     help_items = [Markup("<li>{ht}</li>").format(ht=ht) for ht in password_validators_help_texts()]
     return Markup("<ul>{items}</ul>").format(items=Markup("").join(help_items))
+
+
+def password_requirements() -> list[str]:
+    """The password rules as the sign-up page lists them, under "Your password must:".
+
+    A shorter form of the validators' help texts, one line per rule, each
+    worded to follow that lead-in. The minimum and maximum length share a line,
+    and its numbers come from the validators, so the range shown is the range
+    enforced. A validator added or removed fails a test in test_security.py
+    until this list follows it.
+    """
+    validators = tuple(get_password_validators())
+    min_length = next(v.min_length for v in validators if isinstance(v, pv.MinimumLengthValidator))
+    max_length = next(v.max_length for v in validators if isinstance(v, pv.MaximumLengthValidator))
+    return [
+        _("%(min_length)s–%(max_length)s characters", min_length=min_length, max_length=max_length),
+        # Stands for NumericPasswordValidator, and asks for more than it does:
+        # the validator refuses only a password made of digits alone, so
+        # "1234567890!" passes. Following the line never gets a password refused.
+        _("Include at least one letter"),
+        _("Not be a commonly used password"),
+        _("Not be too similar to your personal information"),
+    ]

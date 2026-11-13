@@ -21,6 +21,10 @@ Feature: User Sign in and Registration
     Given the user is starting to register
     Then the user should see who to contact for an invite code
 
+  Scenario: The password field lists what a password must be
+    Given the user is starting to register
+    Then the user should see what their password must be
+
   Scenario: Sign out
     Given the user is signed in
     When the user signs out

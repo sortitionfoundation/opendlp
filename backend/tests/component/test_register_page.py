@@ -1,5 +1,5 @@
 """ABOUTME: Component tests for the words around the sign-up page's fields
-ABOUTME: The invite code's helper text and its link to the support address"""
+ABOUTME: The invite code's helper text and its support link, and the password requirements"""
 
 import re
 
@@ -68,3 +68,32 @@ class TestInviteCodeHelperText:
         assert "Optional — if you were given an invite code, enter it here." in html
         assert 'id="invite_code-help"' not in html
         assert "OpenDLP support</a>" not in html
+
+
+class TestPasswordRequirements:
+    """The password field lists its rules in the design's short form."""
+
+    def test_the_rules_follow_your_password_must(self, client: FlaskClient):
+        rules = _tag(_page(client), r'<div id="password-requirements"[\s\S]*?</ul>')
+
+        assert "Your password must:" in rules
+        lines = (
+            "10–256 characters",
+            "Include at least one letter",
+            "Not be a commonly used password",
+            "Not be too similar to your personal information",
+        )
+        positions = [rules.find(f"<span>{line}</span>") for line in lines]
+        assert -1 not in positions
+        assert positions == sorted(positions)
+
+    def test_the_password_field_is_described_by_its_rules(self, client: FlaskClient):
+        field = _tag(_page(client), r'<input[^>]*name="password"[^>]*>')
+
+        assert 'aria-describedby="password-requirements"' in field
+
+    def test_the_long_validator_help_texts_are_gone(self, client: FlaskClient):
+        html = _page(client)
+
+        assert "Your password must contain" not in html
+        assert "Your password cannot be" not in html

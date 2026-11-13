@@ -4,6 +4,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
 #}
 {% extends "public/base.html" %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_check %}
 {% from "backoffice/components/input.html" import input, checkbox %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
 {% from "public/_survey_fields.html" import signup_survey_fields %}
@@ -130,12 +131,24 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                     type="password",
                     required=true,
                     error=form.password.errors | join("\n"),
-                    attrs='autocomplete="new-password"')
+                    attrs='autocomplete="new-password"',
+                    described_by_id="password-requirements")
                     }}
-                    {% if password_help %}
-                        <div class="text-body-sm [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-0.5"
-                             style="color: var(--color-secondary-text);">{{ password_help|safe }}</div>
-                    {% endif %}
+                    {# The rules the password validators enforce, in the design's
+                       short form - see password_requirements() in security.py. #}
+                    <div id="password-requirements"
+                         class="text-body-sm flex flex-col gap-0.5"
+                         style="color: var(--color-secondary-text);">
+                        <p>{{ _("Your password must:") }}</p>
+                        <ul class="flex flex-col gap-0.5">
+                            {% for requirement in password_requirements %}
+                                <li class="flex items-start gap-1.5">
+                                    {{ icon_check(classes="w-3.5 h-3.5 mt-[3px] shrink-0") }}
+                                    <span>{{ requirement }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
                 {{ input(form.password_confirm.name,
                 label=form.password_confirm.label.text,
