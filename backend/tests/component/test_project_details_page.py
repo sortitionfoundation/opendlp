@@ -2,13 +2,16 @@
 # ABOUTME: Covers the Basic details card, each editable field's save and refusal, what a save sends out of band, and who may edit
 
 from datetime import date
+from io import BytesIO
 
 import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.value_objects import AssemblyRole
+from opendlp.service_layer.assembly_service import add_assembly_gsheet
 from opendlp.service_layer.user_service import assign_assembly_role
+from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 HTMX = {"HX-Request": "true"}
@@ -318,3 +321,98 @@ class TestTheOldEditPage:
 
         assert response.status_code == 302
         assert "login" in response.location
+
+
+class TestDataSourceCard:
+    @pytest.fixture
+    def assembly_with_gsheet(self, fake_store: FakeStore, admin_user, existing_assembly: Assembly) -> Assembly:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_assembly_gsheet(uow=uow, assembly_id=existing_assembly.id, user_id=admin_user.id, url=VALID_GSHEET_URL)
+        return existing_assembly
+
+    def test_a_new_project_is_in_opendlp_and_undecided(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        html = logged_in_admin.get(_details(existing_assembly)).data.decode()
+
+        assert "Data source" in html
+        assert "Data location" in html
+        assert "In OpenDLP" in html
+        assert "Target data source" in html
+        assert "Respondents data source" in html
+        assert html.count("Decide later") == 2
+
+    def test_a_manager_gets_the_cog_that_opens_the_settings_dialog(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        html = logged_in_admin.get(_details(existing_assembly)).data.decode()
+
+        assert 'aria-label="Data source settings"' in html
+        assert f'hx-get="{_details(existing_assembly)}/data-source"' in html
+        assert 'hx-target="#project-dialog-host"' in html
+        assert 'aria-haspopup="dialog"' in html
+        assert 'data-focus-id="data-source-settings"' in html
+
+    def test_a_reader_sees_the_card_without_the_cog(self, reader: FlaskClient, existing_assembly: Assembly) -> None:
+        html = reader.get(_details(existing_assembly)).data.decode()
+
+        assert "Data location" in html
+        assert 'aria-label="Data source settings"' not in html
+
+    def test_uploaded_targets_are_counted_beside_their_source(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        logged_in_admin.post(
+            f"{_details(existing_assembly)}/data-source/upload-targets",
+            data={"csv_file": (BytesIO(b"feature,value,min,max\nRegion,North,5,10\nRegion,South,5,10"), "t.csv")},
+            content_type="multipart/form-data",
+            headers=HTMX,
+        )
+
+        html = logged_in_admin.get(_details(existing_assembly)).data.decode()
+
+        assert "Import from CSV" in html
+        assert "1 target uploaded" in html
+
+    def test_a_google_sheets_project_shows_its_url_and_no_source_rows(
+        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+    ) -> None:
+        html = logged_in_admin.get(_details(assembly_with_gsheet)).data.decode()
+
+        assert "In Google Sheets" in html
+        assert "Spreadsheet URL" in html
+        assert f'href="{VALID_GSHEET_URL}"' in html
+        assert "Target data source" not in html
+
+    def test_a_google_sheets_project_offers_an_access_check(
+        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+    ) -> None:
+        html = logged_in_admin.get(_details(assembly_with_gsheet)).data.decode()
+
+        assert 'id="gsheet-access-status"' in html
+        assert f'hx-post="{_details(assembly_with_gsheet)}/gsheet/check"' in html
+        assert 'hx-trigger="load"' not in html
+
+    def test_after_a_save_the_access_check_runs_on_load(
+        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+    ) -> None:
+        """Saving the sheet's settings lands here with ?check=1."""
+        html = logged_in_admin.get(f"{_details(assembly_with_gsheet)}?check=1").data.decode()
+
+        assert 'hx-trigger="load"' in html
+
+    def test_a_reader_cannot_set_off_the_access_check(
+        self, fake_store: FakeStore, reader: FlaskClient, admin_user, existing_assembly: Assembly
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_assembly_gsheet(uow=uow, assembly_id=existing_assembly.id, user_id=admin_user.id, url=VALID_GSHEET_URL)
+
+        html = reader.get(f"{_details(existing_assembly)}?check=1").data.decode()
+
+        assert 'hx-trigger="load"' not in html
+        assert "/gsheet/check" not in html
+
+    def test_an_opendlp_project_has_no_access_check(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        assert 'id="gsheet-access-status"' not in logged_in_admin.get(_details(existing_assembly)).data.decode()

@@ -335,7 +335,7 @@ After steps 1–3 of the create plan (schema, form partial, settings dialog):
 
 1. ✅ `inline_edit_row` extracted; My account switched to it.
 2. ✅ Basic details card with the four fields; old edit page removed.
-3. Data source card and the cog; access check rehomed.
+3. ✅ Data source card and the cog; access check rehomed.
 4. Selection settings section on the Select and replace tab.
 5. Registration link card.
 6. Team card: table, add dialog, remove; then change role with its guard.

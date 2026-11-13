@@ -1,0 +1,79 @@
+{#
+ABOUTME: The Data source card on the project details page - where the data is managed, and how it arrives
+ABOUTME: A cog opens the data source settings dialog; a Google Sheet's access check sits under its URL
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_settings %}
+{% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/tag.html" import tag %}
+{% from "backoffice/project_details/_rows.html" import plain_row %}
+{#
+    Context:
+        assembly, data_source ("gsheet" or "csv"), gsheet
+        targets_row, respondents_row: SourceRow, for a project held in OpenDLP
+        can_manage_project: whether to show the cog
+        gsheet_access_result, gsheet_access_auto_check, can_check_gsheet_access:
+            for the access check panel (components/gsheet_access_status.html)
+#}
+{# A source and, pushed to the end of the row, the tag counting what is there. #}
+{% macro source_value(row) %}
+    <dd class="flex-1 min-w-0 flex flex-wrap items-center justify-between gap-2 text-body-md"
+        style="color: var(--color-body-text)">
+        <span>{{ row.source }}</span>
+        {% if row.count_tag %}{{ tag(row.count_tag, colour="green") }}{% endif %}
+    </dd>
+{% endmacro %}
+<div id="data-source">
+    {% call section() %}
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Data source") }}</h2>
+            {% if can_manage_project %}
+                {# Opens the dialog in place, into the page's host; focus comes back here when it closes. #}
+                {{ button(variant="icon",
+                icon=icon_settings(),
+                aria_label=_("Data source settings"),
+                aria_haspopup="dialog",
+                attrs='data-focus-id="data-source-settings" hx-get="' ~ url_for('data_source.settings', assembly_id=assembly.id) ~ '" hx-target="#project-dialog-host" hx-swap="innerHTML"') }}
+            {% endif %}
+        </div>
+        <dl>
+            {% call plain_row(_("Data location")) %}
+                <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
+                    {{ data_source_labels[DataSource.GSHEET if data_source == "gsheet" else DataSource.OPENDLP] }}
+                </dd>
+            {% endcall %}
+            {% if data_source == "gsheet" %}
+                {% call plain_row(_("Spreadsheet URL")) %}
+                    <dd class="text-body-md flex-1 min-w-0" style="color: var(--color-body-text);">
+                        {% if gsheet %}
+                            <a href="{{ gsheet.url }}"
+                               title="{{ gsheet.url }}"
+                               class="block truncate underline"
+                               style="color: var(--color-links)"
+                               target="_blank"
+                               rel="noopener noreferrer">{{ gsheet.url }}</a>
+                        {% else %}
+                            {{ _("Not set") }}
+                        {% endif %}
+                    </dd>
+                {% endcall %}
+            {% else %}
+                {% call plain_row(_("Target data source")) %}
+                    {{ source_value(targets_row) }}
+                {% endcall %}
+                {% call plain_row(_("Respondents data source")) %}
+                    {{ source_value(respondents_row) }}
+                {% endcall %}
+            {% endif %}
+        </dl>
+        {# Under the URL and visible without opening anything: a sheet that
+           cannot be reached is the thing an organiser most needs to see. #}
+        {% if data_source == "gsheet" and gsheet %}
+            <div id="gsheet-access-status" aria-live="polite" class="mt-4">
+                {% with gsheet_access_assembly_id=assembly.id %}
+                    {% include "backoffice/components/gsheet_access_status.html" %}
+                {% endwith %}
+            </div>
+        {% endif %}
+    {% endcall %}
+</div>

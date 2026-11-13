@@ -1111,7 +1111,7 @@ def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     Always asks Google: the cache only serves page views that did not ask for
     a check. Returns the status panel for HTMX; a plain form post redirects to
-    the Assembly Data page, which shows the result from the cache.
+    the project details page, which shows the result from the cache.
     """
     uow = bootstrap.get_flask_uow()
     with uow:
@@ -1152,7 +1152,7 @@ def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
     store_cached_result(assembly_id, result)
 
     if request.headers.get("HX-Request") != "true":
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
     return render_template(
         "backoffice/components/gsheet_access_status.html",
         gsheet_access_assembly_id=assembly_id,

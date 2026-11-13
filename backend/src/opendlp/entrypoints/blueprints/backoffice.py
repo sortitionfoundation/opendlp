@@ -19,6 +19,7 @@ from opendlp.entrypoints.blueprints.registration import (
     short_url,
 )
 from opendlp.entrypoints.context_processors import get_service_account_email
+from opendlp.entrypoints.data_source_card import respondents_row, targets_row
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
     CreateAssemblyGSheetForm,
@@ -133,6 +134,14 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
             created_by_name = get_assembly_creator_name(uow, nav.assembly)
             can_manage_project = can_manage_assembly(current_user, nav.assembly)
+            # The access check panel under a Google Sheet's URL: checked afresh
+            # after a save (?check=1), otherwise whatever the last check found.
+            gsheet_access_result = None
+            gsheet_access_auto_check = False
+            if nav.gsheet:
+                gsheet_access_auto_check = can_manage_project and request.args.get("check", "") == "1"
+                if not gsheet_access_auto_check:
+                    gsheet_access_result = fetch_cached_result(assembly_id, nav.gsheet.url)
             project_dialog = None
             if request.args.get("data_source") == "1" and can_manage_project:
                 project_dialog = project_dialog_context(uow, assembly_id)
@@ -157,6 +166,11 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             created_by_name=created_by_name,
             project_dialog=project_dialog,
             can_manage_project=can_manage_project,
+            targets_row=targets_row(nav.assembly, nav.csv_status.targets_count),
+            respondents_row=respondents_row(nav.assembly, nav.csv_status.respondents_count),
+            gsheet_access_result=gsheet_access_result,
+            gsheet_access_auto_check=gsheet_access_auto_check,
+            can_check_gsheet_access=can_manage_project,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(

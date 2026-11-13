@@ -59,3 +59,50 @@ Feature: Project details
     And I am on the details page of the project
     Then I can read "Riverside Panel" and "How should we use the riverside?"
     And there are no edit buttons on the page
+
+  # Data source
+
+  Scenario: The cog opens the data source settings over the page
+    When I open the data source settings
+    Then the data source settings dialog is open
+    And the dialog's data location is "In OpenDLP"
+    And the dialog has no stepper
+    When I close the data source settings
+    Then the data source settings dialog is closed
+    And focus is on the "Data source settings" button
+
+  Scenario: Targets uploaded in the settings dialog show on the card
+    When I open the data source settings
+    And I choose to import targets from a CSV
+    And I upload the example targets in the settings dialog
+    Then the settings dialog says "4 targets uploaded"
+    And the dialog's data location cannot be changed
+    When I close the data source settings
+    Then the data source card says "Import from CSV"
+    And the data source card says "4 targets uploaded"
+
+  Scenario: Saving how the data will arrive shows on the card
+    When I open the data source settings
+    And I choose to collect respondents through registration
+    And I save the data source settings
+    Then the data source card says "Through OpenDLP registration"
+    And I am told "Data source settings saved"
+
+  Scenario: Moving an empty project to Google Sheets
+    When I open the data source settings
+    And I change the dialog's data location to "In Google Sheets"
+    Then the settings dialog shows the Google Sheets fields
+    When I fill in a spreadsheet URL and the UK team
+    And I save the data source settings
+    Then the data source card says "In Google Sheets"
+    And the data source card links to the spreadsheet
+    And the spreadsheet's access is checked on the page
+
+  Scenario: Deleting uploaded targets comes back to the settings dialog
+    When I open the data source settings
+    And I choose to import targets from a CSV
+    And I upload the example targets in the settings dialog
+    And I delete the targets and confirm
+    Then the data source settings dialog is open
+    And the settings dialog does not say "targets uploaded"
+    And the dialog's data location can be changed

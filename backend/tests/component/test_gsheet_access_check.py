@@ -214,14 +214,16 @@ class TestCheckRoute:
         assert "<script>alert(1)</script>" not in body
         assert "&lt;script&gt;" in body
 
-    def test_without_htmx_redirects_to_the_data_page(self, logged_in_admin: FlaskClient, assembly_with_gsheet, google):
+    def test_without_htmx_redirects_to_the_details_page(
+        self, logged_in_admin: FlaskClient, assembly_with_gsheet, google
+    ):
         """Without JavaScript the form still posts; the cached result then shows on the page."""
         google(FakeGSpreadClient(title="Leeds Assembly Respondents", tabs=_ALL_TABS))
 
         response = logged_in_admin.post(_check_url(assembly_with_gsheet.id))
 
         assert response.status_code == 302
-        assert f"/project/{assembly_with_gsheet.id}/data" in response.location
+        assert response.location.endswith(f"/project/{assembly_with_gsheet.id}")
         page = logged_in_admin.get(response.location).get_data(as_text=True)
         assert "Leeds Assembly Respondents" in page
 

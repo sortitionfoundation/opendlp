@@ -92,7 +92,7 @@ class TestOpeningTheDialog:
         assert response.status_code == 302
         assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}?data_source=1")
         page = logged_in_admin.get(response.location)
-        assert "Data source settings" in page.data.decode()
+        assert 'aria-labelledby="project-dialog-title"' in page.data.decode()
 
     def test_the_details_page_has_no_dialog_unless_asked(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
@@ -100,7 +100,7 @@ class TestOpeningTheDialog:
         html = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}").data.decode()
 
         assert 'id="project-dialog-host"' in html
-        assert "Data source settings" not in html
+        assert 'role="dialog"' not in html
 
     def test_a_new_project_is_held_in_opendlp_and_undecided(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
@@ -139,7 +139,7 @@ class TestOpeningTheDialog:
         response = logged_in_user.get(f"/backoffice/project/{existing_assembly.id}?data_source=1")
 
         assert response.status_code == 200
-        assert "Data source settings" not in response.data.decode()
+        assert 'role="dialog"' not in response.data.decode()
 
 
 class TestChoosingTheLocation:
@@ -366,7 +366,7 @@ class TestDeletingFromTheDialog:
         )
 
         html = response.data.decode()
-        assert "Data source settings" in html
+        assert 'aria-labelledby="project-dialog-title"' in html
         assert "Remove Google Sheets settings" not in html
 
     def test_deleting_everything_unlocks_the_location(
