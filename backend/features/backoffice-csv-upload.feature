@@ -3,21 +3,13 @@ Feature: Backoffice CSV Upload
   I want to upload CSV files for assemblies
   So that I can import targets and people data without using Google Sheets.
 
-  Scenario: Targets and Respondents tabs are always visible
+  Scenario: A new project has its Targets tab open and its Respondents tab waiting for data
     Given I am logged in as an admin user
     And there is an assembly called "Tab Test Assembly"
     When I visit the assembly details page for "Tab Test Assembly"
     Then I should see a "Targets" tab in the assembly navigation
     And I should see a "Respondents" tab in the assembly navigation
-    And the "Targets" tab should be disabled
-    And the "Respondents" tab should be disabled
-
-  Scenario: Targets tab is disabled when no data source is configured
-    Given I am logged in as an admin user
-    And there is an assembly called "No Data Source Assembly"
-    When I visit the assembly data page for "No Data Source Assembly"
-    Then I should see a "Targets" tab in the assembly navigation
-    And the "Targets" tab should be disabled
+    And the "Targets" tab should be enabled
     And the "Respondents" tab should be disabled
 
   Scenario: Targets and Respondents tabs are enabled when gsheet is configured

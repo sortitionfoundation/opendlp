@@ -182,59 +182,6 @@ class TestDetailsShowsWhoCreatedIt:
         assert expected_timestamp(app, assembly_without_a_creator.created_at).encode() in response.data
 
 
-class TestBackofficeAssemblyCreate:
-    """Test backoffice assembly creation functionality."""
-
-    def test_create_assembly_get_form(self, logged_in_admin: FlaskClient) -> None:
-        """Test create assembly form is displayed."""
-        response = logged_in_admin.get("/backoffice/project/new")
-        assert response.status_code == 200
-        assert b"title" in response.data.lower()
-        assert b"question" in response.data.lower()
-
-    def test_create_assembly_minimal_data(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
-        """Test assembly creation with minimal required data persists to the store."""
-        response = logged_in_admin.post(
-            "/backoffice/project/new",
-            data={"title": "Minimal Assembly", "number_to_select": "0"},
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-        assert "/backoffice/project/" in response.location
-
-        with FakeUnitOfWork(store=fake_store) as uow:
-            assert "Minimal Assembly" in [a.title for a in uow.assemblies.all()]
-
-    def test_create_assembly_validation_errors(self, logged_in_admin: FlaskClient) -> None:
-        """Test form validation errors on assembly creation."""
-        response = logged_in_admin.post("/backoffice/project/new", data={"title": "x"})
-        assert response.status_code == 200
-        assert b"error" in response.data or b"Field must be" in response.data
-
-    def test_create_assembly_redirects_when_not_logged_in(self, client: FlaskClient) -> None:
-        """Test create assembly redirects to login when not authenticated."""
-        response = client.get("/backoffice/project/new")
-        assert response.status_code == 302
-        assert "login" in response.location
-
-    def test_create_assembly_appears_in_dashboard(self, logged_in_admin: FlaskClient) -> None:
-        """Test that newly created assembly appears in backoffice dashboard."""
-        future_date = (datetime.now(UTC) + timedelta(days=30)).date()
-        logged_in_admin.post(
-            "/backoffice/project/new",
-            data={
-                "title": "Dashboard Visible Assembly",
-                "question": "Will this appear?",
-                "number_to_select": "25",
-                "first_assembly_date": future_date.strftime("%Y-%m-%d"),
-            },
-        )
-
-        response = logged_in_admin.get("/backoffice/dashboard")
-        assert response.status_code == 200
-        assert b"Dashboard Visible Assembly" in response.data
-
-
 class TestDetailsTabRegistrationSection:
     """The details tab lists the assembly's registration pages read-only."""
 

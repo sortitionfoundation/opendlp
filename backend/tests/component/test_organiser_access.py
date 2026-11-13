@@ -34,10 +34,10 @@ class TestCreateAssemblyGate:
     def test_organiser_can_reach_the_legacy_create_form(self, logged_in_organiser: FlaskClient) -> None:
         assert logged_in_organiser.get("/assemblies/new").status_code == 200
 
-    def test_organiser_can_reach_the_backoffice_create_form(self, logged_in_organiser: FlaskClient) -> None:
+    def test_organiser_can_reach_the_backoffice_create_dialog(self, logged_in_organiser: FlaskClient) -> None:
         assert logged_in_organiser.get("/backoffice/project/new").status_code == 200
 
-    def test_user_is_refused_the_backoffice_create_form(self, logged_in_user: FlaskClient) -> None:
+    def test_user_is_refused_the_backoffice_create_dialog(self, logged_in_user: FlaskClient) -> None:
         """Previously a plain user got the form and a flash on submit; now the route refuses."""
         assert logged_in_user.get("/backoffice/project/new").status_code == 403
 
@@ -47,9 +47,9 @@ class TestOrganiserReachesWhatTheyCreate:
         self, logged_in_organiser: FlaskClient, organiser_user: User, fake_store: FakeStore
     ) -> None:
         response = logged_in_organiser.post(
-            "/backoffice/project/new",
+            "/backoffice/project/new/save",
             data={"title": "My own assembly", "question": "What should we do?", "number_to_select": "0"},
-            follow_redirects=True,
+            headers={"HX-Request": "true"},
         )
         assert response.status_code == 200
 
@@ -60,9 +60,9 @@ class TestOrganiserReachesWhatTheyCreate:
 
     def test_the_new_assembly_appears_on_their_dashboard(self, logged_in_organiser: FlaskClient) -> None:
         logged_in_organiser.post(
-            "/backoffice/project/new",
+            "/backoffice/project/new/save",
             data={"title": "On my dashboard", "question": "Shall we?", "number_to_select": "0"},
-            follow_redirects=True,
+            headers={"HX-Request": "true"},
         )
 
         response = logged_in_organiser.get("/dashboard")

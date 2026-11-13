@@ -69,23 +69,21 @@ class TestBackofficeAssemblyCreate:
     """Test backoffice assembly creation functionality."""
 
     def test_create_assembly_success(self, logged_in_admin):
-        """Test successful assembly creation."""
-        future_date = (datetime.now(UTC) + timedelta(days=30)).date()
+        """Saving the create dialog makes the project and sends htmx to its page."""
         response = logged_in_admin.post(
-            "/backoffice/project/new",
+            "/backoffice/project/new/save",
             data={
                 "title": "New Backoffice Assembly",
                 "question": "What should we discuss in this assembly?",
-                "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "number_to_select": "50",
+                "location": "csv",
                 "csrf_token": get_csrf_token(logged_in_admin, "/backoffice/project/new"),
             },
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        # Should redirect to view assembly page
-        assert response.status_code == 302
-        assert "/backoffice/project/" in response.location
+        assert response.status_code == 200
+        assert "/backoffice/project/" in response.headers["HX-Redirect"]
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
@@ -126,21 +124,20 @@ class TestBackofficeAssemblyEdit:
     def test_complete_create_view_edit_workflow(self, logged_in_admin):
         """Test complete workflow: create -> view -> edit assembly."""
         # Step 1: Create assembly
-        future_date = (datetime.now(UTC) + timedelta(days=60)).date()
         create_response = logged_in_admin.post(
-            "/backoffice/project/new",
+            "/backoffice/project/new/save",
             data={
                 "title": "Workflow Test Assembly",
                 "question": "What should we test?",
-                "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "number_to_select": "30",
+                "location": "csv",
                 "csrf_token": get_csrf_token(logged_in_admin, "/backoffice/project/new"),
             },
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        assert create_response.status_code == 302
-        assembly_url = create_response.location
+        assert create_response.status_code == 200
+        assembly_url = create_response.headers["HX-Redirect"]
 
         # Step 2: View the created assembly
         view_response = logged_in_admin.get(assembly_url)

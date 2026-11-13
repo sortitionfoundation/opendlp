@@ -34,9 +34,9 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
 {% endmacro %}
 {% macro uploaded_banner(text) %}
     <div class="flex items-center gap-2 p-3 rounded-lg"
-         style="background-color: var(--color-subtle-background-panels)">
-        {{ icon_check(style="color: var(--color-success-600)") }}
-        <span class="text-body-sm" style="color: var(--color-body-text);">{{ text }}</span>
+         style="background-color: var(--color-success-background)">
+        {{ icon_check(style="color: var(--color-success-text)") }}
+        <span class="text-body-md" style="color: var(--color-success-text);">{{ text }}</span>
     </div>
 {% endmacro %}
 {# Where the data is managed. In the create dialog that was the step before; on
@@ -84,7 +84,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                 id="project-targets-source",
                 options=options,
                 value=ds.targets_source.value,
-                attrs='x-model="targetsSource"'
+                attrs='x-model="targetsSource"' ~ (' data-dialog-initial-focus' if not ds.targets_errors and not ds.respondents_errors else '')
                 ) }}
             </div>
             <div>
@@ -130,11 +130,12 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                 id="project-targets-file",
                 label=_("CSV File") ,
                 accept=".csv",
-                hint=_("Select a CSV file with targets.")
+                hint=_("Select a CSV file with targets."),
+                attrs='data-dialog-initial-focus' if ds.targets_errors else ''
                 ) }}
                 <div class="mt-4">
                     {{ button(_("Upload targets") , variant="secondary",
-                    attrs='hx-post="' ~ ds.urls.upload_targets ~ '" hx-encoding="multipart/form-data" hx-params="not file" data-focus-id="project-upload-targets"') }}
+                    attrs='hx-post="' ~ ds.urls.upload_targets ~ '" hx-encoding="multipart/form-data" hx-params="not file"') }}
                 </div>
                 {{ example_csv_link("examples/example-targets.csv",
                 about=_("Targets"),
@@ -169,7 +170,8 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                     id="project-respondents-file",
                     label=_("CSV File") ,
                     accept=".csv",
-                    hint=_("Select a CSV file with respondent data.")
+                    hint=_("Select a CSV file with respondent data."),
+                    attrs='data-dialog-initial-focus' if ds.respondents_errors and not ds.targets_errors else ''
                     ) }}
                     {# Prefilled from the last upload so a file whose id column isn't the
                        first one works without retyping. Gated on last_import_timestamp,
@@ -192,7 +194,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                     ) }}
                     <div>
                         {{ button(_("Upload respondents") , variant="secondary",
-                        attrs='hx-post="' ~ ds.urls.upload_respondents ~ '" hx-encoding="multipart/form-data" hx-params="not csv_file" data-focus-id="project-upload-respondents"') }}
+                        attrs='hx-post="' ~ ds.urls.upload_respondents ~ '" hx-encoding="multipart/form-data" hx-params="not csv_file"') }}
                     </div>
                 </div>
                 {{ example_csv_link("examples/example-respondents.csv", about=_("Respondents")) }}

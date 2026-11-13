@@ -19,10 +19,8 @@ from opendlp.entrypoints.blueprints.registration import (
     short_url,
 )
 from opendlp.entrypoints.context_processors import get_service_account_email
-from opendlp.entrypoints.decorators import require_create_assembly
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
-    CreateAssemblyForm,
     CreateAssemblyGSheetForm,
     DbSelectionSettingsForm,
     EditAssemblyForm,
@@ -32,7 +30,6 @@ from opendlp.entrypoints.forms import (
 from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
 from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
-    create_assembly,
     get_assembly_creator_name,
     get_assembly_nav_context,
     get_assembly_with_permissions,
@@ -102,44 +99,6 @@ def dashboard() -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Backoffice dashboard error", user_id=str(current_user.id), error=str(e))
         return render_template("backoffice/dashboard.html", assemblies=[]), 500
-
-
-@backoffice_bp.route("/project/new", methods=["GET", "POST"])
-@login_required
-@require_create_assembly
-def new_assembly() -> ResponseReturnValue:
-    """Create a new assembly in backoffice."""
-    form = CreateAssemblyForm()
-
-    if form.validate_on_submit():
-        try:
-            uow = bootstrap.get_flask_uow()
-            with uow:
-                assembly = create_assembly(
-                    uow=uow,
-                    title=form.title.data or "",
-                    created_by_user_id=current_user.id,
-                    question=form.question.data or "",
-                    first_assembly_date=form.first_assembly_date.data,
-                    number_to_select=form.number_to_select.data or 0,
-                )
-
-            flash(_("Project '%(title)s' created successfully", title=assembly.title), "success")
-            return redirect(url_for("backoffice.view_assembly", assembly_id=assembly.id))
-        except InsufficientPermissions as e:
-            logger.warning("Insufficient permissions to create assembly", user_id=str(current_user.id), error=str(e))
-            flash(_("You don't have permission to create projects"), "error")
-            return redirect(url_for("backoffice.dashboard"))
-        except NotFoundError as e:
-            logger.error("User not found during assembly creation", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while creating the project"), "error")
-            return redirect(url_for("backoffice.dashboard"))
-        except Exception as e:
-            logger.exception("Create assembly error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while creating the project"), "error")
-            return redirect(url_for("backoffice.dashboard"))
-
-    return render_template("backoffice/create_assembly.html", form=form), 200
 
 
 @backoffice_bp.route("/assembly/<path:rest>")

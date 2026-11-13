@@ -40,7 +40,6 @@ class Urls:
     backoffice_showcase = f"{base}/backoffice/showcase"
     backoffice_patterns = f"{base}/backoffice/dev/patterns"
     backoffice_dashboard = f"{base}/backoffice/dashboard"
-    backoffice_create_assembly = f"{base}/backoffice/project/new"
     backoffice_assembly = "{base}/backoffice/project/{assembly_id}"
     backoffice_edit_assembly = "{base}/backoffice/project/{assembly_id}/edit"
     backoffice_members_assembly = "{base}/backoffice/project/{assembly_id}/members"

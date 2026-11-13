@@ -68,44 +68,12 @@ Feature: Backoffice Assembly Management
     And I should see "Updated Climate Assembly" as the page heading
     And I should see "updated successfully"
 
-  # Create Assembly Page Tests
+  # Creating a project is in create-project.feature
 
   Scenario: Dashboard displays create assembly button
     Given I am logged in as an admin user
     When I visit the backoffice dashboard
     Then I should see the "Create project" button
-
-  Scenario: User can navigate to create assembly page from dashboard
-    Given I am logged in as an admin user
-    When I visit the backoffice dashboard
-    And I click the "Create project" button
-    Then I should see the create assembly page
-    And I should see "Create project" as the page heading
-
-  Scenario: Create assembly page displays form fields
-    Given I am logged in as an admin user
-    When I visit the create assembly page
-    Then I should see the title input field
-    And I should see the question textarea field
-    And I should see the first event date field
-    And I should see the number to select field
-
-  Scenario: Create assembly page has create and cancel buttons
-    Given I am logged in as an admin user
-    When I visit the create assembly page
-    Then I should see the "Create project" button
-    And I should see the "Cancel" button
-
-  Scenario: User can create a new assembly
-    Given I am logged in as an admin user
-    When I visit the create assembly page
-    And I fill in the title with "New Test Assembly"
-    And I fill in the question with "What should we discuss?"
-    And I fill in the number to select with "50"
-    And I click the "Create project" button
-    Then I should see the assembly details page
-    And I should see "New Test Assembly" as the page heading
-    And I should see "created successfully"
 
   Scenario: Empty state shows create assembly button
     Given I am logged in as an admin user

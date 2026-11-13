@@ -306,6 +306,11 @@ Found while implementing; none changes what the organiser can do.
 - **The routes enforce the lock.** A CSV posted at a project with a Google
   Sheet is refused, and a location posted at a locked project is ignored. The
   old page relied on a disabled dropdown.
+- **Back and Next carry no name or id**, so that after each redraw focus goes
+  to the new step's first field (or the refused one) rather than staying on
+  the button. Back is not a submit button: on the last step, submitting saves.
+- **The creation is flashed when it happens**, at the first upload or at Save,
+  and shows on the next full page - the project's details page.
 - **Team configuration stays a radio group**, as `AssemblyGSheetForm` renders
   it today; Figma draws a dropdown.
 - **The dialog is wider than the standard one** (`dialog-panel--wide`, 55rem)
@@ -370,8 +375,9 @@ this story, so `docs/language.md` is not changed here.
   create-with-sheet and create-with-CSV against the real database.
 - **JS (vitest):** nothing new is planned in JavaScript. If a component is
   added, it gets a test.
-- **BDD:** rewrite the create scenarios in `backoffice-assembly.feature` and
-  `create-assembly.feature` for the dialog — the three paths (decide later,
+- **BDD:** `features/create-project.feature` replaces the create scenarios in
+  `backoffice-assembly.feature` (`create-assembly.feature` is the legacy page
+  and is left alone) — the three paths (decide later,
   CSV for both, Google Sheet), Back, Cancel leaving nothing, and step 2
   locking after an upload. `just build-all` first.
 - **Showcase:** a "wizard dialog" entry in the patterns page, since this is
@@ -387,8 +393,8 @@ this story, so `docs/language.md` is not changed here.
    plan moves it.
 3. ✅ `data_source` blueprint: settings dialog on an existing project (used by the
    details plan), with the htmx branches on upload/delete/sheet-save.
-4. Create dialog: steps 1 and 2, then step 3 for each path.
-5. Dashboard buttons, old create page removed, BDD and docs, and
+4. ✅ Create dialog: steps 1 and 2, then step 3 for each path.
+5. ✅ Dashboard buttons, old create page removed, BDD and docs, and
    `future_work/delete_legacy_pages.md` (written with this plan).
 
 Steps 1–3 are shared with the details plan; step 3 is where the two meet.

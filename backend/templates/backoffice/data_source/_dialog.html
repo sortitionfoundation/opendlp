@@ -14,6 +14,11 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
     at whatever step that leaves it: nothing about the steps lives in
     JavaScript, and what earlier steps collected rides along as hidden inputs.
 
+    None of the buttons has an id or a name. The host keeps focus on a control
+    it can find again after a redraw (init/fragment-dialog-focus.js); one it
+    cannot find sends focus to the new step's first field, or to whichever
+    field carries data-dialog-initial-focus - the one a refusal is about.
+
     The X, Cancel and the backdrop are links to ds.close_url. Until the project
     exists they ask first once anything has been typed (dialogLeaveGuard);
     after that everything typed is already saved, so they just close.
@@ -61,13 +66,6 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
                        x-ref="dirtyInput">
                 <input type="hidden" name="dialog" value="{{ ds.mode }}">
                 <input type="hidden" name="step" value="{{ step }}">
-                {# The default submitter: Enter moves on, never back. #}
-                <button type="submit"
-                        name="go"
-                        value="next"
-                        style="display: none"
-                        aria-hidden="true"
-                        tabindex="-1"></button>
                 {% call dialog_body() %}
                     {% if creating %}
                         {% set states = {1: "active" if step == 1 else "done", 2: "active" if step == 2 else ("done" if step > 2 else "inactive"), 3: "active" if step == 3 else "inactive"} %}
@@ -141,7 +139,8 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
                 {% endcall %}
                 {% call dialog_footer() %}
                     {% if creating and not exists and step > 1 %}
-                        <span class="mr-auto">{{ button(_("Back") , type="submit", variant="tertiary", attrs='name="go" value="back"') }}</span>
+                        {# Not a submit button: on the last step the form saves, and Back must not. #}
+                        <span class="mr-auto">{{ button(_("Back") , variant="tertiary", attrs="hx-post=\"" ~ ds.urls.step ~ "\" hx-vals='{\"go\": \"back\"}'") }}</span>
                     {% endif %}
                     {% if exists %}
                         {{ button(_("Close") , variant="secondary", href=ds.close_url) }}
@@ -151,7 +150,7 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
                     {% if step == 3 %}
                         {{ button(_("Save") , type="submit", variant="primary") }}
                     {% else %}
-                        {{ button(_("Next") , type="submit", variant="primary", attrs='name="go" value="next"') }}
+                        {{ button(_("Next") , type="submit", variant="primary") }}
                     {% endif %}
                 {% endcall %}
             </form>

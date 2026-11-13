@@ -203,4 +203,34 @@ ABOUTME: Documents states (active/inactive/done/error), URL contract, and panel 
                 &lt;/div&gt;</pre>
         {% endcall %}
     {% endcall %}
+    {# ===== a wizard inside a dialog ===== #}
+    {% call card(title="A wizard in a dialog, drawn by the server", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("The Create new project dialog is a wizard with no step logic in JavaScript. One form posts over htmx into the page's dialog host, and the answer is the whole dialog again at the step that leaves it. What earlier steps collected rides along as hidden inputs, so the server keeps no state between steps and validates everything again when it finally writes.") }}
+            </p>
+            <div class="mb-6">
+                {{ stepper(
+                id="showcase-dialog-wizard",
+                items=[
+                {"key": "details", "label": _("Project details"), "href": "#", "state": "done"},
+                {"key": "location", "label": _("Data location"), "href": "#", "state": "active", "aria-current": "step"},
+                {"key": "data", "label": _("Targets and people"), "href": "#"}
+                ],
+                aria_label=_("Example stepper (progress only)"),
+                mode="wizard",
+                disabled=true
+                ) }}
+            </div>
+            <ul class="text-body-sm list-disc pl-5 mb-4" style="color: var(--color-body-text);">
+                <li>{{ _("The stepper shows progress and is not navigation: disabled=true renders every step as a span, and the active item carries aria-current itself.") }}</li>
+                <li>{{ _("Back and Next are the only way to move. Back is not a submit button, because on the last step submitting saves.") }}</li>
+                <li>{{ _("No button has an id or a name, so after each redraw focus goes to the new step's first field, or to the field marked data-dialog-initial-focus when something was refused.") }}</li>
+                <li>{{ _("Until something is written, the close links ask before discarding (dialogLeaveGuard).") }}</li>
+            </ul>
+            <p class="text-body-sm font-mono" style="color: var(--color-secondary-text);">
+                templates/backoffice/data_source/_dialog.html · src/opendlp/entrypoints/blueprints/data_source.py
+            </p>
+        {% endcall %}
+    {% endcall %}
 </div>

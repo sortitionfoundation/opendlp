@@ -1206,21 +1206,6 @@ def fill_in_title(page: Page, new_title: str):
     title_input.fill(new_title)
 
 
-# Create Assembly Page Tests
-
-
-@when("I visit the create assembly page")
-def visit_create_assembly_page(page: Page):
-    """Navigate to the create assembly page."""
-    page.goto(Urls.backoffice_create_assembly)
-
-
-@then("I should see the create assembly page")
-def see_create_assembly_page(page: Page):
-    """Verify we're on the create assembly page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/project/new"))
-
-
 @when(parsers.parse('I fill in the question with "{question}"'))
 def fill_in_question(page: Page, question: str):
     """Fill in the question textarea with a value."""
@@ -2009,10 +1994,15 @@ def there_is_a_user(email: str, normal_user):
 
 @when(parsers.parse('I create an assembly called "{title}"'))
 def create_assembly_through_the_ui(page: Page, title: str, test_database):
-    """Fill in and submit the backoffice create-assembly form."""
-    page.goto(Urls.backoffice_create_assembly)
-    page.fill('input[name="title"]', title)
-    page.click('button[type="submit"]')
+    """Go through the create project dialog, taking the default at each step."""
+    page.goto(f"{Urls.base}/backoffice/project/new")
+    dialog = page.get_by_role("dialog", name="Create new project")
+    dialog.get_by_label("Project title").fill(title)
+    for landmark in ("#project-location", "#project-targets-source"):
+        dialog.get_by_role("button", name="Next", exact=True).click()
+        expect(dialog.locator(landmark)).to_be_visible()
+    dialog.get_by_role("button", name="Save", exact=True).click()
+    page.wait_for_url(re.compile(r".*/backoffice/project/[0-9a-f-]+$"))
     page.wait_for_load_state("networkidle")
     _assembly_name_id_cache.find_title(title, test_database)
 
