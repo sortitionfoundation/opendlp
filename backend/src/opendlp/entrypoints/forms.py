@@ -569,6 +569,17 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
+class ChangeAssemblyRoleForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for changing the role a team member has on a project."""
+
+    role = RadioField(
+        _l("Project role"),
+        choices=_select_choices(assembly_role_options),
+        coerce=coerce_for_enum(AssemblyRole),
+        validators=[DataRequired()],
+    )
+
+
 class AddUserToAssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for adding a user to an assembly with a specific role."""
 

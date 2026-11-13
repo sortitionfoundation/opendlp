@@ -267,9 +267,17 @@ the members page and the delete buttons across the backoffice use now. A
 design-system alert dialog would be nicer, and is better made as its own
 change across the backoffice than started here.
 
-`POST …/members/<user_id>/remove` gains an htmx branch that answers with the
-Team card. Removing yourself from a project you can then no longer see answers
-`HX-Redirect` to the dashboard.
+*As built:* the bin's form is submitted by `$confirm` as a plain page load,
+not over htmx, so `POST …/members/<user_id>/remove` needs no htmx branch: it
+redirects to the details page at `#team`. Someone who removes themselves from
+a project they can then no longer see is redirected to their list of projects
+instead.
+
+The two dialogs live at `GET/POST …/team/add` and
+`GET/POST …/team/<user_id>/role` (`blueprints/project_details.py`). Changing a
+role goes through a new `change_user_assembly_role` service, which refuses
+someone who has no role on the project - the dialog cannot be used to add
+anyone, which would skip the notification email.
 
 ## Tabs
 
@@ -343,7 +351,7 @@ After steps 1–3 of the create plan (schema, form partial, settings dialog):
 3. ✅ Data source card and the cog; access check rehomed.
 4. ✅ Selection settings section on the Select and replace tab.
 5. ✅ Registration link card.
-6. Team card: table, add dialog, remove; then change role with its guard.
+6. ✅ Team card: table, add dialog, remove; then change role with its guard.
 7. Tabs removed, redirects, the ~50 re-pointed links, `?source=` removed.
 8. BDD/e2e sweep, catalogues, docs.
 

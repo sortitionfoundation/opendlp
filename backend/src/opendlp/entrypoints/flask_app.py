@@ -21,6 +21,7 @@ from opendlp.domain.value_objects import (
     DataSource,
     RespondentsSource,
     TargetsSource,
+    assembly_role_labels,
     assembly_status_labels,
     content_style_labels,
     data_source_labels,
@@ -148,6 +149,7 @@ def register_context_processors(app: Flask) -> None:
     # Same reason: the role tag macro is imported, and needs the labels.
     app.jinja_env.globals["global_role_labels"] = global_role_labels
     app.jinja_env.globals["assembly_status_labels"] = assembly_status_labels
+    app.jinja_env.globals["assembly_role_labels"] = assembly_role_labels
     app.jinja_env.globals["content_style_labels"] = content_style_labels
     app.jinja_env.globals["respondent_status_labels"] = respondent_status_labels
     # The data source dialogs build their dropdowns from the enums and labels.

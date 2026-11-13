@@ -836,6 +836,8 @@ def grant_user_assembly_role(
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to grant roles
+        CannotRemoveLastAssemblyManager: If a non-admin would leave the assembly
+            with no manager by changing its only manager to another role
         UserNotFoundError: If user not found
         AssemblyNotFoundError: If assembly not found
 
@@ -853,6 +855,11 @@ def grant_user_assembly_role(
                 action="grant_user_assembly_role",
                 required_role="admin or assembly manager",
             )
+
+        # Changing the only manager to another role orphans the assembly just
+        # as removing them would, and is refused on the same terms.
+        if role != AssemblyRole.ASSEMBLY_MANAGER and _is_last_assembly_manager(uow, user_id, assembly_id):
+            raise CannotRemoveLastAssemblyManager()
 
     # Validate target user exists
     target_user = uow.users.get(user_id)
@@ -901,6 +908,37 @@ def grant_user_assembly_role(
         )
 
     return assembly_role, detached_user
+
+
+def change_user_assembly_role(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    role: AssemblyRole,
+    current_user: User,
+) -> tuple[UserAssemblyRole, User]:
+    """
+    Change the role of someone who already has one on an assembly.
+
+    Unlike grant_user_assembly_role this never adds anyone: a user with no
+    role on the assembly is reported as not found. No email is sent.
+
+    Raises:
+        InsufficientPermissions: If current_user lacks permission to grant roles
+        CannotRemoveLastAssemblyManager: If a non-admin would leave the assembly
+            with no manager
+        NotFoundError: If the user, the assembly, or the user's role is not found
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    target_user = uow.users.get(user_id)
+    if not target_user:
+        raise UserNotFoundError(f"User {user_id} not found")
+    if target_user.get_assembly_role(assembly_id) is None:
+        raise NotFoundError(f"User {user_id} has no role on assembly {assembly_id}")
+    return grant_user_assembly_role(
+        uow=uow, user_id=user_id, assembly_id=assembly_id, role=role, current_user=current_user
+    )
 
 
 def sole_assembly_manager_id(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> uuid.UUID | None:

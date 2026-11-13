@@ -1,0 +1,56 @@
+{#
+ABOUTME: The dialog that changes one team member's role, on the project details page
+ABOUTME: Says who it is about, offers the roles, and saves over htmx back into the dialog host
+#}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import select %}
+{% from "backoffice/components/modal.html" import modal %}
+{#
+    A fragment dialog (docs/agent/component_accessibility.md), swapped into
+    #project-dialog-host.
+
+    Context:
+        assembly
+        member: the User whose role is changing
+        form: ChangeAssemblyRoleForm
+        form_error: why the change was refused
+        dialog_close_url: set when the page itself was loaded with the dialog open
+#}
+{% set action_url = url_for('project_details.change_team_role', assembly_id=assembly.id, user_id=member.id) %}
+{% set role_options = [] %}
+{% for choice in form.role.choices %}
+    {% set ignored = role_options.append({"value": choice.value, "label": choice.label}) %}
+{% endfor %}
+<div x-data="modal({ initialOpen: true{% if dialog_close_url %}, closeUrl: '{{ dialog_close_url }}'{% endif %} })">
+    {% call modal(id="change-team-role-dialog", title=_("Change role")) %}
+        <form method="post"
+              action="{{ action_url }}"
+              hx-post="{{ action_url }}"
+              hx-target="#project-dialog-host"
+              hx-swap="innerHTML"
+              novalidate>
+            {{ form.hidden_tag() }}
+            {% if form_error %}
+                <div class="mb-4">{{ alert(form_error, variant="error") }}</div>
+            {% endif %}
+            <p class="text-body-md mb-6" style="color: var(--color-body-text);">
+                {{ _("%(user)s (%(email)s)", user=member.display_name, email=member.email) }}
+            </p>
+            {{ select(
+            name="role",
+            id="team-member-role",
+            label=_("Role") ,
+            options=role_options,
+            value=form.role.data.name if form.role.data else "",
+            required=true,
+            error=form.role.errors | join(", "),
+            attrs='data-dialog-initial-focus'
+            ) }}
+            <div class="flex justify-end gap-2 pt-6">
+                {{ button(_("Cancel") , variant="secondary", attrs='@click="close()"') }}
+                {{ button(_("Save") , type="submit", variant="primary") }}
+            </div>
+        </form>
+    {% endcall %}
+</div>

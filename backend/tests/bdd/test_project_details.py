@@ -8,6 +8,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import create_assembly
+from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import assign_assembly_role
 
@@ -323,3 +324,151 @@ def access_is_checked(page: Page) -> None:
     panel = _card(page).locator("#gsheet-access-status")
     expect(panel).to_be_visible()
     expect(panel).not_to_be_empty()
+
+
+# Registration link
+
+
+def _registration_card(page: Page) -> Locator:
+    return page.locator("#registration-link")
+
+
+@given("the project has a registration page", target_fixture="registration_page")
+def project_has_a_registration_page(project, admin_user, test_database):
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        registration_page = create_registration_page_with_slugs(uow, admin_user.id, project.id, name="Main page")
+        uow.commit()
+        return registration_page.create_detached_copy()
+
+
+@then(parsers.parse('the registration link card links to the Registration tab as "{text}"'))
+def registration_card_links_as(page: Page, project, text: str) -> None:
+    link = _registration_card(page).get_by_role("link", name=text)
+    expect(link).to_be_visible()
+    expect(link).to_have_attribute("href", f"/backoffice/project/{project.id}/registration")
+
+
+@then("the registration link card shows the page's URL and its short URL")
+def registration_card_shows_urls(page: Page, registration_page) -> None:
+    card = _registration_card(page)
+    expect(card).to_contain_text(f"/register/{registration_page.url_slug}")
+    expect(card).to_contain_text(f"/r/{registration_page.short_url_slug}")
+
+
+@then("the registration link card offers the QR code to download")
+def registration_card_offers_qr(page: Page) -> None:
+    expect(_registration_card(page).get_by_role("link", name="Download QR code")).to_be_visible()
+
+
+# Team
+
+
+def _team(page: Page) -> Locator:
+    return page.locator("#team")
+
+
+def _add_dialog(page: Page) -> Locator:
+    return page.get_by_role("dialog", name="Add a team member")
+
+
+def _search(page: Page) -> Locator:
+    return _add_dialog(page).locator("#user_id_search")
+
+
+@given(parsers.parse('there is a user "{email}"'))
+def there_is_a_user(email: str, normal_user) -> None:
+    assert email == normal_user.email, f"only the standard normal user is available, not {email}"
+
+
+@given(parsers.parse('"{email}" is a read-only member of the project'))
+def is_a_read_only_member(email: str, project, normal_user, test_database) -> None:
+    assert email == normal_user.email
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        assign_assembly_role(uow, normal_user.id, project.id, AssemblyRole.READ_ONLY)
+        uow.commit()
+
+
+@when("I open the add a team member dialog")
+def open_add_dialog(page: Page) -> None:
+    _team(page).get_by_role("button", name="Add a team member", exact=True).click()
+    expect(_add_dialog(page)).to_be_visible()
+
+
+@then("focus is in the team member search")
+def focus_in_search(page: Page) -> None:
+    expect(_search(page)).to_be_focused()
+
+
+@then("the team member search is empty")
+def search_is_empty(page: Page) -> None:
+    expect(_search(page)).to_have_value("")
+
+
+@when(parsers.parse('I search for "{typed}" and pick "{email}"'))
+def search_and_pick(page: Page, typed: str, email: str) -> None:
+    _search(page).fill(typed)
+    _add_dialog(page).get_by_role("option", name=email).click()
+
+
+@when(parsers.parse('I choose the team role "{label}"'))
+def choose_team_role(page: Page, label: str) -> None:
+    select = _add_dialog(page).locator("#team-member-role")
+    select.select_option(value=label.upper().replace(" ", "_"))
+
+
+@when("I add the team member")
+def add_the_team_member(page: Page) -> None:
+    with page.expect_response(lambda response: response.url.endswith("/team/add")):
+        _add_dialog(page).get_by_role("button", name="Add", exact=True).click()
+
+
+@when("I add the team member and ask for another")
+def add_and_add_another(page: Page) -> None:
+    with page.expect_response(lambda response: response.url.endswith("/team/add?again=1")):
+        _add_dialog(page).get_by_role("button", name="Add and add another", exact=True).click()
+
+
+@then("the add a team member dialog is closed")
+def add_dialog_is_closed(page: Page) -> None:
+    expect(_add_dialog(page)).to_have_count(0)
+
+
+@then(parsers.parse('the add a team member dialog says "{text}"'))
+def add_dialog_says(page: Page, text: str) -> None:
+    expect(_add_dialog(page)).to_contain_text(text)
+
+
+@then(parsers.parse('the team lists "{email}" as "{role}"'))
+def team_lists(page: Page, email: str, role: str) -> None:
+    row = _team(page).get_by_role("row").filter(has_text=email)
+    expect(row).to_be_visible()
+    expect(row).to_contain_text(role)
+
+
+@then(parsers.parse('the team does not list "{email}"'))
+def team_does_not_list(page: Page, email: str) -> None:
+    expect(_team(page)).not_to_contain_text(email)
+
+
+@when(parsers.parse('I open the change role dialog for "{email}"'))
+def open_change_role(page: Page, email: str) -> None:
+    row = _team(page).get_by_role("row").filter(has_text=email)
+    row.get_by_role("button", name="Change the role of").click()
+    expect(page.get_by_role("dialog", name="Change role")).to_be_visible()
+
+
+@when(parsers.parse('I change the role to "{label}"'))
+def change_role_to(page: Page, label: str) -> None:
+    dialog = page.get_by_role("dialog", name="Change role")
+    expect(dialog.locator("#team-member-role")).to_be_focused()
+    dialog.locator("#team-member-role").select_option(value=label.upper().replace(" ", "_"))
+    with page.expect_response(lambda response: response.url.endswith("/role")):
+        dialog.get_by_role("button", name="Save", exact=True).click()
+
+
+@when(parsers.parse('I remove "{email}" from the team and confirm'))
+def remove_and_confirm(page: Page, email: str) -> None:
+    page.once("dialog", lambda dialog: dialog.accept())
+    row = _team(page).get_by_role("row").filter(has_text=email)
+    row.get_by_role("button", name="Remove").click()
+    page.wait_for_load_state("networkidle")

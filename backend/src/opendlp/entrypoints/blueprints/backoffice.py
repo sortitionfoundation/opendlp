@@ -14,6 +14,7 @@ from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_
 from opendlp.domain.assembly_export_gsheet import default_worksheet_name
 from opendlp.domain.value_objects import AssemblyRole, GSheetExportKind
 from opendlp.entrypoints.blueprints.data_source import project_dialog_context
+from opendlp.entrypoints.blueprints.project_details import team_card_context
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     short_url,
@@ -52,7 +53,11 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
 )
 from opendlp.service_layer.gsheet_access_check import fetch_cached_result
-from opendlp.service_layer.permissions import can_manage_assembly, can_manage_assembly_members
+from opendlp.service_layer.permissions import (
+    can_manage_assembly,
+    can_manage_assembly_members,
+    can_see_all_assemblies,
+)
 from opendlp.service_layer.registration_page_service import (
     list_registration_pages,
 )
@@ -146,6 +151,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             project_dialog = None
             if request.args.get("data_source") == "1" and can_manage_project:
                 project_dialog = project_dialog_context(uow, assembly_id)
+            team_card = team_card_context(uow, nav.assembly)
         featured_page = featured_registration_page(registration_pages)
         registration_link = None
         if featured_page is not None:
@@ -181,6 +187,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             gsheet_access_result=gsheet_access_result,
             gsheet_access_auto_check=gsheet_access_auto_check,
             can_check_gsheet_access=can_manage_project,
+            **team_card,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(
@@ -844,7 +851,8 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @backoffice_bp.route("/project/<uuid:assembly_id>/members/<uuid:user_id>/remove", methods=["POST"])
 @login_required
 def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> ResponseReturnValue:
-    """Remove a user from an assembly."""
+    """Remove a user from an assembly, from the Team card on the project details page."""
+    team_url = url_for("backoffice.view_assembly", assembly_id=assembly_id, _anchor="team")
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -861,7 +869,11 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
                 "success",
             )
 
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        # Someone who removed themselves can no longer open the project, unless
+        # they see every project anyway.
+        if user_id == current_user.id and not can_see_all_assemblies(current_user):
+            return redirect(url_for("backoffice.dashboard"))
+        return redirect(team_url)
 
     except CannotRemoveLastAssemblyManager as e:
         logger.warning(
@@ -870,11 +882,11 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             user_id=str(current_user.id),
         )
         flash(e.user_msg(), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        return redirect(team_url)
     except NotFoundError as e:
         logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not remove user from project: %(error)s", error=str(e)), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        return redirect(team_url)
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to remove user from assembly",
@@ -883,7 +895,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             error=str(e),
         )
         flash(_("You don't have permission to remove users from this project"), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        return redirect(team_url)
     except Exception as e:
         logger.exception(
             "Unexpected error removing user from assembly",
@@ -892,7 +904,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             error=str(e),
         )
         flash(_("An error occurred while removing the user from the project"), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        return redirect(team_url)
 
 
 @backoffice_bp.route("/project/<uuid:assembly_id>/members/search")

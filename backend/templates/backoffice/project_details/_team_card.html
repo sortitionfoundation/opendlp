@@ -1,0 +1,105 @@
+{#
+ABOUTME: The Team card on the project details page - who has a role on the project
+ABOUTME: Managers get a button to add someone, and a bin and a pencil beside each person
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_pencil, icon_trash, icon_user_plus %}
+{% from "backoffice/components/section.html" import section %}
+{#
+    Rendered with the page, and again out of band (oob=true) by the routes that
+    add someone or change a role, so the table behind their dialog is current.
+
+    Context:
+        assembly
+        team_members: (User, UserAssemblyRole) pairs
+        can_manage_team: whether to show the button, the bins and the pencils
+        sole_manager_id: the only project manager, when there is exactly one
+        oob: render for an htmx response, to replace the card on the page
+#}
+<div id="team" {% if oob | default(false) %}hx-swap-oob="true"{% endif %}>
+    {% call section() %}
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Team") }}</h2>
+            {% if can_manage_team %}
+                {# Opens the dialog in place, into the page's host; focus comes back here when it closes. #}
+                {{ button(_("Add a team member"),
+                variant="secondary",
+                leading_icon=icon_user_plus(),
+                aria_haspopup="dialog",
+                attrs='data-focus-id="add-team-member" hx-get="' ~ url_for('project_details.add_team_member', assembly_id=assembly.id) ~ '" hx-target="#project-dialog-host" hx-swap="innerHTML"') }}
+            {% endif %}
+        </div>
+        {% if team_members %}
+            <div class="rounded-lg overflow-x-auto"
+                 style="border: 1px solid var(--color-borders-dividers)">
+                <table class="w-full">
+                    <thead>
+                        <tr style="background-color: var(--color-subtle-background-panels)">
+                            <th scope="col"
+                                class="px-3 py-2 text-left text-label-md"
+                                style="color: var(--color-headings)">{{ _("User") }}</th>
+                            <th scope="col"
+                                class="px-3 py-2 text-left text-label-md"
+                                style="color: var(--color-headings)">{{ _("Email") }}</th>
+                            <th scope="col"
+                                class="px-3 py-2 text-left text-label-md"
+                                style="color: var(--color-headings)">{{ _("Role") }}</th>
+                            {% if can_manage_team %}
+                                <th scope="col" class="px-3 py-2">
+                                    <span class="sr-only">{{ _("Actions") }}</span>
+                                </th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user, role in team_members %}
+                            <tr data-focus-row
+                                style="border-top: 1px solid var(--color-borders-dividers)">
+                                <td class="px-3 py-2 text-body-sm" style="color: var(--color-body-text);">{{ user.display_name }}</td>
+                                <td class="px-3 py-2 text-body-sm break-all"
+                                    style="color: var(--color-body-text)">{{ user.email }}</td>
+                                <td class="px-3 py-2 text-body-sm" style="color: var(--color-body-text);">
+                                    {{ assembly_role_labels[role.role] }}
+                                </td>
+                                {% if can_manage_team %}
+                                    {# A project must keep a manager, and only an admin can restore
+                                       one, so a non-admin is not offered the bin or the pencil that
+                                       would be refused. The cell itself stays, or the row loses a
+                                       column. #}
+                                    {% set is_sole_manager = user.id == sole_manager_id %}
+                                    <td class="px-3 py-2 text-right whitespace-nowrap">
+                                        {% if perms.administer_site or not is_sole_manager %}
+                                            <form method="post"
+                                                  action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
+                                                  class="inline"
+                                                  x-data
+                                                  @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this project?', user=user.display_name) }}', $el)">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                {{ button(variant="icon",
+                                                type="submit",
+                                                icon=icon_trash(),
+                                                aria_label=_("Remove %(user)s from the team", user=user.display_name)) }}
+                                            </form>
+                                            {{ button(variant="icon",
+                                            icon=icon_pencil(),
+                                            aria_label=_("Change the role of %(user)s", user=user.display_name),
+                                            aria_haspopup="dialog",
+                                            attrs='data-focus-id="team-role-' ~ user.id ~ '" hx-get="' ~ url_for('project_details.change_team_role', assembly_id=assembly.id, user_id=user.id) ~ '" hx-target="#project-dialog-host" hx-swap="innerHTML"') }}
+                                        {% else %}
+                                            <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                                                {{ _("Last manager") }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-body-md mb-2" style="color: var(--color-body-text);">{{ _("No team members have been added to this project yet.") }}</p>
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Admin users can still manage this project.") }}</p>
+        {% endif %}
+    {% endcall %}
+</div>

@@ -106,3 +106,59 @@ Feature: Project details
     Then the data source settings dialog is open
     And the settings dialog does not say "targets uploaded"
     And the dialog's data location can be changed
+
+  # Registration link
+
+  Scenario: A project with no registration page offers to create one
+    Then the registration link card links to the Registration tab as "Create"
+
+  Scenario: A project with a registration page shows its links
+    Given the project has a registration page
+    And I am on the details page of the project
+    Then the registration link card links to the Registration tab as "See details"
+    And the registration link card shows the page's URL and its short URL
+    And the registration link card offers the QR code to download
+
+  # Team
+
+  Scenario: Adding a team member from the dialog
+    Given there is a user "normal@opendlp.example"
+    When I open the add a team member dialog
+    Then focus is in the team member search
+    When I search for "normal@" and pick "normal@opendlp.example"
+    And I choose the team role "Read Only"
+    And I add the team member
+    Then the add a team member dialog is closed
+    And the team lists "normal@opendlp.example" as "Read only"
+    And I am told "added to project"
+    And focus is on the "Add a team member" button
+
+  Scenario: Adding one person and then another
+    Given there is a user "normal@opendlp.example"
+    When I open the add a team member dialog
+    And I search for "normal@" and pick "normal@opendlp.example"
+    And I add the team member and ask for another
+    Then the add a team member dialog says "has been added"
+    And the team lists "normal@opendlp.example" as "Confirmation caller"
+    And focus is in the team member search
+    And the team member search is empty
+
+  Scenario: Adding nobody is refused in the dialog
+    When I open the add a team member dialog
+    And I add the team member
+    Then the add a team member dialog says "This field is required"
+
+  Scenario: Changing a team member's role
+    Given "normal@opendlp.example" is a read-only member of the project
+    And I am on the details page of the project
+    When I open the change role dialog for "normal@opendlp.example"
+    And I change the role to "Confirmation Caller"
+    Then the team lists "normal@opendlp.example" as "Confirmation caller"
+    And I am told "is now Confirmation caller"
+
+  Scenario: Removing a team member
+    Given "normal@opendlp.example" is a read-only member of the project
+    And I am on the details page of the project
+    When I remove "normal@opendlp.example" from the team and confirm
+    Then the team does not list "normal@opendlp.example"
+    And I am told "removed from project"

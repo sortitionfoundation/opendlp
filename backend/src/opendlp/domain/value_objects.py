@@ -63,6 +63,15 @@ assembly_role_options = {
 }
 
 
+# Short labels, for a table cell or a sentence. Kept next to the role
+# definitions so a renamed role cannot leave a stale label behind somewhere.
+assembly_role_labels = {
+    AssemblyRole.ASSEMBLY_MANAGER: _l("Project manager"),
+    AssemblyRole.CONFIRMATION_CALLER: _l("Confirmation caller"),
+    AssemblyRole.READ_ONLY: _l("Read only"),
+}
+
+
 class AssemblyStatus(Enum):
     ACTIVE = "active"
     ARCHIVED = "archived"

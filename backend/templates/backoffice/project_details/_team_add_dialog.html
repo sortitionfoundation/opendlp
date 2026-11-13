@@ -1,0 +1,80 @@
+{#
+ABOUTME: The "Add a team member" dialog on the project details page - find a user, pick their role
+ABOUTME: Add closes it; Add and add another adds, says who, and comes back empty for the next person
+#}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import select %}
+{% from "backoffice/components/modal.html" import modal %}
+{% from "backoffice/components/search_dropdown.html" import search_dropdown %}
+{#
+    A fragment dialog (docs/agent/component_accessibility.md), swapped into
+    #project-dialog-host. The form posts over htmx back into the host: a
+    refusal is this dialog again with the reason beside its field.
+
+    "Add and add another" is not a submit button and has no name: it posts the
+    same form to the same address with ?again=1, and because the host cannot
+    find it again after the redraw, focus goes to the search field, ready for
+    the next person.
+
+    Context:
+        assembly
+        form: AddUserToAssemblyForm
+        form_error: a reason that belongs to no one field
+        just_added: the name of the person the last "add another" added
+        dialog_close_url: set when the page itself was loaded with the dialog open
+#}
+{% set action_url = url_for('project_details.add_team_member', assembly_id=assembly.id) %}
+{% set role_options = [] %}
+{% for choice in form.role.choices %}
+    {% set ignored = role_options.append({"value": choice.value, "label": choice.label}) %}
+{% endfor %}
+<div x-data="modal({ initialOpen: true{% if dialog_close_url %}, closeUrl: '{{ dialog_close_url }}'{% endif %} })">
+    {% call modal(id="add-team-member-dialog", title=_("Add a team member")) %}
+        <form method="post"
+              action="{{ action_url }}"
+              hx-post="{{ action_url }}"
+              hx-target="#project-dialog-host"
+              hx-swap="innerHTML"
+              novalidate>
+            {{ form.hidden_tag() }}
+            {% if form_error %}
+                <div class="mb-4">{{ alert(form_error, variant="error") }}</div>
+            {% endif %}
+            {% if just_added %}
+                <p class="text-body-md mb-4 p-3 rounded-lg"
+                   role="status"
+                   style="background-color: var(--color-success-background);
+                          color: var(--color-success-text)">
+                    {{ _("%(user)s has been added. Add someone else, or close.", user=just_added) }}
+                </p>
+            {% endif %}
+            <div class="flex flex-col gap-6">
+                {{ search_dropdown(
+                name="user_id",
+                label=_("Team member") ,
+                fetch_url=url_for('backoffice.search_users', assembly_id=assembly.id),
+                placeholder=_("Type to search by email or name…"),
+                hint=form.user_id.description,
+                required=true,
+                error=form.user_id.errors | join(", ")
+                ) }}
+                {{ select(
+                name="role",
+                id="team-member-role",
+                label=_("Role") ,
+                options=role_options,
+                value=form.role.data.name if form.role.data else "",
+                hint=form.role.description,
+                required=true,
+                error=form.role.errors | join(", ")
+                ) }}
+            </div>
+            <div class="flex flex-wrap justify-end gap-2 pt-6">
+                {{ button(_("Cancel") , variant="tertiary", attrs='@click="close()"') }}
+                {{ button(_("Add and add another") , variant="secondary", attrs='hx-post="' ~ action_url ~ '?again=1"') }}
+                {{ button(_("Add") , type="submit", variant="primary") }}
+            </div>
+        </form>
+    {% endcall %}
+</div>

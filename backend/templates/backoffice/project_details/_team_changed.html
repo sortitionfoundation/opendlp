@@ -1,0 +1,12 @@
+{#
+ABOUTME: What the team routes answer a change with, for htmx to swap into the dialog host
+ABOUTME: Nothing, which closes the dialog, or the add dialog again; and out of band the Team card and the flash
+#}
+{% from "backoffice/components/floating_alerts.html" import floating_alerts %}
+{% if form is defined and form %}
+    {% include "backoffice/project_details/_team_add_dialog.html" %}
+{% endif %}
+{% with oob=true %}
+    {% include "backoffice/project_details/_team_card.html" %}
+{% endwith %}
+{{ floating_alerts(oob=true) }}

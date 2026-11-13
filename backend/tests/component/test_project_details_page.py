@@ -10,7 +10,7 @@ from flask.testing import FlaskClient
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.value_objects import AssemblyRole
-from opendlp.service_layer.assembly_service import add_assembly_gsheet
+from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.user_service import assign_assembly_role
 from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeStore, FakeUnitOfWork
@@ -521,3 +521,274 @@ class TestRegistrationLinkCard:
     ) -> None:
         """Creating a page happens on the Registration tab, which the card's link goes to."""
         assert "registration/create" not in logged_in_admin.get(_details(existing_assembly)).data.decode()
+
+
+class TestTeamCard:
+    @pytest.fixture
+    def manager(self, fake_store: FakeStore, logged_in_user: FlaskClient, regular_user, existing_assembly: Assembly):
+        """The regular user, signed in, managing the project alongside its creator."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.ASSEMBLY_MANAGER)
+        return logged_in_user
+
+    @staticmethod
+    def _card(html: str) -> str:
+        start = html.index('<div id="team"')
+        return html[start : html.index('id="project-dialog-host"', start)]
+
+    def test_the_card_lists_the_team_with_short_role_names(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user
+    ) -> None:
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "Team" in card
+        assert admin_user.email in card
+        assert "Project manager" in card
+        assert "assembly-manager" not in card
+
+    def test_a_manager_gets_the_add_button_a_bin_and_a_pencil(
+        self, manager: FlaskClient, existing_assembly: Assembly, admin_user
+    ) -> None:
+        card = self._card(manager.get(_details(existing_assembly)).data.decode())
+
+        assert "Add a team member" in card
+        assert f'hx-get="{_details(existing_assembly)}/team/add"' in card
+        assert f'action="{_details(existing_assembly)}/members/{admin_user.id}/remove"' in card
+        assert f'hx-get="{_details(existing_assembly)}/team/{admin_user.id}/role"' in card
+        assert 'aria-label="Remove Test Admin from the team"' in card
+        assert 'aria-label="Change the role of Test Admin"' in card
+
+    def test_a_reader_sees_the_table_alone(self, reader: FlaskClient, existing_assembly: Assembly, admin_user) -> None:
+        card = self._card(reader.get(_details(existing_assembly)).data.decode())
+
+        assert admin_user.email in card
+        assert "Add a team member" not in card
+        assert "/remove" not in card
+        assert "/role" not in card
+
+    def test_a_non_admin_is_not_offered_what_would_orphan_the_project(
+        self, fake_store: FakeStore, logged_in_organiser: FlaskClient, organiser_user
+    ) -> None:
+        """The only manager's row has no bin and no pencil for someone who could not undo it."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly = create_assembly(uow=uow, title="Organiser's own", created_by_user_id=organiser_user.id)
+            assembly = assembly.create_detached_copy()
+
+        card = self._card(logged_in_organiser.get(_details(assembly)).data.decode())
+
+        assert "Last manager" in card
+        assert f"/members/{organiser_user.id}/remove" not in card
+        assert f"/team/{organiser_user.id}/role" not in card
+
+    def test_an_admin_is_offered_them_even_for_the_only_manager(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user
+    ) -> None:
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "Last manager" not in card
+        assert f"/members/{admin_user.id}/remove" in card
+
+
+class TestAddingATeamMember:
+    def _add(self, client: FlaskClient, assembly: Assembly, user_id, role: str = "READ_ONLY", again: bool = False):
+        query = "?again=1" if again else ""
+        return client.post(
+            f"{_details(assembly)}/team/add{query}", data={"user_id": str(user_id), "role": role}, headers=HTMX
+        )
+
+    def test_the_dialog_opens_over_htmx(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        response = logged_in_admin.get(f"{_details(existing_assembly)}/team/add", headers=HTMX)
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "<html" not in html
+        assert "Add a team member" in html
+        assert f"{_details(existing_assembly)}/members/search" in html
+        assert "Add and add another" in html
+
+    def test_the_roles_are_a_dropdown_that_still_explains_each_role(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        html = logged_in_admin.get(f"{_details(existing_assembly)}/team/add", headers=HTMX).data.decode()
+
+        assert "<select" in html
+        assert "Can view the project but cannot make changes" in html
+
+    def test_without_htmx_its_address_goes_to_the_details_page(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_admin.get(f"{_details(existing_assembly)}/team/add")
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"{_details(existing_assembly)}#team")
+
+    def test_add_closes_the_dialog_and_refreshes_the_card(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user
+    ) -> None:
+        response = self._add(logged_in_admin, existing_assembly, regular_user.id)
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert 'role="dialog"' not in html
+        assert '<div id="team" hx-swap-oob="true">' in html
+        assert regular_user.email in html
+        assert "Read only" in html
+        assert "added to project with role Read only" in html
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(regular_user.id).get_assembly_role(existing_assembly.id) == AssemblyRole.READ_ONLY
+
+    def test_add_and_add_another_keeps_the_dialog_open_and_empty(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user
+    ) -> None:
+        response = self._add(logged_in_admin, existing_assembly, regular_user.id, again=True)
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert 'role="dialog"' in html
+        assert "Test User has been added" in html
+        assert f'value="{regular_user.id}"' not in html
+        assert '<div id="team" hx-swap-oob="true">' in html
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(regular_user.id).get_assembly_role(existing_assembly.id) == AssemblyRole.READ_ONLY
+
+    def test_no_user_chosen_is_refused_in_the_dialog(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_admin.post(
+            f"{_details(existing_assembly)}/team/add", data={"user_id": "", "role": "READ_ONLY"}, headers=HTMX
+        )
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert 'role="dialog"' in html
+        assert "This field is required" in html
+
+    @pytest.mark.parametrize("user_id", ["not-a-uuid", "00000000-0000-0000-0000-000000000000"])
+    def test_a_user_that_does_not_exist_is_refused_in_the_dialog(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, user_id: str
+    ) -> None:
+        response = self._add(logged_in_admin, existing_assembly, user_id)
+
+        assert response.status_code == 422
+        assert "Choose a user from the list" in response.data.decode()
+
+    def test_a_role_that_does_not_exist_is_refused(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user
+    ) -> None:
+        assert self._add(logged_in_admin, existing_assembly, regular_user.id, role="EMPEROR").status_code == 422
+
+    def test_a_reader_cannot_add_anyone(
+        self, fake_store: FakeStore, reader: FlaskClient, existing_assembly: Assembly, organiser_user
+    ) -> None:
+        response = self._add(reader, existing_assembly, organiser_user.id)
+
+        assert response.status_code == 403
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(organiser_user.id).get_assembly_role(existing_assembly.id) is None
+
+    def test_without_htmx_an_add_goes_back_to_the_card(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user
+    ) -> None:
+        response = logged_in_admin.post(
+            f"{_details(existing_assembly)}/team/add", data={"user_id": str(regular_user.id), "role": "READ_ONLY"}
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"{_details(existing_assembly)}#team")
+
+
+class TestChangingARole:
+    @pytest.fixture
+    def member(self, fake_store: FakeStore, regular_user, existing_assembly: Assembly):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.READ_ONLY)
+        return regular_user
+
+    def _url(self, assembly: Assembly, user) -> str:
+        return f"{_details(assembly)}/team/{user.id}/role"
+
+    def test_the_dialog_says_who_and_starts_on_their_role(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, member
+    ) -> None:
+        html = " ".join(logged_in_admin.get(self._url(existing_assembly, member), headers=HTMX).data.decode().split())
+
+        assert "Change role" in html
+        assert "Test User" in html
+        assert member.email in html
+        assert '<option value="READ_ONLY" selected' in html
+
+    def test_a_change_closes_the_dialog_and_refreshes_the_card(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, member
+    ) -> None:
+        response = logged_in_admin.post(
+            self._url(existing_assembly, member), data={"role": "CONFIRMATION_CALLER"}, headers=HTMX
+        )
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert 'role="dialog"' not in html
+        assert '<div id="team" hx-swap-oob="true">' in html
+        assert "Test User is now Confirmation caller" in html
+        with FakeUnitOfWork(store=fake_store) as uow:
+            role = uow.users.get(member.id).get_assembly_role(existing_assembly.id)
+        assert role == AssemblyRole.CONFIRMATION_CALLER
+
+    def test_someone_with_no_role_cannot_be_given_one_this_way(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, organiser_user
+    ) -> None:
+        """Changing a role never adds anyone: that is what Add a team member is for, with its email."""
+        response = logged_in_admin.post(
+            self._url(existing_assembly, organiser_user), data={"role": "READ_ONLY"}, headers=HTMX
+        )
+
+        assert response.status_code == 404
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(organiser_user.id).get_assembly_role(existing_assembly.id) is None
+
+    def test_a_non_admin_cannot_demote_the_only_manager(
+        self, fake_store: FakeStore, logged_in_organiser: FlaskClient, organiser_user
+    ) -> None:
+        """The pencil is hidden for this row; the route refuses all the same."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly = create_assembly(uow=uow, title="Organiser's own", created_by_user_id=organiser_user.id)
+            assembly = assembly.create_detached_copy()
+
+        response = logged_in_organiser.post(
+            self._url(assembly, organiser_user), data={"role": "READ_ONLY"}, headers=HTMX
+        )
+
+        assert response.status_code == 422
+        assert "must keep at least one Project Manager" in response.data.decode()
+        with FakeUnitOfWork(store=fake_store) as uow:
+            role = uow.users.get(organiser_user.id).get_assembly_role(assembly.id)
+        assert role == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_a_reader_cannot_change_a_role(self, reader: FlaskClient, existing_assembly: Assembly, admin_user) -> None:
+        response = reader.post(self._url(existing_assembly, admin_user), data={"role": "READ_ONLY"}, headers=HTMX)
+
+        assert response.status_code == 403
+
+
+class TestRemovingATeamMember:
+    def test_a_removal_comes_back_to_the_team_card(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.READ_ONLY)
+
+        response = logged_in_admin.post(f"{_details(existing_assembly)}/members/{regular_user.id}/remove")
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"{_details(existing_assembly)}#team")
+
+    def test_someone_who_removes_themselves_goes_to_their_projects(
+        self, fake_store: FakeStore, logged_in_user: FlaskClient, regular_user, existing_assembly: Assembly
+    ) -> None:
+        """They can no longer open the project, so sending them back to it would only bounce them."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.ASSEMBLY_MANAGER)
+
+        response = logged_in_user.post(f"{_details(existing_assembly)}/members/{regular_user.id}/remove")
+
+        assert response.status_code == 302
+        assert response.location.endswith("/backoffice/dashboard")

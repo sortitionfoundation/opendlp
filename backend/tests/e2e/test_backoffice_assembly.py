@@ -326,7 +326,7 @@ class TestBackofficeRemoveUserFromAssembly:
         )
 
         assert response.status_code == 302  # Redirect after success
-        assert f"/backoffice/project/{existing_assembly.id}/members" in response.location
+        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}#team")
 
         # Reload user from database to verify removal
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
