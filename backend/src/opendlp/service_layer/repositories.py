@@ -164,6 +164,17 @@ class AssemblyRepository(AbstractRepository):
         """Search assemblies by title (case-insensitive partial match)."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def list_filtered(
+        self, member_user_id: uuid.UUID | None = None, include_archived: bool = False
+    ) -> Iterable[Assembly]:
+        """Assemblies, newest first: only those `member_user_id` holds a role on, if given,
+        and only active ones unless `include_archived`.
+
+        A role lookup, not a permission check, like `get_assemblies_for_user`.
+        """
+        raise NotImplementedError
+
 
 class UserInviteRepository(AbstractRepository):
     """Repository interface for UserInvite domain objects."""

@@ -3640,6 +3640,26 @@ msgstr "%(count)s régi kimeneti munkalap sikeresen törölve"
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A régi munkalapok %(action)s sikertelen: %(error)s"
 
+#: src/opendlp/service_layer/assembly_clone_service.py
+msgid ""
+"The registration form needs its questions. Clone the questions too, or "
+"leave out the registration form."
+msgstr ""
+
+#: src/opendlp/service_layer/assembly_clone_service.py
+msgid "Respondents need the registration questions. Clone the questions too."
+msgstr ""
+
+#: src/opendlp/service_layer/assembly_clone_service.py
+msgid ""
+"Respondents can only be cloned once you confirm they hold no real "
+"personal data, for training or a demo."
+msgstr ""
+
+#: src/opendlp/service_layer/assembly_clone_service.py
+msgid "Keeping respondent statuses only makes sense when cloning respondents."
+msgstr ""
+
 #: src/opendlp/service_layer/dashboard_stats.py
 msgid "Not in targets"
 msgstr "Nem szerepel a célszámok között"
@@ -3912,6 +3932,15 @@ msgstr "Túllépted a gyakorisági korlátot. Próbáld újra később"
 
 #: src/opendlp/service_layer/exceptions.py
 #, python-format
+msgid "You already have a project called %(title)s"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py
+msgid "You already have a project with that title"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py
+#, python-format
 msgid "This registration page already has the maximum of %(limit)s images"
 msgstr "Ezen a regisztrációs oldalon már megvan a maximális %(limit)s kép"
 
@@ -3960,6 +3989,10 @@ msgid ""
 msgstr ""
 "Egy projektnek legalább egy projektvezetővel kell rendelkeznie. Ennek "
 "eltávolítása előtt adj hozzá egy másikat."
+
+#: src/opendlp/service_layer/exceptions.py
+msgid "A project that uses a Google Sheet cannot be cloned"
+msgstr ""
 
 #: src/opendlp/service_layer/image_processing.py
 msgid "The image file is too large"

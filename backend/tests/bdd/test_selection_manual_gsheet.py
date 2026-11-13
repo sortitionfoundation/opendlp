@@ -87,7 +87,7 @@ def _(page: Page, assembly_to_select):
 @given("the selection options are set", target_fixture="assembly_to_select")
 def _(assembly_gsheet_creator):
     """the options are set."""
-    assembly, _ = assembly_gsheet_creator("Assembly to select")
+    assembly, _ = assembly_gsheet_creator("Configured assembly to select")
     return assembly
 
 
@@ -185,7 +185,7 @@ def _(page: Page):
 def _(admin_logged_in_page: Page, assembly_gsheet_creator):
     """the replacements process is initialised."""
     # Create assembly with gsheet configuration
-    assembly, _ = assembly_gsheet_creator("Assembly to select")
+    assembly, _ = assembly_gsheet_creator("Configured assembly to select")
 
     # Navigate to replacements page and load the spreadsheet
     view_url = Urls.for_assembly("view_assembly_data", str(assembly.id))

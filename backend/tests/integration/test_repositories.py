@@ -175,6 +175,39 @@ class TestAssemblyRepository:
         assert [a.title for a in assemblies] == ["Theirs"]
 
 
+class TestAssemblyListFiltered:
+    @pytest.fixture
+    def setup(self, assembly_repo, user_repo, role_repo, postgres_session):
+        member = User(email="member@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        now = datetime.now(UTC)
+        oldest = Assembly(title="Oldest", created_at=now - timedelta(days=3))
+        archived = Assembly(title="Archived", created_at=now - timedelta(days=2))
+        archived.archive()
+        newest = Assembly(title="Newest", created_at=now - timedelta(days=1))
+        user_repo.add(member)
+        for assembly in (oldest, archived, newest):
+            assembly_repo.add(assembly)
+        postgres_session.flush()
+        for assembly in (oldest, archived):
+            role_repo.add(UserAssemblyRole(user_id=member.id, assembly_id=assembly.id, role=AssemblyRole.READ_ONLY))
+        postgres_session.commit()
+        return member
+
+    def test_no_filters_lists_active_newest_first(self, setup, assembly_repo):
+        assert [a.title for a in assembly_repo.list_filtered()] == ["Newest", "Oldest"]
+
+    def test_include_archived(self, setup, assembly_repo):
+        titles = [a.title for a in assembly_repo.list_filtered(include_archived=True)]
+        assert titles == ["Newest", "Archived", "Oldest"]
+
+    def test_member_filter(self, setup, assembly_repo):
+        assert [a.title for a in assembly_repo.list_filtered(member_user_id=setup.id)] == ["Oldest"]
+
+    def test_member_filter_with_archived(self, setup, assembly_repo):
+        titles = [a.title for a in assembly_repo.list_filtered(member_user_id=setup.id, include_archived=True)]
+        assert titles == ["Archived", "Oldest"]
+
+
 class TestUserInviteRepository:
     """Tests for SQL-specific UserInviteRepository methods not in the abstract interface."""
 

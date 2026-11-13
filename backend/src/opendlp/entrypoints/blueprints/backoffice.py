@@ -49,6 +49,7 @@ from opendlp.service_layer.dashboard_stats import (
     get_dashboard_gsheet_config,
 )
 from opendlp.service_layer.exceptions import (
+    AssemblyTitleTaken,
     CannotRemoveLastAssemblyManager,
     InsufficientPermissions,
     NotFoundError,
@@ -125,6 +126,8 @@ def new_assembly() -> ResponseReturnValue:
 
             flash(_("Project '%(title)s' created successfully", title=assembly.title), "success")
             return redirect(url_for("backoffice.view_assembly", assembly_id=assembly.id))
+        except AssemblyTitleTaken as e:
+            form.title.errors.append(e.user_msg())  # type: ignore[attr-defined]
         except InsufficientPermissions as e:
             logger.warning("Insufficient permissions to create assembly", user_id=str(current_user.id), error=str(e))
             flash(_("You don't have permission to create projects"), "error")
@@ -541,6 +544,8 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
                 flash(_("Project '%(title)s' updated successfully", title=updated_assembly.title), "success")
                 return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+            except AssemblyTitleTaken as e:
+                form.title.errors.append(e.user_msg())  # type: ignore[attr-defined]
             except InsufficientPermissions as e:
                 logger.warning(
                     "Insufficient permissions to edit assembly",
