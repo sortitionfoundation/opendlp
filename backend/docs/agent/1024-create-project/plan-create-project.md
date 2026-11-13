@@ -184,6 +184,11 @@ the stored `data_source`, else `opendlp`":
 - any target or respondent → `opendlp`, locked;
 - otherwise the stored value, unlocked, with "In OpenDLP" as the fallback.
 
+The function keeps answering in the two tokens the routes and templates
+already compare against, `"gsheet"` and `"csv"` — `"csv"` meaning "held in
+OpenDLP". Only the stored column says `opendlp`. Renaming the token everywhere
+would touch every tab route for no change in behaviour.
+
 **The lock stays inferred from real data. Storing a choice does not lock
 anything.** Someone who picked "In OpenDLP", saved, and then learns the client
 has a Google Sheet can still switch from the details page; switching away from
@@ -346,7 +351,7 @@ this story, so `docs/language.md` is not changed here.
 
 ## Order of work
 
-1. Migration, domain fields, enums and labels, `determine_data_source`.
+1. ✅ Migration, domain fields, enums and labels, `determine_data_source`.
 2. `_form.html` partial extracted from `assembly_data.html`, rendered by the
    *existing* data source page first — a pure refactor, tests unchanged. The
    selection settings form is left behind on that page for now; the details

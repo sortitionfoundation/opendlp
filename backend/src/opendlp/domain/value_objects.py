@@ -76,6 +76,50 @@ assembly_status_labels = {
 }
 
 
+class DataSource(Enum):
+    """Where a project's targets and respondents are managed."""
+
+    UNDECIDED = ""
+    OPENDLP = "opendlp"
+    GSHEET = "gsheet"
+
+
+data_source_labels = {
+    DataSource.OPENDLP: _l("In OpenDLP"),
+    DataSource.GSHEET: _l("In Google Sheets"),
+}
+
+
+class TargetsSource(Enum):
+    """How an organiser means to get targets into a project held in OpenDLP."""
+
+    UNDECIDED = ""
+    MANUAL = "manual"
+    CSV = "csv"
+
+
+targets_source_labels = {
+    TargetsSource.UNDECIDED: _l("Decide later"),
+    TargetsSource.MANUAL: _l("Create inside OpenDLP"),
+    TargetsSource.CSV: _l("Import from CSV"),
+}
+
+
+class RespondentsSource(Enum):
+    """How an organiser means to get respondents into a project held in OpenDLP."""
+
+    UNDECIDED = ""
+    REGISTRATION = "registration"
+    CSV = "csv"
+
+
+respondents_source_labels = {
+    RespondentsSource.UNDECIDED: _l("Decide later"),
+    RespondentsSource.REGISTRATION: _l("Through OpenDLP registration"),
+    RespondentsSource.CSV: _l("Import from CSV"),
+}
+
+
 class ContentStyle(Enum):
     """How a registration page's intro is styled when it is rendered.
 

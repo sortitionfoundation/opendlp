@@ -45,12 +45,15 @@ from opendlp.domain.value_objects import (
     AssemblyRole,
     AssemblyStatus,
     ContentStyle,
+    DataSource,
     GlobalRole,
     GSheetExportKind,
     RespondentSourceType,
+    RespondentsSource,
     RespondentStatus,
     SelectionRunStatus,
     SelectionTaskType,
+    TargetsSource,
 )
 
 
@@ -310,6 +313,10 @@ assemblies = Table(
         nullable=True,
     ),
     Column("questions_updated_at", TZAwareDatetime(), nullable=True),
+    # Where the organiser said the data is managed; "" means not yet said.
+    Column("data_source", EnumAsString(DataSource, 20), nullable=False, server_default=""),
+    Column("targets_source", EnumAsString(TargetsSource, 20), nullable=False, server_default=""),
+    Column("respondents_source", EnumAsString(RespondentsSource, 20), nullable=False, server_default=""),
     # JSON column for flexible assembly configuration
     Column("config", JSON, nullable=True),
 )
