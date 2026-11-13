@@ -32,6 +32,10 @@ export const SAVE_EVENT = "inline-edit-save";
  *
  * @returns {Object} Alpine component state
  */
+function withBareLineFeeds(text) {
+  return String(text).replace(/\r\n/g, "\n");
+}
+
 export function inlineEdit() {
   return {
     editing: false,
@@ -44,6 +48,21 @@ export function inlineEdit() {
 
     savedValue: function () {
       return this.$refs.saved ? this.$refs.saved.value : "";
+    },
+
+    /**
+     * Whether the field holds something other than the stored value.
+     *
+     * Line endings are left out of it: a textarea reports its value with bare
+     * line feeds, while a value that came through a form post is stored with
+     * carriage returns too, and the two are the same text.
+     */
+    hasChanged: function () {
+      var field = this.$refs.field;
+      if (!field) return false;
+      return (
+        withBareLineFeeds(field.value) !== withBareLineFeeds(this.savedValue())
+      );
     },
 
     startEditing: function () {
@@ -103,8 +122,7 @@ export function inlineEdit() {
      */
     commit: function (returnFocus) {
       if (!this.editing || this.saving) return;
-      var field = this.$refs.field;
-      if (!field || field.value === this.savedValue()) {
+      if (!this.hasChanged()) {
         this.failed = false;
         this.stopEditing(returnFocus);
         return;

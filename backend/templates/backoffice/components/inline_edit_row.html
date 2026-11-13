@@ -1,0 +1,147 @@
+{#
+ABOUTME: One value of a details list edited in place: the value with a pencil, or a field with a tick and an X
+ABOUTME: Rendered with its page, and on its own by the route it posts to, whose answer htmx swaps in for the row
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_check, icon_close, icon_pencil %}
+{% from "backoffice/components/input.html" import input, textarea %}
+{#
+    A row of a details list whose value is edited where it is shown, as on the
+    project details design: the pencil at the end of the row turns the value
+    into a field and itself into a tick, with a red X beside it. The tick,
+    Enter or leaving the row saves; the X or Escape puts the stored value back.
+    The behaviour is the inlineEdit component
+    (src/js/components/inline-edit.js).
+
+    Neither the tick nor the X takes focus from the field when pressed
+    (@mousedown.prevent). Safari does not focus a pressed button at all, so
+    otherwise the field would blur to the page, which counts as leaving the
+    row - and leaving the row saves, even on the way to the X.
+
+    The row is a form posting to `action`. htmx sends it on the component's
+    "inline-edit-save" event rather than on submit, so an unchanged value is
+    never sent, and swaps the server's answer in for the whole row: the row at
+    rest after a save, still open with the reason under the field after a
+    refusal. Without htmx the form posts like any other.
+
+    In a textarea Enter adds a line, so Ctrl+Enter (Cmd+Enter) saves instead;
+    the tick and leaving the row save as they do everywhere.
+
+    Used by My account (profile/_name_row.html) and the project details page
+    (project_details/_rows.html).
+
+    Args:
+        row_id: The id of the row, which htmx swaps the answer in for
+        field: The form field's name, posted as `field` and as the value's name
+        label: The row's term, and the field's label
+        value: The stored value, as the field holds it
+        action: Where the form posts
+        edit_label, save_label, cancel_label: The names of the pencil, the tick
+               and the X - "Edit first name", "Save first name", "Cancel editing
+               first name"
+        kind: "text", "textarea", "number" or "date" - which control edits it
+        display: The value as text at rest, when that differs from `value` (a
+               formatted date). An empty value reads "Not set".
+        submitted: What was typed, when it was refused; defaults to the value
+        error: Why it was refused. A row with an error opens still editing,
+               the field focused.
+        return_focus: The save came from inside the row (the tick or Enter):
+               focus the pencil once htmx has swapped the row in
+        field_attrs: Extra attributes for the control
+        input_id: The control's id; defaults to the field name
+        editable: False for someone who may read the value but not change it:
+               the row has no pencil and no form
+#}
+{% macro inline_edit_row(row_id, field, label, value, action, edit_label="", save_label="", cancel_label="", kind="text", display=none, submitted=none, error="", return_focus=false, field_attrs="", input_id="", editable=true) %}
+    {% set value = value if value is not none else "" %}
+    {% set shown = display if display is not none else value %}
+    {% set editing = error | length > 0 %}
+    {% set input_id = input_id or field %}
+    {% set control_attrs = 'x-ref="field" ' ~ field_attrs ~ (' autofocus' if editing else '') %}
+    {# Padded so the row is as tall as its neighbours with the text on the same
+       line, the field taking the room the text at rest leaves around it. #}
+    <div id="{{ row_id }}"
+         class="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-0.5 border-b last:border-b-0"
+         style="border-color: var(--color-borders-dividers);">
+        {# The label names the field while it is open; at rest it is the row's term. #}
+        <dt class="text-label-lg sm:w-48 shrink-0 sm:pt-3" style="color: var(--color-secondary-text);">
+            {% if editable %}
+                <label for="{{ input_id }}">{{ label }}</label>
+            {% else %}
+                {{ label }}
+            {% endif %}
+        </dt>
+        <dd class="flex-1 min-w-0">
+            {% if not editable %}
+                <p class="text-body-md py-2.5 border-y border-transparent break-words"
+                   style="color: var(--color-body-text);
+                          white-space: pre-line">{{ shown if shown != "" else _("Not set") }}</p>
+            {% else %}
+                <form method="post"
+                      action="{{ action }}"
+                      hx-post="{{ action }}"
+                      hx-trigger="inline-edit-save"
+                      hx-target="#{{ row_id }}"
+                      hx-swap="outerHTML"
+                      x-data="inlineEdit"
+                      {% if editing %}data-editing{% endif %}
+                      @submit.prevent="save()"
+                      @keydown.escape="cancel()"
+                      {% if kind == "textarea" %}@keydown.ctrl.enter="save()" @keydown.meta.enter="save()"{% endif %}
+                      @focusout="leave($event)"
+                      @htmx:after-request="requestDone($event)"
+                      class="flex items-start gap-2"
+                      novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="field" value="{{ field }}">
+                    <input type="hidden" name="return_focus" value="" x-ref="returnFocus">
+                    {# Unnamed, so never sent: the stored value Escape puts back. #}
+                    <input type="hidden" value="{{ value }}" x-ref="saved">
+                    {# The text at rest takes the field's height, so opening it moves nothing. #}
+                    <p x-show="!editing"
+                       {% if editing %}x-cloak{% endif %}
+                       class="flex-1 min-w-0 text-body-md py-2.5 border-y border-transparent break-words"
+                       style="color: var(--color-body-text);
+                              white-space: pre-line">{{ shown if shown != "" else _("Not set") }}</p>
+                    <div x-show="editing" {% if not editing %}x-cloak{% endif %} class="flex-1 min-w-0">
+                        {% if kind == "textarea" %}
+                            {{ textarea(field,
+                            id=input_id,
+                            value=submitted if submitted is not none else value,
+                            error=error,
+                            rows=3,
+                            attrs=control_attrs) }}
+                        {% else %}
+                            {{ input(field,
+                            id=input_id,
+                            type=kind,
+                            value=submitted if submitted is not none else value,
+                            error=error,
+                            attrs=control_attrs) }}
+                        {% endif %}
+                        <p x-show="failed"
+                           x-cloak
+                           role="alert"
+                           class="text-body-sm mt-1.5"
+                           style="color: var(--color-error-text);">{{ _("Something went wrong. Please try again.") }}</p>
+                    </div>
+                    {{ button(variant="icon",
+                    icon=icon_pencil(),
+                    aria_label=edit_label,
+                    attrs='x-show="!editing" x-ref="edit" @click="startEditing()"' ~ (' x-cloak' if editing else '') ~ (' autofocus' if return_focus else '')) }}
+                    {{ button(variant="icon",
+                    type="submit",
+                    icon=icon_check(classes="", style="color: var(--color-success-text);"),
+                    aria_label=save_label,
+                    alpine_loading="saving",
+                    attrs='x-show="editing" @mousedown.prevent' ~ ('' if editing else ' x-cloak')) }}
+                    {{ button(variant="icon",
+                    icon=icon_close(style="color: var(--color-error-text);"),
+                    aria_label=cancel_label,
+                    alpine_disabled="saving",
+                    attrs='x-show="editing" @mousedown.prevent @click="cancel()"' ~ ('' if editing else ' x-cloak')) }}
+                </form>
+            {% endif %}
+        </dd>
+    </div>
+{% endmacro %}

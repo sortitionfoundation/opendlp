@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-13 14:54+0000\n"
+"POT-Creation-Date: 2026-11-13 15:07+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -753,7 +753,8 @@ msgstr "Nem"
 #: templates/backoffice/assembly_edit_respondent.html:95
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:164
-#: templates/backoffice/profile/_name_row.html:88
+#: templates/backoffice/components/inline_edit_row.html:78
+#: templates/backoffice/components/inline_edit_row.html:105
 #: templates/backoffice/profile/view.html:66
 #: templates/gsheets/components/view_config.html:41
 msgid "Not set"
@@ -1178,7 +1179,7 @@ msgid "Select the role this user will have on the project"
 msgstr "Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a projektben"
 
 #: src/opendlp/entrypoints/forms.py:595
-#: templates/backoffice/profile/_name_row.html:38
+#: templates/backoffice/profile/_name_row.html:22
 #, fuzzy
 msgid "First name"
 msgstr "Keresztnév"
@@ -1188,7 +1189,7 @@ msgid "Your first name"
 msgstr "Keresztnév"
 
 #: src/opendlp/entrypoints/forms.py:602
-#: templates/backoffice/profile/_name_row.html:44
+#: templates/backoffice/profile/_name_row.html:28
 #, fuzzy
 msgid "Last name"
 msgstr "Vezetéknév"
@@ -4246,7 +4247,7 @@ msgstr ""
 "Google-táblázatként lehetőséget, majd használd az így létrejött új fájlt."
 
 #: src/opendlp/service_layer/exceptions.py:87
-#: templates/backoffice/profile/_name_row.html:98
+#: templates/backoffice/components/inline_edit_row.html:126
 msgid "Something went wrong. Please try again."
 msgstr "Valami hiba történt. Kérjük, próbáld újra."
 
@@ -8694,32 +8695,32 @@ msgstr "Kódok letöltése"
 msgid "Print codes"
 msgstr "Kódok nyomtatása"
 
-#: templates/backoffice/profile/_name_row.html:39
+#: templates/backoffice/profile/_name_row.html:23
 #, fuzzy
 msgid "Edit first name"
 msgstr "Keresztnév szerkesztése"
 
-#: templates/backoffice/profile/_name_row.html:40
+#: templates/backoffice/profile/_name_row.html:24
 #, fuzzy
 msgid "Save first name"
 msgstr "Keresztnév mentése"
 
-#: templates/backoffice/profile/_name_row.html:41
+#: templates/backoffice/profile/_name_row.html:25
 #, fuzzy
 msgid "Cancel editing first name"
 msgstr "Keresztnév szerkesztésének elvetése"
 
-#: templates/backoffice/profile/_name_row.html:45
+#: templates/backoffice/profile/_name_row.html:29
 #, fuzzy
 msgid "Edit last name"
 msgstr "Vezetéknév szerkesztése"
 
-#: templates/backoffice/profile/_name_row.html:46
+#: templates/backoffice/profile/_name_row.html:30
 #, fuzzy
 msgid "Save last name"
 msgstr "Vezetéknév mentése"
 
-#: templates/backoffice/profile/_name_row.html:47
+#: templates/backoffice/profile/_name_row.html:31
 #, fuzzy
 msgid "Cancel editing last name"
 msgstr "Vezetéknév szerkesztésének elvetése"
