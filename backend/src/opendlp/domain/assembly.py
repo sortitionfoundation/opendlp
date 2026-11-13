@@ -18,9 +18,12 @@ from opendlp.domain.respondents import normalise_field_name
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator, validate_email
 from opendlp.domain.value_objects import (
     AssemblyStatus,
+    DataSource,
     ProgressInfo,
+    RespondentsSource,
     SelectionRunStatus,
     SelectionTaskType,
+    TargetsSource,
     selection_task_type_labels,
 )
 from opendlp.translations import lazy_gettext as _l
@@ -60,6 +63,9 @@ class Assembly:
         reply_to_email: str = "",
         created_by_user_id: uuid.UUID | None = None,
         questions_updated_at: datetime | None = None,
+        data_source: DataSource = DataSource.UNDECIDED,
+        targets_source: TargetsSource = TargetsSource.UNDECIDED,
+        respondents_source: RespondentsSource = RespondentsSource.UNDECIDED,
     ):
         if not title or not title.strip():
             raise ValueError("Assembly title is required")
@@ -87,6 +93,13 @@ class Assembly:
         # them, last changed. Null until they first do. A registration page's
         # form HTML saved before this is behind the questions.
         self.questions_updated_at = questions_updated_at
+        # What the organiser said about where the data lives. A statement of
+        # intent: the data itself decides whether the choice can still change
+        # (see assembly_service.determine_data_source).
+        self.data_source = data_source
+        self.targets_source = targets_source
+        self.respondents_source = respondents_source
+        self._clear_sub_sources_unless_opendlp()
         # An assembly may have a RegistrationPage (domain.registration_page).
         # It is deliberately not wired here as an ORM relationship - it is
         # loaded via RegistrationPageRepository.get_by_assembly_id. A
@@ -127,6 +140,31 @@ class Assembly:
             self.number_to_select = number_to_select
 
         self.updated_at = datetime.now(UTC)
+
+    def set_data_sources(
+        self,
+        data_source: DataSource | None = None,
+        targets_source: TargetsSource | None = None,
+        respondents_source: RespondentsSource | None = None,
+    ) -> None:
+        """Record where the data is managed. None leaves a choice as it is.
+
+        The targets and respondents choices only mean something for a project
+        held in OpenDLP, so any other location clears them.
+        """
+        if data_source is not None:
+            self.data_source = data_source
+        if targets_source is not None:
+            self.targets_source = targets_source
+        if respondents_source is not None:
+            self.respondents_source = respondents_source
+        self._clear_sub_sources_unless_opendlp()
+        self.updated_at = datetime.now(UTC)
+
+    def _clear_sub_sources_unless_opendlp(self) -> None:
+        if self.data_source == DataSource.GSHEET:
+            self.targets_source = TargetsSource.UNDECIDED
+            self.respondents_source = RespondentsSource.UNDECIDED
 
     def set_reply_to(self, name: str = "", email: str = "") -> None:
         """Set the reply-to name and email used when emailing respondents."""
@@ -191,6 +229,9 @@ class Assembly:
             reply_to_email=self.reply_to_email,
             created_by_user_id=self.created_by_user_id,
             questions_updated_at=self.questions_updated_at,
+            data_source=self.data_source,
+            targets_source=self.targets_source,
+            respondents_source=self.respondents_source,
         )
         detached_assembly.target_categories = [c.create_detached_copy() for c in self.target_categories]
         detached_assembly.respondents = [r.create_detached_copy() for r in self.respondents]
