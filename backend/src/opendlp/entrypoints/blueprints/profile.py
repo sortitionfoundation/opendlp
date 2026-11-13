@@ -1,8 +1,21 @@
 """ABOUTME: Profile management routes for users to view and edit their own account
 ABOUTME: Handles profile viewing, editing, and password changes for self-service"""
 
+from typing import Any
+
 import structlog
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint,
+    abort,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    render_template_string,
+    request,
+    session,
+    url_for,
+)
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from werkzeug.wrappers import Response
@@ -33,56 +46,170 @@ profile_bp = Blueprint("profile", __name__)
 
 logger = structlog.get_logger(__name__)
 
+# The names on My account, each edited in place in a row of its own
+# (templates/backoffice/profile/_name_row.html).
+NAME_FIELDS = ("first_name", "last_name")
+
+# One name's row on its own, as htmx swaps it in for the row on the page, with
+# any flash appended out of band to the page's floating alerts.
+_NAME_ROW_RESPONSE = (
+    '{% from "backoffice/profile/_name_row.html" import name_row %}'
+    '{% from "backoffice/components/floating_alerts.html" import floating_alerts %}'
+    "{{ name_row(field, value, submitted=submitted, error=error, return_focus=return_focus) }}"
+    "{{ floating_alerts(oob=true) }}"
+)
+
+# Nothing for the dialog host, which closes the dialog, and the flash appended
+# out of band to the page's floating alerts.
+_DIALOG_CLOSED_RESPONSE = (
+    '{% from "backoffice/components/floating_alerts.html" import floating_alerts %}{{ floating_alerts(oob=true) }}'
+)
+
+
+def _is_htmx() -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def _redirect(location: str) -> ResponseReturnValue:
+    """Redirect, telling htmx to load the page rather than swap it into the dialog host."""
+    if _is_htmx():
+        response = make_response("", 200)
+        response.headers["HX-Redirect"] = location
+        return response
+    return redirect(location)
+
+
+def _view_context() -> dict[str, Any]:
+    """What My account renders from, besides current_user."""
+    return {
+        "role_label": global_role_labels[current_user.global_role],
+        "role_description": global_role_descriptions[current_user.global_role],
+    }
+
 
 @profile_bp.route("/profile")
 @login_required
 def view() -> ResponseReturnValue:
     """View own profile."""
-    return render_template(
-        "backoffice/profile/view.html",
-        role_label=global_role_labels[current_user.global_role],
-        role_description=global_role_descriptions[current_user.global_role],
-    ), 200
+    return render_template("backoffice/profile/view.html", **_view_context()), 200
 
 
 @profile_bp.route("/profile/edit", methods=["GET", "POST"])
 @login_required
 def edit() -> ResponseReturnValue:
-    """Edit own profile."""
-    form = EditOwnProfileForm(obj=current_user)
+    """Save one name, edited in place on My account.
 
+    Each name's row posts its own field, named by `field`. Over htmx the answer
+    is that row again: at rest with the saved name, the success flash appended
+    to the page's alerts, or still open with the reason under the field (422).
+    Without htmx a save goes back to My account, and a refusal renders My
+    account with that row open. There is no edit page, so a GET goes to My
+    account.
+    """
+    if request.method == "GET":
+        return redirect(url_for("profile.view"))
+
+    field = request.form.get("field", "")
+    if field not in NAME_FIELDS:
+        abort(400)
+
+    # Built over the stored user, so the name this row did not post keeps its stored value.
+    form = EditOwnProfileForm(obj=current_user)
     if form.validate_on_submit():
+        value = form[field].data or ""
         try:
             uow = bootstrap.get_flask_uow()
             with uow:
-                update_own_profile(
+                user = update_own_profile(
                     uow=uow,
                     user_id=current_user.id,
-                    first_name=form.first_name.data or "",
-                    last_name=form.last_name.data or "",
+                    first_name=value if field == "first_name" else None,
+                    last_name=value if field == "last_name" else None,
                 )
-
-            flash(_("Profile updated successfully"), "success")
-            return redirect(url_for("profile.view"))
-
         except Exception as e:
             logger.error("Unexpected profile update error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while updating your profile"), "error")
+            error = _("An error occurred while updating your profile")
+        else:
+            flash(_("Profile updated successfully"), "success")
+            if _is_htmx():
+                return _name_row_response(
+                    field, getattr(user, field), return_focus=request.form.get("return_focus") == "1"
+                ), 200
+            return redirect(url_for("profile.view"))
+    else:
+        error = "\n".join(form[field].errors) or _("An error occurred while updating your profile")
 
-    return render_template("backoffice/profile/edit.html", form=form), 200
+    submitted = request.form.get(field, "")
+    if _is_htmx():
+        return _name_row_response(field, getattr(current_user, field), submitted=submitted, error=error), 422
+    return render_template(
+        "backoffice/profile/view.html",
+        name_errors={field: error},
+        name_submitted={field: submitted},
+        **_view_context(),
+    ), 200
+
+
+def _name_row_response(
+    field: str, value: str, submitted: str | None = None, error: str = "", return_focus: bool = False
+) -> str:
+    return render_template_string(
+        _NAME_ROW_RESPONSE, field=field, value=value, submitted=submitted, error=error, return_focus=return_focus
+    )
+
+
+def _password_dialog_response(
+    form: ChangeOwnPasswordForm | SetPasswordForm, form_error: str = "", refused: bool = False
+) -> ResponseReturnValue:
+    """The password dialog on My account: Change password, or Set password for a SetPasswordForm.
+
+    Over htmx the dialog alone, which My account swaps into its dialog host, a
+    refusal answered 422. Without htmx My account with the dialog open, closing
+    to /profile so the address stops opening it.
+    """
+    dialog_context = {
+        "setting": isinstance(form, SetPasswordForm),
+        "password_help": password_validators_help_text_html(),
+        "form_error": form_error,
+    }
+    if _is_htmx():
+        status = 422 if refused else 200
+        return render_template("backoffice/profile/_password_dialog.html", form=form, **dialog_context), status
+    return render_template(
+        "backoffice/profile/view.html",
+        password_form=form,
+        dialog_close_url=url_for("profile.view"),
+        **dialog_context,
+        **_view_context(),
+    ), 200
+
+
+def _signs_in_only_with_oauth() -> bool:
+    """An account with no password it can sign in with, only Google or Microsoft."""
+    return bool(current_user.oauth_provider) and not current_user.has_usable_password()
 
 
 @profile_bp.route("/profile/change-password", methods=["GET", "POST"])
 @login_required
 def change_password() -> ResponseReturnValue:
-    """Change own password."""
-    # OAuth users without a usable password should use set-password instead -
-    # there is no current password for them to type into this form.
-    if current_user.oauth_provider and not current_user.has_usable_password():
-        flash(_("You need to set a password first"), "info")
-        return redirect(url_for("profile.set_password"))
+    """Change own password, in a dialog over My account.
+
+    Over htmx, a GET answers with the dialog, which My account swaps into its
+    dialog host; a refused change with the dialog again, each reason beside its
+    field (422); a change with an empty host, which closes the dialog, and the
+    flash appended to the page's alerts. A reason is never flashed: the alerts
+    sit beneath an open dialog. Without htmx this address is My account with
+    the dialog open - where /.well-known/change-password sends a password
+    manager - and a change goes back to My account.
+
+    An account that signs in only with Google or Microsoft has no current
+    password to type, so for it this address opens the Set password dialog.
+    """
+    if _signs_in_only_with_oauth():
+        return _password_dialog_response(SetPasswordForm(formdata=None))
 
     form = ChangeOwnPasswordForm()
+    form_error = ""
 
     if form.validate_on_submit():
         try:
@@ -98,21 +225,22 @@ def change_password() -> ResponseReturnValue:
                     current_password=form.current_password.data,
                     new_password=form.new_password.data,
                 )
-
-            flash(_("Password changed successfully"), "success")
-            return redirect(url_for("profile.view"))
-
         except InvalidCredentials:
-            flash(_("Current password is incorrect"), "error")
+            # The form validated, so the field has no errors of its own: the
+            # service's refusal is the reason shown beside it.
+            form.current_password.errors = [_("Current password is incorrect")]
         except PasswordTooWeak as e:
-            flash(_("New password is too weak: %(error)s", error=str(e)), "error")
+            form.new_password.errors = [_("New password is too weak: %(error)s", error=str(e))]
         except Exception as e:
             logger.error("Unexpected password change error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while changing your password"), "error")
+            form_error = _("An error occurred while changing your password")
+        else:
+            flash(_("Password changed successfully"), "success")
+            if _is_htmx():
+                return render_template_string(_DIALOG_CLOSED_RESPONSE), 200
+            return redirect(url_for("profile.view"))
 
-    return render_template(
-        "backoffice/profile/change_password.html", form=form, password_help=password_validators_help_text_html()
-    ), 200
+    return _password_dialog_response(form, form_error=form_error, refused=request.method == "POST")
 
 
 @profile_bp.route("/profile/link-google")
@@ -283,19 +411,27 @@ def remove_oauth() -> ResponseReturnValue:
 @profile_bp.route("/profile/set-password", methods=["GET", "POST"])
 @login_required
 def set_password() -> ResponseReturnValue:
-    """Set password for OAuth users who don't have one."""
-    # Redirect if user already has a password they can sign in with. One made
-    # unusable by a lockout does not count - setting a new one is the point.
+    """Set a password for an account that signs in only with Google or Microsoft, in a dialog over My account.
+
+    The dialog and its answers are Change password's. A password set changes
+    the page behind the dialog - the password row, the Change password button
+    - so instead of closing the dialog, My account loads afresh with the flash
+    and focus on Change password.
+
+    An account with a password it can sign in with changes it instead, so for
+    it this address opens the Change password dialog. One made unusable by a
+    lockout does not count - setting a new one is the point.
+    """
     if current_user.has_usable_password():
-        flash(_("You already have a password. Use 'Change password' instead."), "info")
-        return redirect(url_for("profile.view"))
+        return _password_dialog_response(ChangeOwnPasswordForm(formdata=None))
 
     # Require OAuth provider (can't have no auth methods)
     if not current_user.oauth_provider:
         flash(_("Cannot set password without another authentication method"), "error")
-        return redirect(url_for("profile.view"))
+        return _redirect(url_for("profile.view"))
 
     form = SetPasswordForm()
+    form_error = ""
 
     if form.validate_on_submit():
         try:
@@ -318,19 +454,18 @@ def set_password() -> ResponseReturnValue:
                 user.password_hash = hash_password(form.new_password.data)
 
                 uow.commit()
-
-            flash(_("Password set successfully"), "success")
-            return redirect(url_for("profile.view"))
-
         except PasswordTooWeak as e:
-            flash(_("Password is too weak: %(error)s", error=str(e)), "error")
+            # The form validated, so the field has no errors of its own: the
+            # strength rules' refusal is the reason shown beside it.
+            form.new_password.errors = [_("Password is too weak: %(error)s", error=str(e))]
         except Exception as e:
             logger.error("Unexpected set password error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while setting your password"), "error")
+            form_error = _("An error occurred while setting your password")
+        else:
+            flash(_("Password set successfully"), "success")
+            return _redirect(url_for("profile.view", _anchor="focus=change-password"))
 
-    return render_template(
-        "backoffice/profile/set_password.html", form=form, password_help=password_validators_help_text_html()
-    ), 200
+    return _password_dialog_response(form, form_error=form_error, refused=request.method == "POST")
 
 
 @profile_bp.route("/profile/2fa")

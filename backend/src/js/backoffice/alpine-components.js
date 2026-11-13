@@ -10,6 +10,7 @@ import { bulkTargetsValueRow } from "../components/bulk-targets-value-row.js";
 import { charCount } from "../components/char-count.js";
 import { dialogLeaveGuard } from "../components/dialog-leave-guard.js";
 import { infoToggletip } from "../components/info-toggletip.js";
+import { inlineEdit } from "../components/inline-edit.js";
 import { modal } from "../components/modal.js";
 import { registrationMethod } from "../components/registration-method.js";
 import { registrationPageRow } from "../components/registration-page-row.js";
@@ -46,6 +47,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("buttonLoadingDemo", buttonLoadingDemo);
   Alpine.data("dialogLeaveGuard", dialogLeaveGuard);
   Alpine.data("infoToggletip", infoToggletip);
+  Alpine.data("inlineEdit", inlineEdit);
   Alpine.data("modal", modal);
   Alpine.data("progressModalDemo", progressModalDemo);
   Alpine.data("charCount", charCount);

@@ -1,6 +1,6 @@
 {#
 ABOUTME: My account page on the backoffice design system - profile details, authentication methods, security
-ABOUTME: Read-only summary with the actions to edit the profile, change or set a password and manage two-factor
+ABOUTME: The names are edited in place; the actions change or set a password and manage two-factor
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/page_header.html" import page_header %}
@@ -9,6 +9,7 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
 {% from "backoffice/components/tag.html" import tag %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
 {% from "backoffice/profile/_detail_row.html" import detail_row %}
+{% from "backoffice/profile/_name_row.html" import name_row %}
 
 {% block title %}{{ _("My account") }}{% endblock %}
 
@@ -25,6 +26,9 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
 {% block page_content %}
     {% set has_password = current_user.has_usable_password() %}
     {% set provider = current_user.oauth_provider %}
+    {# A name the server refused without htmx comes back open, with the reason. #}
+    {% set name_errors = name_errors | default({}) %}
+    {% set name_submitted = name_submitted | default({}) %}
     <div class="flex flex-col gap-8 max-w-3xl">
         {# Profile information #}
         {% call section() %}
@@ -33,16 +37,14 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
                 {% call detail_row(_("Email address")) %}
                     <dd class="text-body-md flex-1" style="color: var(--color-body-text);">{{ current_user.email }}</dd>
                 {% endcall %}
-                {% call detail_row(_("First name")) %}
-                    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
-                        {{ current_user.first_name if current_user.first_name else _("Not set") }}
-                    </dd>
-                {% endcall %}
-                {% call detail_row(_("Last name")) %}
-                    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
-                        {{ current_user.last_name if current_user.last_name else _("Not set") }}
-                    </dd>
-                {% endcall %}
+                {{ name_row("first_name",
+                current_user.first_name,
+                submitted=name_submitted.get("first_name"),
+                error=name_errors.get("first_name", "")) }}
+                {{ name_row("last_name",
+                current_user.last_name,
+                submitted=name_submitted.get("last_name"),
+                error=name_errors.get("last_name", "")) }}
                 {% call detail_row(_("Role")) %}
                     <dd class="flex-1">
                         {{ tag(role_label, colour="blue") }}
@@ -74,9 +76,11 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
                             </form>
                         {% elif not has_password %}
                             {% if provider %}
-                                <a href="{{ url_for('profile.set_password') }}"
-                                   class="text-body-md underline font-semibold"
-                                   style="color: var(--color-links);">{{ _("Set password") }}</a>
+                                {# Opens the Set password dialog in place, as Change password does. #}
+                                {{ button(_("Set password"),
+                                variant="tertiary",
+                                aria_haspopup="dialog",
+                                attrs='data-focus-id="set-password" hx-get="' ~ url_for('profile.set_password') ~ '" hx-target="#profile-dialog-host" hx-swap="innerHTML"') }}
                             {% else %}
                                 <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("No password set") }}</span>
                             {% endif %}
@@ -178,11 +182,26 @@ ABOUTME: Read-only summary with the actions to edit the profile, change or set a
             </dl>
         {% endcall %}
 
-        <div class="flex flex-wrap gap-4">
-            {{ button(_("Edit profile"), href=url_for('profile.edit'), variant="secondary") }}
-            {% if has_password %}
-                {{ button(_("Change password"), href=url_for('profile.change_password'), variant="secondary") }}
-            {% endif %}
-        </div>
+        {% if has_password %}
+            {# Opens the dialog in place, into the host below; focus comes back here when it closes. #}
+            <div class="flex flex-wrap gap-4">
+                {{ button(_("Change password"),
+                variant="secondary",
+                aria_haspopup="dialog",
+                attrs='data-focus-id="change-password" hx-get="' ~ url_for('profile.change_password') ~ '" hx-target="#profile-dialog-host" hx-swap="innerHTML"') }}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Where the password dialogs open, Change password or Set password. One is
+       rendered here already open when the address itself was
+       /profile/change-password or /profile/set-password, or a password was
+       refused without htmx. #}
+    <div id="profile-dialog-host" data-fragment-dialog-host>
+        {% if password_form %}
+            {% with form=password_form %}
+                {% include "backoffice/profile/_password_dialog.html" %}
+            {% endwith %}
+        {% endif %}
     </div>
 {% endblock %}
