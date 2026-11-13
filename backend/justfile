@@ -271,7 +271,11 @@ translate-regen:
   @# nearly always wrong, can carry placeholders the msgid lacks (which stops
   @# `pybabel compile`), and a bulk "accept fuzzy" pass would ship them. An
   @# empty msgstr is at least honest about needing a translator.
-  uv run pybabel update --ignore-obsolete --no-fuzzy-matching \
+  @# --ignore-pot-creation-date: keep the catalogue's POT-Creation-Date as it
+  @# is. Every regen used to stamp the time of the extraction there, so two
+  @# branches that each ran it conflicted on that header line even when their
+  @# strings merged cleanly. messages.pot still carries the extraction time.
+  uv run pybabel update --ignore-obsolete --no-fuzzy-matching --ignore-pot-creation-date \
     --input-file=translations/messages.pot --output-dir=translations
   @# and trim the extra blank line we always get
   prek run end-of-file-fixer
