@@ -126,7 +126,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 style="
                        background-color: var(--color-page-background);
                        border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
-                       color: var(--color-body-text);
+                       color: var(--color-input-text);
                        {% if disabled %}
                            background-color: var(--color-subtle-background-panels);
                            {% if dim %}color: var(--color-placeholder-text);{% endif %}
@@ -253,7 +253,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             style="
                    background-color: var(--color-page-background);
                    border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
-                   color: var(--color-body-text);
+                   color: var(--color-input-text);
                    {% if disabled %}
                        background-color: var(--color-subtle-background-panels);
                        {% if dim %}color: var(--color-placeholder-text);{% endif %}
@@ -329,7 +329,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             style="
                    background-color: var(--color-page-background);
                    border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
-                   color: var(--color-body-text);
+                   color: var(--color-input-text);
                    {% if disabled %}
                        background-color: var(--color-subtle-background-panels);
                        color: var(--color-placeholder-text);
@@ -593,7 +593,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 {% if attrs %}{{ attrs | safe }}{% endif %}
                 class="text-body-md w-full transition-all duration-150 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-button-md file:cursor-pointer {{ classes }}"
                 style="
-                       color: var(--color-body-text);
+                       color: var(--color-input-text);
                        {% if disabled %}
                            color: var(--color-placeholder-text);
                            cursor: not-allowed;

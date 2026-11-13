@@ -17,7 +17,7 @@ ABOUTME: Confirming resubmits the identical form data with force_unlink=1; cance
 {% endblock %}
 {% block page_content %}
     <section class="mb-8" style="max-width: 48rem;">
-        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("These targets have registration questions linked to them") }}</h2>
+        <h2 class="text-display-sm mb-4" style="color: var(--color-display-text);">{{ _("These targets have registration questions linked to them") }}</h2>
         <p class="text-body-md mb-4">
             {% if deleting_all %}
                 {{ _("A linked question takes its name and its answers from its target, and selection pairs the two by name. Deleting all the targets breaks those pairings. A question people answer stays on the registration page and becomes freely editable; a computed question exists only to feed its target, so it goes when the target does.") }}

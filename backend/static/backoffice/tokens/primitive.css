@@ -4,15 +4,35 @@
  * These are the foundation that semantic tokens reference
  */
 
-/* @font-face declarations - self-hosted via @fontsource
- * Lato ships at weights 100/300/400/700/900 only. Weights 500 and 600
- * are browser-synthesized (matches Figma intent even without real files). */
+/* @font-face declarations - Lato 2.015, self-hosted.
+ * The four files are the LatoLatin subset of the official Lato 2.0 web kit
+ * (latofonts.com, Lato2OFLWeb.zip), committed unchanged, with the SIL Open
+ * Font License next to them in fonts/OFL.txt. One face per weight the type
+ * scale uses, so 500 and 600 render as Medium and Semibold instead of falling
+ * back to the nearest file. The Latin subset includes the Hungarian ő and ű.
+ * Source and upgrade notes: docs/frontend_build.md. */
 @font-face {
     font-family: "Lato";
     font-style: normal;
     font-display: swap;
     font-weight: 400;
-    src: url("/static/backoffice/fonts/lato-latin-400-normal.woff2") format("woff2");
+    src: url("/static/backoffice/fonts/LatoLatin-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Lato";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 500;
+    src: url("/static/backoffice/fonts/LatoLatin-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Lato";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 600;
+    src: url("/static/backoffice/fonts/LatoLatin-Semibold.woff2") format("woff2");
 }
 
 @font-face {
@@ -20,7 +40,7 @@
     font-style: normal;
     font-display: swap;
     font-weight: 700;
-    src: url("/static/backoffice/fonts/lato-latin-700-normal.woff2") format("woff2");
+    src: url("/static/backoffice/fonts/LatoLatin-Bold.woff2") format("woff2");
 }
 
 :root {

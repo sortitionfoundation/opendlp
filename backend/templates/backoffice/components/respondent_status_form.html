@@ -18,7 +18,7 @@ Args:
     {% set selection_status_colours = {"POOL": "grey", "SELECTED": "blue", "CONFIRMED": "green", "WITHDRAWN": "yellow"} %}
     {% set status_key = respondent.selection_status.value %}
     {% set status_colour = selection_status_colours.get(status_key, "grey") %}
-    <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Selection status") }}</h2>
+    <h2 class="text-display-sm mb-4" style="color: var(--color-display-text);">{{ _("Selection status") }}</h2>
     <dl class="flex flex-col gap-2 mb-4">
         <div class="flex items-baseline gap-3">
             <dt class="text-label-lg">{{ _("Current status:") }}</dt>

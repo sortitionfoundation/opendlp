@@ -10,7 +10,7 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
 
 {% block page_content %}
     <div class="flex justify-between items-center mb-2">
-        <h1 style="color: var(--color-headings);" class="text-display-lg">{{ _("Your projects") }}</h1>
+        <h1 style="color: var(--color-display-text);" class="text-display-lg">{{ _("Your projects") }}</h1>
         {% if perms.create_assembly %}
             {{ button(_("Create project"), href=url_for('backoffice.new_assembly'), variant="primary") }}
         {% endif %}

@@ -54,7 +54,7 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
                 </label>
                 <select id="export-status" name="status"
                         class="px-3 py-2 rounded-lg text-body-md"
-                        style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                        style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-input-text);">
                     {% for option in status_options %}
                         <option value="{{ option.value }}" {% if option.value == selected_status %}selected{% endif %}>{{ option.label }}</option>
                     {% endfor %}

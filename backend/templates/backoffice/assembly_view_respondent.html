@@ -130,7 +130,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
             {% call section(classes="mb-6") %}
                 <details x-data="{ open: true }" open>
                     <summary class="text-display-sm mb-4 cursor-pointer"
-                             style="color: var(--color-headings);"
+                             style="color: var(--color-display-text);"
                              @click="open = !open">
                         {{ schema_section.label }}
                     </summary>
@@ -152,7 +152,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
         {% call section(classes="mb-6") %}
             <details x-data="{ open: true }" open>
                 <summary class="text-display-sm mb-4 cursor-pointer"
-                         style="color: var(--color-headings);"
+                         style="color: var(--color-display-text);"
                          @click="open = !open">
                     {{ _("Contact and eligibility") }}
                 </summary>
@@ -191,7 +191,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
     {% call section(classes="mb-6") %}
         <details x-data="{ open: true }" open>
             <summary class="text-display-sm mb-4 cursor-pointer"
-                     style="color: var(--color-headings);"
+                     style="color: var(--color-display-text);"
                      @click="open = !open">
                 {{ _("Attributes") }}
             </summary>
@@ -210,7 +210,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
 {% call section(classes="mb-6") %}
     <details x-data="{ open: true }" open>
         <summary class="text-display-sm mb-4 cursor-pointer"
-                 style="color: var(--color-headings);"
+                 style="color: var(--color-display-text);"
                  @click="open = !open">
             {{ _("Activity") }}
         </summary>
@@ -279,7 +279,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
 {% if can_manage and not is_deleted %}
     {% call section(classes="mb-6") %}
         <div x-data="{ showing: false }">
-            <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Delete personal data") }}</h2>
+            <h2 class="text-display-sm mb-4" style="color: var(--color-display-text);">{{ _("Delete personal data") }}</h2>
             <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
                 {{ _("Under GDPR, a person may request that their personal data be deleted. This action blanks the respondent's contact details, attribute values, and eligibility flags, while preserving their external ID so any past selection can still reference them. This action is irreversible.") }}
             </p>
