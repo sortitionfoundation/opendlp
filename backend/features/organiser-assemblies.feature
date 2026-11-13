@@ -10,24 +10,25 @@ Feature: Organiser assemblies
     Then I should see "Lilliput Transport Assembly"
     When I visit the backoffice dashboard
     Then I should see "Lilliput Transport Assembly"
-    When I visit the assembly members page for "Lilliput Transport Assembly"
+    When I visit the assembly details page for "Lilliput Transport Assembly"
     Then the team members table should show "organiser@opendlp.example"
-    And the team members table should show role "assembly-manager"
+    And the team members table should show role "Project manager"
 
   Scenario: An organiser adds a colleague to their own assembly by exact email
     Given I am logged in as an organiser
     And there is an assembly called "Lilliput Housing Assembly" created by the organiser
     And there is a user "normal@opendlp.example"
-    When I visit the assembly members page for "Lilliput Housing Assembly"
-    Then I should see "Add user to project"
-    When I type "normal@opendlp.example" into the user search dropdown
+    When I visit the assembly details page for "Lilliput Housing Assembly"
+    And I open the add a team member dialog
+    And I type "normal@opendlp.example" into the user search dropdown
     Then I should see "normal@opendlp.example" in the search results
 
   Scenario: An organiser cannot fish for accounts with a partial address
     Given I am logged in as an organiser
     And there is an assembly called "Lilliput Energy Assembly" created by the organiser
     And there is a user "normal@opendlp.example"
-    When I visit the assembly members page for "Lilliput Energy Assembly"
+    When I visit the assembly details page for "Lilliput Energy Assembly"
+    And I open the add a team member dialog
     And I type "normal" into the user search dropdown
     Then I should see "No results found" after searching
 

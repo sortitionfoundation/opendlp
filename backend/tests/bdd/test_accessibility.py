@@ -30,10 +30,12 @@ def page_with_tabs(logged_in_page: Page, existing_assembly) -> Page:
 
 @pytest.fixture
 def page_with_user_search(admin_logged_in_page: Page, existing_assembly) -> Page:
-    """Navigate to assembly members page which has user search autocomplete."""
+    """Open the add a team member dialog on the project details page, which has user search autocomplete."""
     page = admin_logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}/members")
+    page.goto(f"http://localhost:5002/backoffice/project/{existing_assembly.id}")
     page.wait_for_load_state("networkidle")
+    page.locator("#team").get_by_role("button", name="Add a team member", exact=True).click()
+    expect(page.get_by_role("dialog", name="Add a team member")).to_be_visible()
     return page
 
 
@@ -311,7 +313,7 @@ def toggle_buttons_have_aria_pressed(admin_logged_in_page: Page):
 
 @given("the user is on the assembly members page")
 def user_on_assembly_members_page(page_with_user_search: Page):
-    """Ensure user is on assembly members page with search dropdown."""
+    """Ensure the add a team member dialog, with its search dropdown, is open."""
 
 
 @then('the page should have a search dropdown with role="combobox"')

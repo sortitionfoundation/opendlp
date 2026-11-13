@@ -43,7 +43,7 @@ Feature: Backoffice Dashboard
     Given I am logged in as an admin user
     And there is an assembly called "Selection No GSheet Assembly"
     When I visit the assembly selection page for "Selection No GSheet Assembly"
-    Then I should see "Please use the Data tab to set up your data"
+    Then I should see "Please set up your data on the Project Details tab"
     And I should see the "Configure Data Source" button
     And I should not see "Initial Selection"
 
@@ -75,7 +75,7 @@ Feature: Backoffice Dashboard
     Given I am logged in as an admin user
     And there is an assembly called "Selection Tab Navigation Assembly"
     And the assembly "Selection Tab Navigation Assembly" has a gsheet configuration
-    When I visit the assembly data page for "Selection Tab Navigation Assembly"
+    When I visit the assembly targets page for "Selection Tab Navigation Assembly"
     And I click the "Select and Replace" tab
     Then I should see the assembly selection page
 

@@ -173,9 +173,17 @@ calls it target sources (`target_sources`). Do not call it a "data source" in
 the interface: organisers read that as where a target's population figures come
 from, such as the census.
 
-**data source** is where a project's respondents come from: Google Sheets or
-a CSV upload, as chosen on the Data tab. It never means the question behind a
-target, nor where a target's percentages come from.
+**data source** is where a project's targets and respondents are managed: in
+OpenDLP or in Google Sheets, as chosen when the project is created and shown on
+the Data source card of the project details page. For a project held in
+OpenDLP it also covers how each arrives - "Target data source" and
+"Respondents data source". It never means the question behind a target, nor
+where a target's percentages come from.
+
+The third step of the Create new project dialog is named "Targets and people",
+which departs from **respondent** below. That was a deliberate choice for that
+one heading (sc-1024), to be looked at again with the rest of the glossary; the
+field labels in the same step say "respondents".
 
 **source of population figures** is the note a target can carry saying where
 its percentages come from - usually a link to the report, such as census tables

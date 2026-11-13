@@ -4,6 +4,18 @@ This document provides a visual overview of test coverage for the backoffice fun
 
 **Reference IDs:** Each item has a unique ID (e.g., `BO-ASM-3`) for easy reference in discussions.
 
+> **Out of date for projects' set-up pages (sc-1024).** The create page, the
+> edit page, the Data Source tab and the Team Members tab listed below no
+> longer exist: a project is created in a dialog, and its details, data source
+> and team are edited on the project details page. The rows `BO-DAT-*`,
+> `BO-MEM-1`, `BO-MEM-2`, `BDD-GS-*`, `BDD-CSV-*`, `BDD-MEM-*` and the
+> `E2E-GEN-8` to `E2E-GEN-18` and `E2E-MEM-*` entries describe routes and tests
+> that have been replaced. Their coverage now lives in
+> `features/create-project.feature`, `features/project-details.feature`,
+> `tests/component/test_create_project_dialog.py`,
+> `tests/component/test_data_source_dialog.py` and
+> `tests/component/test_project_details_page.py`.
+
 ## Table of Contents
 
 - [Coverage Summary](#coverage-summary)

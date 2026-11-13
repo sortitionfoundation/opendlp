@@ -178,7 +178,7 @@ explicitly. Two ways, and the choice is about size and trust:
 **A few short, trusted values: an `x-data` argument.**
 
 ```html
-<div x-data="urlSelect({ baseUrl: '{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id) }}' })">
+<div x-data="modal({ initialOpen: true, closeUrl: '{{ url_for('backoffice.view_assembly', assembly_id=assembly.id) }}' })">
 ```
 
 **Anything larger, or anything a user wrote: a JSON data block**, read with `readJsonScript()`

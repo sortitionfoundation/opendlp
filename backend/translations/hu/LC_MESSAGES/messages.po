@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-13 15:58+0000\n"
+"POT-Creation-Date: 2026-11-13 16:16+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -6294,8 +6294,8 @@ msgid "No respondents uploaded yet."
 msgstr "Még nincs feltöltött jelentkező."
 
 #: templates/backoffice/assembly_respondents.html:173
-msgid "Please configure a data source in the Data tab first."
-msgstr "Előbb állíts be egy adatforrást az Adatok lapon."
+msgid "Please set up this project's data source on the Project Details tab first."
+msgstr ""
 
 #: templates/backoffice/assembly_respondents.html:175
 #: templates/backoffice/assembly_selection.html:182
@@ -6400,8 +6400,10 @@ msgstr ""
 "előzményeket."
 
 #: templates/backoffice/assembly_selection.html:180
-msgid "Please use the Data tab to set up your data before running a selection."
-msgstr "A kiválasztás futtatása előtt add meg az adataidat az Adatok lapon."
+msgid ""
+"Please set up your data on the Project Details tab before running a "
+"selection."
+msgstr ""
 
 #: templates/backoffice/assembly_selection.html:295
 #: templates/gsheets/manage_tabs.html:2 templates/gsheets/manage_tabs.html:8

@@ -13,7 +13,7 @@ Both are described here and referred to from the other plan. Neither plan can
 ship alone: removing the Data Source tab needs the form to exist, and the
 dialog's last step needs somewhere to land.
 
-**Status: agreed, not yet implemented.** Two rounds of questions are answered
+**Status: implemented.** Every step under [Order of work](#order-of-work) is done; [As built](#as-built-where-the-code-departs-from-the-text-above) says where the code departs from the text. Two rounds of questions are answered
 and folded into the text; the answers are logged under
 [Decisions](#decisions). Nothing is open.
 

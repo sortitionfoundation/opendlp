@@ -54,6 +54,13 @@ can_edit_respondent(user, assembly)
 can_call_confirmations(user, assembly)
 ```
 
+`can_manage_assembly_members` is what the Team card on the project details page
+asks before showing its button, its bins and its pencils. One rule sits beneath
+it in the service layer: a project must keep a project manager. Someone who is
+not an admin can neither remove the only manager nor change them to another
+role (`CannotRemoveLastAssemblyManager`); an admin can do both, because an
+admin can put a manager back.
+
 Those two shapes are what a future policy object
 (`Policy(user).can_view(assembly)`) can absorb without touching call sites, so
 keep to them.

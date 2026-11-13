@@ -42,7 +42,6 @@ class Urls:
     backoffice_dashboard = f"{base}/backoffice/dashboard"
     backoffice_assembly = "{base}/backoffice/project/{assembly_id}"
     backoffice_members_assembly = "{base}/backoffice/project/{assembly_id}/members"
-    backoffice_data_assembly = "{base}/backoffice/project/{assembly_id}/data"
     backoffice_targets_assembly = "{base}/backoffice/project/{assembly_id}/targets"
     backoffice_respondents_assembly = "{base}/backoffice/project/{assembly_id}/respondents"
     backoffice_selection_assembly = "{base}/backoffice/project/{assembly_id}/selection"
@@ -74,18 +73,6 @@ class Urls:
     @classmethod
     def backoffice_members_assembly_url(cls, assembly_id: str) -> str:
         return cls.backoffice_members_assembly.format(base=cls.base, assembly_id=assembly_id)
-
-    @classmethod
-    def backoffice_data_assembly_url(cls, assembly_id: str, source: str = "", mode: str = "") -> str:
-        url = cls.backoffice_data_assembly.format(base=cls.base, assembly_id=assembly_id)
-        params = {}
-        if source:
-            params["source"] = source
-        if mode:
-            params["mode"] = mode
-        if params:
-            url += "?" + urllib.parse.urlencode(params)
-        return url
 
     @classmethod
     def backoffice_targets_assembly_url(cls, assembly_id: str, source: str = "") -> str:

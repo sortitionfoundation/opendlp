@@ -170,7 +170,7 @@ ABOUTME: Displays respondent data configuration for assemblies
     {% else %}
         {# No data source selected #}
         <section class="mb-8">
-            {{ alert(_("Please configure a data source in the Data tab first."), variant="warning") }}
+            {{ alert(_("Please set up this project's data source on the Project Details tab first."), variant="warning") }}
             <div class="mt-4">
                 {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1), variant="primary") }}
             </div>

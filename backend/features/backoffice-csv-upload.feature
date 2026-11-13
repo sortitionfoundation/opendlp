@@ -1,7 +1,7 @@
 Feature: Backoffice CSV Upload
   As an administrator
-  I want to upload CSV files for assemblies
-  So that I can import targets and people data without using Google Sheets.
+  I want a project's tabs to follow the data it holds
+  So that I can only go where there is something to do.
 
   Scenario: A new project has its Targets tab open and its Respondents tab waiting for data
     Given I am logged in as an admin user
@@ -38,51 +38,14 @@ Feature: Backoffice CSV Upload
     Then I should see "Respondents are configured in Google Sheets"
     And I should see "Respondents"
 
-  Scenario: Targets tab is enabled for CSV source until targets uploaded
-    Given I am logged in as an admin user
-    And there is an assembly called "CSV Targets Assembly"
-    When I visit the assembly data page for "CSV Targets Assembly" with source "csv"
-    Then I should see a "Targets" tab in the assembly navigation
-    And the "Targets" tab should be enabled
-
-  # CSV Upload Panel Tests
-
-  Scenario: CSV upload section appears when CSV source is selected
-    Given I am logged in as an admin user
-    And there is an assembly called "CSV Upload Section Test"
-    When I visit the assembly data page for "CSV Upload Section Test" with source "csv"
-    Then I should see "CSV Files Upload"
-    And I should see "Target"
-    And I should see "People"
-
-  Scenario: Both Target and People upload buttons are active initially
-    Given I am logged in as an admin user
-    And there is an assembly called "CSV Initial Upload State"
-    When I visit the assembly data page for "CSV Initial Upload State" with source "csv"
-    Then the Target upload button should be enabled
-    And the People upload button should be enabled
-
-  Scenario: The example links line up at the foot of the two upload cards
-    Given I am logged in as an admin user
-    And there is an assembly called "CSV Example Links"
-    When I visit the assembly data page for "CSV Example Links" with source "csv"
-    Then each "Download an example CSV" link should sit below its card's Upload button
-    And the two "Download an example CSV" links should start level with each other
-    And the two upload cards should be the same height
-
-  Scenario: After uploading targets, People upload becomes active
-    Given I am logged in as an admin user
-    And there is an assembly called "CSV With Targets"
-    And the assembly "CSV With Targets" has targets uploaded
-    When I visit the assembly data page for "CSV With Targets"
-    Then the People upload button should be enabled
-    And the data source selector should be disabled
+  # The upload itself is in the data source dialog: see create-project.feature
+  # and project-details.feature.
 
   Scenario: Targets tab is enabled after targets uploaded
     Given I am logged in as an admin user
     And there is an assembly called "CSV Targets Tab Enable"
     And the assembly "CSV Targets Tab Enable" has targets uploaded
-    When I visit the assembly data page for "CSV Targets Tab Enable"
+    When I visit the assembly details page for "CSV Targets Tab Enable"
     Then the "Targets" tab should be enabled
     And the "Respondents" tab should be disabled
 
@@ -91,24 +54,23 @@ Feature: Backoffice CSV Upload
     And there is an assembly called "CSV Both Uploaded"
     And the assembly "CSV Both Uploaded" has targets uploaded
     And the assembly "CSV Both Uploaded" has respondents uploaded
-    When I visit the assembly data page for "CSV Both Uploaded"
+    When I visit the assembly details page for "CSV Both Uploaded"
     Then the "Targets" tab should be enabled
     And the "Respondents" tab should be enabled
-    And the data source selector should be disabled
 
-  # Building the targets from the respondent data
+  # Building the targets from the respondent data, on the Targets tab
 
   Scenario: The respondent columns are only offered once there is data to read
     Given I am logged in as an admin user
     And there is an assembly called "No Respondents Yet"
-    When I visit the assembly data page for "No Respondents Yet" with source "csv"
+    When I visit the assembly targets page for "No Respondents Yet"
     Then I should not see "Create from respondent data"
 
   Scenario: Building the target categories from the respondent data columns
     Given I am logged in as an admin user
     And there is an assembly called "Targets From Respondents"
     And the assembly "Targets From Respondents" has respondents uploaded
-    When I visit the assembly data page for "Targets From Respondents"
+    When I visit the assembly targets page for "Targets From Respondents"
     And I open the dialog to create targets from respondent data
     And I choose the respondent column "Gender"
     And I add the selected categories

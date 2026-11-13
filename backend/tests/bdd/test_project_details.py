@@ -7,12 +7,12 @@ from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.value_objects import AssemblyRole
-from opendlp.service_layer.assembly_service import create_assembly
+from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import assign_assembly_role
 
-from .config import NORMAL_PASSWORD, Urls
+from .config import NORMAL_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
 
 scenarios("../../features/project-details.feature")
 
@@ -320,10 +320,51 @@ def card_links_to_sheet(page: Page) -> None:
 
 @then("the spreadsheet's access is checked on the page")
 def access_is_checked(page: Page) -> None:
-    """The panel is there and has finished asking: with no Google credentials in tests it says it cannot check."""
+    """The status panel replaces "Checking…" with an outcome.
+
+    Which outcome depends on whether the BDD server has Google credentials, so
+    only the panel's progress is asserted; the outcomes have component tests.
+    """
     panel = _card(page).locator("#gsheet-access-status")
     expect(panel).to_be_visible()
-    expect(panel).not_to_be_empty()
+    expect(panel.locator(".gsheet-access__pending")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT * 6)
+    expect(panel).not_to_have_text("")
+
+
+@given("the project is managed in a Google Sheet")
+def project_in_a_google_sheet(project, admin_user, test_database) -> None:
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        add_assembly_gsheet(uow=uow, user_id=admin_user.id, assembly_id=project.id, url=SHEET_URL, team="uk")
+        uow.commit()
+
+
+@when(parsers.parse('I change the spreadsheet URL to "{url}"'))
+def change_spreadsheet_url(page: Page, url: str) -> None:
+    _settings_dialog(page).get_by_label("Spreadsheet URL").fill(url)
+
+
+@when("I save the data source settings expecting a refusal")
+def save_expecting_refusal(page: Page) -> None:
+    with page.expect_response(lambda response: response.url.endswith("/data-source/save")) as saved:
+        _settings_dialog(page).get_by_role("button", name="Save", exact=True).click()
+    assert saved.value.status == 422
+
+
+@then("the spreadsheet URL is marked as refused")
+def spreadsheet_url_is_refused(page: Page) -> None:
+    expect(_settings_dialog(page).get_by_label("Spreadsheet URL")).to_have_attribute("aria-invalid", "true")
+
+
+@when("I remove the Google Sheets settings and confirm")
+def remove_sheet_and_confirm(page: Page) -> None:
+    page.once("dialog", lambda dialog: dialog.accept())
+    _settings_dialog(page).get_by_role("button", name="Remove Google Sheets settings", exact=True).click()
+    page.wait_for_url("**/backoffice/project/*?data_source=1*")
+
+
+@when("I ask to check access to the spreadsheet")
+def ask_to_check_access(page: Page) -> None:
+    _card(page).get_by_role("button", name="Check access", exact=True).click()
 
 
 # Registration link

@@ -107,6 +107,47 @@ Feature: Project details
     And the settings dialog does not say "targets uploaded"
     And the dialog's data location can be changed
 
+  Scenario: A Google Sheets project shows its sheet and its location is fixed
+    Given the project is managed in a Google Sheet
+    And I am on the details page of the project
+    Then the data source card says "In Google Sheets"
+    And the data source card links to the spreadsheet
+    When I open the data source settings
+    Then the dialog's data location is "In Google Sheets"
+    And the dialog's data location cannot be changed
+
+  Scenario: Updating a Google Sheet's settings
+    Given the project is managed in a Google Sheet
+    And I am on the details page of the project
+    When I open the data source settings
+    And I change the spreadsheet URL to "https://docs.google.com/spreadsheets/d/new-id-9999/edit"
+    And I save the data source settings
+    Then the data source card says "new-id-9999"
+    And I am told "Data source settings saved"
+
+  Scenario: A spreadsheet URL that is missing is refused in the dialog
+    When I open the data source settings
+    And I change the dialog's data location to "In Google Sheets"
+    And I save the data source settings expecting a refusal
+    Then the data source settings dialog is open
+    And the spreadsheet URL is marked as refused
+    And the data source card says "In OpenDLP"
+
+  Scenario: Removing a Google Sheet's settings frees the location
+    Given the project is managed in a Google Sheet
+    And I am on the details page of the project
+    When I open the data source settings
+    And I remove the Google Sheets settings and confirm
+    Then the data source settings dialog is open
+    And the dialog's data location can be changed
+    And I am told "removed successfully"
+
+  Scenario: Checking access to an existing spreadsheet
+    Given the project is managed in a Google Sheet
+    And I am on the details page of the project
+    When I ask to check access to the spreadsheet
+    Then the spreadsheet's access is checked on the page
+
   # Registration link
 
   Scenario: A project with no registration page offers to create one

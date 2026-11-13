@@ -4,7 +4,7 @@ Shortcut sc-1024. The second of two plans for this branch; read
 [plan-create-project.md](plan-create-project.md) first — it defines the data
 source form and the three stored choices that this page shows.
 
-**Status: agreed, not yet implemented.** Two rounds of questions are answered
+**Status: implemented.** Every step under [Order of work](#order-of-work) is done; notes marked *As built* say where the code departs from the text. Two rounds of questions are answered
 and folded into the text; the answers are logged under
 [Decisions](#decisions). Nothing is open.
 
@@ -345,6 +345,16 @@ updates when the title is edited.
 The test churn from removing the Data Source tab is the largest single cost in
 either plan — most CSV and Google Sheet scenarios start there.
 
+*As built:* `features/project-details.feature` holds the scenarios for the
+page (edit in place, the data source dialog including Google Sheets, the
+registration link, the team); `features/backoffice-assembly-gsheet.feature` is
+gone, and the members, CSV-upload and organiser features were rewritten around
+the cards. Thirty-six step definitions that only the old pages used were
+removed from `tests/bdd/test_backoffice.py`. Two documents are flagged as
+needing a rewrite rather than rewritten:
+`tests/manual/backoffice-gsheet/gsheet-manual-test-plan.md` and
+`docs/backoffice-test-coverage.md`.
+
 ## Order of work
 
 After steps 1–3 of the create plan (schema, form partial, settings dialog):
@@ -356,7 +366,7 @@ After steps 1–3 of the create plan (schema, form partial, settings dialog):
 5. ✅ Registration link card.
 6. ✅ Team card: table, add dialog, remove; then change role with its guard.
 7. ✅ Tabs removed, redirects, the ~50 re-pointed links, `?source=` removed.
-8. BDD/e2e sweep, catalogues, docs.
+8. ✅ BDD/e2e sweep, catalogues, docs.
 
 Steps 2–6 each leave a working page with the old tabs still present, so the
 branch can be reviewed card by card; step 7 is the one that removes things.

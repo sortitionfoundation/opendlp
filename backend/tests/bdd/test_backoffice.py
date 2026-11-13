@@ -36,7 +36,6 @@ from .helpers import assert_step_dialog_dimmed
 scenarios("../../features/backoffice.feature")
 scenarios("../../features/backoffice-assembly.feature")
 scenarios("../../features/backoffice-assembly-members.feature")
-scenarios("../../features/backoffice-assembly-gsheet.feature")
 scenarios("../../features/backoffice-csv-upload.feature")
 scenarios("../../features/backoffice-registration-editor.feature")
 scenarios("../../features/backoffice-registration-visual-editor.feature")
@@ -1080,28 +1079,6 @@ def see_page_heading(page: Page, title: str):
     expect(heading).to_contain_text(title)
 
 
-@then("I should see the assembly question section")
-def see_assembly_question_section(page: Page):
-    """Verify the assembly question section is visible."""
-    # The section() macro renders a div, not a section element
-    # Look for h2 heading containing "Framing question"
-    heading = page.locator("h2", has_text="Framing question")
-    expect(heading).to_be_visible()
-
-
-@then("I should see the assembly details summary")
-def see_assembly_details_summary(page: Page):
-    """Verify the assembly details summary (dl/dd section) is visible."""
-    # The section() macro renders a div, not a section element.
-    # Use exact-match role lookup so we don't collide with the "Registration
-    # Page Details" h2 added when the registration page section landed.
-    heading = page.get_by_role("heading", name="Details", exact=True)
-    expect(heading).to_be_visible()
-    # The dl should be a sibling of the h2 within the same container
-    details_list = page.locator("dl").first
-    expect(details_list).to_be_visible()
-
-
 @then(parsers.parse('I should see "{text}"'))
 def see_text_on_page(page: Page, text: str):
     """Verify specific text is visible on the page."""
@@ -1140,48 +1117,6 @@ def click_link_with_text(page: Page, link_text: str):
     link.click()
     # Wait for navigation
     page.wait_for_load_state("networkidle")
-
-
-@then("I should see the title input field")
-def see_title_input_field(page: Page):
-    """Verify the title input field is visible."""
-    title_input = page.locator("input[name='title']")
-    expect(title_input).to_be_visible()
-
-
-@then("I should see the question textarea field")
-def see_question_textarea_field(page: Page):
-    """Verify the question textarea field is visible."""
-    question_textarea = page.locator("textarea[name='question']")
-    expect(question_textarea).to_be_visible()
-
-
-@then("I should see the first event date field")
-def see_first_event_date_field(page: Page):
-    """Verify the first event date field is visible."""
-    date_input = page.locator("input[name='first_assembly_date']")
-    expect(date_input).to_be_visible()
-
-
-@then("I should see the number to select field")
-def see_number_to_select_field(page: Page):
-    """Verify the number to select field is visible."""
-    number_input = page.locator("input[name='number_to_select']")
-    expect(number_input).to_be_visible()
-
-
-@when(parsers.parse('I fill in the title with "{new_title}"'))
-def fill_in_title(page: Page, new_title: str):
-    """Fill in the title input with a new value."""
-    title_input = page.locator("input[name='title']")
-    title_input.fill(new_title)
-
-
-@when(parsers.parse('I fill in the question with "{question}"'))
-def fill_in_question(page: Page, question: str):
-    """Fill in the question textarea with a value."""
-    question_textarea = page.locator("textarea[name='question']")
-    question_textarea.fill(question)
 
 
 @when(parsers.parse('I fill in the number to select with "{number}"'))
@@ -1313,12 +1248,6 @@ def type_into_search_dropdown(page: Page, text: str):
     page.wait_for_timeout(500)
 
 
-@then("I should see the assembly members page")
-def see_assembly_members_page(page: Page):
-    """Verify we're on the assembly members page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/project/.*/members"))
-
-
 @then(parsers.parse('I should see "{text}" as a section heading'))
 def see_section_heading(page: Page, text: str):
     """Verify a section heading with specific text is visible."""
@@ -1326,21 +1255,24 @@ def see_section_heading(page: Page, text: str):
     expect(heading).to_be_visible()
 
 
+@when("I open the add a team member dialog")
+def open_add_team_member_dialog(page: Page):
+    """Open the dialog from the Team card on the project details page."""
+    page.locator("#team").get_by_role("button", name="Add a team member", exact=True).click()
+    expect(page.get_by_role("dialog", name="Add a team member")).to_be_visible()
+
+
+@then("I should see the team role dropdown")
+def see_team_role_dropdown(page: Page):
+    """Verify the dialog offers the roles in a dropdown."""
+    expect(page.get_by_role("dialog", name="Add a team member").locator("select[name='role']")).to_be_visible()
+
+
 @then("I should see the user search dropdown")
 def see_user_search_dropdown(page: Page):
     """Verify the user search dropdown is visible."""
     search_input = page.locator("#user_id_search")
     expect(search_input).to_be_visible()
-
-
-@then("I should see the role selection radio buttons")
-def see_role_selection_radio_buttons(page: Page):
-    """Verify the role selection radio buttons are visible."""
-    fieldset = page.locator("fieldset", has_text="Role")
-    expect(fieldset).to_be_visible()
-    # Check that radio buttons exist
-    radios = fieldset.locator("input[type='radio']")
-    expect(radios.first).to_be_visible()
 
 
 @then("I should see the team members table")
@@ -1368,22 +1300,15 @@ def team_members_table_shows_role(page: Page, role: str):
 def see_remove_buttons_in_table(page: Page):
     """Verify remove buttons are visible in the team members table."""
     table = page.locator("table")
-    remove_button = table.locator("button", has_text="Remove")
+    remove_button = table.get_by_role("button", name=re.compile(r"^Remove .* from the team$"))
     expect(remove_button.first).to_be_visible()
-
-
-@then("I should not see the user search dropdown")
-def not_see_user_search_dropdown(page: Page):
-    """Verify the user search dropdown is not visible."""
-    search_input = page.locator("#user_id_search")
-    expect(search_input).to_be_hidden()
 
 
 @then("I should not see remove buttons in the team members table")
 def not_see_remove_buttons_in_table(page: Page):
     """Verify remove buttons are not visible in the team members table."""
     table = page.locator("table")
-    remove_button = table.locator("button", has_text="Remove")
+    remove_button = table.get_by_role("button", name=re.compile(r"^Remove .* from the team$"))
     expect(remove_button).to_have_count(0)
 
 
@@ -1462,167 +1387,6 @@ def create_gsheet_config_for_assembly(title: str, admin_user, test_database):
             generate_remaining_tab=False,
             columns_to_keep=[],
         )
-
-
-@when(parsers.parse('I visit the assembly data page for "{title}"'))
-def visit_assembly_data_page(page: Page, title: str, test_database):
-    """Navigate to the assembly data page."""
-    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if assembly_id:
-        page.goto(Urls.backoffice_data_assembly_url(assembly_id))
-
-
-@when(parsers.parse('I visit the assembly data page for "{title}" with source "{source}"'))
-def visit_assembly_data_page_with_source(page: Page, title: str, source: str, test_database):
-    """Navigate to the assembly data page with a specific source."""
-    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if assembly_id:
-        page.goto(Urls.backoffice_data_assembly_url(assembly_id, source=source))
-
-
-@when(parsers.parse('I visit the assembly data page for "{title}" with source "{source}" and mode "{mode}"'))
-def visit_assembly_data_page_with_source_and_mode(page: Page, title: str, source: str, mode: str, test_database):
-    """Navigate to the assembly data page with a specific source and mode."""
-    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if assembly_id:
-        page.goto(Urls.backoffice_data_assembly_url(assembly_id, source=source, mode=mode))
-
-
-@when(parsers.parse('I select "{option}" from the data source selector'))
-def select_data_source(page: Page, option: str):
-    """Select an option from the data source selector dropdown."""
-    selector = page.locator("select#data_source")
-    selector.select_option(label=option)
-    page.wait_for_load_state("networkidle")
-
-
-@when(parsers.parse('I fill in the gsheet URL with "{url}"'))
-def fill_gsheet_url(page: Page, url: str):
-    """Fill in the Google Sheet URL input field."""
-    url_input = page.locator("input[name='url']")
-    url_input.fill(url)
-
-
-@when(parsers.parse('I uncheck the "{label}" checkbox'))
-def uncheck_checkbox(page: Page, label: str):
-    """Uncheck a checkbox with the given label."""
-    checkbox = page.locator("input[type='checkbox']").filter(
-        has=page.locator(f"xpath=..//*[contains(text(), '{label}')]")
-    )
-    # If the checkbox is checked, uncheck it
-    if checkbox.count() > 0 and checkbox.first.is_checked():
-        checkbox.first.uncheck()
-    else:
-        # Try a different approach - look for checkbox by name
-        checkbox_by_name = page.locator("input[name='check_same_address']")
-        if checkbox_by_name.count() > 0 and checkbox_by_name.is_checked():
-            checkbox_by_name.uncheck()
-
-
-@when('I click the "Remove" button and confirm')
-def click_remove_and_confirm(page: Page):
-    """Click the Remove button and confirm the dialog."""
-    # Set up dialog handler before clicking
-    page.on("dialog", lambda dialog: dialog.accept())
-    # Find and click the remove button
-    remove_button = page.locator("button", has_text="Remove").first
-    remove_button.click()
-    page.wait_for_load_state("networkidle")
-
-
-@when("I click the gsheet form cancel link")
-def click_gsheet_cancel_link(page: Page):
-    """Click the Cancel button in the gsheet form (more specific than generic button click)."""
-    # Look for the Cancel button within the form actions section
-    # Use get_by_role with exact=True to avoid matching assembly name in breadcrumbs
-    # Note: Button macro renders <a> with role="button" for accessibility
-    cancel_button = page.get_by_role("button", name="Cancel", exact=True)
-    cancel_button.click()
-    page.wait_for_load_state("networkidle")
-
-
-@then("I should see the assembly data page")
-def see_assembly_data_page(page: Page):
-    """Verify we're on the assembly data page."""
-    expect(page).to_have_url(re.compile(r".*/backoffice/project/.*/data"))
-
-
-@then("I should see the data source selector")
-def see_data_source_selector(page: Page):
-    """Verify the data source selector is visible."""
-    selector = page.locator("select#data_source")
-    expect(selector).to_be_visible()
-
-
-@then("the data source selector should be enabled")
-def data_source_selector_enabled(page: Page):
-    """Verify the data source selector is enabled."""
-    selector = page.locator("select#data_source")
-    expect(selector).to_be_enabled()
-
-
-@then("the data source selector should be disabled")
-def data_source_selector_disabled(page: Page):
-    """Verify the data source selector is disabled."""
-    selector = page.locator("select#data_source")
-    expect(selector).to_be_disabled()
-
-
-@then("I should see the gsheet URL input field")
-def see_gsheet_url_input(page: Page):
-    """Verify the Google Sheet URL input field is visible."""
-    url_input = page.locator("input[name='url']")
-    expect(url_input).to_be_visible()
-
-
-@then("the gsheet URL input field should be readonly")
-def gsheet_url_readonly(page: Page):
-    """Verify the Google Sheet URL field is readonly (displayed as link or text, not input)."""
-    # In readonly mode, the URL is displayed as a link, not an input field
-    # So we check that there is NO editable URL input field
-    url_input = page.locator("input[name='url']")
-    expect(url_input).to_have_count(0)
-
-
-@then("the gsheet URL input field should be editable")
-def gsheet_url_editable(page: Page):
-    """Verify the Google Sheet URL input field is editable (not readonly)."""
-    url_input = page.locator("input[name='url']")
-    expect(url_input).not_to_have_attribute("readonly", "")
-
-
-@then("I should see the gsheet configuration in view mode")
-def see_gsheet_view_mode(page: Page):
-    """Verify the gsheet configuration is displayed in view mode."""
-    # In view mode, there should be no editable URL input (URL is shown as link)
-    # and the Edit Configuration button should be visible
-    edit_button = page.locator("a, button", has_text="Edit Configuration")
-    expect(edit_button).to_be_visible()
-    # The Save Configuration button should NOT be visible in view mode
-    save_button = page.locator("button", has_text="Save Configuration")
-    expect(save_button).to_have_count(0)
-
-
-@then("I should see the gsheet configuration in edit mode")
-def see_gsheet_edit_mode(page: Page):
-    """Verify the gsheet configuration is displayed in edit mode."""
-    # In edit mode, the URL input should be editable and Save button should be visible
-    url_input = page.locator("input[name='url']")
-    expect(url_input).not_to_have_attribute("readonly", "")
-    save_button = page.locator("button", has_text="Save Configuration")
-    expect(save_button).to_be_visible()
-
-
-@then("I should see validation error for missing URL")
-def see_validation_error_for_missing_url(page: Page):
-    """Verify a validation error is shown for missing URL field."""
-    # The form should still be displayed (not redirected)
-    # And there should be some validation message - either browser or form
-    # Check that we're still on the form (Save Configuration visible)
-    save_button = page.locator("button", has_text="Save Configuration")
-    expect(save_button).to_be_visible()
-    # The URL field is required, so browser should show native validation
-    # or the form shows an error message
 
 
 # Selection Tab Tests
@@ -1837,32 +1601,6 @@ def assembly_has_respondents_uploaded(title: str, test_database):
         uow.commit()
 
 
-@then("the Target upload button should be enabled")
-def target_upload_button_enabled(page: Page):
-    """Verify the Target section has an enabled upload button."""
-    # Look for an enabled submit button in the Target section
-    target_section = page.locator("text=Target").locator("..").locator("..")
-    upload_button = target_section.locator("button[type='submit'], input[type='submit']").first
-    expect(upload_button).to_be_enabled()
-
-
-@then("the People upload button should be disabled")
-def people_upload_button_disabled(page: Page):
-    """Verify the People section has a disabled upload button."""
-    # Look for a disabled button in the People section
-    people_section = page.locator("text=People").locator("..").locator("..")
-    disabled_button = people_section.locator("button[disabled], span[data-disabled='true']").first
-    expect(disabled_button).to_be_visible()
-
-
-@then("the People upload button should be enabled")
-def people_upload_button_enabled(page: Page):
-    """Verify the People section has an enabled upload button."""
-    people_section = page.locator("text=People").locator("..").locator("..")
-    upload_button = people_section.locator("button[type='submit'], input[type='submit']").first
-    expect(upload_button).to_be_enabled()
-
-
 def _upload_card(page: Page, heading: str) -> Locator:
     """A Data tab upload card ("Targets" or "People"): the nearest rounded box around its heading."""
     return page.get_by_role("heading", name=heading, exact=True).locator(
@@ -1880,29 +1618,6 @@ def _box(locator: Locator) -> dict[str, float]:
 def _example_link_box(page: Page, heading: str, name: str) -> dict[str, float]:
     # The hidden suffix that tells the two links apart in a list of links names the card.
     return _box(_upload_card(page, heading).get_by_role("link", name=f"{name} ({heading})", exact=True))
-
-
-@then(parsers.parse('each "{name}" link should sit below its card\'s Upload button'))
-def example_links_below_upload(page: Page, name: str):
-    for heading in ("Targets", "People"):
-        upload = _box(_upload_card(page, heading).get_by_role("button", name="Upload", exact=True))
-        assert _example_link_box(page, heading, name)["y"] >= upload["y"] + upload["height"], heading
-
-
-@then(parsers.parse('the two "{name}" links should start level with each other'))
-def example_links_level(page: Page, name: str):
-    """Side by side, the note under the Targets link must not put the People link out of line."""
-    targets = _example_link_box(page, "Targets", name)
-    people = _example_link_box(page, "People", name)
-    assert targets["x"] < people["x"], (targets, people)  # side by side, not stacked
-    assert abs(targets["y"] - people["y"]) < 1, (targets, people)
-
-
-@then("the two upload cards should be the same height")
-def upload_cards_same_height(page: Page):
-    targets = _box(_upload_card(page, "Targets"))
-    people = _box(_upload_card(page, "People"))
-    assert abs(targets["height"] - people["height"]) < 1, (targets, people)
 
 
 @when("I open the dialog to create targets from respondent data")
@@ -2665,19 +2380,6 @@ def choose_intro_style(page: Page, label: str):
 def preview_paragraph_has_class(page: Page, text: str, css_class: str):
     paragraph = _preview_frame(page).locator("p", has_text=text)
     expect(paragraph).to_have_class(re.compile(rf"\b{css_class}\b"), timeout=PLAYWRIGHT_TIMEOUT)
-
-
-@then("the spreadsheet access check should finish")
-def spreadsheet_access_check_finishes(page: Page):
-    """The status panel replaces "Checking…" with an outcome.
-
-    Which outcome depends on whether the BDD server has Google credentials, so
-    only the panel's progress is asserted; the outcomes have component tests.
-    """
-    panel = page.locator("#gsheet-access-status")
-    expect(panel).to_be_visible()
-    expect(panel.locator(".gsheet-access__pending")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT * 6)
-    expect(panel).not_to_have_text("")
 
 
 # Thank-you step (features/backoffice-registration-thank-you.feature)
