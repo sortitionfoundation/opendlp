@@ -13,6 +13,7 @@ from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExpor
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.assembly_export_gsheet import default_worksheet_name
 from opendlp.domain.value_objects import AssemblyRole, GSheetExportKind
+from opendlp.entrypoints.blueprints.data_source import project_dialog_context
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     short_url,
@@ -174,6 +175,9 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
             created_by_name = get_assembly_creator_name(uow, nav.assembly)
+            project_dialog = None
+            if request.args.get("data_source") == "1" and can_manage_assembly(current_user, nav.assembly):
+                project_dialog = project_dialog_context(uow, assembly_id)
         registration_page_rows = [
             {
                 "page": page,
@@ -193,6 +197,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_enabled=nav.selection_enabled,
             registration_page_rows=registration_page_rows,
             created_by_name=created_by_name,
+            project_dialog=project_dialog,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(

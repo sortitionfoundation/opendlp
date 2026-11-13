@@ -283,6 +283,34 @@ for *that* branch, since this one merges first. It is recorded here and
 nowhere on that branch, so whoever rebases 1282 onto main needs to read this
 paragraph.
 
+## As built: where the code departs from the text above
+
+Found while implementing; none changes what the organiser can do.
+
+- **The dialog has routes of its own**, in `blueprints/data_source.py`, rather
+  than htmx branches on the old upload and sheet-save routes. The old routes
+  were written around redirects to the Data Source tab and are deleted with it;
+  the new ones call the same services.
+- **The two source dropdowns show and hide their CSV panels with Alpine**
+  (`x-show`), not by asking the server to redraw. A redraw empties file inputs,
+  so choosing a respondents source would have thrown away a targets file
+  already picked. Only the *location* dropdown in the settings dialog redraws.
+- **Deleting is a page load, not an htmx swap.** Delete targets, Delete
+  respondents and Remove Google Sheets settings post to the existing routes
+  (which own the "these targets have linked questions" confirmation page) and
+  come back to the project details page with the settings dialog open
+  (`?data_source=1`). In the create dialog that means a delete lands on the
+  new project's page rather than back in the stepper.
+- **What an upload reports is said in the panel**, not flashed: a flash would
+  sit beneath the open dialog.
+- **The routes enforce the lock.** A CSV posted at a project with a Google
+  Sheet is refused, and a location posted at a locked project is ignored. The
+  old page relied on a disabled dropdown.
+- **Team configuration stays a radio group**, as `AssemblyGSheetForm` renders
+  it today; Figma draws a dropdown.
+- **The dialog is wider than the standard one** (`dialog-panel--wide`, 55rem)
+  to hold the two-column form.
+
 ## Departures from Figma
 
 | Figma | This plan | Why |
@@ -357,7 +385,7 @@ this story, so `docs/language.md` is not changed here.
    *existing* data source page first — a pure refactor, tests unchanged. The
    selection settings form is left behind on that page for now; the details
    plan moves it.
-3. `data_source` blueprint: settings dialog on an existing project (used by the
+3. ✅ `data_source` blueprint: settings dialog on an existing project (used by the
    details plan), with the htmx branches on upload/delete/sheet-save.
 4. Create dialog: steps 1 and 2, then step 3 for each path.
 5. Dashboard buttons, old create page removed, BDD and docs, and

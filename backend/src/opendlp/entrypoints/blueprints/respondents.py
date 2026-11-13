@@ -23,6 +23,7 @@ from opendlp.domain.value_objects import (
     respondent_status_labels,
 )
 from opendlp.entrypoints.context_processors import get_service_account_email
+from opendlp.entrypoints.data_source_urls import data_source_return_url
 from opendlp.entrypoints.edit_respondent_form import (
     ATTR_FIELD_PREFIX,
     build_edit_respondent_form,
@@ -423,9 +424,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Respondents deleted: %(count)d", count=count), "success")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
 
     except InsufficientPermissions as e:
         logger.warning(
@@ -435,9 +434,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("You don't have permission to delete respondents"), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
     except NotFoundError as e:
         logger.warning("Assembly not found for respondents deletion", assembly_id=str(assembly_id), error=str(e))
         flash(_("Project not found"), "error")
@@ -450,9 +447,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("An error occurred while deleting respondents"), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
 
 
 @respondents_bp.route("/project/<uuid:assembly_id>/respondents/export")

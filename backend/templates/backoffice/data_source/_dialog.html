@@ -1,0 +1,181 @@
+{#
+ABOUTME: The data source dialog - "Create new project" in three steps, or a project's "Data source settings"
+ABOUTME: One form the server redraws at every step; loaded over htmx into the page's #project-dialog-host
+#}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, textarea %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
+{% from "backoffice/components/select_dropdown.html" import select_dropdown %}
+{% from "backoffice/components/stepper.html" import stepper %}
+{#
+    A fragment dialog (docs/agent/component_accessibility.md). Every button
+    posts the one form back into the host, and the answer is this dialog again
+    at whatever step that leaves it: nothing about the steps lives in
+    JavaScript, and what earlier steps collected rides along as hidden inputs.
+
+    The X, Cancel and the backdrop are links to ds.close_url. Until the project
+    exists they ask first once anything has been typed (dialogLeaveGuard);
+    after that everything typed is already saved, so they just close.
+
+    Context: ds, built by new_project_dialog_context or project_dialog_context
+    in entrypoints/blueprints/data_source.py.
+#}
+{% set creating = ds.mode == "create" %}
+{% set exists = ds.assembly is not none %}
+{% set step = ds.step %}
+{% set title = _("Create new project") if creating else _("Data source settings") %}
+{% set primary_url = ds.urls.save if step == 3 else ds.urls.step %}
+{% macro carried(name, value) %}
+    <input type="hidden" name="{{ name }}" value="{{ value if value is not none else '' }}">
+{% endmacro %}
+<div x-data="dialogLeaveGuard">
+    <a href="{{ ds.close_url }}"
+       @click="guardLeave($event)"
+       class="dialog-backdrop dialog-backdrop--clickable block"
+       tabindex="-1"
+       aria-hidden="true"></a>
+    <div class="dialog-positioner"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="project-dialog-title">
+        <div class="dialog-panel dialog-panel--default dialog-panel--wide">
+            {% call dialog_header(title, title_id="project-dialog-title") %}
+                <a href="{{ ds.close_url }}"
+                   @click="guardLeave($event)"
+                   class="dialog-close-btn"
+                   aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
+            {% endcall %}
+            <form id="project-dialog-form"
+                  method="post"
+                  action="{{ primary_url }}"
+                  hx-post="{{ primary_url }}"
+                  hx-target="#project-dialog-host"
+                  hx-swap="innerHTML"
+                  {% if not exists %}@input="markDialogDirty()" @change="markDialogDirty()"{% endif %}
+                  novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden"
+                       name="dirty"
+                       value="{{ '1' if ds.dirty and not exists else '' }}"
+                       x-ref="dirtyInput">
+                <input type="hidden" name="dialog" value="{{ ds.mode }}">
+                <input type="hidden" name="step" value="{{ step }}">
+                {# The default submitter: Enter moves on, never back. #}
+                <button type="submit"
+                        name="go"
+                        value="next"
+                        style="display: none"
+                        aria-hidden="true"
+                        tabindex="-1"></button>
+                {% call dialog_body() %}
+                    {% if creating %}
+                        {% set states = {1: "active" if step == 1 else "done", 2: "active" if step == 2 else ("done" if step > 2 else "inactive"), 3: "active" if step == 3 else "inactive"} %}
+                        {% set items = [] %}
+                        {% for number, key, label in [(1, "details", _("Project details")), (2, "location", _("Data location")), (3, "data", _("Targets and people"))] %}
+                            {% set item = {"key": key, "label": label, "href": "#", "state": states[number]} %}
+                            {% if states[number] == "active" %}
+                                {% set ignored = item.update({"aria-current": "step"}) %}
+                            {% endif %}
+                            {% set ignored = items.append(item) %}
+                        {% endfor %}
+                        {{ stepper(items=items, aria_label=_("Steps to create a project"), id="project-steps", mode="wizard", disabled=true) }}
+                    {% endif %}
+                    {% if ds.form_error %}
+                        <div class="mb-4">{{ alert(ds.form_error, variant="error") }}</div>
+                    {% endif %}
+                    {% if not exists %}
+                        {% set details = ds.details_form %}
+                        {% if step == 1 %}
+                            <div class="flex flex-col gap-6">
+                                {{ input("title",
+                                label=_("Project title") ,
+                                value=details.title.data or "",
+                                placeholder=_("Enter the title for this project"),
+                                required=true,
+                                error=details.title.errors | join("\n"),
+                                attrs='maxlength="200"' ~ (' data-dialog-initial-focus' if details.title.errors else '')) }}
+                                {{ textarea("question",
+                                label=_("Framing question (optional)") ,
+                                value=details.question.data or "",
+                                placeholder=_("Type the key question this project will address"),
+                                rows=3,
+                                error=details.question.errors | join("\n")) }}
+                                <div class="max-w-sm">
+                                    {{ input("number_to_select",
+                                    label=_("Panel size (optional)") ,
+                                    type="number",
+                                    value=details.number_to_select.data if details.number_to_select.data is not none else (details.number_to_select.raw_data[0] if details.number_to_select.raw_data else ""),
+                                    hint=_("The number of participants to select"),
+                                    error=details.number_to_select.errors | join("\n"),
+                                    attrs='min="0" step="1" inputmode="numeric"') }}
+                                </div>
+                            </div>
+                            {{ carried("location", ds.location) }}
+                            {{ carried("targets_source", ds.targets_source.value) }}
+                            {{ carried("respondents_source", ds.respondents_source.value) }}
+                        {% else %}
+                            {{ carried("title", details.title.data) }}
+                            {{ carried("question", details.question.data) }}
+                            {{ carried("number_to_select", details.number_to_select.data) }}
+                        {% endif %}
+                        {% if step == 2 %}
+                            {{ select_dropdown(
+                            name="location",
+                            id="project-location",
+                            label=_("Where will you manage your data?") ,
+                            options=[
+                            {"value": "csv", "label": data_source_labels[DataSource.OPENDLP]},
+                            {"value": "gsheet", "label": data_source_labels[DataSource.GSHEET]}
+                            ],
+                            value=ds.location,
+                            attrs='data-dialog-initial-focus'
+                            ) }}
+                            {{ carried("targets_source", ds.targets_source.value) }}
+                            {{ carried("respondents_source", ds.respondents_source.value) }}
+                        {% endif %}
+                    {% endif %}
+                    {% if step == 3 %}
+                        {% include "backoffice/data_source/_form.html" %}
+                    {% endif %}
+                {% endcall %}
+                {% call dialog_footer() %}
+                    {% if creating and not exists and step > 1 %}
+                        <span class="mr-auto">{{ button(_("Back") , type="submit", variant="tertiary", attrs='name="go" value="back"') }}</span>
+                    {% endif %}
+                    {% if exists %}
+                        {{ button(_("Close") , variant="secondary", href=ds.close_url) }}
+                    {% else %}
+                        {{ button(_("Cancel") , variant="secondary", href=ds.close_url, attrs='@click="guardLeave($event)"') }}
+                    {% endif %}
+                    {% if step == 3 %}
+                        {{ button(_("Save") , type="submit", variant="primary") }}
+                    {% else %}
+                        {{ button(_("Next") , type="submit", variant="primary", attrs='name="go" value="next"') }}
+                    {% endif %}
+                {% endcall %}
+            </form>
+            {# Deleting is a page load of its own, because deleting targets that
+               registration questions are linked to asks first on a page of its
+               own. A button inside the dialog's form names one of these with
+               its form attribute; a form cannot sit inside another. #}
+            {% if exists %}
+                {% for form_id, action, question in [
+                ("project-delete-targets", ds.urls.delete_targets, _("Are you sure you want to delete all targets? This action cannot be undone.")),
+                ("project-delete-respondents", ds.urls.delete_respondents, _("Are you sure you want to delete all respondents? This action cannot be undone.")),
+                ("project-remove-gsheet", ds.urls.remove_gsheet, _("Are you sure you want to remove this Google Sheets configuration? This action cannot be undone."))
+                ] %}
+                <form id="{{ form_id }}"
+                      method="post"
+                      action="{{ action }}"
+                      x-data
+                      @submit.prevent="$confirm('{{ question }}', $el)">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="return_to" value="dialog">
+                </form>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    {% include "backoffice/components/leave_guard_modal.html" %}
+</div>

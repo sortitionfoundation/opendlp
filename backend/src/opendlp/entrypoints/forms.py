@@ -348,6 +348,26 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
+class ProjectDetailsStepForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """The first step of the create project dialog."""
+
+    title = StringField(
+        _l("Project title"),
+        validators=[DataRequired(), Length(min=3, max=200)],
+    )
+
+    question = TextAreaField(
+        _l("Framing question"),
+        validators=[Optional(), Length(max=1000)],
+    )
+
+    number_to_select = IntegerField(
+        _l("Panel size"),
+        validators=[Optional(), NonNegativeValidator()],
+        description=_l("The number of participants to select"),
+    )
+
+
 class CreateAssemblyForm(AssemblyForm):
     """Form specifically for creating assemblies."""
 

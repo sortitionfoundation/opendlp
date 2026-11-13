@@ -1,0 +1,202 @@
+{#
+ABOUTME: The data source form - how targets and respondents arrive in OpenDLP, or a Google Sheet's settings
+ABOUTME: The last step of the create dialog and the body of the data source settings dialog; sits inside the dialog's form
+#}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_check %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
+{% from "backoffice/components/input.html" import input, file_input %}
+{% from "backoffice/components/select_dropdown.html" import select_dropdown %}
+{% from "backoffice/data_source/_parts.html" import gsheet_fields, example_csv_link, upload_errors with context %}
+{% set exists = ds.assembly is not none %}
+{% set location_options = [
+{"value": "csv", "label": data_source_labels[DataSource.OPENDLP]},
+{"value": "gsheet", "label": data_source_labels[DataSource.GSHEET]}
+] %}
+{# A dropdown's label with its info icon beside it. #}
+{% macro source_label(for_id, text, info) %}
+    <div class="flex items-center gap-1.5 mb-1.5">
+        <label for="{{ for_id }}" class="text-label-lg" style="color: var(--color-headings);">{{ text }}</label>
+        {{ info_icon(info, about=text) }}
+    </div>
+{% endmacro %}
+{# The rows an import skipped, or a file's warnings: said in the panel, because
+   a flash would sit beneath the open dialog. #}
+{% macro notices(lines) %}
+    {% if lines %}
+        <div class="mb-4 rounded-lg p-4 text-body-sm"
+             role="status"
+             style="background-color: var(--color-warning-background);
+                    color: var(--color-warning-text);
+                    white-space: pre-line">{{ lines | join("\n") }}</div>
+    {% endif %}
+{% endmacro %}
+{% macro uploaded_banner(text) %}
+    <div class="flex items-center gap-2 p-3 rounded-lg"
+         style="background-color: var(--color-subtle-background-panels)">
+        {{ icon_check(style="color: var(--color-success-600)") }}
+        <span class="text-body-sm" style="color: var(--color-body-text);">{{ text }}</span>
+    </div>
+{% endmacro %}
+{# Where the data is managed. In the create dialog that was the step before; on
+   an existing project it can still change until the project has data. #}
+{% if ds.mode == "settings" %}
+    <div class="mb-6">
+        {{ select_dropdown(
+        name="location",
+        id="project-location",
+        label=_("Where will you manage your data?") ,
+        options=location_options,
+        value=ds.location,
+        hint=_("This cannot change while the project has targets, respondents or Google Sheets settings. Remove them to choose again.") if ds.locked else "",
+        disabled=ds.locked,
+        attrs='hx-post="' ~ ds.urls.refresh ~ '" hx-trigger="change"' if not ds.locked else ''
+        ) }}
+    </div>
+{% else %}
+    <input type="hidden" name="location" value="{{ ds.location }}">
+{% endif %}
+{% if ds.location == "gsheet" %}
+    <div class="flex flex-col gap-6">
+        {{ gsheet_fields(ds.gsheet_form, gsheet=ds.gsheet, google_service_account_email=ds.service_account_email) }}
+        {% if ds.gsheet %}
+            <div class="flex justify-end pt-4"
+                 style="border-top: 1px solid var(--color-borders-dividers)">
+                {{ button(_("Remove Google Sheets settings") , type="submit", variant="danger", attrs='form="project-remove-gsheet"') }}
+            </div>
+        {% endif %}
+    </div>
+{% else %}
+    {% set has_targets = ds.targets_count > 0 %}
+    {% set has_respondents = ds.respondents_count > 0 %}
+    <div x-data="{ targetsSource: '{{ ds.targets_source.value }}', respondentsSource: '{{ ds.respondents_source.value }}' }">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                {{ source_label("project-targets-source", _("Target data source"),
+                _("If you're not sure, select \"Decide later\" - you can return here when you know. \"Create inside OpenDLP\" can mean entering targets by hand or creating them from imported respondent data - go to the Targets tab to do that.")) }}
+                {% set options = [] %}
+                {% for choice in TargetsSource %}
+                    {% set ignored = options.append({"value": choice.value, "label": targets_source_labels[choice]}) %}
+                {% endfor %}
+                {{ select_dropdown(
+                name="targets_source",
+                id="project-targets-source",
+                options=options,
+                value=ds.targets_source.value,
+                attrs='x-model="targetsSource"'
+                ) }}
+            </div>
+            <div>
+                {{ source_label("project-respondents-source", _("Respondents data source"),
+                _("If you're not sure, select \"Decide later\" - you can return here when you know. \"Through OpenDLP registration\" means you will set up a registration page for respondents to fill in - first set up targets, then go to the Registration tab.")) }}
+                {% set options = [] %}
+                {% for choice in RespondentsSource %}
+                    {% set ignored = options.append({"value": choice.value, "label": respondents_source_labels[choice]}) %}
+                {% endfor %}
+                {{ select_dropdown(
+                name="respondents_source",
+                id="project-respondents-source",
+                options=options,
+                value=ds.respondents_source.value,
+                attrs='x-model="respondentsSource"'
+                ) }}
+            </div>
+        </div>
+        {# Targets. Shown for "Import from CSV", and whatever the dropdown says
+           once there are targets, so they are never hidden behind a choice. #}
+        <section class="mt-8"
+                 id="project-targets-panel"
+                 aria-labelledby="project-targets-heading"
+                 {% if not has_targets %}x-show="targetsSource === 'csv'" x-cloak{% endif %}>
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="project-targets-heading"
+                    class="text-heading-md"
+                    style="color: var(--color-headings)">{{ _("Targets") }}</h3>
+                {% if has_targets %}
+                    {{ button(_("Delete targets") , type="submit", variant="tertiary", attrs='form="project-delete-targets"') }}
+                {% endif %}
+            </div>
+            {{ upload_errors({"csv_file": ds.targets_errors} if ds.targets_errors else {}) }}
+            {{ notices(ds.targets_notices) }}
+            {% if has_targets %}
+                {% if ds.targets_source.value == "csv" %}
+                    {{ uploaded_banner(ngettext("%(num)d target uploaded", "%(num)d targets uploaded", ds.targets_count)) }}
+                {% else %}
+                    {{ uploaded_banner(ngettext("%(num)d target", "%(num)d targets", ds.targets_count)) }}
+                {% endif %}
+            {% else %}
+                {{ file_input(name="csv_file",
+                id="project-targets-file",
+                label=_("CSV File") ,
+                accept=".csv",
+                hint=_("Select a CSV file with targets.")
+                ) }}
+                <div class="mt-4">
+                    {{ button(_("Upload targets") , variant="secondary",
+                    attrs='hx-post="' ~ ds.urls.upload_targets ~ '" hx-encoding="multipart/form-data" hx-params="not file" data-focus-id="project-upload-targets"') }}
+                </div>
+                {{ example_csv_link("examples/example-targets.csv",
+                about=_("Targets"),
+                note=_("To run a selection with the example targets, set the panel size to 30.")
+                ) }}
+            {% endif %}
+        </section>
+        {# Respondents, on the same terms. #}
+        <section class="mt-8"
+                 id="project-respondents-panel"
+                 aria-labelledby="project-respondents-heading"
+                 {% if not has_respondents %}x-show="respondentsSource === 'csv'" x-cloak{% endif %}>
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="project-respondents-heading"
+                    class="text-heading-md"
+                    style="color: var(--color-headings)">{{ _("Respondents") }}</h3>
+                {% if has_respondents %}
+                    {{ button(_("Delete respondents") , type="submit", variant="tertiary", attrs='form="project-delete-respondents"') }}
+                {% endif %}
+            </div>
+            {{ upload_errors({"file": ds.respondents_errors} if ds.respondents_errors else {}) }}
+            {{ notices(ds.respondents_notices) }}
+            {% if has_respondents %}
+                {% if ds.respondents_source.value == "csv" %}
+                    {{ uploaded_banner(ngettext("%(num)d respondent uploaded", "%(num)d respondents uploaded", ds.respondents_count)) }}
+                {% else %}
+                    {{ uploaded_banner(ngettext("%(num)d respondent", "%(num)d respondents", ds.respondents_count)) }}
+                {% endif %}
+            {% else %}
+                <div class="flex flex-col gap-4">
+                    {{ file_input(name="file",
+                    id="project-respondents-file",
+                    label=_("CSV File") ,
+                    accept=".csv",
+                    hint=_("Select a CSV file with respondent data.")
+                    ) }}
+                    {# Prefilled from the last upload so a file whose id column isn't the
+                       first one works without retyping. Gated on last_import_timestamp,
+                       not on csv_id_column: that defaults to "external_id" the moment a
+                       config row exists, and prefilling it before any upload fails files
+                       that have no column of that name. #}
+                    {% set csv_config = ds.csv_config %}
+                    {% set has_previous_upload = csv_config and csv_config.last_import_timestamp and csv_config.csv_id_column %}
+                    {% if has_previous_upload %}
+                        {% set id_column_hint = _("Using '%(id_column)s' from your last upload. Change it if this file uses a different column, or clear it to use the first column.", id_column=csv_config.csv_id_column) %}
+                    {% else %}
+                        {% set id_column_hint = _("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.") %}
+                    {% endif %}
+                    {{ input(name="id_column",
+                    id="project-respondents-id-column",
+                    label=_("ID Column") ,
+                    value=request.form.get("id_column", csv_config.csv_id_column if has_previous_upload else ""),
+                    placeholder=_("e.g., ID"),
+                    hint=id_column_hint
+                    ) }}
+                    <div>
+                        {{ button(_("Upload respondents") , variant="secondary",
+                        attrs='hx-post="' ~ ds.urls.upload_respondents ~ '" hx-encoding="multipart/form-data" hx-params="not csv_file" data-focus-id="project-upload-respondents"') }}
+                    </div>
+                </div>
+                {{ example_csv_link("examples/example-respondents.csv", about=_("Respondents")) }}
+            {% endif %}
+        </section>
+    </div>
+{% endif %}

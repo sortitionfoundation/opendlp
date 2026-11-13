@@ -1281,6 +1281,11 @@
         max-width: 42rem; /* matches former max-w-2xl */
     }
 
+    /* Wide — for a dialog holding a two-column form (the data source dialogs) */
+    .dialog-panel--wide {
+        max-width: 55rem;
+    }
+
     /* Alert size — compact confirmation dialog matching Figma 1601:856 */
     .dialog-panel--alert {
         max-width: 28rem;

@@ -20,6 +20,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.context_processors import get_service_account_email
+from opendlp.entrypoints.data_source_urls import data_source_return_url
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import (
     CreateAssemblyGSheetForm,
@@ -1233,12 +1234,12 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
             remove_assembly_gsheet(uow, assembly_id, current_user.id)
         flash(_("Google Sheets configuration removed successfully"), "success")
         # Redirect without source param - selector will be unlocked allowing user to choose again
-        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))
 
     except NotFoundError as e:
         logger.warning("Gsheet config not found for delete", error=str(e))
         flash(_("Google Sheets configuration not found"), "error")
-        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to delete gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
@@ -1248,4 +1249,4 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Gsheet delete error for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while removing the Google Sheets configuration"), "error")
-        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
+        return redirect_preserving_scroll(data_source_return_url(assembly_id))

@@ -17,6 +17,7 @@ from opendlp.domain.assembly_export_gsheet import default_worksheet_name
 from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.blueprints.backoffice import render_assembly_data_page
 from opendlp.entrypoints.context_processors import get_service_account_email
+from opendlp.entrypoints.data_source_urls import data_source_return_url
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
 from opendlp.entrypoints.save_all_parser import errors_by_field, parse_save_all_targets, pending_categories
@@ -279,9 +280,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Targets deleted: %(count)d", count=count), "success")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
 
     except TargetLinkedError as e:
         return _render_force_unlink_confirm(
@@ -289,7 +288,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             request.form,
             e.blocks,
             confirm_url=url_for("targets.delete_targets", assembly_id=assembly_id),
-            cancel_url=url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"),
+            cancel_url=data_source_return_url(assembly_id, "csv"),
             deleting_all=True,
         )
     except InsufficientPermissions as e:
@@ -300,9 +299,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("You don't have permission to delete targets"), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
     except NotFoundError as e:
         logger.warning("Assembly not found for targets deletion", assembly_id=str(assembly_id), error=str(e))
         flash(_("Project not found"), "error")
@@ -312,9 +309,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "Delete targets error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
         flash(_("An error occurred while deleting targets"), "error")
-        return redirect_preserving_scroll(
-            url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-        )
+        return redirect_preserving_scroll(data_source_return_url(assembly_id, "csv"))
 
 
 @targets_bp.route(
