@@ -2,7 +2,8 @@
 
 Status: implemented. Three fixes to the public sign-up page
 (`templates/public/register.html`), what each one rests on, and why the fourth,
-the link colour, is not made here.
+the link colour, is not made here. Then the password rules tick as the password
+is typed (5).
 
 Design reference: the OpenDLP - UI Figma file, sign-up frame node `5570-7007`
 and sign-in frame node `5570-6325`.
@@ -63,11 +64,11 @@ and sign-in frame node `5570-6325`.
 ## 3. Password requirements
 
 `service_layer.security.password_requirements()` returns the four lines; the
-page puts them under "Your password must:", each with the Lucide check from
-`icons.html` (`aria-hidden`), in a `<ul>` whose container
-(`id="password-requirements"`) describes the password input. The lines are
-translatable; the long help texts the page showed before were English in every
-language.
+page puts them under "Your password must:", each with an icon (`aria-hidden`)
+that shows whether the password typed so far meets it (see 5), in a `<ul>`
+whose container (`id="password-requirements"`) describes the password input.
+The lines are translatable; the long help texts the page showed before were
+English in every language.
 
 Each line against the validators in `get_password_validators()`:
 
@@ -101,10 +102,83 @@ own. For that change: the Figma sign-up frame binds "View data agreement" to
 `info-600` (#2B5FA6), which the code already has as `--color-info-600`, and its
 contrast on the page background (#F7F7F8) is about 6:1.
 
+## 5. Live password rules
+
+The rules tick as the password is typed. Every line starts with a hollow
+circle, `icon_circle_small` (Lucide's circle-small, from the Figma Icons sheet),
+in the secondary text colour, and turns into the Lucide check in
+`--color-success-text` while the password meets its rule. Nothing turns red: a
+rule not met yet keeps its circle. Without JavaScript the page shows the
+circles and nothing more.
+
+`password_requirements()` returns each line with a key and where it is checked
+while the password is typed (`PasswordRequirement.live_check`); the template
+puts both on the `<li>` (`data-password-rule`, `data-live-check`). The
+`passwordRules` Alpine component (`src/js/components/password-rules.js`) does
+the ticking:
+
+| Line | Checked | How |
+| --- | --- | --- |
+| 10–256 characters | in the browser, on every keystroke | counts code points, as Python's `len()` does, against `data-min-length` and `data-max-length`, which the template takes from the validators |
+| Not be numbers only | in the browser, on every keystroke | unticked while every character is a number (`\p{N}`) |
+| Not be a commonly used password | by the server | `SafeCommonPasswordValidator` |
+| Not be too similar to your personal information | by the server | `UserAttributeSimilarityValidator`, against the email and names typed so far |
+
+- **The browser's two** are decided as the validators decide them.
+  `NumericPasswordValidator` uses Python's `str.isdigit()`, which is true for
+  the digits of any script and for superscripts; all of those are in `\p{N}`,
+  which also holds a few numbers that are not digits (½, Ⅻ). For those the
+  rule stays unticked though the server would accept the password, which is
+  the safe way to be wrong. `tests/fixtures/password_browser_checks.json`
+  holds the cases that are easy to get wrong - other scripts' digits,
+  superscripts, emoji that are two UTF-16 units but one character to Python -
+  and `test_security.py` runs them through the validators,
+  `password-rules.test.js` through the component.
+- **The server's two** are asked about once typing pauses for 400 ms, and
+  again when the email or a name changes. The page posts the password with the
+  email, first and last name to `POST /auth/password-check`, which runs each
+  rule's own validators from `get_password_validators()` on a `TempUser` built
+  from those fields (`password_rule_results()`; `PASSWORD_RULE_VALIDATORS`
+  maps each key to its validators), and answers a boolean per rule,
+  `{"rules": {"length": true, "not-numbers-only": true, "not-common": true,
+  "not-similar": false}}`, never a validator's message. The page takes the two
+  server lines from it. After a change, while the answer is awaited, and when
+  none comes (a network error, the rate limit), those two lines keep their
+  circle. An answer about values that have changed since it was asked is
+  dropped.
+- **The endpoint** is unauthenticated, as the sign-up page is, and POST only.
+  The app's CSRF protection applies; the page sends the token in
+  `X-CSRFToken`. Checks are limited per IP (`password_check_rate_limit_service.py`,
+  a Redis counter like the signup limit's; `PASSWORD_CHECK_RATE_LIMIT_PER_IP`,
+  default 120 per `PASSWORD_CHECK_RATE_LIMIT_WINDOW_MINUTES`, default 10). Over
+  the limit the answer is a 429 with `Retry-After`, and a refused check is not
+  counted, so a page that keeps asking does not keep itself over it. The
+  password is read from the JSON body only and never logged; the request log
+  has the path and the status. Every answer carries `Cache-Control: no-store`.
+  The shape is pinned by `schemas/json_api/password-check.schema.json` and the
+  recorded `tests/fixtures/json_api/password-check.json`.
+- **Sending the form is unchanged.** The server validates the password in full
+  when the form arrives, as before; the ticks are guidance.
+- **Screen readers**: each line ends in its state, visually hidden and
+  translated, " (met)" or " (not met yet)", which shows only once the script
+  runs. The list describes the password field, so the states are read with the
+  field's description. They are not announced as they change, so typing is not
+  interrupted. The icons are `aria-hidden`, and nothing is animated.
+- The confirm password field has no live check.
+- Tests: `tests/unit/test_security.py` (keys, where each line is checked, the
+  verdicts per rule, the shared browser cases),
+  `tests/component/test_password_check.py` (the verdicts, CSRF, the rate limit,
+  no-store, no password in the log), `tests/unit/test_password_check_rate_limit_service.py`,
+  `tests/component/test_register_page.py`
+  (circles, cloaked ticks and states, the data attributes),
+  `src/js/components/password-rules.test.js` (the pause, the pending and failed
+  states, dropped answers), and the `login.feature` scenario "The password
+  rules tick while the password is typed".
+
 ## Open question
 
 - Whether the reset password and profile password pages should get the short
-  list too.
+  list, and its live ticks, too.
 
 ## Seen, not changed
 
