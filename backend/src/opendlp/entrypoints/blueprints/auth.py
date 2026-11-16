@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import structlog
 from django.utils.http import url_has_allowed_host_and_scheme
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.wrappers import Response
@@ -44,13 +44,22 @@ from opendlp.service_layer.exceptions import (
     UserAlreadyExists,
 )
 from opendlp.service_layer.login_rate_limit_service import check_login_rate_limit, record_failed_login
+from opendlp.service_layer.password_check_rate_limit_service import (
+    check_password_check_rate_limit,
+    record_password_check,
+)
 from opendlp.service_layer.password_reset_service import (
     request_password_reset,
     reset_password_with_token,
     send_password_reset_email,
     validate_reset_token,
 )
-from opendlp.service_layer.security import password_requirements, password_validators_help_text_html
+from opendlp.service_layer.security import (
+    TempUser,
+    password_requirements,
+    password_rule_results,
+    password_validators_help_text_html,
+)
 from opendlp.service_layer.signup_rate_limit_service import (
     check_signup_rate_limit,
     record_signup,
@@ -513,6 +522,57 @@ def register(invite_code: str = "") -> ResponseReturnValue:
         show_questions=show_questions,
         selected_method=selected_method,
     )
+
+
+def _not_stored(response: Response, status: int = 200) -> tuple[Response, int]:
+    """Mark a password check's answer as one no browser or cache may keep."""
+    response.headers["Cache-Control"] = "no-store"
+    return response, status
+
+
+def _text_field(body: dict[str, object], name: str) -> str:
+    value = body.get(name)
+    return value if isinstance(value, str) else ""
+
+
+@auth_bp.route("/password-check", methods=["POST"])
+def password_check() -> ResponseReturnValue:
+    """Say which of the sign-up page's password rules a password meets, for the page's live ticks.
+
+    The page posts a JSON body: the password, with the email and names typed so
+    far, because one rule compares the password with them. The answer is a
+    boolean per rule, by the rule's key (password_rule_results()), and never a
+    validator's message. Sending the form is unaffected: it is validated in
+    full when it arrives, as before.
+
+    Unauthenticated, as the sign-up page is. The app's CSRF protection covers
+    it, the checks are rate limited per IP, the password is read from the body
+    only and never logged, and no answer may be stored.
+    """
+    ip_address = request.remote_addr or ""
+    window_minutes = current_app.config["PASSWORD_CHECK_RATE_LIMIT_WINDOW_MINUTES"]
+    try:
+        check_password_check_rate_limit(
+            ip_address=ip_address,
+            max_per_ip=current_app.config["PASSWORD_CHECK_RATE_LIMIT_PER_IP"],
+            window_minutes=window_minutes,
+        )
+    except RateLimitExceeded as error:
+        response, status = _not_stored(jsonify({"error": error.user_msg()}), 429)
+        response.headers["Retry-After"] = str(error.retry_after_seconds)
+        return response, status
+    record_password_check(ip_address=ip_address, window_minutes=window_minutes)
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not isinstance(body.get("password"), str):
+        return _not_stored(jsonify({"error": _("There is no password to check")}), 400)
+
+    user = TempUser(
+        email=_text_field(body, "email"),
+        first_name=_text_field(body, "first_name"),
+        last_name=_text_field(body, "last_name"),
+    )
+    return _not_stored(jsonify({"rules": password_rule_results(body["password"], user)}))
 
 
 @auth_bp.route("/confirm-email/<token>", methods=["GET", "POST"])

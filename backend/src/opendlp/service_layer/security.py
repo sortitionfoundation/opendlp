@@ -99,6 +99,17 @@ def password_validators_help_text_html() -> Markup:
     return Markup("<ul>{items}</ul>").format(items=Markup("").join(help_items))
 
 
+# The validators that decide each of the sign-up page's password rules, by
+# the rule's key. Together they are every validator get_password_validators()
+# builds, each in one rule only.
+PASSWORD_RULE_VALIDATORS: dict[str, tuple[type, ...]] = {
+    "length": (pv.MinimumLengthValidator, pv.MaximumLengthValidator),
+    "not-numbers-only": (pv.NumericPasswordValidator,),
+    "not-common": (pv.SafeCommonPasswordValidator,),
+    "not-similar": (pv.UserAttributeSimilarityValidator,),
+}
+
+
 def password_requirements() -> list[str]:
     """The password rules as the sign-up page lists them, under "Your password must:".
 
@@ -120,3 +131,28 @@ def password_requirements() -> list[str]:
         _("Not be a commonly used password"),
         _("Not be too similar to your personal information"),
     ]
+
+
+def password_rule_results(password: str, user: TempUser) -> dict[str, bool]:
+    """Whether the password meets each of the sign-up page's rules, by the rule's key.
+
+    Each rule is decided by its own validators from get_password_validators(),
+    the ones validate_password_strength() runs when the form is sent, so the
+    page never ticks a rule that sending the form would then refuse. Only the
+    verdicts come back, never the validators' messages.
+    """
+    validators = tuple(get_password_validators())
+    return {
+        key: all(
+            _accepts(validator, password, user) for validator in validators if isinstance(validator, validator_types)
+        )
+        for key, validator_types in PASSWORD_RULE_VALIDATORS.items()
+    }
+
+
+def _accepts(validator: pv.PasswordValidator, password: str, user: TempUser) -> bool:
+    try:
+        validator.validate(password, user)
+    except ValidationError:
+        return False
+    return True

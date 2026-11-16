@@ -87,6 +87,22 @@ def _mock_login_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
+def password_check_redis(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """Keep the live password check's rate limit off Redis in component tests.
+
+    Counters read as zero, so no check is refused, and writes go nowhere. A test
+    of the limit itself sets ``get.return_value`` on the mock it gets back.
+    """
+    mock_redis = MagicMock()
+    mock_redis.get.return_value = None  # no counter = not rate-limited
+    monkeypatch.setattr(
+        "opendlp.service_layer.password_check_rate_limit_service._get_redis",
+        lambda: mock_redis,
+    )
+    return mock_redis
+
+
+@pytest.fixture(autouse=True)
 def _in_memory_csv_upload_stash(monkeypatch: pytest.MonkeyPatch) -> None:
     """Back the pending-CSV stash with a dict for every component test.
 

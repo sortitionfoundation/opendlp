@@ -243,6 +243,23 @@ SIGNUP_RATE_LIMIT_PER_IP=10
 SIGNUP_RATE_LIMIT_WINDOW_MINUTES=60
 ```
 
+### Live Password Check Rate Limiting
+
+The signup page ticks its password rules as the password is typed, and asks
+`POST /auth/password-check` about the two only the server can decide - a
+commonly used password, and one too like the person's details. It asks once
+per pause in typing, and again when the email or a name changes. Each answered
+check counts towards a per-IP limit; over it the endpoint answers 429 and the
+page leaves those two rules unticked. Sending the form is unaffected.
+
+```bash
+# Max password checks per source IP per window (default: 120)
+PASSWORD_CHECK_RATE_LIMIT_PER_IP=120
+
+# Password check rate-limit window in minutes (default: 10)
+PASSWORD_CHECK_RATE_LIMIT_WINDOW_MINUTES=10
+```
+
 ### Account Signup Bot Check (Cloudflare Turnstile)
 
 The signup form can additionally require a Cloudflare Turnstile check (issue

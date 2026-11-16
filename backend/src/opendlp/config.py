@@ -557,6 +557,12 @@ class FlaskBaseConfig:
         self.SIGNUP_RATE_LIMIT_PER_IP: int = int(os.environ.get("SIGNUP_RATE_LIMIT_PER_IP", "10"))
         self.SIGNUP_RATE_LIMIT_WINDOW_MINUTES: int = int(os.environ.get("SIGNUP_RATE_LIMIT_WINDOW_MINUTES", "60"))
 
+        # The signup page's live password rule checks (POST /auth/password-check)
+        self.PASSWORD_CHECK_RATE_LIMIT_PER_IP: int = int(os.environ.get("PASSWORD_CHECK_RATE_LIMIT_PER_IP", "120"))
+        self.PASSWORD_CHECK_RATE_LIMIT_WINDOW_MINUTES: int = int(
+            os.environ.get("PASSWORD_CHECK_RATE_LIMIT_WINDOW_MINUTES", "10")
+        )
+
         # Registration bot protection
         self.REGISTRATION_RATE_LIMIT_PER_IP: int = int(os.environ.get("REGISTRATION_RATE_LIMIT_PER_IP", "30"))
         self.REGISTRATION_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("REGISTRATION_RATE_LIMIT_PER_EMAIL", "5"))

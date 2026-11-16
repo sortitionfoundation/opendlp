@@ -296,3 +296,26 @@ class TestRespondentFieldSpecFixtures:
 
         assert response.status_code == 403
         assert_matches_schema(response.get_json(), "error")
+
+
+class TestPasswordCheckFixtures:
+    def test_password_check_response_matches_schema_and_fixture(self, client):
+        """The answer the sign-up page ticks its rules from: one met, one not, of the two the server decides."""
+        response = client.post(
+            "/auth/password-check",
+            json={
+                "password": "ann.smith.example",  # pragma: allowlist secret
+                "email": "ann.smith@example.org",
+                "first_name": "Ann",
+                "last_name": "Smith",
+            },
+        )
+
+        assert response.status_code == 200
+        check_api_fixture("password-check", response.get_json(), schema_name="password-check")
+
+    def test_a_refused_check_matches_the_error_envelope(self, client):
+        response = client.post("/auth/password-check", json={})
+
+        assert response.status_code == 400
+        assert_matches_schema(response.get_json(), "error")

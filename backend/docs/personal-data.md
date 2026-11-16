@@ -141,7 +141,10 @@ the right altitude split: this file says what you may do and why, that one says 
 the log call. Design notes: [docs/agent/617-log-redaction/](agent/617-log-redaction/).
 
 Note that our bot-protection rate-limit keys contain **IP addresses**, which are personal
-data. They are retained only for the counter's TTL.
+data. They are retained only for the counter's TTL. So does the live password check's limit
+on the signup page, whose endpoint (`POST /auth/password-check`) receives the password, the
+email and the names before the form is sent: it logs none of them and keeps nothing but that
+counter.
 
 ## GDPR and the right to be forgotten
 

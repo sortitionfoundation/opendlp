@@ -14,6 +14,7 @@ const FIXTURE_SCHEMAS = {
   "registration-skeleton": "registration-skeleton",
   "image-upload-error": "error",
   "respondent-field-spec": "respondent-field-spec",
+  "password-check": "password-check",
 };
 
 describe("every recorded fixture", () => {
