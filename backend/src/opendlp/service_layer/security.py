@@ -99,6 +99,25 @@ def password_validators_help_text_html() -> Markup:
     return Markup("<ul>{items}</ul>").format(items=Markup("").join(help_items))
 
 
+@dataclass(frozen=True)
+class PasswordRequirement:
+    """One line of the password rules the sign-up page lists, and how the page ticks it.
+
+    `key` names the rule to the page's script and to the password check
+    endpoint. `live_check` says where the rule is checked while the password is
+    typed: "browser" for a rule the browser decides exactly as the validators
+    do - the length range, between `min_length` and `max_length` characters,
+    and not numbers only - and "server" for a rule only the validators can
+    decide, which the page asks the endpoint about (password_rule_results()).
+    """
+
+    key: str
+    text: str
+    live_check: str
+    min_length: int = 0
+    max_length: int = 0
+
+
 # The validators that decide each of the sign-up page's password rules, by
 # the rule's key. Together they are every validator get_password_validators()
 # builds, each in one rule only.
@@ -110,26 +129,36 @@ PASSWORD_RULE_VALIDATORS: dict[str, tuple[type, ...]] = {
 }
 
 
-def password_requirements() -> list[str]:
+def password_requirements() -> list[PasswordRequirement]:
     """The password rules as the sign-up page lists them, under "Your password must:".
 
     A shorter form of the validators' help texts, one line per rule, each
     worded to follow that lead-in. The minimum and maximum length share a line,
     and its numbers come from the validators, so the range shown is the range
-    enforced. A validator added or removed fails a test in test_security.py
-    until this list follows it.
+    enforced - and the range the browser checks. A validator added or removed
+    fails a test in test_security.py until this list follows it.
     """
     validators = tuple(get_password_validators())
     min_length = next(v.min_length for v in validators if isinstance(v, pv.MinimumLengthValidator))
     max_length = next(v.max_length for v in validators if isinstance(v, pv.MaximumLengthValidator))
     return [
-        _("%(min_length)s–%(max_length)s characters", min_length=min_length, max_length=max_length),
+        PasswordRequirement(
+            key="length",
+            text=_("%(min_length)s–%(max_length)s characters", min_length=min_length, max_length=max_length),
+            live_check="browser",
+            min_length=min_length,
+            max_length=max_length,
+        ),
         # Stands for NumericPasswordValidator and says what it refuses: a
         # password made of digits alone. The design's "Include at least one
         # letter" asked for more than that rule does - "1234567890!" passes.
-        _("Not be numbers only"),
-        _("Not be a commonly used password"),
-        _("Not be too similar to your personal information"),
+        PasswordRequirement(key="not-numbers-only", text=_("Not be numbers only"), live_check="browser"),
+        # Django's list of common passwords, and the person's details: the
+        # browser has neither, so the server answers for these two.
+        PasswordRequirement(key="not-common", text=_("Not be a commonly used password"), live_check="server"),
+        PasswordRequirement(
+            key="not-similar", text=_("Not be too similar to your personal information"), live_check="server"
+        ),
     ]
 
 

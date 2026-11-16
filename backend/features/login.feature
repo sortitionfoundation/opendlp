@@ -25,6 +25,13 @@ Feature: User Sign in and Registration
     Given the user is starting to register
     Then the user should see what their password must be
 
+  Scenario: The password rules tick while the password is typed
+    Given the user is starting to register
+    When the user types a password of ten digits
+    Then the password's length rule should be ticked and its digits rule should not
+    When the user adds a letter to the password
+    Then every password rule should be ticked
+
   Scenario: Sign out
     Given the user is signed in
     When the user signs out

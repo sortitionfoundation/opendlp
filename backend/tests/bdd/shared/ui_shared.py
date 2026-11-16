@@ -111,12 +111,59 @@ def _(page: Page):
 
 @then("the user should see what their password must be")
 def _(page: Page):
-    """the password field is described by the short list of rules under it."""
+    """the password field is described by the short list of rules under it, none of them met yet."""
     password = page.locator('input[name="password"]')
     expect(password).to_have_accessible_description(
         re.compile(
-            r"^Your password must:\s*10–256 characters\s*Not be numbers only\s*"
-            r"Not be a commonly used password\s*Not be too similar to your personal information$"
+            r"^Your password must:\s*10–256 characters\s*\(not met yet\)\s*Not be numbers only\s*\(not met yet\)\s*"
+            r"Not be a commonly used password\s*\(not met yet\)\s*"
+            r"Not be too similar to your personal information\s*\(not met yet\)$"
+        )
+    )
+
+
+# A rule's tick and its hollow circle, as the sign-up page draws them.
+RULE_TICK = 'span[x-show="met($el)"]:not(.sr-only)'
+RULE_CIRCLE = 'span[x-show="!met($el)"]:not(.sr-only)'
+
+
+def _password_rule(page: Page, key: str):
+    return page.locator(f'#password-requirements li[data-password-rule="{key}"]')
+
+
+@when("the user types a password of ten digits")
+def _(page: Page):
+    """the user types a password of ten digits."""
+    page.locator('input[name="password"]').press_sequentially("4719305826")
+
+
+@when("the user adds a letter to the password")
+def _(page: Page):
+    """the user adds a letter to the password."""
+    page.locator('input[name="password"]').press_sequentially("x")
+
+
+@then("the password's length rule should be ticked and its digits rule should not")
+def _(page: Page):
+    """the browser decides these two as each character is typed."""
+    expect(_password_rule(page, "length").locator(RULE_TICK)).to_be_visible()
+    expect(_password_rule(page, "not-numbers-only").locator(RULE_CIRCLE)).to_be_visible()
+    expect(_password_rule(page, "not-numbers-only").locator(RULE_TICK)).to_be_hidden()
+    expect(page.locator('input[name="password"]')).to_have_accessible_description(
+        re.compile(r"10–256 characters\s*\(met\)\s*Not be numbers only\s*\(not met yet\)")
+    )
+
+
+@then("every password rule should be ticked")
+def _(page: Page):
+    """the last two once the server has answered, after a pause in typing."""
+    for key in ("length", "not-numbers-only", "not-common", "not-similar"):
+        expect(_password_rule(page, key).locator(RULE_TICK)).to_be_visible()
+    expect(page.locator('input[name="password"]')).to_have_accessible_description(
+        re.compile(
+            r"^Your password must:\s*10–256 characters\s*\(met\)\s*Not be numbers only\s*\(met\)\s*"
+            r"Not be a commonly used password\s*\(met\)\s*"
+            r"Not be too similar to your personal information\s*\(met\)$"
         )
     )
 

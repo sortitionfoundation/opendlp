@@ -4,7 +4,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
 #}
 {% extends "public/base.html" %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_check %}
+{% from "backoffice/components/icons.html" import icon_check, icon_circle_small %}
 {% from "backoffice/components/input.html" import input, checkbox %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
 {% from "public/_survey_fields.html" import signup_survey_fields %}
@@ -114,9 +114,16 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 </div>
             {% endif %}
             {# Email-only fields - the provider supplies these for Google/Microsoft,
-               so they are revealed only for the email method (shown without JS). #}
+               so they are revealed only for the email method (shown without JS).
+               passwordRules ticks the password's rules as it is typed. It hears
+               every field's input event here, because the email and the names
+               change the answer to one of the rules. #}
             <div class="flex flex-col gap-6"
-                 {% if sso_enabled %}x-show="method === 'email'"{% endif %}>
+                 {% if sso_enabled %}x-show="method === 'email'"{% endif %}
+                 x-data="passwordRules"
+                 @input="changed($event)"
+                 data-check-url="{{ url_for('auth.password_check') }}"
+                 data-csrf-token="{{ csrf_token() }}">
                 {{ input(form.email.name,
                 label=form.email.label.text,
                 type="email",
@@ -135,16 +142,32 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                     described_by_id="password-requirements")
                     }}
                     {# The rules the password validators enforce, in the design's
-                       short form - see password_requirements() in security.py. #}
+                       short form - see password_requirements() in security.py.
+                       Every line starts with a hollow circle, which is all a
+                       page without JavaScript shows, and turns into a green
+                       tick while the password meets its rule. A "browser" line
+                       is checked on every keystroke, the length line with the
+                       validators' numbers. A "server" line waits for the
+                       server's answer after a pause in typing, and stays a
+                       circle until it comes, or if it does not. Nothing turns
+                       red. Each line ends in its state for screen readers, read
+                       with the field's description and not announced as it
+                       changes. #}
                     <div id="password-requirements"
                          class="text-body-sm flex flex-col gap-0.5"
                          style="color: var(--color-secondary-text);">
                         <p>{{ _("Your password must:") }}</p>
                         <ul class="flex flex-col gap-0.5">
                             {% for requirement in password_requirements %}
-                                <li class="flex items-start gap-1.5">
-                                    {{ icon_check(classes="w-3.5 h-3.5 mt-[3px] shrink-0") }}
-                                    <span>{{ requirement }}</span>
+                                <li class="flex items-start gap-1.5"
+                                    data-password-rule="{{ requirement.key }}"
+                                    data-live-check="{{ requirement.live_check }}"
+                                    {% if requirement.key == "length" %}data-min-length="{{ requirement.min_length }}" data-max-length="{{ requirement.max_length }}"{% endif %}>
+                                    <span class="flex shrink-0 mt-[3px]" x-show="!met($el)">{{ icon_circle_small(classes="w-3.5 h-3.5") }}</span>
+                                    <span class="flex shrink-0 mt-[3px]" x-show="met($el)" x-cloak>{{ icon_check(classes="w-3.5 h-3.5", style="color: var(--color-success-text);") }}</span>
+                                    <span>{{ requirement.text }}</span>
+                                    <span class="sr-only" x-show="met($el)" x-cloak> ({{ _("met") }})</span>
+                                    <span class="sr-only" x-show="!met($el)" x-cloak> ({{ _("not met yet") }})</span>
                                 </li>
                             {% endfor %}
                         </ul>

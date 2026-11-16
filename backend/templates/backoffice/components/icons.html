@@ -126,6 +126,19 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
 {% endmacro %}
 
 {# ============================================================================
+   STATUS - NOT YET
+
+   Lucide's circle-small: a hollow circle for a line that can be ticked and is
+   not ticked yet. The sign-up page's password rules start with it and swap it
+   for icon_check as the password meets them.
+============================================================================ #}
+{% macro icon_circle_small(classes="w-4 h-4", style="") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 12C18 15.3137 15.3137 18 12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12Z"/>
+    </svg>
+{% endmacro %}
+
+{# ============================================================================
    STATUS - WARNING
 
    The 20 grid version is drawn to fill the stepper bubble; deliberate.

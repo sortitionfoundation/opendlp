@@ -5,7 +5,7 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
 {% from "backoffice/components/icons.html" import icon_a_large_small, icon_about, icon_arrow_back, icon_arrow_forward, icon_check, icon_check_12, icon_check_20, icon_chevron_down, icon_chevron_right, icon_chevron_up, icon_close, icon_code, icon_copy, icon_data_agreement, icon_download, icon_edit, icon_grip_vertical, icon_hand, icon_info, icon_logout, icon_more_vert, icon_pencil, icon_pie_chart, icon_plus, icon_question_circle, icon_spinner, icon_sparkles, icon_switch, icon_trash, icon_undo, icon_user, icon_warning, icon_warning_20 %}
 {% from "backoffice/components/icons.html" import icon_pilcrow, icon_heading_1, icon_heading_2, icon_heading_3, icon_bold, icon_italic, icon_underline, icon_strikethrough, icon_list, icon_list_ordered, icon_list_indent_increase, icon_list_indent_decrease, icon_text_quote, icon_link, icon_image, icon_scaling, icon_separator_horizontal, icon_table, icon_undo_2, icon_redo_2, icon_text_align_left, icon_text_align_center, icon_text_align_right %}
-{% from "backoffice/components/icons.html" import icon_send, icon_circle_check_big, icon_users, icon_copyright %}
+{% from "backoffice/components/icons.html" import icon_send, icon_circle_check_big, icon_users, icon_copyright, icon_circle_small %}
 
 {#
     A glyph and everything a reader needs to use it: how it looks small, how
@@ -102,7 +102,10 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
         "backoffice/respondent_field_schema/view.html"]) }}
         {{ glyph("icon_check", "Lucide", "24",
         icon_check(classes="w-4 h-4"), icon_check(classes="w-6 h-6"),
-        ["backoffice/assembly_data.html", "backoffice/components/url_display.html"]) }}
+        ["backoffice/assembly_data.html", "backoffice/components/url_display.html", "public/register.html"]) }}
+        {{ glyph("icon_circle_small", "Lucide", "24",
+        icon_circle_small(classes="w-4 h-4"), icon_circle_small(classes="w-6 h-6"),
+        ["public/register.html"]) }}
         {{ glyph("icon_warning", "Lucide", "24",
         icon_warning(classes="w-4 h-4"), icon_warning(classes="w-6 h-6"),
         ["backoffice/assembly_registration.html"]) }}

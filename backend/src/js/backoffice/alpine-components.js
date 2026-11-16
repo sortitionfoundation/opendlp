@@ -12,6 +12,7 @@ import { dialogLeaveGuard } from "../components/dialog-leave-guard.js";
 import { infoToggletip } from "../components/info-toggletip.js";
 import { inlineEdit } from "../components/inline-edit.js";
 import { modal } from "../components/modal.js";
+import { passwordRules } from "../components/password-rules.js";
 import { registrationMethod } from "../components/registration-method.js";
 import { registrationPageRow } from "../components/registration-page-row.js";
 import { replacementSuggestions } from "../components/replacement-suggestions.js";
@@ -49,6 +50,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("infoToggletip", infoToggletip);
   Alpine.data("inlineEdit", inlineEdit);
   Alpine.data("modal", modal);
+  Alpine.data("passwordRules", passwordRules);
   Alpine.data("progressModalDemo", progressModalDemo);
   Alpine.data("charCount", charCount);
   Alpine.data("registrationMethod", registrationMethod);

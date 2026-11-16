@@ -47,6 +47,25 @@ export function postFormData(url, formData, csrfToken) {
 }
 
 /**
+ * POST a JSON payload.
+ *
+ * @param {string} url - the URL to post to
+ * @param {Object} payload - the body
+ * @param {string} csrfToken - the CSRF token for the session
+ * @returns {Promise<{ok: boolean, status: number, data: Object}>}
+ */
+export function postJson(url, payload, csrfToken) {
+  return send(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrfToken,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
  * PATCH a resource with a JSON payload.
  *
  * @param {string} url - the resource URL

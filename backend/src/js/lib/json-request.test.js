@@ -3,7 +3,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { deleteResource, patchJson, postFormData } from "./json-request.js";
+import {
+  deleteResource,
+  patchJson,
+  postFormData,
+  postJson,
+} from "./json-request.js";
 
 function jsonResponse(body, ok, status) {
   return {
@@ -81,6 +86,37 @@ describe("postFormData", () => {
     await expect(
       postFormData("/upload", new FormData(), "csrf-123"),
     ).rejects.toThrow("Failed to fetch");
+  });
+});
+
+describe("postJson", () => {
+  it("sends the payload as JSON with the CSRF token", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ rules: {} }, true, 200));
+
+    await postJson("/check", { password: "x" }, "csrf-123");
+
+    expect(fetchMock).toHaveBeenCalledWith("/check", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "csrf-123",
+      },
+      body: '{"password":"x"}',
+    });
+  });
+
+  it("resolves with the parsed body and the status", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ error: "Slow down" }, false, 429),
+    );
+
+    const result = await postJson("/check", { password: "x" }, "csrf-123");
+
+    expect(result).toEqual({
+      ok: false,
+      status: 429,
+      data: { error: "Slow down" },
+    });
   });
 });
 

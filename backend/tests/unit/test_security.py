@@ -1,5 +1,8 @@
 # ABOUTME: Unit tests for the password helpers in service_layer.security
-# ABOUTME: Hashes that must never match, and the password rules the sign-up page lists against those enforced
+# ABOUTME: Hashes that must never match, and the password rules the sign-up page lists and ticks against those enforced
+
+import json
+from pathlib import Path
 
 import pytest
 
@@ -17,6 +20,9 @@ from opendlp.service_layer.security import (
     verify_password,
 )
 from opendlp.vendor import password_validation as pv
+
+# The cases password-rules.test.js runs through the page's script.
+BROWSER_CHECKS = json.loads((Path(__file__).parents[1] / "fixtures" / "password_browser_checks.json").read_text())
 
 ANN = TempUser(email="ann.smith@example.org", first_name="Ann", last_name="Smith")
 
@@ -64,7 +70,7 @@ class TestPasswordRequirements:
     """The sign-up page's short list of password rules, held to the validators that enforce them."""
 
     def test_the_list_is_the_designs_wording(self):
-        assert password_requirements() == [
+        assert [requirement.text for requirement in password_requirements()] == [
             "10–256 characters",
             "Not be numbers only",
             "Not be a commonly used password",
@@ -75,7 +81,9 @@ class TestPasswordRequirements:
         validators = (pv.MinimumLengthValidator(min_length=12), pv.MaximumLengthValidator(max_length=64))
         monkeypatch.setattr(security, "get_password_validators", lambda: validators)
 
-        assert password_requirements()[0] == "12–64 characters"
+        length = password_requirements()[0]
+        assert length.text == "12–64 characters"
+        assert (length.min_length, length.max_length) == (12, 64)
 
     def test_every_validator_has_a_line(self):
         """Adding or removing a validator has to change the list as well.
@@ -89,6 +97,19 @@ class TestPasswordRequirements:
             pv.NumericPasswordValidator,
             pv.SafeCommonPasswordValidator,
             pv.UserAttributeSimilarityValidator,
+        }
+
+    def test_each_line_has_the_key_its_validators_are_listed_under(self):
+        """The keys name the lines to the page's script and to the password check."""
+        assert [requirement.key for requirement in password_requirements()] == list(PASSWORD_RULE_VALIDATORS)
+
+    def test_the_browser_checks_the_length_and_digits_lines_and_the_server_the_rest(self):
+        """The browser decides only what it can decide exactly as the validators do."""
+        assert {requirement.key: requirement.live_check for requirement in password_requirements()} == {
+            "length": "browser",
+            "not-numbers-only": "browser",
+            "not-common": "server",
+            "not-similar": "server",
         }
 
     @pytest.mark.parametrize(("password", "accepted"), ENFORCED_AS_WRITTEN)
@@ -132,3 +153,29 @@ class TestPasswordRuleResults:
         assert list(PASSWORD_RULE_VALIDATORS) == ["length", "not-numbers-only", "not-common", "not-similar"]
         assert len(listed) == len(set(listed))
         assert set(listed) == {type(validator) for validator in get_password_validators()}
+
+
+class TestBrowserChecksAgreeWithTheValidators:
+    """The two rules the page decides in the browser, on passwords where that is easy to get wrong.
+
+    password-rules.test.js runs the same cases through the page's script, so a
+    rule the browser ticks is a rule the validators accept.
+    """
+
+    def test_the_cases_use_the_validators_numbers(self):
+        length = password_requirements()[0]
+
+        assert (BROWSER_CHECKS["min_length"], BROWSER_CHECKS["max_length"]) == (length.min_length, length.max_length)
+
+    def test_the_cases_cover_the_rules_the_browser_checks(self):
+        browser_keys = {
+            requirement.key for requirement in password_requirements() if requirement.live_check == "browser"
+        }
+
+        assert all(set(case["rules"]) == browser_keys for case in BROWSER_CHECKS["cases"])
+
+    @pytest.mark.parametrize("case", BROWSER_CHECKS["cases"], ids=lambda case: case["why"])
+    def test_the_validators_decide_each_case_as_the_browser_does(self, case: dict):
+        results = password_rule_results(case["typed"], TempUser(email=""))
+
+        assert {key: results[key] for key in case["rules"]} == case["rules"]
