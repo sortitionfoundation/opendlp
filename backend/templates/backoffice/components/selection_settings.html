@@ -44,7 +44,7 @@ ABOUTME: Open until they have been saved once, which selection waits for; folded
             {{ form.hidden_tag() }}
             {# Check Same Address Checkbox #}
             {{ checkbox(name="check_same_address",
-            label=_("Check Same Address") ,
+            label=_("Check same address") ,
             checked=form.check_same_address.data,
             hint=_("Prevent selecting multiple respondents from the same address."),
             attrs="data-address-check"
@@ -72,7 +72,7 @@ ABOUTME: Open until they have been saved once, which selection waits for; folded
                 {% endif %}
                 {# Address Columns Input #}
                 {{ input(name="check_same_address_cols_string",
-                label=_("Address Attributes") ,
+                label=_("Address attributes") ,
                 value=form.check_same_address_cols_string.data or "",
                 placeholder=_("e.g., Street, City, PostCode"),
                 hint=_("Comma-separated respondent attribute names used for address matching."),

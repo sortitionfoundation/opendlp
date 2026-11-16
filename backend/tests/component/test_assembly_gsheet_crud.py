@@ -53,7 +53,7 @@ class TestAssemblyGSheetCreateView:
         assert response.status_code == 200
         assert b"Configure Google Sheets" in response.data
         assert b"Google Sheets URL" in response.data
-        assert b"Team Configuration" in response.data
+        assert b"Team configuration" in response.data
         assert b"Save Configuration" in response.data
 
     def test_create_gsheet_form_contains_all_fields(
@@ -66,22 +66,22 @@ class TestAssemblyGSheetCreateView:
         assert b"Google Sheets URL" in response.data
         assert b'placeholder="https://docs.google.com/spreadsheets/d/' in response.data
 
-        assert b"Team Configuration" in response.data
-        assert b"UK Team" in response.data
-        assert b"EU Team" in response.data
-        assert b"Australia Team" in response.data
+        assert b"Team configuration" in response.data
+        assert b"UK team" in response.data
+        assert b"EU team" in response.data
+        assert b"Australia team" in response.data
 
-        assert b"Respondents Tab Name" in response.data
-        assert b"Targets Tab Name" in response.data
-        assert b"Already Selected Tab Name" in response.data
+        assert b"Respondents tab name" in response.data
+        assert b"Targets tab name" in response.data
+        assert b"Already selected tab name" in response.data
 
-        assert b"ID Column" in response.data
+        assert b"ID column" in response.data
 
-        assert b"Address Columns" in response.data
-        assert b"Columns to Keep" in response.data
+        assert b"Address columns" in response.data
+        assert b"Columns to keep" in response.data
 
-        assert b"Check Same Address" in response.data
-        assert b"Generate Remaining Tab" in response.data
+        assert b"Check same address" in response.data
+        assert b"Generate remaining tab" in response.data
 
     def test_create_gsheet_validation_invalid_url(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly

@@ -413,9 +413,9 @@ before sweeping the source.
    the database does.
 
 2. **Columns, fields and attributes in the selection settings.** The Google
-   Sheets form says "Address Columns", "Columns to Keep" and "ID Column", which is
+   Sheets form says "Address columns", "Columns to keep" and "ID column", which is
    right: they are columns in the spreadsheet. The database settings form has the
-   first of those as "Address Attributes" (it has no "to keep" setting, as only
+   first of those as "Address attributes" (it has no "to keep" setting, as only
    the IDs of a selection are stored). "Fields" is
    the word the rest of the interface uses for these ("Fields are defined by
    your Google Sheets spreadsheet"), so "Address Fields" is

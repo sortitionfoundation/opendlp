@@ -182,7 +182,7 @@ class TestDbSelectionRoutes:
 
         assert response.status_code == 200
         assert b"Selection Settings" in response.data
-        assert b"Check Same Address" in response.data
+        assert b"Check same address" in response.data
 
     def test_save_db_selection_settings(self, logged_in_admin, assembly_for_db_selection, fake_store):
         assembly = assembly_for_db_selection

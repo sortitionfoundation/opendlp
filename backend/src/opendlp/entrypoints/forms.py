@@ -401,8 +401,8 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
             self.check_same_address_cols_string.errors.append(  # type: ignore[attr-defined]
                 str(
                     _l(
-                        "You must specify address columns when 'Check Same Address' is enabled. "
-                        "Please enter column names or disable 'Check Same Address'."
+                        "You must specify address columns when 'Check same address' is enabled. "
+                        "Please enter column names or disable 'Check same address'."
                     )
                 )
             )
@@ -412,7 +412,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     select_registrants_tab = StringField(
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
-        _l("Respondents Tab Name"),
+        _l("Respondents tab name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l(
             "Name of the tab containing respondents data in the Google Sheets spreadsheet — for initial Selection"
@@ -422,7 +422,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     select_targets_tab = StringField(
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
-        _l("Targets Tab Name"),
+        _l("Targets tab name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l("Name of the tab containing categories, category values and targets — for initial Selection"),
         default="Categories",
@@ -430,7 +430,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     replace_registrants_tab = StringField(
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
-        _l("Respondents Tab Name"),
+        _l("Respondents tab name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l(
             "Name of the tab containing respondents data in the Google Sheets spreadsheet — for Replacements"
@@ -440,70 +440,70 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     replace_targets_tab = StringField(
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
-        _l("Targets Tab Name"),
+        _l("Targets tab name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l("Name of the tab containing categories, category values and targets — for Replacements"),
         default="Replacement Categories",
     )
 
     already_selected_tab = StringField(
-        _l("Already Selected Tab Name"),
+        _l("Already selected tab name"),
         validators=[DataRequired(), Length(min=1, max=100)],
         description=_l("Name of the tab containing already selected people (used for Replacements)"),
         default="Selected",
     )
 
     check_same_address = BooleanField(
-        _l("Check Same Address"),
+        _l("Check same address"),
         description=_l("Enable checking for respondents with the same address"),
         default=True,
     )
 
     generate_remaining_tab = BooleanField(
-        _l("Generate Remaining Tab"),
+        _l("Generate remaining tab"),
         description=_l("Create a tab with the remaining respondents after selection"),
         default=True,
     )
 
     team = RadioField(
-        _l("Team Configuration"),
+        _l("Team configuration"),
         choices=[
-            SelectChoice("uk", _l("UK Team")),
-            SelectChoice("eu", _l("EU Team")),
-            SelectChoice("aus", _l("Australia Team")),
+            SelectChoice("uk", _l("UK team")),
+            SelectChoice("eu", _l("EU team")),
+            SelectChoice("aus", _l("Australia team")),
             SelectChoice("other", _l("Custom configuration")),
         ],
         default="other",
         validators=[DataRequired()],
         description=_l(
-            "Select the team configuration to use for default settings for ID Column, Address Columns and Columns To Keep."
+            "Select the team configuration to use for default settings for ID column, Address columns and Columns to keep."
         ),
     )
 
     id_column = StringField(
-        _l("ID Column"),
+        _l("ID column"),
         validators=[DataRequired(), Length(min=1, max=100)],
         default="nationbuilder_id",
         description=_l(
-            "Name of column containing unique identifiers for respondents. Note will be overridden if the Team Configuration is not 'Custom'."
+            "Name of column containing unique identifiers for respondents. Note will be overridden if the Team configuration is not 'Custom'."
         ),
     )
 
     check_same_address_cols_string = StringField(
-        _l("Address Columns"),
+        _l("Address columns"),
         validators=[Optional(), Length(max=500)],
         description=_l(
             "Comma-separated list of column names used for checking same address (e.g., primary_address1, zip_royal_mail). "
-            "Note will be overridden if the Team Configuration is not 'Custom'."
+            "Note will be overridden if the Team configuration is not 'Custom'."
         ),
     )
 
     columns_to_keep_string = StringField(
-        _l("Columns to Keep"),
+        _l("Columns to keep"),
         validators=[Optional(), Length(max=1000)],
         description=_l(
             "Comma-separated list of column names to keep in output (e.g., first_name, last_name, email). "
-            "Note will be overridden if the Team Configuration is not 'Custom'."
+            "Note will be overridden if the Team configuration is not 'Custom'."
         ),
     )
 
@@ -772,13 +772,13 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for editing AssemblyCSV selection settings."""
 
     check_same_address = BooleanField(
-        _l("Check Same Address"),
+        _l("Check same address"),
         default=False,
         description=_l("Prevent selecting multiple respondents from the same address"),
     )
 
     check_same_address_cols_string = StringField(
-        _l("Address Attributes"),
+        _l("Address attributes"),
         validators=[Optional(), Length(max=500)],
         description=_l("Comma-separated respondent attribute names used for address matching"),
     )
@@ -799,8 +799,8 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
             self.check_same_address_cols_string.errors.append(  # type: ignore[attr-defined]
                 str(
                     _l(
-                        "You must specify address attributes when 'Check Same Address' is enabled. "
-                        "Please enter attribute names or disable 'Check Same Address'."
+                        "You must specify address attributes when 'Check same address' is enabled. "
+                        "Please enter attribute names or disable 'Check same address'."
                     )
                 )
             )

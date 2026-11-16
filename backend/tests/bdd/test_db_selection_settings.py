@@ -41,22 +41,22 @@ def user_visits_selection_page(admin_logged_in_page: Page, test_assembly):
     admin_logged_in_page.wait_for_load_state()
 
 
-@when("the user ticks Check Same Address")
+@when("the user ticks Check same address")
 def user_ticks_check_same_address(admin_logged_in_page: Page):
     # The native checkbox is visually hidden behind a styled box, so click its label
-    admin_logged_in_page.locator("#selection-settings").get_by_text("Check Same Address", exact=True).click()
+    admin_logged_in_page.locator("#selection-settings").get_by_text("Check same address", exact=True).click()
     expect(admin_logged_in_page.locator("#check_same_address")).to_be_checked()
 
 
-@when("the user unticks Check Same Address")
+@when("the user unticks Check same address")
 def user_unticks_check_same_address(admin_logged_in_page: Page):
-    admin_logged_in_page.locator("#selection-settings").get_by_text("Check Same Address", exact=True).click()
+    admin_logged_in_page.locator("#selection-settings").get_by_text("Check same address", exact=True).click()
     expect(admin_logged_in_page.locator("#check_same_address")).not_to_be_checked()
 
 
 @when(parsers.parse('the user enters "{attributes}" as the address attributes'))
 def user_enters_address_attributes(admin_logged_in_page: Page, attributes: str):
-    admin_logged_in_page.get_by_label("Address Attributes").fill(attributes)
+    admin_logged_in_page.get_by_label("Address attributes").fill(attributes)
 
 
 @when("the user saves the selection settings")
@@ -74,22 +74,22 @@ def user_opens_settings(admin_logged_in_page: Page):
 @then("the settings do not ask for attributes to keep")
 def settings_do_not_ask_for_attributes_to_keep(admin_logged_in_page: Page):
     settings = admin_logged_in_page.locator("#selection-settings")
-    expect(settings.get_by_text("Check Same Address", exact=True)).to_be_visible()
+    expect(settings.get_by_text("Check same address", exact=True)).to_be_visible()
     expect(settings.get_by_text("Attributes to Keep")).to_have_count(0)
 
 
 @then("the address attributes are hidden")
 def address_attributes_hidden(admin_logged_in_page: Page):
-    expect(admin_logged_in_page.get_by_label("Address Attributes")).to_be_hidden()
+    expect(admin_logged_in_page.get_by_label("Address attributes")).to_be_hidden()
     expect(admin_logged_in_page.get_by_text("Available respondent attributes")).to_be_hidden()
 
 
 @then("the address attributes are shown")
 def address_attributes_shown(admin_logged_in_page: Page):
-    expect(admin_logged_in_page.get_by_label("Address Attributes")).to_be_visible()
+    expect(admin_logged_in_page.get_by_label("Address attributes")).to_be_visible()
     expect(admin_logged_in_page.get_by_text("Available respondent attributes")).to_be_visible()
 
 
 @then(parsers.parse('the address attributes are "{attributes}"'))
 def address_attributes_are(admin_logged_in_page: Page, attributes: str):
-    expect(admin_logged_in_page.get_by_label("Address Attributes")).to_have_value(attributes)
+    expect(admin_logged_in_page.get_by_label("Address attributes")).to_have_value(attributes)

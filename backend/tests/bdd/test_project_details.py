@@ -298,7 +298,7 @@ def settings_dialog_shows_sheet_fields(page: Page) -> None:
 def fill_in_sheet(page: Page) -> None:
     dialog = _settings_dialog(page)
     dialog.get_by_label("Spreadsheet URL").fill(SHEET_URL)
-    dialog.get_by_text("UK Team", exact=True).click()
+    dialog.get_by_text("UK team", exact=True).click()
 
 
 @when("I delete the targets and confirm")

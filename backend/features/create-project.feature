@@ -111,7 +111,7 @@ Feature: Create a project in a dialog
     Then I can see the Google Sheets settings
     And I cannot see the target data source
     When I give the spreadsheet URL "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
-    And I choose the team "UK Team"
+    And I choose the team "UK team"
     Then I cannot see the custom column settings
     When I save the create project dialog
     Then I am on the details page of "Sheet Panel"
@@ -124,7 +124,7 @@ Feature: Create a project in a dialog
     And I choose the data location "In Google Sheets"
     And I move on to the next step
     And I give the spreadsheet URL "https://example.com/not-a-sheet"
-    And I choose the team "UK Team"
+    And I choose the team "UK team"
     And I save the create project dialog
     Then the create project dialog is at the step "Targets and people"
     And the spreadsheet URL is marked as refused

@@ -27,7 +27,7 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {{ input(name="select_registrants_tab",
-            label=_("Respondents Tab") ,
+            label=_("Respondents tab") ,
             value=gsheet_form.select_registrants_tab.data or "",
             placeholder=_("e.g., Respondents"),
             hint=_("Tab containing respondent data for selection."),
@@ -35,7 +35,7 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
             error=e(gsheet_form.select_registrants_tab.errors)
             ) }}
             {{ input(name="select_targets_tab",
-            label=_("Categories Tab") ,
+            label=_("Categories tab") ,
             value=gsheet_form.select_targets_tab.data or "",
             placeholder=_("e.g., Categories"),
             hint=_("Tab containing selection categories/targets."),
@@ -52,7 +52,7 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {{ input(name="replace_registrants_tab",
-            label=_("Respondents Tab") ,
+            label=_("Respondents tab") ,
             value=gsheet_form.replace_registrants_tab.data or "",
             placeholder=_("e.g., Respondents"),
             hint=_("Tab containing respondent data for replacements."),
@@ -60,7 +60,7 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
             error=e(gsheet_form.replace_registrants_tab.errors)
             ) }}
             {{ input(name="replace_targets_tab",
-            label=_("Categories Tab") ,
+            label=_("Categories tab") ,
             value=gsheet_form.replace_targets_tab.data or "",
             placeholder=_("e.g., Categories"),
             hint=_("Tab containing replacement categories/targets."),
@@ -69,7 +69,7 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
             ) }}
         </div>
         {{ input(name="already_selected_tab",
-        label=_("Already Selected Tab") ,
+        label=_("Already selected tab") ,
         value=gsheet_form.already_selected_tab.data or "",
         placeholder=_("e.g., Selected"),
         hint=_("Tab containing previously selected participants (for exclusion during replacement)."),
@@ -81,13 +81,13 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
     <fieldset class="flex flex-col gap-4">
         <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
         {{ checkbox(name="check_same_address",
-        label=_("Check Same Address") ,
+        label=_("Check same address") ,
         checked=gsheet_form.check_same_address.data,
         hint=_("Prevent selecting multiple respondents from the same address."),
         readonly=readonly
         ) }}
         {{ checkbox(name="generate_remaining_tab",
-        label=_("Generate Remaining Tab") ,
+        label=_("Generate remaining tab") ,
         checked=gsheet_form.generate_remaining_tab.data,
         hint=_("Automatically generate a tab with the remaining respondents."),
         readonly=readonly
@@ -97,11 +97,11 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
     {% if not readonly %}
         <div x-data="{ selectedTeam: '{{ gsheet_form.team.data or 'other' }}' }">
             {{ radio_group(name="team",
-            label=_("Team Configuration") ,
+            label=_("Team configuration") ,
             options=[
-            {"value": "uk", "label": _("UK Team")},
-            {"value": "eu", "label": _("EU Team")},
-            {"value": "aus", "label": _("Australia Team")},
+            {"value": "uk", "label": _("UK team")},
+            {"value": "eu", "label": _("EU team")},
+            {"value": "aus", "label": _("Australia team")},
             {"value": "other", "label": _("Custom configuration")}
             ],
             value=gsheet_form.team.data or "other",
@@ -115,7 +115,7 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
                  class="mt-4 flex flex-col gap-4 pl-8"
                  style="border-left: 2px solid var(--color-borders-dividers)">
                 {{ input(name="id_column",
-                label=_("ID Column") ,
+                label=_("ID column") ,
                 value=gsheet_form.id_column.data or "",
                 placeholder=_("e.g., ID"),
                 hint=_("Column name containing unique respondent identifiers."),
@@ -123,7 +123,7 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
                 error=e(gsheet_form.id_column.errors)
                 ) }}
                 {{ input(name="check_same_address_cols_string",
-                label=_("Address Columns") ,
+                label=_("Address columns") ,
                 value=gsheet_form.check_same_address_cols_string.data or "",
                 placeholder=_("e.g., Street, City, PostCode"),
                 hint=_("Comma-separated column names used for address matching."),
@@ -131,7 +131,7 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
                 error=e(gsheet_form.check_same_address_cols_string.errors)
                 ) }}
                 {{ input(name="columns_to_keep_string",
-                label=_("Columns to Keep") ,
+                label=_("Columns to keep") ,
                 value=gsheet_form.columns_to_keep_string.data or "",
                 placeholder=_("e.g., Name, Email, Phone"),
                 hint=_("Comma-separated column names to include in output."),
@@ -145,19 +145,19 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
         <fieldset class="flex flex-col gap-4">
             <legend class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Column Configuration") }}</legend>
             {{ input(name="id_column",
-            label=_("ID Column") ,
+            label=_("ID column") ,
             value=gsheet_form.id_column.data or "",
             hint=_("Column name containing unique respondent identifiers."),
             readonly=readonly
             ) }}
             {{ input(name="check_same_address_cols_string",
-            label=_("Address Columns") ,
+            label=_("Address columns") ,
             value=gsheet_form.check_same_address_cols_string.data or "",
             hint=_("Comma-separated column names used for address matching."),
             readonly=readonly
             ) }}
             {{ input(name="columns_to_keep_string",
-            label=_("Columns to Keep") ,
+            label=_("Columns to keep") ,
             value=gsheet_form.columns_to_keep_string.data or "",
             hint=_("Comma-separated column names to include in output."),
             readonly=readonly

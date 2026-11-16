@@ -167,8 +167,8 @@ class TestMovingBetweenSteps:
         html = _step(logged_in_admin, 2, location="gsheet").data.decode()
 
         assert "Spreadsheet URL" in html
-        assert "Team Configuration" in html
-        assert "Check Same Address" in html
+        assert "Team configuration" in html
+        assert "Check same address" in html
         assert "Target data source" not in html
 
     def test_back_from_step_three_returns_to_the_location(self, logged_in_admin: FlaskClient) -> None:

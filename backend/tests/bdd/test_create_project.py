@@ -195,7 +195,7 @@ def dialog_says(page: Page, text: str) -> None:
 @then("I can see the Google Sheets settings")
 def can_see_sheet_settings(page: Page) -> None:
     expect(_dialog(page).get_by_label("Spreadsheet URL")).to_be_visible()
-    expect(_dialog(page).get_by_text("Team Configuration")).to_be_visible()
+    expect(_dialog(page).get_by_text("Team configuration")).to_be_visible()
 
 
 @when(parsers.parse('I give the spreadsheet URL "{url}"'))
@@ -210,7 +210,7 @@ def choose_team(page: Page, team: str) -> None:
 
 @then("I cannot see the custom column settings")
 def no_custom_columns(page: Page) -> None:
-    expect(_dialog(page).get_by_label("ID Column")).to_be_hidden()
+    expect(_dialog(page).get_by_label("ID column")).to_be_hidden()
 
 
 @then("the spreadsheet URL is marked as refused")
