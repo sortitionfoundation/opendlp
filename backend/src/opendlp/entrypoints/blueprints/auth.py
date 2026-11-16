@@ -691,8 +691,8 @@ def login_google() -> ResponseReturnValue:
     if safe_next_page:
         session["oauth_next"] = safe_next_page
 
-    # Redirect to Google OAuth - it has to be https, so do that
-    redirect_uri = url_for("auth.google_callback", _external=True, _scheme="https")
+    # Redirect to Google OAuth
+    redirect_uri = url_for("auth.google_callback", _external=True)
     response = oauth.google.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response
@@ -783,8 +783,8 @@ def login_microsoft() -> ResponseReturnValue:
     if safe_next_page:
         session["oauth_next"] = safe_next_page
 
-    # Redirect to Microsoft OAuth - it has to be https, so do that
-    redirect_uri = url_for("auth.microsoft_callback", _external=True, _scheme="https")
+    # Redirect to Microsoft OAuth
+    redirect_uri = url_for("auth.microsoft_callback", _external=True)
     response = oauth.microsoft.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response
