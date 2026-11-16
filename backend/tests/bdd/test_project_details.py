@@ -355,13 +355,6 @@ def spreadsheet_url_is_refused(page: Page) -> None:
     expect(_settings_dialog(page).get_by_label("Spreadsheet URL")).to_have_attribute("aria-invalid", "true")
 
 
-@when("I remove the Google Sheets settings and confirm")
-def remove_sheet_and_confirm(page: Page) -> None:
-    page.once("dialog", lambda dialog: dialog.accept())
-    _settings_dialog(page).get_by_role("button", name="Remove Google Sheets settings", exact=True).click()
-    page.wait_for_url("**/backoffice/project/*?data_source=1*")
-
-
 @when("I ask to check access to the spreadsheet")
 def ask_to_check_access(page: Page) -> None:
     _card(page).get_by_role("button", name="Check access", exact=True).click()

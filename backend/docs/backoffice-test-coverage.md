@@ -122,7 +122,6 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | GS-REP-4 | `/assembly/<id>/replacement/<run_id>/cancel` | POST | :large_orange_diamond: | - | - |
 | GS-REP-5 | `/assembly/<id>/selection/replacement-modal-progress/<run_id>` | GET | :x: | - | **No BDD scenario** |
 | GS-CFG-1 | `/assembly/<id>/gsheet/save` | POST | :white_check_mark: | [H][V][P] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User can create new gsheet configuration"* |
-| GS-CFG-2 | `/assembly/<id>/gsheet/delete` | POST | :white_check_mark: | [H][P][N] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User can delete configuration with confirmation"* |
 
 ### Dev Blueprint (`/backoffice/dev/*`)
 
@@ -258,8 +257,6 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | BDD-GS-9 | User can update existing configuration | [H] | POST /gsheet/save |
 | BDD-GS-10 | User can cancel edit and return to view mode | [H] | GET /data |
 | BDD-GS-11 | Data source selector is locked when config exists | [H] | GET /data |
-| BDD-GS-12 | User can delete configuration with confirmation | [H] | POST /gsheet/delete |
-| BDD-GS-13 | After delete data source selector is unlocked | [H] | POST /gsheet/delete |
 
 #### [backoffice-csv-upload.feature](../features/backoffice-csv-upload.feature) (BDD-CSV)
 
@@ -374,13 +371,6 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | E2E-GS-19 | | test_hard_validation_passes_no_address | [H] | POST /gsheet/save |
 | E2E-GS-20 | | test_hard_validation_on_edit | [H] | POST /gsheet/save |
 | E2E-GS-21 | | test_url_validation_enforced | [V] | POST /gsheet/save |
-| E2E-GS-22 | TestBackofficeGSheetDelete | test_delete_gsheet_config_success | [H] | POST /gsheet/delete |
-| E2E-GS-23 | | test_delete_gsheet_not_found | [N] | POST /gsheet/delete |
-| E2E-GS-24 | | test_delete_button_shown_view_mode | [H] | GET /data |
-| E2E-GS-25 | | test_delete_button_shown_edit_mode | [H] | GET /data?mode=edit |
-| E2E-GS-26 | | test_delete_button_not_shown_new | [H] | GET /data |
-| E2E-GS-27 | | test_delete_permission_denied | [P] | POST /gsheet/delete |
-| E2E-GS-28 | | test_delete_redirects_not_logged_in | [P] | POST /gsheet/delete |
 | E2E-GS-29 | | test_gsheet_state_transitions | [H] | Workflow |
 | E2E-SEL-1 | TestBackofficeSelectionTab | test_selection_page_loads_without_gsheet | [H] | GET /selection |
 | E2E-SEL-2 | | test_selection_page_loads_with_gsheet | [H] | GET /selection |

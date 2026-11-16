@@ -133,15 +133,6 @@ Feature: Project details
     And the spreadsheet URL is marked as refused
     And the data source card says "In OpenDLP"
 
-  Scenario: Removing a Google Sheet's settings frees the location
-    Given the project is managed in a Google Sheet
-    And I am on the details page of the project
-    When I open the data source settings
-    And I remove the Google Sheets settings and confirm
-    Then the data source settings dialog is open
-    And the dialog's data location can be changed
-    And I am told "removed successfully"
-
   Scenario: Checking access to an existing spreadsheet
     Given the project is managed in a Google Sheet
     And I am on the details page of the project

@@ -173,7 +173,10 @@ class TestChoosingTheLocation:
         html = response.data.decode()
         assert "Spreadsheet URL" in html
         assert "disabled" in html
-        assert "Remove Google Sheets settings" in html
+        assert "This cannot change now the project has Google Sheets settings." in html
+        # A project locked to Google Sheets stays there: nothing offers to remove the settings
+        assert "Remove Google Sheets settings" not in html
+        assert "gsheet/delete" not in html
 
     def test_the_location_is_fixed_once_there_are_targets(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
@@ -359,19 +362,6 @@ class TestDeletingFromTheDialog:
 
         assert response.status_code == 302
         assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}?data_source=1")
-
-    def test_removing_the_sheet_comes_back_to_the_dialog_unlocked(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
-    ) -> None:
-        response = logged_in_admin.post(
-            f"/backoffice/project/{assembly_with_gsheet.id}/gsheet/delete",
-            data={},
-            follow_redirects=True,
-        )
-
-        html = response.data.decode()
-        assert 'aria-labelledby="project-dialog-title"' in html
-        assert "Remove Google Sheets settings" not in html
 
     def test_deleting_everything_unlocks_the_location(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly

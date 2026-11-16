@@ -149,7 +149,7 @@ Things the old tab did that need a home:
 | Old tab | New home |
 | --- | --- |
 | Google Sheet access check (runs after save, and on demand) | The Data source card: the `gsheet_access_status` partial under the URL row, loaded after a save, with its "Check again" button. Visible without opening anything, because a failed check is the thing an organiser most needs to see |
-| Remove Google Sheet settings (the way to unlock) | In the settings dialog, a destructive link beside the form, like "Delete targets" |
+| Remove Google Sheet settings (the way to unlock) | **Dropped.** A project with Google Sheets settings stays a Google Sheets project, so the dialog offers no way to remove them and the route is gone. |
 | Tab names, team settings (view mode) | Only in the settings dialog. The card stays two rows, as Figma. |
 | Example CSV links | In the dialog's CSV panels |
 | "Create targets from respondent data" | **Moved to the Targets tab.** The plan's first draft said it was already there; it was not - it lived only on the Data Source tab. The brief sends people to the Targets tab for it, so the button and its dialog now sit beside "Add target" there, for a manager of a project with respondent data |

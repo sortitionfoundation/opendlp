@@ -49,7 +49,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
         label=_("Where will you manage your data?") ,
         options=location_options,
         value=ds.location,
-        hint=_("This cannot change while the project has targets, respondents or Google Sheets settings. Remove them to choose again.") if ds.locked else "",
+        hint=(_("This cannot change now the project has Google Sheets settings.") if ds.gsheet else _("This cannot change while the project has targets or respondents. Delete them to choose again.")) if ds.locked else "",
         disabled=ds.locked,
         attrs='hx-post="' ~ ds.urls.refresh ~ '" hx-trigger="change"' if not ds.locked else ''
         ) }}
@@ -60,12 +60,6 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
 {% if ds.location == "gsheet" %}
     <div class="flex flex-col gap-6">
         {{ gsheet_fields(ds.gsheet_form, gsheet=ds.gsheet, google_service_account_email=ds.service_account_email) }}
-        {% if ds.gsheet %}
-            <div class="flex justify-end pt-4"
-                 style="border-top: 1px solid var(--color-borders-dividers)">
-                {{ button(_("Remove Google Sheets settings") , type="submit", variant="danger", attrs='form="project-remove-gsheet"') }}
-            </div>
-        {% endif %}
     </div>
 {% else %}
     {% set has_targets = ds.targets_count > 0 %}

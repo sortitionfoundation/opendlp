@@ -20,17 +20,14 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.context_processors import get_service_account_email
-from opendlp.entrypoints.data_source_urls import data_source_return_url
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import (
     DbSelectionSettingsForm,
 )
-from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
-    remove_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
 from opendlp.service_layer.gsheet_access_check import check_gsheet_access, store_cached_result
@@ -1121,31 +1118,3 @@ def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
         gsheet_access_result=result,
         can_check_gsheet_access=True,
     )
-
-
-@gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
-@login_required
-def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Delete Google Spreadsheet configuration for an assembly."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            remove_assembly_gsheet(uow, assembly_id, current_user.id)
-        flash(_("Google Sheets configuration removed successfully"), "success")
-        # Back to the settings dialog, whose location can be chosen again now the sheet is gone
-        return redirect_preserving_scroll(data_source_return_url(assembly_id))
-
-    except NotFoundError as e:
-        logger.warning("Gsheet config not found for delete", error=str(e))
-        flash(_("Google Sheets configuration not found"), "error")
-        return redirect_preserving_scroll(data_source_return_url(assembly_id))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions to delete gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
-        )
-        flash(_("You don't have permission to manage Google Sheets for this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        logger.exception("Gsheet delete error for assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("An error occurred while removing the Google Sheets configuration"), "error")
-        return redirect_preserving_scroll(data_source_return_url(assembly_id))

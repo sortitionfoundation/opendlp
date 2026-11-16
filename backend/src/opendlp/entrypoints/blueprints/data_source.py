@@ -246,7 +246,6 @@ def project_dialog_context(
             "upload_respondents": url_for("data_source.upload_respondents", assembly_id=assembly_id),
             "delete_targets": url_for("targets.delete_targets", assembly_id=assembly_id),
             "delete_respondents": url_for("respondents.delete_respondents", assembly_id=assembly_id),
-            "remove_gsheet": url_for("gsheets.delete_gsheet_config", assembly_id=assembly_id),
         },
         **context,
     }

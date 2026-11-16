@@ -399,59 +399,6 @@ class TestBackofficeGSheetValidation:
             assert response.status_code == 422, f"Expected a refusal for invalid URL: {invalid_url}"
 
 
-class TestBackofficeGSheetDelete:
-    """Test gsheet configuration delete button visibility and not-found handling."""
-
-    def test_delete_gsheet_config_not_found(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
-        """Test deleting a non-existent gsheet configuration."""
-        response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/gsheet/delete",
-            data={},
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}?data_source=1")
-
-        response = logged_in_admin.get(response.location)
-        assert response.status_code == 200
-        assert b"not found" in response.data
-
-    def test_remove_button_shown_when_config_exists(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet: tuple[Assembly, AssemblyGSheet]
-    ) -> None:
-        """Test that the dialog offers to remove the settings when a config exists."""
-        assembly, _ = assembly_with_gsheet
-        response = _sheet_dialog(logged_in_admin, assembly)
-        assert response.status_code == 200
-        assert b"Remove" in response.data
-        assert b"gsheet/delete" in response.data
-
-    def test_remove_button_not_shown_when_no_config_exists(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
-    ) -> None:
-        """Test that there is nothing to remove, and no form to remove it with, before a config exists."""
-        response = _sheet_dialog(logged_in_admin, existing_assembly)
-        assert response.status_code == 200
-        assert b"gsheet/delete" not in response.data
-
-    def test_delete_gsheet_permission_denied_for_regular_user(
-        self, logged_in_user: FlaskClient, assembly_with_gsheet: tuple[Assembly, AssemblyGSheet]
-    ) -> None:
-        """Test regular users cannot delete gsheet configurations."""
-        assembly, _gsheet = assembly_with_gsheet
-        response = logged_in_user.post(f"/backoffice/project/{assembly.id}/gsheet/delete", data={})
-        assert response.status_code in [302, 403]
-
-    def test_delete_gsheet_redirects_when_not_logged_in(
-        self, client: FlaskClient, assembly_with_gsheet: tuple[Assembly, AssemblyGSheet]
-    ) -> None:
-        """Test delete gsheet redirects to login when not authenticated."""
-        assembly, _gsheet = assembly_with_gsheet
-        response = client.post(f"/backoffice/project/{assembly.id}/gsheet/delete")
-        assert response.status_code == 302
-        assert "login" in response.location
-
-
 class TestBackofficeSelectionTab:
     """Test selection-tab routes that render before any Celery dispatch."""
 

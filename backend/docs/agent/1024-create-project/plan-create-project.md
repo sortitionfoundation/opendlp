@@ -295,8 +295,8 @@ Found while implementing; none changes what the organiser can do.
   (`x-show`), not by asking the server to redraw. A redraw empties file inputs,
   so choosing a respondents source would have thrown away a targets file
   already picked. Only the *location* dropdown in the settings dialog redraws.
-- **Deleting is a page load, not an htmx swap.** Delete targets, Delete
-  respondents and Remove Google Sheets settings post to the existing routes
+- **Deleting is a page load, not an htmx swap.** Delete targets and Delete
+  respondents post to the existing routes
   (which own the "these targets have linked questions" confirmation page) and
   come back to the project details page with the settings dialog open
   (`?data_source=1`). In the create dialog that means a delete lands on the

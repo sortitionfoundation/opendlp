@@ -167,9 +167,6 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
                 {% if ds.respondents_count %}
                     {% set ignored = delete_forms.append(("project-delete-respondents", ds.urls.delete_respondents, _("Are you sure you want to delete all respondents? This action cannot be undone."))) %}
                 {% endif %}
-                {% if ds.gsheet %}
-                    {% set ignored = delete_forms.append(("project-remove-gsheet", ds.urls.remove_gsheet, _("Are you sure you want to remove this Google Sheets configuration? This action cannot be undone."))) %}
-                {% endif %}
                 {% for form_id, action, question in delete_forms %}
                     <form id="{{ form_id }}"
                           method="post"

@@ -1,7 +1,6 @@
 """ABOUTME: End-to-end tests for backoffice gsheet selection (Celery dispatch + DB semantics)
 ABOUTME: Tests gsheet save/delete smokes, selection_settings round-trip, and selection load/run/cancel"""
 
-import re
 import uuid
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
@@ -170,82 +169,6 @@ class TestBackofficeGSheetFormSubmission:
             assert saved_assembly.selection_settings.id_column == "custom_id"
             assert saved_assembly.selection_settings.check_same_address_cols == ["address_line", "postcode"]
             assert saved_assembly.selection_settings.columns_to_keep == ["first_name", "last_name", "email", "phone"]
-
-
-class TestBackofficeGSheetDelete:
-    """Smoke test for gsheet configuration deletion."""
-
-    def test_delete_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
-        """Test successfully deleting a gsheet configuration."""
-        assembly, _ = assembly_with_gsheet
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}")
-
-        response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/gsheet/delete",
-            data={"csrf_token": csrf_token},
-            follow_redirects=False,
-        )
-        # Back to the details page with the settings dialog open
-        assert response.status_code == 302
-        assert response.location.endswith(f"/backoffice/project/{assembly.id}?data_source=1")
-
-        # Follow redirect and verify success message
-        response = logged_in_admin.get(response.location)
-        assert response.status_code == 200
-        assert b"removed successfully" in response.data
-
-        # The location can be chosen again (no config exists)
-        location = re.search(rb'<select name="location"[^>]*>', response.data)
-        assert location is not None
-        assert b"disabled" not in location.group(0)
-
-    def test_gsheet_state_transitions(self, logged_in_admin, existing_assembly):
-        """Test state transitions between no gsheet -> has gsheet -> no gsheet."""
-        assembly = existing_assembly
-
-        # Initially no gsheet - the dialog offers the form for a new one
-        initial_response = _sheet_dialog(logged_in_admin, assembly)
-        assert initial_response.status_code == 200
-        assert b'name="url"' in initial_response.data
-        assert b"Remove Google Sheets settings" not in initial_response.data
-
-        # Create gsheet
-        logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/data-source/save",
-            headers=HTMX,
-            data={
-                "location": "gsheet",
-                "url": "https://docs.google.com/spreadsheets/d/state_transition_123/edit",
-                "team": "uk",
-                "select_registrants_tab": "StateRespondents",
-                "select_targets_tab": "StateCategories",
-                "replace_registrants_tab": "Remaining",
-                "replace_targets_tab": "Replacement",
-                "already_selected_tab": "Selected",
-                "id_column": "state_id",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}"),
-            },
-        )
-
-        # Now has gsheet - the details page shows it, and the dialog offers to remove it
-        view_response = logged_in_admin.get(f"/backoffice/project/{assembly.id}")
-        assert view_response.status_code == 200
-        assert b"state_transition_123" in view_response.data
-        assert b"Remove Google Sheets settings" in _sheet_dialog(logged_in_admin, assembly).data
-
-        # Delete gsheet
-        logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/gsheet/delete",
-            data={
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}"),
-            },
-        )
-
-        # Back to no gsheet - the form for a new one again
-        final_response = _sheet_dialog(logged_in_admin, assembly)
-        assert final_response.status_code == 200
-        assert b'name="url"' in final_response.data
-        assert b"Remove Google Sheets settings" not in final_response.data
 
 
 class TestBackofficeSelectionTab:
