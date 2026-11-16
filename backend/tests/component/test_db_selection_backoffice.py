@@ -1140,6 +1140,22 @@ class TestCsvSelectionSettingsWarning:
         assert "Confirmed" in section
         assert "Save Settings" in section
 
+    def test_folded_settings_show_an_edit_button_in_the_summary(self, logged_in_admin, assembly_with_csv_config):
+        """The whole summary opens the card; the Edit button is there to say so, and goes once it is open."""
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config.id}/selection")
+
+        section = self._settings_section(response.data.decode())
+        assert "group/settings" in section[: section.index(">")]
+        summary = section[section.index("<summary") : section.index("</summary>")]
+        edit = re.search(
+            r'<span class="([^"]*)">\s*<span class="btn-icon">.*?</span>\s*<span>Edit</span>', summary, re.DOTALL
+        )
+        assert edit, "No Edit button in the selection settings summary"
+        assert {"btn", "btn--secondary", "group-open/settings:hidden"} <= set(edit.group(1).split())
+        # It must not be a control of its own inside the summary
+        assert "<button" not in summary
+        assert "<a " not in summary
+
     def test_a_refused_save_comes_back_to_the_selection_page_with_the_settings_open(
         self, logged_in_admin, assembly_with_csv_config
     ):

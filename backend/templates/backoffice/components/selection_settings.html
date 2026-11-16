@@ -3,6 +3,7 @@ ABOUTME: The selection settings of a project held in OpenDLP, on the Select and 
 ABOUTME: Open until they have been saved once, which selection waits for; folded away to one line after that
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_edit %}
 {% from "backoffice/components/input.html" import input, checkbox, first_error as e %}
 {% from "backoffice/components/tag.html" import tag %}
 {#
@@ -18,7 +19,7 @@ ABOUTME: Open until they have been saved once, which selection waits for; folded
 {% set form = selection_settings_form %}
 {% set refused = form.errors | length > 0 %}
 <details id="selection-settings"
-         class="rounded-lg mb-8"
+         class="group/settings rounded-lg mb-8"
          style="background-color: var(--color-tables-cards);
                 border: 1px solid var(--color-borders-dividers)"
          {% if refused or not csv_settings_confirmed %}open{% endif %}>
@@ -29,6 +30,12 @@ ABOUTME: Open until they have been saved once, which selection waits for; folded
         {% else %}
             {{ tag(_("To confirm"), colour="yellow") }}
         {% endif %}
+        {# Says the folded card opens to be edited. The summary is the control,
+           so this only looks like a button: a real one cannot sit inside a summary. #}
+        <span class="btn btn--secondary ml-auto group-open/settings:hidden">
+            <span class="btn-icon">{{ icon_edit(classes="w-4 h-4") }}</span>
+            <span>{{ _("Edit") }}</span>
+        </span>
     </summary>
     <div class="px-6 pb-6">
         <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">

@@ -25,3 +25,10 @@ Feature: Selection settings of a project held in OpenDLP
     And the user opens the selection settings
     Then the address attributes are shown
     And the address attributes are "Postcode"
+
+  Scenario: Confirmed settings are folded away behind an Edit button
+    Given a database assembly whose selection settings are confirmed
+    When the user visits the selection page
+    Then the selection settings are folded away with an Edit button
+    When the user clicks the Edit button of the selection settings
+    Then the selection settings are open with no Edit button

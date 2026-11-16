@@ -35,6 +35,15 @@ def assembly_with_unconfirmed_settings(assembly_creator, admin_user, test_databa
     return assembly
 
 
+@given("a database assembly whose selection settings are confirmed", target_fixture="test_assembly")
+def assembly_with_confirmed_settings(assembly_creator, admin_user, test_database):
+    assembly = assembly_with_unconfirmed_settings(assembly_creator, admin_user, test_database)
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        update_csv_config(uow, admin_user.id, assembly.id, settings_confirmed=True)
+    return assembly
+
+
 @when("the user visits the selection page")
 def user_visits_selection_page(admin_logged_in_page: Page, test_assembly):
     admin_logged_in_page.goto(Urls.assembly_selection(test_assembly.id))
@@ -93,3 +102,24 @@ def address_attributes_shown(admin_logged_in_page: Page):
 @then(parsers.parse('the address attributes are "{attributes}"'))
 def address_attributes_are(admin_logged_in_page: Page, attributes: str):
     expect(admin_logged_in_page.get_by_label("Address attributes")).to_have_value(attributes)
+
+
+def _edit_button(page: Page):
+    return page.locator("#selection-settings > summary").get_by_text("Edit", exact=True)
+
+
+@then("the selection settings are folded away with an Edit button")
+def settings_folded_with_edit_button(admin_logged_in_page: Page):
+    expect(admin_logged_in_page.get_by_role("button", name="Save settings")).to_be_hidden()
+    expect(_edit_button(admin_logged_in_page)).to_be_visible()
+
+
+@when("the user clicks the Edit button of the selection settings")
+def user_clicks_edit(admin_logged_in_page: Page):
+    _edit_button(admin_logged_in_page).click()
+
+
+@then("the selection settings are open with no Edit button")
+def settings_open_without_edit_button(admin_logged_in_page: Page):
+    expect(admin_logged_in_page.get_by_role("button", name="Save settings")).to_be_visible()
+    expect(_edit_button(admin_logged_in_page)).to_be_hidden()
