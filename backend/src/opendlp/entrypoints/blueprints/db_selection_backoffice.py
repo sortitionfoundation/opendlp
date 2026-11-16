@@ -426,11 +426,6 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             if form.check_same_address_cols_string.data
             else []
         )
-        columns_to_keep = (
-            [c.strip() for c in form.columns_to_keep_string.data.split(",") if c.strip()]
-            if form.columns_to_keep_string.data
-            else []
-        )
 
         # Update selection settings (check_same_address, columns, etc.)
         # Reuse the same UnitOfWork for the remaining sequential units of work.
@@ -441,7 +436,8 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
                 check_same_address=form.check_same_address.data,
                 check_same_address_cols=check_same_address_cols,
-                columns_to_keep=columns_to_keep,
+                # Only the respondent IDs of a selection are stored, so there is no output table to pick columns for
+                columns_to_keep=[],
             )
 
         # Mark CSV config as confirmed

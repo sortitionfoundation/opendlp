@@ -40,42 +40,45 @@ ABOUTME: Open until they have been saved once, which selection waits for; folded
         </p>
         <form method="post"
               action="{{ url_for('db_selection_backoffice.save_db_settings', assembly_id=assembly.id) }}"
-              class="flex flex-col gap-6">
+              class="group flex flex-col gap-6">
             {{ form.hidden_tag() }}
             {# Check Same Address Checkbox #}
             {{ checkbox(name="check_same_address",
             label=_("Check Same Address") ,
             checked=form.check_same_address.data,
-            hint=_("Prevent selecting multiple respondents from the same address.")
+            hint=_("Prevent selecting multiple respondents from the same address."),
+            attrs="data-address-check"
             ) }}
-            {% if selection_settings_columns %}
-                <details class="text-body-sm" style="color: var(--color-secondary-text);">
-                    <summary class="cursor-pointer font-medium" style="color: var(--color-headings)">
-                        {{ _("Available respondent attributes") }}
-                    </summary>
-                    <div class="mt-2 p-3 rounded-lg"
-                         style="background-color: var(--color-subtle-background-panels)">
-                        <p class="mb-2">{{ _("The following attribute names are available from the uploaded respondent data:") }}</p>
-                        <code class="text-body-sm">{{ selection_settings_columns | join(", ") }}</code>
-                    </div>
-                </details>
-            {% endif %}
-            {# Address Columns Input #}
-            {{ input(name="check_same_address_cols_string",
-            label=_("Address Attributes") ,
-            value=form.check_same_address_cols_string.data or "",
-            placeholder=_("e.g., Street, City, PostCode"),
-            hint=_("Comma-separated respondent attribute names used for address matching."),
-            error=e(form.check_same_address_cols_string.errors)
-            ) }}
-            {# Columns to Keep Input #}
-            {{ input(name="columns_to_keep_string",
-            label=_("Attributes to Keep") ,
-            value=form.columns_to_keep_string.data or "",
-            placeholder=_("e.g., Name, Email, Phone"),
-            hint=_("Comma-separated respondent attribute names to include in CSV output."),
-            error=e(form.columns_to_keep_string.errors)
-            ) }}
+            {#
+                The address attributes only matter while the box above is ticked, so
+                CSS hides them otherwise - unless they hold an error to put right.
+                The box is found by a data attribute as Tailwind reads an
+                underscore in an arbitrary value, such as its id, as a space.
+            #}
+            {% set address_error = e(form.check_same_address_cols_string.errors) %}
+            <div id="address-attributes"
+                 class="flex-col gap-6 {% if address_error %}flex{% else %}hidden group-has-[[data-address-check]:checked]:flex{% endif %}">
+                {% if selection_settings_columns %}
+                    <details class="text-body-sm" style="color: var(--color-secondary-text);">
+                        <summary class="cursor-pointer font-medium" style="color: var(--color-headings)">
+                            {{ _("Available respondent attributes") }}
+                        </summary>
+                        <div class="mt-2 p-3 rounded-lg"
+                             style="background-color: var(--color-subtle-background-panels)">
+                            <p class="mb-2">{{ _("The following attribute names are available from the uploaded respondent data:") }}</p>
+                            <code class="text-body-sm">{{ selection_settings_columns | join(", ") }}</code>
+                        </div>
+                    </details>
+                {% endif %}
+                {# Address Columns Input #}
+                {{ input(name="check_same_address_cols_string",
+                label=_("Address Attributes") ,
+                value=form.check_same_address_cols_string.data or "",
+                placeholder=_("e.g., Street, City, PostCode"),
+                hint=_("Comma-separated respondent attribute names used for address matching."),
+                error=address_error
+                ) }}
+            </div>
             <div>{{ button(_("Save Settings") , type="submit", variant="primary") }}</div>
         </form>
     </div>

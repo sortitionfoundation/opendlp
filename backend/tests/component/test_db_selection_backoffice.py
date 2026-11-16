@@ -955,7 +955,6 @@ class TestSaveCsvSettings:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "Gender",
-                "columns_to_keep_string": "Gender",
             },
             follow_redirects=True,
         )
@@ -971,7 +970,6 @@ class TestSaveCsvSettings:
             f"/backoffice/project/{assembly.id}/data/csv/settings",
             data={
                 "check_same_address_cols_string": "",
-                "columns_to_keep_string": "",
             },
             follow_redirects=True,
         )
@@ -990,7 +988,6 @@ class TestSaveCsvSettings:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "blabla",
-                "columns_to_keep_string": "Gender",
             },
         )
 
@@ -1017,13 +1014,37 @@ class TestSaveCsvSettings:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "",
-                "columns_to_keep_string": "",
             },
         )
 
         assert response.status_code == 200
         assert b"You must specify address attributes" in response.data
         assert b"Save Settings" in response.data
+
+    def test_save_csv_settings_empties_the_columns_to_keep(self, logged_in_admin, admin_user, fake_store):
+        """Only the IDs of a selection are stored, so a save leaves no columns to keep - team defaults included."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly_id = create_assembly(
+                uow=uow,
+                title="Columns To Keep Assembly",
+                created_by_user_id=admin_user.id,
+                question="What should we select?",
+                first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+                number_to_select=10,
+            ).id
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_selection_settings(
+                uow=uow, user_id=admin_user.id, assembly_id=assembly_id, columns_to_keep=["first_name", "email"]
+            )
+
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_id}/data/csv/settings",
+            data={"check_same_address_cols_string": "", "columns_to_keep_string": "first_name"},
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.assemblies.get(assembly_id).selection_settings.columns_to_keep == []
 
     def test_save_csv_settings_requires_auth(self, client, assembly_with_csv_config_unconfirmed):
         """Save settings endpoint requires authentication."""
@@ -1070,6 +1091,46 @@ class TestCsvSelectionSettingsWarning:
         assert checkbox, "No check_same_address checkbox in the selection settings"
         assert "checked" not in checkbox.group(0)
 
+    def test_settings_do_not_ask_for_attributes_to_keep(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        """Only the IDs of a selection are stored, so there is no output table to choose columns for."""
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config_unconfirmed.id}/selection")
+
+        section = self._settings_section(response.data.decode())
+        assert "Attributes to Keep" not in section
+        assert "columns_to_keep_string" not in section
+
+    @staticmethod
+    def _address_attributes_classes(section: str) -> list[str]:
+        block = re.search(r'<div id="address-attributes"\s+class="([^"]*)"', section)
+        assert block, "No address attributes block in the selection settings"
+        return block.group(1).split()
+
+    def test_address_attributes_show_only_while_the_address_check_is_ticked(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        """They are hidden, and CSS shows them when the box is ticked; the attribute list sits with them."""
+        response = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config_unconfirmed.id}/selection")
+
+        section = self._settings_section(response.data.decode())
+        classes = self._address_attributes_classes(section)
+        assert "hidden" in classes
+        assert "group-has-[[data-address-check]:checked]:flex" in classes
+        block_start = section.index('<div id="address-attributes"')
+        assert section.index("Available respondent attributes") > block_start
+        assert section.index('name="check_same_address_cols_string"') > block_start
+        assert section.index('name="check_same_address"') < block_start
+
+    def test_address_attributes_holding_an_error_are_not_hidden(self, logged_in_admin, assembly_with_csv_config):
+        """An unticked box must not hide the error that refused the save."""
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_with_csv_config.id}/data/csv/settings",
+            data={"check_same_address_cols_string": "blabla"},
+        )
+
+        section = self._settings_section(response.data.decode())
+        assert "Unrecognised attribute names: blabla" in section
+        assert "hidden" not in self._address_attributes_classes(section)
+
     def test_confirmed_settings_are_folded_away(self, logged_in_admin, assembly_with_csv_config):
         """Once saved they are one line, so they do not push the steps down the page on every visit."""
         response = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config.id}/selection")
@@ -1102,7 +1163,7 @@ class TestCsvSelectionSettingsWarning:
 
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly.id}/data/csv/settings",
-            data={"check_same_address_cols_string": "", "columns_to_keep_string": ""},
+            data={"check_same_address_cols_string": ""},
         )
 
         assert response.status_code == 302

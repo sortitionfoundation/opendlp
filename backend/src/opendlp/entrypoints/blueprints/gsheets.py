@@ -364,7 +364,6 @@ def render_selection_page(
                     data={
                         "check_same_address": settings.check_same_address if settings else False,
                         "check_same_address_cols_string": settings.check_same_address_cols_string if settings else "",
-                        "columns_to_keep_string": settings.columns_to_keep_string if settings else "",
                     },
                     available_columns=selection_settings_columns,
                 )

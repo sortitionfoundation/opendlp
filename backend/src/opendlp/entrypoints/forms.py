@@ -783,12 +783,6 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
         description=_l("Comma-separated respondent attribute names used for address matching"),
     )
 
-    columns_to_keep_string = StringField(
-        _l("Attributes to Keep"),
-        validators=[Optional(), Length(max=1000)],
-        description=_l("Comma-separated respondent attribute names to include in CSV output"),
-    )
-
     def __init__(self, *args: Any, available_columns: list[str] | None = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._available_columns = available_columns or []
@@ -822,15 +816,6 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
                 unknown = [c for c in entered if c not in available_set]
                 if unknown:
                     self.check_same_address_cols_string.errors.append(  # type: ignore[attr-defined]
-                        str(_l("Unrecognised attribute names: %(names)s", names=", ".join(unknown)))
-                    )
-                    valid = False
-
-            if self.columns_to_keep_string.data:
-                entered = [c.strip() for c in self.columns_to_keep_string.data.split(",") if c.strip()]
-                unknown = [c for c in entered if c not in available_set]
-                if unknown:
-                    self.columns_to_keep_string.errors.append(  # type: ignore[attr-defined]
                         str(_l("Unrecognised attribute names: %(names)s", names=", ".join(unknown)))
                     )
                     valid = False

@@ -344,7 +344,6 @@ def view_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             check_same_address_cols_string=sel_settings.check_same_address_cols_string
             if sel_settings.check_same_address_cols
             else "",
-            columns_to_keep_string=sel_settings.columns_to_keep_string if sel_settings.columns_to_keep else "",
         )
         return render_template(
             "db_selection/settings.html",
@@ -384,7 +383,8 @@ def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     selection_algorithm="maximin",
                     check_same_address=form.check_same_address.data or False,
                     check_same_address_cols=_parse_comma_list(form.check_same_address_cols_string.data),
-                    columns_to_keep=_parse_comma_list(form.columns_to_keep_string.data),
+                    # Only the respondent IDs of a selection are stored, so there is no output table to pick columns for
+                    columns_to_keep=[],
                 )
             uow3 = bootstrap.get_flask_uow()
             with uow3:

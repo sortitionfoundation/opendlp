@@ -191,7 +191,6 @@ class TestDbSelectionRoutes:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "address1, postcode",
-                "columns_to_keep_string": "first_name, last_name",
             },
             follow_redirects=False,
         )
@@ -204,7 +203,7 @@ class TestDbSelectionRoutes:
             assert a.selection_settings is not None
             assert a.selection_settings.check_same_address is True
             assert a.selection_settings.check_same_address_cols == ["address1", "postcode"]
-            assert a.selection_settings.columns_to_keep == ["first_name", "last_name"]
+            assert a.selection_settings.columns_to_keep == []
 
     def test_save_db_selection_settings_marks_confirmed(self, logged_in_admin, admin_user, fake_store):
         """Saving selection settings should set settings_confirmed=True."""
@@ -226,7 +225,6 @@ class TestDbSelectionRoutes:
             f"/assemblies/{assembly_id}/db_select/settings",
             data={
                 "check_same_address_cols_string": "",
-                "columns_to_keep_string": "",
             },
             follow_redirects=False,
         )
@@ -244,7 +242,6 @@ class TestDbSelectionRoutes:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "",
-                "columns_to_keep_string": "",
             },
         )
 
@@ -300,35 +297,10 @@ class TestDbSelectionRoutes:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "Gender, nonexistent_col",
-                "columns_to_keep_string": "",
             },
         )
         assert response.status_code == 200
         assert b"nonexistent_col" in response.data
-
-    def test_save_settings_rejects_unknown_columns_to_keep(
-        self, logged_in_admin, admin_user, assembly_for_db_selection, fake_store
-    ):
-        """Saving settings with unknown column names in columns_to_keep should show validation error."""
-        assembly = assembly_for_db_selection
-        csv_content = "external_id,email,Gender,Age\nR001,a@b.com,Female,30\n"
-        with FakeUnitOfWork(store=fake_store) as uow:
-            import_respondents_from_csv(
-                uow=uow,
-                user_id=admin_user.id,
-                assembly_id=assembly.id,
-                csv_content=csv_content,
-            )
-
-        response = logged_in_admin.post(
-            f"/assemblies/{assembly.id}/db_select/settings",
-            data={
-                "check_same_address_cols_string": "",
-                "columns_to_keep_string": "Gender, bad_col",
-            },
-        )
-        assert response.status_code == 200
-        assert b"bad_col" in response.data
 
     def test_save_settings_accepts_valid_columns(
         self, logged_in_admin, admin_user, assembly_for_db_selection, fake_store
@@ -347,8 +319,8 @@ class TestDbSelectionRoutes:
         response = logged_in_admin.post(
             f"/assemblies/{assembly.id}/db_select/settings",
             data={
-                "check_same_address_cols_string": "",
-                "columns_to_keep_string": "Gender, Age",
+                "check_same_address": "y",
+                "check_same_address_cols_string": "Gender, Age",
             },
             follow_redirects=False,
         )
@@ -362,8 +334,7 @@ class TestDbSelectionRoutes:
         response = logged_in_admin.post(
             f"/assemblies/{assembly.id}/db_select/settings",
             data={
-                "check_same_address_cols_string": "",
-                "columns_to_keep_string": "anything, whatever",
+                "check_same_address_cols_string": "anything, whatever",
             },
             follow_redirects=False,
         )
