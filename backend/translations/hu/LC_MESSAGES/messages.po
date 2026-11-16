@@ -778,10 +778,6 @@ msgstr "Kérjük, válassz"
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py
-msgid "Enter your invite code to register"
-msgstr "Add meg a meghívókódodat a regisztrációhoz"
-
 #: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
 msgid "First Name"
 msgstr "Keresztnév"
@@ -4274,6 +4270,26 @@ msgid "Row %(row)s: supplied '%(key)s' was replaced by its computed value"
 msgstr ""
 "%(row)s. sor: a megadott \"%(key)s\" értéket a számított érték váltotta "
 "fel"
+
+#: src/opendlp/service_layer/security.py
+#, fuzzy, python-format
+msgid "%(min_length)s–%(max_length)s characters"
+msgstr "%(min_length)s–%(max_length)s karakter hosszú legyen"
+
+#: src/opendlp/service_layer/security.py
+#, fuzzy
+msgid "Not be numbers only"
+msgstr "Ne csak számjegyekből álljon"
+
+#: src/opendlp/service_layer/security.py
+#, fuzzy
+msgid "Not be a commonly used password"
+msgstr "Ne legyen gyakran használt jelszó"
+
+#: src/opendlp/service_layer/security.py
+#, fuzzy
+msgid "Not be too similar to your personal information"
+msgstr "Ne hasonlítson túlságosan a személyes adataidra"
 
 #: src/opendlp/service_layer/selection_history.py
 msgid "Initial selection"
@@ -11207,16 +11223,6 @@ msgid "Already have an account?"
 msgstr "Már van fiókod?"
 
 #: templates/public/register.html
-#, python-format
-msgid ""
-"You need an invite code to create an account. If you do not have one, "
-"please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>."
-msgstr ""
-"Fiók létrehozásához meghívókódra van szükséged. Ha nincs ilyened, lépj "
-"kapcsolatba az <a href=\"mailto:%(email)s\">OpenDLP "
-"ügyfélszolgálatával</a>."
-
-#: templates/public/register.html
 msgid "Create Account with email"
 msgstr "Fiók létrehozása e-mail címmel"
 
@@ -11239,6 +11245,20 @@ msgstr "Microsoft"
 #: templates/public/register.html
 msgid "Optional — if you were given an invite code, enter it here."
 msgstr "Nem kötelező – ha kaptál meghívókódot, add meg itt."
+
+#: templates/public/register.html
+#, fuzzy, python-format
+msgid ""
+"If you don't have one, please contact %(link_start)sOpenDLP "
+"support%(link_end)s."
+msgstr ""
+"Ha nincs ilyened, lépj kapcsolatba %(link_start)saz OpenDLP "
+"ügyfélszolgálatával%(link_end)s."
+
+#: templates/public/register.html
+#, fuzzy
+msgid "Your password must:"
+msgstr "A jelszavad:"
 
 #: templates/public/register.html
 msgid "Tell us a little about yourself"

@@ -150,7 +150,7 @@ class TestOAuthRegistrationForms:
         assert response.status_code == 200
         assert b"Create an Account with Google" in response.data
         assert b"Invite Code" in response.data
-        assert b"invite code to create an account" in response.data
+        assert b'id="invite_code-help"' in response.data
 
     def test_register_page_offers_microsoft(self, client: FlaskClient):
         """The registration page offers a Microsoft button."""
@@ -158,7 +158,7 @@ class TestOAuthRegistrationForms:
         assert response.status_code == 200
         assert b"Create an Account with Microsoft" in response.data
         assert b"Invite Code" in response.data
-        assert b"invite code to create an account" in response.data
+        assert b'id="invite_code-help"' in response.data
 
     def test_register_page_orders_chooser_shared_then_email_then_submits(self, client: FlaskClient):
         """The method chooser is first, then the shared fields, the email fields, then the submits."""
