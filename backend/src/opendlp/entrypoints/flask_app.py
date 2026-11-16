@@ -86,7 +86,7 @@ def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None =
 
     # Apply ProxyFix middleware to trust reverse proxy headers (X-Forwarded-* headers from Caddy)
     # Only apply in production - in dev/test without a proxy, ProxyFix causes empty hostname in URLs
-    if config_name == "production":
+    if flask_config.FLASK_ENV == "production":
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[method-assign]
 
     # Initialize extensions

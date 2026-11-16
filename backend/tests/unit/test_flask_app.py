@@ -7,7 +7,7 @@ from datetime import timedelta
 
 import pytest
 import structlog
-from flask import Flask
+from flask import Flask, request
 from flask.testing import FlaskClient
 
 from opendlp.entrypoints.flask_app import create_app
@@ -139,6 +139,33 @@ class TestFlaskApp:
             csp = response.headers["Content-Security-Policy"]
             assert "frame-src 'self' https://www.youtube-nocookie.com https://challenges.cloudflare.com" in csp
             assert "https://www.youtube.com" not in csp
+
+
+class TestProxyFix:
+    """The app trusts the reverse proxy's X-Forwarded-* headers only in production.
+
+    Without ProxyFix behind Caddy, Flask sees plain http, so every external URL
+    it builds - OAuth redirect URIs, links in emails - comes out as http://.
+    """
+
+    @staticmethod
+    def _scheme_seen_behind_proxy(app: Flask) -> str:
+        app.add_url_rule("/_test_scheme", "_test_scheme", lambda: request.scheme)
+        response = app.test_client().get(
+            "/_test_scheme", headers={"X-Forwarded-Proto": "https", "X-Forwarded-Host": "example.org"}
+        )
+        return response.get_data(as_text=True)
+
+    def test_production_from_flask_env_trusts_forwarded_proto(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # wsgi.py calls create_app() with no name, so production comes from FLASK_ENV
+        monkeypatch.setenv("FLASK_ENV", "production")
+        monkeypatch.setenv("EMAIL_ADAPTER", "smtp")
+        monkeypatch.setenv("SECRET_KEY", "unit-test-key-not-the-dev-default")  # pragma: allowlist secret
+
+        assert self._scheme_seen_behind_proxy(create_app()) == "https"
+
+    def test_testing_config_ignores_forwarded_proto(self) -> None:
+        assert self._scheme_seen_behind_proxy(create_app("testing")) == "http"
 
 
 class TestMainBlueprint:
