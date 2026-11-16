@@ -42,7 +42,8 @@ ABOUTME: Rendered with its page, and on its own by the route it posts to, whose 
                first name"
         kind: "text", "textarea", "number" or "date" - which control edits it
         display: The value as text at rest, when that differs from `value` (a
-               formatted date). An empty value reads "Not set".
+               formatted date). An empty value reads "Not set", in the
+               secondary text colour.
         submitted: What was typed, when it was refused; defaults to the value
         error: Why it was refused. A row with an error opens still editing,
                the field focused.
@@ -57,6 +58,8 @@ ABOUTME: Rendered with its page, and on its own by the route it posts to, whose 
 {% macro inline_edit_row(row_id, field, label, value, action, edit_label="", save_label="", cancel_label="", kind="text", display=none, submitted=none, error="", return_focus=false, field_attrs="", input_id="", editable=true, label_info="") %}
     {% set value = value if value is not none else "" %}
     {% set shown = display if display is not none else value %}
+    {# An absent value is in the label's colour, so it does not read as a value someone typed. #}
+    {% set shown_colour = "var(--color-body-text)" if shown != "" else "var(--color-secondary-text)" %}
     {% set editing = error | length > 0 %}
     {% set input_id = input_id or field %}
     {% set control_attrs = 'x-ref="field" ' ~ field_attrs ~ (' autofocus' if editing else '') %}
@@ -77,7 +80,7 @@ ABOUTME: Rendered with its page, and on its own by the route it posts to, whose 
         <dd class="flex-1 min-w-0">
             {% if not editable %}
                 <p class="text-body-md py-2.5 border-y border-transparent break-words"
-                   style="color: var(--color-body-text);
+                   style="color: {{ shown_colour }};
                           white-space: pre-line">{{ shown if shown != "" else _("Not set") }}</p>
             {% else %}
                 <form method="post"
@@ -104,7 +107,7 @@ ABOUTME: Rendered with its page, and on its own by the route it posts to, whose 
                     <p x-show="!editing"
                        {% if editing %}x-cloak{% endif %}
                        class="flex-1 min-w-0 text-body-md py-2.5 border-y border-transparent break-words"
-                       style="color: var(--color-body-text);
+                       style="color: {{ shown_colour }};
                               white-space: pre-line">{{ shown if shown != "" else _("Not set") }}</p>
                     <div x-show="editing" {% if not editing %}x-cloak{% endif %} class="flex-1 min-w-0">
                         {% if kind == "textarea" %}

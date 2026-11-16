@@ -79,6 +79,22 @@ class TestTheRowAtRest:
 
         assert "Not set" in html
 
+    def test_not_set_is_in_the_secondary_colour(self):
+        """So a blank value does not look like someone typed "Not set"."""
+        html = _render(BASE + ', value=""')
+
+        paragraph = _tag(html, r"<p x-show=\"!editing\".*?</p>")
+        assert "Not set" in paragraph
+        assert "var(--color-secondary-text)" in paragraph
+        assert "var(--color-body-text)" not in paragraph
+
+    def test_a_value_is_in_the_body_colour(self):
+        html = _render(BASE + ', value="Not set"')
+
+        paragraph = _tag(html, r"<p x-show=\"!editing\".*?</p>")
+        assert "var(--color-body-text)" in paragraph
+        assert "var(--color-secondary-text)" not in paragraph
+
     def test_display_is_shown_in_place_of_the_value(self):
         """A date is held as 2026-04-01 and read as 1 Apr 2026."""
         html = _render(BASE + ', value="2026-04-01", display="1 Apr 2026", kind="date"')
@@ -161,3 +177,11 @@ class TestSomeoneWhoMayOnlyRead:
         assert "<label" not in html
         assert "Our panel" in html
         assert "Project title" in html
+
+    def test_not_set_is_in_the_secondary_colour(self):
+        html = _render(BASE + ', value="", editable=false')
+
+        paragraph = _tag(html, r"<p\b.*?</p>")
+        assert "Not set" in paragraph
+        assert "var(--color-secondary-text)" in paragraph
+        assert "var(--color-body-text)" not in paragraph

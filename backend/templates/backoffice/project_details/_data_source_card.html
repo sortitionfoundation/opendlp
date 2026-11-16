@@ -53,7 +53,7 @@ ABOUTME: A cog opens the data source settings dialog; a Google Sheet's access ch
                                target="_blank"
                                rel="noopener noreferrer">{{ gsheet.url }}</a>
                         {% else %}
-                            {{ _("Not set") }}
+                            <span style="color: var(--color-secondary-text);">{{ _("Not set") }}</span>
                         {% endif %}
                     </dd>
                 {% endcall %}
