@@ -1582,6 +1582,11 @@ msgid "We could not verify that you are human. Please try again."
 msgstr "Nem sikerült ellenőrizni, hogy ember vagy. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/auth.py
+#, fuzzy
+msgid "There is no password to check"
+msgstr "Nincs ellenőrizendő jelszó"
+
+#: src/opendlp/entrypoints/blueprints/auth.py
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt. Kérjük, próbáld újra."
 
@@ -3976,6 +3981,11 @@ msgstr "A képet nem sikerült beolvasni"
 #: src/opendlp/service_layer/login_rate_limit_service.py
 msgid "sign-in"
 msgstr "bejelentkezés"
+
+#: src/opendlp/service_layer/password_check_rate_limit_service.py
+#, fuzzy
+msgid "password check"
+msgstr "jelszóellenőrzés"
 
 #: src/opendlp/service_layer/registration_bot_protection_service.py
 msgid "registration"
@@ -11259,6 +11269,16 @@ msgstr ""
 #, fuzzy
 msgid "Your password must:"
 msgstr "A jelszavad:"
+
+#: templates/public/register.html
+#, fuzzy
+msgid "met"
+msgstr "teljesítve"
+
+#: templates/public/register.html
+#, fuzzy
+msgid "not met yet"
+msgstr "még nincs teljesítve"
 
 #: templates/public/register.html
 msgid "Tell us a little about yourself"
