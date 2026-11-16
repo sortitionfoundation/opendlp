@@ -254,8 +254,8 @@ def link_google() -> ResponseReturnValue:
     # Store action in session for callback
     session["oauth_action"] = "link"
 
-    # Redirect to Google OAuth
-    redirect_uri = url_for("profile.google_link_callback", _external=True)
+    # Redirect to Google OAuth - it has to be https, so do that
+    redirect_uri = url_for("profile.google_link_callback", _external=True, _scheme="https")
     response = oauth.google.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response
@@ -317,8 +317,8 @@ def link_microsoft() -> ResponseReturnValue:
     # Store action in session for callback
     session["oauth_action"] = "link"
 
-    # Redirect to Microsoft OAuth
-    redirect_uri = url_for("profile.microsoft_link_callback", _external=True)
+    # Redirect to Microsoft OAuth - it has to be https, so do that
+    redirect_uri = url_for("profile.microsoft_link_callback", _external=True, _scheme="https")
     response = oauth.microsoft.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response

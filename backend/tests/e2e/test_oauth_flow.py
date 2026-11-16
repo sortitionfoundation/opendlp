@@ -298,6 +298,10 @@ class TestOAuthAccountLinking:
 
             response = client.get("/profile/link-google", follow_redirects=False)
             assert response.status_code == 302
+            # Google rejects non-https redirect URIs for non-localhost hosts
+            redirect_uri = mock_google.authorize_redirect.call_args.args[0]
+            assert redirect_uri.startswith("https://")
+            assert redirect_uri.endswith("/profile/link-google/callback")
 
         # Store oauth_action in session
         with client.session_transaction() as session:
@@ -544,6 +548,10 @@ class TestMicrosoftOAuthAccountLinking:
 
             response = client.get("/profile/link-microsoft", follow_redirects=False)
             assert response.status_code == 302
+            # Microsoft rejects non-https redirect URIs for non-localhost hosts
+            redirect_uri = mock_microsoft.authorize_redirect.call_args.args[0]
+            assert redirect_uri.startswith("https://")
+            assert redirect_uri.endswith("/profile/link-microsoft/callback")
 
         # Step 2: Complete OAuth callback
         with patch("opendlp.entrypoints.blueprints.profile.oauth.microsoft") as mock_microsoft:
