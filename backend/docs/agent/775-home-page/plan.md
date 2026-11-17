@@ -55,9 +55,9 @@ JavaScript, no library.
   a third, a fifth of the people); a Targets card slides in and its three bars
   fill; a cursor moves to Select and clicks it; the chosen dots are picked out
   and fly to their seats in an assembly semicircle, the arch of the OpenDLP
-  logo; a tick reads "Panel of 20 · matches targets". The panel keeps the
-  population's proportions (10 / 6 / 4), which is the point of the drawing. A
-  caption under the drawing names each beat.
+  logo; a green tick appears by each target bar, the panel matches the
+  targets. The panel keeps the population's proportions (10 / 6 / 4), which is
+  the point of the drawing. A caption under the drawing names each beat.
 - **How it is built**: every element's keyframes are expressed as percentages of
   the same 14 s clock, so nothing drifts. Each dot carries its own appearance
   delay (`--d`); a chosen dot also carries the offset to its seat (`--dx`,

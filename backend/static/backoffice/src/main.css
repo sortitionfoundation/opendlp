@@ -2023,10 +2023,9 @@ body {
    ========================================
    The drawing is templates/public/_hero_animation.html; see its header. */
 @layer components {
-
     /* Hero animation: one 14 s loop, every element keyed to the same clock.
        Beats: 0-20% people appear · 22-34% targets fill · 36-48% the cursor clicks Select ·
-       50-70% the chosen fly to their seats · 72-92% the result holds · 94-100% fade out. */
+       50-70% the chosen fly to their seats · 72-92% the ticks by the targets hold · 94-100% fade out. */
     .hero-draw { width: 100%; height: auto; display: block; font-family: var(--font-body); }
     .hero-draw__dot--a { fill: var(--color-brand-500); }
     .hero-draw__dot--b { fill: var(--color-brand-300); }
@@ -2035,7 +2034,6 @@ body {
     .hero-draw .t--title { font-weight: 700; font-size: 15px; fill: var(--color-brand-700); }
     .hero-draw .t--label { fill: var(--color-neutral-600); }
     .hero-draw .t--button { fill: #fff; font-weight: 700; font-size: 14px; }
-    .hero-draw .t--badge { fill: var(--color-success-600); font-weight: 700; }
     .hero-draw .cap { fill: var(--color-brand-700); font-size: 18px; font-weight: 700; }
 
     .hero-draw .scene { animation: draw-scene 14s linear infinite; }
@@ -2048,7 +2046,8 @@ body {
         animation: draw-bar 14s cubic-bezier(.2,.8,.2,1) infinite; animation-delay: var(--d, 0s); }
     .hero-draw .select__bg { animation: draw-select 14s linear infinite; }
     .hero-draw .cursor { animation: draw-cursor 14s cubic-bezier(.4,0,.2,1) infinite; }
-    .hero-draw .badge { transform-box: fill-box; transform-origin: center; animation: draw-badge 14s ease-out infinite; }
+    .hero-draw .tick { transform-box: fill-box; transform-origin: center;
+        animation: draw-tick 14s cubic-bezier(.2,.8,.2,1) infinite; animation-delay: var(--d, 0s); }
     .hero-draw .cap { animation: draw-cap 14s linear infinite; }
     .hero-draw .cap--2 { animation-name: draw-cap-2; }
     .hero-draw .cap--3 { animation-name: draw-cap-3; }
@@ -2079,7 +2078,7 @@ body {
         48% { transform: translate(560px, 232px) scale(1); opacity: 1 }
         52%,100% { transform: translate(600px, 300px); opacity: 0 }
     }
-    @keyframes draw-badge { 0%,70% { opacity: 0; transform: scale(.9) } 74%,100% { opacity: 1; transform: scale(1) } }
+    @keyframes draw-tick { 0%,70% { opacity: 0; transform: scale(.4) } 74%,100% { opacity: 1; transform: scale(1) } }
     @keyframes draw-cap   { 0%,2% { opacity: 0 } 5%,19% { opacity: 1 } 22%,100% { opacity: 0 } }
     @keyframes draw-cap-2 { 0%,22% { opacity: 0 } 25%,33% { opacity: 1 } 36%,100% { opacity: 0 } }
     @keyframes draw-cap-3 { 0%,36% { opacity: 0 } 39%,66% { opacity: 1 } 69%,100% { opacity: 0 } }
@@ -2088,7 +2087,7 @@ body {
     /* Without motion, show the result: the panel seated, the targets met. */
     @media (prefers-reduced-motion: reduce) {
         .hero-draw .scene, .hero-draw .dot, .hero-draw .seats, .hero-draw .targets, .hero-draw .bar, .hero-draw .select__bg,
-        .hero-draw .cursor, .hero-draw .badge, .hero-draw .cap { animation: none; }
+        .hero-draw .cursor, .hero-draw .tick, .hero-draw .cap { animation: none; }
         .hero-draw .dot { opacity: .18 }
         .hero-draw .dot--chosen { opacity: 1; transform: translate(var(--dx), var(--dy)) scale(1.15) }
         .hero-draw .cursor, .hero-draw .cap--1, .hero-draw .cap--2, .hero-draw .cap--3 { opacity: 0 }

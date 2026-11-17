@@ -10960,11 +10960,6 @@ msgstr "Kiválasztás"
 
 #: templates/public/_hero_animation.html
 #, fuzzy
-msgid "Panel of 20 · matches targets"
-msgstr "20 fős testület · megfelel a célszámoknak"
-
-#: templates/public/_hero_animation.html
-#, fuzzy
 msgid "Everyone invited has a chance"
 msgstr "Minden meghívottnak van esélye"
 
