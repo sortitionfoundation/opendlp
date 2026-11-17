@@ -851,6 +851,61 @@ class TestChangingARole:
 
         assert response.status_code == 403
 
+    def test_a_reader_cannot_open_the_dialog(
+        self, reader: FlaskClient, existing_assembly: Assembly, admin_user
+    ) -> None:
+        assert reader.get(self._url(existing_assembly, admin_user), headers=HTMX).status_code == 403
+
+    def test_the_dialog_for_someone_not_on_the_team_is_not_found(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, organiser_user
+    ) -> None:
+        assert logged_in_admin.get(self._url(existing_assembly, organiser_user), headers=HTMX).status_code == 404
+
+    def test_a_role_that_does_not_exist_is_refused_in_the_dialog(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, member
+    ) -> None:
+        response = logged_in_admin.post(self._url(existing_assembly, member), data={"role": "EMPEROR"}, headers=HTMX)
+
+        assert response.status_code == 422
+        assert 'role="dialog"' in response.data.decode()
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(member.id).get_assembly_role(existing_assembly.id) == AssemblyRole.READ_ONLY
+
+    def test_without_htmx_its_address_goes_to_the_details_page(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, member
+    ) -> None:
+        response = logged_in_admin.get(self._url(existing_assembly, member))
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"{_details(existing_assembly)}#team")
+
+    def test_without_htmx_a_change_goes_back_to_the_details_page_and_says_so(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, member
+    ) -> None:
+        response = logged_in_admin.post(self._url(existing_assembly, member), data={"role": "CONFIRMATION_CALLER"})
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"{_details(existing_assembly)}#team")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            role = uow.users.get(member.id).get_assembly_role(existing_assembly.id)
+        assert role == AssemblyRole.CONFIRMATION_CALLER
+        with logged_in_admin.session_transaction() as session:
+            messages = [message for _category, message in session.get("_flashes", [])]
+        assert messages == ["Test User is now Confirmation Caller"]
+
+    def test_without_htmx_a_refusal_goes_back_to_the_details_page_with_the_reason(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, member
+    ) -> None:
+        response = logged_in_admin.post(self._url(existing_assembly, member), data={"role": "EMPEROR"})
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"{_details(existing_assembly)}#team")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(member.id).get_assembly_role(existing_assembly.id) == AssemblyRole.READ_ONLY
+        with logged_in_admin.session_transaction() as session:
+            flashes = session.get("_flashes", [])
+        assert flashes == [("error", "Please select a role")]
+
 
 class TestRemovingATeamMember:
     def test_a_removal_comes_back_to_the_team_card(

@@ -191,6 +191,13 @@ class TestChoosingTheLocation:
         assert "Spreadsheet URL" not in html
         assert "Target data source" in html
 
+    def test_someone_who_cannot_manage_the_project_cannot_redraw_it(
+        self, logged_in_user: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_user.post(f"{_base(existing_assembly)}/refresh", data={"location": "gsheet"}, headers=HTMX)
+
+        assert response.status_code == 403
+
 
 class TestUploadingTargets:
     def test_an_upload_shows_the_count_and_stays_in_the_dialog(
@@ -384,6 +391,12 @@ class TestUploadingRespondents:
 
         assert response.status_code == 200
         assert response.headers["HX-Redirect"].endswith("/data/upload-respondents/confirm-diff")
+
+    def test_someone_who_cannot_manage_the_project_is_refused(
+        self, fake_store: FakeStore, logged_in_user: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        assert _upload_respondents(logged_in_user, existing_assembly).status_code == 403
+        assert _stored(fake_store, existing_assembly).respondents_source == RespondentsSource.UNDECIDED
 
 
 class TestDeletingFromTheDialog:

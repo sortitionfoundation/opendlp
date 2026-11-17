@@ -213,6 +213,9 @@ class TestMovingBetweenSteps:
 
         assert 'name="dirty" value="1"' in html
 
+    def test_a_plain_user_cannot_move_between_steps(self, logged_in_user: FlaskClient) -> None:
+        assert _step(logged_in_user, 1).status_code == 403
+
 
 class TestSavingWithoutAnUpload:
     def test_in_opendlp_with_the_defaults_creates_the_project(
@@ -454,4 +457,8 @@ class TestTheFirstUploadCreatesTheProject:
 
     def test_a_plain_user_cannot_upload(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
         assert self._upload_targets(logged_in_user).status_code == 403
+        assert _projects(fake_store) == []
+
+    def test_a_plain_user_cannot_upload_respondents(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
+        assert self._upload_respondents(logged_in_user).status_code == 403
         assert _projects(fake_store) == []
