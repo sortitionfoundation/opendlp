@@ -182,10 +182,14 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
         {% if note %}<p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ note }}</p>{% endif %}
     </div>
 {% endmacro %}
-{# Why an upload was refused, beside the file field it is about. #}
-{% macro upload_errors(errors) %}
+{# Why an upload was refused, beside the file field it is about. An alert, so
+   it is read out when the dialog comes back with it; the file field names the
+   id in aria-describedby, so the reason is read again on reaching the field. #}
+{% macro upload_errors(errors, id) %}
     {% if errors %}
-        <div class="mb-4 rounded-lg p-4"
+        <div id="{{ id }}"
+             role="alert"
+             class="mb-4 rounded-lg p-4"
              style="background-color: var(--color-error-100);
                     border: 1px solid var(--color-error-400)">
             <h4 class="text-heading-sm mb-2" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h4>

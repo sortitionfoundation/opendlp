@@ -111,7 +111,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                     {{ button(_("Delete targets") , type="submit", variant="tertiary", attrs='form="project-delete-targets"') }}
                 {% endif %}
             </div>
-            {{ upload_errors({"csv_file": ds.targets_errors} if ds.targets_errors else {}) }}
+            {{ upload_errors({"csv_file": ds.targets_errors} if ds.targets_errors else {}, id="project-targets-file-problem") }}
             {{ notices(ds.targets_notices) }}
             {% if has_targets %}
                 {% if ds.targets_source.value == "csv" %}
@@ -125,7 +125,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                 label=_("CSV File") ,
                 accept=".csv",
                 hint=_("Select a CSV file with targets."),
-                attrs='data-dialog-initial-focus' if ds.targets_errors else ''
+                attrs='data-dialog-initial-focus aria-invalid="true" aria-describedby="project-targets-file-problem"' if ds.targets_errors else ''
                 ) }}
                 <div class="mt-4">
                     {{ button(_("Upload targets") , variant="secondary",
@@ -150,7 +150,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                     {{ button(_("Delete respondents") , type="submit", variant="tertiary", attrs='form="project-delete-respondents"') }}
                 {% endif %}
             </div>
-            {{ upload_errors({"file": ds.respondents_errors} if ds.respondents_errors else {}) }}
+            {{ upload_errors({"file": ds.respondents_errors} if ds.respondents_errors else {}, id="project-respondents-file-problem") }}
             {{ notices(ds.respondents_notices) }}
             {% if has_respondents %}
                 {% if ds.respondents_source.value == "csv" %}
@@ -165,7 +165,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                     label=_("CSV File") ,
                     accept=".csv",
                     hint=_("Select a CSV file with respondent data."),
-                    attrs='data-dialog-initial-focus' if ds.respondents_errors and not ds.targets_errors else ''
+                    attrs=('data-dialog-initial-focus' if not ds.targets_errors else '') ~ ' aria-invalid="true" aria-describedby="project-respondents-file-problem"' if ds.respondents_errors else ''
                     ) }}
                     {# Prefilled from the last upload so a file whose id column isn't the
                        first one works without retyping. Gated on last_import_timestamp,

@@ -245,6 +245,20 @@ class TestUploadingTargets:
         assert "Please select a CSV file to upload" in html
         assert "There is a problem" in html
 
+    def test_a_refusal_is_announced_and_tied_to_the_file_field(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Focus lands on the file field, which has to say why it is there again."""
+        html = _upload_targets(logged_in_admin, existing_assembly, content="not,a,targets,file\n1,2,3,4").data.decode()
+
+        assert '<div id="project-targets-file-problem"' in html
+        assert 'role="alert"' in html
+        field = html[html.index('id="project-targets-file"') :]
+        field = field[: field.index(">")]
+        assert 'aria-invalid="true"' in field
+        assert 'aria-describedby="project-targets-file-problem"' in field
+        assert "project-respondents-file-problem" not in html
+
     def test_a_bad_file_is_refused_in_place_and_nothing_is_stored(
         self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
@@ -329,7 +343,14 @@ class TestUploadingRespondents:
         )
 
         assert response.status_code == 422
-        assert "Please select a CSV file to upload" in response.data.decode()
+        html = response.data.decode()
+        assert "Please select a CSV file to upload" in html
+        assert '<div id="project-respondents-file-problem"' in html
+        field = html[html.index('id="project-respondents-file"') :]
+        field = field[: field.index(">")]
+        assert 'aria-invalid="true"' in field
+        assert 'aria-describedby="project-respondents-file-problem"' in field
+        assert "data-dialog-initial-focus" in field
 
     def test_a_file_that_is_not_utf8_is_refused_in_place(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
