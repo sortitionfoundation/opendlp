@@ -22,6 +22,7 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, assembly_role_labels
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import AddUserToAssemblyForm, ChangeAssemblyRoleForm, EditAssemblyForm
@@ -37,6 +38,8 @@ from opendlp.service_layer.user_service import (
     change_user_assembly_role,
     get_assembly_members,
     grant_user_assembly_role,
+    holds_assembly_role,
+    send_assembly_role_assigned_email,
     sole_assembly_manager_id,
 )
 from opendlp.translations import gettext as _
@@ -189,18 +192,7 @@ def add_team_member(assembly_id: uuid.UUID) -> ResponseReturnValue:
         role = form.role.data
         assert isinstance(role, AssemblyRole)
         try:
-            uow = bootstrap.get_flask_uow()
-            with uow:
-                _assembly_role, added = grant_user_assembly_role(
-                    uow=uow,
-                    user_id=uuid.UUID(form.user_id.data),
-                    assembly_id=assembly_id,
-                    role=role,
-                    current_user=current_user,
-                    email_adapter=get_email_adapter(),
-                    template_renderer=get_template_renderer(current_app),
-                    url_generator=get_url_generator(current_app),
-                )
+            added = _add_to_team(assembly_id, uuid.UUID(form.user_id.data), role)
         except (ValueError, NotFoundError) as e:
             logger.warning("Could not add team member", assembly_id=str(assembly_id), error=str(e))
             form.user_id.errors = [_("Choose a user from the list")]
@@ -229,6 +221,31 @@ def add_team_member(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(form_error or _("Please select a user and role"), "error")
         return redirect(_details_url(assembly_id))
     return _dialog_response(template, assembly_id, status=422, form=form, form_error=form_error)
+
+
+def _add_to_team(assembly_id: uuid.UUID, user_id: uuid.UUID, role: AssemblyRole) -> User:
+    """Give the user the role, and email them if they are new to the team.
+
+    The email goes once the transaction has closed, so a slow mail server
+    holds nothing open; it failing is logged and does not undo the role.
+    """
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        is_new = not holds_assembly_role(uow, user_id, assembly_id)
+        _assembly_role, added = grant_user_assembly_role(
+            uow=uow, user_id=user_id, assembly_id=assembly_id, role=role, current_user=current_user
+        )
+        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+    if is_new:
+        send_assembly_role_assigned_email(
+            email_adapter=get_email_adapter(),
+            template_renderer=get_template_renderer(current_app),
+            url_generator=get_url_generator(current_app),
+            user=added,
+            assembly=assembly,
+            role=role,
+        )
+    return added
 
 
 def _added_response(assembly_id: uuid.UUID, name: str, role: AssemblyRole) -> ResponseReturnValue:

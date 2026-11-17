@@ -107,29 +107,28 @@ def redirect_old_assembly_url(rest: str) -> ResponseReturnValue:
 def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly details page."""
     try:
-        nav_uow = bootstrap.get_flask_uow()
-        with nav_uow:
-            nav = get_assembly_nav_context(nav_uow, current_user.id, assembly_id)
-
-        # One registration page's links, read-only. Every page, and editing
-        # them, lives on the Registration tab.
         uow = bootstrap.get_flask_uow()
         with uow:
+            nav = get_assembly_nav_context(uow, current_user.id, assembly_id)
+            can_manage_project = can_manage_assembly(current_user, nav.assembly)
+            # One registration page's links, read-only. Every page, and editing
+            # them, lives on the Registration tab.
             registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
             created_by_name = get_assembly_creator_name(uow, nav.assembly)
-            can_manage_project = can_manage_assembly(current_user, nav.assembly)
-            # The access check panel under a Google Sheet's URL: checked afresh
-            # after a save (?check=1), otherwise whatever the last check found.
-            gsheet_access_result = None
-            gsheet_access_auto_check = False
-            if nav.gsheet:
-                gsheet_access_auto_check = can_manage_project and request.args.get("check", "") == "1"
-                if not gsheet_access_auto_check:
-                    gsheet_access_result = fetch_cached_result(assembly_id, nav.gsheet.url)
             project_dialog = None
             if request.args.get("data_source") == "1" and can_manage_project:
                 project_dialog = project_dialog_context(uow, assembly_id)
             team_card = team_card_context(uow, nav.assembly)
+
+        # The access check panel under a Google Sheet's URL: checked afresh
+        # after a save (?check=1), otherwise whatever the last check found.
+        # Read from the cache once the transaction has closed.
+        gsheet_access_result = None
+        gsheet_access_auto_check = False
+        if nav.gsheet:
+            gsheet_access_auto_check = can_manage_project and request.args.get("check", "") == "1"
+            if not gsheet_access_auto_check:
+                gsheet_access_result = fetch_cached_result(assembly_id, nav.gsheet.url)
         featured_page = featured_registration_page(registration_pages)
         registration_link = None
         if featured_page is not None:

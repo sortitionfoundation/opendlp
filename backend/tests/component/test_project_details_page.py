@@ -13,7 +13,7 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.user_service import assign_assembly_role
 from tests.data import VALID_GSHEET_URL
-from tests.fakes import FakeStore, FakeUnitOfWork
+from tests.fakes import FakeEmailAdapter, FakeStore, FakeUnitOfWork
 
 HTMX = {"HX-Request": "true"}
 
@@ -661,6 +661,56 @@ class TestAddingATeamMember:
         assert "Test User has been added" in html
         assert f'value="{regular_user.id}"' not in html
         assert '<div id="team" hx-swap-oob="true">' in html
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(regular_user.id).get_assembly_role(existing_assembly.id) == AssemblyRole.READ_ONLY
+
+    @pytest.fixture
+    def fake_email(self, monkeypatch: pytest.MonkeyPatch) -> FakeEmailAdapter:
+        adapter = FakeEmailAdapter()
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.project_details.get_email_adapter", lambda: adapter)
+        return adapter
+
+    def test_someone_new_to_the_team_is_emailed(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user, fake_email: FakeEmailAdapter
+    ) -> None:
+        self._add(logged_in_admin, existing_assembly, regular_user.id)
+
+        assert len(fake_email.sent) == 1
+        assert fake_email.sent[0]["to"] == [regular_user.email]
+        assert existing_assembly.title in fake_email.sent[0]["subject"]
+
+    def test_someone_already_on_the_team_is_not_emailed_again(
+        self,
+        fake_store: FakeStore,
+        logged_in_admin: FlaskClient,
+        existing_assembly: Assembly,
+        regular_user,
+        fake_email: FakeEmailAdapter,
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.READ_ONLY)
+
+        response = self._add(logged_in_admin, existing_assembly, regular_user.id, role="CONFIRMATION_CALLER")
+
+        assert response.status_code == 200
+        assert fake_email.sent == []
+
+    def test_an_email_that_cannot_be_sent_does_not_undo_the_role(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        fake_store: FakeStore,
+        logged_in_admin: FlaskClient,
+        existing_assembly: Assembly,
+        regular_user,
+    ) -> None:
+        monkeypatch.setattr(
+            "opendlp.entrypoints.blueprints.project_details.get_email_adapter",
+            lambda: FakeEmailAdapter(succeed=False),
+        )
+
+        response = self._add(logged_in_admin, existing_assembly, regular_user.id)
+
+        assert response.status_code == 200
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.users.get(regular_user.id).get_assembly_role(existing_assembly.id) == AssemblyRole.READ_ONLY
 

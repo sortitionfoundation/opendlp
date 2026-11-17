@@ -910,6 +910,15 @@ def grant_user_assembly_role(
     return assembly_role, detached_user
 
 
+def holds_assembly_role(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
+    """Whether the user has any role on the assembly. False for a user that does not exist.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    return user is not None and user.get_assembly_role(assembly_id) is not None
+
+
 def change_user_assembly_role(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
