@@ -453,7 +453,7 @@ def new_project_upload_targets() -> ResponseReturnValue:
             3,
             status=422,
             details_form=details_form,
-            targets_errors=[_("CSV import failed: %(error)s", error=str(e))],
+            targets_errors=[_("CSV import failed: %(error)s", error=e.user_msg())],
         )
     except Exception as e:
         logger.exception("Create project with targets error", user_id=str(current_user.id), error=str(e))
@@ -591,7 +591,7 @@ def upload_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InvalidSelection as e:
         logger.warning("Invalid targets CSV", assembly_id=str(assembly_id), error=str(e))
         return _render_project_dialog(
-            assembly_id, status=422, targets_errors=[_("CSV import failed: %(error)s", error=str(e))]
+            assembly_id, status=422, targets_errors=[_("CSV import failed: %(error)s", error=e.user_msg())]
         )
     except Exception as e:
         logger.exception("Upload targets error", assembly_id=str(assembly_id), error=str(e))

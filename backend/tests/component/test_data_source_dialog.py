@@ -254,6 +254,37 @@ class TestUploadingTargets:
         assert "CSV import failed" in response.data.decode()
         assert _stored(fake_store, existing_assembly).targets_source == TargetsSource.UNDECIDED
 
+    @pytest.mark.parametrize(
+        ("content", "reason"),
+        [
+            pytest.param(
+                "feature,value,min,max,percentage\nRegion,North,5,10,lots",
+                "Invalid percentage &#39;lots&#39; for Region / North",
+                id="our own check",
+            ),
+            pytest.param(
+                "feature,value,min,max\nRegion,North,five,10",
+                "is not a number",
+                id="the library's check",
+            ),
+            pytest.param(
+                "feature,value,min,max,comment\nRegion,North,5,10," + "x" * 2001,
+                "Invalid data for Region / North: comment must be",
+                id="the domain's check",
+            ),
+        ],
+    )
+    def test_a_refusal_says_what_is_wrong_with_the_file(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, content: str, reason: str
+    ) -> None:
+        response = _upload_targets(logged_in_admin, existing_assembly, content=content)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert "CSV import failed: " in html
+        assert reason in html
+        assert "Something went wrong" not in html
+
     def test_a_csv_cannot_go_into_a_google_sheets_project(
         self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
     ) -> None:
