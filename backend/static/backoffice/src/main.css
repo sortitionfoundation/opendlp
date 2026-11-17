@@ -2047,7 +2047,7 @@ body {
     .hero-draw .select__bg { animation: draw-select 14s linear infinite; }
     .hero-draw .cursor { animation: draw-cursor 14s cubic-bezier(.4,0,.2,1) infinite; }
     .hero-draw .tick { transform-box: fill-box; transform-origin: center;
-        animation: draw-tick 14s cubic-bezier(.2,.8,.2,1) infinite; animation-delay: var(--d, 0s); }
+        animation: draw-tick 14s ease-out infinite; animation-delay: var(--d, 0s); }
     .hero-draw .cap { animation: draw-cap 14s linear infinite; }
     .hero-draw .cap--2 { animation-name: draw-cap-2; }
     .hero-draw .cap--3 { animation-name: draw-cap-3; }
@@ -2078,7 +2078,12 @@ body {
         48% { transform: translate(560px, 232px) scale(1); opacity: 1 }
         52%,100% { transform: translate(600px, 300px); opacity: 0 }
     }
-    @keyframes draw-tick { 0%,70% { opacity: 0; transform: scale(.4) } 74%,100% { opacity: 1; transform: scale(1) } }
+    @keyframes draw-tick {
+        0%,70% { opacity: 0; transform: scale(2.6) }
+        73% { opacity: 1; transform: scale(2.2) }
+        77% { transform: scale(.85) }
+        79%,100% { opacity: 1; transform: scale(1) }
+    }
     @keyframes draw-cap   { 0%,2% { opacity: 0 } 5%,19% { opacity: 1 } 22%,100% { opacity: 0 } }
     @keyframes draw-cap-2 { 0%,22% { opacity: 0 } 25%,33% { opacity: 1 } 36%,100% { opacity: 0 } }
     @keyframes draw-cap-3 { 0%,36% { opacity: 0 } 39%,66% { opacity: 1 } 69%,100% { opacity: 0 } }
