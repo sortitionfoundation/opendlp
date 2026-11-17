@@ -26,7 +26,11 @@ from opendlp.domain.value_objects import AssemblyRole, assembly_role_labels
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import AddUserToAssemblyForm, ChangeAssemblyRoleForm, EditAssemblyForm
 from opendlp.service_layer.assembly_service import get_assembly_with_permissions, update_assembly_reporting_changes
-from opendlp.service_layer.exceptions import CannotRemoveLastAssemblyManager, NotFoundError
+from opendlp.service_layer.exceptions import (
+    CannotRemoveLastAssemblyManager,
+    InsufficientPermissions,
+    NotFoundError,
+)
 from opendlp.service_layer.permissions import can_manage_assembly_members
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.user_service import (
@@ -200,6 +204,16 @@ def add_team_member(assembly_id: uuid.UUID) -> ResponseReturnValue:
         except (ValueError, NotFoundError) as e:
             logger.warning("Could not add team member", assembly_id=str(assembly_id), error=str(e))
             form.user_id.errors = [_("Choose a user from the list")]
+        except (CannotRemoveLastAssemblyManager, InsufficientPermissions) as e:
+            # Adding someone who already holds a role changes it, so the
+            # refusals of a role change can come back from here too.
+            logger.warning(
+                "Refused to add team member",
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+                error=str(e),
+            )
+            form_error = e.user_msg()
         except Exception as e:
             logger.exception(
                 "Unexpected error adding team member",
@@ -209,20 +223,23 @@ def add_team_member(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
             form_error = _("An error occurred while adding the user to the project")
         else:
-            if not _is_htmx():
-                flash(_added_message(added.display_name, role), "success")
-                return redirect(_details_url(assembly_id))
-            if request.args.get("again") == "1":
-                return _team_changed(
-                    assembly_id, form=AddUserToAssemblyForm(formdata=None), just_added=added.display_name
-                )
-            flash(_added_message(added.display_name, role), "success")
-            return _team_changed(assembly_id)
+            return _added_response(assembly_id, added.display_name, role)
 
     if not _is_htmx():
         flash(form_error or _("Please select a user and role"), "error")
         return redirect(_details_url(assembly_id))
     return _dialog_response(template, assembly_id, status=422, form=form, form_error=form_error)
+
+
+def _added_response(assembly_id: uuid.UUID, name: str, role: AssemblyRole) -> ResponseReturnValue:
+    """What follows adding someone: the page, the dialog closed, or the dialog again for the next person."""
+    if not _is_htmx():
+        flash(_added_message(name, role), "success")
+        return redirect(_details_url(assembly_id))
+    if request.args.get("again") == "1":
+        return _team_changed(assembly_id, form=AddUserToAssemblyForm(formdata=None), just_added=name)
+    flash(_added_message(name, role), "success")
+    return _team_changed(assembly_id)
 
 
 def _added_message(name: str, role: AssemblyRole) -> str:

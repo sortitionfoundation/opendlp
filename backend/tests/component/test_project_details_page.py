@@ -677,6 +677,24 @@ class TestAddingATeamMember:
     ) -> None:
         assert self._add(logged_in_admin, existing_assembly, regular_user.id, role="EMPEROR").status_code == 422
 
+    def test_a_non_admin_cannot_demote_the_only_manager_by_adding_them_again(
+        self, fake_store: FakeStore, logged_in_organiser: FlaskClient, organiser_user
+    ) -> None:
+        """Adding someone who already holds a role changes it, so the same refusal applies - and says why."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly = create_assembly(uow=uow, title="Organiser's own", created_by_user_id=organiser_user.id)
+            assembly = assembly.create_detached_copy()
+
+        response = self._add(logged_in_organiser, assembly, organiser_user.id)
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert 'role="dialog"' in html
+        assert "must keep at least one Project Manager" in html
+        with FakeUnitOfWork(store=fake_store) as uow:
+            role = uow.users.get(organiser_user.id).get_assembly_role(assembly.id)
+        assert role == AssemblyRole.ASSEMBLY_MANAGER
+
     def test_a_reader_cannot_add_anyone(
         self, fake_store: FakeStore, reader: FlaskClient, existing_assembly: Assembly, organiser_user
     ) -> None:
