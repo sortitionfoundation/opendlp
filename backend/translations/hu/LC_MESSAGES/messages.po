@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-17 15:18+0000\n"
+"POT-Creation-Date: 2026-11-17 16:22+0000\n"
 "PO-Revision-Date: 2026-10-30 13:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -59,7 +59,7 @@ msgstr "Diversimax optimalizálás futtatása"
 
 #: src/opendlp/domain/assembly.py:416
 #: templates/backoffice/components/manage_tabs_progress_modal.html:21
-#: templates/backoffice/components/modal.html:434
+#: templates/backoffice/components/modal.html:446
 #: templates/backoffice/components/replacement_modal.html:50
 msgid "Processing…"
 msgstr "Feldolgozás…"
@@ -535,15 +535,15 @@ msgid "Read Only — Can view the project but cannot make changes"
 msgstr "Megtekintő – Megtekintheti a projektet, de nem módosíthat"
 
 #: src/opendlp/domain/value_objects.py:69
-msgid "Project manager"
+msgid "Project Manager"
 msgstr ""
 
 #: src/opendlp/domain/value_objects.py:70
-msgid "Confirmation caller"
+msgid "Confirmation Caller"
 msgstr ""
 
 #: src/opendlp/domain/value_objects.py:71
-msgid "Read only"
+msgid "Read Only"
 msgstr ""
 
 #: src/opendlp/domain/value_objects.py:83 templates/admin/invite_view.html:64
@@ -1059,7 +1059,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:457 src/opendlp/entrypoints/forms.py:775
 #: templates/backoffice/components/selection_settings.html:54
-#: templates/backoffice/data_source/_parts.html:84
+#: templates/backoffice/data_source/_parts.html:76
 msgid "Check same address"
 msgstr "Címegyezés ellenőrzése"
 
@@ -1068,7 +1068,7 @@ msgid "Enable checking for respondents with the same address"
 msgstr "Azonos címen lakó jelentkezők ellenőrzése"
 
 #: src/opendlp/entrypoints/forms.py:463
-#: templates/backoffice/data_source/_parts.html:90
+#: templates/backoffice/data_source/_parts.html:81
 msgid "Generate remaining tab"
 msgstr "Fennmaradók munkalapjának létrehozása"
 
@@ -1077,27 +1077,27 @@ msgid "Create a tab with the remaining respondents after selection"
 msgstr "Munkalap létrehozása a fennmaradó jelentkezőkkel a kiválasztás után"
 
 #: src/opendlp/entrypoints/forms.py:469
-#: templates/backoffice/data_source/_parts.html:100
+#: templates/backoffice/data_source/_parts.html:89
 msgid "Team configuration"
 msgstr "Csapat beállítás"
 
 #: src/opendlp/entrypoints/forms.py:471
-#: templates/backoffice/data_source/_parts.html:102
+#: templates/backoffice/data_source/_parts.html:91
 msgid "UK team"
 msgstr "UK Team"
 
 #: src/opendlp/entrypoints/forms.py:472
-#: templates/backoffice/data_source/_parts.html:103
+#: templates/backoffice/data_source/_parts.html:92
 msgid "EU team"
 msgstr "EU Team"
 
 #: src/opendlp/entrypoints/forms.py:473
-#: templates/backoffice/data_source/_parts.html:104
+#: templates/backoffice/data_source/_parts.html:93
 msgid "Australia team"
 msgstr "Australia Team"
 
 #: src/opendlp/entrypoints/forms.py:474
-#: templates/backoffice/data_source/_parts.html:105
+#: templates/backoffice/data_source/_parts.html:94
 msgid "Custom configuration"
 msgstr "Egyedi beállítások"
 
@@ -1111,8 +1111,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:484
 #: templates/backoffice/data_source/_form.html:184
-#: templates/backoffice/data_source/_parts.html:118
-#: templates/backoffice/data_source/_parts.html:148
+#: templates/backoffice/data_source/_parts.html:106
 #: templates/respondents/view_respondents.html:104
 msgid "ID column"
 msgstr "ID oszlop"
@@ -1126,8 +1125,7 @@ msgstr ""
 "ez felülíródik, ha a Csapat beállítás nem „Egyéni”."
 
 #: src/opendlp/entrypoints/forms.py:493
-#: templates/backoffice/data_source/_parts.html:126
-#: templates/backoffice/data_source/_parts.html:154
+#: templates/backoffice/data_source/_parts.html:113
 msgid "Address columns"
 msgstr "Cím oszlopok"
 
@@ -1142,8 +1140,7 @@ msgstr ""
 "kerül, ha a Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py:502
-#: templates/backoffice/data_source/_parts.html:134
-#: templates/backoffice/data_source/_parts.html:160
+#: templates/backoffice/data_source/_parts.html:120
 msgid "Columns to keep"
 msgstr "Megtartandó oszlopok"
 
@@ -5256,7 +5253,7 @@ msgstr "Fiók létrehozása"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_edit_respondent.html:30
-#: templates/backoffice/data_source/_parts.html:195 templates/base.html:132
+#: templates/backoffice/data_source/_parts.html:156 templates/base.html:132
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -5378,8 +5375,8 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/data_source/_dialog.html:148
 #: templates/backoffice/profile/2fa_setup.html:67
 #: templates/backoffice/profile/_password_dialog.html:82
-#: templates/backoffice/project_details/_team_add_dialog.html:74
-#: templates/backoffice/project_details/_team_role_dialog.html:51
+#: templates/backoffice/project_details/_team_add_dialog.html:75
+#: templates/backoffice/project_details/_team_role_dialog.html:52
 #: templates/backoffice/registration/_assets.html:256
 #: templates/backoffice/registration/_assets.html:312
 #: templates/backoffice/registration/_modals.html:90
@@ -6543,7 +6540,7 @@ msgstr "Mentés és a kiválasztás újrafuttatása"
 #: templates/backoffice/assembly_targets.html:311
 #: templates/backoffice/components/edit_number_to_select_modal.html:41
 #: templates/backoffice/data_source/_dialog.html:151
-#: templates/backoffice/project_details/_team_role_dialog.html:52
+#: templates/backoffice/project_details/_team_role_dialog.html:53
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:23
 #: templates/backoffice/registration/_step_intro.html:18
@@ -7082,9 +7079,9 @@ msgstr "%(count)s maradék jelentkező"
 
 #: templates/backoffice/components/db_replacement_modal.html:218
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
-#: templates/backoffice/components/modal.html:115
-#: templates/backoffice/components/modal.html:182
-#: templates/backoffice/components/modal.html:276
+#: templates/backoffice/components/modal.html:123
+#: templates/backoffice/components/modal.html:194
+#: templates/backoffice/components/modal.html:288
 #: templates/backoffice/components/replacement_modal.html:168
 #: templates/backoffice/components/selection_progress_modal.html:90
 #: templates/backoffice/data_source/_dialog.html:52
@@ -7395,11 +7392,11 @@ msgstr "A régi munkalapok sikeresen törölve."
 msgid "Delete These Tabs"
 msgstr "Ezeknek a munkalapoknak a törlése"
 
-#: templates/backoffice/components/modal.html:402
+#: templates/backoffice/components/modal.html:414
 msgid "Waiting for task to start…"
 msgstr "Várakozás a feladat indulására…"
 
-#: templates/backoffice/components/modal.html:404
+#: templates/backoffice/components/modal.html:416
 msgid "Messages:"
 msgstr "Üzenetek:"
 
@@ -7830,7 +7827,7 @@ msgid "Please review and save these settings before running selection."
 msgstr "A kiválasztás futtatása előtt nézd át és mentsd el ezeket a beállításokat."
 
 #: templates/backoffice/components/selection_settings.html:56
-#: templates/backoffice/data_source/_parts.html:86
+#: templates/backoffice/data_source/_parts.html:78
 msgid "Prevent selecting multiple respondents from the same address."
 msgstr "Ne lehessen több jelentkezőt kiválasztani ugyanarról a címről."
 
@@ -7847,7 +7844,7 @@ msgid ""
 msgstr "A feltöltött jelentkezői adatokból a következő attribútumnevek érhetők el:"
 
 #: templates/backoffice/components/selection_settings.html:84
-#: templates/backoffice/data_source/_parts.html:128
+#: templates/backoffice/data_source/_parts.html:115
 msgid "e.g., Street, City, PostCode"
 msgstr "például: Utca, Város, Irányítószám"
 
@@ -8102,7 +8099,7 @@ msgstr ""
 "első oszlop legyen az azonosító."
 
 #: templates/backoffice/data_source/_form.html:186
-#: templates/backoffice/data_source/_parts.html:120
+#: templates/backoffice/data_source/_parts.html:108
 msgid "e.g., ID"
 msgstr "például: ID"
 
@@ -8121,80 +8118,75 @@ msgstr "Add meg a Google Táblázatod teljes URL címét."
 msgid "Ensure it is shared with:"
 msgstr "Győződj meg róla, hogy meg van osztva a következővel:"
 
-#: templates/backoffice/data_source/_parts.html:19
-#: templates/gsheets/components/view_config.html:8
-msgid "View Spreadsheet"
-msgstr "Táblázat megtekintése"
-
-#: templates/backoffice/data_source/_parts.html:24
+#: templates/backoffice/data_source/_parts.html:21
 #: templates/gsheets/components/view_config.html:21
 #: templates/gsheets/create_config.html:60
 #: templates/gsheets/edit_config.html:58
 msgid "Initial/Test Selection"
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: templates/backoffice/data_source/_parts.html:26
+#: templates/backoffice/data_source/_parts.html:23
 msgid "Configure the tabs used for the initial selection process."
 msgstr "Állítsd be a kezdeti kiválasztási folyamathoz használt munkalapokat."
 
-#: templates/backoffice/data_source/_parts.html:30
-#: templates/backoffice/data_source/_parts.html:55
+#: templates/backoffice/data_source/_parts.html:27
+#: templates/backoffice/data_source/_parts.html:50
 msgid "Respondents tab"
 msgstr "Jelentkezők munkalapja"
 
-#: templates/backoffice/data_source/_parts.html:32
-#: templates/backoffice/data_source/_parts.html:57
+#: templates/backoffice/data_source/_parts.html:29
+#: templates/backoffice/data_source/_parts.html:52
 msgid "e.g., Respondents"
 msgstr "például: Jelentkezők"
 
-#: templates/backoffice/data_source/_parts.html:33
+#: templates/backoffice/data_source/_parts.html:30
 msgid "Tab containing respondent data for selection."
 msgstr "A kiválasztáshoz használt jelentkezői adatokat tartalmazó munkalap."
 
-#: templates/backoffice/data_source/_parts.html:38
-#: templates/backoffice/data_source/_parts.html:63
+#: templates/backoffice/data_source/_parts.html:34
+#: templates/backoffice/data_source/_parts.html:57
 msgid "Categories tab"
 msgstr "Kiválasztási szempontok munkalapja"
 
-#: templates/backoffice/data_source/_parts.html:40
-#: templates/backoffice/data_source/_parts.html:65
+#: templates/backoffice/data_source/_parts.html:36
+#: templates/backoffice/data_source/_parts.html:59
 msgid "e.g., Categories"
 msgstr "például: Kiválasztási szempontok"
 
-#: templates/backoffice/data_source/_parts.html:41
+#: templates/backoffice/data_source/_parts.html:37
 msgid "Tab containing selection categories/targets."
 msgstr "A kiválasztási kiválasztási szempontokat/célszámokat tartalmazó munkalap."
 
-#: templates/backoffice/data_source/_parts.html:49
+#: templates/backoffice/data_source/_parts.html:44
 #: templates/gsheets/components/view_config.html:22
 #: templates/gsheets/create_config.html:93
 #: templates/gsheets/edit_config.html:91
 msgid "Replacement"
 msgstr "Résztvevő pótlása"
 
-#: templates/backoffice/data_source/_parts.html:51
+#: templates/backoffice/data_source/_parts.html:46
 msgid "Configure the tabs used for replacement selections."
 msgstr "Állítsd be a résztvevők pótlásához használt munkalapokat."
 
-#: templates/backoffice/data_source/_parts.html:58
+#: templates/backoffice/data_source/_parts.html:53
 msgid "Tab containing respondent data for replacements."
 msgstr "A résztvevők pótlásához használt jelentkezői adatokat tartalmazó munkalap."
 
-#: templates/backoffice/data_source/_parts.html:66
+#: templates/backoffice/data_source/_parts.html:60
 msgid "Tab containing replacement categories/targets."
 msgstr ""
 "A résztvevők pótlásához tartozó kiválasztási szempontokat/célszámokat "
 "tartalmazó munkalap."
 
-#: templates/backoffice/data_source/_parts.html:72
+#: templates/backoffice/data_source/_parts.html:65
 msgid "Already selected tab"
 msgstr "Már kiválasztottak munkalap"
 
-#: templates/backoffice/data_source/_parts.html:74
+#: templates/backoffice/data_source/_parts.html:67
 msgid "e.g., Selected"
 msgstr "például: Kiválasztottak"
 
-#: templates/backoffice/data_source/_parts.html:75
+#: templates/backoffice/data_source/_parts.html:68
 msgid ""
 "Tab containing previously selected participants (for exclusion during "
 "replacement)."
@@ -8202,44 +8194,37 @@ msgstr ""
 "A korábban kiválasztott résztvevőket tartalmazó munkalap (a pótlás során "
 "való kizáráshoz)."
 
-#: templates/backoffice/data_source/_parts.html:82
+#: templates/backoffice/data_source/_parts.html:74
 #: templates/backoffice/respondent_field_schema/_field_modal.html:114
 #: templates/backoffice/respondent_field_schema/_field_modal.html:137
 msgid "Options"
 msgstr "Beállítások"
 
-#: templates/backoffice/data_source/_parts.html:92
+#: templates/backoffice/data_source/_parts.html:83
 msgid "Automatically generate a tab with the remaining respondents."
 msgstr "Automatikusan létrejön egy munkalap a fennmaradó jelentkezőkkel."
 
-#: templates/backoffice/data_source/_parts.html:108
+#: templates/backoffice/data_source/_parts.html:97
 msgid "Choose a preset or configure custom column settings."
 msgstr "Válassz egy előbeállítást, vagy adj meg egyéni oszlopbeállításokat."
 
-#: templates/backoffice/data_source/_parts.html:121
-#: templates/backoffice/data_source/_parts.html:150
+#: templates/backoffice/data_source/_parts.html:109
 msgid "Column name containing unique respondent identifiers."
 msgstr "A jelentkezők egyedi azonosítóit tartalmazó oszlop neve."
 
-#: templates/backoffice/data_source/_parts.html:129
-#: templates/backoffice/data_source/_parts.html:156
+#: templates/backoffice/data_source/_parts.html:116
 msgid "Comma-separated column names used for address matching."
 msgstr "A címegyeztetéshez használt oszlopnevek vesszővel elválasztva."
 
-#: templates/backoffice/data_source/_parts.html:136
+#: templates/backoffice/data_source/_parts.html:122
 msgid "e.g., Name, Email, Phone"
 msgstr "például: Név, E-mail, Telefon"
 
-#: templates/backoffice/data_source/_parts.html:137
-#: templates/backoffice/data_source/_parts.html:162
+#: templates/backoffice/data_source/_parts.html:123
 msgid "Comma-separated column names to include in output."
 msgstr "A kimenetbe beveendő oszlopnevek vesszővel elválasztva."
 
-#: templates/backoffice/data_source/_parts.html:146
-msgid "Column Configuration"
-msgstr "Oszlopbeállítások"
-
-#: templates/backoffice/data_source/_parts.html:179
+#: templates/backoffice/data_source/_parts.html:140
 #, fuzzy
 msgid "Download an example CSV"
 msgstr "Példa CSV fájl letöltése"
@@ -8685,7 +8670,7 @@ msgstr ""
 msgid "Last Updated"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/project_details/_team_add_dialog.html:33
+#: templates/backoffice/project_details/_team_add_dialog.html:32
 #: templates/backoffice/project_details/_team_card.html:25
 msgid "Add a team member"
 msgstr ""
@@ -8704,11 +8689,11 @@ msgstr ""
 msgid "Type to search by email or name…"
 msgstr "Gépelj a kereséshez e-mail cím vagy név alapján…"
 
-#: templates/backoffice/project_details/_team_add_dialog.html:75
+#: templates/backoffice/project_details/_team_add_dialog.html:76
 msgid "Add and add another"
 msgstr ""
 
-#: templates/backoffice/project_details/_team_add_dialog.html:76
+#: templates/backoffice/project_details/_team_add_dialog.html:77
 #: templates/backoffice/targets/add_target_modal.html:30
 #: templates/targets/components/category_block.html:297
 msgid "Add"
@@ -8745,7 +8730,7 @@ msgstr "Ehhez a projekthez még nem adtak hozzá csapattagokat."
 msgid "Admin users can still manage this project."
 msgstr "Az adminisztrátorok továbbra is kezelhetik ezt a projektet."
 
-#: templates/backoffice/project_details/_team_role_dialog.html:26
+#: templates/backoffice/project_details/_team_role_dialog.html:25
 msgid "Change role"
 msgstr ""
 
@@ -11454,6 +11439,10 @@ msgstr ""
 "További információért nézd meg a teljes futtatási jelentést (a "
 "folyamatüzenetek fölött). Vagy nyisd meg <a href=\"%(sheet_url)s\" "
 "target=\"_blank\">a táblázatot</a>, és nézd meg az aktuális munkalapokat."
+
+#: templates/gsheets/components/view_config.html:8
+msgid "View Spreadsheet"
+msgstr "Táblázat megtekintése"
 
 #: templates/gsheets/components/view_config.html:20
 msgid "Spreadsheet Tabs"
