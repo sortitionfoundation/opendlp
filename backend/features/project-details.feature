@@ -161,17 +161,17 @@ Feature: Project details
     And I choose the team role "Read Only"
     And I add the team member
     Then the add a team member dialog is closed
-    And the team lists "normal@opendlp.example" as "Read only"
+    And the team lists "normal@opendlp.example" as "Read Only"
     And I am told "added to project"
     And focus is on the "Add a team member" button
 
-  Scenario: Adding one person and then another
+  Scenario: Adding someone and keeping the dialog open for the next
     Given there is a user "normal@opendlp.example"
     When I open the add a team member dialog
     And I search for "normal@" and pick "normal@opendlp.example"
     And I add the team member and ask for another
     Then the add a team member dialog says "has been added"
-    And the team lists "normal@opendlp.example" as "Confirmation caller"
+    And the team lists "normal@opendlp.example" as "Confirmation Caller"
     And focus is in the team member search
     And the team member search is empty
 
@@ -185,8 +185,8 @@ Feature: Project details
     And I am on the details page of the project
     When I open the change role dialog for "normal@opendlp.example"
     And I change the role to "Confirmation Caller"
-    Then the team lists "normal@opendlp.example" as "Confirmation caller"
-    And I am told "is now Confirmation caller"
+    Then the team lists "normal@opendlp.example" as "Confirmation Caller"
+    And I am told "is now Confirmation Caller"
 
   Scenario: Removing a team member
     Given "normal@opendlp.example" is a read-only member of the project

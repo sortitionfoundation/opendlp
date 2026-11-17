@@ -543,7 +543,7 @@ class TestTeamCard:
 
         assert "Team" in card
         assert admin_user.email in card
-        assert "Project manager" in card
+        assert "Project Manager" in card
         assert "assembly-manager" not in card
 
     def test_a_manager_gets_the_add_button_a_bin_and_a_pencil(
@@ -645,8 +645,8 @@ class TestAddingATeamMember:
         assert 'role="dialog"' not in html
         assert '<div id="team" hx-swap-oob="true">' in html
         assert regular_user.email in html
-        assert "Read only" in html
-        assert "added to project with role Read only" in html
+        assert "Read Only" in html
+        assert "added to project with role Read Only" in html
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.users.get(regular_user.id).get_assembly_role(existing_assembly.id) == AssemblyRole.READ_ONLY
 
@@ -809,7 +809,7 @@ class TestChangingARole:
         html = response.data.decode()
         assert 'role="dialog"' not in html
         assert '<div id="team" hx-swap-oob="true">' in html
-        assert "Test User is now Confirmation caller" in html
+        assert "Test User is now Confirmation Caller" in html
         with FakeUnitOfWork(store=fake_store) as uow:
             role = uow.users.get(member.id).get_assembly_role(existing_assembly.id)
         assert role == AssemblyRole.CONFIRMATION_CALLER

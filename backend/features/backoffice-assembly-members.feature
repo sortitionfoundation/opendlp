@@ -29,7 +29,7 @@ Feature: Backoffice Assembly Team Members
     When I visit the assembly details page for "Climate Assembly"
     Then I should see the team members table
     And the team members table should show "normal@opendlp.example"
-    And the team members table should show role "Project manager"
+    And the team members table should show role "Project Manager"
     And I should see remove buttons in the team members table
 
   Scenario: Non-admin member can view the team

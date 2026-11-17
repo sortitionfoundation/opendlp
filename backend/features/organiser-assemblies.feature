@@ -12,7 +12,7 @@ Feature: Organiser assemblies
     Then I should see "Lilliput Transport Assembly"
     When I visit the assembly details page for "Lilliput Transport Assembly"
     Then the team members table should show "organiser@opendlp.example"
-    And the team members table should show role "Project manager"
+    And the team members table should show role "Project Manager"
 
   Scenario: An organiser adds a colleague to their own assembly by exact email
     Given I am logged in as an organiser
