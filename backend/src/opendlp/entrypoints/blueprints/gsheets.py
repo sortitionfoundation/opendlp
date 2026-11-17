@@ -25,9 +25,11 @@ from opendlp.entrypoints.forms import (
     DbSelectionSettingsForm,
 )
 from opendlp.service_layer.assembly_service import (
+    determine_data_source,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
+    get_tab_enabled_states,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
 from opendlp.service_layer.gsheet_access_check import check_gsheet_access, store_cached_result
@@ -335,35 +337,32 @@ def render_selection_page(
     with uow, contextlib.suppress(ServiceLayerError):
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
-    # Determine data source and tab enabled states
+    # The tabs are worked out as on every other tab of the project.
+    data_source, _locked = determine_data_source(gsheet, csv_status, assembly.data_source)
+    targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
+    if data_source == "csv" and not (csv_status and csv_status.has_data):
+        # Held in OpenDLP with nothing in it yet. The page has no selection to
+        # offer, and asks for the data instead.
+        data_source = ""
+
     csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
     selection_settings_columns: list[str] = []
     replacement_plan = None
-    if gsheet:
-        data_source = "gsheet"
-        targets_enabled = True
-        respondents_enabled = True
-        selection_enabled = True
-    elif csv_status and csv_status.has_data:
-        data_source = "csv"
-        targets_enabled = csv_status.has_targets
-        respondents_enabled = csv_status.has_respondents
-        selection_enabled = csv_status.selection_enabled
+    if data_source == "csv" and csv_status:
         csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
         with uow:
             selection_settings_columns = get_respondent_attribute_columns(uow, assembly_id)
-            if selection_settings_form is None:
-                stored_assembly = uow.assemblies.get(assembly_id)
-                settings = stored_assembly.selection_settings if stored_assembly else None
-                selection_settings_form = DbSelectionSettingsForm(
-                    formdata=None,
-                    data={
-                        "check_same_address": settings.check_same_address if settings else False,
-                        "check_same_address_cols_string": settings.check_same_address_cols_string if settings else "",
-                    },
-                    available_columns=selection_settings_columns,
-                )
+        if selection_settings_form is None:
+            settings = assembly.selection_settings
+            selection_settings_form = DbSelectionSettingsForm(
+                formdata=None,
+                data={
+                    "check_same_address": settings.check_same_address if settings else False,
+                    "check_same_address_cols_string": settings.check_same_address_cols_string if settings else "",
+                },
+                available_columns=selection_settings_columns,
+            )
         # Count the respondents holding a place: selected or confirmed
         try:
             with uow:
@@ -379,11 +378,6 @@ def render_selection_page(
             # The solver is the slow part, so it runs once the transaction has closed.
             if replacement_validation is not None:
                 run_feasibility_check(replacement_validation)
-    else:
-        data_source = ""
-        targets_enabled = False
-        respondents_enabled = False
-        selection_enabled = False
 
     # Replacements fill places that are held by nobody: some people must hold a
     # place, and fewer than the assembly needs.

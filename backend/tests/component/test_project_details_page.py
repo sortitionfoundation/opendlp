@@ -859,3 +859,12 @@ class TestProjectTabs:
         tabs = self._tab_bar(logged_in_admin.get(_details(existing_assembly)).data.decode())
 
         assert f'href="{_details(existing_assembly)}/targets"' in tabs
+
+    def test_the_selection_page_of_a_new_project_draws_the_same_tabs(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Reached by its address, it asks for the data - under the tab bar every other tab shows."""
+        html = logged_in_admin.get(f"{_details(existing_assembly)}/selection").data.decode()
+
+        assert f'href="{_details(existing_assembly)}/targets"' in self._tab_bar(html)
+        assert "Please set up your data on the Project Details tab" in html
