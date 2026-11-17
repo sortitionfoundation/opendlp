@@ -678,6 +678,8 @@ class TestAddingATeamMember:
         assert len(fake_email.sent) == 1
         assert fake_email.sent[0]["to"] == [regular_user.email]
         assert existing_assembly.title in fake_email.sent[0]["subject"]
+        assert f"/backoffice/project/{existing_assembly.id}" in fake_email.sent[0]["text_body"]
+        assert "/assemblies/" not in fake_email.sent[0]["text_body"]
 
     def test_someone_already_on_the_team_is_not_emailed_again(
         self,

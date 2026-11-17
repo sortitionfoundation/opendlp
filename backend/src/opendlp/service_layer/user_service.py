@@ -1352,7 +1352,7 @@ def send_assembly_role_assigned_email(
         # Generate assembly URL
         # Using _external=True to get full URL with domain
         assembly_url = url_generator.generate_url(
-            "main.view_assembly",
+            "backoffice.view_assembly",
             assembly_id=assembly.id,
             _external=True,
         )
