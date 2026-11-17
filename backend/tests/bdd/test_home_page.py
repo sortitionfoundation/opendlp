@@ -1,5 +1,5 @@
 """ABOUTME: BDD tests for the public home page served at /
-ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, its word lines up, and it fits a phone"""
+ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, the animation sits where the layout says, and it fits a phone"""
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, scenarios, then, when
@@ -30,8 +30,8 @@ def open_home_page_on_wide_screen(logged_out_page: Page) -> None:
 
 @then("they should see the home page hero")
 def see_hero(logged_out_page: Page) -> None:
-    expect(logged_out_page.get_by_role("heading", level=1)).to_contain_text("Bringing simplicity to sortition")
-    expect(logged_out_page.get_by_role("img", name="OpenDLP - Democratic Lottery Platform")).to_be_visible()
+    expect(logged_out_page.get_by_role("heading", level=1)).to_contain_text("Bringing Simplicity to Sortition")
+    expect(logged_out_page.get_by_role("img", name="How a democratic lottery works in OpenDLP")).to_be_visible()
 
 
 @when("they choose to sign in from the home page")
@@ -51,12 +51,21 @@ def no_horizontal_scroll(logged_out_page: Page) -> None:
     assert overflow == 0
 
 
-@then("the highlighted word should be centred under the logo")
-def highlighted_word_centred(logged_out_page: Page) -> None:
-    logo = logged_out_page.get_by_role("img", name="OpenDLP - Democratic Lottery Platform").bounding_box()
-    word = logged_out_page.get_by_role("heading", level=1).get_by_text("simplicity", exact=True).bounding_box()
-    assert logo is not None
-    assert word is not None
-    logo_centre = logo["x"] + logo["width"] / 2
-    word_centre = word["x"] + word["width"] / 2
-    assert abs(logo_centre - word_centre) < 1
+def _hero_boxes(page: Page) -> tuple[dict[str, float], dict[str, float]]:
+    heading = page.get_by_role("heading", level=1).bounding_box()
+    drawing = page.get_by_role("img", name="How a democratic lottery works in OpenDLP").bounding_box()
+    assert heading is not None
+    assert drawing is not None
+    return heading, drawing
+
+
+@then("the lottery animation should sit to the right of the heading")
+def animation_beside_heading(logged_out_page: Page) -> None:
+    heading, drawing = _hero_boxes(logged_out_page)
+    assert drawing["x"] >= heading["x"] + heading["width"]
+
+
+@then("the lottery animation should sit below the heading")
+def animation_below_heading(logged_out_page: Page) -> None:
+    heading, drawing = _hero_boxes(logged_out_page)
+    assert drawing["y"] >= heading["y"] + heading["height"]

@@ -11,13 +11,16 @@ from flask.testing import FlaskClient
 
 from opendlp.feature_flags import default_dashboard_endpoint
 
-SLOGAN_MSGID = "Bringing %(highlight)s to sortition"
+SLOGAN_MSGID = "Bringing %(highlight)s to Sortition"
 
 
 def slogan_parts(html: str) -> list[str]:
-    """The text of the heading's three spans: before the word, the word, after it."""
+    """The heading's text in three parts: before the highlighted word, the word, after it."""
     heading = html[html.index("<h1") : html.index("</h1>")]
-    return [part.strip() for part in re.findall(r"<span[^>]*>(.*?)</span>", heading, re.DOTALL)]
+    heading = heading[heading.index(">") + 1 :]
+    match = re.fullmatch(r"(.*?)<span[^>]*>(.*?)</span>(.*)", heading, re.DOTALL)
+    assert match is not None
+    return [part.strip() for part in match.groups()]
 
 
 class SloganTranslations:
@@ -39,9 +42,10 @@ class TestHomePage:
         response = client.get("/")
         assert response.status_code == 200
         assert "Bringing" in response.text
-        assert "simplicity" in response.text
-        assert "to sortition" in response.text
-        assert "How does OpenDLP work?" in response.text
+        assert "Simplicity" in response.text
+        assert "to Sortition" in response.text
+        assert "Sortition is complicated" in response.text
+        assert "OpenDLP makes it simple" in response.text
         assert "Key benefits" in response.text
         assert "Who is OpenDLP for?" in response.text
 
@@ -57,9 +61,14 @@ class TestHomePage:
 
     def test_uses_the_opendlp_logo_files(self, client: FlaskClient) -> None:
         response = client.get("/")
-        assert "img/opendlp-logo-light.svg" in response.text
         assert "img/opendlp-small-sized-logo.svg" in response.text
         assert "img/opendlp-favicon.svg" in response.text
+        assert "img/opendlp-logo-light.svg" not in response.text
+
+    def test_hero_carries_the_lottery_animation(self, client: FlaskClient) -> None:
+        response = client.get("/")
+        assert 'class="hero-draw"' in response.text
+        assert "How a democratic lottery works in OpenDLP" in response.text
 
     def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/")
@@ -84,28 +93,40 @@ class TestHomePage:
         assert "LEGAL ENTITY" not in footer
         assert "REGISTRATION NUMBER" not in footer
 
-    def test_intro_splits_the_complexity_sentence(self, client: FlaskClient) -> None:
+    def test_problem_section_names_the_three_difficulties(self, client: FlaskClient) -> None:
         response = client.get("/")
-        assert "<p>Democratic lotteries can be technically complex to implement.</p>" in response.text
-        assert "<p>There are few public resources available to support them.</p>" in response.text
+        start = response.text.index('id="problem-heading"')
+        section = response.text[start : response.text.index("</section>", start)]
+        for title in ("Stitched together by hand", "Easy to get wrong", "Few places to learn"):
+            assert title in section
+        assert "But doing it well is hard." in section
+        assert "We are changing that with OpenDLP." in section
 
-    def test_hero_actions_are_primary_buttons(self, client: FlaskClient) -> None:
+    def test_hero_leads_with_create_account(self, client: FlaskClient) -> None:
+        """Create account is the primary button and comes first; Contact us is secondary."""
         response = client.get("/")
         hero_start = response.text.index("<h1")
         hero = response.text[hero_start : response.text.index("</section>", hero_start)]
-        assert hero.count("btn--primary") == 2
-        assert "btn--secondary" not in hero
+        assert hero.count("btn--primary") == 1
+        assert hero.count("btn--secondary") == 1
+        assert hero.index("/auth/register") < hero.index("mailto:")
+
+    def test_hero_states_the_track_record(self, client: FlaskClient) -> None:
+        response = client.get("/")
+        assert "300+" in response.text
+        assert "30+" in response.text
+        assert "lotteries already run in OpenDLP" in response.text
 
     def test_slogan_splits_around_the_highlighted_word(self, client: FlaskClient) -> None:
         response = client.get("/")
-        assert slogan_parts(response.text) == ["Bringing", "simplicity", "to sortition"]
+        assert slogan_parts(response.text) == ["Bringing", "Simplicity", "to Sortition"]
 
     @pytest.mark.parametrize(
         ("translation", "expected"),
         [
-            ("%(highlight)s for sortition", ["", "simplicity", "for sortition"]),
-            ("Sortition with %(highlight)s", ["Sortition with", "simplicity", ""]),
-            ("A %(highlight)s B", ["A", "simplicity", "B"]),
+            ("%(highlight)s for sortition", ["", "Simplicity", "for sortition"]),
+            ("Sortition with %(highlight)s", ["Sortition with", "Simplicity", ""]),
+            ("A %(highlight)s B", ["A", "Simplicity", "B"]),
         ],
     )
     def test_slogan_split_follows_where_a_translation_puts_the_word(
