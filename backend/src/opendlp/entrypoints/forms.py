@@ -364,7 +364,7 @@ class ProjectDetailsStepForm(FlaskForm):  # type: ignore[no-any-unimported]
     number_to_select = IntegerField(
         _l("Panel size"),
         validators=[Optional(), NonNegativeValidator()],
-        description=_l("The number of participants to select"),
+        description=_l("The number of people to select"),
     )
 
 

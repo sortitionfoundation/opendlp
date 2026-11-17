@@ -68,7 +68,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 {{ source_label("project-targets-source", _("Target data source"),
-                _("If you're not sure, select \"Decide later\" - you can return here when you know. \"Create inside OpenDLP\" can mean entering targets by hand or creating them from imported respondent data - go to the Targets tab to do that.")) }}
+                _("If you're not sure, select \"Decide later\" — you can return here when you know. \"Create inside OpenDLP\" can mean entering targets by hand or creating them from imported respondent data — go to the Targets tab to do that.")) }}
                 {% set options = [] %}
                 {% for choice in TargetsSource %}
                     {% set ignored = options.append({"value": choice.value, "label": targets_source_labels[choice]}) %}
@@ -83,7 +83,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
             </div>
             <div>
                 {{ source_label("project-respondents-source", _("Respondents data source"),
-                _("If you're not sure, select \"Decide later\" - you can return here when you know. \"Through OpenDLP registration\" means you will set up a registration page for respondents to fill in - first set up targets, then go to the Registration tab.")) }}
+                _("If you're not sure, select \"Decide later\" — you can return here when you know. \"Through OpenDLP registration\" means you will set up a registration page for respondents to fill in — first set up targets, then go to the Registration tab.")) }}
                 {% set options = [] %}
                 {% for choice in RespondentsSource %}
                     {% set ignored = options.append({"value": choice.value, "label": respondents_source_labels[choice]}) %}
@@ -181,7 +181,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                     {% endif %}
                     {{ input(name="id_column",
                     id="project-respondents-id-column",
-                    label=_("ID Column") ,
+                    label=_("ID column") ,
                     value=request.form.get("id_column", csv_config.csv_id_column if has_previous_upload else ""),
                     placeholder=_("e.g., ID"),
                     hint=id_column_hint

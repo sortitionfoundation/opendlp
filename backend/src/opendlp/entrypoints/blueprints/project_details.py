@@ -68,7 +68,7 @@ def _saved_message(field: str, targets_moved: bool) -> str:
         return _("Project details saved")
     if targets_moved:
         return _("Panel size saved. Target min and max recalculated.")
-    return _("Panel size saved.")
+    return _("Panel size saved")
 
 
 @project_details_bp.route("/project/<uuid:assembly_id>/edit-field", methods=["POST"])

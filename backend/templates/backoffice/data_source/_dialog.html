@@ -104,7 +104,7 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
                                     label=_("Panel size (optional)") ,
                                     type="number",
                                     value=details.number_to_select.data if details.number_to_select.data is not none else (details.number_to_select.raw_data[0] if details.number_to_select.raw_data else ""),
-                                    hint=_("The number of participants to select"),
+                                    hint=_("The number of people to select"),
                                     error=details.number_to_select.errors | join("\n"),
                                     attrs='min="0" step="1" inputmode="numeric"') }}
                                 </div>

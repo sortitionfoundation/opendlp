@@ -48,7 +48,7 @@ Feature: Project details
   Scenario: The panel size is edited in place
     When I edit the panel size to "45" and press Enter
     Then the panel size reads "45"
-    And I am told "Panel size saved."
+    And I am told "Panel size saved"
 
   Scenario: The first event date is edited in place
     When I edit the first event date to "2031-04-01" and press Enter

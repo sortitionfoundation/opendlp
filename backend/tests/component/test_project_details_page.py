@@ -211,7 +211,7 @@ class TestThePanelSize:
 
         assert response.status_code == 200
         assert _stored(fake_store, existing_assembly).number_to_select == 40
-        assert "Panel size saved." in response.data.decode()
+        assert "Panel size saved" in response.data.decode()
 
     def test_with_no_targets_to_move_the_flash_says_nothing_of_them(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
