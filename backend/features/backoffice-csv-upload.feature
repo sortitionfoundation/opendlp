@@ -72,7 +72,8 @@ Feature: Backoffice CSV Upload
     And the assembly "Targets From Respondents" has respondents uploaded
     When I visit the assembly targets page for "Targets From Respondents"
     And I open the dialog to create targets from respondent data
-    And I choose the respondent column "Gender"
+    Then the dialog covers the page header
+    When I choose the respondent column "Gender"
     And I add the selected categories
     Then I should see "Created 1 targets"
     And I should see "Gender"

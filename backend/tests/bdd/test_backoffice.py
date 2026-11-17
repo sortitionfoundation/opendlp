@@ -1626,6 +1626,19 @@ def open_create_targets_from_columns_dialog(page: Page):
     expect(page.get_by_role("dialog")).to_be_visible()
 
 
+@then("the dialog covers the page header")
+def dialog_covers_page_header(page: Page):
+    """A dialog opened from inside a layer below the header would leave the header on top, and clickable."""
+    header_is_on_top = page.locator("[data-sticky-header]").evaluate(
+        """header => {
+            const box = header.getBoundingClientRect();
+            const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+            return header.contains(top);
+        }"""
+    )
+    assert not header_is_on_top
+
+
 @when(parsers.parse('I choose the respondent column "{column}"'))
 def choose_respondent_column(page: Page, column: str):
     """Clicked by its label, the way the styled checkbox is reached on screen."""
