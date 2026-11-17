@@ -957,10 +957,13 @@ msgid ""
 "You must specify address columns when 'Check same address' is enabled. "
 "Please enter column names or disable 'Check same address'."
 msgstr ""
+"Meg kell adnod a cím oszlopokat, ha a „Címegyezés ellenőrzése” be van "
+"kapcsolva. Add meg az oszlopneveket, vagy kapcsold ki a „Címegyezés "
+"ellenőrzése” lehetőséget."
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Respondents tab name"
-msgstr ""
+msgstr "Regisztrált jelentkezők adatait tartalmazó munkalap neve"
 
 #: src/opendlp/entrypoints/forms.py
 msgid ""
@@ -972,7 +975,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Targets tab name"
-msgstr ""
+msgstr "Célszámok munkalap neve"
 
 #: src/opendlp/entrypoints/forms.py
 msgid ""
@@ -1000,7 +1003,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Already selected tab name"
-msgstr ""
+msgstr "Már kiválasztottak munkalap neve"
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Name of the tab containing already selected people (used for Replacements)"
@@ -1012,7 +1015,7 @@ msgstr ""
 #: templates/backoffice/components/selection_settings.html
 #: templates/backoffice/data_source/_parts.html
 msgid "Check same address"
-msgstr ""
+msgstr "Címegyezés ellenőrzése"
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Enable checking for respondents with the same address"
@@ -1021,7 +1024,7 @@ msgstr "Azonos címen lakó jelentkezők ellenőrzése"
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/data_source/_parts.html
 msgid "Generate remaining tab"
-msgstr ""
+msgstr "Fennmaradók munkalapjának létrehozása"
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Create a tab with the remaining respondents after selection"
@@ -1030,22 +1033,22 @@ msgstr "Munkalap létrehozása a fennmaradó jelentkezőkkel a kiválasztás ut�
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/data_source/_parts.html
 msgid "Team configuration"
-msgstr ""
+msgstr "Csapat beállítás"
 
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/data_source/_parts.html
 msgid "UK team"
-msgstr ""
+msgstr "UK Team"
 
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/data_source/_parts.html
 msgid "EU team"
-msgstr ""
+msgstr "EU Team"
 
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/data_source/_parts.html
 msgid "Australia team"
-msgstr ""
+msgstr "Australia Team"
 
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/data_source/_parts.html
@@ -1057,6 +1060,8 @@ msgid ""
 "Select the team configuration to use for default settings for ID column, "
 "Address columns and Columns to keep."
 msgstr ""
+"Válassza ki az ID oszlop, a Cím oszlopok és a Megőrizendő oszlopok "
+"alapértelmezett beállításaihoz használni kívánt Csoport beállítást."
 
 #: src/opendlp/entrypoints/forms.py templates/backoffice/data_source/_form.html
 #: templates/backoffice/data_source/_parts.html
@@ -1069,11 +1074,13 @@ msgid ""
 "Name of column containing unique identifiers for respondents. Note will "
 "be overridden if the Team configuration is not 'Custom'."
 msgstr ""
+"A jelentkezők egyedi azonosítóit tartalmazó oszlop neve. Ne feledd, hogy "
+"ez felülíródik, ha a Csapat beállítás nem „Egyéni”."
 
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/data_source/_parts.html
 msgid "Address columns"
-msgstr ""
+msgstr "Cím oszlopok"
 
 #: src/opendlp/entrypoints/forms.py
 msgid ""
@@ -1081,11 +1088,14 @@ msgid ""
 "(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
 "Team configuration is not 'Custom'."
 msgstr ""
+"Ugyanazon cím ellenőrzésére használt oszlopnevek vesszővel elválasztott "
+"listája (pl. primary_address1, zip_royal_mail). Megjegyzés: felülírásra "
+"kerül, ha a Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/data_source/_parts.html
 msgid "Columns to keep"
-msgstr ""
+msgstr "Megtartandó oszlopok"
 
 #: src/opendlp/entrypoints/forms.py
 msgid ""
@@ -1093,6 +1103,9 @@ msgid ""
 " last_name, email). Note will be overridden if the Team configuration is "
 "not 'Custom'."
 msgstr ""
+"Az export fájlban megtartandó oszlopnevek vesszővel elválasztott listája "
+"(pl. keresztnév, vezetéknév, e-mail). Megjegyzés: felülírásra kerül, ha a"
+" Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py
 msgid "User's first name"
@@ -1319,7 +1332,7 @@ msgstr "Ne lehessen több jelentkezőt kiválasztani ugyanarról a címről"
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/components/selection_settings.html
 msgid "Address attributes"
-msgstr ""
+msgstr "Cím attribútumok"
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Comma-separated respondent attribute names used for address matching"
@@ -1332,6 +1345,9 @@ msgid ""
 "You must specify address attributes when 'Check same address' is enabled."
 " Please enter attribute names or disable 'Check same address'."
 msgstr ""
+"Meg kell adnod a cím attribútumokat, ha a „Címegyezés ellenőrzése” be van"
+" kapcsolva. Add meg az attribútumneveket, vagy kapcsold ki a „Címegyezés "
+"ellenőrzése” lehetőséget."
 
 #: src/opendlp/entrypoints/forms.py
 #, python-format
@@ -7676,7 +7692,7 @@ msgstr "Állítsd be a kezdeti kiválasztási folyamathoz használt munkalapokat
 
 #: templates/backoffice/data_source/_parts.html
 msgid "Respondents tab"
-msgstr ""
+msgstr "Jelentkezők munkalapja"
 
 #: templates/backoffice/data_source/_parts.html
 msgid "e.g., Respondents"
@@ -7688,7 +7704,7 @@ msgstr "A kiválasztáshoz használt jelentkezői adatokat tartalmazó munkalap.
 
 #: templates/backoffice/data_source/_parts.html
 msgid "Categories tab"
-msgstr ""
+msgstr "Kiválasztási szempontok munkalapja"
 
 #: templates/backoffice/data_source/_parts.html
 msgid "e.g., Categories"
@@ -7720,7 +7736,7 @@ msgstr ""
 
 #: templates/backoffice/data_source/_parts.html
 msgid "Already selected tab"
-msgstr ""
+msgstr "Már kiválasztottak munkalap"
 
 #: templates/backoffice/data_source/_parts.html
 msgid "e.g., Selected"
