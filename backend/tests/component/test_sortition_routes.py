@@ -20,37 +20,6 @@ def _mapped_domain_objects():
     database.start_mappers()
 
 
-@pytest.fixture
-def assembly_with_gsheet(fake_store, admin_user):
-    """Create an assembly with an existing gsheet configuration in the shared store."""
-    with FakeUnitOfWork(store=fake_store) as uow:
-        assembly = create_assembly(
-            uow=uow,
-            title="Assembly with GSheet",
-            created_by_user_id=admin_user.id,
-            question="What should we configure?",
-            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
-            number_to_select=22,
-        )
-        detached_assembly = assembly.create_detached_copy()
-
-    with FakeUnitOfWork(store=fake_store) as uow:
-        gsheet = add_assembly_gsheet(
-            uow=uow,
-            assembly_id=assembly.id,
-            user_id=admin_user.id,
-            url="https://docs.google.com/spreadsheets/d/1234567890abcdef/edit",
-            team="uk",
-            select_registrants_tab="TestRespondents",
-            select_targets_tab="TestCategories",
-            id_column="test_id_column",
-            check_same_address=True,
-            generate_remaining_tab=False,
-        )
-        detached_gsheet = gsheet.create_detached_copy()
-    return detached_assembly, detached_gsheet
-
-
 def _seed_run_record(fake_store, assembly_id, task_id, status, task_type, **kwargs):
     """Seed a SelectionRunRecord into the shared store via the real repo."""
     with FakeUnitOfWork(store=fake_store) as uow:

@@ -325,12 +325,6 @@ class TestTheOldEditPage:
 
 
 class TestDataSourceCard:
-    @pytest.fixture
-    def assembly_with_gsheet(self, fake_store: FakeStore, admin_user, existing_assembly: Assembly) -> Assembly:
-        with FakeUnitOfWork(store=fake_store) as uow:
-            add_assembly_gsheet(uow=uow, assembly_id=existing_assembly.id, user_id=admin_user.id, url=VALID_GSHEET_URL)
-        return existing_assembly
-
     def test_a_new_project_is_in_opendlp_and_undecided(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
@@ -376,9 +370,9 @@ class TestDataSourceCard:
         assert "1 target uploaded" in html
 
     def test_a_google_sheets_project_shows_its_url_and_no_source_rows(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
     ) -> None:
-        html = logged_in_admin.get(_details(assembly_with_gsheet)).data.decode()
+        html = logged_in_admin.get(_details(existing_assembly_with_gsheet)).data.decode()
 
         assert "In Google Sheets" in html
         assert "Spreadsheet URL" in html
@@ -386,19 +380,19 @@ class TestDataSourceCard:
         assert "Target data source" not in html
 
     def test_a_google_sheets_project_offers_an_access_check(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
     ) -> None:
-        html = logged_in_admin.get(_details(assembly_with_gsheet)).data.decode()
+        html = logged_in_admin.get(_details(existing_assembly_with_gsheet)).data.decode()
 
         assert 'id="gsheet-access-status"' in html
-        assert f'hx-post="{_details(assembly_with_gsheet)}/gsheet/check"' in html
+        assert f'hx-post="{_details(existing_assembly_with_gsheet)}/gsheet/check"' in html
         assert 'hx-trigger="load"' not in html
 
     def test_after_a_save_the_access_check_runs_on_load(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
     ) -> None:
         """Saving the sheet's settings lands here with ?check=1."""
-        html = logged_in_admin.get(f"{_details(assembly_with_gsheet)}?check=1").data.decode()
+        html = logged_in_admin.get(f"{_details(existing_assembly_with_gsheet)}?check=1").data.decode()
 
         assert 'hx-trigger="load"' in html
 

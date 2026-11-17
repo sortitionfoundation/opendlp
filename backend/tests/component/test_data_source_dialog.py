@@ -8,7 +8,6 @@ from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.value_objects import AssemblyRole, DataSource, RespondentsSource, TargetsSource
-from opendlp.service_layer.assembly_service import add_assembly_gsheet
 from opendlp.service_layer.user_service import assign_assembly_role
 from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeStore, FakeUnitOfWork
@@ -63,13 +62,6 @@ def _upload_respondents(client: FlaskClient, assembly: Assembly, content: str = 
         content_type="multipart/form-data",
         headers=HTMX,
     )
-
-
-@pytest.fixture
-def assembly_with_gsheet(fake_store: FakeStore, admin_user, existing_assembly: Assembly) -> Assembly:
-    with FakeUnitOfWork(store=fake_store) as uow:
-        add_assembly_gsheet(uow=uow, assembly_id=existing_assembly.id, user_id=admin_user.id, url=VALID_GSHEET_URL)
-    return existing_assembly
 
 
 class TestOpeningTheDialog:
@@ -163,11 +155,11 @@ class TestChoosingTheLocation:
         assert _stored(fake_store, existing_assembly).data_source == DataSource.UNDECIDED
 
     def test_the_location_is_fixed_once_there_is_a_sheet(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
     ) -> None:
         """Asking for OpenDLP on a project with a sheet still shows the sheet, with the choice disabled."""
         response = logged_in_admin.post(
-            f"{_base(assembly_with_gsheet)}/refresh", data={"location": "csv"}, headers=HTMX
+            f"{_base(existing_assembly_with_gsheet)}/refresh", data={"location": "csv"}, headers=HTMX
         )
 
         html = response.data.decode()
@@ -307,10 +299,10 @@ class TestUploadingTargets:
         assert "Something went wrong" not in html
 
     def test_a_csv_cannot_go_into_a_google_sheets_project(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
     ) -> None:
         """Only the interface used to stop this; the route does now."""
-        response = _upload_targets(logged_in_admin, assembly_with_gsheet)
+        response = _upload_targets(logged_in_admin, existing_assembly_with_gsheet)
 
         assert response.status_code == 422
         assert "managed in Google Sheets" in response.data.decode()
@@ -522,28 +514,28 @@ class TestSaving:
         assert _stored_gsheet(fake_store, existing_assembly) is None
 
     def test_saving_again_updates_the_sheet(
-        self, fake_store: FakeStore, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
     ) -> None:
         logged_in_admin.post(
-            f"{_base(assembly_with_gsheet)}/save",
+            f"{_base(existing_assembly_with_gsheet)}/save",
             data={"location": "gsheet", **GSHEET_FIELDS, "select_registrants_tab": "People"},
             headers=HTMX,
         )
 
-        assert _stored_gsheet(fake_store, assembly_with_gsheet).select_registrants_tab == "People"
+        assert _stored_gsheet(fake_store, existing_assembly_with_gsheet).select_registrants_tab == "People"
 
     def test_a_locked_location_cannot_be_changed_by_posting_another(
-        self, fake_store: FakeStore, logged_in_admin: FlaskClient, assembly_with_gsheet: Assembly
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
     ) -> None:
         """The disabled dropdown is not the protection: the route decides from the data."""
         response = logged_in_admin.post(
-            f"{_base(assembly_with_gsheet)}/save",
+            f"{_base(existing_assembly_with_gsheet)}/save",
             data={"location": "csv", "targets_source": "csv"},
             headers=HTMX,
         )
 
         assert response.status_code == 422
-        assert _stored(fake_store, assembly_with_gsheet).targets_source == TargetsSource.UNDECIDED
+        assert _stored(fake_store, existing_assembly_with_gsheet).targets_source == TargetsSource.UNDECIDED
 
     def test_someone_who_cannot_manage_the_project_is_refused(
         self, logged_in_user: FlaskClient, existing_assembly: Assembly

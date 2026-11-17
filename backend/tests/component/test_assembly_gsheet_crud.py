@@ -1,45 +1,11 @@
 # ABOUTME: Component tests for AssemblyGSheet CRUD routes over a FakeUnitOfWork
 # ABOUTME: Drives the real gsheet Flask routes + services against a seeded fake store, no PostgreSQL
 
-from datetime import UTC, datetime, timedelta
 
-import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
-from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from tests.fakes import FakeStore, FakeUnitOfWork
-
-
-@pytest.fixture
-def assembly_with_gsheet(fake_store, admin_user):
-    """Create an assembly with an existing gsheet configuration in the shared store."""
-    with FakeUnitOfWork(store=fake_store) as uow:
-        assembly = create_assembly(
-            uow=uow,
-            title="Assembly with GSheet",
-            created_by_user_id=admin_user.id,
-            question="What should we configure?",
-            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
-            number_to_select=22,
-        )
-        detached_assembly = assembly.create_detached_copy()
-
-    with FakeUnitOfWork(store=fake_store) as uow:
-        gsheet = add_assembly_gsheet(
-            uow=uow,
-            assembly_id=assembly.id,
-            user_id=admin_user.id,
-            url="https://docs.google.com/spreadsheets/d/1234567890abcdef/edit",
-            team="uk",
-            select_registrants_tab="TestRespondents",
-            select_targets_tab="TestCategories",
-            id_column="test_id_column",
-            check_same_address=True,
-            generate_remaining_tab=False,
-        )
-        detached_gsheet = gsheet.create_detached_copy()
-    return detached_assembly, detached_gsheet
 
 
 class TestAssemblyGSheetCreateView:
