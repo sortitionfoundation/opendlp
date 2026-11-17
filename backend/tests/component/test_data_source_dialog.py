@@ -204,6 +204,15 @@ class TestUploadingTargets:
         assert "Delete targets" in html
         assert "<html" not in html
 
+    def test_deleting_targets_asks_first_in_an_attribute_not_in_script(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """A translation with an apostrophe would end a string written into script."""
+        html = _upload_targets(logged_in_admin, existing_assembly).data.decode()
+
+        assert 'data-confirm="Are you sure you want to delete all targets? This action cannot be undone."' in html
+        assert "$confirm" not in html
+
     def test_an_upload_records_import_from_csv_without_save(
         self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:

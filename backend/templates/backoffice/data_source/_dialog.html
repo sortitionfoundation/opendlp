@@ -171,8 +171,7 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
                     <form id="{{ form_id }}"
                           method="post"
                           action="{{ action }}"
-                          x-data
-                          @submit.prevent="$confirm('{{ question }}', $el)">
+                          data-confirm="{{ question }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     </form>
                 {% endfor %}

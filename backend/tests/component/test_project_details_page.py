@@ -558,6 +558,19 @@ class TestTeamCard:
         assert 'aria-label="Remove Test Admin from the team"' in card
         assert 'aria-label="Change the role of Test Admin"' in card
 
+    def test_removing_someone_asks_first_whatever_their_name_holds(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user
+    ) -> None:
+        """The question is an attribute, not script: an apostrophe in a name cannot break it."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.users.get(regular_user.id).last_name = "O'Brien"
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.READ_ONLY)
+
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert 'data-confirm="Are you sure you want to remove Test O&#39;Brien from this project?"' in card
+        assert "$confirm" not in card
+
     def test_a_reader_sees_the_table_alone(self, reader: FlaskClient, existing_assembly: Assembly, admin_user) -> None:
         card = self._card(reader.get(_details(existing_assembly)).data.decode())
 

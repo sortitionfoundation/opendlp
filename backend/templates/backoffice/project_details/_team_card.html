@@ -72,8 +72,7 @@ ABOUTME: Managers get a button to add someone, and a bin and a pencil beside eac
                                             <form method="post"
                                                   action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
                                                   class="inline"
-                                                  x-data
-                                                  @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this project?', user=user.display_name) }}', $el)">
+                                                  data-confirm="{{ _('Are you sure you want to remove %(user)s from this project?', user=user.display_name) }}">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                                 {{ button(variant="icon",
                                                 type="submit",
