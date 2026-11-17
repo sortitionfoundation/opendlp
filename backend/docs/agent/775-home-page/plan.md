@@ -50,7 +50,7 @@ JavaScript, no library.
   translatable through the catalogue like any other string, a seamless loop, and
   an honest `prefers-reduced-motion` fallback. A gif can do none of those; a
   Lottie file would need a design tool to author and a runtime to play.
-- **What it shows**, in an abstract browser window, one loop of 14 seconds:
+- **What it shows**, in an abstract browser window, one loop of 17 seconds:
   everyone invited appears as 64 dots in three groups (plum, red, orange: half,
   a third, a fifth of the people); a Targets card slides in and its three bars
   fill; a cursor moves to Select and clicks it; the chosen dots are picked out
@@ -59,7 +59,7 @@ JavaScript, no library.
   targets. The panel keeps the population's proportions (10 / 6 / 4), which is
   the point of the drawing. A caption under the drawing names each beat.
 - **How it is built**: every element's keyframes are expressed as percentages of
-  the same 14 s clock, so nothing drifts. Each dot carries its own appearance
+  the same 17 s clock, so nothing drifts. Each dot carries its own appearance
   delay (`--d`); a chosen dot also carries the offset to its seat (`--dx`,
   `--dy`), used by one shared `transform: translate(var(--dx), var(--dy))`
   keyframe. The seat outlines are drawn before the dots so the dots cover them.
