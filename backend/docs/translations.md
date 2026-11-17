@@ -95,6 +95,25 @@ format flags and the `#. AUTOTRANS-ERROR:` comments the `/translate` skill
 leaves all survive. If the hook rewrites a file it fails the commit and asks
 for it to be staged again, like ruff format does.
 
+### Fewer merge conflicts in the catalogues
+
+Every branch that adds or changes a string runs `translate-regen`, so the
+catalogues change on most branches. `translate-regen` keeps the parts of a
+catalogue that don't depend on the branch from changing too:
+
+- `pybabel update --ignore-pot-creation-date` leaves the `POT-Creation-Date`
+  header as it is. Every regen used to stamp the time of the extraction
+  there, so two branches that each ran it conflicted on that one line, even
+  when their strings merged cleanly. `messages.pot`, which is not committed,
+  still carries the extraction time.
+- `pybabel extract --add-location=file` writes the `#:` comments with the
+  file name only. With line numbers, an edit that moved lines in a template
+  rewrote the comments of every string below it in that file. To find where a
+  string is used, search the named file for its msgid.
+
+Real conflicts remain when two branches change the same entries, or
+neighbouring ones.
+
 ## Translation Workflow
 
 ### Adding New Translatable Strings
