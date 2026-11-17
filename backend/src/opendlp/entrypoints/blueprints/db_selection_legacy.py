@@ -383,7 +383,7 @@ def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     selection_algorithm="maximin",
                     check_same_address=form.check_same_address.data or False,
                     check_same_address_cols=_parse_comma_list(form.check_same_address_cols_string.data),
-                    # Only the respondent IDs of a selection are stored, so there is no output table to pick columns for
+                    # The downloads of a selection carry the columns of the respondents export, so there are none to pick
                     columns_to_keep=[],
                 )
             uow3 = bootstrap.get_flask_uow()

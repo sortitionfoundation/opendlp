@@ -1092,7 +1092,7 @@ class TestCsvSelectionSettingsWarning:
         assert "checked" not in checkbox.group(0)
 
     def test_settings_do_not_ask_for_attributes_to_keep(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
-        """Only the IDs of a selection are stored, so there is no output table to choose columns for."""
+        """The downloads of a selection carry the columns of the respondents export, so there are none to choose."""
         response = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config_unconfirmed.id}/selection")
 
         section = self._settings_section(response.data.decode())

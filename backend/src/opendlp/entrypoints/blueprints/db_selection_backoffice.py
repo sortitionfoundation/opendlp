@@ -436,7 +436,7 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
                 check_same_address=form.check_same_address.data,
                 check_same_address_cols=check_same_address_cols,
-                # Only the respondent IDs of a selection are stored, so there is no output table to pick columns for
+                # The downloads of a selection carry the columns of the respondents export, so there are none to pick
                 columns_to_keep=[],
             )
 
