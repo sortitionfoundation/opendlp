@@ -7,6 +7,10 @@
  */
 export const SAVE_EVENT = "inline-edit-save";
 
+function withBareLineFeeds(text) {
+  return String(text).replace(/\r\n/g, "\n");
+}
+
 /**
  * Build the state for one row edited in place.
  *
@@ -32,10 +36,6 @@ export const SAVE_EVENT = "inline-edit-save";
  *
  * @returns {Object} Alpine component state
  */
-function withBareLineFeeds(text) {
-  return String(text).replace(/\r\n/g, "\n");
-}
-
 export function inlineEdit() {
   return {
     editing: false,
