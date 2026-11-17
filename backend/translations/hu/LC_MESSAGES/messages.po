@@ -86,7 +86,8 @@ msgstr "Eredmények"
 #: templates/backoffice/assembly_data.html
 #: templates/backoffice/assembly_targets.html
 #: templates/backoffice/components/assembly_tabs.html
-#: templates/main/view_assembly_base.html templates/targets/view_targets.html
+#: templates/main/view_assembly_base.html templates/public/_hero_animation.html
+#: templates/targets/view_targets.html
 msgid "Targets"
 msgstr "Célszámok"
 
@@ -10920,6 +10921,68 @@ msgstr ""
 msgid "Add User to Assembly"
 msgstr "Felhasználó hozzáadása a közösségi gyűléshez"
 
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "How a democratic lottery works in OpenDLP"
+msgstr "Így működik a demokratikus sorsolás az OpenDLP-ben"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid ""
+"A browser window: everyone invited appears as dots, targets are set, one "
+"click selects a panel that matches the targets, and the chosen dots form "
+"the seats of an assembly."
+msgstr ""
+"Egy böngészőablak: a meghívottak pontokként jelennek meg, a célszámok "
+"beállítása után egy kattintás kiválasztja a célszámoknak megfelelő "
+"testületet, és a kiválasztott pontok elfoglalják a közösségi gyűlés "
+"üléseit."
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "Age"
+msgstr "Életkor"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "Gender"
+msgstr "Nem"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "Region"
+msgstr "Régió"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "Select"
+msgstr "Kiválasztás"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "Panel of 20 · matches targets"
+msgstr "20 fős testület · megfelel a célszámoknak"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "Everyone invited has a chance"
+msgstr "Minden meghívottnak van esélye"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "Set the targets"
+msgstr "Célszámok beállítása"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "One click runs the lottery"
+msgstr "Egy kattintás, és fut a sorsolás"
+
+#: templates/public/_hero_animation.html
+#, fuzzy
+msgid "A fair, representative panel"
+msgstr "Igazságos, reprezentatív testület"
+
 #: templates/public/_survey_fields.html
 msgid "characters"
 msgstr "karakter"
@@ -10965,22 +11028,46 @@ msgid "Remember your password?"
 msgstr "Eszedbe jutott a jelszavad?"
 
 #: templates/public/home.html
+#, fuzzy
+msgid "Stitched together by hand"
+msgstr "Kézzel összefércelve"
+
+#: templates/public/home.html
+#, fuzzy
 msgid ""
-"A democratic lottery – a “sortition” – is a gold standard foundation for "
-"citizen engagement and deliberation."
+"The work is often spread across spreadsheets, data sources and "
+"algorithms, stitched together by hand under time pressure."
 msgstr ""
+"A munka gyakran táblázatok, adatforrások és algoritmusok között oszlik "
+"meg, időnyomás alatt, kézzel összefércelve."
 
 #: templates/public/home.html
-msgid "Democratic lotteries can be technically complex to implement."
-msgstr ""
+#, fuzzy
+msgid "Easy to get wrong"
+msgstr "Könnyű elrontani"
 
 #: templates/public/home.html
-msgid "There are few public resources available to support them."
+#, fuzzy
+msgid ""
+"Mistakes are easy to make, and mistakes can undermine an assembly’s "
+"legitimacy."
 msgstr ""
+"Könnyű hibázni, a hibák pedig alááshatják a közösségi gyűlés "
+"legitimitását."
 
 #: templates/public/home.html
-msgid "We are changing that with OpenDLP."
+#, fuzzy
+msgid "Few places to learn"
+msgstr "Kevés helyen lehet megtanulni"
+
+#: templates/public/home.html
+#, fuzzy
+msgid ""
+"Democratic lotteries can be technically complex to implement. There are "
+"few public resources available to support them."
 msgstr ""
+"A demokratikus sorsolás lebonyolítása technikailag összetett lehet, és "
+"kevés nyilvános forrás segíti."
 
 #: templates/public/home.html
 msgid ""
@@ -11054,16 +11141,29 @@ msgid ""
 msgstr ""
 
 #: templates/public/home.html
-msgid "OpenDLP - Democratic Lottery Platform"
-msgstr ""
+#, fuzzy, python-format
+msgid "Bringing %(highlight)s to Sortition"
+msgstr "%(highlight)s a sorsolásban"
 
 #: templates/public/home.html
-#, python-format
-msgid "Bringing %(highlight)s to sortition"
-msgstr ""
+#, fuzzy
+msgid "Simplicity"
+msgstr "Egyszerűség"
 
 #: templates/public/home.html
-msgid "simplicity"
+#, fuzzy
+msgid ""
+"OpenDLP brings everything you need together into a trusted, cohesive "
+"platform that makes sortition simple; empowering anyone running a "
+"deliberative process to bring best practice in-house."
+msgstr ""
+"Az OpenDLP egyetlen megbízható, egységes platformon gyűjti össze mindazt,"
+" ami a sorsoláshoz kell, így a sorsolás egyszerűvé válik, és bárki, aki "
+"deliberatív folyamatot vezet, házon belül alkalmazhatja a legjobb "
+"gyakorlatot."
+
+#: templates/public/home.html
+msgid "Create account"
 msgstr ""
 
 #: templates/public/home.html
@@ -11071,12 +11171,49 @@ msgid "Contact us"
 msgstr ""
 
 #: templates/public/home.html
-msgid "Create account"
+#, fuzzy
+msgid ""
+"democratic lotteries delivered by Sortition Foundation and Sortition "
+"Europe"
 msgstr ""
+"demokratikus sorsolás a Sortition Foundation és a Sortition Europe "
+"lebonyolításában"
 
 #: templates/public/home.html
-msgid "How does OpenDLP work?"
+#, fuzzy
+msgid "lotteries already run in OpenDLP"
+msgstr "sorsolás már az OpenDLP-ben"
+
+#: templates/public/home.html
+#, fuzzy
+msgid "Sortition is complicated"
+msgstr "A sorsolás bonyolult"
+
+#: templates/public/home.html
+#, fuzzy
+msgid ""
+"A democratic lottery is the best practice method for selecting members of"
+" a deliberative process. Everyone has a chance to be invited, and no one "
+"is guaranteed a place."
 msgstr ""
+"A demokratikus sorsolás a deliberatív folyamatok résztvevőinek "
+"kiválasztására szolgáló legjobb gyakorlat. Mindenkinek van esélye a "
+"meghívásra, és senkinek sincs garantált helye."
+
+#: templates/public/home.html
+#, fuzzy
+msgid "But doing it well is hard."
+msgstr "De jól csinálni nehéz."
+
+#: templates/public/home.html
+#, fuzzy
+msgid "We are changing that with OpenDLP."
+msgstr "Ezen változtatunk az OpenDLP-vel."
+
+#: templates/public/home.html
+#, fuzzy
+msgid "OpenDLP makes it simple"
+msgstr "Az OpenDLP egyszerűvé teszi"
 
 #: templates/public/home.html
 msgid ""
