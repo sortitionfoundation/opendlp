@@ -59,7 +59,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
 {% endif %}
 {% if ds.location == "gsheet" %}
     <div class="flex flex-col gap-6">
-        {{ gsheet_fields(ds.gsheet_form, gsheet=ds.gsheet, google_service_account_email=ds.service_account_email) }}
+        {{ gsheet_fields(ds.gsheet_form, google_service_account_email=ds.service_account_email) }}
     </div>
 {% else %}
     {% set has_targets = ds.targets_count > 0 %}
