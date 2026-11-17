@@ -47,6 +47,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.tabular_data import TableProblem, TabularDataError
+from opendlp.service_layer.target_csv_import import TargetsCsvError
 from opendlp.service_layer.target_service import TargetLinkedError, TargetsNotSaved
 from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
 
@@ -78,6 +79,7 @@ CURATED = [
     ContentBlockInvalidError("Add a heading, some text, or both"),
     SelectionAlreadyRunning(_RUNNING_SELECTION),
     TabularDataError([TableProblem(kind="empty", message="The file is empty or has no header row.")]),
+    TargetsCsvError("Invalid percentage 'lots' for Region / North"),
 ]
 
 UNCURATED = [
