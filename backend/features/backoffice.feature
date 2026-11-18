@@ -39,13 +39,14 @@ Feature: Backoffice Dashboard
     Then I should see the assembly selection page
     And I should see "Selection Test Assembly" as the page heading
 
-  Scenario: Selection tab shows warning when no gsheet configured
+  Scenario: Selection tab of a new project says what selection is waiting for
     Given I am logged in as an admin user
     And there is an assembly called "Selection No GSheet Assembly"
     When I visit the assembly selection page for "Selection No GSheet Assembly"
-    Then I should see "Please set up your data on the Project Details tab"
-    And I should see the "Configure Data Source" button
-    And I should not see "Initial Selection"
+    Then I should see "Before you can run a selection:"
+    And I should see "Add targets."
+    And I should see "Add respondents."
+    And I should see "Initial Selection"
 
   Scenario: Selection tab shows selection cards when gsheet configured
     Given I am logged in as an admin user

@@ -3,14 +3,14 @@ Feature: Backoffice CSV Upload
   I want a project's tabs to follow the data it holds
   So that I can only go where there is something to do.
 
-  Scenario: A new project has its Targets tab open and its Respondents tab waiting for data
+  Scenario: A new project has its Targets and Respondents tabs open
     Given I am logged in as an admin user
     And there is an assembly called "Tab Test Assembly"
     When I visit the assembly details page for "Tab Test Assembly"
     Then I should see a "Targets" tab in the assembly navigation
     And I should see a "Respondents" tab in the assembly navigation
     And the "Targets" tab should be enabled
-    And the "Respondents" tab should be disabled
+    And the "Respondents" tab should be enabled
 
   Scenario: Targets and Respondents tabs are enabled when gsheet is configured
     Given I am logged in as an admin user
@@ -47,7 +47,7 @@ Feature: Backoffice CSV Upload
     And the assembly "CSV Targets Tab Enable" has targets uploaded
     When I visit the assembly details page for "CSV Targets Tab Enable"
     Then the "Targets" tab should be enabled
-    And the "Respondents" tab should be disabled
+    And the "Respondents" tab should be enabled
 
   Scenario: Both tabs enabled after both CSVs uploaded
     Given I am logged in as an admin user

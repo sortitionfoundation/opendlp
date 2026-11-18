@@ -45,6 +45,23 @@ Feature: Create a project in a dialog
     When I go back a step
     Then the project title reads "Kept Through Back"
 
+  Scenario: The steps at the top are a way to move too
+    When I open the create project dialog
+    And I give the project the title "Moved By Stepper"
+    And I click the step "Targets and people"
+    Then the create project dialog is at the step "Targets and people"
+    And focus is on the target data source
+    When I click the step "Project details"
+    Then the create project dialog is at the step "Project details"
+    And the project title reads "Moved By Stepper"
+    And focus is on the project title
+
+  Scenario: The steps do not let a missing title past
+    When I open the create project dialog
+    And I click the step "Data location"
+    Then the create project dialog is at the step "Project details"
+    And the project title is marked as required
+
   Scenario: Cancelling asks before discarding and leaves no project
     When I open the create project dialog
     And I give the project the title "Never Made"
@@ -83,6 +100,7 @@ Feature: Create a project in a dialog
     Then the dialog says "4 targets uploaded"
     And there is a project called "Made By Upload"
     And I cannot go back a step
+    And the steps are no longer links
     And the dialog offers "Close" instead of "Cancel"
     When I choose the respondents data source "Import from CSV"
     And I upload the example respondents

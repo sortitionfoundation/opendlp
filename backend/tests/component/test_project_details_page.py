@@ -449,7 +449,7 @@ class TestSelectionSettingsCard:
             data={"check_same_address_cols_string": "", "from": "details"},
             headers=HTMX,
         )
-        assert response.headers["HX-Redirect"].endswith(f"{_details(existing_assembly)}#selection-settings")
+        assert response.headers["HX-Refresh"] == "true"
 
         card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
         assert "Confirmed" in card

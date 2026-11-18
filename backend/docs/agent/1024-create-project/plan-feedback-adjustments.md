@@ -9,8 +9,8 @@ two decided; read them first:
 Where this plan and those two disagree, this one wins. The decisions it
 reverses are named under [What this reverses](#what-this-reverses).
 
-**Status: in progress.** Steps are ticked under [Order of work](#order-of-work)
-as they land.
+**Status: implemented.** Every step under [Order of work](#order-of-work) is
+done; notes marked *As built* say where the code departs from the text.
 
 ## The brief
 
@@ -121,7 +121,9 @@ It and the banner's button `hx-get` the dialog into the page's dialog host.
   with `?settings=1`, which renders the page with the dialog open.
 - `POST` (existing `save_db_settings`) — over htmx: 422 with the dialog and
   the errors, or `HX-Redirect` back to where it was opened with the success
-  flash. Without htmx: as today, a redirect, or the Select page re-rendered
+  flash. *As built:* from the details page the answer is `HX-Refresh`: the
+  dialog is already open over that page, and an address differing only after
+  the `#` would load nothing. Without htmx: as today, a redirect, or the Select page re-rendered
   with the dialog open.
 - **Where it returns** is a token, not a URL: the opener sends `from=details`
   or nothing, the dialog carries it as a hidden input, and the route maps it
@@ -209,7 +211,10 @@ lands back on the details page. Nothing else is in the card.
 3. ✅ Selection settings dialog, the Select tab's banner and cog.
 4. ✅ Selection settings card on Project details.
 5. ✅ Google Sheets: no Registration tab or card; direct links to the dialog.
-6. BDD sweep, catalogues, docs.
+6. ✅ BDD sweep, catalogues, docs.
+
+Left for a Hungarian pass: the fourteen new strings are in the catalogue
+untranslated, with the rest of this branch's.
 
 ## Decisions
 

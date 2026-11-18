@@ -523,6 +523,13 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Selection settings saved successfully"), "success")
+        if _is_htmx() and came_from == SETTINGS_FROM_DETAILS:
+            # The dialog is open over the page to go back to. An address that
+            # differs from the current one only after the # loads nothing, so
+            # the page is told to reload instead.
+            response = make_response("", 200)
+            response.headers["HX-Refresh"] = "true"
+            return response
         return _settings_redirect(_settings_return_url(assembly_id, came_from))
 
     except NotFoundError:

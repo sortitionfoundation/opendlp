@@ -1,5 +1,5 @@
 """ABOUTME: BDD tests for the selection settings of a project held in OpenDLP
-ABOUTME: Checks in a browser that the address attributes show only while the address check is ticked"""
+ABOUTME: Checks in a browser the settings dialog, what it shows and hides, and how selection waits for it"""
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -44,22 +44,47 @@ def assembly_with_confirmed_settings(assembly_creator, admin_user, test_database
     return assembly
 
 
+def _dialog(page: Page):
+    return page.locator("#selection-settings-dialog")
+
+
+def _cog(page: Page):
+    return page.get_by_role("button", name="Selection settings", exact=True)
+
+
+@when("the user visits the project details page")
+def user_visits_details_page(admin_logged_in_page: Page, test_assembly):
+    admin_logged_in_page.goto(Urls.backoffice_assembly_url(test_assembly.id))
+    admin_logged_in_page.wait_for_load_state()
+
+
 @when("the user visits the selection page")
 def user_visits_selection_page(admin_logged_in_page: Page, test_assembly):
     admin_logged_in_page.goto(Urls.assembly_selection(test_assembly.id))
     admin_logged_in_page.wait_for_load_state()
 
 
+@when("the user opens the selection settings")
+def user_opens_settings(admin_logged_in_page: Page):
+    _cog(admin_logged_in_page).click()
+    expect(_dialog(admin_logged_in_page)).to_be_visible()
+
+
+@when("the user follows the page's way to review the selection settings")
+def user_follows_review_link(admin_logged_in_page: Page):
+    admin_logged_in_page.locator("#selection-waiting").get_by_role("link", name="Review selection settings").click()
+
+
 @when("the user ticks Check same address")
 def user_ticks_check_same_address(admin_logged_in_page: Page):
     # The native checkbox is visually hidden behind a styled box, so click its label
-    admin_logged_in_page.locator("#selection-settings").get_by_text("Check same address", exact=True).click()
+    _dialog(admin_logged_in_page).get_by_text("Check same address", exact=True).click()
     expect(admin_logged_in_page.locator("#check_same_address")).to_be_checked()
 
 
 @when("the user unticks Check same address")
 def user_unticks_check_same_address(admin_logged_in_page: Page):
-    admin_logged_in_page.locator("#selection-settings").get_by_text("Check same address", exact=True).click()
+    _dialog(admin_logged_in_page).get_by_text("Check same address", exact=True).click()
     expect(admin_logged_in_page.locator("#check_same_address")).not_to_be_checked()
 
 
@@ -70,19 +95,46 @@ def user_enters_address_attributes(admin_logged_in_page: Page, attributes: str):
 
 @when("the user saves the selection settings")
 def user_saves_settings(admin_logged_in_page: Page):
-    admin_logged_in_page.get_by_role("button", name="Save Settings").click()
-    admin_logged_in_page.wait_for_load_state()
+    _dialog(admin_logged_in_page).get_by_role("button", name="Save Settings").click()
     expect(admin_logged_in_page.get_by_text("Selection settings saved successfully")).to_be_visible()
+    expect(_dialog(admin_logged_in_page)).to_have_count(0)
 
 
-@when("the user opens the selection settings")
-def user_opens_settings(admin_logged_in_page: Page):
-    admin_logged_in_page.locator("#selection-settings > summary").click()
+@when("the user tries to save the selection settings")
+def user_tries_to_save_settings(admin_logged_in_page: Page):
+    with admin_logged_in_page.expect_response(lambda response: response.url.endswith("/data/csv/settings")):
+        _dialog(admin_logged_in_page).get_by_role("button", name="Save Settings").click()
+
+
+@when("the user cancels the selection settings")
+def user_cancels_settings(admin_logged_in_page: Page):
+    _dialog(admin_logged_in_page).get_by_role("button", name="Cancel", exact=True).click()
+
+
+@then("the selection settings dialog is open")
+def settings_dialog_open(admin_logged_in_page: Page):
+    expect(_dialog(admin_logged_in_page)).to_be_visible()
+    expect(_dialog(admin_logged_in_page).get_by_role("heading", name="Selection settings")).to_be_visible()
+
+
+@then("the selection settings dialog is closed")
+def settings_dialog_closed(admin_logged_in_page: Page):
+    expect(_dialog(admin_logged_in_page)).to_have_count(0)
+
+
+@then("focus is on the selection settings cog")
+def focus_on_cog(admin_logged_in_page: Page):
+    expect(_cog(admin_logged_in_page)).to_be_focused()
+
+
+@then(parsers.parse('the dialog says "{text}"'))
+def dialog_says(admin_logged_in_page: Page, text: str):
+    expect(_dialog(admin_logged_in_page)).to_contain_text(text)
 
 
 @then("the settings do not ask for attributes to keep")
 def settings_do_not_ask_for_attributes_to_keep(admin_logged_in_page: Page):
-    settings = admin_logged_in_page.locator("#selection-settings")
+    settings = _dialog(admin_logged_in_page)
     expect(settings.get_by_text("Check same address", exact=True)).to_be_visible()
     expect(settings.get_by_text("Attributes to Keep")).to_have_count(0)
 
@@ -104,22 +156,42 @@ def address_attributes_are(admin_logged_in_page: Page, attributes: str):
     expect(admin_logged_in_page.get_by_label("Address attributes")).to_have_value(attributes)
 
 
-def _edit_button(page: Page):
-    return page.locator("#selection-settings > summary").get_by_text("Edit", exact=True)
+@then("the page says selection is waiting for the selection settings")
+def page_says_waiting_for_settings(admin_logged_in_page: Page):
+    banner = admin_logged_in_page.locator("#selection-waiting")
+    expect(banner).to_contain_text("Before you can run a selection:")
+    expect(banner).to_contain_text("Review and save the selection settings.")
 
 
-@then("the selection settings are folded away with an Edit button")
-def settings_folded_with_edit_button(admin_logged_in_page: Page):
-    expect(admin_logged_in_page.get_by_role("button", name="Save settings")).to_be_hidden()
-    expect(_edit_button(admin_logged_in_page)).to_be_visible()
+@then("the page does not say selection is waiting")
+def page_does_not_say_waiting(admin_logged_in_page: Page):
+    expect(admin_logged_in_page.locator("#selection-waiting")).to_have_count(0)
 
 
-@when("the user clicks the Edit button of the selection settings")
-def user_clicks_edit(admin_logged_in_page: Page):
-    _edit_button(admin_logged_in_page).click()
+def _run_selection(page: Page):
+    return page.locator("#initial-selection-step").get_by_role("button", name="Run Selection", exact=True)
 
 
-@then("the selection settings are open with no Edit button")
-def settings_open_without_edit_button(admin_logged_in_page: Page):
-    expect(admin_logged_in_page.get_by_role("button", name="Save settings")).to_be_visible()
-    expect(_edit_button(admin_logged_in_page)).to_be_hidden()
+@then("running a selection is not possible")
+def running_not_possible(admin_logged_in_page: Page):
+    expect(_run_selection(admin_logged_in_page)).to_be_disabled()
+
+
+@then("running a selection is possible")
+def running_possible(admin_logged_in_page: Page):
+    expect(_run_selection(admin_logged_in_page)).to_be_enabled()
+
+
+@then("the user is on the selection page")
+def user_on_selection_page(admin_logged_in_page: Page, test_assembly):
+    assert admin_logged_in_page.url.split("#")[0].split("?")[0] == Urls.assembly_selection(test_assembly.id)
+
+
+@then("the user is on the project details page")
+def user_on_details_page(admin_logged_in_page: Page, test_assembly):
+    assert admin_logged_in_page.url.split("#")[0].split("?")[0] == Urls.backoffice_assembly_url(test_assembly.id)
+
+
+@then(parsers.parse('the selection settings card says "{text}"'))
+def settings_card_says(admin_logged_in_page: Page, text: str):
+    expect(admin_logged_in_page.locator("#selection-settings")).to_contain_text(text)

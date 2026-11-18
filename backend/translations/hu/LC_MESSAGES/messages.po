@@ -645,8 +645,8 @@ msgstr "Kiválasztva"
 #: src/opendlp/entrypoints/blueprints/respondents.py
 #: src/opendlp/service_layer/dashboard_stats.py
 #: templates/backoffice/assembly_dashboard.html
-#: templates/backoffice/components/selection_settings.html
 #: templates/backoffice/components/table.html
+#: templates/backoffice/project_details/_selection_settings_card.html
 #: templates/respondents/view_respondents.html
 msgid "Confirmed"
 msgstr "Megerősítve"
@@ -1012,7 +1012,7 @@ msgstr ""
 " kieső emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 #: templates/backoffice/data_source/_parts.html
 msgid "Check same address"
 msgstr "Címegyezés ellenőrzése"
@@ -1330,7 +1330,7 @@ msgid "Prevent selecting multiple respondents from the same address"
 msgstr "Ne lehessen több jelentkezőt kiválasztani ugyanarról a címről"
 
 #: src/opendlp/entrypoints/forms.py
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 msgid "Address attributes"
 msgstr "Cím attribútumok"
 
@@ -2348,7 +2348,6 @@ msgstr ""
 "beállításokat."
 
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py
-#: templates/backoffice/components/selection_steps.html
 msgid "Please review and save the selection settings before running selection."
 msgstr ""
 "A kiválasztás futtatása előtt nézd át és mentsd el a kiválasztási "
@@ -5020,6 +5019,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/components/edit_number_to_select_modal.html
 #: templates/backoffice/components/respondent_status_form.html
 #: templates/backoffice/components/rich_editor_link_modal.html
+#: templates/backoffice/components/selection_settings_dialog.html
 #: templates/backoffice/dashboard_export_modal.html
 #: templates/backoffice/data_source/_dialog.html
 #: templates/backoffice/profile/2fa_setup.html
@@ -5339,7 +5339,6 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/assembly_respondents.html
 #: templates/backoffice/assembly_view_respondent.html
 #: templates/backoffice/components/registration_page_list.html
-#: templates/backoffice/components/selection_settings.html
 #: templates/backoffice/components/selection_steps.html
 #: templates/backoffice/registration/_step_email.html
 #: templates/backoffice/registration/_step_form.html
@@ -5856,6 +5855,30 @@ msgid "View Data Configuration"
 msgstr "Adatbeállítások megtekintése"
 
 #: templates/backoffice/assembly_respondents.html
+msgid "No respondents yet"
+msgstr ""
+
+#: templates/backoffice/assembly_respondents.html
+msgid "Respondents arrive in one of two ways:"
+msgstr ""
+
+#: templates/backoffice/assembly_respondents.html
+msgid "Upload a CSV file of people who have already registered elsewhere."
+msgstr ""
+
+#: templates/backoffice/assembly_respondents.html
+msgid "Upload respondents (opens in a new tab)"
+msgstr ""
+
+#: templates/backoffice/assembly_respondents.html
+msgid "Create a registration page for people to fill in."
+msgstr ""
+
+#: templates/backoffice/assembly_respondents.html
+msgid "Go to the Registration tab"
+msgstr ""
+
+#: templates/backoffice/assembly_respondents.html
 msgid "Automatically exported to Google Sheets"
 msgstr "Automatikusan exportálva a Google Táblázatba"
 
@@ -5919,6 +5942,42 @@ msgstr "Adatforrás beállítása"
 #: templates/main/view_assembly_data.html
 msgid "Selection"
 msgstr "Kiválasztás"
+
+#: templates/backoffice/assembly_selection.html
+msgid "Before you can run a selection:"
+msgstr ""
+
+#: templates/backoffice/assembly_selection.html
+msgid "Add targets."
+msgstr ""
+
+#: templates/backoffice/assembly_selection.html
+#: templates/backoffice/target_sources/_checklist.html
+msgid "Go to Targets"
+msgstr "Ugrás a célszámokhoz"
+
+#: templates/backoffice/assembly_selection.html
+msgid "Add respondents."
+msgstr ""
+
+#: templates/backoffice/assembly_selection.html
+msgid "Go to Respondents"
+msgstr ""
+
+#: templates/backoffice/assembly_selection.html
+msgid "Review and save the selection settings."
+msgstr ""
+
+#: templates/backoffice/assembly_selection.html
+msgid "Review selection settings"
+msgstr ""
+
+#: templates/backoffice/assembly_selection.html
+#: templates/backoffice/components/selection_settings_dialog.html
+#: templates/backoffice/project_details/_selection_settings_card.html
+#: templates/db_selection/select.html
+msgid "Selection settings"
+msgstr "Kiválasztási beállítások"
 
 #: templates/backoffice/assembly_selection.html
 msgid "Selection History"
@@ -6052,6 +6111,10 @@ msgstr ""
 #: templates/targets/view_targets.html
 msgid "No targets defined yet."
 msgstr "Még nincsenek meghatározva kiválasztási szempontok."
+
+#: templates/backoffice/assembly_targets.html
+msgid "Import targets from a CSV file (opens in a new tab)"
+msgstr ""
 
 #: templates/backoffice/assembly_targets.html
 msgid "Create from respondent data"
@@ -7375,52 +7438,43 @@ msgstr "Keresési találatok"
 msgid "No results found"
 msgstr "Nincs találat"
 
-#: templates/backoffice/components/selection_settings.html
-#: templates/db_selection/select.html
-msgid "Selection settings"
-msgstr "Kiválasztási beállítások"
-
-#: templates/backoffice/components/selection_settings.html
-msgid "To confirm"
-msgstr ""
-
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 msgid "Configure how the selection algorithm runs for this project."
 msgstr "Állítsd be, hogyan fusson a kiválasztási algoritmus ennél a projektnél."
 
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 msgid "Please review and save these settings before running selection."
 msgstr "A kiválasztás futtatása előtt nézd át és mentsd el ezeket a beállításokat."
 
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 #: templates/backoffice/data_source/_parts.html
 msgid "Prevent selecting multiple respondents from the same address."
 msgstr "Ne lehessen több jelentkezőt kiválasztani ugyanarról a címről."
 
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 #: templates/db_selection/settings.html
 msgid "Available respondent attributes"
 msgstr "Elérhető jelentkezői attribútumok"
 
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 #: templates/db_selection/settings.html
 msgid ""
 "The following attribute names are available from the uploaded respondent "
 "data:"
 msgstr "A feltöltött jelentkezői adatokból a következő attribútumnevek érhetők el:"
 
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 #: templates/backoffice/data_source/_parts.html
 msgid "e.g., Street, City, PostCode"
 msgstr "például: Utca, Város, Irányítószám"
 
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 msgid "Comma-separated respondent attribute names used for address matching."
 msgstr ""
 "A címegyeztetéshez használt jelentkezői attribútumnevek vesszővel "
 "elválasztva."
 
-#: templates/backoffice/components/selection_settings.html
+#: templates/backoffice/components/selection_settings_dialog.html
 #: templates/db_selection/settings.html
 msgid "Save Settings"
 msgstr "Beállítások mentése"
@@ -7488,6 +7542,10 @@ msgid "Wait for the running selection to finish before selecting replacements."
 msgstr ""
 "Várd meg, amíg a futó kiválasztás befejeződik, mielőtt pótszemélyeket "
 "választasz ki."
+
+#: templates/backoffice/components/selection_steps.html
+msgid "Selection is waiting for what is listed at the top of the page."
+msgstr ""
 
 #: templates/backoffice/components/selection_steps.html
 msgid ""
@@ -8210,6 +8268,10 @@ msgstr ""
 #: templates/main/view_assembly_details.html
 msgid "Last Updated"
 msgstr "Utoljára módosítva"
+
+#: templates/backoffice/project_details/_selection_settings_card.html
+msgid "To confirm"
+msgstr ""
 
 #: templates/backoffice/project_details/_team_add_dialog.html
 #: templates/backoffice/project_details/_team_card.html
@@ -9536,10 +9598,6 @@ msgstr ""
 "Ehhez a projekthez még nincsenek kiválasztási szempontok beállítva. Előbb"
 " add meg a szempontokat – ezután mindegyik kap itt egy sort, amely "
 "megmondja, honnan származnak az adatai."
-
-#: templates/backoffice/target_sources/_checklist.html
-msgid "Go to Targets"
-msgstr "Ugrás a célszámokhoz"
 
 #: templates/backoffice/target_sources/_checklist.html
 #, python-format

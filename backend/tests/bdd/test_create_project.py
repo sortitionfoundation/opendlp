@@ -82,6 +82,23 @@ def back_a_step(page: Page) -> None:
         _dialog(page).get_by_role("button", name="Back", exact=True).click()
 
 
+@when(parsers.parse('I click the step "{step}"'))
+def click_the_step(page: Page, step: str) -> None:
+    with page.expect_response(lambda response: response.url.endswith("/project/new/step")):
+        _dialog(page).locator("a.stepper-link").filter(has_text=step).click()
+
+
+@then("focus is on the target data source")
+def focus_is_on_the_target_source(page: Page) -> None:
+    expect(_dialog(page).locator("#project-targets-source")).to_be_focused()
+
+
+@then("the steps are no longer links")
+def steps_are_not_links(page: Page) -> None:
+    expect(_dialog(page).locator("a.stepper-link")).to_have_count(0)
+    expect(_dialog(page).locator('span.stepper-link[aria-disabled="true"]')).to_have_count(3)
+
+
 @then("I can go back a step")
 def can_go_back(page: Page) -> None:
     expect(_dialog(page).get_by_role("button", name="Back", exact=True)).to_be_visible()

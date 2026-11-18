@@ -1216,9 +1216,22 @@ class TestSelectionSettingsDialog:
             headers=HTMX,
         )
 
-        assert response.headers["HX-Redirect"].endswith(f"/backoffice/project/{assembly.id}#selection-settings")
+        assert response.headers["HX-Refresh"] == "true"
+        assert "HX-Redirect" not in response.headers
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.assemblies.get(assembly.id).csv.settings_confirmed is True
+
+    def test_opened_from_project_details_a_save_without_htmx_goes_back_there(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.post(
+            _settings_url(assembly.id), data={"check_same_address_cols_string": "", "from": "details"}
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/project/{assembly.id}#selection-settings")
 
     def test_where_to_go_back_to_is_a_token_not_an_address(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
         assembly = assembly_with_csv_config_unconfirmed
