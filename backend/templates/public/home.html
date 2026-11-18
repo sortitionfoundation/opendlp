@@ -1,6 +1,6 @@
 {#
 ABOUTME: Public home page on the OpenDLP design system, served at /
-ABOUTME: Header, hero with the lottery animation, why sortition is hard, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6524-18922
+ABOUTME: Header, hero with the product demo, why sortition is hard, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6524-18922
 #}
 {#
    Colours and fonts follow the backoffice design system rather than the
@@ -119,9 +119,8 @@ ABOUTME: Header, hero with the lottery animation, why sortition is hard, how it 
                             <li><strong style="color: var(--color-brand-700)">30+</strong> {{ _("lotteries already run in OpenDLP") }}</li>
                         </ul>
                     </div>
-                    <div class="w-full max-w-2xl mx-auto lg:max-w-none"
-                         style="filter: drop-shadow(0 12px 28px rgba(94, 0, 58, 0.14))">
-                        {% include "public/_hero_animation.html" %}
+                    <div class="w-full max-w-2xl mx-auto lg:max-w-none">
+                        {% include "public/_hero_demo.html" %}
                     </div>
                 </div>
             </section>
@@ -329,4 +328,7 @@ ABOUTME: Header, hero with the lottery animation, why sortition is hard, how it 
             </p>
         </footer>
     </div>
+    <script nonce="{{ csp_nonce }}"
+            src="{{ url_for('static', filename='js/hero-demo.js', v=static_hashes('js/hero-demo.js')) }}"
+            defer></script>
 {% endblock %}

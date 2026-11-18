@@ -1,0 +1,198 @@
+{#
+ABOUTME: The home page hero demo: five simplified screens of the backoffice, built from the design-system macros,
+ABOUTME: through which one cursor creates a project, sets its targets, runs the selection and sees the result.
+#}
+{#
+   The scenes are plain markup; src/js/hero-demo.js (bundled to js/hero-demo.js) plays them (see its header). Without JavaScript, or when the
+   visitor prefers reduced motion, the stage shows the last scene at rest. Every label is the real screen's label,
+   so the catalogue already has most of them; the texts the cursor types are data attributes, so the script
+   carries no words. The app layer is laid out at 800px and scaled to the frame, so the screens keep the
+   proportions of a desktop window at every width.
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/card.html" import card %}
+{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/page_header.html" import page_header %}
+{% from "backoffice/components/tag.html" import tag %}
+{% from "backoffice/components/icons.html" import icon_check, icon_plus %}
+{% from "backoffice/components/modal.html" import progress_bar, status_badge, dialog_header %}
+{% from "backoffice/components/alert.html" import alert %}
+{% set project_title = _("Citizens' Assembly on Climate") %}
+{% macro pie(title, slices) %}
+    {# The dashboard's pie card box (pie_chart_card), with the pie drawn in CSS so the home page needs no Chart.js.
+       slices: list of (label, percent, colour). #}
+    {% set ns = namespace(stops=[], at=0) %}
+    {% for label, pct, colour in slices %}
+        {% set _ = ns.stops.append(colour ~ " " ~ ns.at ~ "% " ~ (ns.at + pct) ~ "%") %}
+        {% set ns.at = ns.at + pct %}
+    {% endfor %}
+    <div class="rounded-3xl p-4 flex flex-col gap-4 w-full h-full"
+         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+        <p class="text-display-sm" style="color: var(--color-display-text);">{{ title }}</p>
+        <div class="flex items-center justify-center w-full" style="height: 150px;">
+            <div class="hero-demo__pie" aria-hidden="true"
+                 style="background: conic-gradient({{ ns.stops | join(', ') }});"></div>
+        </div>
+    </div>
+{% endmacro %}
+<div class="hero-demo" data-hero-demo>
+    <p class="sr-only">{{ _("A short demonstration of OpenDLP: an organiser creates a project, names it, sets its targets, runs the selection, and the dashboard shows a panel that matches every target.") }}</p>
+    <div class="hero-demo__frame" aria-hidden="true">
+        <div class="hero-demo__chrome"><span></span><span></span><span></span><i></i></div>
+        <div class="hero-demo__viewport">
+            <div class="hero-demo__app" data-demo-app>
+                {# The backoffice bar, as the navigation macro draws it: the logo left, the account avatar right. #}
+                <div class="w-full px-10" style="background-color: var(--color-tables-cards); border-bottom: 1px solid var(--color-borders-dividers);">
+                    <div class="flex items-center justify-between gap-4">
+                        <img src="{{ url_for('static', filename='img/opendlp-small-sized-logo.svg') }}" alt="" width="142" height="64">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-label-md"
+                              style="background-color: var(--color-brand-700); color: var(--color-neutral-0);">AB</span>
+                    </div>
+                </div>
+                <div class="hero-demo__scenes">
+                    {# 1 · Your projects #}
+                    <section class="hero-demo__scene" data-scene="projects">
+                        <div class="flex items-center justify-between gap-4 mb-2">
+                            <h2 class="text-display-sm" style="color: var(--color-display-text);">{{ _("Your projects") }}</h2>
+                            {{ button(_("Create project"), variant="primary", attrs='data-demo="create-project"') }}
+                        </div>
+                        <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Welcome back, %(name)s!", name="Alex") }}</p>
+                        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem;">
+                            {% call card(title=_("Youth Panel on Transport"), subtitle=_("Created: %(date)s", date="3 Oct 2026")) %}
+                                <p class="text-body-md" style="color: var(--color-body-text);">{{ _("How should young people get around our city?") }}</p>
+                            {% endcall %}
+                            {% call card(title=_("Housing Forum"), subtitle=_("Created: %(date)s", date="21 Aug 2026")) %}
+                                <p class="text-body-md" style="color: var(--color-body-text);">{{ _("Where should the next 5,000 homes go?") }}</p>
+                            {% endcall %}
+                        </div>
+                    </section>
+                    {# 2 · Create project #}
+                    <section class="hero-demo__scene" data-scene="create">
+                        <h2 class="text-display-sm mb-1" style="color: var(--color-display-text);">{{ _("Create project") }}</h2>
+                        <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Set up a new project.") }}</p>
+                        <div class="flex flex-col gap-6 max-w-lg">
+                            {{ input("demo-title", label=_("Project title"), hint=_("Enter the title for this project"), required=true, attrs='data-demo="title" data-type="' ~ project_title ~ '" tabindex="-1" readonly') }}
+                            {{ input("demo-size", label=_("Panel size"), hint=_("The number of participants to select for this event"), type="number", required=true, classes="w-40", attrs='data-demo="size" data-type="30" tabindex="-1" readonly') }}
+                            <div class="flex gap-2">
+                                {{ button(_("Create project"), variant="primary", attrs='data-demo="submit-create"') }}
+                                {{ button(_("Cancel"), variant="secondary") }}
+                            </div>
+                        </div>
+                    </section>
+                    {# 3 · Targets #}
+                    <section class="hero-demo__scene" data-scene="targets">
+                        {{ page_header(title=project_title) }}
+                        <div class="flex items-baseline gap-3 mt-3 mb-3">
+                            <h3 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Targets") }}</h3>
+                            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Panel size: %(number)s", number=30) }}</p>
+                        </div>
+                        {% call card(title=_("Gender")) %}
+                            <table class="w-full">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                        <th class="text-left py-2 text-label-md" style="color: var(--color-headings);">{{ _("Value") }}</th>
+                                        <th class="text-right py-2 text-label-md" style="color: var(--color-headings);">{{ _("Population") }} %</th>
+                                        <th class="text-left py-2 pl-6 text-label-md" style="color: var(--color-headings);">{{ _("Min") }}</th>
+                                        <th class="text-left py-2 pl-3 text-label-md" style="color: var(--color-headings);">{{ _("Max") }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for value, pct, lo, hi in [(_("Female"), "51%", 14, 16), (_("Male"), "47%", 12, 14), (_("Non-binary"), "2%", 0, 3)] %}
+                                        <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                                            <td class="py-1 text-body-md" style="color: var(--color-body-text);">{{ value }}</td>
+                                            <td class="py-1 text-body-md text-right" style="color: var(--color-body-text);">{{ pct }}</td>
+                                            <td class="py-1 pl-6">{{ input("demo-min-" ~ loop.index, type="number", classes="w-24", aria_label=value ~ " " ~ _("Min"), attrs='data-demo="min-' ~ loop.index ~ '" data-type="' ~ lo ~ '" tabindex="-1" readonly') }}</td>
+                                            <td class="py-1 pl-3">{{ input("demo-max-" ~ loop.index, type="number", classes="w-24", aria_label=value ~ " " ~ _("Max"), attrs='data-demo="max-' ~ loop.index ~ '" data-type="' ~ hi ~ '" tabindex="-1" readonly') }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endcall %}
+                    </section>
+                    {# 4 · Select and replace #}
+                    <section class="hero-demo__scene" data-scene="selection">
+                        {{ page_header(title=project_title) }}
+                        <div class="selection-step mt-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers); border-radius: 0.5rem; padding: 1rem 1.5rem; display: flex; gap: 1rem; align-items: center;">
+                            <span class="stepper-number" aria-hidden="true">1</span>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-heading-sm">{{ _("Initial Selection") }}</h3>
+                                <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Run the sortition algorithm to select participants from the uploaded CSV data based on demographic targets.") }}</p>
+                                <div class="hero-demo__status rounded-lg px-4 py-2 mt-2 flex items-center gap-2 max-w-xl" data-demo="status-panel">
+                                    <span class="hero-demo__status-check">{{ icon_check(classes="w-6 h-6 flex-shrink-0") }}</span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-body-sm">{{ _("Panel size:") }} <span class="text-heading-sm">30</span></p>
+                                        <p class="text-body-sm">{{ _("Selected or confirmed:") }} <span class="text-heading-sm" data-demo="held">0</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>{{ button(_("Run Selection"), variant="primary", attrs='data-demo="run"') }}</div>
+                        </div>
+                        <div class="mt-6">
+                            {% call card(title=_("Selection History")) %}
+                                <p class="text-body-sm" data-demo="history-empty" style="color: var(--color-secondary-text);">{{ _("No selection has been run yet.") }}</p>
+                                <table class="w-full" data-demo="history" hidden>
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                                            <th class="text-left py-2 text-label-md" style="color: var(--color-headings);">{{ _("Status") }}</th>
+                                            <th class="text-left py-2 text-label-md" style="color: var(--color-headings);">{{ _("Selection") }}</th>
+                                            <th class="text-left py-2 text-label-md" style="color: var(--color-headings);">{{ _("Started By") }}</th>
+                                            <th class="text-left py-2 text-label-md" style="color: var(--color-headings);">{{ _("Completed At") }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="py-3">{{ tag(_("Completed"), colour="green") }}</td>
+                                            <td class="py-3 text-body-sm" style="color: var(--color-body-text);">{{ _("Initial Selection") }}</td>
+                                            <td class="py-3 text-body-sm" style="color: var(--color-body-text);">Alex</td>
+                                            <td class="py-3 text-body-sm" style="color: var(--color-body-text);">{{ _("Just now") }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% endcall %}
+                        </div>
+                    </section>
+                    {# 5 · Dashboard #}
+                    <section class="hero-demo__scene" data-scene="dashboard">
+                        {{ page_header(title=project_title) }}
+                        <div class="flex items-center gap-3 mt-4 mb-4">
+                            <h3 class="text-display-sm" style="color: var(--color-display-text);">{{ _("Gender") }}</h3>
+                            {{ tag(_("Selected") ~ ": 30 / 30", colour="green") }}
+                        </div>
+                        {% set slices = [(_("Female"), 50, "var(--color-data-blue-400)"), (_("Male"), 43, "var(--color-data-orange-100)"), (_("Non-binary"), 7, "var(--color-data-pink-700)")] %}
+                        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;">
+                            {{ pie(_("Target"), slices) }}
+                            {{ pie(_("Respondents"), [(_("Female"), 52, "var(--color-data-blue-400)"), (_("Male"), 44, "var(--color-data-orange-100)"), (_("Non-binary"), 4, "var(--color-data-pink-700)")]) }}
+                            {{ pie(_("Selected"), slices) }}
+                        </div>
+                        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center mt-3">
+                            {% for label, pct, colour in slices %}
+                                <span class="flex gap-1.5 items-center text-caption" style="color: var(--color-headings);">
+                                    <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 2px; background-color: {{ colour }};"></span>{{ label }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+                {# The task progress dialog, as progress_modal draws it, over the selection scene #}
+                <div class="hero-demo__modal" data-demo="modal" hidden>
+                    <div class="dialog-backdrop"></div>
+                    <div class="dialog-positioner">
+                        <div class="dialog-panel dialog-panel--default hero-demo__panel">
+                            {% call dialog_header(title=_("Task progress")) %}{% endcall %}
+                            <div class="p-6">
+                                <div data-demo="modal-done" hidden>
+                                    {% call alert(variant="success", use_caller=true) %}{{ _("Task completed successfully.") }} {{ _("30 people selected.") }}{% endcall %}
+                                </div>
+                                <div class="mb-4"><span class="text-body-sm" style="color: var(--color-headings)">{{ _("Task:") }}</span> <span class="text-body-md">{{ _("Initial Selection") }}</span></div>
+                                <div data-demo="badge-running">{{ status_badge("running", _("Status"), label_classes="text-body-sm") }}</div>
+                                <div data-demo="badge-done" hidden>{{ status_badge("completed", _("Status"), label_classes="text-body-sm") }}</div>
+                                <div data-demo="progress">{{ progress_bar(label=_("Selecting participants…"), current=0, total=100) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <svg class="hero-demo__cursor" data-demo="cursor" viewBox="0 0 20 24" width="20" height="24"><path d="M1 1l0 17 4.5-4 3 7 3-1.3-3-6.8h6z" fill="#2F3442" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
+    </div>
+</div>

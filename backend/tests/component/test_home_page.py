@@ -65,10 +65,14 @@ class TestHomePage:
         assert "img/opendlp-favicon.svg" in response.text
         assert "img/opendlp-logo-light.svg" not in response.text
 
-    def test_hero_carries_the_lottery_animation(self, client: FlaskClient) -> None:
+    def test_hero_carries_the_product_demo(self, client: FlaskClient) -> None:
+        """The demo's five screens are on the page, and its script loads under the page's nonce."""
         response = client.get("/")
-        assert 'class="hero-draw"' in response.text
-        assert "How a democratic lottery works in OpenDLP" in response.text
+        assert "data-hero-demo" in response.text
+        for scene in ("projects", "create", "targets", "selection", "dashboard"):
+            assert f'data-scene="{scene}"' in response.text
+        assert "js/hero-demo.js" in response.text
+        assert "A short demonstration of OpenDLP" in response.text
 
     def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/")
@@ -105,8 +109,9 @@ class TestHomePage:
     def test_hero_leads_with_create_account(self, client: FlaskClient) -> None:
         """Create account is the primary button and comes first; Contact us is secondary."""
         response = client.get("/")
+        # The text column only: the demo beside it has buttons of its own.
         hero_start = response.text.index("<h1")
-        hero = response.text[hero_start : response.text.index("</section>", hero_start)]
+        hero = response.text[hero_start : response.text.index("data-hero-demo", hero_start)]
         assert hero.count("btn--primary") == 1
         assert hero.count("btn--secondary") == 1
         assert hero.index("/auth/register") < hero.index("mailto:")

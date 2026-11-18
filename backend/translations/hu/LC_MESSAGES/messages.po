@@ -73,7 +73,7 @@ msgstr "Feldolgozás…"
 #: templates/backoffice/respondents/export_modal.html
 #: templates/backoffice/targets/table_cells.html
 #: templates/db_selection/select.html templates/main/view_assembly_base.html
-#: templates/respondents/view_respondents.html
+#: templates/public/_hero_demo.html templates/respondents/view_respondents.html
 #: templates/targets/components/category_block.html
 msgid "Respondents"
 msgstr "Jelentkezők"
@@ -86,7 +86,7 @@ msgstr "Eredmények"
 #: templates/backoffice/assembly_data.html
 #: templates/backoffice/assembly_targets.html
 #: templates/backoffice/components/assembly_tabs.html
-#: templates/main/view_assembly_base.html templates/public/_hero_animation.html
+#: templates/main/view_assembly_base.html templates/public/_hero_demo.html
 #: templates/targets/view_targets.html
 msgid "Targets"
 msgstr "Célszámok"
@@ -600,7 +600,7 @@ msgstr "Jelentkezők"
 #: templates/backoffice/assembly_view_respondent.html
 #: templates/backoffice/components/table.html
 #: templates/backoffice/targets/table_cells.html
-#: templates/respondents/view_respondents.html
+#: templates/public/_hero_demo.html templates/respondents/view_respondents.html
 msgid "Selected"
 msgstr "Kiválasztva"
 
@@ -827,10 +827,11 @@ msgstr "Új jelszó megerősítése"
 
 #: src/opendlp/entrypoints/forms.py
 #: templates/backoffice/registration/_step_email.html
+#: templates/public/_hero_demo.html
 msgid "Project title"
 msgstr "Projekt címe"
 
-#: src/opendlp/entrypoints/forms.py
+#: src/opendlp/entrypoints/forms.py templates/public/_hero_demo.html
 msgid "Enter the title for this project"
 msgstr "Add meg a projekt címét"
 
@@ -853,11 +854,11 @@ msgstr "Nem kötelező – az esemény első ülésének időpontja"
 
 #: src/opendlp/entrypoints/forms.py templates/backoffice/assembly_details.html
 #: templates/backoffice/assembly_targets.html
-#: templates/main/view_assembly_details.html
+#: templates/main/view_assembly_details.html templates/public/_hero_demo.html
 msgid "Panel size"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py
+#: src/opendlp/entrypoints/forms.py templates/public/_hero_demo.html
 msgid "The number of participants to select for this event"
 msgstr "Az eseményre kiválasztandó résztvevők száma"
 
@@ -1169,6 +1170,7 @@ msgstr ""
 #: templates/backoffice/components/db_selection_progress_modal.html
 #: templates/backoffice/targets/bulk_edit_form.html
 #: templates/backoffice/targets/category_block.html
+#: templates/public/_hero_demo.html
 #: templates/targets/components/category_block.html
 msgid "Value"
 msgstr "Érték"
@@ -1190,6 +1192,7 @@ msgstr "Nem kötelező – a minimum és a maximum ebből adódik"
 #: templates/backoffice/components/db_selection_progress_modal.html
 #: templates/backoffice/targets/bulk_edit_form.html
 #: templates/backoffice/targets/category_block.html
+#: templates/public/_hero_demo.html
 #: templates/targets/components/category_block.html
 msgid "Min"
 msgstr "Min."
@@ -1199,6 +1202,7 @@ msgstr "Min."
 #: templates/backoffice/components/db_selection_progress_modal.html
 #: templates/backoffice/targets/bulk_edit_form.html
 #: templates/backoffice/targets/category_block.html
+#: templates/public/_hero_demo.html
 #: templates/targets/components/category_block.html
 msgid "Max"
 msgstr "Max."
@@ -1673,6 +1677,7 @@ msgstr "Hiba történt a projekt betöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py
 #: templates/backoffice/assembly_dashboard.html
+#: templates/public/_hero_demo.html
 msgid "Population"
 msgstr "Népesség"
 
@@ -1689,6 +1694,7 @@ msgstr ""
 #: src/opendlp/service_layer/selection_report.py
 #: templates/backoffice/components/db_replacement_modal.html
 #: templates/backoffice/components/db_selection_progress_modal.html
+#: templates/public/_hero_demo.html
 msgid "Target"
 msgstr "Kezdés dátuma"
 
@@ -4746,7 +4752,7 @@ msgstr "Menü bezárása"
 #: templates/backoffice/dashboard.html templates/base.html
 #: templates/errors/400.html templates/errors/403.html
 #: templates/errors/404.html templates/errors/413.html
-#: templates/errors/500.html
+#: templates/errors/500.html templates/public/_hero_demo.html
 msgid "Your projects"
 msgstr "Projektjeid"
 
@@ -4930,7 +4936,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/gsheets/create_config.html templates/gsheets/edit_config.html
 #: templates/gsheets/manage_tabs.html templates/gsheets/replace.html
 #: templates/gsheets/select.html templates/main/create_assembly.html
-#: templates/main/edit_assembly.html
+#: templates/main/edit_assembly.html templates/public/_hero_demo.html
 #: templates/targets/components/category_block.html
 #: templates/targets/components/category_name_edit.html
 msgid "Cancel"
@@ -4978,7 +4984,7 @@ msgstr "Szerepkör"
 #: templates/backoffice/components/selection_progress_modal.html
 #: templates/backoffice/respondents/export_modal.html
 #: templates/main/view_assembly_data.html
-#: templates/main/view_assembly_details.html
+#: templates/main/view_assembly_details.html templates/public/_hero_demo.html
 #: templates/respondents/view_respondents.html
 msgid "Status"
 msgstr "Állapot"
@@ -5512,6 +5518,7 @@ msgstr "Vezérlőpult"
 
 #: templates/backoffice/assembly_dashboard.html
 #: templates/backoffice/components/selection_steps.html
+#: templates/public/_hero_demo.html
 msgid "Panel size:"
 msgstr ""
 
@@ -6230,7 +6237,7 @@ msgstr "Adatforrás beállítása"
 
 #: templates/backoffice/assembly_selection.html
 #: templates/db_selection/select.html templates/gsheets/select.html
-#: templates/main/view_assembly_data.html
+#: templates/main/view_assembly_data.html templates/public/_hero_demo.html
 msgid "Selection"
 msgstr "Kiválasztás"
 
@@ -6239,6 +6246,7 @@ msgid "Go to Data Settings"
 msgstr "Ugrás az adatbeállításokhoz"
 
 #: templates/backoffice/assembly_selection.html
+#: templates/public/_hero_demo.html
 msgid "Selection History"
 msgstr "Kiválasztások előzményei"
 
@@ -6262,7 +6270,7 @@ msgid "Show all runs"
 msgstr "Minden futtatás mutatása"
 
 #: templates/backoffice/assembly_selection.html
-#: templates/main/view_assembly_data.html
+#: templates/main/view_assembly_data.html templates/public/_hero_demo.html
 msgid "Started By"
 msgstr "Elindította"
 
@@ -6282,7 +6290,7 @@ msgstr "Elkezdve"
 #: templates/backoffice/components/selection_progress_modal.html
 #: templates/db_selection/components/progress.html
 #: templates/gsheets/components/progress.html
-#: templates/main/view_assembly_data.html
+#: templates/main/view_assembly_data.html templates/public/_hero_demo.html
 msgid "Completed At"
 msgstr "Befejezve"
 
@@ -6359,7 +6367,7 @@ msgstr "Kezdeti kiválasztás kiválasztási szempontok munkalapja:"
 msgid "Replacement Categories Tab:"
 msgstr "Pótláshoz tartozó kiválasztási szempontok munkalapja:"
 
-#: templates/backoffice/assembly_targets.html
+#: templates/backoffice/assembly_targets.html templates/public/_hero_demo.html
 #, python-format
 msgid "Panel size: %(number)s"
 msgstr ""
@@ -6593,20 +6601,20 @@ msgid "Switch to Site Admin"
 msgstr "Váltás az oldal adminisztrációra"
 
 #: templates/backoffice/create_assembly.html
-#: templates/backoffice/dashboard.html
+#: templates/backoffice/dashboard.html templates/public/_hero_demo.html
 msgid "Create project"
 msgstr "Projekt létrehozása"
 
-#: templates/backoffice/create_assembly.html
+#: templates/backoffice/create_assembly.html templates/public/_hero_demo.html
 msgid "Set up a new project."
 msgstr "Hozz létre egy új projektet."
 
-#: templates/backoffice/dashboard.html
+#: templates/backoffice/dashboard.html templates/public/_hero_demo.html
 #, python-format
 msgid "Welcome back, %(name)s!"
 msgstr "Üdvözlünk újra, %(name)s!"
 
-#: templates/backoffice/dashboard.html
+#: templates/backoffice/dashboard.html templates/public/_hero_demo.html
 #, python-format
 msgid "Created: %(date)s"
 msgstr "Létrehozva: %(date)s"
@@ -6990,12 +6998,14 @@ msgstr "Résztvevők pótlásának futtatása"
 
 #: templates/backoffice/components/db_selection_progress_modal.html
 #: templates/backoffice/components/selection_progress_modal.html
+#: templates/public/_hero_demo.html
 msgid "Task progress"
 msgstr "Feladat előrehaladása"
 
 #: templates/backoffice/components/db_selection_progress_modal.html
 #: templates/backoffice/components/replacement_modal.html
 #: templates/backoffice/components/selection_progress_modal.html
+#: templates/public/_hero_demo.html
 msgid "Task completed successfully."
 msgstr "A feladat sikeresen befejeződött."
 
@@ -7027,6 +7037,7 @@ msgstr "A feladat megszakítva"
 #: templates/backoffice/components/manage_tabs_progress_modal.html
 #: templates/backoffice/components/replacement_modal.html
 #: templates/backoffice/components/selection_progress_modal.html
+#: templates/public/_hero_demo.html
 msgid "Task:"
 msgstr "Feladat:"
 
@@ -7672,10 +7683,12 @@ msgid "No results found"
 msgstr "Nincs találat"
 
 #: templates/backoffice/components/selection_steps.html
+#: templates/public/_hero_demo.html
 msgid "Initial Selection"
 msgstr "Kezdeti kiválasztás"
 
 #: templates/backoffice/components/selection_steps.html
+#: templates/public/_hero_demo.html
 msgid ""
 "Run the sortition algorithm to select participants from the uploaded CSV "
 "data based on demographic targets."
@@ -7700,6 +7713,7 @@ msgstr ""
 "ellenőrizd az adataidat."
 
 #: templates/backoffice/components/selection_steps.html
+#: templates/public/_hero_demo.html
 msgid "Selected or confirmed:"
 msgstr "Kiválasztva vagy megerősítve:"
 
@@ -7726,6 +7740,7 @@ msgstr "Tesztkiválasztás futtatása"
 
 #: templates/backoffice/components/selection_steps.html
 #: templates/db_selection/select.html templates/gsheets/select.html
+#: templates/public/_hero_demo.html
 msgid "Run Selection"
 msgstr "Rétegzett kiválasztás"
 
@@ -10875,7 +10890,7 @@ msgstr "Függőben"
 msgid "Running"
 msgstr "Folyamatban"
 
-#: templates/main/view_assembly_data.html
+#: templates/main/view_assembly_data.html templates/public/_hero_demo.html
 msgid "Completed"
 msgstr "Kész"
 
@@ -10921,62 +10936,81 @@ msgstr ""
 msgid "Add User to Assembly"
 msgstr "Felhasználó hozzáadása a közösségi gyűléshez"
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
-msgid "How a democratic lottery works in OpenDLP"
-msgstr "Így működik a demokratikus sorsolás az OpenDLP-ben"
+msgid "Citizens' Assembly on Climate"
+msgstr "Klímaügyi közösségi gyűlés"
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
 msgid ""
-"A browser window: everyone invited appears as dots, targets are set, one "
-"click selects a panel that matches the targets, and the chosen dots form "
-"the seats of an assembly."
+"A short demonstration of OpenDLP: an organiser creates a project, names "
+"it, sets its targets, runs the selection, and the dashboard shows a panel"
+" that matches every target."
 msgstr ""
-"Egy böngészőablak: a meghívottak pontokként jelennek meg, a célszámok "
-"beállítása után egy kattintás kiválasztja a célszámoknak megfelelő "
-"testületet, és a kiválasztott pontok elfoglalják a közösségi gyűlés "
-"üléseit."
+"Az OpenDLP rövid bemutatója: a szervező létrehoz és elnevez egy "
+"projektet, beállítja a célszámokat, lefuttatja a kiválasztást, és az "
+"irányítópult egy minden célszámnak megfelelő testületet mutat."
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
-msgid "Age"
-msgstr "Életkor"
+msgid "Youth Panel on Transport"
+msgstr "Ifjúsági testület a közlekedésről"
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
+#, fuzzy
+msgid "How should young people get around our city?"
+msgstr "Hogyan közlekedjenek a fiatalok a városunkban?"
+
+#: templates/public/_hero_demo.html
+#, fuzzy
+msgid "Housing Forum"
+msgstr "Lakhatási fórum"
+
+#: templates/public/_hero_demo.html
+#, fuzzy
+msgid "Where should the next 5,000 homes go?"
+msgstr "Hol épüljön fel a következő 5000 lakás?"
+
+#: templates/public/_hero_demo.html
 #, fuzzy
 msgid "Gender"
 msgstr "Nem"
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
-msgid "Region"
-msgstr "Régió"
+msgid "Female"
+msgstr "Nő"
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
-msgid "Select"
-msgstr "Kiválasztás"
+msgid "Male"
+msgstr "Férfi"
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
-msgid "Everyone invited has a chance"
-msgstr "Minden meghívottnak van esélye"
+msgid "Non-binary"
+msgstr "Nem bináris"
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
-msgid "Set the targets"
-msgstr "Célszámok beállítása"
+msgid "No selection has been run yet."
+msgstr "Még nem futott kiválasztás."
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
-msgid "One click runs the lottery"
-msgstr "Egy kattintás, és fut a sorsolás"
+msgid "Just now"
+msgstr "Az imént"
 
-#: templates/public/_hero_animation.html
+#: templates/public/_hero_demo.html
 #, fuzzy
-msgid "A fair, representative panel"
-msgstr "Igazságos, reprezentatív testület"
+msgid "30 people selected."
+msgstr "30 személy kiválasztva."
+
+#: templates/public/_hero_demo.html
+#, fuzzy
+msgid "Selecting participants…"
+msgstr "Résztvevők kiválasztása…"
 
 #: templates/public/_survey_fields.html
 msgid "characters"

@@ -1,8 +1,8 @@
-# 775 — Home page content and the lottery animation
+# 775 — Home page content and the product demo
 
 Status: implemented. The public home page (`templates/public/home.html`) gets
 the content team's second text pass and a hero that shows OpenDLP is a live web
-tool, not a command line: an animated drawing of a democratic lottery.
+tool, not a command line: a short demo of the product.
 
 Design references: the OpenDLP - UI Figma file, home page node `6524-18922`,
 for the sections below the hero; the content doc's "Mock Up Text" tab for every
@@ -23,7 +23,7 @@ dense for a first look, and to show the essence instead: the lottery.
 
 - **Two columns from `lg`** (`grid-cols-[5fr_6fr]`): the heading, the new
   paragraph, the buttons and the two proof lines on the left, left-aligned; the
-  animation on the right. Below `lg` they stack, text first. The header already
+  demo on the right. Below `lg` they stack, text first. The header already
   carries the logo, so the hero no longer repeats the full logo above the
   heading.
 - **Heading** "Bringing Simplicity to Sortition", capitalised as the content doc
@@ -39,39 +39,39 @@ dense for a first look, and to show the essence instead: the lottery.
   "already ran"; the grammar is fixed here and flagged to the author). The
   figures sit outside the translated strings.
 
-## The animation
+## The demo
 
-`templates/public/_hero_animation.html`, an inline SVG; its motion is the
-`.hero-draw` rules in `static/backoffice/src/main.css`. No image file, no
-JavaScript, no library.
+Version 1 was an abstract SVG drawing of the lottery; the stakeholders found it
+too abstract, so the hero now plays a short demo built from the backoffice's
+own components, simplified.
 
-- **Why SVG and CSS, not a gif**: crisp at any size and pixel density, a few
-  kilobytes instead of megabytes, colours from the design tokens, the captions
-  translatable through the catalogue like any other string, a seamless loop, and
-  an honest `prefers-reduced-motion` fallback. A gif can do none of those; a
-  Lottie file would need a design tool to author and a runtime to play.
-- **What it shows**, in an abstract browser window, one loop of 17 seconds:
-  everyone invited appears as 64 dots in three groups (plum, red, orange: half,
-  a third, a fifth of the people); a Targets card slides in and its three bars
-  fill; a cursor moves to Select and clicks it; the chosen dots are picked out
-  and fly to their seats in an assembly semicircle, the arch of the OpenDLP
-  logo; a green tick appears by each target bar, the panel matches the
-  targets. The panel keeps the population's proportions (10 / 6 / 4), which is
-  the point of the drawing. A caption under the drawing names each beat.
-- **How it is built**: every element's keyframes are expressed as percentages of
-  the same 17 s clock, so nothing drifts. Each dot carries its own appearance
-  delay (`--d`); a chosen dot also carries the offset to its seat (`--dx`,
-  `--dy`), used by one shared `transform: translate(var(--dx), var(--dy))`
-  keyframe. The seat outlines are drawn before the dots so the dots cover them.
-  The geometry came from a one-off script; the file is plain markup and is
-  edited by hand from here.
-- **Accessibility**: the SVG has `role="img"` with a title and a description
-  that tell the story in words. Under `prefers-reduced-motion: reduce` every
-  animation is off and the drawing shows its result: the panel seated, the
-  targets met, the last caption.
-- **Colours**: the dots use `--color-brand-500` and `--color-brand-300`, plus
-  the logo orange `#FB5732`, which has no token (see the note at the top of
-  `home.html`). Text and the button use the neutral, brand and success tokens.
+- **Where**: `templates/public/_hero_demo.html` holds five screens; the
+  `.hero-demo` rules in `main.css` style the frame; `src/js/hero-demo.js`
+  (bundled to `static/js/hero-demo.js`, loaded under the page's CSP nonce)
+  plays them.
+- **What it shows**, one cursor, about thirty seconds a loop: *Your projects*
+  with two project cards, the cursor clicks Create project; *Create project*,
+  the title "Citizens' Assembly on Climate" and the panel size 30 typed in;
+  *Targets*, the Gender card alone, Min and Max typed into each row, no tabs,
+  no Edit or Save; *Select and replace*, Run Selection, the Task progress
+  dialog with its bar and the success alert, then the green panel and a
+  Completed row in Selection history; the *Dashboard*, Gender's Target,
+  Respondents and Selected pie cards, the Selected pie the same shape as the
+  Target one.
+- **Real components**: button, card, input, page header, tag, the dialog's
+  backdrop, positioner and header, alert, status badge and progress bar come
+  from the design-system macros, so the demo is the app's markup and styles.
+  The pie cards use the dashboard card's box with the pie drawn as a CSS
+  conic gradient, so the home page does not load Chart.js.
+- **How it plays**: the app layer is laid out at 800px and scaled to the
+  column, so it reads as a desktop window at any width. The script finds each
+  target by its `data-demo` name and reads what to type from `data-type`, so
+  it carries no words and works in every language. A click is a small dip of
+  the cursor and the target pressed. The loop pauses while the hero is off
+  screen.
+- **Fallbacks and accessibility**: the frame is `aria-hidden`; an `sr-only`
+  paragraph tells the story. Under `prefers-reduced-motion`, or without
+  JavaScript, the last screen shows at rest.
 
 ## "Sortition is complicated"
 
@@ -100,11 +100,11 @@ passes.
 
 - Component (`tests/component/test_home_page.py`): the new titles, the problem
   section, Create account before Contact us with the two button variants, the
-  proof lines, the animation's presence, and the slogan split with the new
+  proof lines, the demo's five screens and its script, and the slogan split with the new
   heading shape. The hero logo assertion now checks the full logo is gone and
   the footer's compact logo stays.
 - BDD (`features/home-page.feature`): the two "centred under the logo"
-  scenarios are replaced by two layout scenarios, the animation to the right of
+  scenarios are replaced by two layout scenarios, the demo to the right of
   the heading at 1440 and below it at 375, plus the existing phone-width and
   sign-in scenarios.
 - Two older component tests, the footer and header help links, fail on this
