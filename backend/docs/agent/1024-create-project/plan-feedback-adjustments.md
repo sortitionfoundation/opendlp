@@ -206,7 +206,7 @@ lands back on the details page. Nothing else is in the card.
 
 1. ✅ Clickable stepper.
 2. ✅ Tabs always enabled for OpenDLP; Respondents empty state; Targets link.
-3. Selection settings dialog, the Select tab's banner and cog.
+3. ✅ Selection settings dialog, the Select tab's banner and cog.
 4. Selection settings card on Project details.
 5. Google Sheets: no Registration tab or card; direct links to the dialog.
 6. BDD sweep, catalogues, docs.

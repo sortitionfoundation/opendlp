@@ -4,13 +4,17 @@ ABOUTME: Provides /backoffice/project/*/selection/db/* routes for selection, pro
 import uuid
 
 import structlog
-from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, current_app, flash, make_response, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_url_generator
-from opendlp.entrypoints.blueprints.gsheets import redirect_to_running_task, render_selection_page
+from opendlp.entrypoints.blueprints.gsheets import (
+    redirect_to_running_task,
+    render_selection_page,
+    unbound_selection_settings_form,
+)
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.service_layer.assembly_service import (
@@ -64,9 +68,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         if not csv_config.settings_confirmed:
             flash(_("Please review and save the selection settings before checking data"), "warning")
-            return redirect(
-                url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, _anchor="selection-settings")
-            )
+            return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, settings=1))
 
         with uow:
             check_result = check_db_selection_data(uow=uow, user_id=current_user.id, assembly_id=assembly_id)
@@ -112,9 +114,7 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
             if not csv_config.settings_confirmed:
                 flash(_("Please review and save the selection settings before running selection"), "warning")
-                return redirect(
-                    url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, _anchor="selection-settings")
-                )
+                return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, settings=1))
 
             task_id = start_db_select_task(uow, current_user.id, assembly_id, test_selection=test_mode)
 
@@ -161,9 +161,7 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
             if not csv_config.settings_confirmed:
                 flash(_("Please review and save the selection settings before running selection"), "warning")
-                return redirect(
-                    url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, _anchor="selection-settings")
-                )
+                return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, settings=1))
 
             plan = build_replacement_plan(uow, current_user.id, assembly_id)
             validation = validate_replacement_form(uow, assembly_id, plan, request.form, check_feasibility=recheck)
@@ -401,23 +399,98 @@ def download_db_selection_report(assembly_id: uuid.UUID, run_id: uuid.UUID) -> R
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
+SETTINGS_DIALOG_TEMPLATE = "backoffice/components/selection_settings_dialog.html"
+
+# The one page other than the Select and Replace tab that opens the settings dialog.
+SETTINGS_FROM_DETAILS = "details"
+
+
+def _is_htmx() -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def _settings_return_url(assembly_id: uuid.UUID, came_from: str) -> str:
+    """The page the settings dialog was opened from. A token picks it, never an address from the request."""
+    if came_from == SETTINGS_FROM_DETAILS:
+        return url_for("backoffice.view_assembly", assembly_id=assembly_id, _anchor="selection-settings")
+    return url_for("gsheets.view_assembly_selection", assembly_id=assembly_id)
+
+
+def _settings_redirect(location: str) -> ResponseReturnValue:
+    """Redirect, telling htmx to load the page rather than swap it into the dialog host."""
+    if _is_htmx():
+        response = make_response("", 200)
+        response.headers["HX-Redirect"] = location
+        return response
+    return redirect(location)
+
+
+def _render_settings_dialog(
+    assembly_id: uuid.UUID,
+    came_from: str,
+    form: DbSelectionSettingsForm | None = None,
+    status: int = 200,
+) -> ResponseReturnValue:
+    """The settings dialog alone, for the dialog host of the page that asked for it."""
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+        columns = get_respondent_attribute_columns(uow, assembly_id)
+        csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+    return render_template(
+        SETTINGS_DIALOG_TEMPLATE,
+        assembly=assembly,
+        selection_settings_form=form or unbound_selection_settings_form(assembly, columns),
+        selection_settings_columns=columns,
+        csv_settings_confirmed=csv_config.settings_confirmed,
+        selection_settings_from=came_from if came_from == SETTINGS_FROM_DETAILS else "",
+    ), status
+
+
+@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/data/csv/settings")
+@login_required
+@require_assembly_management
+def db_settings_dialog(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """The selection settings dialog of a project held in OpenDLP.
+
+    Over htmx the dialog alone. Without htmx the Select and Replace tab with
+    the dialog open, so the address works as a link.
+    """
+    if not _is_htmx():
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, settings=1))
+    try:
+        return _render_settings_dialog(assembly_id, request.args.get("from", ""))
+    except NotFoundError:
+        flash(_("Project not found"), "error")
+        return _settings_redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to manage this project"), "error")
+        return _settings_redirect(url_for("backoffice.dashboard"))
+
+
 @db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/data/csv/settings", methods=["POST"])
 @login_required
 @require_assembly_management
 def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Save the selection settings of a project held in OpenDLP, from the Select and replace tab."""
+    """Save the selection settings of a project held in OpenDLP, from their dialog.
+
+    Saving loads the page the dialog was opened from. A refusal answers with
+    the dialog again - alone over htmx, or over the Select and Replace tab
+    without it - holding what was typed and the reasons.
+    """
+    came_from = request.form.get("from", "")
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            # Get available columns for form validation (same source as the page's hints)
+            # Get available columns for form validation (same source as the dialog's hints)
             available_columns = get_respondent_attribute_columns(uow, assembly_id)
 
         # Create form with request data for validation
         form = DbSelectionSettingsForm(available_columns=available_columns)
 
         if not form.validate_on_submit():
-            # Re-render the Selection tab with the settings open, so the errors
-            # appear under the fields and what was typed is kept.
+            if _is_htmx():
+                return _render_settings_dialog(assembly_id, came_from, form=form, status=422)
             return render_selection_page(assembly_id, selection_settings_form=form)
 
         # Parse comma-separated columns
@@ -450,18 +523,18 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Selection settings saved successfully"), "success")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return _settings_redirect(_settings_return_url(assembly_id, came_from))
 
     except NotFoundError:
         flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+        return _settings_redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
         flash(_("You don't have permission to manage this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+        return _settings_redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Save DB settings error", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while saving settings"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return _settings_redirect(_settings_return_url(assembly_id, came_from))
 
 
 @db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/reset", methods=["POST"])

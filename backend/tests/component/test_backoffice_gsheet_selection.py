@@ -372,10 +372,11 @@ class TestBackofficeSelectionTab:
     def test_selection_page_loads_without_gsheet_config(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        """Test that selection page loads and shows configure message when no gsheet config."""
+        """With no gsheet config the project is held in OpenDLP: the page says what selection waits for."""
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/selection")
         assert response.status_code == 200
-        assert b"configure" in response.data.lower() or b"Google Sheets" in response.data
+        assert b"Before you can run a selection:" in response.data
+        assert b"Check Spreadsheet" not in response.data
 
     def test_selection_page_loads_with_gsheet_config(
         self, logged_in_admin: FlaskClient, assembly_with_gsheet: tuple[Assembly, AssemblyGSheet]

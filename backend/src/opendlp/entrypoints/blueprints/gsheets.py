@@ -15,7 +15,7 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
-from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import SelectionTaskType
@@ -25,6 +25,7 @@ from opendlp.entrypoints.forms import (
     DbSelectionSettingsForm,
 )
 from opendlp.service_layer.assembly_service import (
+    CSVUploadStatus,
     determine_data_source,
     get_assembly_gsheet,
     get_assembly_with_permissions,
@@ -33,6 +34,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
 from opendlp.service_layer.gsheet_access_check import check_gsheet_access, store_cached_result
+from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.replacement_targets import (
     ReplacementPlan,
     ReplacementValidation,
@@ -239,6 +241,38 @@ def _get_db_replacement_dialog_context(
     return plan, validation
 
 
+# What a selection on a project held in OpenDLP can be waiting for, in the
+# order the page lists them.
+WAITING_FOR_TARGETS = "targets"
+WAITING_FOR_RESPONDENTS = "respondents"
+WAITING_FOR_SETTINGS = "settings"
+
+
+def selection_waiting_for(csv_status: CSVUploadStatus, settings_confirmed: bool) -> list[str]:
+    """What a project held in OpenDLP still needs before a selection can run."""
+    waiting = []
+    if not csv_status.has_targets:
+        waiting.append(WAITING_FOR_TARGETS)
+    if not csv_status.has_respondents:
+        waiting.append(WAITING_FOR_RESPONDENTS)
+    if not settings_confirmed:
+        waiting.append(WAITING_FOR_SETTINGS)
+    return waiting
+
+
+def unbound_selection_settings_form(assembly: Assembly, available_columns: list[str]) -> DbSelectionSettingsForm:
+    """The selection settings form as first shown: holding what is stored."""
+    settings = assembly.selection_settings
+    return DbSelectionSettingsForm(
+        formdata=None,
+        data={
+            "check_same_address": settings.check_same_address if settings else False,
+            "check_same_address_cols_string": settings.check_same_address_cols_string if settings else "",
+        },
+        available_columns=available_columns,
+    )
+
+
 def render_selection_page(
     assembly_id: uuid.UUID,
     *,
@@ -248,9 +282,9 @@ def render_selection_page(
 ) -> ResponseReturnValue:
     """Render the selection page for the current user.
 
-    A project held in OpenDLP has its selection settings on this page. A save
-    that was refused re-renders it with ``selection_settings_form`` carrying
-    the reasons; otherwise the form is built from the stored settings.
+    A project held in OpenDLP has its selection settings in a dialog over this
+    page. A save that was refused without htmx re-renders the page with the
+    dialog open and ``selection_settings_form`` carrying the reasons.
 
     The database replacement dialog re-renders this page after a rejected
     submission: ``replacement_form`` carries the numbers the organiser typed and
@@ -340,29 +374,27 @@ def render_selection_page(
     # The tabs are worked out as on every other tab of the project.
     data_source, _locked = determine_data_source(gsheet, csv_status, assembly.data_source)
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
-    if data_source == "csv" and not (csv_status and csv_status.has_data):
-        # Held in OpenDLP with nothing in it yet. The page has no selection to
-        # offer, and asks for the data instead.
-        data_source = ""
 
     csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
+    selection_waiting: list[str] = []
     selection_settings_columns: list[str] = []
+    selection_settings_open = False
+    can_manage_project = can_manage_assembly(current_user, assembly)
     replacement_plan = None
     if data_source == "csv" and csv_status:
         csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
-        with uow:
-            selection_settings_columns = get_respondent_attribute_columns(uow, assembly_id)
-        if selection_settings_form is None:
-            settings = assembly.selection_settings
-            selection_settings_form = DbSelectionSettingsForm(
-                formdata=None,
-                data={
-                    "check_same_address": settings.check_same_address if settings else False,
-                    "check_same_address_cols_string": settings.check_same_address_cols_string if settings else "",
-                },
-                available_columns=selection_settings_columns,
-            )
+        selection_waiting = selection_waiting_for(csv_status, csv_settings_confirmed)
+        # The settings dialog is drawn with the page when a save was refused
+        # without htmx, or the address asks for it (?settings=1).
+        selection_settings_open = can_manage_project and (
+            selection_settings_form is not None or request.args.get("settings") == "1"
+        )
+        if selection_settings_open:
+            with uow:
+                selection_settings_columns = get_respondent_attribute_columns(uow, assembly_id)
+            if selection_settings_form is None:
+                selection_settings_form = unbound_selection_settings_form(assembly, selection_settings_columns)
         # Count the respondents holding a place: selected or confirmed
         try:
             with uow:
@@ -383,7 +415,7 @@ def render_selection_page(
     # place, and fewer than the assembly needs.
     replacement_enabled = (
         data_source == "csv"
-        and csv_settings_confirmed
+        and not selection_waiting
         and 0 < csv_held_count < assembly.number_to_select
         and active_initial_selection_run_id is None
     )
@@ -428,8 +460,12 @@ def render_selection_page(
         selection_enabled=selection_enabled,
         csv_held_count=csv_held_count,
         csv_settings_confirmed=csv_settings_confirmed,
-        selection_settings_form=selection_settings_form if data_source == "csv" else None,
+        selection_waiting=selection_waiting,
+        can_manage_project=can_manage_project,
+        selection_settings_open=selection_settings_open,
+        selection_settings_form=selection_settings_form if selection_settings_open else None,
         selection_settings_columns=selection_settings_columns,
+        selection_settings_from="",
         active_initial_selection_run_id=active_initial_selection_run_id,
     ), 200
 

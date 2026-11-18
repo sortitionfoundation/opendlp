@@ -366,7 +366,7 @@ class TestStartReplacement:
             data={"number_to_select": "6"},
         )
         assert response.status_code == 302
-        assert response.headers["Location"].endswith("/selection#selection-settings")
+        assert response.headers["Location"].endswith("/selection?settings=1")
 
     def test_requires_login(self, client, assembly_after_withdrawal):
         response = client.post(

@@ -1,0 +1,89 @@
+{#
+ABOUTME: The selection settings dialog of a project held in OpenDLP: whether and how to check for a shared address
+ABOUTME: A fragment dialog, opened by a cog on the Select and Replace tab and on the Project Details tab
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, checkbox, first_error as e %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_footer, modal %}
+{#
+    A fragment dialog (docs/agent/component_accessibility.md), swapped into
+    #project-dialog-host. Saving loads the page it was opened from afresh, as
+    what that page offers depends on the settings being confirmed; Cancel and
+    the X only close it.
+
+    Context:
+        assembly
+        selection_settings_form: DbSelectionSettingsForm
+        selection_settings_columns: the respondent attributes the form's fields may name
+        csv_settings_confirmed: whether the settings have been saved once
+        selection_settings_from: "details" when opened from the Project Details
+            tab, which is where saving then goes back to; otherwise empty
+#}
+{% set form = selection_settings_form %}
+{% set action_url = url_for('db_selection_backoffice.save_db_settings', assembly_id=assembly.id) %}
+<div x-data="modal({ initialOpen: true })">
+    {% call modal(id="selection-settings-dialog", title=_("Selection settings"), wrap_body=false) %}
+        <form method="post"
+              action="{{ action_url }}"
+              hx-post="{{ action_url }}"
+              hx-target="#project-dialog-host"
+              hx-swap="innerHTML"
+              class="group"
+              novalidate>
+            {{ form.hidden_tag() }}
+            <input type="hidden" name="from" value="{{ selection_settings_from | default('') }}">
+            {% call dialog_body() %}
+                <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
+                    {% if csv_settings_confirmed %}
+                        {{ _("Configure how the selection algorithm runs for this project.") }}
+                    {% else %}
+                        {{ _("Please review and save these settings before running selection.") }}
+                    {% endif %}
+                </p>
+                <div class="flex flex-col gap-6">
+                    {# Check Same Address Checkbox #}
+                    {{ checkbox(name="check_same_address",
+                    label=_("Check same address") ,
+                    checked=form.check_same_address.data,
+                    hint=_("Prevent selecting multiple respondents from the same address."),
+                    attrs="data-address-check data-dialog-initial-focus"
+                    ) }}
+                    {#
+                        The address attributes only matter while the box above is ticked, so
+                        CSS hides them otherwise - unless they hold an error to put right.
+                        The box is found by a data attribute as Tailwind reads an
+                        underscore in an arbitrary value, such as its id, as a space.
+                    #}
+                    {% set address_error = e(form.check_same_address_cols_string.errors) %}
+                    <div id="address-attributes"
+                         class="flex-col gap-6 {% if address_error %}flex{% else %}hidden group-has-[[data-address-check]:checked]:flex{% endif %}">
+                        {% if selection_settings_columns %}
+                            <details class="text-body-sm" style="color: var(--color-secondary-text);">
+                                <summary class="cursor-pointer font-medium" style="color: var(--color-headings)">
+                                    {{ _("Available respondent attributes") }}
+                                </summary>
+                                <div class="mt-2 p-3 rounded-lg"
+                                     style="background-color: var(--color-subtle-background-panels)">
+                                    <p class="mb-2">{{ _("The following attribute names are available from the uploaded respondent data:") }}</p>
+                                    <code class="text-body-sm">{{ selection_settings_columns | join(", ") }}</code>
+                                </div>
+                            </details>
+                        {% endif %}
+                        {# Address Columns Input #}
+                        {{ input(name="check_same_address_cols_string",
+                        label=_("Address attributes") ,
+                        value=form.check_same_address_cols_string.data or "",
+                        placeholder=_("e.g., Street, City, PostCode"),
+                        hint=_("Comma-separated respondent attribute names used for address matching."),
+                        error=address_error
+                        ) }}
+                    </div>
+                </div>
+            {% endcall %}
+            {% call dialog_footer() %}
+                {{ button(_("Cancel") , variant="secondary", attrs='@click="close()"') }}
+                {{ button(_("Save Settings") , type="submit", variant="primary") }}
+            {% endcall %}
+        </form>
+    {% endcall %}
+</div>
