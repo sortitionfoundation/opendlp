@@ -72,6 +72,10 @@ class TestHomePage:
         for scene in ("projects", "create", "targets", "selection", "dashboard"):
             assert f'data-scene="{scene}"' in response.text
         assert "js/hero-demo.js" in response.text
+        # every target the script looks for is a real attribute, not escaped text
+        for name in ("create-project", "title", "size", "submit-create", "min-1", "max-3", "run", "modal"):
+            assert f'data-demo="{name}"' in response.text
+        assert "&#34;" not in response.text[response.text.index("data-hero-demo") :]
         assert "A short demonstration of OpenDLP" in response.text
 
     def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:

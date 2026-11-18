@@ -53,6 +53,7 @@ function startHeroDemo(root) {
     return [t.left - f.left + t.width * 0.5, t.top - f.top + t.height * 0.55];
   };
   const moveTo = async (target, ms = 700) => {
+    if (!target) return; // a missing target is skipped rather than stopping the loop
     const [x, y] = centreOf(target);
     const anim = cursor.animate(
       [
@@ -70,6 +71,7 @@ function startHeroDemo(root) {
   };
   // A click is a small dip of the cursor to the bottom right and back, and the target pressed meanwhile.
   const click = async (target) => {
+    if (!target) return;
     cursor.classList.add("is-nudging");
     cursor.style.transform = `translate(${cx + 3}px, ${cy + 3}px)`;
     target.classList.add("is-pressed-btn");
@@ -81,6 +83,7 @@ function startHeroDemo(root) {
     await sleep(220);
   };
   const type = async (input, perChar = 55) => {
+    if (!input) return;
     const text = input.dataset.type || "";
     input.classList.add("is-typing");
     input.value = "";

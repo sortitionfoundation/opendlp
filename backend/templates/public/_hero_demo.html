@@ -18,6 +18,9 @@ ABOUTME: through which one cursor creates a project, sets its targets, runs the 
 {% from "backoffice/components/modal.html" import progress_bar, status_badge, dialog_header %}
 {% from "backoffice/components/alert.html" import alert %}
 {% set project_title = _("Citizens' Assembly on Climate") %}
+{# The title the cursor types, as an attribute. A translated string is markup, and joining a plain string to it
+   escapes the plain part, quotes and all, so every part is marked safe and the title itself is escaped. #}
+{% set title_attrs = ('data-demo="title" tabindex="-1" readonly data-type="' | safe) ~ (project_title | string | forceescape) ~ ('"' | safe) %}
 {% macro pie(title, slices) %}
     {# The dashboard's pie card box (pie_chart_card), with the pie drawn in CSS so the home page needs no Chart.js.
        slices: list of (label, percent, colour). #}
@@ -71,7 +74,7 @@ ABOUTME: through which one cursor creates a project, sets its targets, runs the 
                         <h2 class="text-display-sm mb-1" style="color: var(--color-display-text);">{{ _("Create project") }}</h2>
                         <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Set up a new project.") }}</p>
                         <div class="flex flex-col gap-6 max-w-lg">
-                            {{ input("demo-title", label=_("Project title"), hint=_("Enter the title for this project"), required=true, attrs='data-demo="title" data-type="' ~ project_title ~ '" tabindex="-1" readonly') }}
+                            {{ input("demo-title", label=_("Project title"), hint=_("Enter the title for this project"), required=true, attrs=title_attrs) }}
                             {{ input("demo-size", label=_("Panel size"), hint=_("The number of participants to select for this event"), type="number", required=true, classes="w-40", attrs='data-demo="size" data-type="30" tabindex="-1" readonly') }}
                             <div class="flex gap-2">
                                 {{ button(_("Create project"), variant="primary", attrs='data-demo="submit-create"') }}
