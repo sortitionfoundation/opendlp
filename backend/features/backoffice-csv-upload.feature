@@ -1,7 +1,7 @@
 Feature: Backoffice CSV Upload
   As an administrator
-  I want a project's tabs to follow the data it holds
-  So that I can only go where there is something to do.
+  I want a project's tabs open from the start
+  So that each one can tell me what it is waiting for.
 
   Scenario: A new project has its Targets and Respondents tabs open
     Given I am logged in as an admin user
@@ -40,23 +40,6 @@ Feature: Backoffice CSV Upload
 
   # The upload itself is in the data source dialog: see create-project.feature
   # and project-details.feature.
-
-  Scenario: Targets tab is enabled after targets uploaded
-    Given I am logged in as an admin user
-    And there is an assembly called "CSV Targets Tab Enable"
-    And the assembly "CSV Targets Tab Enable" has targets uploaded
-    When I visit the assembly details page for "CSV Targets Tab Enable"
-    Then the "Targets" tab should be enabled
-    And the "Respondents" tab should be enabled
-
-  Scenario: Both tabs enabled after both CSVs uploaded
-    Given I am logged in as an admin user
-    And there is an assembly called "CSV Both Uploaded"
-    And the assembly "CSV Both Uploaded" has targets uploaded
-    And the assembly "CSV Both Uploaded" has respondents uploaded
-    When I visit the assembly details page for "CSV Both Uploaded"
-    Then the "Targets" tab should be enabled
-    And the "Respondents" tab should be enabled
 
   # Building the targets from the respondent data, on the Targets tab
 

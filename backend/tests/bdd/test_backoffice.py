@@ -13,7 +13,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.email_template_service import assign_auto_reply_template, create_email_template
@@ -1511,16 +1510,6 @@ def see_tab_in_navigation(page: Page, tab_name: str):
     expect(tab).to_be_visible()
 
 
-@then(parsers.parse('the "{tab_name}" tab should be disabled'))
-def tab_should_be_disabled(page: Page, tab_name: str):
-    """Verify a specific tab is disabled (shown as span, not a link)."""
-    # Disabled tabs are rendered as spans with aria-disabled attribute, not links
-    disabled_tab = page.locator("nav[aria-label='Project sections'] span[aria-disabled='true']").filter(
-        has_text=tab_name
-    )
-    expect(disabled_tab).to_be_visible()
-
-
 @then(parsers.parse('the "{tab_name}" tab should be enabled'))
 def tab_should_be_enabled(page: Page, tab_name: str):
     """Verify a specific tab is enabled (shown as a clickable link)."""
@@ -1552,30 +1541,6 @@ def visit_assembly_respondents_page(page: Page, title: str, test_database):
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
     if assembly_id:
         page.goto(Urls.backoffice_respondents_assembly_url(assembly_id))
-
-
-@given(parsers.parse('the assembly "{title}" has targets uploaded'))
-def assembly_has_targets_uploaded(title: str, test_database):
-    """Create target categories for an assembly to simulate CSV upload."""
-    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if not assembly_id:
-        return
-
-    session_factory = test_database
-    uow = SqlAlchemyUnitOfWork(session_factory)
-    with uow:
-        # Create sample target categories
-        category = TargetCategory(
-            assembly_id=uuid.UUID(assembly_id),
-            name="Gender",
-            sort_order=0,
-        )
-        category.values = [
-            TargetValue(value="Male", min=10, max=20),
-            TargetValue(value="Female", min=10, max=20),
-        ]
-        uow.target_categories.add(category)
-        uow.commit()
 
 
 @given(parsers.parse('the assembly "{title}" has respondents uploaded'))
