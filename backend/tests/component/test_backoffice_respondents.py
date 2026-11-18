@@ -622,7 +622,7 @@ class TestRespondentsPageWithNobodyYet:
         body = logged_in_admin.get(self._url(existing_assembly)).get_data(as_text=True)
 
         link = body.split("Upload respondents (opens in a new tab)")[0].rsplit("<a ", 1)[1]
-        assert f'href="/backoffice/project/{existing_assembly.id}?data_source=1"' in link
+        assert f'href="/backoffice/project/{existing_assembly.id}?data_source=1&amp;upload=respondents"' in link
         assert 'target="_blank"' in link
         assert 'rel="noopener"' in link
 

@@ -128,7 +128,7 @@ class TestViewTargetsPage:
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
         link = html.split('id="import-targets-link"')[0].rsplit("<a ", 1)[1]
-        assert f'href="/backoffice/project/{existing_assembly.id}?data_source=1"' in link
+        assert f'href="/backoffice/project/{existing_assembly.id}?data_source=1&amp;upload=targets"' in link
         assert "Import targets from a CSV file (opens in a new tab)" in html
         assert 'target="_blank"' in html.split('id="import-targets-link"')[1].split(">")[0]
 

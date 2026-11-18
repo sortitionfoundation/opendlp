@@ -81,6 +81,20 @@ Feature: Project details
     Then the data source card says "Import from CSV"
     And the data source card says "4 targets uploaded"
 
+  Scenario: The Targets tab's import link opens the dialog ready for the file
+    When I follow the "Import targets from a CSV file (opens in a new tab)" link on the Targets tab
+    Then the data source settings dialog is open
+    And the dialog's target data source is "Import from CSV"
+    And focus is on the dialog's targets file field
+    When I upload the example targets in the settings dialog
+    Then the settings dialog says "4 targets uploaded"
+
+  Scenario: The Respondents tab's upload link opens the dialog ready for the file
+    When I follow the "Upload respondents (opens in a new tab)" link on the Respondents tab
+    Then the data source settings dialog is open
+    And the dialog's respondents data source is "Import from CSV"
+    And focus is on the dialog's respondents file field
+
   Scenario: Saving how the data will arrive shows on the card
     When I open the data source settings
     And I choose to collect respondents through registration

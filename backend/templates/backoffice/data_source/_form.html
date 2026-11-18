@@ -78,7 +78,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                 id="project-targets-source",
                 options=options,
                 value=ds.targets_source.value,
-                attrs='x-model="targetsSource"' ~ (' data-dialog-initial-focus' if not ds.targets_errors and not ds.respondents_errors else '')
+                attrs='x-model="targetsSource"' ~ (' data-dialog-initial-focus' if not ds.targets_errors and not ds.respondents_errors and not ds.focus_upload else '')
                 ) }}
             </div>
             <div>
@@ -125,7 +125,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                 label=_("CSV File") ,
                 accept=".csv",
                 hint=_("Select a CSV file with targets."),
-                attrs='data-dialog-initial-focus aria-invalid="true" aria-describedby="project-targets-file-problem"' if ds.targets_errors else ''
+                attrs='data-dialog-initial-focus aria-invalid="true" aria-describedby="project-targets-file-problem"' if ds.targets_errors else ('data-dialog-initial-focus' if ds.focus_upload == "targets" else '')
                 ) }}
                 <div class="mt-4">
                     {{ button(_("Upload targets") , variant="secondary",
@@ -165,7 +165,7 @@ ABOUTME: The last step of the create dialog and the body of the data source sett
                     label=_("CSV File") ,
                     accept=".csv",
                     hint=_("Select a CSV file with respondent data."),
-                    attrs=('data-dialog-initial-focus' if not ds.targets_errors else '') ~ ' aria-invalid="true" aria-describedby="project-respondents-file-problem"' if ds.respondents_errors else ''
+                    attrs=('data-dialog-initial-focus' if not ds.targets_errors else '') ~ ' aria-invalid="true" aria-describedby="project-respondents-file-problem"' if ds.respondents_errors else ('data-dialog-initial-focus' if ds.focus_upload == "respondents" else '')
                     ) }}
                     {# Prefilled from the last upload so a file whose id column isn't the
                        first one works without retyping. Gated on last_import_timestamp,

@@ -134,6 +134,92 @@ class TestOpeningTheDialog:
         assert 'role="dialog"' not in response.data.decode()
 
 
+def _tag(html: str, element_id: str) -> str:
+    """The opening tag of the element with this id."""
+    before, after = html.split(f'id="{element_id}"', 1)
+    return before.rsplit("<", 1)[1] + after.split(">", 1)[0]
+
+
+def _chosen(html: str, select_id: str) -> str:
+    """The value of the option a dropdown shows as selected."""
+    options = html.split(f'id="{select_id}"', 1)[1].split("</select>", 1)[0]
+    selected = [option for option in options.split("<option")[1:] if "selected" in option.split(">", 1)[0]]
+    return selected[0].split('value="', 1)[1].split('"', 1)[0] if selected else ""
+
+
+class TestOpeningReadyForAnUpload:
+    """?upload= on the details page: a link that says "upload" lands on the upload form."""
+
+    def _open(self, client: FlaskClient, assembly: Assembly, upload: str) -> str:
+        return client.get(f"/backoffice/project/{assembly.id}?data_source=1&upload={upload}").data.decode()
+
+    def test_targets_opens_on_import_from_csv_with_focus_on_the_file(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        html = self._open(logged_in_admin, existing_assembly, "targets")
+
+        assert _chosen(html, "project-targets-source") == "csv"
+        assert _chosen(html, "project-respondents-source") == ""
+        assert "targetsSource: 'csv'" in html
+        assert "data-dialog-initial-focus" in _tag(html, "project-targets-file")
+        assert "data-dialog-initial-focus" not in _tag(html, "project-targets-source")
+
+    def test_respondents_opens_on_import_from_csv_with_focus_on_the_file(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        html = self._open(logged_in_admin, existing_assembly, "respondents")
+
+        assert _chosen(html, "project-respondents-source") == "csv"
+        assert _chosen(html, "project-targets-source") == ""
+        assert "respondentsSource: 'csv'" in html
+        assert "data-dialog-initial-focus" in _tag(html, "project-respondents-file")
+        assert "data-dialog-initial-focus" not in _tag(html, "project-targets-source")
+
+    def test_opening_it_saves_nothing(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The dropdown is only shown that way; the choice is stored by an upload or by Save."""
+        self._open(logged_in_admin, existing_assembly, "targets")
+
+        assert _stored(fake_store, existing_assembly).targets_source == TargetsSource.UNDECIDED
+
+    def test_anything_else_is_ignored(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        html = self._open(logged_in_admin, existing_assembly, "nonsense")
+
+        assert _chosen(html, "project-targets-source") == ""
+        assert _chosen(html, "project-respondents-source") == ""
+        assert "data-dialog-initial-focus" in _tag(html, "project-targets-source")
+
+    def test_targets_already_here_leave_the_dropdown_alone(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """A stale link must not relabel targets that were made another way."""
+        _upload_targets(logged_in_admin, existing_assembly)
+        logged_in_admin.post(
+            f"{_base(existing_assembly)}/save",
+            data={"location": "csv", "targets_source": "manual", "respondents_source": ""},
+            headers=HTMX,
+        )
+
+        html = self._open(logged_in_admin, existing_assembly, "targets")
+
+        assert _chosen(html, "project-targets-source") == "manual"
+        assert "data-dialog-initial-focus" in _tag(html, "project-targets-source")
+
+    def test_a_google_sheets_project_ignores_it(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly = uow.assemblies.get(existing_assembly.id)
+            assembly.data_source = DataSource.GSHEET
+            uow.commit()
+
+        html = self._open(logged_in_admin, existing_assembly, "targets")
+
+        assert 'id="project-targets-file"' not in html
+        assert 'role="dialog"' in html
+
+
 class TestChoosingTheLocation:
     def test_choosing_google_sheets_redraws_with_the_sheet_fields(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly

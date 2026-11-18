@@ -56,6 +56,9 @@ logger = structlog.get_logger(__name__)
 
 MODE_CREATE = "create"
 MODE_SETTINGS = "settings"
+# What ?upload= on the details page may ask the dialog to open ready for.
+UPLOAD_TARGETS = "targets"
+UPLOAD_RESPONDENTS = "respondents"
 
 DIALOG_TEMPLATE = "backoffice/data_source/_dialog.html"
 
@@ -188,6 +191,7 @@ def new_project_dialog_context(
         "details_form": details_form,
         "location": location,
         "locked": False,
+        "focus_upload": "",
         "targets_source": _posted_choice(TargetsSource, posted.get("targets_source"), TargetsSource.UNDECIDED),
         "respondents_source": _posted_choice(
             RespondentsSource, posted.get("respondents_source"), RespondentsSource.UNDECIDED
@@ -212,15 +216,31 @@ def project_dialog_context(
     assembly_id: uuid.UUID,
     mode: str = MODE_SETTINGS,
     posted: MultiDict[str, str] | None = None,
+    upload: str = "",
     **extra: Any,
 ) -> dict[str, Any]:
     """What either dialog renders from once the project exists.
+
+    `upload` ("targets" or "respondents") opens the dialog ready for that CSV:
+    its dropdown on "Import from CSV" and focus on its file field. It is a
+    link's hint, so it is ignored where there is nothing to upload into - the
+    data is in a Google Sheet, or already here.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     posted = posted if posted is not None else MultiDict()
     nav = get_assembly_nav_context(uow, current_user.id, assembly_id)
     location = nav.data_source if nav.data_source_locked else _posted_location(posted, nav.data_source)
+    targets_source = _posted_choice(TargetsSource, posted.get("targets_source"), nav.assembly.targets_source)
+    respondents_source = _posted_choice(
+        RespondentsSource, posted.get("respondents_source"), nav.assembly.respondents_source
+    )
+    focus_upload = ""
+    if location == OPENDLP_SOURCE:
+        if upload == UPLOAD_TARGETS and nav.csv_status.targets_count == 0:
+            targets_source, focus_upload = TargetsSource.CSV, upload
+        elif upload == UPLOAD_RESPONDENTS and nav.csv_status.respondents_count == 0:
+            respondents_source, focus_upload = RespondentsSource.CSV, upload
     context = _base_context(posted, extra)
     context.setdefault("gsheet_form", _gsheet_form_for(nav, posted) if location == GSHEET_SOURCE else None)
     return {
@@ -230,10 +250,9 @@ def project_dialog_context(
         "details_form": None,
         "location": location,
         "locked": nav.data_source_locked,
-        "targets_source": _posted_choice(TargetsSource, posted.get("targets_source"), nav.assembly.targets_source),
-        "respondents_source": _posted_choice(
-            RespondentsSource, posted.get("respondents_source"), nav.assembly.respondents_source
-        ),
+        "targets_source": targets_source,
+        "respondents_source": respondents_source,
+        "focus_upload": focus_upload,
         "targets_count": nav.csv_status.targets_count,
         "respondents_count": nav.csv_status.respondents_count,
         "csv_config": nav.csv_status.csv_config,

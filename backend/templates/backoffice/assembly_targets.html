@@ -132,7 +132,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                                     {# A new tab: this page may hold unsaved edits, and
                                        the dialog belongs to another page of the project. #}
                                     {% if can_manage %}
-                                        <a href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1) }}"
+                                        <a href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1, upload='targets') }}"
                                            id="import-targets-link"
                                            target="_blank"
                                            rel="noopener"

@@ -80,8 +80,15 @@ filter), the heading, filter, export and table give way to:
 > - **Create a registration page** for people to fill in. *[Go to the
 >   Registration tab]*
 
-The upload link is `…/project/<id>?data_source=1` with `target="_blank"`, as
-asked. Someone who cannot manage the project sees only the first line.
+The upload link is `…/project/<id>?data_source=1&upload=respondents` with
+`target="_blank"`, as asked. Someone who cannot manage the project sees only
+the first line.
+
+**`upload=`** (`targets` or `respondents`) opens the dialog ready for that
+file: its dropdown shows "Import from CSV", so the upload form is on screen,
+and focus is on the file field. Nothing is stored by opening it - the choice
+is saved by the upload, or by Save. It is ignored when the project already
+has that data (a stale link must not relabel it) or is held in Google Sheets.
 
 A caution worth recording: after the upload in the new tab, the first tab
 still says "No respondents yet" until it is reloaded. If testing shows people
@@ -90,7 +97,8 @@ tripping on that, the cheap fix is to drop `target="_blank"`.
 ### Targets tab
 
 With no targets, a manager sees beside "No targets defined yet." a link
-"Import targets from a CSV file (opens in a new tab)" to the same dialog. A
+"Import targets from a CSV file (opens in a new tab)" to the same dialog,
+with `upload=targets`. A
 new tab here as well: the Targets page may hold unsaved edits, and the two
 links should behave alike.
 

@@ -117,7 +117,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             created_by_name = get_assembly_creator_name(uow, nav.assembly)
             project_dialog = None
             if request.args.get("data_source") == "1" and can_manage_project:
-                project_dialog = project_dialog_context(uow, assembly_id)
+                project_dialog = project_dialog_context(uow, assembly_id, upload=request.args.get("upload", ""))
             team_card = team_card_context(uow, nav.assembly)
 
         # The access check panel under a Google Sheet's URL: checked afresh

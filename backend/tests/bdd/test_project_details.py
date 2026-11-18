@@ -252,6 +252,28 @@ def choose_import_targets(page: Page) -> None:
     expect(_settings_dialog(page).locator("#project-targets-file")).to_be_visible()
 
 
+@when(parsers.parse('I follow the "{text}" link on the {tab} tab'))
+def follow_link_on_tab(page: Page, project, text: str, tab: str) -> None:
+    """The link opens a new tab; following its address in this one keeps the scenario on one page."""
+    page.goto(f"{Urls.base}/backoffice/project/{project.id}/{tab.lower()}")
+    href = page.get_by_role("link", name=text, exact=True).get_attribute("href")
+    assert href
+    page.goto(f"{Urls.base}{href}")
+
+
+@then(parsers.parse('the dialog\'s {kind} data source is "{label}"'))
+def dialog_source_is(page: Page, kind: str, label: str) -> None:
+    select = {"target": "#project-targets-source", "respondents": "#project-respondents-source"}[kind]
+    expect(_settings_dialog(page).locator(f"{select} option:checked")).to_have_text(label)
+
+
+@then(parsers.parse("focus is on the dialog's {kind} file field"))
+def focus_on_file_field(page: Page, kind: str) -> None:
+    field = _settings_dialog(page).locator(f"#project-{kind}-file")
+    expect(field).to_be_visible()
+    expect(field).to_be_focused()
+
+
 @when("I choose to collect respondents through registration")
 def choose_registration(page: Page) -> None:
     _settings_dialog(page).locator("#project-respondents-source").select_option("registration")
