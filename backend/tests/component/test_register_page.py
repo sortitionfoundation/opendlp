@@ -1,5 +1,5 @@
 """ABOUTME: Component tests for the words around the sign-up page's fields
-ABOUTME: The invite code's helper text and its support link, and the password requirements"""
+ABOUTME: The invite code's helper text and support link, the password requirements and the survey's sources question"""
 
 import re
 
@@ -97,3 +97,23 @@ class TestPasswordRequirements:
 
         assert "Your password must contain" not in html
         assert "Your password cannot be" not in html
+
+
+class TestWhereDidYouHearAboutUs:
+    """The optional survey asks where people heard about OpenDLP, from a fixed list."""
+
+    def test_the_question_offers_its_answers_in_order(self, client: FlaskClient, open_signup):
+        select = _tag(_page(client), r'<select name="survey_heard_about_us"[\s\S]*?</select>')
+
+        labels = [label.strip() for label in re.findall(r"<option[^>]*>([^<]*)</option>", select)]
+        assert labels == ["Please select", "Social media", "An event", "Forum", "Newsletter", "From a friend", "Other"]
+        values = re.findall(r'<option value="([^"]*)"', select)
+        assert values == ["", "social_media", "event", "forum", "newsletter", "friend", "other"]
+
+    def test_the_question_is_the_select_label(self, client: FlaskClient, open_signup):
+        label = _tag(_page(client), r'<label for="survey_heard_about_us"[^>]*>[^<]*')
+
+        assert "Where did you hear about us?" in label
+
+    def test_the_question_is_not_asked_without_open_signup(self, client: FlaskClient):
+        assert "survey_heard_about_us" not in _page(client)
