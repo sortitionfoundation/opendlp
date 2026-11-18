@@ -8,6 +8,10 @@ source form and the three stored choices that this page shows.
 and folded into the text; the answers are logged under
 [Decisions](#decisions). Nothing is open.
 
+**Changed since:** [plan-feedback-adjustments.md](plan-feedback-adjustments.md)
+revises parts of this plan after team feedback and user testing. Where the two
+disagree, that one wins.
+
 Design: OpenDLP - UI Figma file, nodes 6025-7141 (Google Sheet project),
 6860-17012 (In OpenDLP, CSVs imported), 6030-8378 (add a team member).
 

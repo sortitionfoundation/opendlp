@@ -81,12 +81,25 @@ class TestOpeningTheDialog:
         assert "Targets and people" in html
         assert html.count('aria-current="step"') == 1
 
-    def test_the_steps_are_not_links(self, logged_in_admin: FlaskClient) -> None:
-        """Back and Next are the only way to move: the stepper shows progress."""
+    def test_every_step_is_a_link_that_posts_the_form(self, logged_in_admin: FlaskClient) -> None:
+        """The stepper is a second way to move, beside Back and Next."""
         html = logged_in_admin.get(NEW, headers=HTMX).data.decode()
 
         stepper_html = html.split('class="stepper"')[1].split("</ol>")[0]
-        assert "<a " not in stepper_html
+        assert stepper_html.count("<a ") == 3
+        assert stepper_html.count(f'hx-post="{NEW}/step"') == 3
+        for number in (1, 2, 3):
+            assert f'hx-vals="{{&#34;go&#34;: &#34;{number}&#34;}}"' in stepper_html
+        assert "aria-disabled" not in stepper_html
+
+    def test_the_steps_carry_no_id_so_focus_moves_to_the_step_shown(self, logged_in_admin: FlaskClient) -> None:
+        """The dialog host keeps focus on a control it can find again by id; a step must not hold it."""
+        html = logged_in_admin.get(NEW, headers=HTMX).data.decode()
+
+        stepper_html = html.split('class="stepper"')[1].split("</ol>")[0]
+        assert " id=" not in stepper_html
+        assert "data-focus-id" not in stepper_html
+        assert "data-dialog-initial-focus" in html.split('name="title"')[1].split(">")[0]
 
     def test_a_plain_user_cannot_open_it(self, logged_in_user: FlaskClient) -> None:
         assert logged_in_user.get(NEW, headers=HTMX).status_code == 403
@@ -189,6 +202,34 @@ class TestMovingBetweenSteps:
         response = logged_in_admin.post(f"{NEW}/step", data={"step": "2", "go": "back", "title": ""}, headers=HTMX)
 
         assert response.status_code == 200
+
+    def test_the_stepper_jumps_forward_past_a_step(self, logged_in_admin: FlaskClient) -> None:
+        response = _step(logged_in_admin, 1, go="3")
+
+        assert response.status_code == 200
+        assert "Target data source" in response.data.decode()
+
+    def test_the_stepper_jumps_back_to_the_details_as_typed(self, logged_in_admin: FlaskClient) -> None:
+        html = _step(logged_in_admin, 3, go="1", location="gsheet").data.decode()
+
+        assert 'value="A fresh project"' in html
+        assert 'name="location" value="gsheet"' in html
+
+    def test_jumping_forward_validates_the_details(self, logged_in_admin: FlaskClient) -> None:
+        response = logged_in_admin.post(f"{NEW}/step", data={"step": "1", "go": "3", "title": ""}, headers=HTMX)
+
+        assert response.status_code == 422
+        assert 'name="title"' in response.data.decode()
+
+    def test_jumping_back_does_not_validate(self, logged_in_admin: FlaskClient) -> None:
+        response = logged_in_admin.post(f"{NEW}/step", data={"step": "3", "go": "1", "title": ""}, headers=HTMX)
+
+        assert response.status_code == 200
+        assert 'name="title"' in response.data.decode()
+
+    def test_a_step_that_does_not_exist_is_the_nearest_that_does(self, logged_in_admin: FlaskClient) -> None:
+        assert "Target data source" in _step(logged_in_admin, 2, go="9").data.decode()
+        assert "Where will you manage your data?" in _step(logged_in_admin, 1, go="nonsense").data.decode()
 
     def test_moving_between_steps_creates_nothing(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
         """Cancel before the first write leaves nothing behind."""
@@ -355,6 +396,17 @@ class TestTheFirstUploadCreatesTheProject:
         assert "Cancel" not in html
         assert "Close" in html
         assert f'href="/backoffice/project/{project.id}"' in html
+
+    def test_after_the_upload_the_steps_are_not_links_and_not_dimmed(self, logged_in_admin: FlaskClient) -> None:
+        """The earlier steps have nothing to go back to: they keep their ticks and stop being links."""
+        html = self._upload_targets(logged_in_admin).data.decode()
+
+        stepper_html = html.split('class="stepper"')[1].split("</ol>")[0]
+        assert "<a " not in stepper_html
+        assert "hx-post" not in stepper_html
+        assert stepper_html.count("data-step-settled") == 3
+        assert stepper_html.count("(completed)") == 2
+        assert stepper_html.count('aria-current="step"') == 1
 
     def test_after_the_upload_nothing_is_unsaved(self, logged_in_admin: FlaskClient) -> None:
         html = " ".join(self._upload_targets(logged_in_admin, dirty="1").data.decode().split())

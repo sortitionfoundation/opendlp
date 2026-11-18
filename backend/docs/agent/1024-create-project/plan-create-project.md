@@ -17,6 +17,10 @@ dialog's last step needs somewhere to land.
 and folded into the text; the answers are logged under
 [Decisions](#decisions). Nothing is open.
 
+**Changed since:** [plan-feedback-adjustments.md](plan-feedback-adjustments.md)
+revises parts of this plan after team feedback and user testing. Where the two
+disagree, that one wins.
+
 Design: OpenDLP - UI Figma file, overview node 6025-5966. Figma draws two steps;
 the decision since is three. Where this plan and Figma disagree, the brief wins
 and the difference is listed under [Departures from Figma](#departures-from-figma).

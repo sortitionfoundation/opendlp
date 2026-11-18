@@ -939,6 +939,13 @@
         opacity: 0.6;
     }
 
+    /* A step that is not a link because there is nowhere for it to go, not
+       because it is waiting its turn: it keeps its full strength. */
+    .stepper-link[aria-disabled="true"][data-step-settled] {
+        cursor: default;
+        opacity: 1;
+    }
+
     /* Hover — only for non-active, non-disabled steps in tabs mode */
     .stepper-link:not([aria-disabled="true"]):hover .stepper-label {
         color: var(--color-headings);

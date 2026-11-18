@@ -191,6 +191,7 @@ ABOUTME: Documents states (active/inactive/done/error), URL contract, and panel 
             <ul class="text-body-sm font-mono mb-4" style="color: var(--color-body-text);">
                 <li>disabled: bool ❌ ({{ _("locks the WHOLE stepper in either mode — steps render as aria-disabled spans") }})</li>
                 <li>preserve_scroll: bool ❌ ({{ _("keep scroll position across step navigation") }})</li>
+                <li>ids: bool ❌ ({{ _("false leaves the steps without ids, for a wizard in a dialog the server redraws — see the create project dialog") }})</li>
             </ul>
 
             <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Panel convention (same as tabs macro)") }}</h4>

@@ -14,7 +14,8 @@ ABOUTME: Google Sheets settings fields, the example CSV link, and the list of re
     placeholder="https://docs.google.com/spreadsheets/d/...",
     hint=_("Enter the full URL of your Google Sheets spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email else ""),
     required=true,
-    error=e(gsheet_form.url.errors)
+    error=e(gsheet_form.url.errors),
+    attrs='data-dialog-initial-focus'
     ) }}
     {# Initial/Test Selection Fieldset #}
     <fieldset class="flex flex-col gap-4">

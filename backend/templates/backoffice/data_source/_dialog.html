@@ -14,10 +14,11 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
     at whatever step that leaves it: nothing about the steps lives in
     JavaScript, and what earlier steps collected rides along as hidden inputs.
 
-    None of the buttons has an id or a name. The host keeps focus on a control
-    it can find again after a redraw (init/fragment-dialog-focus.js); one it
-    cannot find sends focus to the new step's first field, or to whichever
-    field carries data-dialog-initial-focus - the one a refusal is about.
+    None of the buttons has an id or a name, and nor do the steps of the
+    stepper. The host keeps focus on a control it can find again after a redraw
+    (init/fragment-dialog-focus.js); one it cannot find sends focus to the
+    field carrying data-dialog-initial-focus - the step's first field, or the
+    one a refusal is about.
 
     The X, Cancel and the backdrop are links to ds.close_url. Until the project
     exists they ask first once anything has been typed (dialogLeaveGuard);
@@ -68,16 +69,26 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
                 <input type="hidden" name="step" value="{{ step }}">
                 {% call dialog_body() %}
                     {% if creating %}
+                        {# Every step is a way to move, as Back and Next are: a
+                           click posts this form with the step to go to, so what
+                           was typed rides along. Once the project exists the
+                           earlier steps have nothing to go back to, and stay
+                           ticked without being links. #}
                         {% set states = {1: "active" if step == 1 else "done", 2: "active" if step == 2 else ("done" if step > 2 else "inactive"), 3: "active" if step == 3 else "inactive"} %}
                         {% set items = [] %}
                         {% for number, key, label in [(1, "details", _("Project details")), (2, "location", _("Data location")), (3, "data", _("Targets and people"))] %}
                             {% set item = {"key": key, "label": label, "href": "#", "state": states[number]} %}
-                            {% if states[number] == "active" %}
-                                {% set ignored = item.update({"aria-current": "step"}) %}
+                            {% if exists %}
+                                {% set ignored = item.update({"disabled": true, "data-step-settled": "true"}) %}
+                                {% if number == 3 %}
+                                    {% set ignored = item.update({"aria-current": "step"}) %}
+                                {% endif %}
+                            {% else %}
+                                {% set ignored = item.update({"hx-post": ds.urls.step, "hx-vals": '{"go": "' ~ number ~ '"}'}) %}
                             {% endif %}
                             {% set ignored = items.append(item) %}
                         {% endfor %}
-                        {{ stepper(items=items, aria_label=_("Steps to create a project"), id="project-steps", mode="wizard", disabled=true) }}
+                        {{ stepper(items=items, aria_label=_("Steps to create a project"), id="project-steps", mode="wizard", ids=false) }}
                     {% endif %}
                     {% if ds.form_error %}
                         <div class="mb-4">{{ alert(ds.form_error, variant="error") }}</div>
@@ -92,7 +103,7 @@ ABOUTME: One form the server redraws at every step; loaded over htmx into the pa
                                 placeholder=_("Enter the title for this project"),
                                 required=true,
                                 error=details.title.errors | join("\n"),
-                                attrs='maxlength="200"' ~ (' data-dialog-initial-focus' if details.title.errors else '')) }}
+                                attrs='maxlength="200" data-dialog-initial-focus') }}
                                 {{ textarea("question",
                                 label=_("Framing question (optional)") ,
                                 value=details.question.data or "",

@@ -320,6 +320,14 @@ def _skipped_row_notices(errors: list[str]) -> list[str]:
     return notices
 
 
+def _step_number(raw: str, default: int) -> int:
+    """A step of the create dialog, 1 to 3, from what was posted; `default` for anything else."""
+    try:
+        return max(1, min(3, int(raw)))
+    except ValueError:
+        return max(1, min(3, default))
+
+
 def _project_details(form: ProjectDetailsStepForm) -> ProjectDetails:
     return ProjectDetails(
         title=form.title.data or "",
@@ -357,16 +365,18 @@ def new_project() -> ResponseReturnValue:
 @login_required
 @require_create_assembly
 def new_project_step() -> ResponseReturnValue:
-    """Move between the steps. Nothing is written: what was typed rides along in the form."""
+    """Move between the steps. Nothing is written: what was typed rides along in the form.
+
+    `go` says where to: "back", a step's number (the stepper), or nothing for
+    Next. Moving forward checks the project's details first, and a refusal
+    shows them again at the first step; moving back checks nothing.
+    """
     details_form = ProjectDetailsStepForm()
-    try:
-        current = int(request.form.get("step", "1"))
-    except ValueError:
-        current = 1
-    going_back = request.form.get("go") == "back"
-    if not going_back and not details_form.validate():
+    current = _step_number(request.form.get("step", ""), default=1)
+    go = request.form.get("go", "")
+    target = current - 1 if go == "back" else _step_number(go, default=current + 1)
+    if target > current and not details_form.validate():
         return _render_new_project_dialog(1, status=422, details_form=details_form)
-    target = max(1, min(3, current + (-1 if going_back else 1)))
     return _render_new_project_dialog(target, details_form=details_form)
 
 
