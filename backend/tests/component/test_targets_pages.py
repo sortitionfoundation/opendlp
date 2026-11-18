@@ -123,6 +123,35 @@ class TestViewTargetsPage:
         assert "add-from-columns" in html
         assert "Import from CSV" not in html
 
+    def test_with_no_targets_a_manager_is_pointed_at_the_csv_import(self, logged_in_admin, existing_assembly):
+        """The import itself stays in the data source dialog; this opens it, in a new tab."""
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        link = html.split('id="import-targets-link"')[0].rsplit("<a ", 1)[1]
+        assert f'href="/backoffice/project/{existing_assembly.id}?data_source=1"' in link
+        assert "Import targets from a CSV file (opens in a new tab)" in html
+        assert 'target="_blank"' in html.split('id="import-targets-link"')[1].split(">")[0]
+
+    def test_with_targets_the_csv_import_is_not_offered(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "import-targets-link" not in html
+
+    def test_a_reader_is_not_pointed_at_the_csv_import(
+        self, logged_in_user, regular_user, existing_assembly, fake_store
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.READ_ONLY)
+
+        html = logged_in_user.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "No targets defined yet" in html
+        assert "import-targets-link" not in html
+
     def test_a_reader_is_not_offered_building_from_respondent_columns(
         self, logged_in_user, regular_user, existing_assembly, fake_store
     ):

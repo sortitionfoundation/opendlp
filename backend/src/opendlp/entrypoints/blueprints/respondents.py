@@ -603,6 +603,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             viewer = uow.users.get(current_user.id)
             assembly_obj = uow.assemblies.get(assembly_id)
             can_edit = bool(viewer and assembly_obj and can_edit_respondent(viewer, assembly_obj))
+            can_manage_project = bool(viewer and assembly_obj and can_manage_assembly(viewer, assembly_obj))
 
         # Calculate pagination info
         total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
@@ -656,6 +657,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             status_options=_status_filter_options(status_counts, status_filter_str),
             has_respondents=bool(sum(status_counts.values())),
             can_edit=can_edit,
+            can_manage_project=can_manage_project,
             respondent_gsheet=respondent_gsheet,
         ), 200
     except NotFoundError as e:

@@ -128,6 +128,16 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                             {% if not target_categories %}
                                 <p class="text-body-md" style="color: var(--color-secondary-text);">
                                     {{ _("No targets defined yet.") }}
+                                    {# A new tab: this page may hold unsaved edits, and
+                                       the dialog belongs to another page of the project. #}
+                                    {% if can_manage %}
+                                        <a href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1) }}"
+                                           id="import-targets-link"
+                                           target="_blank"
+                                           rel="noopener"
+                                           class="underline"
+                                           style="color: var(--color-links)">{{ _("Import targets from a CSV file (opens in a new tab)") }}</a>
+                                    {% endif %}
                                 </p>
                             {% endif %}
                         </div>

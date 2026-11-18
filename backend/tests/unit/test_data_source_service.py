@@ -43,10 +43,14 @@ class TestDetermineDataSource:
         assert determine_data_source(None, _status(), stored=DataSource.GSHEET) == ("gsheet", False)
         assert determine_data_source(None, _status(), stored=DataSource.OPENDLP) == ("csv", False)
 
-    def test_an_undecided_project_has_its_targets_tab_open(self):
+    def test_an_undecided_project_has_every_tab_open(self):
+        """Held in OpenDLP by default, and such a project's tabs do not wait for data."""
         source, _locked = determine_data_source(None, _status())
 
-        assert get_tab_enabled_states(source, None, _status()) == (True, False, False)
+        assert get_tab_enabled_states(source, None, _status()) == (True, True, True)
+
+    def test_a_google_sheets_project_waits_for_its_sheet_settings(self):
+        assert get_tab_enabled_states("gsheet", None, _status()) == (False, False, False)
 
 
 class TestSetDataSources:

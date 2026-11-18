@@ -182,7 +182,7 @@ lands back on the details page. Nothing else is in the card.
 | Banner links | "Go to Targets", "Go to Respondents", "Review selection settings" |
 | Respondents empty state | as quoted above |
 | Targets link | "Import targets from a CSV file" |
-| New-tab links | visually hidden "(opens in a new tab)" after the link text |
+| New-tab links | "(opens in a new tab)" in the link text, visible to everyone |
 
 ## Tests
 
@@ -204,8 +204,8 @@ lands back on the details page. Nothing else is in the card.
 
 ## Order of work
 
-1. Clickable stepper.
-2. Tabs always enabled for OpenDLP; Respondents empty state; Targets link.
+1. ✅ Clickable stepper.
+2. ✅ Tabs always enabled for OpenDLP; Respondents empty state; Targets link.
 3. Selection settings dialog, the Select tab's banner and cog.
 4. Selection settings card on Project details.
 5. Google Sheets: no Registration tab or card; direct links to the dialog.

@@ -14,7 +14,7 @@ from opendlp.domain.registration_content_block import form_item_ref
 from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule
 from opendlp.domain.respondent_field_schema import FieldType
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import AssemblyRole, RespondentStatus
 from opendlp.entrypoints.blueprints import respondents as respondents_blueprint
 from opendlp.service_layer import csv_upload_stash
 from opendlp.service_layer.assembly_service import create_assembly
@@ -31,6 +31,7 @@ from opendlp.service_layer.respondent_service import (
     delete_respondent,
     import_respondents_from_csv,
 )
+from opendlp.service_layer.user_service import assign_assembly_role
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 HTMX = {"HX-Request": "true"}
@@ -597,6 +598,73 @@ class TestBackofficeViewRespondentsPage:
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents")
         assert response.status_code == 200
         assert b"jane.doe" in response.data
+
+
+class TestRespondentsPageWithNobodyYet:
+    """With no respondents the page says how they arrive, in place of an empty table."""
+
+    def _url(self, assembly: Assembly) -> str:
+        return f"/backoffice/project/{assembly.id}/respondents"
+
+    def test_a_manager_is_shown_the_two_ways_in(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        body = logged_in_admin.get(self._url(existing_assembly)).get_data(as_text=True)
+
+        assert "No respondents yet" in body
+        assert "Upload respondents (opens in a new tab)" in body
+        assert "Go to the Registration tab" in body
+        assert f'href="/backoffice/project/{existing_assembly.id}/registration"' in body
+
+    def test_the_upload_link_opens_the_data_source_dialog_in_a_new_tab(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        body = logged_in_admin.get(self._url(existing_assembly)).get_data(as_text=True)
+
+        link = body.split("Upload respondents (opens in a new tab)")[0].rsplit("<a ", 1)[1]
+        assert f'href="/backoffice/project/{existing_assembly.id}?data_source=1"' in link
+        assert 'target="_blank"' in link
+        assert 'rel="noopener"' in link
+
+    def test_there_is_no_table_filter_or_export(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        body = logged_in_admin.get(self._url(existing_assembly)).get_data(as_text=True)
+
+        assert "<table" not in body
+        assert 'id="status-filter"' not in body
+        assert "No respondents uploaded yet." not in body
+
+    def test_a_reader_is_told_there_is_nobody_and_offered_nothing(
+        self, logged_in_user: FlaskClient, regular_user, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.READ_ONLY)
+
+        body = logged_in_user.get(self._url(existing_assembly)).get_data(as_text=True)
+
+        assert "No respondents yet" in body
+        assert "Upload respondents" not in body
+        assert "Go to the Registration tab" not in body
+
+    def test_one_respondent_brings_the_table_back(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_statuses(fake_store, existing_assembly.id, [RespondentStatus.POOL])
+
+        body = logged_in_admin.get(self._url(existing_assembly)).get_data(as_text=True)
+
+        assert "No respondents yet" not in body
+        assert "<table" in body
+
+    def test_the_tab_is_open_before_anyone_has_registered(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The tabs of a project held in OpenDLP do not wait for data."""
+        body = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}").get_data(as_text=True)
+
+        assert f'href="/backoffice/project/{existing_assembly.id}/respondents"' in body
+        assert f'href="/backoffice/project/{existing_assembly.id}/selection"' in body
 
 
 def _seed_statuses(fake_store: FakeStore, assembly_id: uuid.UUID, statuses: list[RespondentStatus]) -> None:

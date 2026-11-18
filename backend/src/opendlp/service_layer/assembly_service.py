@@ -724,10 +724,6 @@ class CSVUploadStatus:
     def has_data(self) -> bool:
         return self.respondents_count > 0 or self.targets_count > 0
 
-    @property
-    def selection_enabled(self) -> bool:
-        return self.respondents_count > 0 and self.targets_count > 0
-
 
 GSHEET_SOURCE = "gsheet"
 OPENDLP_SOURCE = "csv"
@@ -776,13 +772,18 @@ def get_tab_enabled_states(
     gsheet: AssemblyGSheet | None,
     csv_status: CSVUploadStatus | None,
 ) -> tuple[bool, bool, bool]:
-    """Return which of the (targets, respondents, selection) tabs are enabled."""
+    """Return which of the (targets, respondents, selection) tabs are enabled.
+
+    `csv_status` is not consulted: what a project held in OpenDLP holds no
+    longer decides which of its tabs open.
+    """
     if data_source == "gsheet":
         enabled = gsheet is not None
         return enabled, enabled, enabled
-    if data_source == "csv" and csv_status:
-        # targets is always enabled, as you can create from blank in the targets tab
-        return True, csv_status.has_respondents, csv_status.selection_enabled
+    if data_source == "csv":
+        # A project held in OpenDLP has every tab open from the start: each one
+        # says what it is waiting for and where to go to provide it.
+        return True, True, True
     return False, False, False
 
 
