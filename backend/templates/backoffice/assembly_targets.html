@@ -24,6 +24,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
             {{ assembly_tabs(
             assembly=assembly,
             active_tab="targets",
+            data_source=data_source|default(""),
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled|default(false)
@@ -56,7 +57,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
             </dl>
 
             <div class="mt-4">
-                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, _anchor='data-source'), variant="secondary") }}
+                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1, _anchor='data-source'), variant="secondary") }}
             </div>
         {% endcall %}
     {% else %}

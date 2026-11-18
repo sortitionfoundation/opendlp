@@ -3,7 +3,7 @@ ABOUTME: Shared assembly navigation tabs macro
 ABOUTME: Ensures consistent tab display across all assembly pages
 #}
 {% from "backoffice/components/tabs.html" import tabs %}
-{% macro assembly_tabs(assembly, active_tab, targets_enabled=false, respondents_enabled=false, selection_enabled=false, preserve_scroll=false) %}
+{% macro assembly_tabs(assembly, active_tab, targets_enabled=false, respondents_enabled=false, selection_enabled=false, preserve_scroll=false, data_source="") %}
     {#
     Render consistent assembly navigation tabs across all assembly pages.
 
@@ -15,13 +15,18 @@ ABOUTME: Ensures consistent tab display across all assembly pages
         selection_enabled: Whether the Selection tab should be clickable
         preserve_scroll: Whether to preserve scroll position when switching tabs (default: false —
             the tab bar is sticky, so after navigation users expect to land at the top of the page)
+        data_source: Where the project's data is managed, "gsheet" or "csv". A project
+            held in Google Sheets has no Registration tab: its respondents arrive in
+            the spreadsheet, so a registration page here would collect people that
+            selection never reads. The registration pages themselves stay reachable
+            by their address.
 
     Where the data is managed and who is on the team are cards on the Project
     Details tab, not tabs of their own.
 
     Usage:
         assembly_tabs(assembly, "details")
-        assembly_tabs(assembly, "targets", targets_enabled=true, selection_enabled=true)
+        assembly_tabs(assembly, "targets", targets_enabled=true, selection_enabled=true, data_source=data_source)
     #}
     {# Build the item list so the Dashboard tab (results dashboard, ticket 886) can be
        gated behind the FF_RESULTS_DASHBOARD feature flag. When the flag is off or
@@ -41,12 +46,6 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     "disabled": not targets_enabled
     },
     {
-    "key": "registration",
-    "label": _("Registration"),
-    "href": url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id),
-    "active": active_tab == "registration"
-    },
-    {
     "key": "respondents",
     "label": _("Respondents"),
     "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id),
@@ -61,6 +60,15 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     "disabled": not selection_enabled
     }
     ] %}
+    {% if data_source != "gsheet" %}
+        {# After Targets, where it has always sat. #}
+        {% set _ignored = tab_items.insert(2, {
+        "key": "registration",
+        "label": _("Registration"),
+        "href": url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id),
+        "active": active_tab == "registration"
+        }) %}
+    {% endif %}
     {% if feature("results_dashboard") %}
         {% set _ignored = tab_items.append({
         "key": "dashboard",

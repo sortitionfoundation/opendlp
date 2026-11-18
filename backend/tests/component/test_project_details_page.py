@@ -1002,6 +1002,56 @@ class TestProjectTabs:
         assert f"{_details(existing_assembly)}/data" not in tabs
         assert f"{_details(existing_assembly)}/members" not in tabs
 
+    def test_a_project_held_in_opendlp_has_a_registration_tab_after_targets(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        tabs = self._tab_bar(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert f'href="{_details(existing_assembly)}/registration"' in tabs
+        assert tabs.index("Targets") < tabs.index("Registration") < tabs.index("Respondents")
+
+    @pytest.mark.parametrize("page", ["", "/targets", "/respondents", "/selection"])
+    def test_a_google_sheets_project_has_no_registration_tab(
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly, page: str
+    ) -> None:
+        """Its respondents arrive in the spreadsheet, so a registration page would collect people nobody selects from."""
+        html = logged_in_admin.get(f"{_details(existing_assembly_with_gsheet)}{page}").data.decode()
+
+        tabs = self._tab_bar(html)
+        assert "Registration" not in tabs
+        assert "Targets" in tabs
+        assert "Respondents" in tabs
+
+    def test_a_google_sheets_project_has_no_registration_link_card(
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
+    ) -> None:
+        html = logged_in_admin.get(_details(existing_assembly_with_gsheet)).data.decode()
+
+        assert 'id="registration-link"' not in html
+        assert 'id="team"' in html
+
+    def test_a_google_sheets_projects_registration_page_is_still_there_by_its_address(
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
+    ) -> None:
+        """Hidden, not refused - and the page it shows has no Registration tab either."""
+        response = logged_in_admin.get(f"{_details(existing_assembly_with_gsheet)}/registration")
+
+        assert response.status_code == 200
+        assert "Registration" not in self._tab_bar(response.data.decode())
+
+    @pytest.mark.parametrize("page", ["/targets", "/respondents"])
+    def test_a_google_sheets_projects_data_configuration_link_opens_the_dialog(
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly, page: str
+    ) -> None:
+        details = _details(existing_assembly_with_gsheet)
+        html = logged_in_admin.get(f"{details}{page}").data.decode()
+
+        link = html.split("View Data Configuration")[0].rsplit("<a ", 1)[1]
+        assert f'href="{details}?data_source=1#data-source"' in link
+        landed = logged_in_admin.get(f"{details}?data_source=1").data.decode()
+        assert "Data source settings" in landed
+        assert 'id="project-dialog-title"' in landed
+
     def test_tab_links_carry_no_source_parameter(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:

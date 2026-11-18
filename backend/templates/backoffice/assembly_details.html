@@ -24,6 +24,7 @@ ABOUTME: Cards for the project's basic details (edited in place), data source, r
             {{ assembly_tabs(
             assembly=assembly,
             active_tab="details",
+            data_source=data_source|default(""),
             targets_enabled=targets_enabled|default(false),
             respondents_enabled=respondents_enabled|default(false),
             selection_enabled=selection_enabled|default(false)
@@ -67,7 +68,10 @@ ABOUTME: Cards for the project's basic details (edited in place), data source, r
             {% include "backoffice/project_details/_selection_settings_card.html" %}
         {% endif %}
 
-        {% include "backoffice/project_details/_registration_card.html" %}
+        {# A Google Sheets project has no Registration tab for the card to lead to. #}
+        {% if data_source != "gsheet" %}
+            {% include "backoffice/project_details/_registration_card.html" %}
+        {% endif %}
 
         {% include "backoffice/project_details/_team_card.html" %}
     </div>

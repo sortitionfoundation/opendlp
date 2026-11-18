@@ -18,6 +18,7 @@ ABOUTME: Opens as a takeover dialog over the registration hub; set-up and upload
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
             active_tab="registration",
+            data_source=data_source|default(""),
             targets_enabled=targets_enabled|default(false),
             respondents_enabled=respondents_enabled|default(false),
             selection_enabled=selection_enabled|default(false)
