@@ -74,6 +74,7 @@ class TestAuthenticationFlow:
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
+                "accept_beta_disclaimer": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
@@ -160,6 +161,7 @@ class TestOpenSignup:
             "password": "securepassword123",  # pragma: allowlist secret
             "password_confirm": "securepassword123",  # pragma: allowlist secret
             "accept_data_agreement": "y",
+            "accept_beta_disclaimer": "y",
             "csrf_token": get_csrf_token(client, url),
         }
         data.update(extra_data)
@@ -197,6 +199,29 @@ class TestOpenSignup:
                 "comment": "Looking forward to it",
                 "heard_about_us": "newsletter",
             }
+
+    def test_register_records_when_the_agreements_were_accepted(
+        self, client: FlaskClient, postgres_session_factory, open_signup
+    ):
+        response = self._register(client)
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get_by_email("opensignup@example.com")
+            assert user is not None
+            assert user.user_data_agreement_agreed_at is not None
+            assert user.beta_disclaimer_agreed_at is not None
+
+    def test_register_without_the_beta_disclaimer_is_refused(
+        self, client: FlaskClient, postgres_session_factory, open_signup
+    ):
+        # An unticked box is not sent at all; an empty value reads the same
+        response = self._register(client, accept_beta_disclaimer="")
+        assert response.status_code == 200
+        assert b"You must accept the beta disclaimer to register" in response.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.users.get_by_email("opensignup@example.com") is None
 
     def test_register_without_invite_refused_when_flag_off(self, client: FlaskClient, postgres_session_factory):
         response = self._register(client)
@@ -281,6 +306,7 @@ class TestRegistrationServiceErrors:
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
+                "accept_beta_disclaimer": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=True,
@@ -554,6 +580,7 @@ class TestSignupTurnstile:
             "password": "securepassword123",  # pragma: allowlist secret
             "password_confirm": "securepassword123",  # pragma: allowlist secret
             "accept_data_agreement": "y",
+            "accept_beta_disclaimer": "y",
             "csrf_token": get_csrf_token(client, "/auth/register"),
         }
 

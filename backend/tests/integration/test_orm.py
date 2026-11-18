@@ -101,6 +101,39 @@ class TestUserORM:
 
         assert retrieved_user.sessions_invalidated_at is None
 
+    def test_beta_disclaimer_agreed_at_round_trips(self, postgres_session: Session):
+        user = User(
+            email="beta-tester@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed_password",  # pragma: allowlist secret
+        )
+        user.mark_beta_disclaimer_agreed()
+        agreed_at = user.beta_disclaimer_agreed_at
+
+        postgres_session.add(user)
+        postgres_session.commit()
+        postgres_session.expunge_all()
+
+        retrieved_user = postgres_session.query(User).filter_by(email="beta-tester@example.com").first()
+
+        assert retrieved_user.beta_disclaimer_agreed_at == agreed_at
+        assert retrieved_user.beta_disclaimer_agreed_at.tzinfo is not None
+
+    def test_beta_disclaimer_agreed_at_defaults_to_null(self, postgres_session: Session):
+        user = User(
+            email="before-beta@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed_password",  # pragma: allowlist secret
+        )
+
+        postgres_session.add(user)
+        postgres_session.commit()
+        postgres_session.expunge_all()
+
+        retrieved_user = postgres_session.query(User).filter_by(email="before-beta@example.com").first()
+
+        assert retrieved_user.beta_disclaimer_agreed_at is None
+
     def test_user_oauth_fields(self, postgres_session: Session):
         """Test that OAuth fields are properly stored and retrieved."""
         user = User(

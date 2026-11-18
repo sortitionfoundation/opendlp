@@ -25,6 +25,18 @@ Feature: User Sign in and Registration
     Given the user is starting to register
     Then the user should see what their password must be
 
+  Scenario: The beta disclaimer is read out with its tickbox
+    Given the user is starting to register
+    Then the user should see the beta disclaimer read out with its tickbox
+
+  Scenario: Register fails without accepting the beta disclaimer
+    Given the user is starting to register
+    When the user uses a valid invite code
+    And the user does not accept the beta disclaimer
+    And the user finishes registration
+    Then the user should not be registered
+    And the user should be told to accept the beta disclaimer
+
   Scenario: Sign out
     Given the user is signed in
     When the user signs out

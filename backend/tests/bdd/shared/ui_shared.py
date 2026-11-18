@@ -10,6 +10,12 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from ..config import ADMIN_EMAIL, ADMIN_PASSWORD, FRESH_PASSWORD, Urls
 
 NEWUSER_EMAIL = "newuser@example.com"
+BETA_DISCLAIMER = (
+    "By registering an account I understand that currently OpenDLP is only open for beta testing, therefore using "
+    "it in actual democratic lottery processes and/or with actual personal datasets is forbidden. I agree to "
+    "contact Sortition Foundation directly before using OpenDLP for actual projects described earlier. I also "
+    "consent to Sortition Foundation contacting me to learn more about my usage patterns and user needs."
+)
 
 
 @given("the user is signing in")
@@ -54,6 +60,7 @@ def _(page: Page):
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
     page.get_by_role("checkbox", name="Accept Data Agreement").check()
+    page.get_by_role("checkbox", name="Accept beta disclaimer").check()
     # Note: Don't check data agreement here - let the explicit steps handle it
 
 
@@ -67,6 +74,7 @@ def _(page: Page, user_invite: str):
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
     page.get_by_role("checkbox", name="Accept Data Agreement").check()
+    page.get_by_role("checkbox", name="Accept beta disclaimer").check()
     # Note: Don't check data agreement here - let the explicit steps handle it
 
 
@@ -100,6 +108,14 @@ def _(page: Page):
         checkbox.uncheck()
 
 
+@when("the user does not accept the beta disclaimer")
+def _(page: Page):
+    """the user does not accept the beta disclaimer."""
+    checkbox = page.get_by_role("checkbox", name="Accept beta disclaimer")
+    if checkbox.is_checked():
+        checkbox.uncheck()
+
+
 @then("the user should see who to contact for an invite code")
 def _(page: Page):
     """the invite code field's helper text names who to ask, and links to them."""
@@ -118,6 +134,24 @@ def _(page: Page):
             r"^Your password must:\s*10–256 characters\s*Not be numbers only\s*"
             r"Not be a commonly used password\s*Not be too similar to your personal information$"
         )
+    )
+
+
+@then("the user should see the beta disclaimer read out with its tickbox")
+def _(page: Page):
+    """the disclaimer paragraph is the accessible description of its short-labelled tickbox."""
+    checkbox = page.get_by_role("checkbox", name="Accept beta disclaimer")
+    expect(checkbox).not_to_be_checked()
+    expect(checkbox).to_have_accessible_description(BETA_DISCLAIMER)
+
+
+@then("the user should be told to accept the beta disclaimer")
+def _(page: Page):
+    """the error sits under the tickbox and is read out before the disclaimer."""
+    expect(page.get_by_text("You must accept the beta disclaimer to register")).to_be_visible()
+    checkbox = page.get_by_role("checkbox", name="Accept beta disclaimer")
+    expect(checkbox).to_have_accessible_description(
+        re.compile(r"^You must accept the beta disclaimer to register\s+By registering an account")
     )
 
 

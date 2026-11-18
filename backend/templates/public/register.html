@@ -203,6 +203,27 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 error=form.accept_data_agreement.errors | join("\n"))
                 }}
             </fieldset>
+            {# The disclaimer is too long for a tickbox label, so it is a
+               paragraph with a short label under it, like the data agreement
+               above; the paragraph also describes the tickbox, so a screen
+               reader reads it out with the label. #}
+            <fieldset class="flex flex-col gap-3">
+                <legend class="text-heading-lg" style="color: var(--color-headings);">
+                    {{ _("Beta disclaimer") }}
+                </legend>
+                <p id="beta-disclaimer-text"
+                   class="text-body-sm"
+                   style="color: var(--color-secondary-text);">
+                    {{ _("By registering an account I understand that currently OpenDLP is only open for beta testing, therefore using it in actual democratic lottery processes and/or with actual personal datasets is forbidden. I agree to contact Sortition Foundation directly before using OpenDLP for actual projects described earlier. I also consent to Sortition Foundation contacting me to learn more about my usage patterns and user needs.") }}
+                </p>
+                {{ checkbox(form.accept_beta_disclaimer.name,
+                label=form.accept_beta_disclaimer.label.text,
+                checked=form.accept_beta_disclaimer.data,
+                required=true,
+                error=form.accept_beta_disclaimer.errors | join("\n"),
+                described_by_id="beta-disclaimer-text")
+                }}
+            </fieldset>
             {% if config.TURNSTILE_SITE_KEY %}
                 <div class="cf-turnstile"
                      data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"

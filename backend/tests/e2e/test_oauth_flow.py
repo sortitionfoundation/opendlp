@@ -141,6 +141,7 @@ class TestOAuthRegistration:
                 "action": "google",
                 "invite_code": valid_invite.code,
                 "accept_data_agreement": "y",
+                "accept_beta_disclaimer": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
@@ -169,6 +170,9 @@ class TestOAuthRegistration:
             assert user.oauth_provider == "google"
             assert user.oauth_id == "google-oauth-id-12345"
             assert user.password_hash is None  # No password for OAuth-only user
+            # The tickboxes on the form were carried across the redirect
+            assert user.user_data_agreement_agreed_at is not None
+            assert user.beta_disclaimer_agreed_at is not None
 
     def test_register_google_saves_survey_answers(
         self, client: FlaskClient, postgres_session_factory, admin_user: User, mock_oauth_token, open_signup
@@ -181,6 +185,7 @@ class TestOAuthRegistration:
                 "action": "google",
                 "invite_code": "",
                 "accept_data_agreement": "y",
+                "accept_beta_disclaimer": "y",
                 "survey_location": "Berlin, Germany",
                 "survey_process_plan": "within_year",
                 "survey_heard_about_us": "event",
@@ -421,6 +426,7 @@ class TestMicrosoftOAuthRegistration:
                 "action": "microsoft",
                 "invite_code": valid_invite.code,
                 "accept_data_agreement": "y",
+                "accept_beta_disclaimer": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
@@ -450,6 +456,9 @@ class TestMicrosoftOAuthRegistration:
             assert user.oauth_provider == "microsoft"
             assert user.oauth_id == "microsoft-oauth-id-67890"
             assert user.password_hash is None  # No password for OAuth-only user
+            # The tickboxes on the form were carried across the redirect
+            assert user.user_data_agreement_agreed_at is not None
+            assert user.beta_disclaimer_agreed_at is not None
 
     def test_register_microsoft_saves_survey_answers(
         self, client: FlaskClient, postgres_session_factory, admin_user: User, mock_microsoft_oauth_token, open_signup
@@ -461,6 +470,7 @@ class TestMicrosoftOAuthRegistration:
                 "action": "microsoft",
                 "invite_code": "",
                 "accept_data_agreement": "y",
+                "accept_beta_disclaimer": "y",
                 "survey_location": "Vienna, Austria",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },

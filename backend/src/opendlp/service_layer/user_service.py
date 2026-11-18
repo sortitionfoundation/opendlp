@@ -57,6 +57,7 @@ def create_user(
     is_active: bool = True,
     accept_data_agreement: bool = False,
     auto_confirm_email: bool = False,
+    accept_beta_disclaimer: bool = False,
 ) -> tuple[User, EmailConfirmationToken | None]:
     """
     Create a new user with proper validation.
@@ -72,6 +73,7 @@ def create_user(
         invite_code: invite code for registration
         global_role: role for the user
         accept_data_agreement: whether user has accepted data agreement
+        accept_beta_disclaimer: whether user has accepted the beta disclaimer
         auto_confirm_email: if True, mark email as confirmed immediately
             (used for CLI-created users where no confirmation email is sent)
 
@@ -131,6 +133,8 @@ def create_user(
     # Mark data agreement as accepted if provided
     if accept_data_agreement:
         user.mark_data_agreement_agreed()
+    if accept_beta_disclaimer:
+        user.mark_beta_disclaimer_agreed()
 
     uow.users.add(user)
 
@@ -337,6 +341,7 @@ def find_or_create_oauth_user(
     invite_code: str | None = None,
     accept_data_agreement: bool = False,
     open_signup: bool = False,
+    accept_beta_disclaimer: bool = False,
 ) -> tuple[User, bool]:
     """
     Find existing OAuth user or create new one.
@@ -357,6 +362,7 @@ def find_or_create_oauth_user(
         accept_data_agreement: whether user has accepted data agreement
         open_signup: when True, a new user may be created without an invite code
             (and is given the organiser role, mirroring email open signup)
+        accept_beta_disclaimer: whether user has accepted the beta disclaimer
 
     Returns:
         Tuple of (User, created_flag) where created_flag is True if user was created
@@ -397,6 +403,7 @@ def find_or_create_oauth_user(
         oauth_provider=provider,
         oauth_id=oauth_id,
         accept_data_agreement=accept_data_agreement,
+        accept_beta_disclaimer=accept_beta_disclaimer,
         **role_kwargs,
     )
     # Token will be None for OAuth users (they're auto-confirmed)

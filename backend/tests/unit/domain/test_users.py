@@ -177,6 +177,37 @@ class TestUser:
 
         assert user.user_data_agreement_agreed_at == agreement_time
 
+    def test_mark_beta_disclaimer_agreed(self):
+        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+
+        assert user.beta_disclaimer_agreed_at is None
+
+        before_time = datetime.now(UTC)
+        user.mark_beta_disclaimer_agreed()
+        after_time = datetime.now(UTC)
+
+        assert user.beta_disclaimer_agreed_at is not None
+        assert before_time <= user.beta_disclaimer_agreed_at <= after_time
+        # A separate agreement from the data agreement, with a time of its own
+        assert user.user_data_agreement_agreed_at is None
+
+    def test_create_user_with_beta_disclaimer_time(self):
+        agreement_time = datetime.now(UTC)
+        user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+            beta_disclaimer_agreed_at=agreement_time,
+        )
+
+        assert user.beta_disclaimer_agreed_at == agreement_time
+
+    def test_detached_copy_keeps_the_beta_disclaimer_time(self):
+        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user.mark_beta_disclaimer_agreed()
+
+        assert user.create_detached_copy().beta_disclaimer_agreed_at == user.beta_disclaimer_agreed_at
+
     def test_user_equality_and_hash(self):
         user_id = uuid.uuid4()
 

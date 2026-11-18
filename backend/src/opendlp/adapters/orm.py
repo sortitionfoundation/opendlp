@@ -281,6 +281,8 @@ users = Table(
     Column("email_confirmed_at", TZAwareDatetime(), nullable=True),
     # Sessions and remember-me cookies issued before this time are rejected
     Column("sessions_invalidated_at", TZAwareDatetime(), nullable=True),
+    # When the user agreed to the beta disclaimer on the sign-up page; null if they never did
+    Column("beta_disclaimer_agreed_at", TZAwareDatetime(), nullable=True),
     Index("ix_users_oauth_provider_id", "oauth_provider", "oauth_id"),
 )
 

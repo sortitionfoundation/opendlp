@@ -138,6 +138,35 @@ class TestCreateUser:
                 invite_code="INVALID",
             )
 
+    def test_create_user_records_when_the_agreements_were_accepted(self, uow):
+        before = datetime.now(UTC)
+        user, _ = user_service.create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPass123",  # pragma: allowlist secret
+            global_role=GlobalRole.USER,
+            accept_data_agreement=True,
+            accept_beta_disclaimer=True,
+        )
+
+        assert user.user_data_agreement_agreed_at is not None
+        assert user.beta_disclaimer_agreed_at is not None
+        assert user.beta_disclaimer_agreed_at >= before
+        stored = uow.users.get(user.id)
+        assert stored.beta_disclaimer_agreed_at == user.beta_disclaimer_agreed_at
+
+    def test_create_user_records_no_agreement_unless_told(self, uow):
+        """Accounts made outside the sign-up page, by the CLI say, have agreed to nothing."""
+        user, _ = user_service.create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPass123",  # pragma: allowlist secret
+            global_role=GlobalRole.USER,
+        )
+
+        assert user.user_data_agreement_agreed_at is None
+        assert user.beta_disclaimer_agreed_at is None
+
 
 class TestAuthenticateUser:
     """Test user authentication functionality."""
@@ -1042,6 +1071,24 @@ class TestOAuthUserOperations:
 
         assert created is True
         assert user.global_role == GlobalRole.ORGANISER
+
+    def test_find_or_create_oauth_user_records_the_agreements_on_a_new_user(self, uow, patch_password_hashing):
+        """The agreements ticked on the sign-up page reach the account the callback creates."""
+
+        user, created = user_service.find_or_create_oauth_user(
+            uow=uow,
+            provider="google",
+            oauth_id="google123",
+            email="newuser@example.com",
+            invite_code=None,
+            accept_data_agreement=True,
+            open_signup=True,
+            accept_beta_disclaimer=True,
+        )
+
+        assert created is True
+        assert user.user_data_agreement_agreed_at is not None
+        assert user.beta_disclaimer_agreed_at is not None
 
     def test_find_or_create_oauth_user_creates_new_user_with_invite(self, uow, patch_password_hashing):
         """Test OAuth user creation with valid invite."""

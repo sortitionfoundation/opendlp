@@ -1,5 +1,5 @@
 """ABOUTME: Component tests for the words around the sign-up page's fields
-ABOUTME: The invite code's helper text and support link, the password requirements and the survey's sources question"""
+ABOUTME: Invite code help, password rules, the survey's sources question and the beta disclaimer's tickbox"""
 
 import re
 
@@ -117,3 +117,66 @@ class TestWhereDidYouHearAboutUs:
 
     def test_the_question_is_not_asked_without_open_signup(self, client: FlaskClient):
         assert "survey_heard_about_us" not in _page(client)
+
+
+BETA_DISCLAIMER = (
+    "By registering an account I understand that currently OpenDLP is only open for beta testing, therefore using "
+    "it in actual democratic lottery processes and/or with actual personal datasets is forbidden. I agree to "
+    "contact Sortition Foundation directly before using OpenDLP for actual projects described earlier. I also "
+    "consent to Sortition Foundation contacting me to learn more about my usage patterns and user needs."
+)
+
+
+class TestBetaDisclaimer:
+    """The beta disclaimer sits under the data agreement, with a required tickbox of its own."""
+
+    def test_the_disclaimer_reads_as_written(self, client: FlaskClient):
+        paragraph = _tag(_page(client), r'<p id="beta-disclaimer-text"[^>]*>[^<]*</p>')
+
+        assert BETA_DISCLAIMER in " ".join(paragraph.split())
+
+    def test_the_disclaimer_and_its_tickbox_follow_the_data_agreement(self, client: FlaskClient):
+        html = _page(client)
+
+        data_agreement = html.find('name="accept_data_agreement"')
+        disclaimer = html.find('id="beta-disclaimer-text"')
+        tickbox = html.find('name="accept_beta_disclaimer"')
+        assert -1 not in (data_agreement, disclaimer, tickbox)
+        assert data_agreement < disclaimer < tickbox < html.find('value="email"', tickbox)
+
+    def test_the_tickbox_has_a_short_label_marked_required(self, client: FlaskClient):
+        tickbox = _tag(_page(client), r'<input[^>]*name="accept_beta_disclaimer"[\s\S]*?</label>')
+
+        assert 'type="checkbox"' in tickbox
+        label = _tag(tickbox, r'<span class="checkbox-label">[\s\S]*')
+        assert "Accept beta disclaimer" in label
+        assert "*</span>" in label
+
+    def test_the_tickbox_is_described_by_the_disclaimer(self, client: FlaskClient):
+        field = _tag(_page(client), r'<input[^>]*name="accept_beta_disclaimer"[^>]*>')
+
+        assert 'aria-describedby="beta-disclaimer-text"' in field
+
+    def test_an_unticked_disclaimer_is_refused_under_its_tickbox(self, client: FlaskClient, open_signup):
+        response = client.post(
+            "/auth/register",
+            data={
+                "first_name": "New",
+                "last_name": "User",
+                "email": "newuser@example.com",
+                "password": "securepassword123",  # pragma: allowlist secret
+                "password_confirm": "securepassword123",  # pragma: allowlist secret
+                "accept_data_agreement": "y",
+            },
+        )
+        html = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        error = _tag(html, r'<p id="accept_beta_disclaimer-error"[^>]*>[^<]*</p>')
+        assert "You must accept the beta disclaimer to register" in error
+        field = _tag(html, r'<input[^>]*name="accept_beta_disclaimer"[^>]*>')
+        assert 'aria-invalid="true"' in field
+        # One attribute naming both, or the second would be ignored
+        assert 'aria-describedby="accept_beta_disclaimer-error beta-disclaimer-text"' in field
+        # The data agreement the user did tick stays ticked
+        assert re.search(r"\bchecked\b", _tag(html, r'<input[^>]*name="accept_data_agreement"[^>]*>'))

@@ -39,6 +39,7 @@ class User:
         totp_enabled_at: datetime | None = None,
         email_confirmed_at: datetime | None = None,
         sessions_invalidated_at: datetime | None = None,
+        beta_disclaimer_agreed_at: datetime | None = None,
     ):
         validate_email(email)
 
@@ -61,6 +62,7 @@ class User:
         self.totp_enabled_at = totp_enabled_at
         self.email_confirmed_at = email_confirmed_at
         self.sessions_invalidated_at = sessions_invalidated_at
+        self.beta_disclaimer_agreed_at = beta_disclaimer_agreed_at
         self.assembly_roles: list[UserAssemblyRole] = []
 
     # couple of things required for flask_login
@@ -176,6 +178,10 @@ class User:
         """Mark that the user has agreed to the data agreement at the current time."""
         self.user_data_agreement_agreed_at = datetime.now(UTC)
 
+    def mark_beta_disclaimer_agreed(self) -> None:
+        """Mark that the user has agreed to the beta disclaimer at the current time."""
+        self.beta_disclaimer_agreed_at = datetime.now(UTC)
+
     def enable_totp(self, encrypted_secret: str) -> None:
         """Enable TOTP 2FA with encrypted secret."""
         if self.oauth_provider:
@@ -229,6 +235,7 @@ class User:
             totp_enabled_at=self.totp_enabled_at,
             email_confirmed_at=self.email_confirmed_at,
             sessions_invalidated_at=self.sessions_invalidated_at,
+            beta_disclaimer_agreed_at=self.beta_disclaimer_agreed_at,
         )
         detached_user.assembly_roles = [r.create_detached_copy() for r in self.assembly_roles]
         return detached_user
