@@ -159,6 +159,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             created_by_name=created_by_name,
             project_dialog=project_dialog,
             can_manage_project=can_manage_project,
+            csv_settings_confirmed=bool(nav.csv_status.csv_config and nav.csv_status.csv_config.settings_confirmed),
             targets_row=targets_row(nav.assembly, nav.csv_status.targets_count),
             respondents_row=respondents_row(nav.assembly, nav.csv_status.respondents_count),
             gsheet_access_result=gsheet_access_result,

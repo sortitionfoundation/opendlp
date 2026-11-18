@@ -413,6 +413,63 @@ class TestDataSourceCard:
         assert 'id="gsheet-access-status"' not in logged_in_admin.get(_details(existing_assembly)).data.decode()
 
 
+class TestSelectionSettingsCard:
+    """A card of a heading, a tag and a cog: the settings themselves are in the dialog the cog opens."""
+
+    @staticmethod
+    def _card(html: str) -> str:
+        """The card's own markup: from its id to the card after it."""
+        start = html.index('<div id="selection-settings"')
+        return html[start : html.index('id="registration-link"', start)]
+
+    def test_a_project_held_in_opendlp_has_the_card_with_settings_to_confirm(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "Selection settings" in card
+        assert "To confirm" in card
+        assert 'name="check_same_address"' not in card
+
+    def test_the_cog_opens_the_dialog_and_says_where_it_was_opened(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert 'aria-label="Selection settings"' in card
+        assert 'aria-haspopup="dialog"' in card
+        assert f'hx-get="{_details(existing_assembly)}/data/csv/settings?from=details"' in card
+        assert 'hx-target="#project-dialog-host"' in card
+
+    def test_saving_from_the_card_shows_the_settings_confirmed(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_admin.post(
+            f"{_details(existing_assembly)}/data/csv/settings",
+            data={"check_same_address_cols_string": "", "from": "details"},
+            headers=HTMX,
+        )
+        assert response.headers["HX-Redirect"].endswith(f"{_details(existing_assembly)}#selection-settings")
+
+        card = self._card(logged_in_admin.get(_details(existing_assembly)).data.decode())
+        assert "Confirmed" in card
+        assert "To confirm" not in card
+
+    def test_a_reader_sees_the_card_without_the_cog(self, reader: FlaskClient, existing_assembly: Assembly) -> None:
+        card = self._card(reader.get(_details(existing_assembly)).data.decode())
+
+        assert "To confirm" in card
+        assert 'aria-label="Selection settings"' not in card
+
+    def test_a_google_sheets_project_has_no_such_card(
+        self, logged_in_admin: FlaskClient, existing_assembly_with_gsheet: Assembly
+    ) -> None:
+        """Its selection settings are fields of the sheet's own settings."""
+        html = logged_in_admin.get(_details(existing_assembly_with_gsheet)).data.decode()
+
+        assert 'id="selection-settings"' not in html
+
+
 class TestRegistrationLinkCard:
     def _seed_page(
         self,

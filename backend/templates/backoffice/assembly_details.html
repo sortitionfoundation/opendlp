@@ -63,12 +63,17 @@ ABOUTME: Cards for the project's basic details (edited in place), data source, r
 
         {% include "backoffice/project_details/_data_source_card.html" %}
 
+        {% if data_source == "csv" %}
+            {% include "backoffice/project_details/_selection_settings_card.html" %}
+        {% endif %}
+
         {% include "backoffice/project_details/_registration_card.html" %}
 
         {% include "backoffice/project_details/_team_card.html" %}
     </div>
 
-    {# Where this page's dialogs open. The data source settings dialog is
+    {# Where this page's dialogs open: data source settings, selection
+       settings, and the team's. The data source settings dialog is
        rendered here already open when the address asked for it
        (?data_source=1), which is where deleting data from it comes back to. #}
     <div id="project-dialog-host" data-fragment-dialog-host>
