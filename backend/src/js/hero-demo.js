@@ -25,7 +25,9 @@ function startHeroDemo(root) {
     root.style.setProperty("--hero-demo-scale", scale);
   };
   fit();
-  window.addEventListener("resize", fit);
+  // A ResizeObserver also catches the frame appearing, e.g. when the showcase opens its tab.
+  if ("ResizeObserver" in window) new ResizeObserver(fit).observe(root);
+  else window.addEventListener("resize", fit);
   // Reduced motion: the window is sized, and the stylesheet keeps the last scene at rest.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 

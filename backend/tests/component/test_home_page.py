@@ -65,18 +65,14 @@ class TestHomePage:
         assert "img/opendlp-favicon.svg" in response.text
         assert "img/opendlp-logo-light.svg" not in response.text
 
-    def test_hero_carries_the_product_demo(self, client: FlaskClient) -> None:
-        """The demo's five screens are on the page, and its script loads under the page's nonce."""
+    def test_hero_shows_the_product_picture(self, client: FlaskClient) -> None:
+        """The hero's picture is the static image; the earlier demo and drawing live in the showcase."""
         response = client.get("/")
-        assert "data-hero-demo" in response.text
-        for scene in ("projects", "create", "targets", "selection", "dashboard"):
-            assert f'data-scene="{scene}"' in response.text
-        assert "js/hero-demo.js" in response.text
-        # every target the script looks for is a real attribute, not escaped text
-        for name in ("create-project", "title", "size", "submit-create", "min-1", "max-3", "run", "modal"):
-            assert f'data-demo="{name}"' in response.text
-        assert "&#34;" not in response.text[response.text.index("data-hero-demo") :]
-        assert "A short demonstration of OpenDLP" in response.text
+        assert "data-hero-image" in response.text
+        assert "img/home-hero.png" in response.text
+        assert "data-hero-demo" not in response.text
+        assert "hero-draw" not in response.text
+        assert "js/hero-demo.js" not in response.text
 
     def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/")
@@ -115,7 +111,7 @@ class TestHomePage:
         response = client.get("/")
         # The text column only: the demo beside it has buttons of its own.
         hero_start = response.text.index("<h1")
-        hero = response.text[hero_start : response.text.index("data-hero-demo", hero_start)]
+        hero = response.text[hero_start : response.text.index("data-hero-visual", hero_start)]
         assert hero.count("btn--primary") == 1
         assert hero.count("btn--secondary") == 1
         assert hero.index("/auth/register") < hero.index("mailto:")

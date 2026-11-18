@@ -1,0 +1,11 @@
+{#
+ABOUTME: The home page hero's picture: the backoffice's Your projects screen on a monitor,
+ABOUTME: with a callout pointing at Create project. A static image, the hero in production.
+#}
+{# The picture has its own light pink background; the rounded corners make its edge part of the design. #}
+<img src="{{ url_for('static', filename='img/home-hero.png', v=static_hashes('img/home-hero.png')) }}"
+     alt="{{ _("The OpenDLP projects screen on a monitor, with a callout pointing at the Create project button: start creating your first assembly project.") }}"
+     width="2880"
+     height="1720"
+     class="block w-full h-auto rounded-xl"
+     data-hero-image>

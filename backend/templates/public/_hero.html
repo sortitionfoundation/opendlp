@@ -1,0 +1,50 @@
+{#
+ABOUTME: The home page hero: the slogan, the pitch, the two calls to action and the proof lines on the left,
+ABOUTME: and whatever the caller puts on the right; the home page passes its picture, the showcase each version.
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_send, icon_plus %}
+{# Import with context: the Contact us button reads support_email_address. #}
+{# heading_tag: the showcase draws three heroes under its own h1, so it passes h3. #}
+{% macro home_hero(heading_tag="h1") %}
+    {% set visual = caller() %}
+    {% set heading_style = "color: var(--color-brand-700); font-family: var(--font-display);" %}
+    {% set body_style = "color: var(--color-body-text);" %}
+    {# The text left and the picture right from lg, stacked below it with the text first.
+       The header carries the logo, so the hero does not repeat it. #}
+    <section class="px-4 md:px-20 pt-10 pb-14 md:py-16"
+             style="background-color: var(--color-neutral-100)">
+        <div class="mx-auto max-w-screen-xl grid grid-cols-1 lg:grid-cols-[5fr_6fr] gap-10 lg:gap-14 items-center">
+            <div class="flex flex-col items-start gap-6">
+                {# The translator sees one sentence and can move the placeholder anywhere in it;
+                   we split the translation at the placeholder into the text before and after
+                   the highlighted word. The whitespace around the span keeps the sentence's
+                   spaces in the heading's text. #}
+                {% set slogan_parts = _("Bringing %(highlight)s to Sortition", highlight="\x00").split("\x00") %}
+                <{{ heading_tag }} class="text-4xl md:text-5xl font-bold leading-tight tracking-wide"
+                style="{{ heading_style }}">
+                {{ slogan_parts[0] | trim }}
+                <span class="px-3 inline-block"
+                      style="background-color: var(--color-primary-action);
+                             color: var(--color-neutral-0)">{{ _("Simplicity") }}</span>
+                {{ slogan_parts[1:] | join | trim }}
+            </{{ heading_tag }}>
+            <p class="max-w-xl text-lg md:text-xl leading-relaxed" style="{{ body_style }}">
+                {{ _("OpenDLP brings everything you need together into a trusted, cohesive platform that makes sortition simple; empowering anyone running a deliberative process to bring best practice in-house.") }}
+            </p>
+            <div class="flex flex-wrap gap-4">
+                {{ button(_("Create account"), variant="primary", href=url_for('auth.register'), leading_icon=icon_plus(classes="")) }}
+                {{ button(_("Contact us"), variant="secondary", href="mailto:" ~ support_email_address, leading_icon=icon_send(classes="")) }}
+            </div>
+                {# The figures stay outside the translated strings, so they read the same in every language. #}
+            <ul class="flex flex-col gap-1 text-base" style="color: var(--color-secondary-text)">
+                <li><strong style="color: var(--color-brand-700)">300+</strong> {{ _("democratic lotteries delivered by Sortition Foundation and Sortition Europe") }}</li>
+                <li><strong style="color: var(--color-brand-700)">30+</strong> {{ _("lotteries already run in OpenDLP") }}</li>
+            </ul>
+        </div>
+        <div class="w-full max-w-2xl mx-auto lg:max-w-none" data-hero-visual>
+            {{ visual }}
+        </div>
+    </div>
+    </section>
+{% endmacro %}

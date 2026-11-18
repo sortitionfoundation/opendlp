@@ -1,13 +1,15 @@
-# 775 — Home page content and the product demo
+# 775 — Home page content and the hero picture
 
 Status: implemented. The public home page (`templates/public/home.html`) gets
 the content team's second text pass and a hero that shows OpenDLP is a live web
-tool, not a command line: a short demo of the product.
+tool, not a command line: a picture of the product. The hero has had three
+pictures; the home page shows the last, and the design-system showcase keeps all
+three in a Public pages tab.
 
 Design references: the OpenDLP - UI Figma file, home page node `6524-18922`,
 for the sections below the hero; the content doc's "Mock Up Text" tab for every
 string; and infogram.com/features/interactive-content for the hero's shape,
-text and calls to action on the left, the moving picture on the right, stacked
+text and calls to action on the left, the picture on the right, stacked
 on a phone.
 
 ## The story
@@ -16,14 +18,21 @@ Hamish's redesigned page has been on main since 11-12. The marketing review of
 it asked for three things: proof on the first screen that the software exists
 and works, a section naming the problems practitioners face before the
 "how it works" section, and that section retitled so problem and solution
-match. The team agreed not to show real screens of the product, which are too
-dense for a first look, and to show the essence instead: the lottery.
+match. The team first agreed not to show real screens of the product, which are
+too dense for a first look, and to show the essence instead: the lottery. The
+stakeholders found that drawing too abstract; a demo built from the product's
+screens followed it, and the final choice is a static picture of the projects
+screen.
 
 ## The hero
 
+- **One macro**: `templates/public/_hero.html`'s `home_hero()` draws the hero
+  with whatever its caller puts in the picture slot (`data-hero-visual`), so the
+  home page and the showcase draw the same hero. `heading_tag` lets the
+  showcase pass `h3` under its own `h1`.
 - **Two columns from `lg`** (`grid-cols-[5fr_6fr]`): the heading, the new
   paragraph, the buttons and the two proof lines on the left, left-aligned; the
-  demo on the right. Below `lg` they stack, text first. The header already
+  picture on the right. Below `lg` they stack, text first. The header already
   carries the logo, so the hero no longer repeats the full logo above the
   heading.
 - **Heading** "Bringing Simplicity to Sortition", capitalised as the content doc
@@ -39,11 +48,36 @@ dense for a first look, and to show the essence instead: the lottery.
   "already ran"; the grammar is fixed here and flagged to the author). The
   figures sit outside the translated strings.
 
-## The demo
+## The picture (in production)
 
-Version 1 was an abstract SVG drawing of the lottery; the stakeholders found it
-too abstract, so the hero now plays a short demo built from the backoffice's
-own components, simplified.
+- `templates/public/_hero_image.html` shows `static/img/home-hero.png`
+  (2880×1720, from the design): the Your projects screen on a monitor, with a
+  callout pointing at Create project, "Start creating your first assembly
+  project". The image carries its width and height, so the page does not jump
+  while it loads, and a translated alt text.
+- The callout is part of the image, so it reads in English in every language.
+- The picture has its own light pink background (#FAF3F5) on the hero's grey
+  (neutral-100); its corners are rounded so the edge reads as a card.
+
+## The earlier versions, in the showcase
+
+The showcase (`/backoffice/showcase?tab=public`, staging and dev only) has a
+Public pages tab with one section, Home Page Hero, that draws the hero three
+times through `home_hero()`: with the picture, the demo and the drawing. The
+demo's script is loaded there; a `ResizeObserver` sizes it when its tab opens,
+since a hidden tab has no width.
+
+### Version 1: the abstract drawing
+
+`templates/public/_hero_animation.html`, restored from history with its
+`.hero-draw` rules in `main.css`: an inline SVG animated in CSS, one 17 s loop.
+Everyone invited appears as dots, targets fill, one click runs the lottery and
+the chosen dots take their seats; ticks by the targets show the panel matches
+them. Under reduced motion it shows the result at rest.
+
+### Version 2: the product demo
+
+A short demo built from the backoffice's own components, simplified.
 
 - **Where**: `templates/public/_hero_demo.html` holds five screens; the
   `.hero-demo` rules in `main.css` style the frame; `src/js/hero-demo.js`
@@ -100,11 +134,15 @@ passes.
 
 - Component (`tests/component/test_home_page.py`): the new titles, the problem
   section, Create account before Contact us with the two button variants, the
-  proof lines, the demo's five screens and its script, and the slogan split with the new
-  heading shape. The hero logo assertion now checks the full logo is gone and
+  proof lines, the picture in the hero with no demo or drawing on the page,
+  and the slogan split with the new heading shape. The hero logo assertion now checks the full logo is gone and
   the footer's compact logo stays.
+- Component (`tests/component/test_backoffice_general.py`): the showcase's
+  Public pages tab draws the hero three times, with the picture, the drawing and
+  the demo, the demo's five screens, its script, and every `data-demo` target as
+  a real attribute.
 - BDD (`features/home-page.feature`): the two "centred under the logo"
-  scenarios are replaced by two layout scenarios, the demo to the right of
+  scenarios are replaced by two layout scenarios, the picture to the right of
   the heading at 1440 and below it at 375, plus the existing phone-width and
   sign-in scenarios.
 - Two older component tests, the footer and header help links, fail on this

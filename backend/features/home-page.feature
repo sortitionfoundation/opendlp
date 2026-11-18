@@ -13,10 +13,10 @@ Feature: Home page
     Given an anonymous visitor opens the home page on a phone
     Then the home page should not scroll sideways
 
-  Scenario: The hero puts the demo beside the text on a wide screen
+  Scenario: The hero puts the picture beside the text on a wide screen
     Given an anonymous visitor opens the home page on a wide screen
-    Then the product demo should sit to the right of the heading
+    Then the product picture should sit to the right of the heading
 
-  Scenario: The hero stacks the demo under the text on a phone
+  Scenario: The hero stacks the picture under the text on a phone
     Given an anonymous visitor opens the home page on a phone
-    Then the product demo should sit below the heading
+    Then the product picture should sit below the heading
