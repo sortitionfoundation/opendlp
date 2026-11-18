@@ -5557,16 +5557,12 @@ msgid "Data"
 msgstr "Adatok"
 
 #: templates/backoffice/assembly_data.html
-#: templates/backoffice/dashboard_export_modal.html
-#: templates/backoffice/respondents/export_modal.html
-#: templates/backoffice/targets/export_modal.html
-#: templates/main/view_assembly_data.html
-msgid "Google Sheets"
-msgstr "Google Táblázat"
+msgid "Collect data in OpenDLP/upload CSV"
+msgstr ""
 
 #: templates/backoffice/assembly_data.html
-msgid "CSV file"
-msgstr "CSV fájl"
+msgid "Connect a Google sheet"
+msgstr ""
 
 #: templates/backoffice/assembly_data.html
 msgid "Select Data Source"
@@ -6652,6 +6648,13 @@ msgstr "CSV"
 #: templates/backoffice/dashboard_export_modal.html
 msgid "Xls"
 msgstr "Xls"
+
+#: templates/backoffice/dashboard_export_modal.html
+#: templates/backoffice/respondents/export_modal.html
+#: templates/backoffice/targets/export_modal.html
+#: templates/main/view_assembly_data.html
+msgid "Google Sheets"
+msgstr "Google Táblázat"
 
 #: templates/backoffice/dashboard_export_modal.html
 #: templates/backoffice/respondents/export_modal.html
