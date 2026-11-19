@@ -65,14 +65,23 @@ class TestHomePage:
         assert "img/opendlp-favicon.svg" in response.text
         assert "img/opendlp-logo-light.svg" not in response.text
 
-    def test_hero_shows_the_product_picture(self, client: FlaskClient) -> None:
-        """The hero's picture is the static image; the earlier demo and drawing live in the showcase."""
+    def test_hero_plays_the_product_demo(self, client: FlaskClient) -> None:
+        """The demo's five screens are in the hero, and its script loads under the page's nonce."""
         response = client.get("/")
-        assert "data-hero-image" in response.text
-        assert "img/home-hero.png" in response.text
-        assert "data-hero-demo" not in response.text
+        assert "data-hero-demo" in response.text
+        for scene in ("projects", "create", "targets", "selection", "dashboard"):
+            assert f'data-scene="{scene}"' in response.text
+        script = re.search(r"<script[^>]*js/hero-demo\.js[^>]*>", response.text)
+        assert script is not None
+        assert re.search(r'nonce="[^"]+"', script.group(0))
+        # every target the script looks for is a real attribute, not escaped text
+        for name in ("create-project", "title", "size", "submit-create", "min-1", "max-3", "run", "modal"):
+            assert f'data-demo="{name}"' in response.text
+        assert "&#34;" not in response.text[response.text.index("data-hero-demo") :]
+        assert "A short demonstration of OpenDLP" in response.text
+        # the static picture and the drawing are kept in the showcase only
+        assert "data-hero-image" not in response.text
         assert "hero-draw" not in response.text
-        assert "js/hero-demo.js" not in response.text
 
     def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/")

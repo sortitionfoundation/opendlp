@@ -1,6 +1,6 @@
 {#
 ABOUTME: Public home page on the OpenDLP design system, served at /
-ABOUTME: Header, hero with the product picture, why sortition is hard, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6524-18922
+ABOUTME: Header, hero with the product demo, why sortition is hard, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6524-18922
 #}
 {#
    Colours and fonts follow the backoffice design system rather than the
@@ -89,7 +89,7 @@ ABOUTME: Header, hero with the product picture, why sortition is hard, how it wo
         {% endcall %}
         <main id="main-content" class="flex-1">
             {% call home_hero() %}
-                {% include "public/_hero_image.html" %}
+                {% include "public/_hero_demo.html" %}
             {% endcall %}
             {# Why sortition is hard #}
             <section class="px-4 md:px-20 py-14 md:py-20"
@@ -295,4 +295,8 @@ ABOUTME: Header, hero with the product picture, why sortition is hard, how it wo
             </p>
         </footer>
     </div>
+    {# Plays the hero's product demo; without it the demo rests on its last screen. #}
+    <script nonce="{{ csp_nonce }}"
+            src="{{ url_for('static', filename='js/hero-demo.js', v=static_hashes('js/hero-demo.js')) }}"
+            defer></script>
 {% endblock %}

@@ -1,5 +1,7 @@
 """ABOUTME: BDD tests for the public home page served at /
-ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, the picture sits where the layout says, and it fits a phone"""
+ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, the demo sits where the layout says and plays, and it fits a phone"""
+
+import re
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, scenarios, then, when
@@ -7,6 +9,9 @@ from pytest_bdd import given, scenarios, then, when
 from .config import Urls
 
 scenarios("../../features/home-page.feature")
+
+# the class the demo's script sets while it plays
+RUNNING = re.compile(r"(^|\s)is-running(\s|$)")
 
 
 @given("an anonymous visitor opens the home page")
@@ -23,6 +28,14 @@ def open_home_page_on_phone(logged_out_page: Page) -> None:
 
 @given("an anonymous visitor opens the home page on a wide screen")
 def open_home_page_on_wide_screen(logged_out_page: Page) -> None:
+    logged_out_page.set_viewport_size({"width": 1440, "height": 900})
+    logged_out_page.goto(Urls.front_page)
+    logged_out_page.wait_for_load_state("networkidle")
+
+
+@given("an anonymous visitor who prefers reduced motion opens the home page")
+def open_home_page_with_reduced_motion(logged_out_page: Page) -> None:
+    logged_out_page.emulate_media(reduced_motion="reduce")
     logged_out_page.set_viewport_size({"width": 1440, "height": 900})
     logged_out_page.goto(Urls.front_page)
     logged_out_page.wait_for_load_state("networkidle")
@@ -53,19 +66,37 @@ def no_horizontal_scroll(logged_out_page: Page) -> None:
 
 def _hero_boxes(page: Page) -> tuple[dict[str, float], dict[str, float]]:
     heading = page.get_by_role("heading", level=1).bounding_box()
-    picture = page.locator("[data-hero-visual]").bounding_box()
+    demo = page.locator("[data-hero-visual]").bounding_box()
     assert heading is not None
-    assert picture is not None
-    return heading, picture
+    assert demo is not None
+    return heading, demo
 
 
-@then("the product picture should sit to the right of the heading")
-def animation_beside_heading(logged_out_page: Page) -> None:
-    heading, picture = _hero_boxes(logged_out_page)
-    assert picture["x"] >= heading["x"] + heading["width"]
+@then("the product demo should sit to the right of the heading")
+def demo_beside_heading(logged_out_page: Page) -> None:
+    heading, demo = _hero_boxes(logged_out_page)
+    assert demo["x"] >= heading["x"] + heading["width"]
 
 
-@then("the product picture should sit below the heading")
-def animation_below_heading(logged_out_page: Page) -> None:
-    heading, picture = _hero_boxes(logged_out_page)
-    assert picture["y"] >= heading["y"] + heading["height"]
+@then("the product demo should sit below the heading")
+def demo_below_heading(logged_out_page: Page) -> None:
+    heading, demo = _hero_boxes(logged_out_page)
+    assert demo["y"] >= heading["y"] + heading["height"]
+
+
+@then("the product demo should move on from its first screen")
+def demo_plays(logged_out_page: Page) -> None:
+    demo = logged_out_page.locator("[data-hero-demo]")
+    expect(demo).to_have_class(RUNNING)
+    # Your projects first; the cursor clicks Create project about two seconds in.
+    expect(demo.locator('[data-scene="create"]')).to_be_visible(timeout=10_000)
+
+
+@then("the product demo should rest on the dashboard screen")
+def demo_at_rest(logged_out_page: Page) -> None:
+    demo = logged_out_page.locator("[data-hero-demo]")
+    expect(demo.locator('[data-scene="dashboard"]')).to_be_visible()
+    # A playing demo opens on Your projects, with the cursor showing.
+    expect(demo.locator('[data-scene="projects"]')).to_be_hidden()
+    expect(demo.locator('[data-demo="cursor"]')).to_be_hidden()
+    expect(demo).not_to_have_class(RUNNING)

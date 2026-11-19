@@ -1,6 +1,6 @@
 {#
 ABOUTME: Showcase section for the public home page's hero: the three versions it has had, each drawn
-ABOUTME: with the hero's real text - the static picture in production, the product demo and the abstract drawing
+ABOUTME: with the hero's real text - the static picture, the product demo in production and the abstract drawing
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
 {# With context: the hero's Contact us button reads support_email_address. #}
@@ -14,9 +14,9 @@ ABOUTME: with the hero's real text - the static picture in production, the produ
 {% macro home_hero_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Home Page Hero") }}
-        {{ showcase_description("The hero of the public home page (templates/public/_hero.html): the slogan, the pitch, the two calls to action and the proof lines on the left, a picture on the right; stacked from below lg. It has had three pictures. The home page shows the first; the other two are kept for reference and can be dropped back in.") }}
+        {{ showcase_description("The hero of the public home page (templates/public/_hero.html): the slogan, the pitch, the two calls to action and the proof lines on the left, a picture on the right; stacked from below lg. It has had three pictures. The home page plays the second, the product demo; the other two are kept for reference.") }}
 
-        {{ showcase_subtitle("1. Static picture (in production)") }}
+        {{ showcase_subtitle("1. Static picture") }}
         {{ showcase_description("templates/public/_hero_image.html: the projects screen on a monitor with a callout pointing at Create project. One image, static/img/home-hero.png; its callout is part of the picture, so it reads in English in every language.") }}
         {% call hero_frame() %}
             {% call home_hero(heading_tag="h3") %}
@@ -24,7 +24,7 @@ ABOUTME: with the hero's real text - the static picture in production, the produ
             {% endcall %}
         {% endcall %}
 
-        {{ showcase_subtitle("2. Product demo") }}
+        {{ showcase_subtitle("2. Product demo (in production)") }}
         {{ showcase_description("templates/public/_hero_demo.html, played by src/js/hero-demo.js: five simplified backoffice screens built from the design-system macros. A cursor creates a project, names it, sets the targets, runs the selection, and the dashboard's pies show a panel that matches every target. Pauses off screen; with reduced motion it rests on the dashboard.") }}
         {% call hero_frame() %}
             {% call home_hero(heading_tag="h3") %}
