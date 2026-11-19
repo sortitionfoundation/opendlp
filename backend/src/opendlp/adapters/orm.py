@@ -748,6 +748,7 @@ registration_pages = Table(
         ForeignKey("email_templates.id", ondelete="SET NULL"),
         nullable=True,
     ),
+    Column("auto_reply_enabled", Boolean, nullable=False, default=True, server_default=text("true")),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Partial unique indexes — only enforce uniqueness when the value is set.

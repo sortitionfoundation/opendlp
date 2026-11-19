@@ -1,6 +1,6 @@
 # 1361 — Let a registration page turn its auto-reply off
 
-Status: **planned, not implemented**, on `1361-disable-auto-reply` (branched
+Status: **in progress**, on `1361-disable-auto-reply` (branched
 from `1361-auto-reply-fixes`). Questions are marked **Q1…Q5**; all are
 answered. Each keeps its options for the record, with the decision marked ✅.
 
@@ -225,8 +225,10 @@ activity texts are not translated (Q4). Check `docs/language.md`, then load
 
 ## 11. Order of work
 
-1. Domain flag and `sends_auto_reply()`, with unit tests.
-2. ORM column and migration, with the integration test.
+1. ✅ Domain flag and `sends_auto_reply()`, with unit tests.
+2. ✅ ORM column and migration (`bb3237d4dfc8`), with the integration tests.
+   Committed with step 1: a page loaded from the database is built without
+   `__init__`, so the domain attribute cannot ship without its column.
 3. Service: `set_auto_reply_enabled`, the send path, readiness, copy, with tests.
 4. Blueprint and template, with component tests.
 5. Text, catalogues, docs.
