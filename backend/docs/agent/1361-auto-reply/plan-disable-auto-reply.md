@@ -230,7 +230,7 @@ activity texts are not translated (Q4). Check `docs/language.md`, then load
    Committed with step 1: a page loaded from the database is built without
    `__init__`, so the domain attribute cannot ship without its column.
 3. ✅ Service: `set_auto_reply_enabled`, the send path, readiness, copy, with tests.
-4. Blueprint and template, with component tests.
+4. ✅ Blueprint and template, with component tests.
 5. Text, catalogues, docs.
 6. E2E and BDD.
 
