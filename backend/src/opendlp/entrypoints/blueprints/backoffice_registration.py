@@ -610,7 +610,7 @@ def _load_auto_reply_context(
     """Load the auto-reply template and readiness problems for the view route.
 
     Prefers the template currently assigned to the page. When nothing is assigned
-    (a legacy state from before the auto-reply became always-on) falls back to the
+    (a legacy state from before new pages had a template assigned) falls back to the
     first template stored for the assembly, so the editor still shows the
     pre-created copy for the manager to work on.
 
@@ -692,8 +692,9 @@ def _email_section_url(assembly_id: uuid.UUID, url_slug: str, edit: bool = False
 def _create_and_assign_default_template(assembly_id: uuid.UUID, page_id: uuid.UUID) -> None:
     """Create the default auto-reply template and assign it to the given page.
 
-    The auto-reply is always-on: a created template is an assigned template, and
-    this helper is the single place that enforces that invariant.
+    Whether the auto-reply is sent is the page's on/off setting, not whether it has a
+    template: a created template is an assigned template, and this helper is the
+    single place that enforces that invariant.
     """
     defaults = _default_email_template_content()
     uow = bootstrap.get_flask_uow()
@@ -887,7 +888,7 @@ def _create_default_auto_reply_template(assembly_id: uuid.UUID, page_id: uuid.UU
 
     Not fatal — if this fails (validation, race, etc.) we log and let the manager
     hit the "Set up auto-reply" fallback in the UI. The template is assigned
-    straight away: the auto-reply is always-on, so a page with a template sends it.
+    straight away, so a new page sends it unless the auto-reply is turned off.
     """
     try:
         _create_and_assign_default_template(assembly_id, page_id)
