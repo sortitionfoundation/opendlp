@@ -83,7 +83,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     assembly_id = _seed_assembly_with_required_email(postgres_session_factory, admin_user.id)
 
     # Step 0: create the registration page. Route seeds a default email template
-    # as a side effect and assigns it — the auto-reply is always-on.
+    # as a side effect and assigns it, with the auto-reply on.
     response = logged_in_admin.post(f"/backoffice/project/{assembly_id}/registration/create")
     assert response.status_code == 302
 
@@ -92,7 +92,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
         assert page is not None, "page should have been created"
         seeded = uow.email_templates.list_by_assembly(assembly_id)
         assert len(seeded) == 1, "creation should seed exactly one default template"
-        assert page.auto_reply_email_template_id == seeded[0].id, "seeded template is assigned (always-on)"
+        assert page.auto_reply_email_template_id == seeded[0].id, "seeded template is assigned"
         slug = page.url_slug
 
     # Creation lands on the editor's first step, the name and URLs.
@@ -156,7 +156,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     assert "assembly_title" in html.intro_html
 
     # Step 5: save updated auto-reply copy with save_and_next (it is already
-    # assigned and always-on — there is no enable step).
+    # assigned and on — there is no enable step).
     response = logged_in_admin.post(
         f"/backoffice/project/{assembly_id}/registration/{slug}/email/save",
         data={

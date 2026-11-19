@@ -525,7 +525,7 @@ class TestPageCreationSeedsDefaultTemplate:
         assert response.status_code == 302
         templates = _list_templates(fake_store, assembly_id)
         assert len(templates) == 1
-        # Assigned straight away — the auto-reply is always-on once a template exists.
+        # Assigned straight away, so the new page's auto-reply is sent unless turned off.
         page = _get_page(fake_store, assembly_id)
         assert page.auto_reply_email_template_id == templates[0].id
 
