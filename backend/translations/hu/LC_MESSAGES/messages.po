@@ -376,7 +376,6 @@ msgid "None yet"
 msgstr "Még nincs"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "I have supported one or more processes"
 msgstr "Egy vagy több folyamat lebonyolításában segítettem"
 
@@ -401,7 +400,6 @@ msgid "Planning one within the next year"
 msgstr "A következő egy éven belül tervezünk egyet"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "Planning one in the distant future"
 msgstr "A távolabbi jövőben tervezünk egyet"
 
@@ -414,37 +412,30 @@ msgid "Anything else you want to tell us?"
 msgstr "Van még valami, amit szeretnél elmondani nekünk?"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "Where did you hear about us?"
 msgstr "Honnan hallottál rólunk?"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "Social media"
 msgstr "Közösségi médiából"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "An event"
 msgstr "Egy rendezvényen"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "Forum"
 msgstr "Fórumon"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "Newsletter"
 msgstr "Hírlevélből"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "From a friend"
 msgstr "Egy barátomtól"
 
 #: src/opendlp/domain/user_signup_surveys.py
-#, fuzzy
 msgid "Other"
 msgstr "Egyéb"
 
@@ -1208,7 +1199,6 @@ msgid "Select the role this user will have on the project"
 msgstr "Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a projektben"
 
 #: src/opendlp/entrypoints/forms.py templates/backoffice/profile/_name_row.html
-#, fuzzy
 msgid "First name"
 msgstr "Keresztnév"
 
@@ -1217,7 +1207,6 @@ msgid "Your first name"
 msgstr "Keresztnév"
 
 #: src/opendlp/entrypoints/forms.py templates/backoffice/profile/_name_row.html
-#, fuzzy
 msgid "Last name"
 msgstr "Vezetéknév"
 
@@ -1226,22 +1215,18 @@ msgid "Your last name"
 msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py
-#, fuzzy
 msgid "Current password"
 msgstr "Jelenlegi jelszó"
 
 #: src/opendlp/entrypoints/forms.py
-#, fuzzy
 msgid "New password"
 msgstr "Új jelszó"
 
 #: src/opendlp/entrypoints/forms.py
-#, fuzzy
 msgid "Confirm new password"
 msgstr "Új jelszó megerősítése"
 
 #: src/opendlp/entrypoints/forms.py
-#, fuzzy
 msgid "Confirm password"
 msgstr "Jelszó megerősítése"
 
@@ -4397,22 +4382,19 @@ msgstr ""
 "fel"
 
 #: src/opendlp/service_layer/security.py
-#, fuzzy, python-format
+#, python-format
 msgid "%(min_length)s–%(max_length)s characters"
 msgstr "%(min_length)s–%(max_length)s karakter hosszú legyen"
 
 #: src/opendlp/service_layer/security.py
-#, fuzzy
 msgid "Not be numbers only"
 msgstr "Ne csak számjegyekből álljon"
 
 #: src/opendlp/service_layer/security.py
-#, fuzzy
 msgid "Not be a commonly used password"
 msgstr "Ne legyen gyakran használt jelszó"
 
 #: src/opendlp/service_layer/security.py
-#, fuzzy
 msgid "Not be too similar to your personal information"
 msgstr "Ne hasonlítson túlságosan a személyes adataidra"
 
@@ -7730,7 +7712,6 @@ msgid "Upload targets"
 msgstr ""
 
 #: templates/backoffice/data_source/_form.html
-#, fuzzy
 msgid "To run a selection with the example targets, set the panel size to 30."
 msgstr ""
 "Ha a példa célszámokkal szeretnél kiválasztást futtatni, állítsd a "
@@ -7873,12 +7854,10 @@ msgid "Comma-separated column names to include in output."
 msgstr "A kimenetbe beveendő oszlopnevek vesszővel elválasztva."
 
 #: templates/backoffice/data_source/_parts.html
-#, fuzzy
 msgid "Download an example CSV"
 msgstr "Példa CSV fájl letöltése"
 
 #: templates/backoffice/profile/2fa_backup_codes.html
-#, fuzzy
 msgid "New backup codes"
 msgstr "Új tartalék kódok"
 
@@ -7905,7 +7884,6 @@ msgstr "Kész"
 
 #: templates/backoffice/profile/2fa_settings.html
 #: templates/backoffice/profile/view.html
-#, fuzzy
 msgid "Two-factor authentication"
 msgstr "Kétlépcsős azonosítás"
 
@@ -7924,7 +7902,6 @@ msgstr ""
 "hitelesítési védelmet nyújt."
 
 #: templates/backoffice/profile/2fa_settings.html
-#, fuzzy
 msgid "Current status"
 msgstr "Jelenlegi állapot"
 
@@ -7937,7 +7914,6 @@ msgid "of 8"
 msgstr "a 8-ból"
 
 #: templates/backoffice/profile/2fa_settings.html
-#, fuzzy
 msgid "Enable two-factor authentication"
 msgstr "Kétlépcsős azonosítás bekapcsolása"
 
@@ -7973,7 +7949,6 @@ msgid "Set up two-factor authentication"
 msgstr "Kétlépcsős azonosítás beállítása"
 
 #: templates/backoffice/profile/2fa_settings.html
-#, fuzzy
 msgid "Manage two-factor authentication"
 msgstr "Kétlépcsős azonosítás kezelése"
 
@@ -8023,7 +7998,6 @@ msgid "Disable"
 msgstr "Kikapcsolás"
 
 #: templates/backoffice/profile/2fa_setup.html
-#, fuzzy
 msgid "Step 1: Scan QR code"
 msgstr "1. lépés: olvasd be a QR-kódot"
 
@@ -8044,7 +8018,6 @@ msgid "You can enter this code manually in your authenticator app:"
 msgstr "Ezt a kódot kézzel is beírhatod a hitelesítő alkalmazásodba:"
 
 #: templates/backoffice/profile/2fa_setup.html
-#, fuzzy
 msgid "Step 2: Save backup codes"
 msgstr "2. lépés: mentsd el a tartalék kódokat"
 
@@ -8059,7 +8032,6 @@ msgstr ""
 "alkalmazásodhoz, ezekkel a kódokkal tudsz bejelentkezni."
 
 #: templates/backoffice/profile/2fa_setup.html
-#, fuzzy
 msgid "Step 3: Verify setup"
 msgstr "3. lépés: ellenőrizd a beállítást"
 
@@ -8082,32 +8054,26 @@ msgid "Print codes"
 msgstr "Kódok nyomtatása"
 
 #: templates/backoffice/profile/_name_row.html
-#, fuzzy
 msgid "Edit first name"
 msgstr "Keresztnév szerkesztése"
 
 #: templates/backoffice/profile/_name_row.html
-#, fuzzy
 msgid "Save first name"
 msgstr "Keresztnév mentése"
 
 #: templates/backoffice/profile/_name_row.html
-#, fuzzy
 msgid "Cancel editing first name"
 msgstr "Keresztnév szerkesztésének elvetése"
 
 #: templates/backoffice/profile/_name_row.html
-#, fuzzy
 msgid "Edit last name"
 msgstr "Vezetéknév szerkesztése"
 
 #: templates/backoffice/profile/_name_row.html
-#, fuzzy
 msgid "Save last name"
 msgstr "Vezetéknév mentése"
 
 #: templates/backoffice/profile/_name_row.html
-#, fuzzy
 msgid "Cancel editing last name"
 msgstr "Vezetéknév szerkesztésének elvetése"
 
@@ -8122,7 +8088,7 @@ msgid "Change password"
 msgstr "Jelszó megváltoztatása"
 
 #: templates/backoffice/profile/_password_dialog.html
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Set a password to add it as an additional authentication method. You will"
 " be able to sign in using either your password or %(provider)s OAuth."
@@ -8135,17 +8101,15 @@ msgid "Your password must meet the following requirements:"
 msgstr "A jelszavadnak meg kell felelnie a következő követelményeknek:"
 
 #: templates/backoffice/profile/view.html
-#, fuzzy
 msgid "Profile information"
 msgstr "Profiladatok"
 
 #: templates/backoffice/profile/view.html
-#, fuzzy
 msgid "Authentication methods"
 msgstr "Bejelentkezési módok"
 
 #: templates/backoffice/profile/view.html
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Are you sure you want to remove password authentication? You will only be"
 " able to sign in with %(provider)s."
@@ -11230,17 +11194,15 @@ msgid "Add User to Assembly"
 msgstr "Felhasználó hozzáadása a közösségi gyűléshez"
 
 #: templates/public/_hero.html
-#, fuzzy, python-format
+#, python-format
 msgid "Bringing %(highlight)s to Sortition"
 msgstr "%(highlight)s a sorsolásban"
 
 #: templates/public/_hero.html
-#, fuzzy
 msgid "Simplicity"
 msgstr "Egyszerűség"
 
 #: templates/public/_hero.html
-#, fuzzy
 msgid ""
 "OpenDLP brings everything you need together into a trusted, cohesive "
 "platform that makes sortition simple; empowering anyone running a "
@@ -11260,7 +11222,6 @@ msgid "Contact us"
 msgstr ""
 
 #: templates/public/_hero.html
-#, fuzzy
 msgid ""
 "democratic lotteries delivered by Sortition Foundation and Sortition "
 "Europe"
@@ -11269,17 +11230,14 @@ msgstr ""
 "lebonyolításában"
 
 #: templates/public/_hero.html
-#, fuzzy
 msgid "lotteries already run in OpenDLP"
 msgstr "sorsolás már az OpenDLP-ben"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Citizens' Assembly on Climate"
 msgstr "Klímaügyi közösségi gyűlés"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid ""
 "A short demonstration of OpenDLP: an organiser creates a project, names "
 "it, sets its targets, runs the selection, and the dashboard shows a panel"
@@ -11290,22 +11248,18 @@ msgstr ""
 "irányítópult egy minden célszámnak megfelelő testületet mutat."
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Youth Panel on Transport"
 msgstr "Ifjúsági testület a közlekedésről"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "How should young people get around our city?"
 msgstr "Hogyan közlekedjenek a fiatalok a városunkban?"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Housing Forum"
 msgstr "Lakhatási fórum"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Where should the next 5,000 homes go?"
 msgstr "Hol épüljön fel a következő 5000 lakás?"
 
@@ -11314,42 +11268,34 @@ msgid "Set up a new project."
 msgstr "Hozz létre egy új projektet."
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Gender"
 msgstr "Nem"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Female"
 msgstr "Nő"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Male"
 msgstr "Férfi"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Non-binary"
 msgstr "Nem bináris"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "No selection has been run yet."
 msgstr "Még nem futott kiválasztás."
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Just now"
 msgstr "Az imént"
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "30 people selected."
 msgstr "30 személy kiválasztva."
 
 #: templates/public/_hero_demo.html
-#, fuzzy
 msgid "Selecting participants…"
 msgstr "Résztvevők kiválasztása…"
 
@@ -11398,12 +11344,10 @@ msgid "Remember your password?"
 msgstr "Eszedbe jutott a jelszavad?"
 
 #: templates/public/home.html
-#, fuzzy
 msgid "Stitched together by hand"
 msgstr "Kézzel összefércelve"
 
 #: templates/public/home.html
-#, fuzzy
 msgid ""
 "The work is often spread across spreadsheets, data sources and "
 "algorithms, stitched together by hand under time pressure."
@@ -11412,12 +11356,10 @@ msgstr ""
 "meg, időnyomás alatt, kézzel összefércelve."
 
 #: templates/public/home.html
-#, fuzzy
 msgid "Easy to get wrong"
 msgstr "Könnyű elrontani"
 
 #: templates/public/home.html
-#, fuzzy
 msgid ""
 "Mistakes are easy to make, and mistakes can undermine an assembly’s "
 "legitimacy."
@@ -11426,12 +11368,10 @@ msgstr ""
 "legitimitását."
 
 #: templates/public/home.html
-#, fuzzy
 msgid "Few places to learn"
 msgstr "Kevés helyen lehet megtanulni"
 
 #: templates/public/home.html
-#, fuzzy
 msgid ""
 "Democratic lotteries can be technically complex to implement. There are "
 "few public resources available to support them."
@@ -11511,12 +11451,10 @@ msgid ""
 msgstr ""
 
 #: templates/public/home.html
-#, fuzzy
 msgid "Sortition is complicated"
 msgstr "A sorsolás bonyolult"
 
 #: templates/public/home.html
-#, fuzzy
 msgid ""
 "A democratic lottery is the best practice method for selecting members of"
 " a deliberative process. Everyone has a chance to be invited, and no one "
@@ -11527,17 +11465,14 @@ msgstr ""
 "meghívásra, és senkinek sincs garantált helye."
 
 #: templates/public/home.html
-#, fuzzy
 msgid "But doing it well is hard."
 msgstr "De jól csinálni nehéz."
 
 #: templates/public/home.html
-#, fuzzy
 msgid "We are changing that with OpenDLP."
 msgstr "Ezen változtatunk az OpenDLP-vel."
 
 #: templates/public/home.html
-#, fuzzy
 msgid "OpenDLP makes it simple"
 msgstr "Az OpenDLP egyszerűvé teszi"
 
@@ -11640,7 +11575,6 @@ msgid "Open source under the Apache License 2.0"
 msgstr ""
 
 #: templates/public/login.html
-#, fuzzy
 msgid "Sign in to"
 msgstr "Bejelentkezés"
 
@@ -11677,7 +11611,6 @@ msgid "Create an Account"
 msgstr "Fiók létrehozása"
 
 #: templates/public/register.html
-#, fuzzy
 msgid "Create an account on"
 msgstr "Fiók létrehozása"
 
@@ -11710,7 +11643,7 @@ msgid "Optional — if you were given an invite code, enter it here."
 msgstr "Nem kötelező – ha kaptál meghívókódot, add meg itt."
 
 #: templates/public/register.html
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "If you don't have one, please contact %(link_start)sOpenDLP "
 "support%(link_end)s."
@@ -11719,7 +11652,6 @@ msgstr ""
 "ügyfélszolgálatával%(link_end)s."
 
 #: templates/public/register.html
-#, fuzzy
 msgid "Your password must:"
 msgstr "A jelszavad:"
 
@@ -11744,12 +11676,11 @@ msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
 #: templates/public/register.html
-#, fuzzy
 msgid "Beta disclaimer"
 msgstr "Bétatesztelési nyilatkozat"
 
 #: templates/public/register.html
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Registration for OpenDLP is currently only open for beta testing. Please "
 "%(link_start)scontact us%(link_end)s if you intend to use it in actual "
