@@ -687,32 +687,11 @@ def _default_email_template_content() -> dict[str, str]:
     return {
         "name": _("Registration auto-reply"),
         "subject": _("Thanks for registering for {{ project.title }}"),
-        # Follows the team's own auto-reply. What OpenDLP knows is a dynamic field;
-        # what it doesn't, such as the session dates, is a [placeholder] to replace.
         "body_html": _(
-            "<p>Dear {{ respondent.first_name_or_friend }},</p>\n"
-            "<p>Thank you for registering your interest in <strong>{{ assembly.title }}</strong>, "
-            "which will look at the question:</p>\n"
-            "<p><strong>{{ assembly.question }}</strong></p>\n"
-            "<p>The assembly will meet on these dates:</p>\n"
-            "<ul>\n"
-            "    <li>[Date, time and place of each session]</li>\n"
-            "</ul>\n"
-            "<p><strong>What happens next</strong></p>\n"
-            "<p>When registration closes, we will choose the members of the assembly by lottery from "
-            "everyone who registered. Depending on how many people register, you will usually have "
-            "around a [10 to 20] in 100 chance of being selected.</p>\n"
-            "<ul>\n"
-            "    <li><strong>[Date]:</strong> if you have been selected, we will tell you by email or phone, "
-            "and arrange a short call to answer any questions you have.</li>\n"
-            "    <li><strong>[Date]:</strong> if you have not been selected, we will tell you by email.</li>\n"
-            "    <li><strong>{{ assembly.first_assembly_date_text }}:</strong> the first session of the assembly.</li>\n"
-            "</ul>\n"
-            "<p>You can read how we look after your details in our privacy policy: "
-            "[link to your privacy policy].</p>\n"
-            "<p>If you have any questions, or your plans change and you can no longer take part, "
-            "please reply to this email or write to {{ reply_to_email }} as soon as you can.</p>\n"
-            "<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>"
+            "<p>Hi {{ respondent.first_name_or_friend }},</p>\n"
+            "<p>Thanks for registering for <strong>{{ project.title }}</strong>.</p>\n"
+            "<p>We'll be in touch about the assembly on {{ project.first_event_date_text }}.</p>\n"
+            "<p>Best wishes,<br>The team</p>"
         ),
     }
 
