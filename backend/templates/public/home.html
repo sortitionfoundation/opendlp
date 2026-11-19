@@ -1,6 +1,6 @@
 {#
 ABOUTME: Public home page on the OpenDLP design system, served at /
-ABOUTME: Header, hero, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6517-17690
+ABOUTME: Header, hero with the product demo, why sortition is hard, how it works, key benefits, who it is for, sign-in/sign-up panels and footer - Figma node 6524-18922
 #}
 {#
    Colours and fonts follow the backoffice design system rather than the
@@ -11,15 +11,15 @@ ABOUTME: Header, hero, how it works, key benefits, who it is for, sign-in/sign-u
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/navigation.html" import navigation %}
-{% from "backoffice/components/icons.html" import icon_send, icon_plus, icon_circle_check_big, icon_users, icon_copyright %}
+{% from "backoffice/components/icons.html" import icon_circle_check_big, icon_users, icon_copyright %}
+{% from "public/_hero.html" import home_hero with context %}
 {% block title %}{{ _("Open Democratic Lottery Platform") }}{% endblock %}
 {% set heading_style = "color: var(--color-brand-700); font-family: var(--font-display);" %}
 {% set body_style = "color: var(--color-body-text);" %}
-{% set intro = [
-_("A democratic lottery – a “sortition” – is a gold standard foundation for citizen engagement and deliberation."),
-_("Democratic lotteries can be technically complex to implement."),
-_("There are few public resources available to support them."),
-_("We are changing that with OpenDLP."),
+{% set problems = [
+(_("Stitched together by hand"), _("The work is often spread across spreadsheets, data sources and algorithms, stitched together by hand under time pressure.")),
+(_("Easy to get wrong"), _("Mistakes are easy to make, and mistakes can undermine an assembly’s legitimacy.")),
+(_("Few places to learn"), _("Democratic lotteries can be technically complex to implement. There are few public resources available to support them.")),
 ] %}
 {% set steps = [
 ("Set targets", _("Decide what the panel should look like, in terms of age, gender, education level, opinion, etc. The room is diverse and broadly reflects the wider population.")),
@@ -88,41 +88,33 @@ _("We are changing that with OpenDLP."),
             {% endif %}
         {% endcall %}
         <main id="main-content" class="flex-1">
-            {# Hero #}
-            <section class="px-4 pt-10 pb-14 md:pb-16"
-                     style="background-color: var(--color-neutral-100)">
-                <div class="mx-auto max-w-5xl flex flex-col items-center gap-8 text-center">
-                    {# The full logo carries the "OpenDLP / Democratic Lottery Platform"
-                       wordmark, so its alt text names the product. #}
-                    <img src="{{ url_for('static', filename='img/opendlp-logo-light.svg') }}"
-                         alt="{{ _('OpenDLP - Democratic Lottery Platform') }}"
-                         width="400"
-                         height="196"
-                         class="w-72 md:w-[400px] h-auto">
-                    {# The highlighted word sits centred under the logo. The translator sees
-                       one sentence and can move the placeholder anywhere in it; we split the
-                       translation at the placeholder into the text before and after the word.
-                       Below lg the three parts stack, each on its own centred line. From lg up
-                       they go in a grid whose outer columns are always equal, so the middle
-                       column - the word - is centred whatever the lengths either side, and
-                       even when one side is empty. The whitespace between the spans keeps
-                       the sentence's spaces in the heading's text. #}
-                    {% set slogan_parts = _("Bringing %(highlight)s to sortition", highlight="\x00").split("\x00") %}
-                    <h1 class="w-full flex flex-col items-center lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-baseline lg:gap-x-3 text-4xl md:text-5xl font-bold leading-tight tracking-wide"
-                        style="{{ heading_style }}">
-                        <span class="lg:text-right">{{ slogan_parts[0] | trim }}</span>
-                        <span class="px-3 inline-block"
-                              style="background-color: var(--color-primary-action);
-                                     color: var(--color-neutral-0)">{{ _("simplicity") }}</span>
-                        <span class="lg:text-left">{{ slogan_parts[1:] | join | trim }}</span>
-                    </h1>
-                    <div class="flex flex-wrap justify-center gap-4 md:gap-10">
-                        {{ button(_("Contact us"), variant="primary", href="mailto:" ~ support_email_address, leading_icon=icon_send(classes="")) }}
-                        {{ button(_("Create account"), variant="primary", href=url_for('auth.register'), leading_icon=icon_plus(classes="")) }}
-                    </div>
-                    <div class="max-w-3xl flex flex-col gap-4 text-lg md:text-xl leading-relaxed" style="{{ body_style }}">
-                        {% for paragraph in intro %}<p>{{ paragraph }}</p>{% endfor %}
-                    </div>
+            {% call home_hero() %}
+                {% include "public/_hero_demo.html" %}
+            {% endcall %}
+            {# Why sortition is hard #}
+            <section class="px-4 md:px-20 py-14 md:py-20"
+                     aria-labelledby="problem-heading"
+                     style="background-color: var(--color-page-background)">
+                <div class="mx-auto max-w-screen-xl flex flex-col gap-8">
+                    <h2 id="problem-heading"
+                        class="text-3xl md:text-4xl font-bold tracking-wide"
+                        style="{{ heading_style }}">{{ _("Sortition is complicated") }}</h2>
+                    <p class="text-xl md:text-2xl leading-relaxed" style="{{ heading_style }} font-family: var(--font-body); font-weight: 400;">
+                        {{ _("A democratic lottery is the best practice method for selecting members of a deliberative process. Everyone has a chance to be invited, and no one is guaranteed a place.") }}
+                    </p>
+                    <p class="text-xl md:text-2xl font-bold" style="{{ heading_style }}">{{ _("But doing it well is hard.") }}</p>
+                    <ul class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {% for title, text in problems %}
+                            <li class="flex flex-col gap-4 p-8 md:p-10"
+                                style="background-color: var(--color-neutral-100)">
+                                <h3 class="text-2xl font-bold" style="{{ heading_style }}">{{ title }}</h3>
+                                <p class="text-lg leading-relaxed" style="{{ body_style }}">{{ text }}</p>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <p class="text-xl md:text-2xl leading-relaxed" style="{{ heading_style }} font-family: var(--font-body); font-weight: 400;">
+                        {{ _("We are changing that with OpenDLP.") }}
+                    </p>
                 </div>
             </section>
             {# How it works #}
@@ -139,7 +131,7 @@ _("We are changing that with OpenDLP."),
                 <div class="relative mx-auto max-w-screen-xl flex flex-col gap-8">
                     <h2 id="how-it-works-heading"
                         class="text-3xl md:text-4xl font-bold tracking-wide"
-                        style="{{ heading_style }}">{{ _("How does OpenDLP work?") }}</h2>
+                        style="{{ heading_style }}">{{ _("OpenDLP makes it simple") }}</h2>
                     <p class="text-xl md:text-2xl leading-relaxed" style="{{ heading_style }} font-family: var(--font-body); font-weight: 400;">
                         {{ _("OpenDLP is an online service that makes it easier to run democratic lotteries for deliberative processes. It is transparent, auditable, and built for democratic institutions.") }}
                     </p>
@@ -303,4 +295,8 @@ _("We are changing that with OpenDLP."),
             </p>
         </footer>
     </div>
+    {# Plays the hero's product demo; without it the demo rests on its last screen. #}
+    <script nonce="{{ csp_nonce }}"
+            src="{{ url_for('static', filename='js/hero-demo.js', v=static_hashes('js/hero-demo.js')) }}"
+            defer></script>
 {% endblock %}

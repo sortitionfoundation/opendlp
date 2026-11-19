@@ -118,6 +118,22 @@ class TestBackofficeShowcase:
         missing = [name for name in names if name not in body]
         assert not missing, f"showcase does not list these icons: {missing}"
 
+    def test_showcase_presents_the_home_hero(self, client: FlaskClient) -> None:
+        """The Public pages tab draws the home page hero with its product demo, the demo's script included."""
+        response = client.get("/backoffice/showcase")
+        assert response.status_code == 200
+        body = response.data.decode()
+        assert 'data-tab="public"' in body
+        assert body.count("data-hero-visual") == 1
+        assert "data-hero-demo" in body
+        for scene in ("projects", "create", "targets", "selection", "dashboard"):
+            assert f'data-scene="{scene}"' in body
+        assert "js/hero-demo.js" in body
+        # every target the demo's script looks for is a real attribute, not escaped text
+        for name in ("create-project", "title", "size", "submit-create", "min-1", "max-3", "run", "modal"):
+            assert f'data-demo="{name}"' in body
+        assert "&#34;" not in body[body.index("data-hero-demo") :]
+
     def test_search_demo_empty_query(self, client: FlaskClient) -> None:
         """Search demo returns empty for no query."""
         response = client.get("/backoffice/showcase/search-demo")

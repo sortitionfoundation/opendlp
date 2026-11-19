@@ -45,7 +45,11 @@ export function showcaseNav() {
       // Priority 2: ?tab= query param
       var params = new URLSearchParams(window.location.search);
       var urlTab = params.get("tab");
-      if (urlTab === "foundations" || urlTab === "components") {
+      if (
+        urlTab === "foundations" ||
+        urlTab === "components" ||
+        urlTab === "public"
+      ) {
         self.tab = urlTab;
       }
       self.writeUrl("");

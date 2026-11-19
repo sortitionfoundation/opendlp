@@ -13,10 +13,18 @@ Feature: Home page
     Given an anonymous visitor opens the home page on a phone
     Then the home page should not scroll sideways
 
-  Scenario: The highlighted word sits centred under the logo on a wide screen
+  Scenario: The hero puts the demo beside the text on a wide screen
     Given an anonymous visitor opens the home page on a wide screen
-    Then the highlighted word should be centred under the logo
+    Then the product demo should sit to the right of the heading
 
-  Scenario: The highlighted word sits centred under the logo on a phone
+  Scenario: The hero stacks the demo under the text on a phone
     Given an anonymous visitor opens the home page on a phone
-    Then the highlighted word should be centred under the logo
+    Then the product demo should sit below the heading
+
+  Scenario: The demo plays through the product's screens
+    Given an anonymous visitor opens the home page on a wide screen
+    Then the product demo should move on from its first screen
+
+  Scenario: The demo rests on its result for a visitor who prefers reduced motion
+    Given an anonymous visitor who prefers reduced motion opens the home page
+    Then the product demo should rest on the dashboard screen
