@@ -231,7 +231,8 @@ activity texts are not translated (Q4). Check `docs/language.md`, then load
    `__init__`, so the domain attribute cannot ship without its column.
 3. ✅ Service: `set_auto_reply_enabled`, the send path, readiness, copy, with tests.
 4. ✅ Blueprint and template, with component tests.
-5. Text, catalogues, docs.
+5. ✅ Text, catalogues, docs. The checkbox label stays "Send auto-reply email".
+   The service docs strings are not extracted, so changing them costs no translation.
 6. E2E and BDD.
 
 Each step is its own commit.

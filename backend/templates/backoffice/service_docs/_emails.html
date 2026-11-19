@@ -499,7 +499,7 @@ ABOUTME: Documents CRUD on EmailTemplate, auto-reply assignment, readiness check
                 </div>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Inspect whether the assembly's registration pages are configured to actually deliver an auto-reply. The check runs on the assembly's field schema, which all of its pages share. Returns an ERROR if no email is collected, a WARNING if email is optional, or an empty list if email is required. Given a page, also returns a WARNING when its auto-reply has no reply-to, on the template or the assembly.") }}
+                {{ _("Inspect whether the assembly's registration pages are configured to actually deliver an auto-reply. The check runs on the assembly's field schema, which all of its pages share. Returns an ERROR if no email is collected, a WARNING if email is optional, or an empty list if email is required. Given a page, also returns a WARNING when its auto-reply has no reply-to, on the template or the assembly, and returns nothing at all when the page has its auto-reply turned off.") }}
             </p>
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
@@ -568,7 +568,7 @@ ABOUTME: Documents CRUD on EmailTemplate, auto-reply assignment, readiness check
                 <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-secondary-text); color: var(--color-page-background)">⚙️ Called from registration submit</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Send the configured auto-reply to a newly registered respondent. Skips silently when no auto-reply is configured. Logs a warning when configured but the respondent has no email. Never raises on send failure - the failure is recorded as a RespondentEmailSendRecord with outcome=FAILED.") }}
+                {{ _("Send the configured auto-reply to a newly registered respondent. Skips silently when no auto-reply is configured or the page has it turned off. Logs a warning when configured but the respondent has no email. Never raises on send failure - the failure is recorded as a RespondentEmailSendRecord with outcome=FAILED.") }}
             </p>
             <div class="grid grid-cols-2 gap-4">
                 <div>
