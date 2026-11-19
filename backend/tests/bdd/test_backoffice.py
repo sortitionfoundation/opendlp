@@ -2291,9 +2291,12 @@ def set_replies_go_to(page: Page, name: str, email: str):
 
 @then(parsers.parse('replies should go to "{name}" at "{email}"'))
 def replies_go_to(page: Page, name: str, email: str):
-    expect(page.get_by_label("Reply-to name", exact=True)).to_have_value(name, timeout=PLAYWRIGHT_TIMEOUT)
-    expect(page.get_by_label("Reply-to email address", exact=True)).to_have_value(email)
-    expect(page.get_by_label("Reply-to email address", exact=True)).to_have_attribute("readonly", "")
+    # Out of edit mode the saved values are shown as text, with no inputs to type in.
+    panel = page.locator("#reg-steps-panel-email")
+    expect(panel.get_by_text(name, exact=True)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(panel.get_by_text(email, exact=True)).to_be_visible()
+    expect(page.locator('input[name="template_reply_to_name"]')).to_have_count(0)
+    expect(page.locator('input[name="template_reply_to_email"]')).to_have_count(0)
 
 
 @then(parsers.parse('the formatting toolbar should offer "{name}"'))
