@@ -87,8 +87,8 @@ msgstr "Eredmények"
 #: templates/backoffice/assembly_targets.html
 #: templates/backoffice/components/assembly_tabs.html
 #: templates/backoffice/data_source/_form.html
-#: templates/main/view_assembly_base.html templates/public/_hero_animation.html
-#: templates/public/_hero_demo.html templates/targets/view_targets.html
+#: templates/main/view_assembly_base.html templates/public/_hero_demo.html
+#: templates/targets/view_targets.html
 msgid "Targets"
 msgstr "Célszámok"
 
@@ -11255,63 +11255,6 @@ msgstr ""
 msgid "lotteries already run in OpenDLP"
 msgstr "sorsolás már az OpenDLP-ben"
 
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid "How a democratic lottery works in OpenDLP"
-msgstr "Így működik a demokratikus sorsolás az OpenDLP-ben"
-
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid ""
-"A browser window: everyone invited appears as dots, targets are set, one "
-"click selects a panel that matches the targets, and the chosen dots form "
-"the seats of an assembly."
-msgstr ""
-"Egy böngészőablak: a meghívottak pontokként jelennek meg, a célszámok "
-"beállítása után egy kattintás kiválasztja a célszámoknak megfelelő "
-"testületet, és a kiválasztott pontok elfoglalják a közösségi gyűlés "
-"üléseit."
-
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid "Age"
-msgstr "Életkor"
-
-#: templates/public/_hero_animation.html templates/public/_hero_demo.html
-#, fuzzy
-msgid "Gender"
-msgstr "Nem"
-
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid "Region"
-msgstr "Régió"
-
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid "Select"
-msgstr "Kiválasztás"
-
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid "Everyone invited has a chance"
-msgstr "Minden meghívottnak van esélye"
-
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid "Set the targets"
-msgstr "Célszámok beállítása"
-
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid "One click runs the lottery"
-msgstr "Egy kattintás, és fut a sorsolás"
-
-#: templates/public/_hero_animation.html
-#, fuzzy
-msgid "A fair, representative panel"
-msgstr "Igazságos, reprezentatív testület"
-
 #: templates/public/_hero_demo.html
 #, fuzzy
 msgid "Citizens' Assembly on Climate"
@@ -11354,6 +11297,11 @@ msgstr "Hozz létre egy új projektet."
 
 #: templates/public/_hero_demo.html
 #, fuzzy
+msgid "Gender"
+msgstr "Nem"
+
+#: templates/public/_hero_demo.html
+#, fuzzy
 msgid "Female"
 msgstr "Nő"
 
@@ -11386,15 +11334,6 @@ msgstr "30 személy kiválasztva."
 #, fuzzy
 msgid "Selecting participants…"
 msgstr "Résztvevők kiválasztása…"
-
-#: templates/public/_hero_image.html
-#, fuzzy
-msgid ""
-"The OpenDLP projects screen on a monitor, with a callout pointing at the "
-"Create project button: start creating your first assembly project."
-msgstr ""
-"Az OpenDLP projektlistája egy monitoron, egy kiemeléssel, amely a Projekt"
-" létrehozása gombra mutat: kezdd el az első közösségi gyűlés projektedet."
 
 #: templates/public/_survey_fields.html
 msgid "characters"

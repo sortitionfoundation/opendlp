@@ -1,16 +1,16 @@
 {#
 ABOUTME: The home page hero: the slogan, the pitch, the two calls to action and the proof lines on the left,
-ABOUTME: and whatever the caller puts on the right; the home page passes the product demo, the showcase each version.
+ABOUTME: and whatever the caller puts on the right; the home page and the design-system showcase pass the product demo.
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/icons.html" import icon_send, icon_plus %}
 {# Import with context: the Contact us button reads support_email_address. #}
-{# heading_tag: the showcase draws three heroes under its own h1, so it passes h3. #}
+{# heading_tag: the showcase draws the hero under its own h1, so it passes h3. #}
 {% macro home_hero(heading_tag="h1") %}
     {% set visual = caller() %}
     {% set heading_style = "color: var(--color-brand-700); font-family: var(--font-display);" %}
     {% set body_style = "color: var(--color-body-text);" %}
-    {# The text left and the picture right from lg, stacked below it with the text first.
+    {# The text left and the demo right from lg, stacked below it with the text first.
        The header carries the logo, so the hero does not repeat it. #}
     <section class="px-4 md:px-20 pt-10 pb-14 md:py-16"
              style="background-color: var(--color-neutral-100)">

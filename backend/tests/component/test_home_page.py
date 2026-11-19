@@ -79,9 +79,6 @@ class TestHomePage:
             assert f'data-demo="{name}"' in response.text
         assert "&#34;" not in response.text[response.text.index("data-hero-demo") :]
         assert "A short demonstration of OpenDLP" in response.text
-        # the static picture and the drawing are kept in the showcase only
-        assert "data-hero-image" not in response.text
-        assert "hero-draw" not in response.text
 
     def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/")
