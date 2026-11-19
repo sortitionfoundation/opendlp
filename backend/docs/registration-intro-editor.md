@@ -326,6 +326,34 @@ Every email is sent with a plain-text version made from the HTML
 (`src/opendlp/domain/html_to_text.py`), which reads lists, quotes and
 horizontal lines as plain text would.
 
+### Turning it off
+
+Each page sends its auto-reply unless the step's **Send auto-reply email**
+checkbox is unticked. Like the rest of the step, it is changed in edit mode
+and saved with Save. The setting belongs to the page
+(`RegistrationPage.auto_reply_enabled`), so the page's other variants are not
+affected, and a copied page starts with the same setting.
+
+While it is off:
+
+- nobody who registers through the page is sent the email, and no send is
+  recorded against them;
+- the template is kept, so turning the auto-reply back on sends the same
+  email;
+- the step shows one notice saying the auto-reply is off, and none of its
+  other messages: neither the warnings described below nor the error that
+  the page collects no email address. They are about whether the email can
+  be delivered, and it is not being sent;
+- a test send still works, so the email can be checked before it is turned
+  back on.
+
+Turning it off or on is recorded in the page's activity. Nothing shows that
+record yet.
+
+An unticked checkbox is left out of a submitted form, so the step also sends
+a hidden `auto_reply_enabled_shown` field, and the setting only changes when
+that is present. A save from a form without the checkbox leaves it as it was.
+
 ### Where replies go
 
 The email is sent from the deployment's mail settings (`SMTP_FROM_EMAIL`,

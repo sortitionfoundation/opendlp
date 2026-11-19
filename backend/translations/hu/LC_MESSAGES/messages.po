@@ -8931,6 +8931,14 @@ msgid "Close and return to registration"
 msgstr "Bezárás és vissza a regisztrációhoz"
 
 #: templates/backoffice/registration/_step_email.html
+msgid ""
+"The auto-reply is off. People who register through this page will not get"
+" an email."
+msgstr ""
+"Az automatikus válasz ki van kapcsolva. Akik ezen az oldalon "
+"jelentkeznek, nem kapnak e-mailt."
+
+#: templates/backoffice/registration/_step_email.html
 msgid "Auto-reply cannot be sent"
 msgstr "Az automatikus válasz nem küldhető el"
 
