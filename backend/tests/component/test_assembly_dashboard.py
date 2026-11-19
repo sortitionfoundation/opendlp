@@ -19,8 +19,9 @@ def _dashboard_url(assembly) -> str:
     return f"/backoffice/project/{assembly.id}/dashboard"
 
 
-def _members_url(assembly) -> str:
-    return f"/backoffice/project/{assembly.id}/members"
+def _details_url(assembly) -> str:
+    """Any page carrying the project's tab bar would do; the details page is the first of them."""
+    return f"/backoffice/project/{assembly.id}"
 
 
 def _indicator_values(html: str) -> list[str]:
@@ -207,11 +208,11 @@ class TestTheViewToggle:
 
 class TestTheTabGating:
     def test_tab_is_hidden_by_default(self, logged_in_admin, existing_assembly):
-        html = logged_in_admin.get(_members_url(existing_assembly)).get_data(as_text=True)
+        html = logged_in_admin.get(_details_url(existing_assembly)).get_data(as_text=True)
         assert _dashboard_url(existing_assembly) not in html
 
     def test_tab_is_shown_when_the_flag_is_on(self, logged_in_admin, existing_assembly, results_dashboard_on):
-        html = logged_in_admin.get(_members_url(existing_assembly)).get_data(as_text=True)
+        html = logged_in_admin.get(_details_url(existing_assembly)).get_data(as_text=True)
         assert _dashboard_url(existing_assembly) in html
 
 

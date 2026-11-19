@@ -5,13 +5,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from sortition_algorithms.errors import SortitionBaseError
 from sortition_algorithms.features import ALL_FEATURE_FIELD_NAMES, read_in_features
 
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.translations import gettext as _
 
 from .constants import SORT_ORDER_STEP
-from .exceptions import InvalidSelection
+from .error_translation import translate_sortition_error
+from .exceptions import CuratedMessage, InvalidSelection
 from .tabular_data import rows_from_csv, select_columns
 from .target_service import _load_user_and_assembly, release_links_before_deleting_all, relink_fields
 
@@ -22,6 +24,15 @@ if TYPE_CHECKING:
 
 
 WARNING_VALUE_CHARS = 60
+
+
+class TargetsCsvError(CuratedMessage, InvalidSelection):
+    """A problem with what a targets file holds, written for the organiser.
+
+    The message names the target and the value at fault, and carries nothing
+    but our own wording, the library's translated wording, or the domain's
+    reason for refusing a value - so it is safe to show as it stands.
+    """
 
 
 class TargetImportResult(NamedTuple):
@@ -74,9 +85,18 @@ def _parse_percentage(raw: str, feature: str, value: str) -> float | None:
     try:
         percentage = float(raw.rstrip("%").strip())
     except ValueError as e:
-        raise InvalidSelection(f"Invalid percentage '{raw}' for {feature} / {value}") from e
+        raise TargetsCsvError(
+            _("Invalid percentage '%(raw)s' for %(feature)s / %(value)s", raw=raw, feature=feature, value=value)
+        ) from e
     if not 0 <= percentage <= 100:
-        raise InvalidSelection(f"Percentage '{raw}' for {feature} / {value} must be between 0 and 100")
+        raise TargetsCsvError(
+            _(
+                "Percentage '%(raw)s' for %(feature)s / %(value)s must be between 0 and 100",
+                raw=raw,
+                feature=feature,
+                value=value,
+            )
+        )
     return percentage
 
 
@@ -173,8 +193,11 @@ def import_targets_from_csv(
 
     try:
         feature_collection, feature_col, value_col = read_in_features(headers, body)
-    except Exception as e:
-        raise InvalidSelection(f"Failed to parse CSV: {e!s}") from e
+    except SortitionBaseError as e:
+        # The library's own account of what is wrong with the file. Anything
+        # else is a bug rather than a mistake in the file, and is left to
+        # reach the route's handler, which logs it.
+        raise TargetsCsvError(translate_sortition_error(e)) from e
 
     value_extras, category_extras = _collect_csv_extras(body, feature_col, value_col)
     warnings: list[str] = []
@@ -206,7 +229,9 @@ def import_targets_from_csv(
                 ),
             )
         except ValueError as e:
-            raise InvalidSelection(f"Invalid data for {feature_name}: {e}") from e
+            raise TargetsCsvError(
+                _("Invalid data for %(feature)s: %(error)s", feature=feature_name, error=str(e))
+            ) from e
 
         # Add target values
         for value_name, fv_minmax in feature_values.items():
@@ -225,7 +250,14 @@ def import_targets_from_csv(
                     minmax_manual=True,
                 )
             except ValueError as e:
-                raise InvalidSelection(f"Invalid data for {feature_name} / {value_name}: {e}") from e
+                raise TargetsCsvError(
+                    _(
+                        "Invalid data for %(feature)s / %(value)s: %(error)s",
+                        feature=feature_name,
+                        value=value_name,
+                        error=str(e),
+                    )
+                ) from e
             category.add_value(target_val)
 
         _fill_missing_percentages(category, assembly.number_to_select)

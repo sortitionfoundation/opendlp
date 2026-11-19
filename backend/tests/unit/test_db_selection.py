@@ -231,7 +231,6 @@ class TestDbSelectionSettingsForm:
                 data={
                     "check_same_address": True,
                     "check_same_address_cols_string": "address1, postcode",
-                    "columns_to_keep_string": "first_name, last_name",
                 },
                 meta={"csrf": False},
             )
@@ -243,7 +242,6 @@ class TestDbSelectionSettingsForm:
                 data={
                     "check_same_address": False,
                     "check_same_address_cols_string": "",
-                    "columns_to_keep_string": "",
                 },
                 meta={"csrf": False},
             )

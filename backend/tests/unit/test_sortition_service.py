@@ -1358,8 +1358,8 @@ class TestStartDbSelectTask:
         """A leftover gsheet id_column reaches neither the worker nor the record.
 
         The database data source always keys people by DB_ID_COLUMN, and the
-        stored settings snapshot is what generate_selection_csvs replays later,
-        so both have to carry the adapter's column name.
+        stored settings snapshot records what the run used, so both have to
+        carry the adapter's column name.
         """
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)

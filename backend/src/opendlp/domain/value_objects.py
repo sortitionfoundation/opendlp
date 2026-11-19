@@ -63,6 +63,15 @@ assembly_role_options = {
 }
 
 
+# Short labels, for a table cell or a sentence. Kept next to the role
+# definitions so a renamed role cannot leave a stale label behind somewhere.
+assembly_role_labels = {
+    AssemblyRole.ASSEMBLY_MANAGER: _l("Project Manager"),
+    AssemblyRole.CONFIRMATION_CALLER: _l("Confirmation Caller"),
+    AssemblyRole.READ_ONLY: _l("Read Only"),
+}
+
+
 class AssemblyStatus(Enum):
     ACTIVE = "active"
     ARCHIVED = "archived"
@@ -73,6 +82,50 @@ class AssemblyStatus(Enum):
 assembly_status_labels = {
     AssemblyStatus.ACTIVE: _l("Active"),
     AssemblyStatus.ARCHIVED: _l("Archived"),
+}
+
+
+class DataSource(Enum):
+    """Where a project's targets and respondents are managed."""
+
+    UNDECIDED = ""
+    OPENDLP = "opendlp"
+    GSHEET = "gsheet"
+
+
+data_source_labels = {
+    DataSource.OPENDLP: _l("In OpenDLP"),
+    DataSource.GSHEET: _l("In Google Sheets"),
+}
+
+
+class TargetsSource(Enum):
+    """How an organiser means to get targets into a project held in OpenDLP."""
+
+    UNDECIDED = ""
+    MANUAL = "manual"
+    CSV = "csv"
+
+
+targets_source_labels = {
+    TargetsSource.UNDECIDED: _l("Decide later"),
+    TargetsSource.MANUAL: _l("Create inside OpenDLP"),
+    TargetsSource.CSV: _l("Import from CSV"),
+}
+
+
+class RespondentsSource(Enum):
+    """How an organiser means to get respondents into a project held in OpenDLP."""
+
+    UNDECIDED = ""
+    REGISTRATION = "registration"
+    CSV = "csv"
+
+
+respondents_source_labels = {
+    RespondentsSource.UNDECIDED: _l("Decide later"),
+    RespondentsSource.REGISTRATION: _l("Through OpenDLP registration"),
+    RespondentsSource.CSV: _l("Import from CSV"),
 }
 
 

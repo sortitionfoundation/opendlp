@@ -3,7 +3,7 @@ ABOUTME: Backoffice assembly selection page
 ABOUTME: Displays selection operations: initial selection, replacement, and tab management
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/icons.html" import icon_download %}
+{% from "backoffice/components/icons.html" import icon_download, icon_settings %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/card.html" import card, card_body, card_footer %}
@@ -21,8 +21,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
             active_tab="selection",
-            data_source=data_source|default("") ,
-            gsheet=gsheet|default(none),
+            data_source=data_source|default(""),
             targets_enabled=targets_enabled|default(false),
             respondents_enabled=respondents_enabled|default(false),
             selection_enabled=selection_enabled|default(false)
@@ -54,13 +53,54 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {% endif %}
     {% if data_source == "csv" %}
         {# CSV/Database source - show selection options #}
-        {% if not csv_settings_confirmed|default(true) %}
-            {# Show warning when selection settings are not confirmed #}
-            {% call alert(variant="warning", use_caller=true) %}
-                {{ _("Please review and save the selection settings before running selection.") }}
-                <a href="{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id, source='csv', mode='edit') }}#selection-settings"
-                   class="underline font-medium">{{ _("Go to Data Settings") }}</a>
+        {% set settings_url = url_for('db_selection_backoffice.db_settings_dialog', assembly_id=assembly.id) %}
+        {# What selection is waiting for, each with the way to provide it. The
+           steps below stay on the page with their actions disabled meanwhile. #}
+        {% if selection_waiting %}
+            {% call alert(variant="warning", id="selection-waiting", use_caller=true) %}
+                <p class="font-medium mb-2">{{ _("Before you can run a selection:") }}</p>
+                <ul class="list-disc pl-6 flex flex-col gap-2">
+                    {% if "targets" in selection_waiting %}
+                        <li>
+                            {{ _("Add targets.") }}
+                            <a href="{{ url_for('targets.view_assembly_targets', assembly_id=assembly.id) }}"
+                               class="underline">{{ _("Go to Targets") }}</a>
+                        </li>
+                    {% endif %}
+                    {% if "respondents" in selection_waiting %}
+                        <li>
+                            {{ _("Add respondents.") }}
+                            <a href="{{ url_for('respondents.view_assembly_respondents', assembly_id=assembly.id) }}"
+                               class="underline">{{ _("Go to Respondents") }}</a>
+                        </li>
+                    {% endif %}
+                    {% if "settings" in selection_waiting %}
+                        <li>
+                            {{ _("Review and save the selection settings.") }}
+                            {% if can_manage_project %}
+                                {# A link, so it works without script; with it, the dialog opens in place. #}
+                                <a href="{{ settings_url }}"
+                                   class="underline"
+                                   data-focus-id="selection-settings-review"
+                                   aria-haspopup="dialog"
+                                   hx-get="{{ settings_url }}"
+                                   hx-target="#project-dialog-host"
+                                   hx-swap="innerHTML">{{ _("Review selection settings") }}</a>
+                            {% endif %}
+                        </li>
+                    {% endif %}
+                </ul>
             {% endcall %}
+        {% endif %}
+        {# The cog that opens the selection settings, above the steps they govern. #}
+        {% if can_manage_project %}
+            <div class="flex justify-end mb-2">
+                {{ button(variant="icon",
+                icon=icon_settings(),
+                aria_label=_("Selection settings"),
+                aria_haspopup="dialog",
+                attrs='data-focus-id="selection-settings-cog" hx-get="' ~ settings_url ~ '" hx-target="#project-dialog-host" hx-swap="innerHTML"') }}
+            </div>
         {% endif %}
         {# The two numbered steps: initial selection and replacement selection #}
         {% include "backoffice/components/selection_steps.html" %}
@@ -182,10 +222,10 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {% endcall %}
         </div>
     {% elif not gsheet %}
-        {# No Google Sheet configured - show configuration prompt #}
-        {{ alert(_("Please use the Data tab to set up your data before running a selection.") , variant="warning") }}
+        {# Held in Google Sheets, with the sheet's settings still to give #}
+        {{ alert(_("Please set up your data on the Project Details tab before running a selection.") , variant="warning") }}
         <section class="flex gap-4">
-            {{ button(_("Configure Data Source") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
+            {{ button(_("Configure Data Source") , href=url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1), variant="primary") }}
         </section>
     {% else %}
         {# Google Sheet configured - show selection options #}
@@ -318,4 +358,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {% endcall %}
         </div>
     {% endif %}
+    {# Where the selection settings dialog opens. Drawn already open when the
+       address asks for it (?settings=1) or a save was refused without htmx. #}
+    <div id="project-dialog-host" data-fragment-dialog-host>
+        {% if selection_settings_open %}
+            {% include "backoffice/components/selection_settings_dialog.html" %}
+        {% endif %}
+    </div>
 {% endblock %}

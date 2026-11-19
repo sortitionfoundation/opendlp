@@ -201,12 +201,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # same snapshot rather than two sequential read-only transactions.
         uow = bootstrap.get_flask_uow()
         with uow:
-            nav = get_assembly_nav_context(
-                uow,
-                current_user.id,
-                assembly_id,
-                request.args.get("source", ""),
-            )
+            nav = get_assembly_nav_context(uow, current_user.id, assembly_id)
             hub_context = registration_hub_context(uow, assembly_id, nav.data_source, nav.gsheet)
 
         return render_template(
@@ -252,12 +247,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
         # sequential read-only transactions.
         uow = bootstrap.get_flask_uow()
         with uow:
-            nav = get_assembly_nav_context(
-                uow,
-                current_user.id,
-                assembly_id,
-                request.args.get("source", ""),
-            )
+            nav = get_assembly_nav_context(uow, current_user.id, assembly_id)
 
             # Get registration page and HTML source from service layer
             page = _page_by_slug(uow, assembly_id, url_slug)
@@ -562,12 +552,7 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
         nav_uow = bootstrap.get_flask_uow()
         with nav_uow:
-            get_assembly_nav_context(
-                nav_uow,
-                current_user.id,
-                assembly_id,
-                "",
-            )
+            get_assembly_nav_context(nav_uow, current_user.id, assembly_id)
 
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -788,7 +773,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID, url_slug: str) -
     """
     nav_uow = bootstrap.get_flask_uow()
     with nav_uow:
-        get_assembly_nav_context(nav_uow, current_user.id, assembly_id, "")
+        get_assembly_nav_context(nav_uow, current_user.id, assembly_id)
         page = _page_by_slug(nav_uow, assembly_id, url_slug)
 
     if action == "create":
@@ -1103,12 +1088,7 @@ def download_registration_qr_code(assembly_id: uuid.UUID, url_slug: str) -> Resp
         # Verify user has permission to access this assembly
         nav_uow = bootstrap.get_flask_uow()
         with nav_uow:
-            get_assembly_nav_context(
-                nav_uow,
-                current_user.id,
-                assembly_id,
-                "",
-            )
+            get_assembly_nav_context(nav_uow, current_user.id, assembly_id)
 
         # The QR code encodes the short URL, so a short slug must be configured
         uow = bootstrap.get_flask_uow()

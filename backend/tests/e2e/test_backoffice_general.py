@@ -9,8 +9,8 @@ def test_dashboard_loads_for_logged_in_user(logged_in_admin):
     assert b"Dashboard" in response.data or b"Assembly" in response.data.lower()
 
 
-def test_view_assembly_data_page_loads(logged_in_admin, existing_assembly):
-    """The assembly data page loads successfully."""
-    response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data")
+def test_the_old_data_address_lands_on_the_data_source_card(logged_in_admin, existing_assembly):
+    """The Data Source tab is a card on the details page; its address redirects there."""
+    response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data", follow_redirects=True)
     assert response.status_code == 200
-    assert b"Data Source" in response.data or b"data" in response.data.lower()
+    assert b'id="data-source"' in response.data

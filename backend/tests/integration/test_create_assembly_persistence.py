@@ -1,12 +1,14 @@
 """ABOUTME: Integration tests that creating an assembly persists against a real Postgres.
 ABOUTME: The new assembly row and the creator's role row are inserted in one commit, FK ordering and all."""
 
+import uuid
+
 import pytest
 from sqlalchemy import text
 
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole
-from opendlp.service_layer.assembly_service import create_assembly, get_assembly_creator_name
+from opendlp.domain.value_objects import AssemblyRole, DataSource, GlobalRole, RespondentsSource, TargetsSource
+from opendlp.service_layer.assembly_service import create_assembly, get_assembly_creator_name, set_data_sources
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -131,3 +133,61 @@ class TestCreatedByColumnShape:
         ).scalar_one()
 
         assert nullable == "YES"
+
+
+class TestDataSourceChoicesPersistence:
+    def test_the_choices_survive_the_round_trip(self, postgres_session_factory, organiser):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(
+                uow=uow,
+                title="Chosen",
+                created_by_user_id=organiser.id,
+                data_source=DataSource.OPENDLP,
+                targets_source=TargetsSource.CSV,
+                respondents_source=RespondentsSource.REGISTRATION,
+            )
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as fresh:
+            reloaded = fresh.assemblies.get(assembly.id)
+            assert reloaded.data_source == DataSource.OPENDLP
+            assert reloaded.targets_source == TargetsSource.CSV
+            assert reloaded.respondents_source == RespondentsSource.REGISTRATION
+
+    def test_a_row_written_without_the_columns_reads_as_undecided(self, postgres_session_factory, organiser):
+        """What the previous release inserts during a zero-downtime deploy: the server default fills the gap."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(uow=uow, title="Old release", created_by_user_id=organiser.id)
+            uow.commit()
+        session = postgres_session_factory()
+        try:
+            row_id = uuid.uuid4()
+            session.execute(
+                text(
+                    "INSERT INTO assemblies (id, title, question, number_to_select, status, created_at, updated_at)"
+                    " SELECT :new_id, 'Inserted bare', question, number_to_select, status, created_at, updated_at"
+                    " FROM assemblies WHERE id = :id"
+                ),
+                {"new_id": row_id, "id": assembly.id},
+            )
+            session.commit()
+        finally:
+            session.close()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as fresh:
+            bare = fresh.assemblies.get(row_id)
+            assert bare.data_source == DataSource.UNDECIDED
+            assert bare.targets_source == TargetsSource.UNDECIDED
+            assert bare.respondents_source == RespondentsSource.UNDECIDED
+
+    def test_set_data_sources_is_persisted(self, postgres_session_factory, organiser):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(uow=uow, title="Changed later", created_by_user_id=organiser.id)
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            set_data_sources(uow, organiser.id, assembly.id, data_source=DataSource.GSHEET)
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as fresh:
+            assert fresh.assemblies.get(assembly.id).data_source == DataSource.GSHEET

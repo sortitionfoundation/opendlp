@@ -196,13 +196,26 @@ def _write_export(
     The caller is expected to manage the `uow` context (`with uow: ...`).
     uow and an already-authorised caller."""
     respondents = _fetch_respondents(uow, assembly_id, status_filter)
-    schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    id_column_header = resolve_id_column_header(assembly)
-    page_slugs = {page.id: page.url_slug for page in uow.registration_pages.list_by_assembly_id(assembly_id)}
-    table = build_respondent_table(
-        respondents, schema, id_column_header, application_url=config.get_application_url(), page_slugs=page_slugs
+    target.write_sheet(sheet_title, respondent_export_table(uow, assembly, respondents))
+
+
+def respondent_export_table(uow: AbstractUnitOfWork, assembly: Assembly, respondents: list[Respondent]) -> TabularData:
+    """The export's table for these respondents of the assembly, in the order given.
+
+    Every download of respondents goes through here, so that they all carry the
+    same columns. No permission check: the caller has already made one.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    schema = uow.respondent_field_definitions.list_by_assembly(assembly.id)
+    page_slugs = {page.id: page.url_slug for page in uow.registration_pages.list_by_assembly_id(assembly.id)}
+    return build_respondent_table(
+        respondents,
+        schema,
+        resolve_id_column_header(assembly),
+        application_url=config.get_application_url(),
+        page_slugs=page_slugs,
     )
-    target.write_sheet(sheet_title, table)
 
 
 def write_respondent_export(

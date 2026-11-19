@@ -137,8 +137,6 @@ class OpenDLPDataAdapter(AbstractDataSource):
         else:
             # DELETED respondents are omitted from the people feed: the
             # sortition-algorithms validator rejects blanked attribute values.
-            # generate_selection_csvs synthesises blanked rows for them after
-            # the fact so historical exports still reference their external_id.
             respondents = self.uow.respondents.get_by_assembly_id(self.assembly_id, include_deleted=False)
             if not respondents:
                 raise BadDataError(

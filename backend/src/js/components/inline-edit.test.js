@@ -8,14 +8,20 @@ import { inlineEdit, SAVE_EVENT } from "./inline-edit.js";
 /**
  * A row as the server renders it, holding `saved`, with `typed` in the field,
  * and the component over it with the Alpine magics it reaches for supplied by
- * hand. `editing` renders it as after a refusal.
+ * hand. `editing` renders it as after a refusal; `multiline` makes the field a
+ * textarea, which keeps the line breaks a single-line input drops.
  */
-function row({ saved = "Ada", typed = saved, editing = false } = {}) {
+function row({
+  saved = "Ada",
+  typed = saved,
+  editing = false,
+  multiline = false,
+} = {}) {
   document.body.innerHTML = `
     <form id="row" ${editing ? "data-editing" : ""}>
       <input type="hidden" id="saved">
       <input type="hidden" id="return-focus" name="return_focus" value="">
-      <input id="field" name="first_name">
+      ${multiline ? '<textarea id="field" name="question"></textarea>' : '<input id="field" name="first_name">'}
       <button type="button" id="edit">Edit first name</button>
       <button type="submit" id="tick">Save first name</button>
       <button type="button" id="cancel">Cancel editing first name</button>
@@ -179,6 +185,33 @@ describe("inlineEdit", () => {
 
       expect(sent).not.toHaveBeenCalled();
       expect(state.editing).toBe(false);
+    });
+
+    it("counts text that differs only in its line endings as unchanged", () => {
+      // A textarea reports bare line feeds; a value stored from a form post has
+      // carriage returns too.
+      const { state, el, sent } = row({
+        saved: "One\r\nTwo",
+        multiline: true,
+      });
+      edit(state, el, "One\nTwo");
+
+      state.save();
+
+      expect(sent).not.toHaveBeenCalled();
+      expect(state.editing).toBe(false);
+    });
+
+    it("sends text whose lines have changed", () => {
+      const { state, el, sent } = row({
+        saved: "One\r\nTwo",
+        multiline: true,
+      });
+      edit(state, el, "One\nTwo\nThree");
+
+      state.save();
+
+      expect(sent).toHaveBeenCalledTimes(1);
     });
 
     it("sends once however often it is pressed while the answer is on its way", () => {

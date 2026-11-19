@@ -1,45 +1,11 @@
 # ABOUTME: Component tests for AssemblyGSheet CRUD routes over a FakeUnitOfWork
 # ABOUTME: Drives the real gsheet Flask routes + services against a seeded fake store, no PostgreSQL
 
-from datetime import UTC, datetime, timedelta
 
-import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
-from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from tests.fakes import FakeStore, FakeUnitOfWork
-
-
-@pytest.fixture
-def assembly_with_gsheet(fake_store, admin_user):
-    """Create an assembly with an existing gsheet configuration in the shared store."""
-    with FakeUnitOfWork(store=fake_store) as uow:
-        assembly = create_assembly(
-            uow=uow,
-            title="Assembly with GSheet",
-            created_by_user_id=admin_user.id,
-            question="What should we configure?",
-            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
-            number_to_select=22,
-        )
-        detached_assembly = assembly.create_detached_copy()
-
-    with FakeUnitOfWork(store=fake_store) as uow:
-        gsheet = add_assembly_gsheet(
-            uow=uow,
-            assembly_id=assembly.id,
-            user_id=admin_user.id,
-            url="https://docs.google.com/spreadsheets/d/1234567890abcdef/edit",
-            team="uk",
-            select_registrants_tab="TestRespondents",
-            select_targets_tab="TestCategories",
-            id_column="test_id_column",
-            check_same_address=True,
-            generate_remaining_tab=False,
-        )
-        detached_gsheet = gsheet.create_detached_copy()
-    return detached_assembly, detached_gsheet
 
 
 class TestAssemblyGSheetCreateView:
@@ -53,7 +19,7 @@ class TestAssemblyGSheetCreateView:
         assert response.status_code == 200
         assert b"Configure Google Sheets" in response.data
         assert b"Google Sheets URL" in response.data
-        assert b"Team Configuration" in response.data
+        assert b"Team configuration" in response.data
         assert b"Save Configuration" in response.data
 
     def test_create_gsheet_form_contains_all_fields(
@@ -66,22 +32,22 @@ class TestAssemblyGSheetCreateView:
         assert b"Google Sheets URL" in response.data
         assert b'placeholder="https://docs.google.com/spreadsheets/d/' in response.data
 
-        assert b"Team Configuration" in response.data
-        assert b"UK Team" in response.data
-        assert b"EU Team" in response.data
-        assert b"Australia Team" in response.data
+        assert b"Team configuration" in response.data
+        assert b"UK team" in response.data
+        assert b"EU team" in response.data
+        assert b"Australia team" in response.data
 
-        assert b"Respondents Tab Name" in response.data
-        assert b"Targets Tab Name" in response.data
-        assert b"Already Selected Tab Name" in response.data
+        assert b"Respondents tab name" in response.data
+        assert b"Targets tab name" in response.data
+        assert b"Already selected tab name" in response.data
 
-        assert b"ID Column" in response.data
+        assert b"ID column" in response.data
 
-        assert b"Address Columns" in response.data
-        assert b"Columns to Keep" in response.data
+        assert b"Address columns" in response.data
+        assert b"Columns to keep" in response.data
 
-        assert b"Check Same Address" in response.data
-        assert b"Generate Remaining Tab" in response.data
+        assert b"Check same address" in response.data
+        assert b"Generate remaining tab" in response.data
 
     def test_create_gsheet_validation_invalid_url(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly

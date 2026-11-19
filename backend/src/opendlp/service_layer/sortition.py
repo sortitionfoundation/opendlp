@@ -12,8 +12,6 @@ from typing import Any
 import structlog
 from celery.result import AsyncResult
 from sortition_algorithms import RunReport, adapters
-from sortition_algorithms import settings as sa_settings
-from sortition_algorithms.core import person_list_to_table
 from sortition_algorithms.errors import SortitionBaseError
 from sortition_algorithms.features import FeatureCollection
 from sortition_algorithms.people import People
@@ -42,6 +40,7 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.report_translation import translate_run_report_to_html
+from opendlp.service_layer.respondent_export_service import respondent_export_table
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.writing_guard import refuse_if_writing_run_unfinished
 from opendlp.translations import gettext as _
@@ -628,32 +627,6 @@ def start_db_replace_task(
     return task_id
 
 
-DELETED_CSV_PLACEHOLDER = "DATA DELETED"
-
-
-def _person_list_to_table_with_deleted(
-    person_keys: list[str],
-    people: People,
-    features: FeatureCollection,
-    settings_obj: sa_settings.Settings,
-    deleted_ext_ids: set[str],
-) -> list[list[str]]:
-    """Wrap person_list_to_table, inserting blanked rows for DELETED external_ids.
-
-    DELETED respondents aren't loaded into `people` (their blanked attributes
-    would fail sortition-algorithms validation). We still need to represent
-    them in the historical CSV so the selection output references a known ID.
-    """
-    live_keys = [k for k in person_keys if k not in deleted_ext_ids]
-    table = person_list_to_table(live_keys, people, features, settings_obj)
-    header = table[0]
-    column_count = len(header)
-    for ext_id in person_keys:
-        if ext_id in deleted_ext_ids:
-            table.append([ext_id, *[DELETED_CSV_PLACEHOLDER] * (column_count - 1)])
-    return table
-
-
 def get_selected_respondents(uow: AbstractUnitOfWork, record: SelectionRunRecord) -> list[Respondent]:
     """The respondents a finished run selected, ordered by external ID.
 
@@ -674,45 +647,30 @@ def generate_selection_csvs(
     assembly_id: uuid.UUID,
     task_id: uuid.UUID,
 ) -> tuple[str, str]:
+    """The people a finished run selected, and those it left, as two CSVs.
+
+    Both carry the columns of the respondents export, and show each respondent
+    as they are now rather than as they were when the run finished. Someone
+    whose details have been deleted since keeps their row, with the external ID
+    and the status alone.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     record = uow.selection_run_records.get_by_task_id(task_id)
     if not record:
         raise SelectionRunRecordNotFoundError(f"SelectionRunRecord {task_id} not found")
     if not record.selected_ids or record.remaining_ids is None:
         raise InvalidSelection(_("Selection has not completed — no results to download"))
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-    selected_ext_ids = list(record.selected_ids[0])
-    remaining_ext_ids = list(record.remaining_ids)
+    def csv_of(external_ids: list[str]) -> str:
+        respondents = uow.respondents.get_by_external_ids(assembly_id, external_ids)
+        table = respondent_export_table(uow, assembly, respondents)
+        return _table_to_csv([table.headers, *table.rows])
 
-    # Reconstruct settings from what was stored at selection time. The id column
-    # is not taken from the record: this reads back through the database adapter,
-    # which always keys people by DB_ID_COLUMN.
-    stored = record.settings_used
-    settings_obj = sa_settings.Settings(
-        id_column=DB_ID_COLUMN,
-        selection_algorithm=stored.get("selection_algorithm", "maximin"),
-        check_same_address=stored.get("check_same_address", False),
-        check_same_address_columns=stored.get("check_same_address_columns", []),
-        columns_to_keep=stored.get("columns_to_keep", []),
-    )
-
-    # We need to get ALL the people, so we can get all their data, so we can fetch data for
-    # those who are already selected.
-    data_source = OpenDLPDataAdapter(uow, assembly_id, eligible_only=False)
-    select_data = adapters.SelectionData(data_source)
-    features, _feat_report = select_data.load_features()
-    full_people, _ppl_report = select_data.load_people(settings_obj, features)
-
-    all_ext_ids = set(selected_ext_ids) | set(remaining_ext_ids)
-    deleted_ext_ids = {ext_id for ext_id in all_ext_ids if ext_id not in full_people}
-
-    selected_table = _person_list_to_table_with_deleted(
-        selected_ext_ids, full_people, features, settings_obj, deleted_ext_ids
-    )
-    remaining_table = _person_list_to_table_with_deleted(
-        remaining_ext_ids, full_people, features, settings_obj, deleted_ext_ids
-    )
-
-    return _table_to_csv(selected_table), _table_to_csv(remaining_table)
+    return csv_of(list(record.selected_ids[0])), csv_of(list(record.remaining_ids))
 
 
 @dataclass

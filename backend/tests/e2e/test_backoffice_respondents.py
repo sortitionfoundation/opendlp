@@ -60,20 +60,18 @@ class TestBackofficeUploadRespondents:
         csv_content = "name,person_id,age\nAlice,P001,30\nBob,P002,25"
 
         response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/data/upload-respondents",
+            f"/backoffice/project/{existing_assembly.id}/data-source/upload-respondents",
             data={
                 "file": (BytesIO(csv_content.encode()), "respondents.csv"),
                 "id_column": "person_id",
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/project/{existing_assembly.id}/data?source=csv"
-                ),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}"),
             },
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        assert response.status_code == 302
-        assert "source=csv" in response.location
+        assert response.status_code == 200
+        assert b"respondents uploaded" in response.data or b"respondent uploaded" in response.data
 
         # Verify respondents were created with correct external_id
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -106,15 +104,13 @@ class TestBackofficeDeleteRespondents:
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly_with_respondents.id}/data/delete-respondents",
             data={
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/project/{assembly_with_respondents.id}/data?source=csv"
-                ),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly_with_respondents.id}"),
             },
             follow_redirects=False,
         )
 
         assert response.status_code == 302
-        assert "source=csv" in response.location
+        assert "data_source=1" in response.location
 
         # Verify respondents were deleted
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -127,14 +123,14 @@ class TestUploadDiffConfirmation:
 
     def _upload(self, client, assembly_id, csv_text, filename="respondents.csv", id_column=""):
         return client.post(
-            f"/backoffice/project/{assembly_id}/data/upload-respondents",
+            f"/backoffice/project/{assembly_id}/data-source/upload-respondents",
             data={
                 "file": (BytesIO(csv_text.encode()), filename),
                 "id_column": id_column,
-                "csrf_token": get_csrf_token(client, f"/backoffice/project/{assembly_id}/data?source=csv"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{assembly_id}"),
             },
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
     def _confirm(self, client, assembly_id, action="confirm"):
@@ -163,8 +159,8 @@ class TestUploadDiffConfirmation:
             existing_assembly.id,
             "external_id,first_name,postcode\nR002,Bob,SW1\n",
         )
-        assert response.status_code == 303
-        assert "confirm-diff" in response.location
+        assert response.status_code == 200
+        assert "confirm-diff" in response.headers["HX-Redirect"]
 
     def test_diff_page_shows_added_and_absent_columns(
         self, logged_in_admin, existing_assembly, postgres_session_factory
@@ -212,7 +208,7 @@ class TestUploadDiffConfirmation:
             follow_redirects=False,
         )
         assert confirm_response.status_code == 302
-        assert "source=csv" in confirm_response.location
+        assert confirm_response.location.endswith("#data-source")
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
@@ -261,7 +257,7 @@ class TestUploadDiffConfirmation:
             follow_redirects=False,
         )
         assert response.status_code == 302
-        assert "source=csv" in response.location
+        assert "data_source=1" in response.location
 
     def test_stash_expires_and_confirm_then_imports_nothing(
         self, logged_in_admin, existing_assembly, postgres_session_factory, test_redis_client
@@ -287,7 +283,7 @@ class TestUploadDiffConfirmation:
 
         response = self._confirm(logged_in_admin, existing_assembly.id)
         assert response.status_code == 302
-        assert "source=csv" in response.location
+        assert "data_source=1" in response.location
         with logged_in_admin.session_transaction() as session:
             messages = [msg[1] for msg in session.get("_flashes", [])]
         assert any("expired" in m.lower() for m in messages)
@@ -345,7 +341,8 @@ class TestUploadDiffConfirmation:
             "first_name,person_ref,postcode\nBob,P002,SW1\n",
             id_column="person_ref",
         )
-        assert response.status_code == 303
+        assert response.status_code == 200
+        assert "confirm-diff" in response.headers["HX-Redirect"]
 
         assert self._confirm(logged_in_admin, existing_assembly.id).status_code == 302
 
@@ -360,7 +357,7 @@ class TestUploadDiffConfirmation:
         # Patch the per-request bytes lookup so the route enforces the override.
         monkeypatch.setattr(_config, "get_max_csv_upload_bytes", lambda: 1)
         monkeypatch.setattr(
-            "opendlp.entrypoints.blueprints.respondents.get_max_csv_upload_bytes",
+            "opendlp.entrypoints.blueprints.data_source.get_max_csv_upload_bytes",
             lambda: 1,
         )
 
@@ -369,11 +366,9 @@ class TestUploadDiffConfirmation:
             existing_assembly.id,
             "external_id,first_name\nR001,Alice\n",
         )
-        # Friendly redirect-with-flash, not a raw 413.
-        assert response.status_code == 302
-        with logged_in_admin.session_transaction() as session:
-            messages = [msg[1] for msg in session.get("_flashes", [])]
-        assert any("too large" in m.lower() for m in messages)
+        # A refusal in the dialog, not a raw 413.
+        assert response.status_code == 422
+        assert b"too large" in response.data.lower()
 
 
 class TestBackofficeViewRespondentsPage:
@@ -569,14 +564,14 @@ class TestUploadCsvCleaning:
 
     def _upload(self, client, assembly_id, content: bytes, id_column=""):
         return client.post(
-            f"/backoffice/project/{assembly_id}/data/upload-respondents",
+            f"/backoffice/project/{assembly_id}/data-source/upload-respondents",
             data={
                 "file": (BytesIO(content), "respondents.csv"),
                 "id_column": id_column,
-                "csrf_token": get_csrf_token(client, f"/backoffice/project/{assembly_id}/data?source=csv"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{assembly_id}"),
             },
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
     def _flashes(self, client) -> list[tuple[str, str]]:
@@ -591,8 +586,7 @@ class TestUploadCsvCleaning:
     def test_trailing_empty_columns_import(self, logged_in_admin, existing_assembly, postgres_session_factory):
         response = self._upload(logged_in_admin, existing_assembly.id, b"id,age,,\nR1,30,,\nR2,40,,\n")
 
-        assert response.status_code == 302
+        assert response.status_code == 200
         assert self._respondent_ids(postgres_session_factory, existing_assembly.id) == {"R1", "R2"}
-        assert self._flashes(logged_in_admin) == [
-            ("success", "Respondents uploaded successfully: 2 imported"),
-        ]
+        assert b"2 respondents uploaded" in response.data
+        assert self._flashes(logged_in_admin) == []

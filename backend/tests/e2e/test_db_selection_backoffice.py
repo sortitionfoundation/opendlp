@@ -422,7 +422,6 @@ class TestSaveCsvSettings:
                 "csrf_token": csrf_token,
                 # check_same_address not included = False (no address columns required)
                 "check_same_address_cols_string": "",
-                "columns_to_keep_string": "Gender",
             },
             follow_redirects=True,
         )

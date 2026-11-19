@@ -1,30 +1,30 @@
 {#
 ABOUTME: Backoffice assembly details page
-ABOUTME: Displays assembly information with question, metadata, and edit action
+ABOUTME: Cards for the project's basic details (edited in place), data source, registration link and team
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% from "backoffice/components/url_display.html" import readonly_url_display %}
+{% from "backoffice/components/tag.html" import tag %}
+{% from "backoffice/project_details/_rows.html" import plain_row, project_field_row, updated_row %}
 
-{% block title %}{{ assembly.title }} - Assembly{% endblock %}
+{% block title %}{{ assembly.title }} - {{ _("Project details") }}{% endblock %}
 
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to Your projects")
+        back_label=_("Back to Your projects"),
+        title_id="project-page-title"
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(
             assembly=assembly,
             active_tab="details",
             data_source=data_source|default(""),
-            gsheet=gsheet|default(none),
             targets_enabled=targets_enabled|default(false),
             respondents_enabled=respondents_enabled|default(false),
             selection_enabled=selection_enabled|default(false)
@@ -34,128 +34,57 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 {% endblock %}
 
 {% block page_content %}
-    {# Framing question section #}
-    {% if assembly.question %}
-        <div class="mb-8">
-            {% call section() %}
-                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Framing question") }}</h2>
-                <p class="text-body-lg" style="color: var(--color-body-text);">{{ assembly.question }}</p>
-            {% endcall %}
-        </div>
-    {% endif %}
-
-    {# Assembly Details Summary #}
-    <div class="mb-8">
+    {# One column of cards, the width the design gives them. #}
+    <div class="flex flex-col gap-6 max-w-2xl">
+        {# Basic details: four values edited in place, three only read. #}
         {% call section() %}
-            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Details") }}</h2>
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Basic details") }}</h2>
             <dl>
-                {# Status #}
-                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Status") }}</dt>
-                    <dd class="text-body-md" style="color: var(--color-body-text);">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm" style="background-color: var(--color-success-background, #d4edda); color: var(--color-success-text, #155724);">
-                            {{ assembly_status_labels[assembly.status] }}
-                        </span>
+                {{ project_field_row(assembly, "title", can_manage_project) }}
+                {{ project_field_row(assembly, "question", can_manage_project) }}
+                {% call plain_row(_("Status")) %}
+                    <dd class="flex-1">
+                        {{ tag(assembly_status_labels[assembly.status], colour="green" if assembly.is_active() else "grey") }}
                     </dd>
-                </div>
-
-                {# First event date #}
-                {% if assembly.first_assembly_date %}
-                    <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                        <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("First event date") }}</dt>
-                        <dd class="text-body-md" style="color: var(--color-body-text);">
-                            {{ assembly.first_assembly_date|dateformat('long') }}
-                        </dd>
-                    </div>
-                {% endif %}
-
-                {# Panel size #}
-                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">
-                        {{ _("Panel size") }}
-                        {{ info_icon(_("The number of people to select"), about=_("Panel size")) }}
-                    </dt>
-                    <dd class="text-body-md" style="color: var(--color-body-text);">
-                        {{ assembly.number_to_select }}
-                    </dd>
-                </div>
-
-                {# Created #}
-                <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Created") }}</dt>
-                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                {% endcall %}
+                {{ project_field_row(assembly, "number_to_select", can_manage_project) }}
+                {{ project_field_row(assembly, "first_assembly_date", can_manage_project) }}
+                {% call plain_row(_("Created")) %}
+                    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">
                         {% if created_by_name %}
                             {{ _("By %(name)s at %(timestamp)s", name=created_by_name, timestamp=assembly.created_at|datetimeformat('long')) }}
                         {% else %}
                             {{ assembly.created_at|datetimeformat('long') }}
                         {% endif %}
                     </dd>
-                </div>
-
-                {# Last Updated #}
-                <div class="flex flex-col sm:flex-row sm:gap-4 py-3">
-                    <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Last Updated") }}</dt>
-                    <dd class="text-body-md" style="color: var(--color-body-text);">
-                        {{ assembly.updated_at|datetimeformat('long') }}
-                    </dd>
-                </div>
+                {% endcall %}
+                {{ updated_row(assembly) }}
             </dl>
         {% endcall %}
+
+        {% include "backoffice/project_details/_data_source_card.html" %}
+
+        {% if data_source == "csv" %}
+            {% include "backoffice/project_details/_selection_settings_card.html" %}
+        {% endif %}
+
+        {# A Google Sheets project has no Registration tab for the card to lead to. #}
+        {% if data_source != "gsheet" %}
+            {% include "backoffice/project_details/_registration_card.html" %}
+        {% endif %}
+
+        {% include "backoffice/project_details/_team_card.html" %}
     </div>
 
-    {# Registration Page Details Section #}
-    <div class="mb-8">
-        {% call section() %}
-            <h2 class="text-heading-lg mb-6" style="color: var(--color-headings);">{{ _("Registration Pages") }}</h2>
-
-            {% if registration_page_rows %}
-                {# Read-only summary: one block per page with its copyable URLs #}
-                <div class="space-y-8 max-w-2xl">
-                    {% for row in registration_page_rows %}
-                        <div {% if not loop.first %}class="pt-6" style="border-top: 1px solid var(--color-borders-dividers);"{% endif %}>
-                            <h3 class="text-heading-sm mb-3" style="color: var(--color-headings);">
-                                {{ row.page.name }}
-                                {% if row.page.language %}
-                                    <span class="ml-1 px-2 py-0.5 rounded text-overline align-middle"
-                                          style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text); border: 1px solid var(--color-borders-dividers);">{{ row.page.language }}</span>
-                                {% endif %}
-                            </h3>
-                            <div class="space-y-4">
-                                {% if row.registration_url %}
-                                    {{ readonly_url_display(
-                                    label=_("Registration URL"),
-                                    hint=_("The URL for this registration page"),
-                                    url=row.registration_url
-                                    ) }}
-                                {% endif %}
-                                {% if row.short_url %}
-                                    {{ readonly_url_display(
-                                    label=_("Short URL"),
-                                    hint=_("A shorter URL for QR codes and paper invitations"),
-                                    url=row.short_url
-                                    ) }}
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
-                    {{ _("No registration page has been created for this project.") }}
-                </p>
-            {% endif %}
-
-            {# Registration pages are managed on the Registration tab; this section is read-only. #}
-            <p class="text-body-md mt-6" style="color: var(--color-secondary-text);">
-                {{ _("To create your first registration page, edit an existing one, or add another (for example a language variant), go to the %(link_start)sRegistration tab%(link_end)s.",
-                link_start=('<a href="' ~ url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) ~ '" class="hover:underline" style="color: var(--color-links);">')|safe,
-                    link_end=("</a>"|safe)) }}
-            </p>
-        {% endcall %}
+    {# Where this page's dialogs open: data source settings, selection
+       settings, and the team's. The data source settings dialog is
+       rendered here already open when the address asked for it
+       (?data_source=1), which is where deleting data from it comes back to. #}
+    <div id="project-dialog-host" data-fragment-dialog-host>
+        {% if project_dialog %}
+            {% with ds=project_dialog %}
+                {% include "backoffice/data_source/_dialog.html" %}
+            {% endwith %}
+        {% endif %}
     </div>
-
-    {# Actions #}
-    <section class="flex gap-4">
-        {{ button(_("Edit project"), href=url_for('backoffice.edit_assembly', assembly_id=assembly.id), variant="primary") }}
-    </section>
 {% endblock %}

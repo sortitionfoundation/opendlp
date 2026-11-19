@@ -5,7 +5,9 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/icons.html" import icon_check, icon_warning %}
 {% set is_db = data_source == "csv" %}
-{% set settings_missing = is_db and not csv_settings_confirmed|default(true) %}
+{# Targets, respondents or confirmed settings still to come: the banner above
+   the steps says which, and every action waits. #}
+{% set waiting = is_db and (selection_waiting|default([]))|length > 0 %}
 {% set held = csv_held_count|default(0) %}
 {# The status panel's look: neutral before anyone is selected, amber while
    places are still to fill, green once every place is filled. #}
@@ -81,7 +83,7 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                               x-data
                               @submit.prevent="$confirm('{{ _("Are you sure you want to reset all selected respondents to the pool? This action cannot be undone.") }}', $el)">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            {{ button(_("Reset Selected People") , type="submit", variant="danger", disabled=settings_missing) }}
+                            {{ button(_("Reset Selected People") , type="submit", variant="danger", disabled=waiting) }}
                         </form>
                     {% else %}
                         {% if not is_db %}
@@ -95,11 +97,11 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                         {% set run_url = url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) if is_db else url_for('gsheets.start_selection_run', assembly_id=assembly.id) %}
                         <form method="post" action="{{ run_url }}?test=1" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            {{ button(_("Run Test Selection") , type="submit", variant="secondary", disabled=settings_missing) }}
+                            {{ button(_("Run Test Selection") , type="submit", variant="secondary", disabled=waiting) }}
                         </form>
                         <form method="post" action="{{ run_url }}" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            {{ button(_("Run Selection") , type="submit", variant="primary", disabled=settings_missing) }}
+                            {{ button(_("Run Selection") , type="submit", variant="primary", disabled=waiting) }}
                         </form>
                     {% endif %}
                 </div>
@@ -121,8 +123,8 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                         <p class="text-body-sm" id="replacement-step-hint" style="color: var(--color-secondary-text);">
                             {% if active_initial_selection_run_id %}
                                 {{ _("Wait for the running selection to finish before selecting replacements.") }}
-                            {% elif settings_missing %}
-                                {{ _("Please review and save the selection settings before running selection.") }}
+                            {% elif waiting %}
+                                {{ _("Selection is waiting for what is listed at the top of the page.") }}
                             {% elif held == 0 %}
                                 {{ _("Run the initial selection first. Replacements fill the places of people who withdraw afterwards.") }}
                             {% else %}

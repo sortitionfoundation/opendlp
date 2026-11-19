@@ -4,39 +4,28 @@ ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source
 import uuid
 
 import structlog
-from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExportTarget
-from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.assembly_export_gsheet import default_worksheet_name
-from opendlp.domain.value_objects import AssemblyRole, GSheetExportKind
+from opendlp.domain.value_objects import GSheetExportKind
+from opendlp.entrypoints.blueprints.data_source import project_dialog_context
+from opendlp.entrypoints.blueprints.project_details import team_card_context
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     short_url,
 )
 from opendlp.entrypoints.context_processors import get_service_account_email
-from opendlp.entrypoints.decorators import require_create_assembly
-from opendlp.entrypoints.forms import (
-    AddUserToAssemblyForm,
-    CreateAssemblyForm,
-    CreateAssemblyGSheetForm,
-    DbSelectionSettingsForm,
-    EditAssemblyForm,
-    EditAssemblyGSheetForm,
-    UploadTargetsCsvForm,
-)
+from opendlp.entrypoints.data_source_card import respondents_row, targets_row
 from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
+from opendlp.entrypoints.registration_link_card import featured_registration_page, registration_tab_link_text
 from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
-    create_assembly,
     get_assembly_creator_name,
     get_assembly_nav_context,
-    get_assembly_with_permissions,
-    get_or_create_csv_config,
-    get_or_create_selection_settings,
     update_assembly,
 )
 from opendlp.service_layer.dashboard_stats import (
@@ -54,20 +43,17 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
 )
 from opendlp.service_layer.gsheet_access_check import fetch_cached_result
-from opendlp.service_layer.permissions import can_manage_assembly, can_manage_assembly_members
+from opendlp.service_layer.permissions import (
+    can_manage_assembly,
+    can_see_all_assemblies,
+)
 from opendlp.service_layer.registration_page_service import (
     list_registration_pages,
 )
-from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
-from opendlp.service_layer.target_respondent_helpers import get_column_distinct_counts
-from opendlp.service_layer.target_service import get_targets_for_assembly
 from opendlp.service_layer.user_service import (
-    get_assembly_members,
     get_user_assemblies,
-    grant_user_assembly_role,
     revoke_user_assembly_role,
     search_assembly_candidate_users,
-    sole_assembly_manager_id,
 )
 from opendlp.translations import gettext as _
 
@@ -103,44 +89,6 @@ def dashboard() -> ResponseReturnValue:
         return render_template("backoffice/dashboard.html", assemblies=[]), 500
 
 
-@backoffice_bp.route("/project/new", methods=["GET", "POST"])
-@login_required
-@require_create_assembly
-def new_assembly() -> ResponseReturnValue:
-    """Create a new assembly in backoffice."""
-    form = CreateAssemblyForm()
-
-    if form.validate_on_submit():
-        try:
-            uow = bootstrap.get_flask_uow()
-            with uow:
-                assembly = create_assembly(
-                    uow=uow,
-                    title=form.title.data or "",
-                    created_by_user_id=current_user.id,
-                    question=form.question.data or "",
-                    first_assembly_date=form.first_assembly_date.data,
-                    number_to_select=form.number_to_select.data or 0,
-                )
-
-            flash(_("Project '%(title)s' created successfully", title=assembly.title), "success")
-            return redirect(url_for("backoffice.view_assembly", assembly_id=assembly.id))
-        except InsufficientPermissions as e:
-            logger.warning("Insufficient permissions to create assembly", user_id=str(current_user.id), error=str(e))
-            flash(_("You don't have permission to create projects"), "error")
-            return redirect(url_for("backoffice.dashboard"))
-        except NotFoundError as e:
-            logger.error("User not found during assembly creation", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while creating the project"), "error")
-            return redirect(url_for("backoffice.dashboard"))
-        except Exception as e:
-            logger.exception("Create assembly error", user_id=str(current_user.id), error=str(e))
-            flash(_("An error occurred while creating the project"), "error")
-            return redirect(url_for("backoffice.dashboard"))
-
-    return render_template("backoffice/create_assembly.html", form=form), 200
-
-
 @backoffice_bp.route("/assembly/<path:rest>")
 def redirect_old_assembly_url(rest: str) -> ResponseReturnValue:
     """Send a bookmarked /backoffice/assembly/… URL to its /backoffice/project/… twin.
@@ -159,29 +107,44 @@ def redirect_old_assembly_url(rest: str) -> ResponseReturnValue:
 def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly details page."""
     try:
-        nav_uow = bootstrap.get_flask_uow()
-        with nav_uow:
-            nav = get_assembly_nav_context(
-                nav_uow,
-                current_user.id,
-                assembly_id,
-                request.args.get("source", ""),
-            )
-
-        # Read-only registration page summary: name, status and copyable URLs per
-        # page. Editing lives on the Registration tab, not here.
         uow = bootstrap.get_flask_uow()
         with uow:
+            nav = get_assembly_nav_context(uow, current_user.id, assembly_id)
+            can_manage_project = can_manage_assembly(current_user, nav.assembly)
+            # One registration page's links, read-only. Every page, and editing
+            # them, lives on the Registration tab.
             registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
             created_by_name = get_assembly_creator_name(uow, nav.assembly)
-        registration_page_rows = [
-            {
-                "page": page,
-                "registration_url": registration_url(page.url_slug) if page.url_slug else "",
-                "short_url": short_url(page.short_url_slug) if page.short_url_slug else "",
+            project_dialog = None
+            if request.args.get("data_source") == "1" and can_manage_project:
+                project_dialog = project_dialog_context(uow, assembly_id, upload=request.args.get("upload", ""))
+            team_card = team_card_context(uow, nav.assembly)
+
+        # The access check panel under a Google Sheet's URL: checked afresh
+        # after a save (?check=1), otherwise whatever the last check found.
+        # Read from the cache once the transaction has closed.
+        gsheet_access_result = None
+        gsheet_access_auto_check = False
+        if nav.gsheet:
+            gsheet_access_auto_check = can_manage_project and request.args.get("check", "") == "1"
+            if not gsheet_access_auto_check:
+                gsheet_access_result = fetch_cached_result(assembly_id, nav.gsheet.url)
+        featured_page = featured_registration_page(registration_pages)
+        registration_link = None
+        if featured_page is not None:
+            page_short_url = short_url(featured_page.short_url_slug) if featured_page.short_url_slug else ""
+            registration_link = {
+                "registration_url": registration_url(featured_page.url_slug) if featured_page.url_slug else "",
+                "short_url": page_short_url,
+                # The QR code encodes the short URL, so there is none to download without one.
+                "qr_code_url": url_for(
+                    "backoffice_registration.download_registration_qr_code",
+                    assembly_id=assembly_id,
+                    url_slug=featured_page.url_slug,
+                )
+                if page_short_url and featured_page.url_slug
+                else "",
             }
-            for page in registration_pages
-        ]
 
         return render_template(
             "backoffice/assembly_details.html",
@@ -191,8 +154,18 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
-            registration_page_rows=registration_page_rows,
+            registration_link=registration_link,
+            registration_tab_link_text=registration_tab_link_text(len(registration_pages)),
             created_by_name=created_by_name,
+            project_dialog=project_dialog,
+            can_manage_project=can_manage_project,
+            csv_settings_confirmed=bool(nav.csv_status.csv_config and nav.csv_status.csv_config.settings_confirmed),
+            targets_row=targets_row(nav.assembly, nav.csv_status.targets_count),
+            respondents_row=respondents_row(nav.assembly, nav.csv_status.respondents_count),
+            gsheet_access_result=gsheet_access_result,
+            gsheet_access_auto_check=gsheet_access_auto_check,
+            can_check_gsheet_access=can_manage_project,
+            **team_card,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(
@@ -355,12 +328,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            nav = get_assembly_nav_context(
-                uow,
-                current_user.id,
-                assembly_id,
-                request.args.get("source", ""),
-            )
+            nav = get_assembly_nav_context(uow, current_user.id, assembly_id)
             summary = get_assembly_dashboard_summary(uow, current_user.id, assembly_id)
             report = get_assembly_dashboard_report(uow, current_user.id, assembly_id)
 
@@ -516,76 +484,8 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
 @backoffice_bp.route("/project/<uuid:assembly_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice edit assembly page."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-        form = EditAssemblyForm(obj=assembly)
-
-        if form.validate_on_submit():
-            try:
-                # Registration page URLs are deliberately NOT handled here — they
-                # are page-scoped settings edited on the Registration tab.
-                with uow:
-                    updated_assembly = update_assembly(
-                        uow=uow,
-                        assembly_id=assembly_id,
-                        user_id=current_user.id,
-                        title=form.title.data,
-                        question=form.question.data or "",
-                        first_assembly_date=form.first_assembly_date.data,
-                        number_to_select=form.number_to_select.data,
-                    )
-
-                flash(_("Project '%(title)s' updated successfully", title=updated_assembly.title), "success")
-                return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
-            except InsufficientPermissions as e:
-                logger.warning(
-                    "Insufficient permissions to edit assembly",
-                    assembly_id=str(assembly_id),
-                    user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("You don't have permission to edit this project"), "error")
-                return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
-            except NotFoundError as e:
-                logger.error(
-                    "Assembly or user not found while editing assembly",
-                    assembly_id=str(assembly_id),
-                    user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("An error occurred while updating the project"), "error")
-                return redirect(url_for("backoffice.dashboard"))
-            except Exception as e:
-                logger.exception(
-                    "Edit assembly error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
-                )
-                flash(_("An error occurred while updating the project"), "error")
-                return redirect(url_for("backoffice.dashboard"))
-
-        return render_template(
-            "backoffice/edit_assembly.html",
-            form=form,
-            assembly=assembly,
-        ), 200
-    except NotFoundError as e:
-        logger.warning(
-            "Assembly not found for edit", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions to access assembly",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        flash(_("You don't have permission to edit this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+    """Where the edit page was. A project's details are edited in place on its details page."""
+    return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
 
 
 @backoffice_bp.route("/project/<uuid:assembly_id>/update-number-to-select", methods=["POST"])
@@ -626,305 +526,25 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
-def render_assembly_data_page(
-    assembly_id: uuid.UUID,
-    targets_upload_form: UploadTargetsCsvForm | None = None,
-    preferred_source: str = "",
-) -> str:
-    """Render the assembly data page.
-
-    Shared with the targets blueprint, which owns the targets CSV upload route
-    but not the page the form is on: a rejected upload re-renders this page with
-    `targets_upload_form` carrying the errors, rather than redirecting and
-    leaving the reason in a flash message away from the field. That caller also
-    names the source, because a POST carries no `?source=` to read it from.
-
-    Raises the same exceptions as the service functions it calls.
-    """
-    google_service_account_email = get_service_account_email()
-
-    nav_uow = bootstrap.get_flask_uow()
-    with nav_uow:
-        nav = get_assembly_nav_context(
-            nav_uow,
-            current_user.id,
-            assembly_id,
-            preferred_source or request.args.get("source", ""),
-        )
-
-    # Get selection settings for gsheet display and form population.
-    # A single UnitOfWork is reused for the sequential reads below.
-    uow = bootstrap.get_flask_uow()
-    sel_settings = None
-    with uow:
-        try:
-            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
-        except Exception as sel_error:
-            logger.exception("Error loading selection settings", error=str(sel_error))
-
-    # Set up gsheet form if gsheet source is selected
-    gsheet_mode = "new"
-    gsheet_form = None
-    if nav.data_source == "gsheet":
-        mode_param = request.args.get("mode", "")
-        gsheet_mode = ("edit" if mode_param == "edit" else "view") if nav.gsheet else "new"
-        if nav.gsheet:
-            gsheet_form = EditAssemblyGSheetForm(
-                obj=nav.gsheet,
-                id_column=sel_settings.id_column if sel_settings else "",
-                check_same_address=sel_settings.check_same_address if sel_settings else True,
-                check_same_address_cols_string=sel_settings.check_same_address_cols_string if sel_settings else "",
-                columns_to_keep_string=sel_settings.columns_to_keep_string if sel_settings else "",
-            )
-        else:
-            gsheet_form = CreateAssemblyGSheetForm()
-
-    # The access check panel shows on the configuration's view mode only
-    gsheet_access_result = None
-    gsheet_access_auto_check = False
-    can_check_gsheet_access = False
-    if gsheet_mode == "view" and nav.gsheet:
-        can_check_gsheet_access = can_manage_assembly(current_user, nav.assembly)
-        gsheet_access_auto_check = can_check_gsheet_access and request.args.get("check", "") == "1"
-        if not gsheet_access_auto_check:
-            gsheet_access_result = fetch_cached_result(assembly_id, nav.gsheet.url)
-
-    # Set up CSV settings form if CSV source is selected
-    csv_settings_form = None
-    csv_available_columns: list[str] = []
-    csv_mode = "view"  # Default to view mode
-    csv_config = None
-    # What the "Create from respondent data" dialog on the targets card needs:
-    # the columns it can offer, how many distinct answers each holds, and the
-    # categories that already cover one.
-    target_categories: list = []
-    respondent_attribute_columns: list[str] = []
-    column_distinct_counts: dict[str, int] = {}
-    if nav.data_source == "csv":
-        # Determine mode (view or edit)
-        mode_param = request.args.get("mode", "")
-        csv_mode = "edit" if mode_param == "edit" else "view"
-
-        # Get or create CSV config (reusing the UnitOfWork from above)
-        with uow:
-            csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
-
-            # Get available columns from respondents for validation hints
-            csv_available_columns = get_respondent_attribute_columns(uow, assembly_id)
-
-            target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-
-        # The id column identifies a respondent rather than describing them,
-        # so it is never a target category.
-        respondent_attribute_columns = [
-            column for column in csv_available_columns if column != csv_config.csv_id_column
-        ]
-        if respondent_attribute_columns:
-            # Opens its own UnitOfWork, so it stays outside the block above.
-            column_distinct_counts = get_column_distinct_counts(assembly_id, respondent_attribute_columns)
-
-        # Create form with current values from SelectionSettings
-        csv_settings_form = DbSelectionSettingsForm(
-            data={
-                "check_same_address": sel_settings.check_same_address if sel_settings else False,
-                "check_same_address_cols_string": sel_settings.check_same_address_cols_string if sel_settings else "",
-                "columns_to_keep_string": sel_settings.columns_to_keep_string if sel_settings else "",
-            },
-            available_columns=csv_available_columns,
-        )
-
-    return render_template(
-        "backoffice/assembly_data.html",
-        assembly=nav.assembly,
-        data_source=nav.data_source,
-        data_source_locked=nav.data_source_locked,
-        gsheet=nav.gsheet,
-        selection_settings=sel_settings,
-        gsheet_mode=gsheet_mode,
-        gsheet_form=gsheet_form,
-        google_service_account_email=google_service_account_email,
-        targets_enabled=nav.targets_enabled,
-        respondents_enabled=nav.respondents_enabled,
-        selection_enabled=nav.selection_enabled,
-        csv_status=nav.csv_status,
-        csv_settings_form=csv_settings_form,
-        csv_available_columns=csv_available_columns,
-        csv_mode=csv_mode,
-        csv_config=csv_config,
-        target_categories=target_categories,
-        respondent_attribute_columns=respondent_attribute_columns,
-        column_distinct_counts=column_distinct_counts,
-        targets_upload_form=targets_upload_form,
-        gsheet_access_result=gsheet_access_result,
-        gsheet_access_auto_check=gsheet_access_auto_check,
-        can_check_gsheet_access=can_check_gsheet_access,
-    )
-
-
 @backoffice_bp.route("/project/<uuid:assembly_id>/data")
 @login_required
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice assembly data page."""
-    try:
-        return render_assembly_data_page(assembly_id), 200
-    except NotFoundError as e:
-        logger.warning(
-            "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions for assembly",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        flash(_("You don't have permission to view this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        logger.exception(
-            "View assembly data error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("An error occurred while loading project data"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+    """Where the Data Source tab was. The data source is a card on the project details page."""
+    return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id, _anchor="data-source"))
 
 
 @backoffice_bp.route("/project/<uuid:assembly_id>/members")
 @login_required
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice assembly team members page."""
-    try:
-        nav_uow = bootstrap.get_flask_uow()
-        with nav_uow:
-            nav = get_assembly_nav_context(
-                nav_uow,
-                current_user.id,
-                assembly_id,
-                request.args.get("source", ""),
-            )
-
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assembly_users = get_assembly_members(uow, assembly_id, current_user)
-            # Named so the page can hide a Remove button that would be refused:
-            # a non-admin may not leave the assembly with no manager.
-            sole_manager_id = sole_assembly_manager_id(uow, assembly_id)
-
-        can_manage_assembly_users = can_manage_assembly_members(current_user, nav.assembly)
-        add_user_form = AddUserToAssemblyForm()
-
-        return render_template(
-            "backoffice/assembly_members.html",
-            assembly=nav.assembly,
-            assembly_users=assembly_users,
-            can_manage_assembly_users=can_manage_assembly_users,
-            sole_manager_id=sole_manager_id,
-            add_user_form=add_user_form,
-            current_tab="members",
-            data_source=nav.data_source,
-            gsheet=nav.gsheet,
-            targets_enabled=nav.targets_enabled,
-            respondents_enabled=nav.respondents_enabled,
-            selection_enabled=nav.selection_enabled,
-        ), 200
-    except NotFoundError as e:
-        logger.warning(
-            "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions for assembly",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        flash(_("You don't have permission to view this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        logger.exception(
-            "View assembly members error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("An error occurred while loading team members"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-
-
-@backoffice_bp.route("/project/<uuid:assembly_id>/members/add", methods=["POST"])
-@login_required
-def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Add a user to an assembly with a specific role."""
-    form = AddUserToAssemblyForm()
-
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            if form.validate_on_submit():
-                user_id = uuid.UUID(form.user_id.data)
-
-                # Role is already an AssemblyRole enum from form coercion
-                role = form.role.data
-                assert isinstance(role, AssemblyRole)
-
-                # Get email adapters for sending notification
-                email_adapter = get_email_adapter()
-                template_renderer = get_template_renderer(current_app)
-                url_generator = get_url_generator(current_app)
-
-                # Call service layer to add user to assembly
-                _assembly_role, target_user = grant_user_assembly_role(
-                    uow=uow,
-                    user_id=user_id,
-                    assembly_id=assembly_id,
-                    role=role,
-                    current_user=current_user,
-                    email_adapter=email_adapter,
-                    template_renderer=template_renderer,
-                    url_generator=url_generator,
-                )
-
-                flash(
-                    _(
-                        "%(user)s added to project with role %(role)s",
-                        user=target_user.display_name,
-                        role=role.value,
-                    ),
-                    "success",
-                )
-            else:
-                flash(_("Please select a user and role"), "error")
-
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
-
-    except NotFoundError as e:
-        logger.error("Error adding user to assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Could not add user to project: %(error)s", error=str(e)), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions to add user to assembly",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        flash(_("You don't have permission to add users to this project"), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
-    except Exception as e:
-        logger.exception(
-            "Unexpected error adding user to assembly",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        flash(_("An error occurred while adding the user to the project"), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+    """Where the Team Members tab was. The team is a card on the project details page."""
+    return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id, _anchor="team"))
 
 
 @backoffice_bp.route("/project/<uuid:assembly_id>/members/<uuid:user_id>/remove", methods=["POST"])
 @login_required
 def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> ResponseReturnValue:
-    """Remove a user from an assembly."""
+    """Remove a user from an assembly, from the Team card on the project details page."""
+    team_url = url_for("backoffice.view_assembly", assembly_id=assembly_id, _anchor="team")
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -941,7 +561,11 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
                 "success",
             )
 
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        # Someone who removed themselves can no longer open the project, unless
+        # they see every project anyway.
+        if user_id == current_user.id and not can_see_all_assemblies(current_user):
+            return redirect(url_for("backoffice.dashboard"))
+        return redirect(team_url)
 
     except CannotRemoveLastAssemblyManager as e:
         logger.warning(
@@ -950,11 +574,11 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             user_id=str(current_user.id),
         )
         flash(e.user_msg(), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        return redirect(team_url)
     except NotFoundError as e:
         logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not remove user from project: %(error)s", error=str(e)), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        return redirect(team_url)
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to remove user from assembly",
@@ -963,7 +587,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             error=str(e),
         )
         flash(_("You don't have permission to remove users from this project"), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        return redirect(team_url)
     except Exception as e:
         logger.exception(
             "Unexpected error removing user from assembly",
@@ -972,7 +596,7 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
             error=str(e),
         )
         flash(_("An error occurred while removing the user from the project"), "error")
-        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
+        return redirect(team_url)
 
 
 @backoffice_bp.route("/project/<uuid:assembly_id>/members/search")

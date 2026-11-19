@@ -18,10 +18,17 @@ import opendlp.logging
 from opendlp import bootstrap, config
 from opendlp.domain.respondent_field_schema import DERIVATION_TYPE_LABELS, ON_REGISTRATION_PAGE_LABELS
 from opendlp.domain.value_objects import (
+    DataSource,
+    RespondentsSource,
+    TargetsSource,
+    assembly_role_labels,
     assembly_status_labels,
     content_style_labels,
+    data_source_labels,
     global_role_labels,
     respondent_status_labels,
+    respondents_source_labels,
+    targets_source_labels,
 )
 from opendlp.entrypoints.context_processors import (
     inject_capabilities,
@@ -142,8 +149,16 @@ def register_context_processors(app: Flask) -> None:
     # Same reason: the role tag macro is imported, and needs the labels.
     app.jinja_env.globals["global_role_labels"] = global_role_labels
     app.jinja_env.globals["assembly_status_labels"] = assembly_status_labels
+    app.jinja_env.globals["assembly_role_labels"] = assembly_role_labels
     app.jinja_env.globals["content_style_labels"] = content_style_labels
     app.jinja_env.globals["respondent_status_labels"] = respondent_status_labels
+    # The data source dialogs build their dropdowns from the enums and labels.
+    app.jinja_env.globals["DataSource"] = DataSource
+    app.jinja_env.globals["TargetsSource"] = TargetsSource
+    app.jinja_env.globals["RespondentsSource"] = RespondentsSource
+    app.jinja_env.globals["data_source_labels"] = data_source_labels
+    app.jinja_env.globals["targets_source_labels"] = targets_source_labels
+    app.jinja_env.globals["respondents_source_labels"] = respondents_source_labels
     app.jinja_env.globals["derivation_type_labels"] = DERIVATION_TYPE_LABELS
     app.jinja_env.globals["on_registration_page_labels"] = ON_REGISTRATION_PAGE_LABELS
     # Translates a stored library error, such as a cached Google Sheets access check,
@@ -165,6 +180,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.auth import auth_bp  # noqa: PLC0415
     from .blueprints.backoffice import backoffice_bp  # noqa: PLC0415
     from .blueprints.backoffice_registration import backoffice_registration_bp  # noqa: PLC0415
+    from .blueprints.data_source import data_source_bp  # noqa: PLC0415
     from .blueprints.db_selection_backoffice import db_selection_backoffice_bp  # noqa: PLC0415
     from .blueprints.db_selection_legacy import db_selection_legacy_bp  # noqa: PLC0415
     from .blueprints.gsheets import gsheets_bp  # noqa: PLC0415
@@ -172,6 +188,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.health import health_bp  # noqa: PLC0415
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
+    from .blueprints.project_details import project_details_bp  # noqa: PLC0415
     from .blueprints.registration import registration_bp  # noqa: PLC0415
     from .blueprints.respondent_field_schema import respondent_field_schema_bp  # noqa: PLC0415
     from .blueprints.respondents import respondents_bp  # noqa: PLC0415
@@ -190,6 +207,8 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(health_bp)
     app.register_blueprint(backoffice_bp, url_prefix="/backoffice")
     app.register_blueprint(backoffice_registration_bp, url_prefix="/backoffice")
+    app.register_blueprint(data_source_bp, url_prefix="/backoffice")
+    app.register_blueprint(project_details_bp, url_prefix="/backoffice")
     if config.dev_tools_enabled():
         from .blueprints.dev import dev_bp  # noqa: PLC0415
 

@@ -64,7 +64,7 @@ class TestDbSelectionSmoke:
 
         assert response.status_code == 200
         assert b"Selection Settings" in response.data
-        assert b"Check Same Address" in response.data
+        assert b"Check same address" in response.data
 
     def test_save_db_selection_settings(self, logged_in_admin, assembly_for_db_selection, postgres_session_factory):
         assembly = assembly_for_db_selection
@@ -73,7 +73,6 @@ class TestDbSelectionSmoke:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "address1, postcode",
-                "columns_to_keep_string": "first_name, last_name",
             },
             follow_redirects=False,
         )
@@ -86,7 +85,7 @@ class TestDbSelectionSmoke:
             assert a.selection_settings is not None
             assert a.selection_settings.check_same_address is True
             assert a.selection_settings.check_same_address_cols == ["address1", "postcode"]
-            assert a.selection_settings.columns_to_keep == ["first_name", "last_name"]
+            assert a.selection_settings.columns_to_keep == []
 
     @patch("opendlp.entrypoints.blueprints.db_selection_legacy.check_db_selection_data")
     def test_check_db_data_success(self, mock_check, logged_in_admin, assembly_for_db_selection):

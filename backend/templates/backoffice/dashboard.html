@@ -9,10 +9,14 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
 {% block title %}{{ _("Your projects") }}{% endblock %}
 
 {% block page_content %}
+    {# Both buttons open the create dialog in place, into the host at the foot of
+       the page. Without JavaScript each is a link to the same address, which is
+       this page with the dialog already open. #}
+    {% set open_create_dialog = 'hx-get="' ~ url_for('data_source.new_project') ~ '" hx-target="#project-dialog-host" hx-swap="innerHTML"' %}
     <div class="flex justify-between items-center mb-2">
         <h1 style="color: var(--color-display-text);" class="text-display-lg">{{ _("Your projects") }}</h1>
         {% if perms.create_assembly %}
-            {{ button(_("Create project"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+            {{ button(_("Create project"), href=url_for('data_source.new_project'), variant="primary", aria_haspopup="dialog", attrs=open_create_dialog ~ ' data-focus-id="create-project"') }}
         {% endif %}
     </div>
     <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">{{ _("Welcome back, %(name)s!", name=current_user.display_name) }}</p>
@@ -42,11 +46,19 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
                 <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No projects yet") }}</p>
                 {% if perms.create_assembly %}
                     <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("Create your first project to get started.") }}</p>
-                    {{ button(_("Create your first project"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+                    {{ button(_("Create your first project"), href=url_for('data_source.new_project'), variant="primary", aria_haspopup="dialog", attrs=open_create_dialog ~ ' data-focus-id="create-first-project"') }}
                 {% else %}
                     <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("You have not been added to any projects yet — ask a Project Manager to add you.") }}</p>
                 {% endif %}
             {% endcall %}
         {% endif %}
     </section>
+
+    <div id="project-dialog-host" data-fragment-dialog-host>
+        {% if project_dialog %}
+            {% with ds=project_dialog %}
+                {% include "backoffice/data_source/_dialog.html" %}
+            {% endwith %}
+        {% endif %}
+    </div>
 {% endblock %}

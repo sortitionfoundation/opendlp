@@ -939,6 +939,13 @@
         opacity: 0.6;
     }
 
+    /* A step that is not a link because there is nowhere for it to go, not
+       because it is waiting its turn: it keeps its full strength. */
+    .stepper-link[aria-disabled="true"][data-step-settled] {
+        cursor: default;
+        opacity: 1;
+    }
+
     /* Hover — only for non-active, non-disabled steps in tabs mode */
     .stepper-link:not([aria-disabled="true"]):hover .stepper-label {
         color: var(--color-headings);
@@ -1279,6 +1286,11 @@
     /* Default size — for content/progress modals with chrome */
     .dialog-panel--default {
         max-width: 42rem; /* matches former max-w-2xl */
+    }
+
+    /* Wide — for a dialog holding a two-column form (the data source dialogs) */
+    .dialog-panel--wide {
+        max-width: 55rem;
     }
 
     /* Alert size — compact confirmation dialog matching Figma 1601:856 */

@@ -15,28 +15,26 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
-from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import (
-    CreateAssemblyGSheetForm,
-    EditAssemblyGSheetForm,
+    DbSelectionSettingsForm,
 )
-from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
-    add_assembly_gsheet,
+    CSVUploadStatus,
+    determine_data_source,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
-    get_or_create_selection_settings,
-    remove_assembly_gsheet,
-    update_assembly_gsheet,
+    get_tab_enabled_states,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
-from opendlp.service_layer.gsheet_access_check import check_gsheet_access, forget_cached_result, store_cached_result
+from opendlp.service_layer.gsheet_access_check import check_gsheet_access, store_cached_result
+from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.replacement_targets import (
     ReplacementPlan,
     ReplacementValidation,
@@ -45,7 +43,7 @@ from opendlp.service_layer.replacement_targets import (
     run_feasibility_check,
 )
 from opendlp.service_layer.report_translation import translate_run_report_to_html
-from opendlp.service_layer.respondent_service import count_held_respondents
+from opendlp.service_layer.respondent_service import count_held_respondents, get_respondent_attribute_columns
 from opendlp.service_layer.selection_history import name_history
 from opendlp.service_layer.sortition import (
     InvalidSelection,
@@ -243,13 +241,50 @@ def _get_db_replacement_dialog_context(
     return plan, validation
 
 
+# What a selection on a project held in OpenDLP can be waiting for, in the
+# order the page lists them.
+WAITING_FOR_TARGETS = "targets"
+WAITING_FOR_RESPONDENTS = "respondents"
+WAITING_FOR_SETTINGS = "settings"
+
+
+def selection_waiting_for(csv_status: CSVUploadStatus, settings_confirmed: bool) -> list[str]:
+    """What a project held in OpenDLP still needs before a selection can run."""
+    waiting = []
+    if not csv_status.has_targets:
+        waiting.append(WAITING_FOR_TARGETS)
+    if not csv_status.has_respondents:
+        waiting.append(WAITING_FOR_RESPONDENTS)
+    if not settings_confirmed:
+        waiting.append(WAITING_FOR_SETTINGS)
+    return waiting
+
+
+def unbound_selection_settings_form(assembly: Assembly, available_columns: list[str]) -> DbSelectionSettingsForm:
+    """The selection settings form as first shown: holding what is stored."""
+    settings = assembly.selection_settings
+    return DbSelectionSettingsForm(
+        formdata=None,
+        data={
+            "check_same_address": settings.check_same_address if settings else False,
+            "check_same_address_cols_string": settings.check_same_address_cols_string if settings else "",
+        },
+        available_columns=available_columns,
+    )
+
+
 def render_selection_page(
     assembly_id: uuid.UUID,
     *,
     replacement_form: Mapping[str, str] | None = None,
     replacement_validation: ReplacementValidation | None = None,
+    selection_settings_form: DbSelectionSettingsForm | None = None,
 ) -> ResponseReturnValue:
     """Render the selection page for the current user.
+
+    A project held in OpenDLP has its selection settings in a dialog over this
+    page. A save that was refused without htmx re-renders the page with the
+    dialog open and ``selection_settings_form`` carrying the reasons.
 
     The database replacement dialog re-renders this page after a rejected
     submission: ``replacement_form`` carries the numbers the organiser typed and
@@ -336,21 +371,30 @@ def render_selection_page(
     with uow, contextlib.suppress(ServiceLayerError):
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
-    # Determine data source and tab enabled states
+    # The tabs are worked out as on every other tab of the project.
+    data_source, _locked = determine_data_source(gsheet, csv_status, assembly.data_source)
+    targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
+
     csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
+    selection_waiting: list[str] = []
+    selection_settings_columns: list[str] = []
+    selection_settings_open = False
+    can_manage_project = can_manage_assembly(current_user, assembly)
     replacement_plan = None
-    if gsheet:
-        data_source = "gsheet"
-        targets_enabled = True
-        respondents_enabled = True
-        selection_enabled = True
-    elif csv_status and csv_status.has_data:
-        data_source = "csv"
-        targets_enabled = csv_status.has_targets
-        respondents_enabled = csv_status.has_respondents
-        selection_enabled = csv_status.selection_enabled
+    if data_source == "csv" and csv_status:
         csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
+        selection_waiting = selection_waiting_for(csv_status, csv_settings_confirmed)
+        # The settings dialog is drawn with the page when a save was refused
+        # without htmx, or the address asks for it (?settings=1).
+        selection_settings_open = can_manage_project and (
+            selection_settings_form is not None or request.args.get("settings") == "1"
+        )
+        if selection_settings_open:
+            with uow:
+                selection_settings_columns = get_respondent_attribute_columns(uow, assembly_id)
+            if selection_settings_form is None:
+                selection_settings_form = unbound_selection_settings_form(assembly, selection_settings_columns)
         # Count the respondents holding a place: selected or confirmed
         try:
             with uow:
@@ -366,17 +410,12 @@ def render_selection_page(
             # The solver is the slow part, so it runs once the transaction has closed.
             if replacement_validation is not None:
                 run_feasibility_check(replacement_validation)
-    else:
-        data_source = ""
-        targets_enabled = False
-        respondents_enabled = False
-        selection_enabled = False
 
     # Replacements fill places that are held by nobody: some people must hold a
     # place, and fewer than the assembly needs.
     replacement_enabled = (
         data_source == "csv"
-        and csv_settings_confirmed
+        and not selection_waiting
         and 0 < csv_held_count < assembly.number_to_select
         and active_initial_selection_run_id is None
     )
@@ -421,6 +460,12 @@ def render_selection_page(
         selection_enabled=selection_enabled,
         csv_held_count=csv_held_count,
         csv_settings_confirmed=csv_settings_confirmed,
+        selection_waiting=selection_waiting,
+        can_manage_project=can_manage_project,
+        selection_settings_open=selection_settings_open,
+        selection_settings_form=selection_settings_form if selection_settings_open else None,
+        selection_settings_columns=selection_settings_columns,
+        selection_settings_from="",
         active_initial_selection_run_id=active_initial_selection_run_id,
     ), 200
 
@@ -1047,61 +1092,6 @@ def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
 # --- GSheet config views ---
 
 
-def _get_gsheet_form_data(form: CreateAssemblyGSheetForm | EditAssemblyGSheetForm) -> dict:
-    """Extract gsheet configuration data from form."""
-    return {
-        "url": form.url.data,
-        "team": form.team.data,
-        "select_registrants_tab": form.select_registrants_tab.data,
-        "select_targets_tab": form.select_targets_tab.data,
-        "replace_registrants_tab": form.replace_registrants_tab.data,
-        "replace_targets_tab": form.replace_targets_tab.data,
-        "already_selected_tab": form.already_selected_tab.data,
-        "id_column": form.id_column.data,
-        "check_same_address": form.check_same_address.data,
-        "generate_remaining_tab": form.generate_remaining_tab.data,
-        "check_same_address_cols_string": form.check_same_address_cols_string.data,
-        "columns_to_keep_string": form.columns_to_keep_string.data,
-    }
-
-
-def _handle_gsheet_save_success(
-    uow: AbstractUnitOfWork,
-    assembly_id: uuid.UUID,
-    user_id: uuid.UUID,
-    form: CreateAssemblyGSheetForm | EditAssemblyGSheetForm,
-    is_update: bool,
-) -> ResponseReturnValue:
-    """Handle successful gsheet form validation and save to service layer."""
-    form_data = _get_gsheet_form_data(form)
-
-    if is_update:
-        update_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
-        flash(_("Google Sheets configuration updated successfully"), "success")
-    else:
-        add_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
-        flash(_("Google Sheets configuration created successfully"), "success")
-
-    # Soft validation warning - check if columns_to_keep is empty
-    # Team defaults may have populated columns_to_keep even if the form field was empty
-    team = form.team.data if hasattr(form, "team") and form.team else ""
-    columns_to_keep = form.columns_to_keep_string.data or ""
-    has_team_with_defaults = team and team != "other"
-    if not columns_to_keep.strip() and not has_team_with_defaults:
-        flash(
-            _(
-                "Warning: No columns to keep specified. "
-                "This means the output will only include respondent data columns "
-                "used for the targets and address checking. Is this intentional?"
-            ),
-            "warning",
-        )
-
-    # The URL may have changed, so the cached access check may describe another sheet
-    forget_cached_result(assembly_id)
-    return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet", check=1))
-
-
 @gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/check", methods=["POST"])
 @login_required
 @require_assembly_management
@@ -1110,7 +1100,7 @@ def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     Always asks Google: the cache only serves page views that did not ask for
     a check. Returns the status panel for HTMX; a plain form post redirects to
-    the Assembly Data page, which shows the result from the cache.
+    the project details page, which shows the result from the cache.
     """
     uow = bootstrap.get_flask_uow()
     with uow:
@@ -1151,101 +1141,10 @@ def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
     store_cached_result(assembly_id, result)
 
     if request.headers.get("HX-Request") != "true":
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
+        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
     return render_template(
         "backoffice/components/gsheet_access_status.html",
         gsheet_access_assembly_id=assembly_id,
         gsheet_access_result=result,
         can_check_gsheet_access=True,
     )
-
-
-@gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/save", methods=["POST"])
-@login_required
-def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Save Google Spreadsheet configuration for an assembly."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        is_update = existing_gsheet is not None
-        form = EditAssemblyGSheetForm() if is_update else CreateAssemblyGSheetForm()
-
-        if form.validate_on_submit():
-            try:
-                with uow:
-                    return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
-            except InsufficientPermissions as e:
-                logger.warning("Insufficient permissions for gsheet save", error=str(e))
-                flash(_("You don't have permission to manage Google Sheets for this project"), "error")
-                return redirect(url_for("backoffice.dashboard"))
-            except NotFoundError as e:
-                logger.error("Gsheet save validation error for assembly", assembly_id=str(assembly_id), error=str(e))
-                flash(_("Please check your input and try again"), "error")
-            except Exception as e:
-                logger.error("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
-                flash(_("An error occurred while saving the Google Sheets configuration"), "error")
-
-        # Form validation failed or service error - re-render the page with errors.
-        # Reuse the UnitOfWork from the lookup above.
-        sel_settings = None
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            # selection_settings is optional for the form re-render.
-            with contextlib.suppress(ServiceLayerError):
-                sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
-
-        return render_template(
-            "backoffice/assembly_data.html",
-            assembly=assembly,
-            data_source="gsheet",
-            data_source_locked=is_update,  # Locked if updating existing config
-            gsheet=existing_gsheet,
-            selection_settings=sel_settings,
-            gsheet_mode="edit" if is_update else "new",
-            gsheet_form=form,
-            google_service_account_email=get_service_account_email(),
-        ), 200
-
-    except NotFoundError as e:
-        logger.warning("Assembly not found for gsheet save", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions to save gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
-        )
-        flash(_("You don't have permission to view this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        logger.exception("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("An error occurred while saving the Google Sheets configuration"), "error")
-        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
-
-
-@gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/delete", methods=["POST"])
-@login_required
-def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Delete Google Spreadsheet configuration for an assembly."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            remove_assembly_gsheet(uow, assembly_id, current_user.id)
-        flash(_("Google Sheets configuration removed successfully"), "success")
-        # Redirect without source param - selector will be unlocked allowing user to choose again
-        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
-
-    except NotFoundError as e:
-        logger.warning("Gsheet config not found for delete", error=str(e))
-        flash(_("Google Sheets configuration not found"), "error")
-        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
-    except InsufficientPermissions as e:
-        logger.warning(
-            "Insufficient permissions to delete gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
-        )
-        flash(_("You don't have permission to manage Google Sheets for this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        logger.exception("Gsheet delete error for assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("An error occurred while removing the Google Sheets configuration"), "error")
-        return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))

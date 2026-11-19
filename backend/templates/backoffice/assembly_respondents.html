@@ -26,8 +26,7 @@ ABOUTME: Displays respondent data configuration for assemblies
             {{ assembly_tabs(
             assembly=assembly,
             active_tab="respondents",
-            data_source=data_source,
-            gsheet=gsheet,
+            data_source=data_source|default(""),
             targets_enabled=targets_enabled,
             respondents_enabled=respondents_enabled,
             selection_enabled=selection_enabled|default(false)
@@ -60,9 +59,39 @@ ABOUTME: Displays respondent data configuration for assemblies
             </dl>
 
             <div class="mt-4">
-                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
+                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1, _anchor='data-source'), variant="outline") }}
             </div>
         {% endcall %}
+    {% elif data_source == "csv" and not has_respondents and not status_filter %}
+        {# Nobody yet: say how respondents arrive, rather than show an empty table.
+           The upload opens in a new tab, as the dialog it leads to belongs to
+           another page of the project. #}
+        <div class="mb-8" id="respondents-empty">
+            {% call section() %}
+                <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("No respondents yet") }}</h2>
+                {% if can_manage_project %}
+                    <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                        {{ _("Respondents arrive in one of two ways:") }}
+                    </p>
+                    <ul class="flex flex-col gap-4 list-disc pl-6 text-body-md" style="color: var(--color-body-text);">
+                        <li>
+                            {{ _("Upload a CSV file of people who have already registered elsewhere.") }}
+                            <a href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1, upload='respondents') }}"
+                               target="_blank"
+                               rel="noopener"
+                               class="underline"
+                               style="color: var(--color-links)">{{ _("Upload respondents (opens in a new tab)") }}</a>
+                        </li>
+                        <li>
+                            {{ _("Create a registration page for people to fill in.") }}
+                            <a href="{{ url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) }}"
+                               class="underline"
+                               style="color: var(--color-links)">{{ _("Go to the Registration tab") }}</a>
+                        </li>
+                    </ul>
+                {% endif %}
+            {% endcall %}
+        </div>
     {% elif data_source == "csv" %}
         <div class="mb-8">
             {% call section() %}
@@ -172,9 +201,9 @@ ABOUTME: Displays respondent data configuration for assemblies
     {% else %}
         {# No data source selected #}
         <section class="mb-8">
-            {{ alert(_("Please configure a data source in the Data tab first."), variant="warning") }}
+            {{ alert(_("Please set up this project's data source on the Project Details tab first."), variant="warning") }}
             <div class="mt-4">
-                {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
+                {{ button(_("Configure Data Source"), href=url_for('backoffice.view_assembly', assembly_id=assembly.id, data_source=1), variant="primary") }}
             </div>
         </section>
     {% endif %}
