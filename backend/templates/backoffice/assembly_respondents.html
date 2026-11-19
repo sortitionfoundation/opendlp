@@ -137,10 +137,14 @@ ABOUTME: Displays respondent data configuration for assemblies
                                     {{ table_cell(respondent.external_id, bold=true) }}
                                     {{ table_cell(respondent.email or "—") }}
                                     {% call table_cell_custom(align="right") %}
-                                        <a href="{{ url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}">{{ _("View") }}</a>
+                                        <a href="{{ url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}"
+                                           class="hover:underline"
+                                           style="color: var(--color-links);">{{ _("View") }}</a>
                                         {% if can_edit and respondent.selection_status.value != "DELETED" %}
                                             &nbsp;|&nbsp;
-                                            <a href="{{ url_for('respondents.edit_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}">{{ _("Edit") }}</a>
+                                            <a href="{{ url_for('respondents.edit_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}"
+                                               class="hover:underline"
+                                               style="color: var(--color-links);">{{ _("Edit") }}</a>
                                         {% endif %}
                                     {% endcall %}
                                 {% endcall %}
