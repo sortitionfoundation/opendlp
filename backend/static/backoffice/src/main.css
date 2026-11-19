@@ -1178,7 +1178,7 @@
     }
 
     .question-tags a {
-        color: var(--color-primary-action);
+        color: var(--color-links);
         text-decoration: underline;
     }
 
