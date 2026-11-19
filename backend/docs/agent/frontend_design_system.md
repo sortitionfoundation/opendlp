@@ -76,7 +76,7 @@ Rules for using tokens in templates:
 - Prefer semantic tokens over primitives (`--color-links`, not `--color-info-600`).
 - Never invent a token name in a template. If no existing token fits, add a semantic alias to `semantic.css` first.
 - Status colours use a `100/400/600` scale (background/border/text), with purpose-named aliases `--color-{success,warning,error,info}-{background,text}`. There are no `-500`/`-700` shades - use `-400` for borders/strokes and `-600` for text.
-- Links are link blue. Both link tokens, `--color-links` and `--color-link-text`, are the design's info-600 (#2B5FA6), and a link needs one of them set explicitly because the Tailwind preflight sets `a { color: inherit }`. A link is never coloured with `--color-primary-action`, the brand crimson of primary buttons and error texts: `tests/unit/test_link_colours.py` fails on one, apart from two exceptions it names - the error summary's links, red like the errors they list, and the page header's back arrow, an icon control.
+- Links are link blue. Both link tokens, `--color-links` and `--color-link-text`, are the design's info-600 (#2B5FA6), and a link needs one of them set explicitly because the Tailwind preflight sets `a { color: inherit }`. A link is never coloured with `--color-primary-action`, the brand crimson of primary buttons and error texts: `tests/unit/test_link_colours.py` fails on one, apart from the one exception it names, the page header's back arrow, an icon control.
 
 ## HTML Template Requirements
 

@@ -16,8 +16,6 @@ PRIMARY_ACTION_COLOUR_RE = re.compile(r"(?<![-\w])color\s*:\s*var\(\s*--color-pr
 
 # The only links still coloured with --color-primary-action, and why.
 PRIMARY_ACTION_LINKS = {
-    # The error summary's links to the fields are red, like the errors they list.
-    "backoffice/assembly_form.html": 1,
     # The page header's back arrow is an icon control, not a text link.
     "backoffice/components/page_header.html": 1,
 }
