@@ -77,6 +77,20 @@ class TestExportUsers:
         admin_row = next(row for row in rows if row[0] == "admin@example.com")
         assert admin_row[headers.index("location")] == ""
 
+    def test_exports_where_the_user_heard_about_us_as_its_token(self, uow):
+        admin = _make_user(uow, "admin@example.com", GlobalRole.ADMIN)
+        user = _make_user(uow, "someone@example.com")
+        signup_survey_service.save_signup_survey(uow, user.id, {"heard_about_us": "friend"})
+
+        target = CsvExportTarget()
+        signup_survey_service.export_users(uow, admin.id, target=target)
+
+        lines = target.getvalue().lstrip("﻿").splitlines()
+        headers = lines[0].split(",")
+        user_row = next(row for row in (line.split(",") for line in lines[1:]) if row[0] == "someone@example.com")
+        # The stored token, not its label, so the column reads the same in every UI language
+        assert user_row[headers.index("heard_about_us")] == "friend"
+
     def test_answers_to_removed_questions_get_their_own_columns(self, uow):
         admin = _make_user(uow, "admin@example.com", GlobalRole.ADMIN)
         user = _make_user(uow, "someone@example.com")

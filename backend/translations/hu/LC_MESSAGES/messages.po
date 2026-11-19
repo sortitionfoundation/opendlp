@@ -412,6 +412,41 @@ msgstr "Csak érdeklődöm"
 msgid "Anything else you want to tell us?"
 msgstr "Van még valami, amit szeretnél elmondani nekünk?"
 
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Where did you hear about us?"
+msgstr "Honnan hallottál rólunk?"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Social media"
+msgstr "Közösségi médiából"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "An event"
+msgstr "Egy rendezvényen"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Forum"
+msgstr "Fórumon"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Newsletter"
+msgstr "Hírlevélből"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "From a friend"
+msgstr "Egy barátomtól"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Other"
+msgstr "Egyéb"
+
 #: src/opendlp/domain/validators.py
 msgid "URL slug cannot be empty"
 msgstr "Az URL-azonosító nem lehet üres"
@@ -11536,6 +11571,23 @@ msgstr ""
 #: templates/public/register.html
 msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
+
+#: templates/public/register.html
+#, fuzzy
+msgid "Beta disclaimer"
+msgstr "Bétatesztelési nyilatkozat"
+
+#: templates/public/register.html
+#, fuzzy, python-format
+msgid ""
+"Registration for OpenDLP is currently only open for beta testing. Please "
+"%(link_start)scontact us%(link_end)s if you intend to use it in actual "
+"democratic lottery processes and/or with actual personal datasets."
+msgstr ""
+"Az OpenDLP-be jelenleg csak bétatesztelésre lehet regisztrálni. Kérjük, "
+"%(link_start)slépj kapcsolatba velünk%(link_end)s, ha valódi demokratikus"
+" sorsolási folyamatokban és/vagy valódi személyes adatállományokkal "
+"tervezed használni."
 
 #: templates/public/register.html
 msgid "Create an Account with Google"

@@ -169,7 +169,9 @@ class TestAdminUserView:
     ):
         """The signup survey section shows the answers, with choice tokens as labels."""
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            save_signup_survey(uow, regular_user.id, {"location": "Budapest", "organisation_size": "2_10"})
+            save_signup_survey(
+                uow, regular_user.id, {"location": "Budapest", "organisation_size": "2_10", "heard_about_us": "friend"}
+            )
 
         login_as_admin(client, admin_user)
         response = client.get(f"/admin/users/{regular_user.id}")
@@ -177,6 +179,8 @@ class TestAdminUserView:
         assert b"Signup Survey" in response.data
         assert b"Budapest" in response.data
         assert b"2 to 10 people" in response.data
+        assert b"Where did you hear about us?" in response.data
+        assert b"From a friend" in response.data
 
     def test_view_user_without_survey_says_so(self, client: FlaskClient, admin_user: User, regular_user: User):
         login_as_admin(client, admin_user)

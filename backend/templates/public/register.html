@@ -14,6 +14,11 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
     {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
     {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
     {% set sso_enabled = google_enabled or microsoft_enabled %}
+    {# The invite code's helper text and the beta disclaimer both link to the
+       support address. The link is a few words inside a sentence, which a
+       translation may need to inflect, so it goes in as start and end markers
+       rather than as a whole. #}
+    {% set support_link_start = ('<a href="mailto:%s" class="underline" style="color: var(--color-links);">' | format(support_email_address | e)) | safe %}
     <div class="flex flex-col gap-8">
         {% call page_heading(_("Create an account on"), logo=true) %}
             <p class="text-body-md" style="color: var(--color-body-text);">
@@ -94,10 +99,7 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 {% endif %}
             {% else %}
                 {# A code is required, so the helper text under the field says
-                   where to get one. The link is a few words inside the
-                   sentence, which a translation may need to inflect, so it goes
-                   in as start and end markers rather than as a whole. #}
-                {% set support_link_start = ('<a href="mailto:%s" class="underline" style="color: var(--color-links);">' | format(support_email_address | e)) | safe %}
+                   where to get one. #}
                 <div class="flex flex-col gap-1.5">
                     {{ input(form.invite_code.name,
                     label=form.invite_code.label.text,
@@ -203,6 +205,16 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                 error=form.accept_data_agreement.errors | join("\n"))
                 }}
             </fieldset>
+            {# The beta disclaimer is information, not an agreement: there is
+               nothing to tick and nothing is stored. So it is a heading and a
+               paragraph rather than a fieldset, which groups form controls; the
+               heading is an h2 under the page's h1, like the survey's. #}
+            <div class="flex flex-col gap-1.5">
+                <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Beta disclaimer") }}</h2>
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("Registration for OpenDLP is currently only open for beta testing. Please %(link_start)scontact us%(link_end)s if you intend to use it in actual democratic lottery processes and/or with actual personal datasets.", link_start=support_link_start, link_end="</a>" | safe) }}
+                </p>
+            </div>
             {% if config.TURNSTILE_SITE_KEY %}
                 <div class="cf-turnstile"
                      data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"
