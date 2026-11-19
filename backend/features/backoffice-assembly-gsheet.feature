@@ -22,7 +22,7 @@ Feature: Backoffice Assembly Google Sheets Configuration
     Given I am logged in as an admin user
     And there is an assembly called "Data Test Assembly"
     When I visit the assembly data page for "Data Test Assembly"
-    And I select "Connect a Google sheet" from the data source selector
+    And I select "Connect a Google Sheets spreadsheet" from the data source selector
     Then I should see "Google Sheets Configuration"
     And I should see the gsheet URL input field
 

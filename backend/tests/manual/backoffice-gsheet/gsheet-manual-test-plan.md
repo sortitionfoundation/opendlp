@@ -64,7 +64,7 @@ Create a spreadsheet with:
 2. Click on an assembly card
 3. Click the "Data" tab
 4. Verify data source selector is enabled
-5. Select "Connect a Google sheet" from dropdown
+5. Select "Connect a Google Sheets spreadsheet" from dropdown
 6. Enter URL of Sheet A (valid configuration)
 7. Fill in tab names:
    - Respondents Tab: `Respondents`
@@ -258,7 +258,7 @@ Create a spreadsheet with:
 2. Observe data source selector
 
 **Expected Results:**
-- [ ] Selector shows "Connect a Google sheet" selected
+- [ ] Selector shows "Connect a Google Sheets spreadsheet" selected
 - [ ] Selector is disabled (greyed out)
 - [ ] Help text mentions "Data source is locked"
 - [ ] Cannot change to CSV while config exists

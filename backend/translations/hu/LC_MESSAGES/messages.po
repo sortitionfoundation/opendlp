@@ -5561,7 +5561,7 @@ msgid "Collect data in OpenDLP/upload CSV"
 msgstr ""
 
 #: templates/backoffice/assembly_data.html
-msgid "Connect a Google sheet"
+msgid "Connect a Google Sheets spreadsheet"
 msgstr ""
 
 #: templates/backoffice/assembly_data.html
