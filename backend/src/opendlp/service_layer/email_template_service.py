@@ -120,6 +120,10 @@ def _template_problems(
 def _auto_reply_readiness_problems(
     uow: AbstractUnitOfWork, assembly_id: uuid.UUID, page_id: uuid.UUID | None = None
 ) -> list[AutoReplyReadinessProblem]:
+    if page_id is not None:
+        page = uow.registration_pages.get(page_id)
+        if page is not None and not page.auto_reply_enabled:
+            return []
     problems = _email_field_problems(uow, assembly_id)
     if page_id is not None:
         problems.extend(_template_problems(uow, assembly_id, page_id))
@@ -136,7 +140,8 @@ def auto_reply_readiness_problems(
     also warns when the page's auto-reply has nowhere for replies to go - no
     reply-to on its template or on the assembly - when it still has [placeholders]
     to replace, and when it shows a first assembly date the assembly doesn't have.
-    Returns every problem found.
+    Returns every problem found, or none at all for a page whose auto-reply is
+    turned off: an email that will not be sent has nothing to stop it.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
