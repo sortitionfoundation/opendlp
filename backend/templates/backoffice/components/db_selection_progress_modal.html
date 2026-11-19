@@ -131,7 +131,9 @@ classes="max-w-3xl"
                             {{ table_cell(respondent.display_name(assembly.name_fields)) }}
                             {{ table_cell(respondent.email or "—") }}
                             {% call table_cell_custom(align="right") %}
-                                <a href="{{ url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}">{{ _("View") }}</a>
+                                <a href="{{ url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id) }}"
+                                   class="hover:underline"
+                                   style="color: var(--color-links);">{{ _("View") }}</a>
                             {% endcall %}
                         {% endcall %}
                     {% endfor %}

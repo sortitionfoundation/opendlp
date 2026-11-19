@@ -33,7 +33,7 @@
                     {{ ngettext("The assembly needs %(total)s, so %(strong_open)s%(num)s place is to be filled%(strong_close)s.", "The assembly needs %(total)s, so %(strong_open)s%(num)s places are to be filled%(strong_close)s.", plan.calculated_number, total=plan.number_to_select, strong_open='<strong>'|safe, strong_close='</strong>'|safe) }}
                     <button type="button"
                             class="text-label-md hover:underline ml-1"
-                            style="color: var(--color-primary-action)"
+                            style="color: var(--color-links)"
                             x-show="!numberEditing"
                             @click="editNumber()"
                             aria-controls="number_to_select-section"

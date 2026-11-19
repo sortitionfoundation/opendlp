@@ -151,7 +151,8 @@ Usage:
 {# Table cell with link #}
 {% macro table_cell_link(text, href, align="left", nowrap=true, classes="") %}
     {#
-Table cell containing a styled link.
+Table cell containing a link, in the link colour (--color-links) and
+underlined on hover like the other text links.
 
 Args:
   text: Link text
@@ -165,10 +166,8 @@ Usage:
     #}
   <td class="px-5 py-4 text-label-md text-{{ align }} {{ 'whitespace-nowrap' if nowrap else '' }} {{ classes }}">
     <a href="{{ href }}"
-       class="transition-colors"
-       style="color: var(--color-primary-action);"
-       onmouseover="this.style.color='var(--color-active-states)'"
-       onmouseout="this.style.color='var(--color-primary-action)'">
+       class="hover:underline"
+       style="color: var(--color-links);">
       {{ text }}
     </a>
   </td>
