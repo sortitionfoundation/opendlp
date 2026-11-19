@@ -99,23 +99,25 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                             </div>
                         </div>
                         <div class="space-y-4">
-                            {% set common_input_attrs %}{% if not edit_mode %}readonly aria-readonly="true" style="background-color: var(--color-subtle-background-panels); cursor: default;"{% endif %}{% endset %}
                             {# One row per field, labels in a shared column so the inputs line up;
-                               the help text is in each label's info icon. #}
+                               the help text is in each label's info icon. Outside edit mode the
+                               values are plain text, so nothing looks editable that is not. #}
                             <div class="space-y-3">
                                 {{ input(name="template_reply_to_name",
                                 label=_("Reply-to name"),
                                 info=_("Also shown as who the email is from."),
                                 inline=true,
                                 value=email_template.reply_to_name,
-                                attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                readonly=not edit_mode,
+                                attrs='maxlength="255"') }}
                                 {{ input(name="template_reply_to_email",
                                 label=_("Reply-to email address"),
                                 info=_("When someone replies to the auto-reply, their email goes here."),
                                 inline=true,
                                 type="email",
                                 value=email_template.reply_to_email,
-                                attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                readonly=not edit_mode,
+                                attrs='maxlength="255"') }}
                                             {# Template name is not exposed yet — one template per page, always called "Registration
 auto-reply". When multi-template support ships this becomes a visible input. #}
                                 {{ input(name="template_subject",
@@ -124,7 +126,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                                 info=_("Dynamic fields allowed, e.g. {{ project.title }}."),
                                 inline=true,
                                 required=true,
-                                attrs=common_input_attrs|trim) }}
+                                readonly=not edit_mode) }}
                             </div>
                             {% set body_attrs %}
                                 {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
