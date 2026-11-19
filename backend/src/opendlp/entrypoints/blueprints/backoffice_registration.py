@@ -93,6 +93,7 @@ from opendlp.service_layer.registration_page_service import (
     rename_registration_page,
     render_registration_form,
     reopen_registration_page,
+    set_auto_reply_enabled,
     unpublish_registration_page,
     update_registration_page,
     update_registration_page_html,
@@ -717,11 +718,15 @@ def _handle_email_action_create(assembly_id: uuid.UUID, page: RegistrationPage) 
 
 def _handle_email_action_save(
     assembly_id: uuid.UUID,
-    url_slug: str,
-    template_id: uuid.UUID | None,
+    page: RegistrationPage,
     *,
     advance: bool = False,
 ) -> str:
+    # Save always targets the page's assigned template. The form does not choose a
+    # template, so a posted template_id is deliberately ignored — trusting it would
+    # let a request update a template belonging to a different assembly.
+    url_slug = page.url_slug
+    template_id = page.auto_reply_email_template_id
     if template_id is None:
         flash(_("There is no auto-reply email to save yet — set one up first"), "warning")
         return _email_section_url(assembly_id, url_slug)
@@ -739,6 +744,8 @@ def _handle_email_action_save(
             reply_to_name=request.form.get("template_reply_to_name", "").strip(),
             reply_to_email=request.form.get("template_reply_to_email", "").strip(),
         )
+        if request.form.get("auto_reply_enabled_shown"):
+            set_auto_reply_enabled(uow, current_user.id, page.id, bool(request.form.get("auto_reply_enabled")))
     flash(_("Auto-reply email saved"), "success")
     if advance:
         return editor_url(assembly_id, url_slug, section="preview")
@@ -760,15 +767,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID, url_slug: str) -
     if action not in ("save", "save_and_next"):
         flash(_("Unknown action — nothing was changed"), "warning")
         return _email_section_url(assembly_id, url_slug)
-    # Save always targets the page's assigned template. The form does not choose a
-    # template, so a posted template_id is deliberately ignored — trusting it would
-    # let a request update a template belonging to a different assembly.
-    return _handle_email_action_save(
-        assembly_id,
-        url_slug,
-        page.auto_reply_email_template_id,
-        advance=(action == "save_and_next"),
-    )
+    return _handle_email_action_save(assembly_id, page, advance=(action == "save_and_next"))
 
 
 @backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/<url_slug>/email/save", methods=["POST"])
@@ -780,11 +779,8 @@ def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> R
 
     - create   → create a template with default copy and assign it as the auto-reply.
                  Lands the user in edit mode so they can immediately customise it.
-    - save     → update subject / body_html / reply-to on the page's assigned template.
-
-    There is deliberately no enable/disable: the product currently always sends the
-    auto-reply. If a real need to switch it off emerges, that gets a first-class
-    service-layer method — not the old assign/unassign-as-a-toggle trick.
+    - save     → update subject / body_html / reply-to on the page's assigned template,
+                 and turn the auto-reply on or off when the form carried its checkbox.
     """
     action = request.form.get("action", "save")
     try:
