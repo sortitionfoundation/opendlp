@@ -25,6 +25,10 @@ Feature: User Sign in and Registration
     Given the user is starting to register
     Then the user should see what their password must be
 
+  Scenario: The sign-up page shows the beta disclaimer
+    Given the user is starting to register
+    Then the user should see the beta disclaimer
+
   Scenario: Sign out
     Given the user is signed in
     When the user signs out

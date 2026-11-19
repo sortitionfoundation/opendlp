@@ -88,6 +88,23 @@ def _mock_login_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
+def _mock_signup_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Prevent the open signup rate limit from connecting to Redis in component tests.
+
+    The same seam again, on the per-IP limit for open signups. A component test
+    that signs up by email with open signup on reaches it twice: checking the
+    counter on the way in, and recording the new account on the way out.
+    """
+    mock_redis = MagicMock()
+    mock_redis.get.return_value = None  # no counter = not rate-limited
+    mock_redis.pipeline.return_value = MagicMock()
+    monkeypatch.setattr(
+        "opendlp.service_layer.signup_rate_limit_service._get_redis",
+        lambda: mock_redis,
+    )
+
+
+@pytest.fixture(autouse=True)
 def _in_memory_csv_upload_stash(monkeypatch: pytest.MonkeyPatch) -> None:
     """Back the pending-CSV stash with a dict for every component test.
 

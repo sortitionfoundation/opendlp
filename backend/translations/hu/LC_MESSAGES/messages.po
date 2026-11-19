@@ -413,6 +413,41 @@ msgstr "Csak érdeklődöm"
 msgid "Anything else you want to tell us?"
 msgstr "Van még valami, amit szeretnél elmondani nekünk?"
 
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Where did you hear about us?"
+msgstr "Honnan hallottál rólunk?"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Social media"
+msgstr "Közösségi médiából"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "An event"
+msgstr "Egy rendezvényen"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Forum"
+msgstr "Fórumon"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Newsletter"
+msgstr "Hírlevélből"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "From a friend"
+msgstr "Egy barátomtól"
+
+#: src/opendlp/domain/user_signup_surveys.py
+#, fuzzy
+msgid "Other"
+msgstr "Egyéb"
+
 #: src/opendlp/domain/validators.py
 msgid "URL slug cannot be empty"
 msgstr "Az URL-azonosító nem lehet üres"
@@ -1926,35 +1961,18 @@ msgstr "Köszönjük, hogy jelentkezett: {{ project.title }}"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py
 msgid ""
-"<p>Dear {{ respondent.first_name_or_friend }},</p>\n"
-"<p>Thank you for registering your interest in <strong>{{ assembly.title "
-"}}</strong>, which will look at the question:</p>\n"
-"<p><strong>{{ assembly.question }}</strong></p>\n"
-"<p>The assembly will meet on these dates:</p>\n"
-"<ul>\n"
-"    <li>[Date, time and place of each session]</li>\n"
-"</ul>\n"
-"<p><strong>What happens next</strong></p>\n"
-"<p>When registration closes, we will choose the members of the assembly "
-"by lottery from everyone who registered. Depending on how many people "
-"register, you will usually have around a [10 to 20] in 100 chance of "
-"being selected.</p>\n"
-"<ul>\n"
-"    <li><strong>[Date]:</strong> if you have been selected, we will tell "
-"you by email or phone, and arrange a short call to answer any questions "
-"you have.</li>\n"
-"    <li><strong>[Date]:</strong> if you have not been selected, we will "
-"tell you by email.</li>\n"
-"    <li><strong>{{ assembly.first_assembly_date_text }}:</strong> the "
-"first session of the assembly.</li>\n"
-"</ul>\n"
-"<p>You can read how we look after your details in our privacy policy: "
-"[link to your privacy policy].</p>\n"
-"<p>If you have any questions, or your plans change and you can no longer "
-"take part, please reply to this email or write to {{ reply_to_email }} as"
-" soon as you can.</p>\n"
-"<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>"
+"<p>Hi {{ respondent.first_name_or_friend }},</p>\n"
+"<p>Thanks for registering for <strong>{{ project.title }}</strong>.</p>\n"
+"<p>We'll be in touch about the assembly on {{ "
+"project.first_event_date_text }}.</p>\n"
+"<p>Best wishes,<br>The team</p>"
 msgstr ""
+"<p>Kedves {{ respondent.first_name_or_friend }}!</p>\n"
+"<p>Köszönjük, hogy jelentkezett a következőre: <strong>{{ project.title "
+"}}</strong>.</p>\n"
+"<p>{{ project.first_event_date_text }} napján tartandó közösségi "
+"gyűléssel kapcsolatban jelentkezünk.</p>\n"
+"<p>Üdvözlettel,<br>a csapat</p>"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py
 msgid "Auto-reply email created. Edit it below and click Save."
@@ -11724,6 +11742,23 @@ msgstr ""
 #: templates/public/register.html
 msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
+
+#: templates/public/register.html
+#, fuzzy
+msgid "Beta disclaimer"
+msgstr "Bétatesztelési nyilatkozat"
+
+#: templates/public/register.html
+#, fuzzy, python-format
+msgid ""
+"Registration for OpenDLP is currently only open for beta testing. Please "
+"%(link_start)scontact us%(link_end)s if you intend to use it in actual "
+"democratic lottery processes and/or with actual personal datasets."
+msgstr ""
+"Az OpenDLP-be jelenleg csak bétatesztelésre lehet regisztrálni. Kérjük, "
+"%(link_start)slépj kapcsolatba velünk%(link_end)s, ha valódi demokratikus"
+" sorsolási folyamatokban és/vagy valódi személyes adatállományokkal "
+"tervezed használni."
 
 #: templates/public/register.html
 msgid "Create an Account with Google"

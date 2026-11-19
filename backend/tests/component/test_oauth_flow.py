@@ -12,6 +12,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.extensions import OAUTH_HTTP_TIMEOUT_SECONDS, oauth
 from opendlp.entrypoints.flask_app import create_app
+from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeStore, FakeUnitOfWork
 
@@ -20,6 +21,16 @@ from tests.fakes import FakeStore, FakeUnitOfWork
 def _mapped_domain_objects():
     """Remove-auth services call SQLAlchemy flag_modified, which needs mapped classes."""
     database.start_mappers()
+
+
+@pytest.fixture
+def open_signup(monkeypatch):
+    """Turn on FF_OPEN_SIGNUP for one test, restoring the flags afterwards."""
+    monkeypatch.setenv("FF_OPEN_SIGNUP", "true")
+    reload_flags()
+    yield
+    monkeypatch.delenv("FF_OPEN_SIGNUP", raising=False)
+    reload_flags()
 
 
 @pytest.fixture
@@ -194,6 +205,22 @@ class TestOAuthRegistrationForms:
         assert response.status_code in [200, 302]
         if response.status_code == 200:
             assert b"Invalid" in response.data or b"error" in response.data.lower()
+
+    @pytest.mark.parametrize("provider", ["google", "microsoft"])
+    def test_a_provider_sign_up_starts_with_only_the_data_agreement(
+        self, client: FlaskClient, open_signup, provider: str
+    ):
+        """The beta disclaimer is text with nothing to tick, so the data agreement is all the hand-off needs."""
+        response = client.post(
+            "/auth/register",
+            data={"action": provider, "invite_code": "", "accept_data_agreement": "y"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert response.headers["Location"] == f"/auth/login/{provider}"
+        with client.session_transaction() as session:
+            assert session["oauth_accept_agreement"] is True
 
 
 class TestOAuthLoginPage:

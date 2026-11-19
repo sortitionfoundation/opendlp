@@ -92,6 +92,19 @@ SIGNUP_SURVEY_QUESTIONS: list[SignupSurveyQuestion] = [
         label=_l("Anything else you want to tell us?"),
         field_type=SurveyFieldType.TEXTAREA,
     ),
+    SignupSurveyQuestion(
+        key="heard_about_us",
+        label=_l("Where did you hear about us?"),
+        field_type=SurveyFieldType.SELECT,
+        choices={
+            "social_media": _l("Social media"),
+            "event": _l("An event"),
+            "forum": _l("Forum"),
+            "newsletter": _l("Newsletter"),
+            "friend": _l("From a friend"),
+            "other": _l("Other"),
+        },
+    ),
 ]
 
 

@@ -171,6 +171,7 @@ class TestOpenSignup:
         response = client.get("/auth/register")
         assert response.status_code == 200
         assert b"Which country are you in?" in response.data
+        assert b"Where did you hear about us?" in response.data
 
         response = self._register(
             client,
@@ -178,6 +179,7 @@ class TestOpenSignup:
             survey_organisation_size="2_10",
             survey_process_plan="within_year",
             survey_comment="Looking forward to it",
+            survey_heard_about_us="newsletter",
         )
         assert response.status_code == 302
         assert response.headers["Location"] == "/auth/login"
@@ -193,6 +195,7 @@ class TestOpenSignup:
                 "organisation_size": "2_10",
                 "process_plan": "within_year",
                 "comment": "Looking forward to it",
+                "heard_about_us": "newsletter",
             }
 
     def test_register_without_invite_refused_when_flag_off(self, client: FlaskClient, postgres_session_factory):

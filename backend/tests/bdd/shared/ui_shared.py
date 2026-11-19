@@ -10,6 +10,10 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from ..config import ADMIN_EMAIL, ADMIN_PASSWORD, FRESH_PASSWORD, Urls
 
 NEWUSER_EMAIL = "newuser@example.com"
+BETA_DISCLAIMER = (
+    "Registration for OpenDLP is currently only open for beta testing. Please contact us if you intend to use it in "
+    "actual democratic lottery processes and/or with actual personal datasets."
+)
 
 
 @given("the user is signing in")
@@ -119,6 +123,19 @@ def _(page: Page):
             r"Not be a commonly used password\s*Not be too similar to your personal information$"
         )
     )
+
+
+@then("the user should see the beta disclaimer")
+def _(page: Page):
+    """the disclaimer is text under its own heading, links to support, and leaves nothing to tick."""
+    expect(page.get_by_role("heading", name="Beta disclaimer", level=2)).to_be_visible()
+    expect(page.get_by_text(BETA_DISCLAIMER)).to_be_visible()
+    contact = page.get_by_role("link", name="contact us")
+    expect(contact).to_have_attribute("href", re.compile(r"^mailto:[^@\s]+@[^@\s]+$"))
+    # The data agreement's tickbox is the only one
+    tickboxes = page.get_by_role("checkbox")
+    expect(tickboxes).to_have_count(1)
+    expect(tickboxes).to_have_accessible_name(re.compile(r"^Accept Data Agreement"))
 
 
 @then("the user should be directed to try registering again")
