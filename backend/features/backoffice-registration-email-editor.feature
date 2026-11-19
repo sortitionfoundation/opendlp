@@ -49,3 +49,10 @@ Feature: Backoffice registration auto-reply email visual editor
     Then the visual email editor should show "Hello"
     And the visual email editor should not be editable
     And there should be no formatting toolbar
+
+  Scenario: Turning the auto-reply off
+    Given there is an assembly called "Email Off Assembly" with the auto-reply body "<p>Thanks for registering</p>"
+    When I visit the auto-reply email editor for "Email Off Assembly"
+    And I untick "Send auto-reply email"
+    And I save the registration form
+    Then the auto-reply should be shown as off

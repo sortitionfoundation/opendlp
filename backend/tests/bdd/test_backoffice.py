@@ -2299,6 +2299,23 @@ def replies_go_to(page: Page, name: str, email: str):
     expect(page.locator('input[name="template_reply_to_email"]')).to_have_count(0)
 
 
+@when(parsers.parse('I untick "{label}"'))
+def untick_checkbox(page: Page, label: str):
+    checkbox = page.get_by_role("checkbox", name=label, exact=True)
+    expect(checkbox).to_be_checked(timeout=PLAYWRIGHT_TIMEOUT)
+    checkbox.uncheck()
+
+
+@then("the auto-reply should be shown as off")
+def auto_reply_shown_as_off(page: Page):
+    """Back in the read-only view: the checkbox is unticked and the notice replaces any warnings."""
+    checkbox = page.get_by_role("checkbox", name="Send auto-reply email", exact=True)
+    expect(checkbox).not_to_be_checked(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(checkbox).to_be_disabled()
+    expect(page.get_by_role("status").filter(has_text="The auto-reply is off.")).to_be_visible()
+    expect(page.get_by_text("Auto-reply cannot be sent")).to_have_count(0)
+
+
 @then(parsers.parse('the formatting toolbar should offer "{name}"'))
 def toolbar_offers(page: Page, name: str):
     toolbar = page.get_by_role("toolbar", name="Formatting")
