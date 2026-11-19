@@ -1,6 +1,6 @@
 # 1361 — Let a registration page turn its auto-reply off
 
-Status: **in progress**, on `1361-disable-auto-reply` (branched
+Status: **implemented**, on `1361-disable-auto-reply` (branched
 from `1361-auto-reply-fixes`). Questions are marked **Q1…Q5**; all are
 answered. Each keeps its options for the record, with the decision marked ✅.
 
@@ -221,7 +221,7 @@ activity texts are not translated (Q4). Check `docs/language.md`, then load
 | Integration (real DB) | The column round-trips through the ORM. An existing row without the value reads as `true` (server default). |
 | Component (blueprint) | View mode: read-only checkbox matching the stored value. Edit mode: an enabled checkbox. Save with it unticked turns it off; ticked turns it on. A save without `auto_reply_enabled_shown` leaves it alone. When off: the notice shows, and neither the readiness banner nor the test-send box's "Registrants still won't receive…" line appears, even on a page with no email field. Replaces `test_checkbox_renders_checked_and_disabled_with_no_toggle_form`. |
 | E2E | In `tests/e2e/test_registration_auto_reply.py`: a published page with the auto-reply off takes a registration and sends no email and writes no send record. |
-| BDD | One scenario: Edit, untick "Send auto-reply email", Save, then see it unticked and the notice (the `I uncheck the "…" checkbox` step already exists in `tests/bdd/test_backoffice.py:1550`). |
+| BDD | One scenario: Edit, untick "Send auto-reply email", Save, then see it unticked and the notice ("Turning the auto-reply off" in `features/backoffice-registration-email-editor.feature`, with its own `I untick "…"` step: the uncheck step this plan first pointed to is no longer on main). |
 
 ## 11. Order of work
 
@@ -233,6 +233,6 @@ activity texts are not translated (Q4). Check `docs/language.md`, then load
 4. ✅ Blueprint and template, with component tests.
 5. ✅ Text, catalogues, docs. The checkbox label stays "Send auto-reply email".
    The service docs strings are not extracted, so changing them costs no translation.
-6. E2E and BDD.
+6. ✅ E2E and BDD.
 
 Each step is its own commit.
