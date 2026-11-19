@@ -288,6 +288,38 @@ def test_test_submission_sends_auto_reply(uow) -> None:
     adapter.send_email.assert_called_once()
 
 
+def test_no_auto_reply_when_the_page_has_it_turned_off(uow) -> None:
+    """The template is kept but nothing is sent and nothing is recorded."""
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
+    _page(uow).set_auto_reply_enabled(False)
+    adapter = MagicMock()
+
+    result = submit_registration(
+        uow,
+        url_slug=slug,
+        form_data={"email": "ada@example.com", "consent": "yes", "first_name": "Ada"},
+    )
+    record = send_registration_auto_reply(uow, adapter, respondent=result.respondent)
+
+    assert record is None
+    adapter.send_email.assert_not_called()
+    assert uow.respondent_email_send_records.list_by_respondent(result.respondent.id) == []
+
+
+def test_test_send_still_works_with_the_auto_reply_turned_off(uow) -> None:
+    """A manager can check the email before turning it back on."""
+    _build(uow, RegistrationPageStatus.TEST)
+    _page(uow).set_auto_reply_enabled(False)
+    admin = _admin(uow)
+    adapter = MagicMock()
+    adapter.send_email.return_value = True
+
+    result = send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=_page(uow).id, to_email="manager@example.com")
+
+    assert result.sent is True
+    adapter.send_email.assert_called_once()
+
+
 def _use_reply_to_email_in_body(uow) -> EmailTemplate:
     template = uow.email_templates.get(_page(uow).auto_reply_email_template_id)
     template.body_html = "<p>Write to {{ reply_to_email }}.</p>"
