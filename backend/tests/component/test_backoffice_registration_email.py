@@ -663,11 +663,23 @@ class TestReplyTo:
 
         body = _email_step(logged_in_admin, assembly_id, edit=False)
 
-        email_input = body[body.rindex("<input", 0, body.index('name="template_reply_to_email"')) :]
-        email_input = email_input[: email_input.index(">") + 1]
-        assert 'value="team@example.com"' in email_input
-        assert "readonly" in email_input
-        assert 'value="The Team"' in body
+        # Shown as text, not as inputs that look editable but are not.
+        for name in ("template_reply_to_name", "template_reply_to_email", "template_subject"):
+            assert f'name="{name}"' not in body
+        assert re.search(r"<p[^>]*>\s*team@example\.com\s*</p>", body)
+        assert re.search(r"<p[^>]*>\s*The Team\s*</p>", body)
+        assert re.search(r"<p[^>]*>\s*" + re.escape(template.subject) + r"\s*</p>", body)
+
+    def test_edit_mode_shows_reply_to_and_subject_as_inputs(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=True)
+
+        for name in ("template_reply_to_name", "template_reply_to_email", "template_subject"):
+            field = body[body.rindex("<input", 0, body.index(f'name="{name}"')) :]
+            field = field[: field.index(">") + 1]
+            assert "readonly" not in field
 
     def test_sent_from_address_is_not_shown(self, logged_in_admin, fake_store, assembly_id, monkeypatch):
         monkeypatch.setenv("SMTP_FROM_EMAIL", "noreply@example.org")
