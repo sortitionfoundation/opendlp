@@ -1,5 +1,5 @@
 """ABOUTME: Jinja render tests for the form input macros in backoffice/components/input.html
-ABOUTME: Covers the switch's checkbox semantics, select optgroups, info icons, inline input and checkbox descriptions"""
+ABOUTME: Covers the switch's checkbox semantics, the select's optgroup support and the info icons and inline input"""
 
 import re
 
@@ -21,8 +21,7 @@ def _render(macro_call: str) -> str:
     app = _make_app()
     with app.test_request_context("/"):
         return render_template_string(
-            '{% from "backoffice/components/input.html" import checkbox, input, select, switch, textarea %}'
-            + macro_call,
+            '{% from "backoffice/components/input.html" import input, select, switch, textarea %}' + macro_call,
         )
 
 
@@ -134,24 +133,4 @@ class TestTextareaInfo:
         html = _render('{{ textarea("body", label="Body") }}')
 
         assert "body-info" not in html
-        assert "aria-describedby" not in html
-
-
-class TestCheckboxDescribedBy:
-    def test_a_paragraph_of_the_callers_describes_the_checkbox(self):
-        html = _render('{{ checkbox("agree", label="I agree", described_by_id="terms-text") }}')
-
-        assert 'aria-describedby="terms-text"' in html
-
-    def test_an_error_joins_the_paragraph_in_one_describedby(self):
-        html = _render('{{ checkbox("agree", label="I agree", error="Tick to agree", described_by_id="terms-text") }}')
-
-        # A second aria-describedby attribute would be ignored, so both ids share one.
-        assert html.count("aria-describedby=") == 1
-        assert 'aria-describedby="agree-error terms-text"' in html
-        assert 'aria-invalid="true"' in html
-
-    def test_without_one_there_is_no_describedby(self):
-        html = _render('{{ checkbox("agree", label="I agree") }}')
-
         assert "aria-describedby" not in html

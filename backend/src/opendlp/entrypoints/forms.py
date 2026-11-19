@@ -267,12 +267,6 @@ class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any
         description=_l("I agree to the data agreement"),
     )
 
-    # The disclaimer's text is on the sign-up page, above this tickbox.
-    accept_beta_disclaimer = BooleanField(
-        _l("Accept beta disclaimer"),
-        validators=[DataRequired(message=_l("You must accept the beta disclaimer to register"))],
-    )
-
     def validate_invite_code(self, invite_code: StringField) -> None:
         """Validate that invite code is present when needed, and valid when given."""
         _validate_invite_code_field(invite_code)
@@ -282,9 +276,8 @@ class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any
 
         The same form serves all three signup buttons. An OAuth provider supplies
         the email, name and identity on the way back, so its fields are neither
-        needed nor shown for that path — only the shared invite code, survey,
-        data agreement and beta disclaimer are collected here and carried across
-        the redirect.
+        needed nor shown for that path — only the shared invite code, survey and
+        data agreement are collected here and carried across the redirect.
         """
         for field in (self.email, self.password, self.password_confirm, self.first_name, self.last_name):
             field.validators = [Optional()]

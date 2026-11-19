@@ -1,13 +1,15 @@
 """ABOUTME: Component tests for the words around the sign-up page's fields
-ABOUTME: Invite code help, password rules, the survey's sources question and the beta disclaimer's tickbox"""
+ABOUTME: Invite code help, password rules, the survey's sources question and the beta disclaimer's text"""
 
 import re
+from itertools import pairwise
 
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
 from opendlp.feature_flags import reload_flags
+from tests.fakes import FakeStore, FakeUnitOfWork
 
 
 @pytest.fixture
@@ -120,44 +122,68 @@ class TestWhereDidYouHearAboutUs:
 
 
 BETA_DISCLAIMER = (
-    "By registering an account I understand that currently OpenDLP is only open for beta testing, therefore using "
-    "it in actual democratic lottery processes and/or with actual personal datasets is forbidden. I agree to "
-    "contact Sortition Foundation directly before using OpenDLP for actual projects described earlier. I also "
-    "consent to Sortition Foundation contacting me to learn more about my usage patterns and user needs."
+    "Registration for OpenDLP is currently only open for beta testing. Please contact us if you intend to use it in "
+    "actual democratic lottery processes and/or with actual personal datasets."
 )
 
 
+def _disclaimer(html: str) -> str:
+    """The "Beta disclaimer" heading and the paragraph under it."""
+    return _tag(html, r"<h2[^>]*>Beta disclaimer</h2>\s*<p[^>]*>[\s\S]*?</p>")
+
+
+def _text(html: str) -> str:
+    """The words of some markup, tags dropped and whitespace collapsed."""
+    return " ".join(re.sub(r"<[^>]+>", " ", html).split())
+
+
 class TestBetaDisclaimer:
-    """The beta disclaimer sits under the data agreement, with a required tickbox of its own."""
+    """The beta disclaimer is text under the data agreement, with nothing to tick."""
 
     def test_the_disclaimer_reads_as_written(self, client: FlaskClient):
-        paragraph = _tag(_page(client), r'<p id="beta-disclaimer-text"[^>]*>[^<]*</p>')
+        paragraph = _tag(_disclaimer(_page(client)), r"<p[^>]*>[\s\S]*?</p>")
 
-        assert BETA_DISCLAIMER in " ".join(paragraph.split())
+        assert _text(paragraph) == BETA_DISCLAIMER
 
-    def test_the_disclaimer_and_its_tickbox_follow_the_data_agreement(self, client: FlaskClient):
+    def test_contact_us_links_to_the_support_address(self, app: Flask, client: FlaskClient):
+        link = _tag(_disclaimer(_page(client)), r"<a [^>]*>contact us</a>")
+
+        assert f'href="mailto:{app.config["SUPPORT_EMAIL"]}"' in link
+        assert "color: var(--color-links);" in link
+
+    def test_the_support_link_is_there_with_open_signup_too(self, app: Flask, client: FlaskClient, open_signup):
+        """Open sign-up hides the invite code's helper text, the other link to support, but not this one."""
+        link = _tag(_disclaimer(_page(client)), r"<a [^>]*>contact us</a>")
+
+        assert f'href="mailto:{app.config["SUPPORT_EMAIL"]}"' in link
+
+    def test_its_title_is_a_heading_in_the_page_outline(self, client: FlaskClient, open_signup):
+        html = _page(client)
+        headings = [(int(level), _text(title)) for level, title in re.findall(r"<h([1-6])[^>]*>([\s\S]*?)</h\1>", html)]
+
+        assert (2, "Beta disclaimer") in headings
+        levels = [level for level, _ in headings]
+        assert levels[0] == 1
+        # No level is skipped on the way down
+        assert all(later <= earlier + 1 for earlier, later in pairwise(levels))
+
+    def test_it_sits_under_the_data_agreement_and_above_the_submit_buttons(self, client: FlaskClient):
         html = _page(client)
 
         data_agreement = html.find('name="accept_data_agreement"')
-        disclaimer = html.find('id="beta-disclaimer-text"')
-        tickbox = html.find('name="accept_beta_disclaimer"')
-        assert -1 not in (data_agreement, disclaimer, tickbox)
-        assert data_agreement < disclaimer < tickbox < html.find('value="email"', tickbox)
+        disclaimer = html.find(_disclaimer(html))
+        assert -1 not in (data_agreement, disclaimer)
+        assert data_agreement < disclaimer < html.find('value="email"', disclaimer)
 
-    def test_the_tickbox_has_a_short_label_marked_required(self, client: FlaskClient):
-        tickbox = _tag(_page(client), r'<input[^>]*name="accept_beta_disclaimer"[\s\S]*?</label>')
+    def test_there_is_nothing_to_tick(self, client: FlaskClient):
+        """The data agreement's tickbox is the only one on the page."""
+        tickboxes = re.findall(r'<input[^>]*type="checkbox"[^>]*>', _page(client))
 
-        assert 'type="checkbox"' in tickbox
-        label = _tag(tickbox, r'<span class="checkbox-label">[\s\S]*')
-        assert "Accept beta disclaimer" in label
-        assert "*</span>" in label
+        assert [_tag(tickbox, r'name="[^"]*"') for tickbox in tickboxes] == ['name="accept_data_agreement"']
 
-    def test_the_tickbox_is_described_by_the_disclaimer(self, client: FlaskClient):
-        field = _tag(_page(client), r'<input[^>]*name="accept_beta_disclaimer"[^>]*>')
-
-        assert 'aria-describedby="beta-disclaimer-text"' in field
-
-    def test_an_unticked_disclaimer_is_refused_under_its_tickbox(self, client: FlaskClient, open_signup):
+    def test_a_sign_up_by_email_needs_only_the_data_agreement(
+        self, client: FlaskClient, fake_store: FakeStore, open_signup
+    ):
         response = client.post(
             "/auth/register",
             data={
@@ -169,14 +195,9 @@ class TestBetaDisclaimer:
                 "accept_data_agreement": "y",
             },
         )
-        html = response.get_data(as_text=True)
 
-        assert response.status_code == 200
-        error = _tag(html, r'<p id="accept_beta_disclaimer-error"[^>]*>[^<]*</p>')
-        assert "You must accept the beta disclaimer to register" in error
-        field = _tag(html, r'<input[^>]*name="accept_beta_disclaimer"[^>]*>')
-        assert 'aria-invalid="true"' in field
-        # One attribute naming both, or the second would be ignored
-        assert 'aria-describedby="accept_beta_disclaimer-error beta-disclaimer-text"' in field
-        # The data agreement the user did tick stays ticked
-        assert re.search(r"\bchecked\b", _tag(html, r'<input[^>]*name="accept_data_agreement"[^>]*>'))
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user = uow.users.get_by_email("newuser@example.com")
+            assert user is not None
+            assert user.user_data_agreement_agreed_at is not None

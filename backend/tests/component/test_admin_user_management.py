@@ -72,17 +72,6 @@ def _seed_user(
         return user_obj.create_detached_copy()
 
 
-def _summary_value(html: str, key: str) -> str:
-    """The text of one row of the user page's summary list, tags dropped and whitespace collapsed."""
-    match = re.search(
-        rf'<dt class="govuk-summary-list__key">{re.escape(key)}</dt>\s*<dd class="govuk-summary-list__value">(.*?)</dd>',
-        html,
-        re.DOTALL,
-    )
-    assert match is not None, f"no {key} row on the page"
-    return " ".join(re.sub(r"<[^>]+>", " ", match.group(1)).split())
-
-
 class TestAdminUserListPermissions:
     """Permission and auth branches for the admin user list."""
 
@@ -111,30 +100,6 @@ class TestAdminUserView:
         assert user.email.encode() in response.data
         assert user.first_name.encode() in response.data
         assert user.last_name.encode() in response.data
-
-    def test_view_user_shows_when_the_beta_disclaimer_was_agreed(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore
-    ) -> None:
-        user = _seed_user(fake_store, "beta@example.com", GlobalRole.USER)
-        with FakeUnitOfWork(store=fake_store) as uow:
-            uow.users.get(user.id).mark_beta_disclaimer_agreed()
-            uow.commit()
-
-        response = logged_in_admin.get(f"/admin/users/{user.id}")
-        assert response.status_code == 200
-        assert _summary_value(response.get_data(as_text=True), "Beta disclaimer").startswith("Agreed on ")
-
-    def test_view_user_says_so_when_the_beta_disclaimer_was_not_agreed(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore
-    ) -> None:
-        """Accounts made before the disclaimer, or outside the sign-up page, never agreed to it."""
-        user = _seed_user(fake_store, "before-beta@example.com", GlobalRole.USER)
-
-        response = logged_in_admin.get(f"/admin/users/{user.id}")
-        html = response.get_data(as_text=True)
-        assert response.status_code == 200
-        assert _summary_value(html, "Beta disclaimer") == "Not agreed"
-        assert _summary_value(html, "Data Agreement").startswith("Agreed on ")
 
 
 class TestAdminUserEdit:

@@ -11,10 +11,8 @@ from ..config import ADMIN_EMAIL, ADMIN_PASSWORD, FRESH_PASSWORD, Urls
 
 NEWUSER_EMAIL = "newuser@example.com"
 BETA_DISCLAIMER = (
-    "By registering an account I understand that currently OpenDLP is only open for beta testing, therefore using "
-    "it in actual democratic lottery processes and/or with actual personal datasets is forbidden. I agree to "
-    "contact Sortition Foundation directly before using OpenDLP for actual projects described earlier. I also "
-    "consent to Sortition Foundation contacting me to learn more about my usage patterns and user needs."
+    "Registration for OpenDLP is currently only open for beta testing. Please contact us if you intend to use it in "
+    "actual democratic lottery processes and/or with actual personal datasets."
 )
 
 
@@ -60,7 +58,6 @@ def _(page: Page):
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
     page.get_by_role("checkbox", name="Accept Data Agreement").check()
-    page.get_by_role("checkbox", name="Accept beta disclaimer").check()
     # Note: Don't check data agreement here - let the explicit steps handle it
 
 
@@ -74,7 +71,6 @@ def _(page: Page, user_invite: str):
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
     page.get_by_role("checkbox", name="Accept Data Agreement").check()
-    page.get_by_role("checkbox", name="Accept beta disclaimer").check()
     # Note: Don't check data agreement here - let the explicit steps handle it
 
 
@@ -108,14 +104,6 @@ def _(page: Page):
         checkbox.uncheck()
 
 
-@when("the user does not accept the beta disclaimer")
-def _(page: Page):
-    """the user does not accept the beta disclaimer."""
-    checkbox = page.get_by_role("checkbox", name="Accept beta disclaimer")
-    if checkbox.is_checked():
-        checkbox.uncheck()
-
-
 @then("the user should see who to contact for an invite code")
 def _(page: Page):
     """the invite code field's helper text names who to ask, and links to them."""
@@ -137,22 +125,17 @@ def _(page: Page):
     )
 
 
-@then("the user should see the beta disclaimer read out with its tickbox")
+@then("the user should see the beta disclaimer")
 def _(page: Page):
-    """the disclaimer paragraph is the accessible description of its short-labelled tickbox."""
-    checkbox = page.get_by_role("checkbox", name="Accept beta disclaimer")
-    expect(checkbox).not_to_be_checked()
-    expect(checkbox).to_have_accessible_description(BETA_DISCLAIMER)
-
-
-@then("the user should be told to accept the beta disclaimer")
-def _(page: Page):
-    """the error sits under the tickbox and is read out before the disclaimer."""
-    expect(page.get_by_text("You must accept the beta disclaimer to register")).to_be_visible()
-    checkbox = page.get_by_role("checkbox", name="Accept beta disclaimer")
-    expect(checkbox).to_have_accessible_description(
-        re.compile(r"^You must accept the beta disclaimer to register\s+By registering an account")
-    )
+    """the disclaimer is text under its own heading, links to support, and leaves nothing to tick."""
+    expect(page.get_by_role("heading", name="Beta disclaimer", level=2)).to_be_visible()
+    expect(page.get_by_text(BETA_DISCLAIMER)).to_be_visible()
+    contact = page.get_by_role("link", name="contact us")
+    expect(contact).to_have_attribute("href", re.compile(r"^mailto:[^@\s]+@[^@\s]+$"))
+    # The data agreement's tickbox is the only one
+    tickboxes = page.get_by_role("checkbox")
+    expect(tickboxes).to_have_count(1)
+    expect(tickboxes).to_have_accessible_name(re.compile(r"^Accept Data Agreement"))
 
 
 @then("the user should be directed to try registering again")

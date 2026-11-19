@@ -198,12 +198,7 @@ class TestOAuthRegistrationForms:
         """Invalid invite re-renders the form without reaching OAuth."""
         response = client.post(
             "/auth/register",
-            data={
-                "action": "google",
-                "invite_code": "INVALID_CODE",
-                "accept_data_agreement": "y",
-                "accept_beta_disclaimer": "y",
-            },
+            data={"action": "google", "invite_code": "INVALID_CODE", "accept_data_agreement": "y"},
             follow_redirects=False,
         )
 
@@ -211,50 +206,21 @@ class TestOAuthRegistrationForms:
         if response.status_code == 200:
             assert b"Invalid" in response.data or b"error" in response.data.lower()
 
-
-class TestOAuthRegistrationBetaDisclaimer:
-    """Signing up with Google or Microsoft needs the beta disclaimer ticked, and records when it was."""
-
     @pytest.mark.parametrize("provider", ["google", "microsoft"])
-    def test_an_unticked_disclaimer_stops_the_hand_off(self, client: FlaskClient, open_signup, provider: str):
+    def test_a_provider_sign_up_starts_with_only_the_data_agreement(
+        self, client: FlaskClient, open_signup, provider: str
+    ):
+        """The beta disclaimer is text with nothing to tick, so the data agreement is all the hand-off needs."""
         response = client.post(
             "/auth/register",
             data={"action": provider, "invite_code": "", "accept_data_agreement": "y"},
             follow_redirects=False,
         )
 
-        assert response.status_code == 200
-        assert b"You must accept the beta disclaimer to register" in response.data
-        with client.session_transaction() as session:
-            assert "oauth_accept_beta_disclaimer" not in session
-
-    @pytest.mark.parametrize("provider", ["google", "microsoft"])
-    def test_the_ticked_disclaimer_is_recorded_on_the_new_account(
-        self, client: FlaskClient, fake_store: FakeStore, google_token: dict, open_signup, provider: str
-    ):
-        response = client.post(
-            "/auth/register",
-            data={"action": provider, "invite_code": "", "accept_data_agreement": "y", "accept_beta_disclaimer": "y"},
-            follow_redirects=False,
-        )
         assert response.status_code == 302
+        assert response.headers["Location"] == f"/auth/login/{provider}"
         with client.session_transaction() as session:
-            assert session["oauth_accept_beta_disclaimer"] is True
-
-        with patch(f"opendlp.entrypoints.blueprints.auth.oauth.{provider}") as mock_provider:
-            mock_provider.authorize_access_token.return_value = google_token
-            response = client.get(f"/auth/login/{provider}/callback", follow_redirects=False)
-        assert response.status_code == 302
-
-        with FakeUnitOfWork(store=fake_store) as uow:
-            user = uow.users.get_by_email(google_token["userinfo"]["email"])
-            assert user is not None
-            assert user.oauth_provider == provider
-            assert user.beta_disclaimer_agreed_at is not None
-            assert user.user_data_agreement_agreed_at is not None
-        # Carried across the redirect, then dropped once the account exists
-        with client.session_transaction() as session:
-            assert "oauth_accept_beta_disclaimer" not in session
+            assert session["oauth_accept_agreement"] is True
 
 
 class TestOAuthLoginPage:

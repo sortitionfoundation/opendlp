@@ -49,7 +49,6 @@ class TestRegistration:
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
-                "accept_beta_disclaimer": "y",
             },
         )
         assert response.status_code == 200
@@ -67,7 +66,6 @@ class TestRegistration:
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
-                "accept_beta_disclaimer": "y",
             },
         )
         assert response.status_code == 200
@@ -93,7 +91,6 @@ class TestRegistration:
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "differentpassword",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
-                "accept_beta_disclaimer": "y",
             },
         )
         assert response.status_code == 200
@@ -114,49 +111,6 @@ class TestRegistration:
             },
         )
         assert response.status_code == 200
-
-    def test_register_without_the_beta_disclaimer_fails(
-        self, client: FlaskClient, fake_store: FakeStore, valid_invite: UserInvite
-    ) -> None:
-        """The beta disclaimer is required as the data agreement is: no tick, no account."""
-        response = client.post(
-            "/auth/register",
-            data={
-                "invite_code": valid_invite.code,
-                "first_name": "New",
-                "last_name": "User",
-                "email": "newuser@example.com",
-                "password": "securepassword123",  # pragma: allowlist secret
-                "password_confirm": "securepassword123",  # pragma: allowlist secret
-                "accept_data_agreement": "y",
-            },
-        )
-        assert response.status_code == 200
-        assert b"You must accept the beta disclaimer to register" in response.data
-        assert b"You must accept the data agreement to register" not in response.data
-        with FakeUnitOfWork(store=fake_store) as uow:
-            assert uow.users.get_by_email("newuser@example.com") is None
-
-    def test_register_without_either_agreement_names_both(
-        self, client: FlaskClient, fake_store: FakeStore, valid_invite: UserInvite
-    ) -> None:
-        """The disclaimer comes in addition to the data agreement, not in place of it."""
-        response = client.post(
-            "/auth/register",
-            data={
-                "invite_code": valid_invite.code,
-                "first_name": "New",
-                "last_name": "User",
-                "email": "newuser@example.com",
-                "password": "securepassword123",  # pragma: allowlist secret
-                "password_confirm": "securepassword123",  # pragma: allowlist secret
-            },
-        )
-        assert response.status_code == 200
-        assert b"You must accept the data agreement to register" in response.data
-        assert b"You must accept the beta disclaimer to register" in response.data
-        with FakeUnitOfWork(store=fake_store) as uow:
-            assert uow.users.get_by_email("newuser@example.com") is None
 
     def test_registration_with_invite_code_in_url(self, client: FlaskClient, valid_invite: UserInvite) -> None:
         """Registration form pre-fills the invite code from the URL."""

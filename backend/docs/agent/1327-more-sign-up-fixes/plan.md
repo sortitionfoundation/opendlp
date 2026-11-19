@@ -1,15 +1,18 @@
 # 1327 — More fixes on the sign-up page
 
 Status: implemented. Two additions to the public sign-up page
-(`templates/public/register.html`): one more optional survey question, and the
-beta disclaimer with a required tickbox. The disclaimer's text is the one
-written for sc-1305, so this covers that story as well.
+(`templates/public/register.html`): one more optional survey question, and a
+beta disclaimer shown as text. The disclaimer is the one sc-1305 asked for, so
+this covers that story as well.
 
 ## The story
 
 1. Add the disclaimer text with a tickbox.
 2. Add one more question with drop-down answers: where did you hear about us?
    Social media, an event, a forum, a newsletter, a friend, or other.
+
+The disclaimer is information, not an agreement, so it has no tickbox and
+nothing is stored: see [2. The beta disclaimer](#2-the-beta-disclaimer).
 
 ## 1. Where did you hear about us?
 
@@ -32,103 +35,73 @@ written for sc-1305, so this covers that story as well.
 
 ## 2. The beta disclaimer
 
-The text, as Sortition Foundation wrote it:
+The text:
 
-> By registering an account I understand that currently OpenDLP is only open
-> for beta testing, therefore using it in actual democratic lottery processes
-> and/or with actual personal datasets is forbidden. I agree to contact
-> Sortition Foundation directly before using OpenDLP for actual projects
-> described earlier. I also consent to Sortition Foundation contacting me to
-> learn more about my usage patterns and user needs.
+> Registration for OpenDLP is currently only open for beta testing. Please
+> contact us if you intend to use it in actual democratic lottery processes
+> and/or with actual personal datasets.
+
+It tells people what OpenDLP is ready for and who to talk to; it asks nothing
+of them. So there is nothing to tick, and nothing is stored.
 
 ### On the page
 
-- A fieldset of its own under the data agreement, with the legend "Beta
-  disclaimer", the text as a paragraph, and under it a required tickbox
-  labelled "Accept beta disclaimer" — the shape of the data agreement block
-  above it, whose tickbox is "Accept Data Agreement".
-- The text is not the tickbox's label because it is 63 words. The checkbox
-  component sets its label in the semibold label style and centres the box on
-  it, which suits one line; three sentences there would be a heavy block with
-  the box floating beside its middle.
-- The paragraph is the tickbox's description. The checkbox macro
-  (`backoffice/components/input.html`) gained `described_by_id`, as `input`
-  already had, so the tickbox's `aria-describedby` names the paragraph and a
-  screen reader reads it out with the short label. After a refused submit the
-  error and the paragraph share the one attribute, error first.
+- Under the data agreement, above the Turnstile check and the submit buttons,
+  so it is the last thing read before the account is created. It sits with the
+  fields every sign-up method shares, so email, Google and Microsoft sign-ups
+  all show it.
+- A plain block, not a fieldset: a fieldset groups form controls, and there is
+  none. Its title, "Beta disclaimer", is an `h2` under the page's `h1`, as the
+  survey's "Tell us a little about yourself" is; the text is one paragraph in
+  the secondary text style, as the data agreement's is.
+- "contact us" links to the support address: `mailto:` and the context
+  processor's `support_email_address`, escaped, coloured with `--color-links`,
+  the way the invite code's helper text links "OpenDLP support". The two share
+  one `support_link_start`, set at the top of the template, since the invite
+  code's helper text shows only when an invite is required and the disclaimer
+  always shows.
+- The sentence is one msgid with the link's start and end as placeholders, so
+  a translation can move or inflect the linked words.
 
-### Required
+### Nothing stored
 
-- `RegistrationForm.accept_beta_disclaimer` (`entrypoints/forms.py`) is a
-  `BooleanField` with `DataRequired`, as `accept_data_agreement` is. Unticked,
-  the page comes back with "You must accept the beta disclaimer to register"
-  under the tickbox and keeps everything else that was entered.
-- `relax_for_oauth()` leaves it required, so the Google and Microsoft buttons
-  refuse to hand over to the provider until it is ticked, as with the data
-  agreement.
-
-### Stored and shown
-
-- `User.beta_disclaimer_agreed_at`, nullable, set to the current time by
-  `User.mark_beta_disclaimer_agreed()` — the same as
-  `user_data_agreement_agreed_at` and `mark_data_agreement_agreed()`.
-- `create_user()` and `find_or_create_oauth_user()` take
-  `accept_beta_disclaimer`, as they take `accept_data_agreement`. The email
-  path passes the form's value. The Google and Microsoft paths carry it across
-  the provider redirect in the session as `oauth_accept_beta_disclaimer`, next
-  to `oauth_accept_agreement`; the callbacks hand it to
-  `find_or_create_oauth_user()` and pop it with the other OAuth keys.
-- The admin user view (`templates/admin/user_view.html`) has a "Beta
-  disclaimer" row under "Data Agreement": "Agreed on <time>", or "Not agreed".
-- The users export carries neither agreement time, and is unchanged.
-
-### Migration
-
-`50903a521008` adds the nullable `users.beta_disclaimer_agreed_at` column, with
-no backfill; the downgrade drops it. It is safe for a zero-downtime deploy: the
-previous release's mapper never selects or inserts the new column. Accounts
-made before the disclaimer, and accounts made by the CLI or the seed command,
-stay null and show "Not agreed".
+With nothing accepted, the form, the services, the user record, the OAuth
+session and the admin user view stay as they are: no form field, no column and
+no migration. Main's migration head, `a62d0a510eee`, is still the head.
 
 ## Tests
 
 - `tests/component/test_register_page.py`: the question's options and their
   order, and that it shows only with open sign-up; the disclaimer's text as
-  written, its place under the data agreement, the tickbox's short required
-  label, its description, and the refusal with the error under the tickbox.
-- `tests/component/test_auth_flow.py`: no account without the disclaimer, and
-  both errors when neither box is ticked.
-- `tests/component/test_oauth_flow.py`: Google and Microsoft refuse to hand
-  off without the disclaimer, and carry it through the callback to the new
-  account, then drop it from the session.
-- `tests/component/test_admin_user_management.py`: the admin view's "Agreed
-  on" and "Not agreed".
-- `tests/e2e/test_auth_flow.py`, `tests/e2e/test_oauth_flow.py`: both
-  agreement times stored on PostgreSQL by the email, Google and Microsoft
-  paths; the new answer saved by email and Google sign-up.
-- `tests/unit/test_signup_survey_service.py`: the token in the export;
-  `tests/unit/test_user_service.py`, `tests/unit/domain/test_users.py`,
-  `tests/integration/test_orm.py`: the domain method, the services and the
-  column round trip; `tests/unit/test_input_macros.py`: the macro's
-  `described_by_id`.
-- BDD (`features/login.feature`): the disclaimer is read out with its tickbox,
-  and sign-up without it is refused. The steps that register now tick both
-  boxes.
-
-Every test that posts the sign-up form now ticks the disclaimer as well as the
-data agreement.
+  written; its "contact us" link to the support address, with invites required
+  and with open sign-up, where the invite code's helper text is hidden; its
+  title as an `h2` in a heading outline that skips no level; its place under
+  the data agreement and above the submit buttons; the data agreement's
+  tickbox as the only one on the page; and an email sign-up with only the data
+  agreement ticked.
+- `tests/component/test_oauth_flow.py`: a Google or Microsoft sign-up hands off
+  to the provider with only the data agreement ticked.
+- `tests/e2e/test_auth_flow.py`, `tests/e2e/test_oauth_flow.py`: the new answer
+  saved by email and Google sign-up; `tests/e2e/test_admin_user_management.py`:
+  its label on the admin user view; `tests/unit/test_signup_survey_service.py`:
+  the token in the export.
+- BDD (`features/login.feature`): the sign-up page shows the disclaimer, with
+  its heading, its text and the support link, and no tickbox but the data
+  agreement's.
 
 ## Translations
 
-The eleven new strings have fuzzy Hungarian proposals in the sign-up page's
-informal register, so they show in English until a reviewer accepts them. The
-disclaimer is what users agree to, so its Hungarian deserves a careful read.
+The nine new strings, the question with its six answers, the disclaimer's
+title and its text, have fuzzy Hungarian proposals in the sign-up page's
+informal register, so they show in English until a reviewer accepts them. In
+the disclaimer, "contact us" is "lépj kapcsolatba velünk", the catalogue's
+usual words for contacting someone, with the link's markers around it.
 
 ## Seen, not changed
 
 - With open sign-up on, "Sign in with Google" or "Sign in with Microsoft" on
   the sign-in page creates an Organiser account for an email OpenDLP does not
-  know yet, without passing the sign-up page, so neither the data agreement
-  nor the beta disclaimer is ticked or recorded: both stay null. That was
-  already so for the data agreement. Sending such a sign-in to the sign-up
-  page instead would be a change of its own.
+  know yet, without passing the sign-up page: the data agreement is neither
+  ticked nor recorded, and the survey and the beta disclaimer are not seen.
+  That is how main behaves. Sending such a sign-in to the sign-up page instead
+  would be a change of its own.
