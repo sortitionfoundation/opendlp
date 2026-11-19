@@ -345,7 +345,7 @@ each assembly. If neither is set, the email has no Reply-To, and the step
 shows a warning. Every send records the reply-to address it used.
 
 `{{ reply_to_email }}` puts that same reply-to address in the email, for a
-sentence such as the default's "please reply to this email or write to
+sentence such as "please reply to this email or write to
 {{ reply_to_email }}". When neither reply-to is set it is the address the email
 is sent from (`SMTP_FROM_EMAIL`), so the sentence always has an address in
 it; an organiser who wants no replies deletes the sentence. Its name is left
@@ -360,9 +360,9 @@ not translated: the email adapter that builds it doesn't know the reader's
 language. With no reply-to name, the From name is `SMTP_FROM_NAME` alone.
 
 The step warns about two more things in the email itself. Text in square
-brackets with a letter in it, such as `[Your name]`, is a placeholder the
-default auto-reply leaves for the organiser to replace; the warning lists the
-ones still there. And an email that shows the first assembly date, in either
+brackets with a letter in it, such as `[Your name]`, is a placeholder left for
+the organiser to replace, as in a template pasted in from elsewhere; the
+warning lists the ones still there. And an email that shows the first assembly date, in either
 form, warns while the assembly has no date, as it would send a blank. Like
 the reply-to warning, neither stops the page being published.
 
