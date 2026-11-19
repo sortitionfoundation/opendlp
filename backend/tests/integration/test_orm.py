@@ -1211,6 +1211,42 @@ class TestRegistrationPageORM:
         assert retrieved_html.content_style is ContentStyle.GOVUK
         assert retrieved_html.form_updated_at.tzinfo is not None
 
+    def test_registration_page_auto_reply_enabled_round_trips(self, postgres_session: Session):
+        """A page with its auto-reply turned off reads back as off."""
+        assembly = Assembly(title="Auto-reply Off Assembly", status=AssemblyStatus.ACTIVE)
+        postgres_session.add(assembly)
+        postgres_session.commit()
+        page = RegistrationPage(assembly_id=assembly.id, url_slug="auto-reply-off", auto_reply_enabled=False)
+        postgres_session.add(page)
+        postgres_session.commit()
+
+        postgres_session.expire_all()
+
+        retrieved = postgres_session.query(RegistrationPage).filter_by(id=page.id).first()
+        assert retrieved is not None
+        assert retrieved.auto_reply_enabled is False
+        assert retrieved.create_detached_copy().auto_reply_enabled is False
+
+    def test_registration_page_auto_reply_enabled_defaults_to_on_in_the_database(self, postgres_session: Session):
+        """A row written without the column, as the previous release writes them, has the auto-reply on."""
+        assembly = Assembly(title="Old Release Assembly", status=AssemblyStatus.ACTIVE)
+        postgres_session.add(assembly)
+        postgres_session.commit()
+        page_id = uuid.uuid4()
+        postgres_session.execute(
+            text(
+                "INSERT INTO registration_pages (id, assembly_id, name, language, url_slug, short_url_slug, status, "
+                "source_type, thank_you_html, activity, created_at, updated_at) "
+                "VALUES (:id, :assembly_id, '', '', 'old-release', '', 'TEST', 'html', '', '[]', now(), now())"
+            ),
+            {"id": page_id, "assembly_id": assembly.id},
+        )
+        postgres_session.commit()
+
+        retrieved = postgres_session.query(RegistrationPage).filter_by(id=page_id).first()
+        assert retrieved is not None
+        assert retrieved.auto_reply_enabled is True
+
     def test_registration_page_content_style_round_trips(self, postgres_session: Session):
         """A plain content style is stored as its value and read back as the enum."""
         assembly = Assembly(title="Style Assembly", status=AssemblyStatus.ACTIVE)

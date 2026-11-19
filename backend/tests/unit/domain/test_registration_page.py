@@ -2317,3 +2317,33 @@ class TestGenerateStarterFormHtmlGovuk:
 
         assert '<fieldset class="govuk-fieldset" role="group" aria-describedby="date_of_birth-hint">' in html
         assert '<div class="govuk-hint" id="date_of_birth-hint">For example, 27 3 1985</div>' in html
+
+
+class TestAutoReplyEnabled:
+    def test_a_new_page_has_the_auto_reply_on(self):
+        """Every page sent its auto-reply before it could be turned off, so on is the default."""
+        assert RegistrationPage(assembly_id=uuid.uuid4()).auto_reply_enabled is True
+
+    def test_set_auto_reply_enabled_turns_it_off_and_bumps_updated_at(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), updated_at=datetime(2026, 1, 1, tzinfo=UTC))
+
+        page.set_auto_reply_enabled(False)
+
+        assert page.auto_reply_enabled is False
+        assert page.updated_at > datetime(2026, 1, 1, tzinfo=UTC)
+
+    @pytest.mark.parametrize(
+        ("enabled", "has_template", "sends"),
+        [(True, True, True), (True, False, False), (False, True, False), (False, False, False)],
+    )
+    def test_sends_auto_reply_needs_it_on_and_a_template(self, enabled, has_template, sends):
+        page = RegistrationPage(
+            assembly_id=uuid.uuid4(),
+            auto_reply_enabled=enabled,
+            auto_reply_email_template_id=uuid.uuid4() if has_template else None,
+        )
+        assert page.sends_auto_reply() is sends
+
+    def test_detached_copy_keeps_the_flag(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), auto_reply_enabled=False)
+        assert page.create_detached_copy().auto_reply_enabled is False
