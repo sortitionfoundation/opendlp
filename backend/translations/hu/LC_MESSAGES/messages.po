@@ -844,16 +844,6 @@ msgid "I agree to the data agreement"
 msgstr "Elfogadom az adatkezelési megállapodást"
 
 #: src/opendlp/entrypoints/forms.py
-#, fuzzy
-msgid "Accept beta disclaimer"
-msgstr "Bétatesztelési nyilatkozat elfogadása"
-
-#: src/opendlp/entrypoints/forms.py
-#, fuzzy
-msgid "You must accept the beta disclaimer to register"
-msgstr "A regisztrációhoz el kell fogadnod a bétatesztelési nyilatkozatot"
-
-#: src/opendlp/entrypoints/forms.py
 msgid "Enter your email address to receive a password reset link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
@@ -5366,11 +5356,6 @@ msgstr "Elfogadva ekkor"
 #: templates/admin/user_view.html
 msgid "Not agreed"
 msgstr "Nincs elfogadva"
-
-#: templates/admin/user_view.html templates/public/register.html
-#, fuzzy
-msgid "Beta disclaimer"
-msgstr "Bétatesztelési nyilatkozat"
 
 #: templates/admin/user_view.html
 msgid "Account Created"
@@ -11332,22 +11317,20 @@ msgstr "Adatkezelési megállapodás megtekintése"
 
 #: templates/public/register.html
 #, fuzzy
+msgid "Beta disclaimer"
+msgstr "Bétatesztelési nyilatkozat"
+
+#: templates/public/register.html
+#, fuzzy, python-format
 msgid ""
-"By registering an account I understand that currently OpenDLP is only "
-"open for beta testing, therefore using it in actual democratic lottery "
-"processes and/or with actual personal datasets is forbidden. I agree to "
-"contact Sortition Foundation directly before using OpenDLP for actual "
-"projects described earlier. I also consent to Sortition Foundation "
-"contacting me to learn more about my usage patterns and user needs."
+"Registration for OpenDLP is currently only open for beta testing. Please "
+"%(link_start)scontact us%(link_end)s if you intend to use it in actual "
+"democratic lottery processes and/or with actual personal datasets."
 msgstr ""
-"Fiók regisztrálásával tudomásul veszem, hogy az OpenDLP jelenleg csak "
-"bétatesztelésre érhető el, ezért tilos valódi demokratikus sorsolási "
-"folyamatokban és/vagy valódi személyes adatállományokkal használni. "
-"Vállalom, hogy mielőtt az OpenDLP-t a fent leírt valódi projektekhez "
-"használnám, közvetlenül felveszem a kapcsolatot a Sortition "
-"Foundationnel. Hozzájárulok továbbá ahhoz, hogy a Sortition Foundation "
-"felvegye velem a kapcsolatot, hogy többet megtudjon a használati "
-"szokásaimról és a felhasználói igényeimről."
+"Az OpenDLP-be jelenleg csak bétatesztelésre lehet regisztrálni. Kérjük, "
+"%(link_start)slépj kapcsolatba velünk%(link_end)s, ha valódi demokratikus"
+" sorsolási folyamatokban és/vagy valódi személyes adatállományokkal "
+"tervezed használni."
 
 #: templates/public/register.html
 msgid "Create an Account with Google"
