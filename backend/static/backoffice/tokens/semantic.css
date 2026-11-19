@@ -44,11 +44,13 @@
 
     /* ========================================
      LINK COLOURS
+     Links are link blue: the design's info-600. A link is never coloured
+     with --color-primary-action, the brand crimson.
      Tailwind preflight sets a { color: inherit }, so links must opt in.
      ======================================== */
 
-    --color-links: var(--color-primary-action);
-    --color-link-text: var(--color-primary-action);
+    --color-links: var(--color-info-600);
+    --color-link-text: var(--color-info-600);
 
     /* ========================================
      FOCUS RING
