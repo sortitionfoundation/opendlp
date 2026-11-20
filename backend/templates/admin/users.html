@@ -116,14 +116,9 @@ ABOUTME: The Users tab of Site Admin; each row opens the user's page
                                 {% endcall %}
                                 {{ table_cell(user.created_at|dateformat('medium')) }}
                                 {% call table_cell_custom(align="right") %}
-                                    <span class="inline-flex gap-4">
-                                        <a href="{{ url_for('admin.view_user', user_id=user.id) }}"
-                                           class="underline"
-                                           style="color: var(--color-links)">{{ _("View") }}</a>
-                                        <a href="{{ url_for('admin.edit_user', user_id=user.id) }}"
-                                           class="underline"
-                                           style="color: var(--color-links)">{{ _("Edit") }}</a>
-                                    </span>
+                                    <a href="{{ url_for('admin.view_user', user_id=user.id) }}"
+                                       class="underline"
+                                       style="color: var(--color-links)">{{ _("View") }}</a>
                                 {% endcall %}
                             {% endcall %}
                         {% endfor %}

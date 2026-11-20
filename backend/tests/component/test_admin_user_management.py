@@ -178,7 +178,7 @@ class TestAdminUserView:
 
         assert "govuk-" not in body
         assert re.search(r'<a href="/admin/users"[^>]*aria-label="Back to Users"', body, re.DOTALL)
-        assert f'href="/admin/users/{user.id}/edit"' in body
+        assert f'action="/admin/users/{user.id}/name"' in body
         assert f'href="/admin/users/{user.id}/2fa/audit-log"' in body
 
     def test_an_oauth_user_shows_their_provider_and_no_2fa_link(
@@ -290,89 +290,19 @@ class TestAdminUser2faAuditLog:
 
 
 class TestAdminUserEdit:
-    """Admin edit user functionality."""
+    """There is no edit page: a user is edited on their own page."""
 
-    def test_edit_user_page_accessible_to_admin(self, logged_in_admin: FlaskClient, regular_user: User) -> None:
+    def test_the_old_edit_address_goes_to_the_users_page(
+        self, logged_in_admin: FlaskClient, regular_user: User
+    ) -> None:
+        """There is no edit page any more; old links land on the user's page."""
         response = logged_in_admin.get(f"/admin/users/{regular_user.id}/edit")
-        assert response.status_code == 200
-        assert b"Edit User" in response.data or b"edit" in response.data.lower()
+        assert response.status_code == 302
+        assert response.location.endswith(f"/admin/users/{regular_user.id}")
 
-    def test_edit_user_not_accessible_to_regular_user(self, logged_in_user: FlaskClient, regular_user: User) -> None:
+    def test_edit_address_not_accessible_to_regular_user(self, logged_in_user: FlaskClient, regular_user: User) -> None:
         response = logged_in_user.get(f"/admin/users/{regular_user.id}/edit")
         assert response.status_code == 403
-
-    def test_edit_user_form_preselects_current_role(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
-        user = _seed_user(fake_store, "regular@example.com", GlobalRole.USER, "Reg", "User")
-
-        response = logged_in_admin.get(f"/admin/users/{user.id}/edit")
-        assert response.status_code == 200
-
-        data = response.data.decode()
-        assert re.search(r'value="USER"[^>]*?checked', data) is not None, "USER radio should be checked"
-        assert re.search(r'value="ADMIN"[^>]*?checked', data) is None, "ADMIN radio should not be checked"
-
-        organiser = _seed_user(fake_store, "organiser@example.com", GlobalRole.ORGANISER, "Global", "Organiser")
-
-        response = logged_in_admin.get(f"/admin/users/{organiser.id}/edit")
-        assert response.status_code == 200
-
-        data = response.data.decode()
-        assert re.search(r'value="ORGANISER"[^>]*?checked', data) is not None, "ORGANISER radio should be checked"
-
-    def test_edit_user_role_success(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
-        user = _seed_user(fake_store, "role@example.com", GlobalRole.USER, "Role", "Change")
-
-        response = logged_in_admin.post(
-            f"/admin/users/{user.id}/edit",
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "global_role": GlobalRole.ORGANISER.name,
-                "is_active": "y",
-            },
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-
-    def test_editing_a_user_leaves_them_active(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
-        """The edit form no longer carries the active flag - disabling has its own route."""
-        user = _seed_user(fake_store, "edited@example.com", GlobalRole.USER, "Ed", "Ited")
-
-        response = logged_in_admin.post(
-            f"/admin/users/{user.id}/edit",
-            data={
-                "first_name": "Renamed",
-                "last_name": user.last_name,
-                "global_role": user.global_role.name,
-            },
-            follow_redirects=False,
-        )
-
-        assert response.status_code == 302
-        with FakeUnitOfWork(store=fake_store) as uow:
-            assert uow.users.get(user.id).is_active is True
-
-    def test_admin_cannot_change_own_role(self, logged_in_admin: FlaskClient, admin_user: User) -> None:
-        response = logged_in_admin.post(
-            f"/admin/users/{admin_user.id}/edit",
-            data={
-                "first_name": admin_user.first_name or "Admin",
-                "last_name": admin_user.last_name or "User",
-                "global_role": GlobalRole.USER.name,
-            },
-            follow_redirects=False,
-        )
-        assert response.status_code == 200
-        assert b"Cannot change your own" in response.data or b"error" in response.data.lower()
-
-    def test_the_edit_form_has_no_active_checkbox(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
-        """Unticking a box mid-form is the wrong control for something this destructive."""
-        user = _seed_user(fake_store, "noactive@example.com", GlobalRole.USER)
-
-        response = logged_in_admin.get(f"/admin/users/{user.id}/edit")
-
-        assert response.status_code == 200
-        assert b'name="is_active"' not in response.data
 
 
 class TestAdminUserNameEdit:

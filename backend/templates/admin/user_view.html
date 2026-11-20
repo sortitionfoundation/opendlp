@@ -140,7 +140,6 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
         {% endcall %}
 
         <div class="flex flex-wrap items-center gap-3">
-            {{ button(_("Edit user"), href=url_for('admin.edit_user', user_id=user.id)) }}
             {% if user.totp_enabled and not user.oauth_provider %}
                 {{ confirm_action(
                 id="disable-2fa-dialog",

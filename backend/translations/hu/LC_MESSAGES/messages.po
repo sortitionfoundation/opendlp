@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-11-12 16:48+0000\n"
-"PO-Revision-Date: 2026-11-20 10:49+0000\n"
+"PO-Revision-Date: 2026-11-20 11:39+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
@@ -1136,22 +1136,14 @@ msgstr ""
 "(pl. keresztnév, vezetéknév, e-mail). Megjegyzés: felülírásra kerül, ha a"
 " Csapat beállítás nem 'Egyedi'."
 
-#: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
+#: src/opendlp/entrypoints/forms.py templates/admin/_name_row.html
 #: templates/backoffice/profile/_name_row.html
 msgid "First name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py
-msgid "User's first name"
-msgstr "Keresztnév"
-
-#: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
+#: src/opendlp/entrypoints/forms.py templates/admin/_name_row.html
 #: templates/backoffice/profile/_name_row.html
 msgid "Last name"
-msgstr "Vezetéknév"
-
-#: src/opendlp/entrypoints/forms.py
-msgid "User's last name"
 msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
@@ -1455,21 +1447,23 @@ msgid "An error occurred while loading the user details"
 msgstr "Hiba történt a felhasználó adatainak betöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/admin.py
+msgid "An error occurred while updating the user"
+msgstr "Hiba történt a felhasználó frissítése közben"
+
+#: src/opendlp/entrypoints/blueprints/admin.py
 #, python-format
 msgid "User '%(email)s' updated successfully"
 msgstr "'%(email)s' felhasználó sikeresen frissítve"
 
 #: src/opendlp/entrypoints/blueprints/admin.py
-msgid "You don't have permission to perform this action"
-msgstr "Nincs jogosultságod a művelet végrehajtásához"
+#, fuzzy
+msgid "Choose a role for this user"
+msgstr "Válassz szerepkört ennek a felhasználónak"
 
-#: src/opendlp/entrypoints/blueprints/admin.py
-msgid "An error occurred while updating the user"
-msgstr "Hiba történt a felhasználó frissítése közben"
-
-#: src/opendlp/entrypoints/blueprints/admin.py
-msgid "An error occurred while loading the edit page"
-msgstr "Hiba történt a szerkesztőoldal betöltése közben"
+#: src/opendlp/entrypoints/blueprints/admin.py templates/admin/user_view.html
+#, fuzzy
+msgid "You cannot change your own role"
+msgstr "A saját szerepkörödet nem módosíthatod"
 
 #: src/opendlp/entrypoints/blueprints/admin.py
 #, python-format
@@ -1490,6 +1484,10 @@ msgid ""
 msgstr ""
 "'%(email)s' fiókja letiltva. Minden munkamenete lezárult, és a jelszava "
 "véglegesen törlődött."
+
+#: src/opendlp/entrypoints/blueprints/admin.py
+msgid "You don't have permission to perform this action"
+msgstr "Nincs jogosultságod a művelet végrehajtásához"
 
 #: src/opendlp/entrypoints/blueprints/admin.py
 msgid "An error occurred while disabling the account"
@@ -4931,9 +4929,9 @@ msgstr "Projektjeid"
 
 #: templates/admin/_header.html templates/admin/invite_create.html
 #: templates/admin/invite_view.html templates/admin/invites.html
-#: templates/admin/user_2fa_audit_log.html templates/admin/user_edit.html
-#: templates/admin/user_view.html templates/admin/users.html
-#: templates/backoffice/base_page.html templates/base.html
+#: templates/admin/user_2fa_audit_log.html templates/admin/user_view.html
+#: templates/admin/users.html templates/backoffice/base_page.html
+#: templates/base.html
 msgid "Site Admin"
 msgstr "Oldal adminisztráció"
 
@@ -5015,7 +5013,7 @@ msgid "Support links"
 msgstr "Súgó linkek"
 
 #: templates/admin/_confirm.html templates/admin/invite_create.html
-#: templates/admin/user_edit.html
+#: templates/admin/user_view.html
 #: templates/backoffice/assembly_edit_respondent.html
 #: templates/backoffice/assembly_view_respondent.html
 #: templates/backoffice/components/db_replacement_modal.html
@@ -5091,6 +5089,30 @@ msgstr "Felhasznált"
 #: templates/admin/_invite_status.html
 msgid "Expired"
 msgstr "Lejárt"
+
+#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
+msgid "Edit first name"
+msgstr "Keresztnév szerkesztése"
+
+#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
+msgid "Save first name"
+msgstr "Keresztnév mentése"
+
+#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
+msgid "Cancel editing first name"
+msgstr "Keresztnév szerkesztésének elvetése"
+
+#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
+msgid "Edit last name"
+msgstr "Vezetéknév szerkesztése"
+
+#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
+msgid "Save last name"
+msgstr "Vezetéknév mentése"
+
+#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
+msgid "Cancel editing last name"
+msgstr "Vezetéknév szerkesztésének elvetése"
 
 #: templates/admin/invite_create.html templates/admin/invites.html
 #, fuzzy
@@ -5278,7 +5300,7 @@ msgstr "Nincs meghívó. Hozz létre egyet a kezdéshez."
 msgid "2FA audit log"
 msgstr "Kétlépcsős azonosítás eseménynaplója"
 
-#: templates/admin/user_2fa_audit_log.html templates/admin/user_edit.html
+#: templates/admin/user_2fa_audit_log.html
 #, fuzzy
 msgid "Back to user"
 msgstr "Vissza a felhasználóhoz"
@@ -5358,51 +5380,25 @@ msgstr ""
 "Ehhez a felhasználóhoz nincs kétlépcsős azonosítási "
 "eseménynapló-bejegyzés."
 
-#: templates/admin/user_edit.html templates/admin/user_view.html
-#, fuzzy
-msgid "Edit user"
-msgstr "Felhasználó szerkesztése"
-
-#: templates/admin/user_edit.html
-#, fuzzy, python-format
-msgid "Update details for %(email)s. Email addresses cannot be changed."
-msgstr "%(email)s adatainak frissítése. Az e-mail cím nem módosítható."
-
-#: templates/admin/user_edit.html
-msgid ""
-"You are editing your own account. You cannot change your own role or "
-"disable your own account."
-msgstr ""
-"A saját fiókodat szerkeszted. A saját szerepkörödet nem módosíthatod, és "
-"a saját fiókodat nem tilthatod le."
-
-#: templates/admin/user_edit.html
-#, fuzzy, python-format
-msgid ""
-"Whether the account is active is changed from the %(link_start)suser's "
-"page%(link_end)s, not here."
-msgstr ""
-"Azt, hogy a fiók aktív-e, a %(link_start)sfelhasználó oldalán%(link_end)s"
-" lehet módosítani, nem itt."
-
-#: templates/admin/user_edit.html
-#: templates/backoffice/assembly_edit_respondent.html
-msgid "Save changes"
-msgstr "Módosítások mentése"
-
 #: templates/admin/user_view.html
 #, fuzzy
 msgid "Back to Users"
 msgstr "Vissza a felhasználókhoz"
 
 #: templates/admin/user_view.html
+#: templates/backoffice/project_details/_team_role_dialog.html
+msgid "Change role"
+msgstr "Szerepkör módosítása"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Save role"
+msgstr "Szerepkör mentése"
+
+#: templates/admin/user_view.html
 #, fuzzy
 msgid "User details"
 msgstr "Felhasználó adatai"
-
-#: templates/admin/user_view.html
-msgid "Not provided"
-msgstr "Nincs megadva"
 
 #: templates/admin/user_view.html
 #, fuzzy
@@ -5622,23 +5618,6 @@ msgstr "2FA"
 msgid "OAuth"
 msgstr "OAuth"
 
-#: templates/admin/users.html templates/backoffice/assembly_respondents.html
-#: templates/backoffice/assembly_view_respondent.html
-#: templates/backoffice/components/registration_page_list.html
-#: templates/backoffice/components/selection_steps.html
-#: templates/backoffice/registration/_step_email.html
-#: templates/backoffice/registration/_step_form.html
-#: templates/backoffice/registration/_step_intro.html
-#: templates/backoffice/registration/_step_page.html
-#: templates/backoffice/registration/_step_thank_you.html
-#: templates/backoffice/respondent_field_schema/_editor.html
-#: templates/backoffice/target_sources/_checklist.html
-#: templates/backoffice/target_sources/_setup_modal.html
-#: templates/main/edit_assembly.html
-#: templates/targets/components/category_block.html
-msgid "Edit"
-msgstr "Szerkesztés"
-
 #: templates/admin/users.html
 #, fuzzy
 msgid "users"
@@ -5756,6 +5735,10 @@ msgstr "Például: 27 3 1985"
 #: templates/backoffice/assembly_edit_respondent.html
 msgid "Why are you making this change?"
 msgstr "Miért végzed el ezt a módosítást?"
+
+#: templates/backoffice/assembly_edit_respondent.html
+msgid "Save changes"
+msgstr "Módosítások mentése"
 
 #: templates/backoffice/assembly_registration.html
 #: templates/backoffice/components/assembly_tabs.html
@@ -5932,6 +5915,23 @@ msgstr ""
 #: templates/backoffice/components/db_selection_progress_modal.html
 msgid "ID"
 msgstr "ID"
+
+#: templates/backoffice/assembly_respondents.html
+#: templates/backoffice/assembly_view_respondent.html
+#: templates/backoffice/components/registration_page_list.html
+#: templates/backoffice/components/selection_steps.html
+#: templates/backoffice/registration/_step_email.html
+#: templates/backoffice/registration/_step_form.html
+#: templates/backoffice/registration/_step_intro.html
+#: templates/backoffice/registration/_step_page.html
+#: templates/backoffice/registration/_step_thank_you.html
+#: templates/backoffice/respondent_field_schema/_editor.html
+#: templates/backoffice/target_sources/_checklist.html
+#: templates/backoffice/target_sources/_setup_modal.html
+#: templates/main/edit_assembly.html
+#: templates/targets/components/category_block.html
+msgid "Edit"
+msgstr "Szerkesztés"
 
 #: templates/backoffice/assembly_respondents.html
 msgid "respondents"
@@ -8084,30 +8084,6 @@ msgstr "Kódok letöltése"
 msgid "Print codes"
 msgstr "Kódok nyomtatása"
 
-#: templates/backoffice/profile/_name_row.html
-msgid "Edit first name"
-msgstr "Keresztnév szerkesztése"
-
-#: templates/backoffice/profile/_name_row.html
-msgid "Save first name"
-msgstr "Keresztnév mentése"
-
-#: templates/backoffice/profile/_name_row.html
-msgid "Cancel editing first name"
-msgstr "Keresztnév szerkesztésének elvetése"
-
-#: templates/backoffice/profile/_name_row.html
-msgid "Edit last name"
-msgstr "Vezetéknév szerkesztése"
-
-#: templates/backoffice/profile/_name_row.html
-msgid "Save last name"
-msgstr "Vezetéknév mentése"
-
-#: templates/backoffice/profile/_name_row.html
-msgid "Cancel editing last name"
-msgstr "Vezetéknév szerkesztésének elvetése"
-
 #: templates/backoffice/profile/_password_dialog.html
 #: templates/backoffice/profile/view.html
 msgid "Set password"
@@ -8362,10 +8338,6 @@ msgstr "Ehhez a projekthez még nem adtak hozzá csapattagokat."
 #: templates/backoffice/project_details/_team_card.html
 msgid "Admin users can still manage this project."
 msgstr "Az adminisztrátorok továbbra is kezelhetik ezt a projektet."
-
-#: templates/backoffice/project_details/_team_role_dialog.html
-msgid "Change role"
-msgstr "Szerepkör módosítása"
 
 #: templates/backoffice/project_details/_team_role_dialog.html
 #, python-format
