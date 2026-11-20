@@ -76,7 +76,8 @@ A short demo built from the backoffice's own components, simplified.
   each target by its `data-demo` name and reads what to type from
   `data-type`, so it carries no words and works in every language. A click is
   a small dip of the cursor and the target pressed. The loop pauses while the
-  hero is off screen.
+  hero is off screen, and a button under the frame pauses it on request (see
+  `docs/agent/775-hero-demo-pause/plan.md`).
 - **Fallbacks and accessibility**: the frame is `aria-hidden`; an `sr-only`
   paragraph tells the story. Under `prefers-reduced-motion`, or without
   JavaScript, the last screen shows at rest.
