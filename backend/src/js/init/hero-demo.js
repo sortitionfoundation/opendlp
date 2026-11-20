@@ -28,7 +28,13 @@ function freezeAnimations(element) {
   const running = element
     .getAnimations({ subtree: true })
     .filter((animation) => animation.playState === "running");
-  running.forEach((animation) => animation.pause());
+  running.forEach((animation) => {
+    // pause() only takes effect a frame or more later, by when the cursor has moved on a few
+    // pixels; setting the current time completes the pause at once, where the visitor pressed.
+    const { currentTime } = animation;
+    animation.pause();
+    animation.currentTime = currentTime;
+  });
   // One that has since been cancelled stays cancelled: playing it would start it again.
   return () =>
     running

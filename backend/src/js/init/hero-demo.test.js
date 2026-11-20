@@ -62,11 +62,13 @@ function setUp({ reducedMotion = false } = {}) {
   };
 }
 
-// An animation as getAnimations() returns one, in the state given.
-function animation(playState) {
-  const a = { playState };
+// An animation as getAnimations() returns one, in the state given. Like a browser's, its
+// pause() lands a frame late, by when it has moved on; setting currentTime pins it.
+function animation(playState, currentTime = 120) {
+  const a = { playState, currentTime };
   a.pause = vi.fn(() => {
     a.playState = "paused";
+    a.currentTime += 16;
   });
   a.play = vi.fn(() => {
     a.playState = "running";
@@ -228,6 +230,15 @@ describe("startHeroDemo animations", () => {
     toggle.click();
     expect(moving.play).toHaveBeenCalled();
     expect(done.play).not.toHaveBeenCalled();
+  });
+
+  it("holds an animation at the moment of the pause, not a frame later", () => {
+    const { toggle, frame } = setUp();
+    const moving = animation("running", 250);
+    frame.getAnimations = () => [moving];
+
+    toggle.click();
+    expect(moving.currentTime).toBe(250);
   });
 
   it("does not start again an animation cancelled while paused", () => {
