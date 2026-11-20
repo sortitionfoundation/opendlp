@@ -119,6 +119,6 @@ and give it a component render test.
 2. [x] Index redirect, tabs, users list.
 3. [x] User page with dialogs, edit user, audit log.
 4. [x] Invites list, invite page, create invite.
-5. [ ] Account menu link; `test_legacy_header.py`.
+5. [x] Account menu link; `test_legacy_header.py`.
 6. [ ] Wording pass, then the `translate-catalogues` skill.
 7. [ ] `just check`, `just test-nobdd`, then `just build-all && just test-bdd-headless`.

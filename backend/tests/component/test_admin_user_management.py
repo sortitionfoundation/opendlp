@@ -608,6 +608,14 @@ class TestAdminNavigation:
         assert response.status_code == 200
         assert b"Site Admin" in response.data
 
+    def test_account_menu_opens_site_admin_in_the_same_tab(self, logged_in_admin: FlaskClient) -> None:
+        """Site Admin is on the backoffice design, so the account menu no longer sends it to another tab."""
+        body = logged_in_admin.get("/backoffice/dashboard").get_data(as_text=True)
+
+        link = re.search(r'<a[^>]*href="/admin/"[^>]*>', body)
+        assert link is not None
+        assert "target=" not in link.group(0)
+
     def test_admin_menu_not_visible_to_regular_user(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/dashboard")
         assert response.status_code == 200
