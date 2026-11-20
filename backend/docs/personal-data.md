@@ -173,6 +173,12 @@ The reply-to name and address on an auto-reply email are free text typed by the 
 be a team member's own address. They are not linked to a user account, so deleting a user does
 not blank them; like a name typed into an email body, they have to be found and edited by hand.
 
+`opendlp projects clone --respondents` copies respondents into a new project, as separate rows
+with their own IDs. Erasing someone from one project does not touch the other. That is why the
+command is for training and demo data only: it refuses to copy respondents without
+`--for-training-or-demo`, and asks for confirmation before it does. Deleted respondents are never
+copied. See [Command Line Interface](cli.md#projects).
+
 When adding a table that holds personal data, add a corresponding `DELETE` to
 `_delete_all_test_data()` in `tests/conftest.py` and to `delete_all_except_standard_users()` in
 `tests/bdd/conftest.py`, respecting foreign-key ordering.

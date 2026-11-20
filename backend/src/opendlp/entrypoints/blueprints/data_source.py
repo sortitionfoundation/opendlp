@@ -29,13 +29,14 @@ from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
     get_assembly_nav_context,
     get_user_assemblies,
+    is_title_available,
     set_data_sources,
     update_assembly_gsheet,
     update_csv_config,
 )
 from opendlp.service_layer.csv_upload_stash import StashedUpload
 from opendlp.service_layer.csv_upload_stash import stash as stash_pending_upload
-from opendlp.service_layer.exceptions import InvalidSelection
+from opendlp.service_layer.exceptions import AssemblyTitleTaken, InvalidSelection
 from opendlp.service_layer.gsheet_access_check import forget_cached_result
 from opendlp.service_layer.project_creation_service import (
     ProjectDetails,
@@ -355,6 +356,25 @@ def _project_details(form: ProjectDetailsStepForm) -> ProjectDetails:
     )
 
 
+def _details_refused(details_form: ProjectDetailsStepForm) -> bool:
+    """Validate the first step, including that the title is free; the reasons land on the form's fields."""
+    if not details_form.validate():
+        return True
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        available = is_title_available(uow, current_user.id, details_form.title.data or "")
+    if not available:
+        details_form.title.errors.append(AssemblyTitleTaken(details_form.title.data or "").user_msg())  # type: ignore[attr-defined]
+        return True
+    return False
+
+
+def _title_taken_dialog(details_form: ProjectDetailsStepForm, e: AssemblyTitleTaken) -> ResponseReturnValue:
+    """Back to the first step with the reason under the title: another project took it while the dialog was open."""
+    details_form.title.errors.append(e.user_msg())  # type: ignore[attr-defined]
+    return _render_new_project_dialog(1, status=422, details_form=details_form)
+
+
 def _flash_created(title: str) -> None:
     flash(_("Project '%(title)s' created successfully", title=title), "success")
 
@@ -394,7 +414,7 @@ def new_project_step() -> ResponseReturnValue:
     current = _step_number(request.form.get("step", ""), default=1)
     go = request.form.get("go", "")
     target = current - 1 if go == "back" else _step_number(go, default=current + 1)
-    if target > current and not details_form.validate():
+    if target > current and _details_refused(details_form):
         return _render_new_project_dialog(1, status=422, details_form=details_form)
     return _render_new_project_dialog(target, details_form=details_form)
 
@@ -434,6 +454,8 @@ def new_project_save() -> ResponseReturnValue:
                         RespondentsSource, request.form.get("respondents_source"), RespondentsSource.UNDECIDED
                     ),
                 )
+    except AssemblyTitleTaken as e:
+        return _title_taken_dialog(details_form, e)
     except Exception as e:
         logger.exception("Create project error", user_id=str(current_user.id), error=str(e))
         return _render_new_project_dialog(
@@ -476,6 +498,8 @@ def new_project_upload_targets() -> ResponseReturnValue:
                 ),
             )
             warnings = list(result.warnings)
+    except AssemblyTitleTaken as e:
+        return _title_taken_dialog(details_form, e)
     except InvalidSelection as e:
         logger.warning("Invalid targets CSV for a new project", user_id=str(current_user.id), error=str(e))
         return _render_new_project_dialog(
@@ -523,6 +547,8 @@ def new_project_upload_respondents() -> ResponseReturnValue:
                     TargetsSource, request.form.get("targets_source"), TargetsSource.UNDECIDED
                 ),
             )
+    except AssemblyTitleTaken as e:
+        return _title_taken_dialog(details_form, e)
     except InvalidSelection as e:
         logger.warning("Invalid respondents CSV for a new project", user_id=str(current_user.id), error=str(e))
         return _render_new_project_dialog(

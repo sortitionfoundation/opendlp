@@ -28,6 +28,7 @@ from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import AddUserToAssemblyForm, ChangeAssemblyRoleForm, EditAssemblyForm
 from opendlp.service_layer.assembly_service import get_assembly_with_permissions, update_assembly_reporting_changes
 from opendlp.service_layer.exceptions import (
+    AssemblyTitleTaken,
     CannotRemoveLastAssemblyManager,
     InsufficientPermissions,
     NotFoundError,
@@ -101,6 +102,8 @@ def edit_field(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     uow, assembly_id, current_user.id, **{field: value}
                 )
                 assembly = assembly.create_detached_copy()
+        except AssemblyTitleTaken as e:
+            error = e.user_msg()
         except Exception as e:
             logger.exception(
                 "Edit project field error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)

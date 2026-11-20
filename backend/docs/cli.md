@@ -1,6 +1,6 @@
 # Command Line Interface (CLI)
 
-OpenDLP provides a comprehensive CLI for system administration tasks including user management, invite management, database operations, and Celery task monitoring.
+OpenDLP provides a comprehensive CLI for system administration tasks including user management, invite management, project listing and cloning, database operations, and Celery task monitoring.
 
 ## Installation and Access
 
@@ -103,6 +103,61 @@ opendlp database reset
 **Warning:** The `reset` command permanently deletes all data. It requires explicit confirmation and the `ALLOW_RESET_DB` environment variable set to `DANGEROUS`.
 
 Use `opendlp database [COMMAND] --help` for detailed options.
+
+### Projects
+
+List and clone projects. The interface says "project"; the code underneath still says "assembly".
+
+```bash
+# List active projects, newest first: id, status, data source, title - tab separated
+opendlp projects list
+
+# Only the projects a user holds a role on, archived ones included
+opendlp projects list --member user@example.com --include-archived
+
+# Clone a project for a demo or training session
+opendlp projects clone PROJECT_ID --user-email admin@example.com
+
+# Clone with respondents and team members, choosing the title
+opendlp projects clone PROJECT_ID --user-email admin@example.com --title "Training day" \
+    --respondents --for-training-or-demo --team
+```
+
+**Available commands:**
+- `list` - One project per line, so it pipes into `grep`, `cut` and `sort`. The data source is
+  `gsheet` or `csv` (held in OpenDLP, which is also what a project nobody has chosen for
+  reads as); a project with a Google Sheet attached cannot be cloned.
+- `clone` - Copy a project whose data is held in OpenDLP. `--user-email` must name an active
+  admin, who becomes the copy's manager.
+
+**What `clone` copies.** Always: the title, question, first date, number to select,
+selection settings, and the choices of where the data, targets and respondents come from.
+By default also the targets (`--no-targets` to leave them out), the registration questions
+(`--no-questions`) and the registration pages with their images, documents, email templates
+and whether each sends an auto-reply (`--no-registration`). Only when asked: the respondents
+(`--respondents`) and the team members (`--team`).
+
+Never copied: selection history, emails sent to respondents, the Google Sheet export settings,
+reply-to names and addresses, respondent comments, and deleted respondents.
+
+**How the copy differs from the original:**
+- The title defaults to "<original title> (copy)", or "(copy 2)" and so on up to "(copy 9)".
+  A title that matches another active project fails; pick one with `--title`.
+- Registration pages start in Test, with new URLs. Links to images and documents in the page
+  HTML and email templates point at the copy's own.
+- Derived fields (age ranges, mappings) are copied only with both the targets and the questions.
+  Without the targets, their values are also removed from copied respondents.
+- Respondents go back into the pool - Selected, Confirmed and Withdrawn alike - unless
+  `--preserve-respondent-status` is given. Test submissions stay test submissions.
+
+**Respondents and personal data.** Cloning respondents needs `--for-training-or-demo`, stating
+that they hold no real personal data, and then a confirmation that names how many will be
+copied. `--yes` skips the confirmation, for scripts. See [Personal Data](personal-data.md).
+
+`--no-questions` needs `--no-registration` too, and `--respondents` needs the questions, since
+both are built on them.
+
+Use `opendlp projects [COMMAND] --help` for detailed options.
 
 ### Celery
 

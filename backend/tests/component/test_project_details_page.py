@@ -256,6 +256,21 @@ class TestARefusedValue:
         assert '<input type="hidden" value="Existing Assembly" x-ref="saved">' in html
         assert _stored(fake_store, existing_assembly).title == "Existing Assembly"
 
+    def test_a_title_another_project_has_comes_back_open_with_the_reason(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, admin_user, existing_assembly: Assembly
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            other = create_assembly(uow=uow, title="Other Assembly", created_by_user_id=admin_user.id)
+            uow.commit()
+
+        response = _save(logged_in_admin, other, "title", "existing assembly")
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert "data-editing" in html
+        assert "You already have a project called existing assembly" in html
+        assert _stored(fake_store, other).title == "Other Assembly"
+
     def test_a_refusal_sends_nothing_out_of_band(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:

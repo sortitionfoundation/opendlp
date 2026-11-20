@@ -277,7 +277,7 @@ def create_registration_page(
     return page.create_detached_copy()
 
 
-def _generated_url_slug(
+def generate_page_url_slug(
     uow: AbstractUnitOfWork, assembly_id: uuid.UUID, assembly_title: str, name: str, language: str
 ) -> str:
     """Build a unique slug from the assembly title plus a suffix identifying the page.
@@ -322,7 +322,7 @@ def create_registration_page_with_slugs(
         raise InsufficientPermissions(action="create registration page", required_role=_MANAGE_ROLE)
     validated_name = _validated_name(uow, assembly_id, name)
 
-    url_slug = _generated_url_slug(uow, assembly.id, assembly.title, validated_name, language)
+    url_slug = generate_page_url_slug(uow, assembly.id, assembly.title, validated_name, language)
     short_url_slug = generate_unique_short_url_slug(uow)
 
     page = RegistrationPage(
@@ -370,7 +370,7 @@ def duplicate_registration_page(
         source_type=source.source_type,
         thank_you_html=source.thank_you_html,
         thank_you_use_default=source.thank_you_use_default,
-        url_slug=_generated_url_slug(uow, assembly.id, assembly.title, validated_name, language),
+        url_slug=generate_page_url_slug(uow, assembly.id, assembly.title, validated_name, language),
         short_url_slug=generate_unique_short_url_slug(uow),
         name=validated_name,
         language=language,

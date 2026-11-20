@@ -514,3 +514,48 @@ class TestTheFirstUploadCreatesTheProject:
     def test_a_plain_user_cannot_upload_respondents(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
         assert self._upload_respondents(logged_in_user).status_code == 403
         assert _projects(fake_store) == []
+
+
+class TestATakenTitle:
+    """A title matching another project the user can see is refused, with the reason under the title."""
+
+    def test_it_is_refused_at_step_one(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, existing_assembly: Assembly
+    ) -> None:
+        response = _step(logged_in_admin, 1, title="existing assembly")
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert "You already have a project called existing assembly" in html
+        assert "Where will you manage your data?" not in html
+        assert len(_projects(fake_store)) == 1
+
+    def test_a_save_that_slips_past_step_one_goes_back_to_it(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_admin.post(
+            f"{NEW}/save", data={**DETAILS, "title": "Existing Assembly", "location": "csv"}, headers=HTMX
+        )
+
+        assert response.status_code == 422
+        assert "You already have a project called Existing Assembly" in response.data.decode()
+        assert len(_projects(fake_store)) == 1
+
+    def test_a_targets_upload_that_slips_past_step_one_creates_nothing(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_admin.post(
+            f"{NEW}/upload-targets",
+            data={
+                **DETAILS,
+                "title": "Existing Assembly",
+                "location": "csv",
+                "csv_file": (BytesIO(TARGETS_CSV.encode()), "targets.csv"),
+            },
+            content_type="multipart/form-data",
+            headers=HTMX,
+        )
+
+        assert response.status_code == 422
+        assert "You already have a project called Existing Assembly" in response.data.decode()
+        assert len(_projects(fake_store)) == 1
