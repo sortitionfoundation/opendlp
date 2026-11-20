@@ -127,6 +127,8 @@ def pause_demo_from_keyboard(logged_out_page: Page) -> None:
     # Tab from the top of the page until the button has focus, so it is in the tab order.
     for _ in range(20):
         logged_out_page.keyboard.press("Tab")
+        # The frame's buttons are pictures of buttons: focus passes them by.
+        assert logged_out_page.evaluate("!document.activeElement.closest('.hero-demo__frame')")
         if toggle.evaluate("button => button === document.activeElement"):
             break
     expect(toggle).to_be_focused()

@@ -7,7 +7,9 @@ ABOUTME: through which one cursor creates a project, sets its targets, runs the 
    visitor prefers reduced motion, the stage shows the last scene at rest. Every label is the real screen's label,
    so the catalogue already has most of them; the texts the cursor types are data attributes, so the script
    carries no words. The app layer is laid out at 800px and scaled to the frame, so the screens keep the
-   proportions of a desktop window at every width.
+   proportions of a desktop window at every width. The frame is a picture: aria-hidden keeps it from screen
+   readers, which read the sr-only paragraph instead, and inert keeps its buttons out of the tab order and
+   unclickable.
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/card.html" import card %}
@@ -40,7 +42,7 @@ ABOUTME: through which one cursor creates a project, sets its targets, runs the 
 {% endmacro %}
 <div class="hero-demo" data-hero-demo>
     <p class="sr-only">{{ _("A short demonstration of OpenDLP: an organiser creates a project, names it, sets its targets, runs the selection, and the dashboard shows a panel that matches every target.") }}</p>
-    <div class="hero-demo__frame" aria-hidden="true">
+    <div class="hero-demo__frame" aria-hidden="true" inert>
         <div class="hero-demo__chrome"><span></span><span></span><span></span><i></i></div>
         <div class="hero-demo__viewport">
             <div class="hero-demo__app" data-demo-app>

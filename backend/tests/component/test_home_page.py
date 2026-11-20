@@ -149,6 +149,18 @@ class TestHomePage:
         assert "hero-demo__toggle-pause" in inner
         assert "hero-demo__toggle-play" in inner
 
+    def test_hero_demo_frame_keeps_its_buttons_out_of_the_tab_order(self, client: FlaskClient) -> None:
+        """The frame is a picture, and its buttons are pictures of buttons.
+
+        aria-hidden keeps them from screen readers; without inert they would still take focus, and a
+        keyboard user would land on controls a screen reader says are not there.
+        """
+        response = client.get("/")
+        frame = re.search(r'<div class="hero-demo__frame"[^>]*>', response.text)
+        assert frame is not None
+        assert 'aria-hidden="true"' in frame.group(0)
+        assert re.search(r"\sinert[\s>]", frame.group(0))
+
     def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/")
         assert 'href="#how-it-works"' in response.text
