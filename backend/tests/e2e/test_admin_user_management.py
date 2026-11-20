@@ -270,6 +270,23 @@ class TestAdminUserEdit:
         assert b"NewFirst" in view_response.data
         assert b"NewLast" in view_response.data
 
+    def test_change_user_role_success(
+        self, client: FlaskClient, admin_user: User, test_users: list[User], postgres_session_factory
+    ):
+        """The role dialog's form changes the role, against the real database."""
+        login_as_admin(client, admin_user)
+
+        user = test_users[0]
+        response = client.post(
+            f"/admin/users/{user.id}/role",
+            data={"global_role": "ORGANISER", "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}")},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.users.get(user.id).global_role == GlobalRole.ORGANISER
+
 
 class TestAdminDisableAccount:
     """Disabling against the real database, including what it does to a live session."""

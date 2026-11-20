@@ -1,12 +1,14 @@
 {#
 ABOUTME: Site Admin page for one user - their details, signup survey answers and account actions
-ABOUTME: Names are edited in place; disabling, enabling and switching off two-factor are confirmed in a dialog
+ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling and 2FA off are confirmed in one
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "admin/_header.html" import inner_header %}
 {% from "admin/_role_tag.html" import role_tag %}
 {% from "admin/_confirm.html" import confirm_action %}
 {% from "admin/_name_row.html" import name_row %}
+{% from "backoffice/components/modal.html" import modal, dialog_body, dialog_footer %}
+{% from "backoffice/components/input.html" import radio_group %}
 {% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/detail_row.html" import detail_row %}
 {% from "backoffice/components/button.html" import button %}
@@ -20,6 +22,30 @@ ABOUTME: Names are edited in place; disabling, enabling and switching off two-fa
 
 {% macro value(text) %}
     <dd class="text-body-md flex-1" style="color: var(--color-body-text);">{{ text }}</dd>
+{% endmacro %}
+
+{% macro role_dialog(user, form) %}
+    {% set role = form.global_role.data %}
+    <div x-data="modal({ initialOpen: false })" class="contents">
+        {{ button(_("Change role"), variant="secondary", id="change-role-open", attrs='@click="open()"', aria_haspopup="dialog") }}
+        {% call modal(id="change-role-dialog", title=_("Change role"), wrap_body=false) %}
+            <form method="post" action="{{ url_for('admin.edit_user_role', user_id=user.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% call dialog_body() %}
+                    {{ radio_group(form.global_role.name,
+                    label=form.global_role.label.text,
+                    hint=form.global_role.description,
+                    options=form.global_role.choices,
+                    value=role.name if role.name is defined else (role or ""),
+                    attrs="data-dialog-initial-focus") }}
+                {% endcall %}
+                {% call dialog_footer() %}
+                    {{ button(_("Cancel"), variant="secondary", attrs='@click="close()"') }}
+                    {{ button(_("Save role"), type="submit") }}
+                {% endcall %}
+            </form>
+        {% endcall %}
+    </div>
 {% endmacro %}
 
 {% macro missing(text) %}
@@ -40,7 +66,14 @@ ABOUTME: Names are edited in place; disabling, enabling and switching off two-fa
                 submitted=name_submitted.get("last_name"),
                 error=name_errors.get("last_name", "")) }}
                 {% call detail_row(_("Global role")) %}
-                    <dd class="flex-1">{{ role_tag(user.global_role) }}</dd>
+                    <dd class="flex-1 flex flex-wrap items-center gap-3">
+                        {{ role_tag(user.global_role) }}
+                        {% if user.id == current_user.id %}
+                            <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("You cannot change your own role") }}</span>
+                        {% else %}
+                            {{ role_dialog(user, role_form) }}
+                        {% endif %}
+                    </dd>
                 {% endcall %}
                 {% call detail_row(_("Account status")) %}
                     <dd class="flex-1">

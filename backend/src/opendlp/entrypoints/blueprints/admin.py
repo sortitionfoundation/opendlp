@@ -26,7 +26,7 @@ from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, leftover_answer_keys
 from opendlp.domain.users import User
 from opendlp.entrypoints.decorators import require_admin
-from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm, EditUserNamesForm
+from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm, EditUserNamesForm, EditUserRoleForm
 from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.exceptions import (
     CannotDisableSelf,
@@ -171,7 +171,7 @@ def export_users_csv() -> ResponseReturnValue:
 @login_required
 @require_admin
 def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
-    """View a single user's details, with their names edited in place."""
+    """View a single user's details, with their names edited in place and their role in a dialog."""
     try:
         return _user_page(user_id), 200
 
@@ -208,6 +208,7 @@ def _user_page(
         survey=survey,
         survey_questions=SIGNUP_SURVEY_QUESTIONS,
         leftover_answer_keys=leftover_answer_keys(survey.answers) if survey else [],
+        role_form=EditUserRoleForm(obj=user),
         name_errors=name_errors or {},
         name_submitted=name_submitted or {},
     )
@@ -347,6 +348,45 @@ def edit_user_name(user_id: uuid.UUID) -> ResponseReturnValue:
     if _is_htmx():
         return _name_row_response(stored, field, submitted=submitted, error=error), 422
     return _user_page(user_id, name_errors={field: error}, name_submitted={field: submitted}), 200
+
+
+@admin_bp.route("/users/<uuid:user_id>/role", methods=["POST"])
+@login_required
+@require_admin
+def edit_user_role(user_id: uuid.UUID) -> ResponseReturnValue:
+    """Change a user's global role, from the dialog on their page."""
+    form = EditUserRoleForm()
+    if not form.validate_on_submit():
+        flash(_("Choose a role for this user"), "error")
+        return redirect(url_for("admin.view_user", user_id=user_id))
+
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            user = update_user(
+                uow=uow,
+                user_id=user_id,
+                admin_user_id=current_user.id,
+                global_role=form.global_role.data,
+            )
+    except UserNotFoundError as e:
+        logger.warning(
+            "User not found for role change by admin",
+            user_id=str(user_id),
+            admin_user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("User not found"), "error")
+        return redirect(url_for("admin.list_users"))
+    except ValueError as e:
+        logger.warning("Refused role change", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e))
+        flash(_("You cannot change your own role"), "error")
+    except Exception as e:
+        logger.error("Error changing user role", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e))
+        flash(_("An error occurred while updating the user"), "error")
+    else:
+        flash(_("User '%(email)s' updated successfully", email=user.email), "success")
+    return redirect(url_for("admin.view_user", user_id=user_id))
 
 
 def _is_htmx() -> bool:

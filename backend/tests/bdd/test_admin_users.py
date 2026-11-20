@@ -197,3 +197,24 @@ def _(admin_logged_in_page: Page, name: str):
     """the saved name survives a reload."""
     admin_logged_in_page.reload()
     expect(admin_logged_in_page.locator("#admin-user-first_name-row")).to_contain_text(name)
+
+
+@when("the admin changes their role to Organiser")
+def _(admin_logged_in_page: Page, disposable_user: User):
+    """the admin changes the role in the dialog."""
+    page = admin_logged_in_page
+    page.goto(f"{Urls.admin_users}/{disposable_user.id}")
+    page.get_by_role("button", name="Change role").click()
+    dialog = page.get_by_role("dialog", name="Change role")
+    expect(dialog).to_be_visible()
+    dialog.get_by_label("Organiser — Can create projects, and manage the ones they belong to").check()
+    dialog.get_by_role("button", name="Save role").click()
+    expect(page.locator("#floating-alerts")).to_contain_text("updated successfully")
+
+
+@then("the user's role is Organiser")
+def _(admin_logged_in_page: Page, disposable_user: User):
+    """the role row shows Organiser."""
+    admin_logged_in_page.goto(f"{Urls.admin_users}/{disposable_user.id}")
+    row = admin_logged_in_page.locator("dl > div", has_text="Global role")
+    expect(row.locator("strong").first).to_have_text("Organiser")
