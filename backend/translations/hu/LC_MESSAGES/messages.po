@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-11-12 16:48+0000\n"
-"PO-Revision-Date: 2026-11-19 15:28+0000\n"
+"PO-Revision-Date: 2026-11-20 10:49+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
@@ -499,7 +499,7 @@ msgstr ""
 "Adminisztrátor – Teljes rendszerhozzáférés, beleértve a "
 "felhasználókezelést"
 
-#: src/opendlp/domain/value_objects.py templates/admin/user_2fa_audit_log.html
+#: src/opendlp/domain/value_objects.py
 #: templates/backoffice/project_details/_team_card.html
 #: templates/main/view_assembly_members.html
 msgid "User"
@@ -561,9 +561,9 @@ msgstr "Visszaigazoló"
 msgid "Read Only"
 msgstr "Megtekintő"
 
-#: src/opendlp/domain/value_objects.py templates/admin/invite_view.html
-#: templates/admin/invites.html templates/admin/user_view.html
-#: templates/admin/users.html templates/backoffice/profile/view.html
+#: src/opendlp/domain/value_objects.py templates/admin/_invite_status.html
+#: templates/admin/user_view.html templates/admin/users.html
+#: templates/backoffice/profile/view.html
 msgid "Active"
 msgstr "Aktív"
 
@@ -872,15 +872,15 @@ msgstr "Érvénytelen vagy lejárt meghívó kód."
 msgid "Please select"
 msgstr "Kérjük, válassz"
 
-#: src/opendlp/entrypoints/forms.py templates/admin/invite_view.html
+#: src/opendlp/entrypoints/forms.py
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
+#: src/opendlp/entrypoints/forms.py
 msgid "First Name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
+#: src/opendlp/entrypoints/forms.py
 msgid "Last Name"
 msgstr "Vezetéknév"
 
@@ -1136,16 +1136,27 @@ msgstr ""
 "(pl. keresztnév, vezetéknév, e-mail). Megjegyzés: felülírásra kerül, ha a"
 " Csapat beállítás nem 'Egyedi'."
 
+#: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
+#: templates/backoffice/profile/_name_row.html
+msgid "First name"
+msgstr "Keresztnév"
+
 #: src/opendlp/entrypoints/forms.py
 msgid "User's first name"
 msgstr "Keresztnév"
+
+#: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
+#: templates/backoffice/profile/_name_row.html
+msgid "Last name"
+msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py
 msgid "User's last name"
 msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
-msgid "Global Role"
+#, fuzzy
+msgid "Global role"
 msgstr "Globális szerepkör"
 
 #: src/opendlp/entrypoints/forms.py
@@ -1155,7 +1166,8 @@ msgstr ""
 "jogosultságait"
 
 #: src/opendlp/entrypoints/forms.py
-msgid "Role for New User"
+#, fuzzy
+msgid "Role for the new user"
 msgstr "Az új felhasználó szerepköre"
 
 #: src/opendlp/entrypoints/forms.py
@@ -1163,15 +1175,12 @@ msgid "The role that will be granted to the user who uses this invite"
 msgstr "Az a szerepkör, amelyet a meghívót felhasználó felhasználó kap"
 
 #: src/opendlp/entrypoints/forms.py
-msgid "Email Address (Optional)"
-msgstr "E-mail cím"
-
-#: src/opendlp/entrypoints/forms.py
 msgid "Optional — if provided, the invite will be emailed to this address"
 msgstr "Nem kötelező – ha megadod, a meghívó e-mailben erre a címre megy ki"
 
 #: src/opendlp/entrypoints/forms.py
-msgid "Expires In (Hours)"
+#, fuzzy
+msgid "Expires in (hours)"
 msgstr "Lejárat (óra)"
 
 #: src/opendlp/entrypoints/forms.py
@@ -1198,17 +1207,9 @@ msgstr "Válaszd ki a projekthez hozzáadni kívánt felhasználót"
 msgid "Select the role this user will have on the project"
 msgstr "Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a projektben"
 
-#: src/opendlp/entrypoints/forms.py templates/backoffice/profile/_name_row.html
-msgid "First name"
-msgstr "Keresztnév"
-
 #: src/opendlp/entrypoints/forms.py
 msgid "Your first name"
 msgstr "Keresztnév"
-
-#: src/opendlp/entrypoints/forms.py templates/backoffice/profile/_name_row.html
-msgid "Last name"
-msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Your last name"
@@ -4928,11 +4929,11 @@ msgstr "Menü bezárása"
 msgid "Your projects"
 msgstr "Projektjeid"
 
-#: templates/admin/index.html templates/admin/invite_create.html
+#: templates/admin/_header.html templates/admin/invite_create.html
 #: templates/admin/invite_view.html templates/admin/invites.html
 #: templates/admin/user_2fa_audit_log.html templates/admin/user_edit.html
 #: templates/admin/user_view.html templates/admin/users.html
-#: templates/base.html
+#: templates/backoffice/base_page.html templates/base.html
 msgid "Site Admin"
 msgstr "Oldal adminisztráció"
 
@@ -4964,7 +4965,6 @@ msgstr "Bejelentkezés"
 msgid "Create Account"
 msgstr "Fiók létrehozása"
 
-#: templates/admin/invite_create.html templates/admin/user_edit.html
 #: templates/backoffice/assembly_edit_respondent.html
 #: templates/backoffice/data_source/_parts.html templates/base.html
 #: templates/gsheets/create_config.html templates/gsheets/edit_config.html
@@ -5014,65 +5014,8 @@ msgstr ""
 msgid "Support links"
 msgstr "Súgó linkek"
 
-#: templates/admin/index.html
-msgid "Manage users and invites for the OpenDLP platform."
-msgstr "Az OpenDLP platform felhasználóinak és meghívóinak kezelése."
-
-#: templates/admin/index.html templates/admin/user_2fa_audit_log.html
-#: templates/admin/user_edit.html templates/admin/user_view.html
-#: templates/admin/users.html
-msgid "User Management"
-msgstr "Felhasználók kezelése"
-
-#: templates/admin/index.html
-msgid "View, edit, and manage user accounts and roles."
-msgstr "Felhasználói fiókok és szerepkörök megtekintése, szerkesztése és kezelése."
-
-#: templates/admin/index.html
-msgid "Manage Users"
-msgstr "Felhasználók kezelése"
-
-#: templates/admin/index.html templates/admin/invite_create.html
-#: templates/admin/invite_view.html templates/admin/invites.html
-msgid "Invite Management"
-msgstr "Meghívók kezelése"
-
-#: templates/admin/index.html
-msgid "Create, view, and manage invites for site users."
-msgstr ""
-"Meghívók létrehozása, megtekintése és kezelése az oldal felhasználói "
-"számára."
-
-#: templates/admin/index.html
-msgid "Manage Invites"
-msgstr "Meghívók kezelése"
-
-#: templates/admin/index.html templates/backoffice/assembly_dashboard.html
-#: templates/backoffice/assembly_details.html
-#: templates/backoffice/assembly_registration.html
-#: templates/backoffice/assembly_registration_list.html
-#: templates/backoffice/assembly_respondents.html
-#: templates/backoffice/assembly_selection.html
-#: templates/backoffice/assembly_targets.html
-#: templates/backoffice/profile/view.html
-#: templates/backoffice/respondent_field_schema/view.html
-#: templates/backoffice/target_sources/view.html
-msgid "Back to Your projects"
-msgstr "Vissza a projektjeidhez"
-
-#: templates/admin/invite_create.html
-msgid "Create Invite"
-msgstr "Meghívó létrehozása"
-
-#: templates/admin/invite_create.html templates/admin/invites.html
-msgid "Create New Invite"
-msgstr "Új meghívó létrehozása"
-
-#: templates/admin/invite_create.html
-msgid "Generate a new invite code for user registration"
-msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
-
-#: templates/admin/invite_create.html templates/admin/user_edit.html
+#: templates/admin/_confirm.html templates/admin/invite_create.html
+#: templates/admin/user_edit.html
 #: templates/backoffice/assembly_edit_respondent.html
 #: templates/backoffice/assembly_view_respondent.html
 #: templates/backoffice/components/db_replacement_modal.html
@@ -5113,17 +5056,75 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 msgid "Cancel"
 msgstr "Mégse"
 
-#: templates/admin/invite_view.html
-msgid "Invite Details"
-msgstr "A meghívó részletei"
+#: templates/admin/_header.html templates/backoffice/assembly_dashboard.html
+#: templates/backoffice/assembly_details.html
+#: templates/backoffice/assembly_registration.html
+#: templates/backoffice/assembly_registration_list.html
+#: templates/backoffice/assembly_respondents.html
+#: templates/backoffice/assembly_selection.html
+#: templates/backoffice/assembly_targets.html
+#: templates/backoffice/profile/view.html
+#: templates/backoffice/respondent_field_schema/view.html
+#: templates/backoffice/target_sources/view.html
+msgid "Back to Your projects"
+msgstr "Vissza a projektjeidhez"
+
+#: templates/admin/_header.html
+#, fuzzy
+msgid "Site Admin sections"
+msgstr "Az oldal adminisztrációjának részei"
+
+#: templates/admin/_header.html templates/admin/users.html
+#, fuzzy
+msgid "Users"
+msgstr "Felhasználók"
+
+#: templates/admin/_header.html templates/admin/invites.html
+#, fuzzy
+msgid "Invites"
+msgstr "Meghívók"
+
+#: templates/admin/_invite_status.html templates/admin/invite_view.html
+msgid "Used"
+msgstr "Felhasznált"
+
+#: templates/admin/_invite_status.html
+msgid "Expired"
+msgstr "Lejárt"
+
+#: templates/admin/invite_create.html templates/admin/invites.html
+#, fuzzy
+msgid "Create invite"
+msgstr "Meghívó létrehozása"
+
+#: templates/admin/invite_create.html templates/admin/invite_view.html
+#, fuzzy
+msgid "Back to Invites"
+msgstr "Vissza a meghívókhoz"
+
+#: templates/admin/invite_create.html
+msgid "Generate a new invite code for user registration"
+msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 
 #: templates/admin/invite_view.html
-msgid "Invite code copied!"
-msgstr "Meghívókód másolva!"
+#, fuzzy
+msgid "Invite"
+msgstr "Meghívó"
 
 #: templates/admin/invite_view.html
-msgid "Copy Code"
-msgstr "Kód másolása"
+#, fuzzy, python-format
+msgid "Invite %(code)s"
+msgstr "Meghívó: %(code)s"
+
+#: templates/admin/invite_view.html
+#, fuzzy
+msgid "Invite code"
+msgstr "Meghívókód"
+
+#: templates/admin/invite_view.html
+#, fuzzy
+msgid "Copy invite code"
+msgstr "Meghívókód másolása"
 
 #: templates/admin/invite_view.html
 #: templates/backoffice/registration/_step_page.html
@@ -5132,12 +5133,10 @@ msgid "Registration URL"
 msgstr "Regisztrációs URL"
 
 #: templates/admin/invite_view.html
-msgid "URL copied!"
-msgstr "URL másolva!"
-
-#: templates/admin/invite_view.html
-msgid "Copy URL"
-msgstr "URL másolása"
+#: templates/backoffice/assembly_registration.html
+#: templates/backoffice/components/url_display.html
+msgid "Copy URL to clipboard"
+msgstr "URL másolása a vágólapra"
 
 #: templates/admin/invite_view.html templates/admin/invites.html
 #: templates/admin/users.html templates/backoffice/profile/view.html
@@ -5163,44 +5162,26 @@ msgid "Status"
 msgstr "Állapot"
 
 #: templates/admin/invite_view.html templates/admin/invites.html
-msgid "Used"
-msgstr "Felhasznált"
-
-#: templates/admin/invite_view.html templates/admin/invites.html
-msgid "Expired"
-msgstr "Lejárt"
-
-#: templates/admin/invite_view.html
-msgid "Created At"
+#: templates/admin/users.html templates/backoffice/assembly_details.html
+#: templates/backoffice/assembly_view_respondent.html
+#: templates/main/dashboard.html templates/main/view_assembly_details.html
+msgid "Created"
 msgstr "Létrehozva"
 
-#: templates/admin/invite_view.html
-msgid "Expires At"
-msgstr "Lejár"
+#: templates/admin/invite_view.html templates/admin/invites.html
+msgid "Expires"
+msgstr "Lejárat"
 
 #: templates/admin/invite_view.html
-msgid "Used By"
+#, fuzzy
+msgid "Used by"
 msgstr "Felhasználta"
-
-#: templates/admin/invite_view.html
-msgid "Used At"
-msgstr "Felhasználva"
 
 #: templates/admin/invite_view.html
 #: templates/backoffice/assembly_selection.html
 #: templates/main/view_assembly_data.html
 msgid "Unknown"
 msgstr "Ismeretlen"
-
-#: templates/admin/invite_view.html templates/admin/user_edit.html
-#: templates/backoffice/targets/category_block.html
-#: templates/db_selection/components/progress.html
-#: templates/db_selection/select.html
-#: templates/gsheets/components/progress.html
-#: templates/targets/components/category_block.html
-#: templates/targets/view_targets.html
-msgid "Warning"
-msgstr "Figyelem"
 
 #: templates/admin/invite_view.html
 msgid ""
@@ -5213,16 +5194,29 @@ msgid "Are you sure you want to revoke this invite? This action cannot be undone
 msgstr "Biztosan visszavonod ezt a meghívót? Ez a művelet nem vonható vissza."
 
 #: templates/admin/invite_view.html
-msgid "Revoke Invite"
+#, fuzzy
+msgid "Revoke invite"
 msgstr "Meghívó visszavonása"
 
-#: templates/admin/invite_view.html
-msgid "Back to Invite List"
-msgstr "Vissza a meghívók listájához"
+#: templates/admin/invites.html
+#, fuzzy
+msgid "Total invites"
+msgstr "Összes meghívó"
 
 #: templates/admin/invites.html
-msgid "This is to manage invite codes for users of this site."
-msgstr "Itt kezelheted az oldal felhasználóinak meghívókódjait."
+#, fuzzy
+msgid "Active invites"
+msgstr "Aktív meghívók"
+
+#: templates/admin/invites.html
+#, fuzzy
+msgid "Used invites"
+msgstr "Felhasznált meghívók"
+
+#: templates/admin/invites.html
+#, fuzzy
+msgid "Conversion rate"
+msgstr "Beváltási arány"
 
 #: templates/admin/invites.html
 msgid "This will permanently delete all expired, unused invites. Are you sure?"
@@ -5231,24 +5225,9 @@ msgstr ""
 " benne?"
 
 #: templates/admin/invites.html
-msgid "Clean Up Expired Invites"
+#, fuzzy
+msgid "Clean up expired invites"
 msgstr "Lejárt meghívók törlése"
-
-#: templates/admin/invites.html
-msgid "Total Invites"
-msgstr "Összes meghívó"
-
-#: templates/admin/invites.html
-msgid "Active Invites"
-msgstr "Aktív meghívók"
-
-#: templates/admin/invites.html
-msgid "Used Invites"
-msgstr "Felhasznált meghívók"
-
-#: templates/admin/invites.html
-msgid "Conversion Rate"
-msgstr "Beváltási arány"
 
 #: templates/admin/invites.html
 #, python-format
@@ -5258,17 +5237,6 @@ msgstr "%(count)s meghívó látható (a lejártakkal együtt)"
 #: templates/admin/invites.html
 msgid "Code"
 msgstr "Kód"
-
-#: templates/admin/invites.html templates/admin/users.html
-#: templates/backoffice/assembly_details.html
-#: templates/backoffice/assembly_view_respondent.html
-#: templates/main/dashboard.html templates/main/view_assembly_details.html
-msgid "Created"
-msgstr "Létrehozva"
-
-#: templates/admin/invites.html
-msgid "Expires"
-msgstr "Lejárat"
 
 #: templates/admin/invites.html templates/admin/users.html
 #: templates/backoffice/assembly_respondents.html
@@ -5305,39 +5273,15 @@ msgstr "Visszavonás"
 msgid "No invites found. Create one to get started."
 msgstr "Nincs meghívó. Hozz létre egyet a kezdéshez."
 
-#: templates/admin/invites.html templates/admin/users.html
-msgid "Back to Site Admin"
-msgstr "Vissza az oldal adminisztrációhoz"
-
 #: templates/admin/user_2fa_audit_log.html
-msgid "2FA Audit Log"
+#, fuzzy
+msgid "2FA audit log"
 msgstr "Kétlépcsős azonosítás eseménynaplója"
 
-#: templates/admin/user_2fa_audit_log.html
-msgid "Two-Factor Authentication Audit Log"
-msgstr "A kétlépcsős azonosítás eseménynaplója"
-
-#: templates/admin/user_2fa_audit_log.html
-msgid "Showing audit log for:"
-msgstr "Az eseménynapló a következőhöz tartozik:"
-
-#: templates/admin/user_2fa_audit_log.html
-msgid "Timestamp"
-msgstr "Időbélyeg"
-
-#: templates/admin/user_2fa_audit_log.html
-#: templates/backoffice/assembly_view_respondent.html
-msgid "Action"
-msgstr "Művelet"
-
-#: templates/admin/user_2fa_audit_log.html
-msgid "Performed By"
-msgstr "Végrehajtotta"
-
-#: templates/admin/user_2fa_audit_log.html
-#: templates/main/view_assembly_base.html
-msgid "Details"
-msgstr "Részletek"
+#: templates/admin/user_2fa_audit_log.html templates/admin/user_edit.html
+#, fuzzy
+msgid "Back to user"
+msgstr "Vissza a felhasználóhoz"
 
 #: templates/admin/user_2fa_audit_log.html templates/admin/user_view.html
 #: templates/admin/users.html templates/backoffice/profile/2fa_settings.html
@@ -5352,34 +5296,61 @@ msgid "Disabled"
 msgstr "Kikapcsolva"
 
 #: templates/admin/user_2fa_audit_log.html
-msgid "Admin Disabled"
+#, fuzzy
+msgid "Admin disabled"
 msgstr "Adminisztrátor kapcsolta ki"
 
 #: templates/admin/user_2fa_audit_log.html
-msgid "Backup Code Used"
+#, fuzzy
+msgid "Backup code used"
 msgstr "Tartalék kód felhasználva"
 
 #: templates/admin/user_2fa_audit_log.html
-msgid "Backup Codes Regenerated"
+#, fuzzy
+msgid "Backup codes regenerated"
 msgstr "Tartalék kódok újragenerálva"
 
 #: templates/admin/user_2fa_audit_log.html
-msgid "Self"
-msgstr "Saját maga"
+#, fuzzy, python-format
+msgid "Two-factor authentication events for %(email)s"
+msgstr "A kétlépcsős azonosítás eseményei: %(email)s"
+
+#: templates/admin/user_2fa_audit_log.html
+#, fuzzy
+msgid "Time"
+msgstr "Időpont"
+
+#: templates/admin/user_2fa_audit_log.html
+#: templates/backoffice/assembly_view_respondent.html
+msgid "Action"
+msgstr "Művelet"
+
+#: templates/admin/user_2fa_audit_log.html
+#, fuzzy
+msgid "Performed by"
+msgstr "Végrehajtotta"
+
+#: templates/admin/user_2fa_audit_log.html
+#: templates/main/view_assembly_base.html
+msgid "Details"
+msgstr "Részletek"
+
+#: templates/admin/user_2fa_audit_log.html
+#, fuzzy
+msgid "Unknown action"
+msgstr "Ismeretlen művelet"
 
 #: templates/admin/user_2fa_audit_log.html
 msgid "System"
 msgstr "Rendszer"
 
 #: templates/admin/user_2fa_audit_log.html
-msgid "View details"
-msgstr "Részletek megtekintése"
+msgid "Self"
+msgstr "Saját maga"
 
 #: templates/admin/user_2fa_audit_log.html
-#: templates/backoffice/targets/bulk_edit_form.html
-#: templates/main/view_assembly_data.html
-msgid "None"
-msgstr "Nincs"
+msgid "View details"
+msgstr "Részletek megtekintése"
 
 #: templates/admin/user_2fa_audit_log.html
 msgid "No 2FA audit log entries found for this user."
@@ -5387,16 +5358,271 @@ msgstr ""
 "Ehhez a felhasználóhoz nincs kétlépcsős azonosítási "
 "eseménynapló-bejegyzés."
 
-#: templates/admin/user_2fa_audit_log.html
-msgid "Back to User Details"
-msgstr "Vissza a felhasználó adataihoz"
-
 #: templates/admin/user_edit.html templates/admin/user_view.html
-msgid "Edit User"
+#, fuzzy
+msgid "Edit user"
 msgstr "Felhasználó szerkesztése"
 
-#: templates/admin/user_edit.html templates/admin/users.html
-#: templates/backoffice/assembly_respondents.html
+#: templates/admin/user_edit.html
+#, fuzzy, python-format
+msgid "Update details for %(email)s. Email addresses cannot be changed."
+msgstr "%(email)s adatainak frissítése. Az e-mail cím nem módosítható."
+
+#: templates/admin/user_edit.html
+msgid ""
+"You are editing your own account. You cannot change your own role or "
+"disable your own account."
+msgstr ""
+"A saját fiókodat szerkeszted. A saját szerepkörödet nem módosíthatod, és "
+"a saját fiókodat nem tilthatod le."
+
+#: templates/admin/user_edit.html
+#, fuzzy, python-format
+msgid ""
+"Whether the account is active is changed from the %(link_start)suser's "
+"page%(link_end)s, not here."
+msgstr ""
+"Azt, hogy a fiók aktív-e, a %(link_start)sfelhasználó oldalán%(link_end)s"
+" lehet módosítani, nem itt."
+
+#: templates/admin/user_edit.html
+#: templates/backoffice/assembly_edit_respondent.html
+msgid "Save changes"
+msgstr "Módosítások mentése"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Back to Users"
+msgstr "Vissza a felhasználókhoz"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "User details"
+msgstr "Felhasználó adatai"
+
+#: templates/admin/user_view.html
+msgid "Not provided"
+msgstr "Nincs megadva"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Account status"
+msgstr "Fiók állapota"
+
+#: templates/admin/user_view.html templates/admin/users.html
+msgid "Inactive"
+msgstr "Inaktív"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Sign-in method"
+msgstr "Bejelentkezési mód"
+
+#: templates/admin/user_view.html
+#: templates/backoffice/profile/2fa_settings.html
+#: templates/backoffice/profile/view.html
+msgid "Two-factor authentication"
+msgstr "Kétlépcsős azonosítás"
+
+#: templates/admin/user_view.html
+msgid "Not applicable (OAuth user)"
+msgstr "Nem értelmezhető (OAuth-felhasználó)"
+
+#: templates/admin/user_view.html
+#, fuzzy, python-format
+msgid "Enabled on %(date)s"
+msgstr "Bekapcsolva: %(date)s"
+
+#: templates/admin/user_view.html
+msgid "View 2FA audit log"
+msgstr "Kétlépcsős azonosítás eseménynaplójának megtekintése"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Data agreement"
+msgstr "Adatkezelési megállapodás"
+
+#: templates/admin/user_view.html
+#, fuzzy, python-format
+msgid "Agreed on %(date)s"
+msgstr "Elfogadva: %(date)s"
+
+#: templates/admin/user_view.html
+msgid "Not agreed"
+msgstr "Nincs elfogadva"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Account created"
+msgstr "Fiók létrehozva"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Signup survey"
+msgstr "Regisztrációs kérdőív"
+
+#: templates/admin/user_view.html
+msgid "Not answered"
+msgstr "Nincs válasz"
+
+#: templates/admin/user_view.html
+msgid "No signup survey answers for this user."
+msgstr "A felhasználó nem töltötte ki a regisztrációs kérdőívet."
+
+#: templates/admin/user_view.html
+msgid "Disable 2FA"
+msgstr "Kétlépcsős azonosítás kikapcsolása"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Disable two-factor authentication?"
+msgstr "Kikapcsolod a kétlépcsős azonosítást?"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "This removes the user's TOTP secret and backup codes."
+msgstr "Ezzel törlődik a felhasználó TOTP-kulcsa és tartalék kódjai."
+
+#: templates/admin/user_view.html
+#, fuzzy, python-format
+msgid ""
+"This ends every session they have signed in to and switches off their "
+"two-factor authentication. They will still sign in with %(provider)s when"
+" the account is enabled again."
+msgstr ""
+"Ezzel minden munkamenete lezárul, és kikapcsol a kétlépcsős azonosítása. "
+"A fiók újbóli engedélyezése után továbbra is %(provider)s fiókkal fog "
+"bejelentkezni."
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid ""
+"This ends every session they have signed in to, permanently removes their"
+" password, and switches off their two-factor authentication. They will "
+"have to set a new password when the account is enabled again."
+msgstr ""
+"Ezzel minden munkamenete lezárul, véglegesen törlődik a jelszava, és "
+"kikapcsol a kétlépcsős azonosítása. A fiók újbóli engedélyezése után új "
+"jelszót kell beállítania."
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Disable account"
+msgstr "Fiók letiltása"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Disable this account?"
+msgstr "Letiltod ezt a fiókot?"
+
+#: templates/admin/user_view.html
+#, fuzzy, python-format
+msgid ""
+"The user will be emailed to say so, and signs in with %(provider)s as "
+"before."
+msgstr ""
+"A felhasználó e-mailt kap erről, és a korábbi módon, %(provider)s fiókkal"
+" jelentkezik be."
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid ""
+"The user will be emailed telling them to request a password reset — their"
+" old password no longer works."
+msgstr ""
+"A felhasználó e-mailt kap azzal a kéréssel, hogy kérjen "
+"jelszó-visszaállítást – a régi jelszava már nem működik."
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Enable account"
+msgstr "Fiók engedélyezése"
+
+#: templates/admin/user_view.html
+#, fuzzy
+msgid "Enable this account?"
+msgstr "Engedélyezed ezt a fiókot?"
+
+#: templates/admin/users.html
+#, fuzzy
+msgid "Total users"
+msgstr "Összes felhasználó"
+
+#: templates/admin/users.html
+#, fuzzy
+msgid "Active users"
+msgstr "Aktív felhasználók"
+
+#: templates/admin/users.html
+msgid "Admins"
+msgstr "Adminisztrátorok"
+
+#: templates/admin/users.html
+msgid "Organisers"
+msgstr "Főszervezők"
+
+#: templates/admin/users.html
+#, fuzzy
+msgid "Password users"
+msgstr "Jelszavas felhasználók"
+
+#: templates/admin/users.html
+#, fuzzy
+msgid "2FA enabled"
+msgstr "Kétlépcsős azonosítás bekapcsolva"
+
+#: templates/admin/users.html
+msgid "All roles"
+msgstr "Minden szerepkör"
+
+#: templates/admin/users.html
+msgid "Search by name or email"
+msgstr "Keresés név vagy e-mail alapján"
+
+#: templates/admin/users.html
+msgid "Enter name or email…"
+msgstr "Add meg a nevet vagy e-mail címet…"
+
+#: templates/admin/users.html
+#, fuzzy
+msgid "Apply filters"
+msgstr "Szűrők alkalmazása"
+
+#: templates/admin/users.html
+msgid "Clear"
+msgstr "Törlés"
+
+#: templates/admin/users.html
+#, fuzzy, python-format
+msgid "To add a user, %(link_start)screate an invite%(link_end)s for them."
+msgstr ""
+"Felhasználó hozzáadásához %(link_start)shozz létre neki egy "
+"meghívót%(link_end)s."
+
+#: templates/admin/users.html
+msgid "Export users as CSV"
+msgstr "Felhasználók exportálása CSV-be"
+
+#: templates/admin/users.html
+#, fuzzy, python-format
+msgid "Users found: %(count)s"
+msgstr "Talált felhasználók: %(count)s"
+
+#: templates/admin/users.html templates/backoffice/assembly_respondents.html
+#: templates/backoffice/components/db_selection_progress_modal.html
+#: templates/backoffice/components/registration_page_list.html
+msgid "Name"
+msgstr "Név"
+
+#: templates/admin/users.html
+msgid "2FA"
+msgstr "2FA"
+
+#: templates/admin/users.html
+msgid "OAuth"
+msgstr "OAuth"
+
+#: templates/admin/users.html templates/backoffice/assembly_respondents.html
 #: templates/backoffice/assembly_view_respondent.html
 #: templates/backoffice/components/registration_page_list.html
 #: templates/backoffice/components/selection_steps.html
@@ -5413,275 +5639,14 @@ msgstr "Felhasználó szerkesztése"
 msgid "Edit"
 msgstr "Szerkesztés"
 
-#: templates/admin/user_edit.html
-#, python-format
-msgid "Update details for %(email)s"
-msgstr "%(email)s adatainak frissítése"
-
-#: templates/admin/user_edit.html
-msgid "Note:"
-msgstr "Megjegyzés:"
-
-#: templates/admin/user_edit.html
-msgid "Email addresses cannot be changed for security reasons."
-msgstr "Az e-mail cím biztonsági okokból nem módosítható."
-
-#: templates/admin/user_edit.html
-#, python-format
-msgid ""
-"Whether the account is active is changed from the <a class=\"govuk-link\""
-" href=\"%(url)s\">user's page</a>, not here."
-msgstr ""
-"Azt, hogy a fiók aktív-e, a <a class=\"govuk-link\" "
-"href=\"%(url)s\">felhasználó oldalán</a> lehet módosítani, nem itt."
-
-#: templates/admin/user_edit.html
-msgid ""
-"You are editing your own account. You cannot change your own role or "
-"disable your own account."
-msgstr ""
-"A saját fiókodat szerkeszted. A saját szerepkörödet nem módosíthatod, és "
-"a saját fiókodat nem tilthatod le."
-
-#: templates/admin/user_edit.html templates/gsheets/edit_config.html
-#: templates/main/edit_assembly.html
-msgid "Save Changes"
-msgstr "Módosítások mentése"
-
-#: templates/admin/user_view.html
-msgid "User Details"
-msgstr "Felhasználó adatai"
-
-#: templates/admin/user_view.html templates/admin/users.html
-msgid "Not provided"
-msgstr "Nincs megadva"
-
-#: templates/admin/user_view.html
-msgid "Account Status"
-msgstr "Fiók állapota"
-
-#: templates/admin/user_view.html templates/admin/users.html
-msgid "Inactive"
-msgstr "Inaktív"
-
-#: templates/admin/user_view.html
-msgid "Authentication Method"
-msgstr "Bejelentkezési mód"
-
-#: templates/admin/user_view.html
-msgid "OAuth"
-msgstr "OAuth"
-
-#: templates/admin/user_view.html templates/public/verify_2fa.html
-msgid "Two-Factor Authentication"
-msgstr "Kétlépcsős azonosítás"
-
-#: templates/admin/user_view.html
-msgid "Not applicable (OAuth user)"
-msgstr "Nem értelmezhető (OAuth-felhasználó)"
-
-#: templates/admin/user_view.html
-#: templates/backoffice/profile/2fa_settings.html
-msgid "Enabled on"
-msgstr "Bekapcsolva ekkor"
-
-#: templates/admin/user_view.html
-msgid "View 2FA audit log"
-msgstr "Kétlépcsős azonosítás eseménynaplójának megtekintése"
-
-#: templates/admin/user_view.html templates/public/register.html
-msgid "Data Agreement"
-msgstr "Adatkezelési Megállapodás"
-
-#: templates/admin/user_view.html
-msgid "Agreed on"
-msgstr "Elfogadva ekkor"
-
-#: templates/admin/user_view.html
-msgid "Not agreed"
-msgstr "Nincs elfogadva"
-
-#: templates/admin/user_view.html
-msgid "Account Created"
-msgstr "Fiók létrehozva"
-
-#: templates/admin/user_view.html
-msgid "Signup Survey"
-msgstr "Regisztrációs kérdőív"
-
-#: templates/admin/user_view.html
-msgid "Not answered"
-msgstr "Nincs válasz"
-
-#: templates/admin/user_view.html
-msgid "No signup survey answers for this user."
-msgstr "A felhasználó nem töltötte ki a regisztrációs kérdőívet."
-
-#: templates/admin/user_view.html
-msgid ""
-"Are you sure you want to disable two-factor authentication for this user?"
-" This will remove their TOTP secret and backup codes."
-msgstr ""
-"Biztosan kikapcsolod a kétlépcsős azonosítást ennél a felhasználónál? "
-"Ezzel törlődik a TOTP-kulcsa és a tartalék kódjai."
-
-#: templates/admin/user_view.html
-msgid "Disable 2FA"
-msgstr "Kétlépcsős azonosítás kikapcsolása"
-
-#: templates/admin/user_view.html
-#, python-format
-msgid ""
-"Are you sure you want to disable this account? This ends every session "
-"they have signed in to and switches off their two-factor authentication. "
-"They will still sign in with %(provider)s when the account is enabled "
-"again."
-msgstr ""
-"Biztosan letiltod ezt a fiókot? Ezzel minden munkamenete lezárul, és "
-"kikapcsol a kétlépcsős azonosítása. A fiók újbóli engedélyezése után "
-"továbbra is %(provider)s fiókkal fog bejelentkezni."
-
-#: templates/admin/user_view.html
-msgid ""
-"Are you sure you want to disable this account? This ends every session "
-"they have signed in to, permanently removes their password, and switches "
-"off their two-factor authentication. They will have to set a new password"
-" when the account is enabled again."
-msgstr ""
-"Biztosan letiltod ezt a fiókot? Ezzel minden munkamenete lezárul, "
-"véglegesen törlődik a jelszava, és kikapcsol a kétlépcsős azonosítása. A "
-"fiók újbóli engedélyezése után új jelszót kell beállítania."
-
-#: templates/admin/user_view.html
-msgid "Disable Account"
-msgstr "Fiók letiltása"
-
-#: templates/admin/user_view.html
-#, python-format
-msgid ""
-"Are you sure you want to enable this account? The user will be emailed to"
-" say so, and signs in with %(provider)s as before."
-msgstr ""
-"Biztosan engedélyezed ezt a fiókot? A felhasználó e-mailt kap erről, és a"
-" korábbi módon, %(provider)s fiókkal jelentkezik be."
-
-#: templates/admin/user_view.html
-msgid ""
-"Are you sure you want to enable this account? The user will be emailed "
-"telling them to request a password reset — their old password no longer "
-"works."
-msgstr ""
-"Biztosan engedélyezed ezt a fiókot? A felhasználó e-mailt kap azzal a "
-"kéréssel, hogy kérjen jelszó-visszaállítást – a régi jelszava már nem "
-"működik."
-
-#: templates/admin/user_view.html
-msgid "Enable Account"
-msgstr "Fiók engedélyezése"
-
-#: templates/admin/user_view.html
-msgid "Back to User List"
-msgstr "Vissza a felhasználók listájához"
-
 #: templates/admin/users.html
-msgid "Total Users"
-msgstr "Összes felhasználó"
-
-#: templates/admin/users.html
-msgid "Active Users"
-msgstr "Aktív felhasználók"
-
-#: templates/admin/users.html
-msgid "Admins"
-msgstr "Adminisztrátorok"
-
-#: templates/admin/users.html
-msgid "Organisers"
-msgstr "Főszervezők"
-
-#: templates/admin/users.html
-msgid "Password Users"
-msgstr "Jelszavas felhasználók"
-
-#: templates/admin/users.html
-msgid "2FA Enabled"
-msgstr "Kétlépcsős azonosítás bekapcsolva"
-
-#: templates/admin/users.html
-msgid "Search by name or email"
-msgstr "Keresés név vagy e-mail alapján"
-
-#: templates/admin/users.html
-msgid "Enter name or email…"
-msgstr "Add meg a nevet vagy e-mail címet…"
-
-#: templates/admin/users.html
-msgid "Filter by role"
-msgstr "Szűrés szerepkör szerint"
-
-#: templates/admin/users.html
-msgid "All roles"
-msgstr "Minden szerepkör"
-
-#: templates/admin/users.html templates/respondents/view_respondents.html
-msgid "Filter by status"
-msgstr "Szűrés állapot szerint"
-
-#: templates/admin/users.html
-msgid "Apply Filters"
-msgstr "Szűrők alkalmazása"
-
-#: templates/admin/users.html
-msgid "Clear"
-msgstr "Törlés"
-
-#: templates/admin/users.html
-#, python-format
-msgid "Showing %(start)s to %(end)s of %(total)s users"
-msgstr "%(total)s felhasználóból %(start)s–%(end)s látható"
-
-#: templates/admin/users.html templates/backoffice/assembly_respondents.html
-#: templates/backoffice/components/db_selection_progress_modal.html
-#: templates/backoffice/components/registration_page_list.html
-msgid "Name"
-msgstr "Név"
-
-#: templates/admin/users.html
-msgid "2FA"
-msgstr "2FA"
-
-#: templates/admin/users.html
-msgid "— (OAuth)"
-msgstr "— (OAuth)"
-
-#: templates/admin/users.html templates/backoffice/components/pagination.html
-#: templates/main/view_assembly_data.html
-#: templates/respondents/view_respondents.html
-msgid "Previous"
-msgstr "Előző"
-
-#: templates/admin/users.html templates/backoffice/components/pagination.html
-#: templates/backoffice/data_source/_dialog.html
-#: templates/main/view_assembly_data.html
-#: templates/respondents/view_respondents.html
-msgid "Next"
-msgstr "Következő"
+#, fuzzy
+msgid "users"
+msgstr "felhasználó"
 
 #: templates/admin/users.html
 msgid "No users found matching your criteria."
 msgstr "Nincs a feltételeknek megfelelő felhasználó."
-
-#: templates/admin/users.html
-msgid "To create a user,"
-msgstr "Felhasználó létrehozásához"
-
-#: templates/admin/users.html
-msgid "create/send them an invite code"
-msgstr "hozz létre és küldj neki egy meghívókódot"
-
-#: templates/admin/users.html
-msgid "Export users as CSV"
-msgstr "Felhasználók exportálása CSV-be"
 
 #: templates/backoffice/assembly_dashboard.html
 #: templates/backoffice/components/assembly_tabs.html
@@ -5792,10 +5757,6 @@ msgstr "Például: 27 3 1985"
 msgid "Why are you making this change?"
 msgstr "Miért végzed el ezt a módosítást?"
 
-#: templates/backoffice/assembly_edit_respondent.html
-msgid "Save changes"
-msgstr "Módosítások mentése"
-
 #: templates/backoffice/assembly_registration.html
 #: templates/backoffice/components/assembly_tabs.html
 #: templates/backoffice/project_details/_registration_card.html
@@ -5817,11 +5778,6 @@ msgstr ""
 #: templates/backoffice/assembly_registration.html
 msgid "Go to Details tab"
 msgstr "Ugrás a Részletek lapra"
-
-#: templates/backoffice/assembly_registration.html
-#: templates/backoffice/components/url_display.html
-msgid "Copy URL to clipboard"
-msgstr "URL másolása a vágólapra"
 
 #: templates/backoffice/assembly_registration.html
 #: templates/backoffice/components/registration_page_list.html
@@ -6404,10 +6360,6 @@ msgstr "Súgó (tudástár)"
 #: templates/backoffice/base_page.html templates/backoffice/profile/view.html
 msgid "My account"
 msgstr "Fiókom"
-
-#: templates/backoffice/base_page.html
-msgid "Switch to Site Admin"
-msgstr "Váltás az oldal adminisztrációra"
 
 #: templates/backoffice/dashboard.html templates/public/_hero_demo.html
 msgid "Create project"
@@ -7105,6 +7057,19 @@ msgstr "Üzenetek:"
 #, python-format
 msgid "Showing %(start)s-%(end)s of %(total)s %(items)s"
 msgstr "%(total)s %(items)s közül %(start)s–%(end)s látható"
+
+#: templates/backoffice/components/pagination.html
+#: templates/main/view_assembly_data.html
+#: templates/respondents/view_respondents.html
+msgid "Previous"
+msgstr "Előző"
+
+#: templates/backoffice/components/pagination.html
+#: templates/backoffice/data_source/_dialog.html
+#: templates/main/view_assembly_data.html
+#: templates/respondents/view_respondents.html
+msgid "Next"
+msgstr "Következő"
 
 #: templates/backoffice/components/registration_page_list.html
 msgid "Create registration page"
@@ -7950,11 +7915,6 @@ msgid "Done"
 msgstr "Kész"
 
 #: templates/backoffice/profile/2fa_settings.html
-#: templates/backoffice/profile/view.html
-msgid "Two-factor authentication"
-msgstr "Kétlépcsős azonosítás"
-
-#: templates/backoffice/profile/2fa_settings.html
 msgid "Back to profile"
 msgstr "Vissza a profilhoz"
 
@@ -7971,6 +7931,10 @@ msgstr ""
 #: templates/backoffice/profile/2fa_settings.html
 msgid "Current status"
 msgstr "Jelenlegi állapot"
+
+#: templates/backoffice/profile/2fa_settings.html
+msgid "Enabled on"
+msgstr "Bekapcsolva ekkor"
 
 #: templates/backoffice/profile/2fa_settings.html
 msgid "Backup codes remaining"
@@ -10145,6 +10109,11 @@ msgid "Delete value"
 msgstr "Érték törlése"
 
 #: templates/backoffice/targets/bulk_edit_form.html
+#: templates/main/view_assembly_data.html
+msgid "None"
+msgstr "Nincs"
+
+#: templates/backoffice/targets/bulk_edit_form.html
 #, python-format
 msgid "'%(name)s' and all its values will be deleted when you save."
 msgstr "\"%(name)s\" és az összes értéke törlődik, amikor mentesz."
@@ -10210,6 +10179,15 @@ msgstr "Min. %(min)s és max. %(max)s, a százalékból számolva"
 #: templates/backoffice/targets/category_block.html
 msgid "Source of population figures:"
 msgstr "Népességi adatok forrása:"
+
+#: templates/backoffice/targets/category_block.html
+#: templates/db_selection/components/progress.html
+#: templates/db_selection/select.html
+#: templates/gsheets/components/progress.html
+#: templates/targets/components/category_block.html
+#: templates/targets/view_targets.html
+msgid "Warning"
+msgstr "Figyelem"
 
 #: templates/backoffice/targets/category_block.html
 #: templates/targets/components/category_block.html
@@ -10945,6 +10923,10 @@ msgstr "Google Táblázat módosítása"
 #: templates/gsheets/edit_config.html
 msgid "Update the Google Sheets settings for this assembly."
 msgstr "Frissítsd a közösségi gyűléshez tartozó Google Táblázat beállításait."
+
+#: templates/gsheets/edit_config.html templates/main/edit_assembly.html
+msgid "Save Changes"
+msgstr "Módosítások mentése"
 
 #: templates/gsheets/edit_config.html
 msgid "Remove Configuration"
@@ -11803,6 +11785,10 @@ msgstr ""
 "segíthessünk neked."
 
 #: templates/public/register.html
+msgid "Data Agreement"
+msgstr "Adatkezelési Megállapodás"
+
+#: templates/public/register.html
 msgid "Please read and accept our data agreement to proceed."
 msgstr ""
 "A folytatáshoz kérjük, olvasd el és fogadd el az adatkezelési "
@@ -11871,6 +11857,10 @@ msgstr "Jelszókövetelmények"
 #: templates/public/reset_password.html
 msgid "Reset password"
 msgstr "Jelszó visszaállítása"
+
+#: templates/public/verify_2fa.html
+msgid "Two-Factor Authentication"
+msgstr "Kétlépcsős azonosítás"
 
 #: templates/public/verify_2fa.html
 msgid "Enter the 6-digit code from your authenticator app to complete sign in."
@@ -11995,6 +11985,10 @@ msgstr "Jelentkezők összesen"
 #: templates/respondents/view_respondents.html
 msgid "Available for selection"
 msgstr "Kiválasztásra elérhető"
+
+#: templates/respondents/view_respondents.html
+msgid "Filter by status"
+msgstr "Szűrés állapot szerint"
 
 #: templates/respondents/view_respondents.html
 msgid "Reset selection status"
