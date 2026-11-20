@@ -11357,6 +11357,11 @@ msgstr "30 személy kiválasztva."
 msgid "Selecting participants…"
 msgstr "Résztvevők kiválasztása…"
 
+#: templates/public/_hero_demo.html
+#, fuzzy
+msgid "Pause the demo"
+msgstr "Bemutató szüneteltetése"
+
 #: templates/public/_survey_fields.html
 msgid "characters"
 msgstr "karakter"
