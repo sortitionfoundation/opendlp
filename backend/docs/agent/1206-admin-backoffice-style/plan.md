@@ -7,14 +7,14 @@ plus the small route changes listed below.
 
 ## Decisions
 
-| #  | Question | Decision |
-| -- | -------- | -------- |
-| D1 | The index page | Dropped. `/admin/` redirects to the users list. The two list pages carry `tabs` (Users, Invites). |
-| D2 | Stat cards | A new `stat_tile` component, with a showcase entry and a test. All ten stats kept. |
-| D3 | Confirmations | `alert_dialog` for disable account, enable account and disable 2FA. Revoke invite and clean up keep `data-confirm`. |
-| D4 | Editing a user | A separate edit page, restyled. Editing in place is in `docs/agent/future_work/admin_user_inline_edit.md`. |
-| D5 | Error summary | Dropped. Errors show beside each field, through `input()` / `radio_group()`. |
-| D6 | Wording | Brought into line with `docs/language.md` on this branch, then a translation pass. |
+| #   | Question       | Decision                                                                                                            |
+| --- | -------------- | ------------------------------------------------------------------------------------------------------------------- |
+| D1  | The index page | Dropped. `/admin/` redirects to the users list. The two list pages carry `tabs` (Users, Invites).                   |
+| D2  | Stat cards     | A new `stat_tile` component, with a showcase entry and a test. All ten stats kept.                                  |
+| D3  | Confirmations  | `alert_dialog` for disable account, enable account and disable 2FA. Revoke invite and clean up keep `data-confirm`. |
+| D4  | Editing a user | A separate edit page, restyled. Editing in place is in `docs/agent/future_work/admin_user_inline_edit.md`.          |
+| D5  | Error summary  | Dropped. Errors show beside each field, through `input()` / `radio_group()`.                                        |
+| D6  | Wording        | Brought into line with `docs/language.md` on this branch, then a translation pass.                                  |
 
 ## Navigation
 
@@ -33,23 +33,23 @@ plus the small route changes listed below.
 
 ## Components
 
-| Need | Component |
-| ---- | --------- |
-| Page title, back arrow | `page_header` |
-| Users / Invites tabs | `tabs` |
-| Page panels | `section` |
-| Stats | **new** `stat_tile` (D2) |
-| Tables | `table`, `table_head`, `table_body`, `table_row`, `table_cell`, `table_cell_custom` |
-| Role, status, 2FA tags | `tag` — `admin/_role_tag.html` becomes a wrapper around it |
-| Pagination | `pagination`, filters carried in `base_url` |
-| Search and filters | `input`, `select`, `button` in a GET form |
-| Forms | `input`, `radio_group`, `button` |
-| Details lists | `detail_row`, moved from `backoffice/profile/` to `backoffice/components/` |
-| Copy code / URL | `copy_button` / `readonly_url_display` from `url_display.html` |
-| Audit-log details | `collapsible_section` |
-| Confirm dialogs | `alert_dialog` inside `x-data="modal({ initialOpen: false })"` (D3) |
-| Empty states | `alert(variant="info")` |
-| Flash messages | `floating_alerts`, already in `base_page.html` |
+| Need                   | Component                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| Page title, back arrow | `page_header`                                                                       |
+| Users / Invites tabs   | `tabs`                                                                              |
+| Page panels            | `section`                                                                           |
+| Stats                  | **new** `stat_tile` (D2)                                                            |
+| Tables                 | `table`, `table_head`, `table_body`, `table_row`, `table_cell`, `table_cell_custom` |
+| Role, status, 2FA tags | `tag` — `admin/_role_tag.html` becomes a wrapper around it                          |
+| Pagination             | `pagination`, filters carried in `base_url`                                         |
+| Search and filters     | `input`, `select`, `button` in a GET form                                           |
+| Forms                  | `input`, `radio_group`, `button`                                                    |
+| Details lists          | `detail_row`, moved from `backoffice/profile/` to `backoffice/components/`          |
+| Copy code / URL        | `copy_button` / `readonly_url_display` from `url_display.html`                      |
+| Audit-log details      | `collapsible_section`                                                               |
+| Confirm dialogs        | `alert_dialog` inside `x-data="modal({ initialOpen: false })"` (D3)                 |
+| Empty states           | `alert(variant="info")`                                                             |
+| Flash messages         | `floating_alerts`, already in `base_page.html`                                      |
 
 ### `stat_tile` (new)
 
