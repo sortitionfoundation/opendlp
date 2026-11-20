@@ -1,101 +1,71 @@
-{% extends "base.html" %}
-{% block title %}{{ _("2FA Audit Log") }} - {{ user.email }} - OpenDLP{% endblock %}
-{% block content %}
-    <div class="govuk-width-container">
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-full">
-                <div class="govuk-breadcrumbs">
-                    <ol class="govuk-breadcrumbs__list">
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link"
-                               href="{{ url_for('admin.list_users') }}">{{ _("User Management") }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link"
-                               href="{{ url_for('admin.view_user', user_id=user.id) }}">{{ user.email }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">{{ _("2FA Audit Log") }}</li>
-                    </ol>
-                </div>
-                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _("Two-Factor Authentication Audit Log") }}</h1>
-                <p class="govuk-body">
-                    {{ _("Showing audit log for:") }} <strong>{{ user.email }}</strong>
-                </p>
-                {% if audit_logs %}
-                    <table class="govuk-table">
-                        <thead class="govuk-table__head">
-                            <tr class="govuk-table__row">
-                                <th scope="col" class="govuk-table__header">{{ _("Timestamp") }}</th>
-                                <th scope="col" class="govuk-table__header">{{ _("Action") }}</th>
-                                <th scope="col" class="govuk-table__header">{{ _("Performed By") }}</th>
-                                <th scope="col" class="govuk-table__header">{{ _("Details") }}</th>
-                            </tr>
-                        </thead>
-                        <tbody class="govuk-table__body">
-                            {% for log in audit_logs %}
-                                <tr class="govuk-table__row">
-                                    <td class="govuk-table__cell">
-                                        {{ log.timestamp|datetimeformat('medium') }}
-                                    </td>
-                                    <td class="govuk-table__cell">
-                                        {% if log.action == 'enabled' %}
-                                            <strong class="govuk-tag govuk-tag--green">{{ _("Enabled") }}</strong>
-                                        {% elif log.action == 'disabled' %}
-                                            <strong class="govuk-tag govuk-tag--grey">{{ _("Disabled") }}</strong>
-                                        {% elif log.action == 'admin_disabled' %}
-                                            <strong class="govuk-tag govuk-tag--red">{{ _("Admin Disabled") }}</strong>
-                                        {% elif log.action == 'backup_code_used' %}
-                                            <strong class="govuk-tag govuk-tag--blue">{{ _("Backup Code Used") }}</strong>
-                                        {% elif log.action == 'backup_codes_regenerated' %}
-                                            <strong class="govuk-tag govuk-tag--yellow">{{ _("Backup Codes Regenerated") }}</strong>
-                                        {% else %}
-                                            <strong class="govuk-tag">{{ log.action }}</strong>
-                                        {% endif %}
-                                    </td>
-                                    <td class="govuk-table__cell">
-                                        {% if log.performed_by %}
-                                            {% if log.performed_by == user.id %}
-                                                {{ _("Self") }}
-                                            {% elif performer_cache.get(log.performed_by) %}
-                                                {{ performer_cache[log.performed_by] }}
-                                            {% else %}
-                                                {{ _("User") }} {{ log.performed_by }}
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="govuk-hint">{{ _("System") }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="govuk-table__cell">
-                                        {% if log.metadata %}
-                                            <details class="govuk-details govuk-details--small">
-                                                <summary class="govuk-details__summary">
-                                                    <span class="govuk-details__summary-text">{{ _("View details") }}</span>
-                                                </summary>
-                                                <div class="govuk-details__text">
-                                                    <pre>{{ log.metadata | tojson(indent=2) }}</pre>
-                                                </div>
-                                            </details>
-                                        {% else %}
-                                            <span class="govuk-hint">{{ _("None") }}</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <div class="govuk-inset-text">
-                        <p class="govuk-body">{{ _("No 2FA audit log entries found for this user.") }}</p>
-                    </div>
-                {% endif %}
-                <div class="govuk-button-group govuk-!-margin-top-6">
-                    <a href="{{ url_for('admin.view_user', user_id=user.id) }}"
-                       class="govuk-button govuk-button--secondary">{{ _("Back to User Details") }}</a>
-                </div>
-            </div>
-        </div>
+{#
+ABOUTME: Site Admin page listing a user's two-factor authentication events
+ABOUTME: Each event shows its time, a tag for the action, who did it, and the recorded details
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "admin/_header.html" import inner_header %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
+{% from "backoffice/components/tag.html" import tag %}
+{% from "backoffice/components/modal.html" import collapsible_section %}
+{% from "backoffice/components/alert.html" import alert %}
+
+{% block title %}{{ _("2FA audit log") }} - {{ user.email }} - {{ _("Site Admin") }}{% endblock %}
+
+{% block page_header %}
+    {{ inner_header(title=_("2FA audit log"), back_href=url_for('admin.view_user', user_id=user.id), back_label=_("Back to user")) }}
+{% endblock %}
+
+{% block page_content %}
+    {# Every action the services record, so none reaches the page untranslated. #}
+    {% set action_tags = {
+    "enabled": (_("Enabled"), "green"),
+    "disabled": (_("Disabled"), "grey"),
+    "admin_disabled": (_("Admin disabled"), "red"),
+    "backup_code_used": (_("Backup code used"), "blue"),
+    "backup_codes_regenerated": (_("Backup codes regenerated"), "yellow")
+    } %}
+    <div class="flex flex-col gap-6">
+        <p class="text-body-md" style="color: var(--color-body-text);">
+            {{ _("Two-factor authentication events for %(email)s", email=user.email) }}
+        </p>
+        {% if audit_logs %}
+            {% call table(id="audit-log-table") %}
+                {{ table_head([
+                {"label": _("Time")},
+                {"label": _("Action")},
+                {"label": _("Performed by")},
+                {"label": _("Details")}
+                ]) }}
+                {% call table_body() %}
+                    {% for log in audit_logs %}
+                        {% call table_row() %}
+                            {{ table_cell(log.timestamp|datetimeformat('medium')) }}
+                            {% call table_cell_custom() %}
+                                {% set label, colour = action_tags.get(log.action, (_("Unknown action"), "grey")) %}
+                                {{ tag(label, colour=colour) }}
+                            {% endcall %}
+                            {% if not log.performed_by %}
+                                {{ table_cell(_("System")) }}
+                            {% elif log.performed_by == user.id %}
+                                {{ table_cell(_("Self")) }}
+                            {% else %}
+                                {{ table_cell(performer_cache.get(log.performed_by) or log.performed_by) }}
+                            {% endif %}
+                            {% call table_cell_custom(nowrap=false) %}
+                                {% if log.metadata %}
+                                    {% call collapsible_section(_("View details")) %}
+                                        <pre class="text-body-sm whitespace-pre-wrap">{{ log.metadata | tojson(indent=2) }}</pre>
+                                    {% endcall %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            {% endcall %}
+                        {% endcall %}
+                    {% endfor %}
+                {% endcall %}
+            {% endcall %}
+        {% else %}
+            {{ alert(_("No 2FA audit log entries found for this user."), variant="info") }}
+        {% endif %}
     </div>
 {% endblock %}

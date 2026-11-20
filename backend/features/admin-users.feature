@@ -32,3 +32,8 @@ Feature: Manage Users
     And the admin has disabled their account
     When the admin enables their account
     Then the disposable user still cannot sign in with their old password
+
+  Scenario: Change your mind about disabling an account
+    Given there is a disposable user
+    When the admin starts to disable their account and cancels
+    Then the disposable user's account is still active
