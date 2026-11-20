@@ -155,6 +155,9 @@ def clone_assembly(
         question=source.question,
         first_assembly_date=source.first_assembly_date,
         number_to_select=source.number_to_select,
+        data_source=source.data_source,
+        targets_source=source.targets_source,
+        respondents_source=source.respondents_source,
     )
     clone = uow.assemblies.get(created.id)
     assert clone is not None
@@ -337,6 +340,7 @@ def _clone_registration(
             source_type=source_page.source_type,
             thank_you_html=source_page.thank_you_html,
             thank_you_use_default=source_page.thank_you_use_default,
+            auto_reply_enabled=source_page.auto_reply_enabled,
             name=source_page.name,
             language=source_page.language,
         )

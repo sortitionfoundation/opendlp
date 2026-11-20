@@ -32,11 +32,14 @@ from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import (
     AssemblyRole,
+    DataSource,
     GlobalRole,
     GSheetExportKind,
+    RespondentsSource,
     RespondentStatus,
     SelectionRunStatus,
     SelectionTaskType,
+    TargetsSource,
 )
 from opendlp.service_layer.assembly_clone_service import CloneOptions, clone_assembly, count_respondents_to_clone
 from opendlp.service_layer.assembly_service import create_assembly
@@ -80,6 +83,9 @@ def source(postgres_session_factory, people):
             question="What should we do?",
             first_assembly_date=date(2027, 3, 1),
             number_to_select=30,
+            data_source=DataSource.OPENDLP,
+            targets_source=TargetsSource.CSV,
+            respondents_source=RespondentsSource.REGISTRATION,
         )
         assembly = uow.assemblies.get(created.id)
         assembly.set_reply_to("Organiser", "organiser@example.org")
@@ -172,7 +178,12 @@ def source(postgres_session_factory, people):
         )
         english.record_create(people["organiser"])
         welsh = RegistrationPage(
-            assembly_id=assembly.id, name="Cymraeg", language="cy", url_slug="climate-cy", short_url_slug="222222"
+            assembly_id=assembly.id,
+            name="Cymraeg",
+            language="cy",
+            url_slug="climate-cy",
+            short_url_slug="222222",
+            auto_reply_enabled=False,
         )
         uow.registration_pages.add(english)
         uow.registration_pages.add(welsh)
@@ -258,6 +269,9 @@ class TestDefaultClone:
             assert clone.question == "What should we do?"
             assert clone.first_assembly_date == date(2027, 3, 1)
             assert clone.number_to_select == 30
+            assert clone.data_source == DataSource.OPENDLP
+            assert clone.targets_source == TargetsSource.CSV
+            assert clone.respondents_source == RespondentsSource.REGISTRATION
             assert clone.questions_updated_at == QUESTIONS_UPDATED
             assert (clone.reply_to_name, clone.reply_to_email) == ("", "")
             assert clone.created_by_user_id == people["admin"]
@@ -301,6 +315,8 @@ class TestDefaultClone:
             assert pages["Cymraeg"].url_slug != english.url_slug
             assert english.thank_you_html == "<p>Thanks</p>"
             assert english.thank_you_use_default is False
+            assert english.auto_reply_enabled is True
+            assert pages["Cymraeg"].auto_reply_enabled is False
             assert [(a.action, a.author_id) for a in english.activity] == [
                 (RegistrationPageAction.CREATE, people["admin"])
             ]

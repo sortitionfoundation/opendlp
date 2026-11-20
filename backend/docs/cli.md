@@ -130,10 +130,11 @@ opendlp projects clone PROJECT_ID --user-email admin@example.com --title "Traini
 - `clone` - Copy a project whose data is held in OpenDLP. `--user-email` must name an active
   admin, who becomes the copy's manager.
 
-**What `clone` copies.** Always: the title, question, first date, number to select and
-selection settings. By default also the targets (`--no-targets` to leave them out), the
-registration questions (`--no-questions`) and the registration pages with their images,
-documents and email templates (`--no-registration`). Only when asked: the respondents
+**What `clone` copies.** Always: the title, question, first date, number to select,
+selection settings, and the choices of where the data, targets and respondents come from.
+By default also the targets (`--no-targets` to leave them out), the registration questions
+(`--no-questions`) and the registration pages with their images, documents, email templates
+and whether each sends an auto-reply (`--no-registration`). Only when asked: the respondents
 (`--respondents`) and the team members (`--team`).
 
 Never copied: selection history, emails sent to respondents, the Google Sheet export settings,
