@@ -133,6 +133,7 @@ class TestBackofficeShowcase:
         for name in ("create-project", "title", "size", "submit-create", "min-1", "max-3", "run", "modal"):
             assert f'data-demo="{name}"' in body
         assert "&#34;" not in body[body.index("data-hero-demo") :]
+        assert body.count("data-hero-demo-toggle") == 1
 
     def test_search_demo_empty_query(self, client: FlaskClient) -> None:
         """Search demo returns empty for no query."""
