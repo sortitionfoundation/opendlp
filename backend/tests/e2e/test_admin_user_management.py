@@ -251,6 +251,25 @@ class TestAdminUserEdit:
         assert b"NewFirst" in view_response.data
         assert b"NewLast" in view_response.data
 
+    def test_edit_user_names_in_place(self, client: FlaskClient, admin_user: User, test_users: list[User]):
+        """Each name saves on its own from the user's page, against the real database."""
+        login_as_admin(client, admin_user)
+
+        user = test_users[0]
+        csrf_token = get_csrf_token(client, f"/admin/users/{user.id}")
+        for field, value in (("first_name", "NewFirst"), ("last_name", "NewLast")):
+            response = client.post(
+                f"/admin/users/{user.id}/name",
+                data={"field": field, field: value, "csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+            assert response.status_code == 302
+            assert f"/admin/users/{user.id}" in response.location
+
+        view_response = client.get(f"/admin/users/{user.id}")
+        assert b"NewFirst" in view_response.data
+        assert b"NewLast" in view_response.data
+
 
 class TestAdminDisableAccount:
     """Disabling against the real database, including what it does to a live session."""

@@ -14,6 +14,9 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeEmailAdapter, FakeStore, FakeUnitOfWork
 
+# What htmx sends with every request it makes, and what the routes answer differently.
+HTMX_HEADERS = {"HX-Request": "true"}
+
 
 def _second_client(app: Flask, user: User | None = None) -> FlaskClient:
     """A client separate from the conftest one, optionally signed in.
@@ -370,6 +373,111 @@ class TestAdminUserEdit:
 
         assert response.status_code == 200
         assert b'name="is_active"' not in response.data
+
+
+class TestAdminUserNameEdit:
+    """A user's names are edited in place on their page, one at a time."""
+
+    def test_the_page_has_a_pencil_for_each_name(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """Both names are rows edited in place, posting to the name route."""
+        user = _seed_user(fake_store, "pencil@example.com", GlobalRole.USER, "Pen", "Cil")
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+
+        assert 'id="admin-user-first_name-row"' in body
+        assert 'id="admin-user-last_name-row"' in body
+        assert 'aria-label="Edit first name"' in body
+        assert 'aria-label="Edit last name"' in body
+
+    def test_saving_a_name_over_htmx_answers_with_the_row(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """The row comes back at rest with the new name, and the flash out of band."""
+        user = _seed_user(fake_store, "rename@example.com", GlobalRole.USER, "Old", "Name")
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name",
+            data={"field": "first_name", "first_name": "New", "return_focus": "1"},
+            headers=HTMX_HEADERS,
+        )
+
+        body = response.get_data(as_text=True)
+        assert response.status_code == 200
+        assert 'id="admin-user-first_name-row"' in body
+        assert "New" in body
+        assert 'id="floating-alerts"' in body and "updated successfully" in body
+        assert "<html" not in body
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.users.get(user.id)
+            assert stored.first_name == "New"
+            assert stored.last_name == "Name"
+
+    def test_saving_a_name_without_htmx_goes_back_to_the_page(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """Without htmx the save redirects to the user's page."""
+        user = _seed_user(fake_store, "plain@example.com", GlobalRole.USER, "Plain", "Form")
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name", data={"field": "last_name", "last_name": "Post"}
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/admin/users/{user.id}")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).last_name == "Post"
+
+    def test_a_refused_name_over_htmx_stays_open_with_the_reason(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """Too long a name is refused with 422, the row open with what was typed."""
+        user = _seed_user(fake_store, "long@example.com", GlobalRole.USER, "Short", "Name")
+        too_long = "x" * 101
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name",
+            data={"field": "first_name", "first_name": too_long},
+            headers=HTMX_HEADERS,
+        )
+
+        body = response.get_data(as_text=True)
+        assert response.status_code == 422
+        assert f'value="{too_long}"' in body
+        assert 'aria-invalid="true"' in body
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).first_name == "Short"
+
+    def test_a_refused_name_without_htmx_renders_the_page_with_the_row_open(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """Without htmx a refusal shows the whole page, that row open with the reason."""
+        user = _seed_user(fake_store, "longplain@example.com", GlobalRole.USER, "Short", "Name")
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name", data={"field": "last_name", "last_name": "y" * 101}
+        )
+
+        body = response.get_data(as_text=True)
+        assert response.status_code == 200
+        assert "<html" in body
+        assert 'aria-invalid="true"' in body
+
+    def test_an_unknown_field_is_refused(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """Only the two names can be posted; the email cannot be changed this way."""
+        user = _seed_user(fake_store, "field@example.com", GlobalRole.USER)
+
+        response = logged_in_admin.post(f"/admin/users/{user.id}/name", data={"field": "email", "email": "x@y.z"})
+
+        assert response.status_code == 400
+
+    def test_a_regular_user_cannot_save_a_name(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
+        user = _seed_user(fake_store, "victim@example.com", GlobalRole.USER, "Keep", "Me")
+
+        response = logged_in_user.post(f"/admin/users/{user.id}/name", data={"field": "first_name", "first_name": "X"})
+
+        assert response.status_code == 403
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).first_name == "Keep"
 
 
 class TestAdminDisableAccount:

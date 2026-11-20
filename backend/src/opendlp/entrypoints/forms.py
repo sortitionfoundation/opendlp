@@ -517,6 +517,22 @@ class EditAssemblyGSheetForm(AssemblyGSheetForm):
     """Form specifically for editing assembly Google Spreadsheet configuration."""
 
 
+class EditUserNamesForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for an admin editing a user's names, each saved on its own from the user's page."""
+
+    first_name = StringField(
+        _l("First name"),
+        validators=[Length(max=100)],
+        render_kw={"autocomplete": "given-name"},
+    )
+
+    last_name = StringField(
+        _l("Last name"),
+        validators=[Length(max=100)],
+        render_kw={"autocomplete": "family-name"},
+    )
+
+
 class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for editing user details (admin only)."""
 

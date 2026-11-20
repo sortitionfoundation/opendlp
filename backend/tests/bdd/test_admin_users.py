@@ -2,7 +2,7 @@ import re
 from collections.abc import Callable
 
 from playwright.sync_api import Page, expect
-from pytest_bdd import given, scenarios, step, then, when
+from pytest_bdd import given, parsers, scenarios, step, then, when
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
@@ -167,3 +167,33 @@ def _(page: Page, disposable_user: User):
     """the disposable user still cannot sign in with their old password."""
     _sign_in_attempt(page, disposable_user.email, DISPOSABLE_PASSWORD)
     expect(page.locator("#floating-alerts")).to_contain_text("Invalid email or password")
+
+
+@when(parsers.parse('the admin edits their first name to "{name}" and presses Enter'))
+def _(admin_logged_in_page: Page, disposable_user: User, name: str):
+    """the admin edits their first name and presses Enter."""
+    page = admin_logged_in_page
+    page.goto(f"{Urls.admin_users}/{disposable_user.id}")
+    page.get_by_role("button", name="Edit first name").click()
+    field = page.get_by_label("First name", exact=True)
+    expect(field).to_be_focused()
+    field.fill(name)
+    with page.expect_response(lambda response: response.url.endswith(f"/admin/users/{disposable_user.id}/name")):
+        field.press("Enter")
+
+
+@then(parsers.parse('the admin sees the first name "{name}" without leaving the page'))
+def _(admin_logged_in_page: Page, disposable_user: User, name: str):
+    """the admin sees the saved first name in the row, with focus back on the pencil."""
+    page = admin_logged_in_page
+    expect(page.locator("#admin-user-first_name-row")).to_contain_text(name)
+    expect(page.get_by_role("button", name="Edit first name")).to_be_focused()
+    expect(page.locator("#floating-alerts")).to_contain_text("updated successfully")
+    assert page.url.endswith(f"/admin/users/{disposable_user.id}")
+
+
+@then(parsers.parse('the user\'s first name is "{name}" after a reload'))
+def _(admin_logged_in_page: Page, name: str):
+    """the saved name survives a reload."""
+    admin_logged_in_page.reload()
+    expect(admin_logged_in_page.locator("#admin-user-first_name-row")).to_contain_text(name)
