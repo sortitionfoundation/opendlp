@@ -28,3 +28,11 @@ Feature: Home page
   Scenario: The demo rests on its result for a visitor who prefers reduced motion
     Given an anonymous visitor who prefers reduced motion opens the home page
     Then the product demo should rest on the dashboard screen
+    And there should be no button to pause the demo
+
+  Scenario: The visitor pauses the demo and plays it on, from the keyboard
+    Given an anonymous visitor opens the home page on a wide screen
+    When they pause the product demo from the keyboard
+    Then the product demo should hold still
+    When they play the product demo from the keyboard
+    Then the product demo should move on again
