@@ -67,7 +67,9 @@ ABOUTME: The Invites tab of Site Admin; an unused invite that has not expired ca
                                               action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}"
                                               data-confirm="{{ _("Are you sure you want to revoke this invite?") }}">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            {{ button(_("Revoke"), variant="tertiary", type="submit") }}
+                                            <button type="submit"
+                                                    class="text-body-sm underline cursor-pointer"
+                                                    style="color: var(--color-links)">{{ _("Revoke") }}</button>
                                         </form>
                                     {% endif %}
                                 </span>
