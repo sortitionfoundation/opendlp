@@ -21,11 +21,10 @@ scenarios("../../features/admin-users.feature")
 def _(page: Page):
     """the user creates an invite."""
     page.goto(Urls.admin)
-    invite_links = page.get_by_text("Manage Invites")
-    invite_links.last.click()
-    page.get_by_text("Create New Invite").click()
+    page.get_by_role("tab", name="Invites").click()
+    page.get_by_role("button", name="Create invite").click()
     page.get_by_label("Admin — Full system access including user management").check()
-    page.click('button[type="submit"]')
+    page.get_by_role("button", name="Create invite").click()
 
 
 @then("the user sees the invite to give to the user")
@@ -97,11 +96,11 @@ def _(normal_logged_in_page: Page, assembly: Assembly):
 
 
 def _disable_account(page: Page, user: User) -> None:
-    """Click through the confirmation on the admin's Disable Account button."""
+    """Confirm Disable account in its dialog on the user's page."""
     page.goto(f"{Urls.admin_users}/{user.id}")
-    page.on("dialog", lambda dialog: dialog.accept())
-    page.get_by_role("button", name="Disable Account").click()
-    expect(page.locator(".govuk-notification-banner").first).to_contain_text("Account disabled")
+    page.get_by_role("button", name="Disable account").click()
+    page.get_by_role("alertdialog").get_by_role("button", name="Disable account").click()
+    expect(page.locator("#floating-alerts")).to_contain_text("Account disabled")
 
 
 def _sign_in_attempt(page: Page, email: str, password: str) -> None:
@@ -136,10 +135,31 @@ def _(page: Page, disposable_user: User):
 def _(admin_logged_in_page: Page, disposable_user: User):
     """the admin enables their account."""
     admin_logged_in_page.goto(f"{Urls.admin_users}/{disposable_user.id}")
-    admin_logged_in_page.on("dialog", lambda dialog: dialog.accept())
-    admin_logged_in_page.get_by_role("button", name="Enable Account").click()
-    # Two banners: the account change and the email we sent about it
-    expect(admin_logged_in_page.locator(".govuk-notification-banner").first).to_contain_text("Account enabled")
+    admin_logged_in_page.get_by_role("button", name="Enable account").click()
+    admin_logged_in_page.get_by_role("alertdialog").get_by_role("button", name="Enable account").click()
+    expect(admin_logged_in_page.locator("#floating-alerts")).to_contain_text("Account enabled")
+
+
+@when("the admin starts to disable their account and cancels")
+def _(admin_logged_in_page: Page, disposable_user: User):
+    """the admin starts to disable their account and cancels."""
+    page = admin_logged_in_page
+    page.goto(f"{Urls.admin_users}/{disposable_user.id}")
+    opener = page.get_by_role("button", name="Disable account")
+    opener.click()
+    dialog = page.get_by_role("alertdialog")
+    expect(dialog).to_contain_text("Disable this account?")
+    expect(dialog.get_by_role("button", name="Cancel")).to_be_focused()
+    dialog.get_by_role("button", name="Cancel").click()
+    expect(dialog).to_be_hidden()
+    expect(opener).to_be_focused()
+
+
+@then("the disposable user's account is still active")
+def _(admin_logged_in_page: Page, disposable_user: User):
+    """the disposable user's account is still active."""
+    admin_logged_in_page.goto(f"{Urls.admin_users}/{disposable_user.id}")
+    expect(admin_logged_in_page.get_by_role("button", name="Disable account")).to_be_visible()
 
 
 @then("the disposable user still cannot sign in with their old password")

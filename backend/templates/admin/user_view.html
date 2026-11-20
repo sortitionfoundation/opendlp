@@ -1,188 +1,154 @@
-{% extends "base.html" %}
+{#
+ABOUTME: Site Admin page for one user - their details, signup survey answers and account actions
+ABOUTME: Disabling or enabling the account and switching off two-factor are confirmed in a dialog
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "admin/_header.html" import inner_header %}
 {% from "admin/_role_tag.html" import role_tag %}
-{% block title %}{{ user.email }} - {{ _("User Details") }} - OpenDLP{% endblock %}
-{% block content %}
-    <div class="govuk-width-container">
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-two-thirds">
-                <div class="govuk-breadcrumbs">
-                    <ol class="govuk-breadcrumbs__list">
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link"
-                               href="{{ url_for('admin.list_users') }}">{{ _("User Management") }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">{{ user.email }}</li>
-                    </ol>
-                </div>
-                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _("User Details") }}</h1>
-                <dl class="govuk-summary-list">
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Email") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {{ user.email }}
-                        </dd>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("First Name") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {% if user.first_name %}
-                                {{ user.first_name }}
-                            {% else %}
-                                <span class="govuk-hint">{{ _("Not provided") }}</span>
-                            {% endif %}
-                        </dd>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Last Name") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {% if user.last_name %}
-                                {{ user.last_name }}
-                            {% else %}
-                                <span class="govuk-hint">{{ _("Not provided") }}</span>
-                            {% endif %}
-                        </dd>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Global Role") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {{ role_tag(user.global_role) }}
-                        </dd>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Account Status") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {% if user.is_active %}
-                                <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
-                            {% else %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _("Inactive") }}</strong>
-                            {% endif %}
-                        </dd>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Authentication Method") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {% if user.oauth_provider %}
-                                {{ _("OAuth") }} ({{ user.oauth_provider }})
-                            {% else %}
-                                {{ _("Password") }}
-                            {% endif %}
-                        </dd>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Two-Factor Authentication") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {% if user.oauth_provider %}
-                                <span class="govuk-hint">{{ _("Not applicable (OAuth user)") }}</span>
-                            {% elif user.totp_enabled %}
-                                <strong class="govuk-tag govuk-tag--blue">{{ _("Enabled") }}</strong>
-                                {% if user.totp_enabled_at %}
-                                    <br>
-                                    <span class="govuk-hint govuk-!-margin-top-2">
-                                        {{ _("Enabled on") }} {{ user.totp_enabled_at|datetimeformat('long') }}
-                                    </span>
-                                {% endif %}
-                                <br>
-                                <a href="{{ url_for('admin.view_user_2fa_audit_log', user_id=user.id) }}"
-                                   class="govuk-link govuk-!-margin-top-2">{{ _("View 2FA audit log") }}</a>
-                            {% else %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _("Disabled") }}</strong>
-                                <br>
-                                <a href="{{ url_for('admin.view_user_2fa_audit_log', user_id=user.id) }}"
-                                   class="govuk-link govuk-!-margin-top-2">{{ _("View 2FA audit log") }}</a>
-                            {% endif %}
-                        </dd>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Data Agreement") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {% if user.user_data_agreement_agreed_at %}
-                                {{ _("Agreed on") }} {{ user.user_data_agreement_agreed_at|datetimeformat('long') }}
-                            {% else %}
-                                <span class="govuk-hint">{{ _("Not agreed") }}</span>
-                            {% endif %}
-                        </dd>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key">{{ _("Account Created") }}</dt>
-                        <dd class="govuk-summary-list__value">
-                            {{ user.created_at|datetimeformat('long') }}
-                        </dd>
-                    </div>
-                </dl>
-                <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Signup Survey") }}</h2>
-                {% if survey %}
-                    <dl class="govuk-summary-list">
-                        {% for question in survey_questions %}
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">{{ question.label }}</dt>
-                                <dd class="govuk-summary-list__value">
-                                    {% set answer = question.display_value(survey.answers) %}
-                                    {% if answer %}
-                                        {{ answer }}
-                                    {% else %}
-                                        <span class="govuk-hint">{{ _("Not answered") }}</span>
-                                    {% endif %}
-                                </dd>
-                            </div>
-                        {% endfor %}
-                        {% for key in leftover_answer_keys %}
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">{{ key }}</dt>
-                                <dd class="govuk-summary-list__value">{{ survey.answers[key] }}</dd>
-                            </div>
-                        {% endfor %}
-                    </dl>
-                {% else %}
-                    <p class="govuk-body">
-                        <span class="govuk-hint">{{ _("No signup survey answers for this user.") }}</span>
-                    </p>
-                {% endif %}
-                <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
-                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}"
-                       class="govuk-button">{{ _("Edit User") }}</a>
-                    {% if user.totp_enabled and not user.oauth_provider %}
-                        <form method="POST"
-                              action="{{ url_for('admin.disable_user_2fa', user_id=user.id) }}"
-                              style="display: inline"
-                              data-confirm="{{ _("Are you sure you want to disable two-factor authentication for this user? This will remove their TOTP secret and backup codes.") }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                            <button type="submit" class="govuk-button govuk-button--warning">{{ _("Disable 2FA") }}</button>
-                        </form>
-                    {% endif %}
-                    {% if user.id != current_user.id %}
+{% from "admin/_confirm.html" import confirm_action %}
+{% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/detail_row.html" import detail_row %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/tag.html" import tag %}
+
+{% block title %}{{ user.email }} - {{ _("Site Admin") }}{% endblock %}
+
+{% block page_header %}
+    {{ inner_header(title=user.email, back_href=url_for('admin.list_users'), back_label=_("Back to Users")) }}
+{% endblock %}
+
+{% macro value(text) %}
+    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">{{ text }}</dd>
+{% endmacro %}
+
+{% macro missing(text) %}
+    <dd class="text-body-md flex-1" style="color: var(--color-secondary-text);">{{ text }}</dd>
+{% endmacro %}
+
+{% block page_content %}
+    {% set provider = user.oauth_provider|capitalize if user.oauth_provider else "" %}
+    <div class="flex flex-col gap-6 max-w-3xl">
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("User details") }}</h2>
+            <dl>
+                {% call detail_row(_("Email")) %}{{ value(user.email) }}{% endcall %}
+                {% call detail_row(_("First name")) %}
+                    {{ value(user.first_name) if user.first_name else missing(_("Not provided")) }}
+                {% endcall %}
+                {% call detail_row(_("Last name")) %}
+                    {{ value(user.last_name) if user.last_name else missing(_("Not provided")) }}
+                {% endcall %}
+                {% call detail_row(_("Global role")) %}
+                    <dd class="flex-1">{{ role_tag(user.global_role) }}</dd>
+                {% endcall %}
+                {% call detail_row(_("Account status")) %}
+                    <dd class="flex-1">
                         {% if user.is_active %}
-                            <form method="POST"
-                                  action="{{ url_for('admin.disable_user_account', user_id=user.id) }}"
-                                  style="display: inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit"
-                                        class="govuk-button govuk-button--warning"
-                                        data-module="govuk-button"
-                                        data-confirm="{% if user.oauth_provider %}{{ _("Are you sure you want to disable this account? This ends every session they have signed in to and switches off their two-factor authentication. They will still sign in with %(provider)s when the account is enabled again.", provider=user.oauth_provider|capitalize) }}{% else %}{{ _("Are you sure you want to disable this account? This ends every session they have signed in to, permanently removes their password, and switches off their two-factor authentication. They will have to set a new password when the account is enabled again.") }}{% endif %}">
-                                    {{ _("Disable Account") }}
-                                </button>
-                            </form>
+                            {{ tag(_("Active"), colour="green") }}
                         {% else %}
-                            <form method="POST"
-                                  action="{{ url_for('admin.enable_user_account', user_id=user.id) }}"
-                                  style="display: inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit"
-                                        class="govuk-button govuk-button--secondary"
-                                        data-module="govuk-button"
-                                        data-confirm="{% if user.oauth_provider %}{{ _("Are you sure you want to enable this account? The user will be emailed to say so, and signs in with %(provider)s as before.", provider=user.oauth_provider|capitalize) }}{% else %}{{ _("Are you sure you want to enable this account? The user will be emailed telling them to request a password reset — their old password no longer works.") }}{% endif %}">
-                                    {{ _("Enable Account") }}
-                                </button>
-                            </form>
+                            {{ tag(_("Inactive"), colour="grey") }}
                         {% endif %}
+                    </dd>
+                {% endcall %}
+                {% call detail_row(_("Sign-in method")) %}
+                    {{ value(provider if provider else _("Password")) }}
+                {% endcall %}
+                {% call detail_row(_("Two-factor authentication")) %}
+                    <dd class="text-body-md flex-1 flex flex-col items-start gap-2"
+                        style="color: var(--color-body-text);">
+                        {% if user.oauth_provider %}
+                            <span style="color: var(--color-secondary-text);">{{ _("Not applicable (OAuth user)") }}</span>
+                        {% else %}
+                            {% if user.totp_enabled %}
+                                {{ tag(_("Enabled"), colour="blue") }}
+                                {% if user.totp_enabled_at %}
+                                    <span style="color: var(--color-secondary-text);">{{ _("Enabled on %(date)s", date=user.totp_enabled_at|datetimeformat('long')) }}</span>
+                                {% endif %}
+                            {% else %}
+                                {{ tag(_("Disabled"), colour="grey") }}
+                            {% endif %}
+                            <a href="{{ url_for('admin.view_user_2fa_audit_log', user_id=user.id) }}"
+                               class="underline"
+                               style="color: var(--color-links)">{{ _("View 2FA audit log") }}</a>
+                        {% endif %}
+                    </dd>
+                {% endcall %}
+                {% call detail_row(_("Data agreement")) %}
+                    {% if user.user_data_agreement_agreed_at %}
+                        {{ value(_("Agreed on %(date)s", date=user.user_data_agreement_agreed_at|datetimeformat('long'))) }}
+                    {% else %}
+                        {{ missing(_("Not agreed")) }}
                     {% endif %}
-                    <a href="{{ url_for('admin.list_users') }}"
-                       class="govuk-button govuk-button--secondary">{{ _("Back to User List") }}</a>
-                </div>
-            </div>
+                {% endcall %}
+                {% call detail_row(_("Account created")) %}{{ value(user.created_at|datetimeformat('long')) }}{% endcall %}
+            </dl>
+        {% endcall %}
+
+        {% call section() %}
+            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Signup survey") }}</h2>
+            {% if survey %}
+                <dl>
+                    {% for question in survey_questions %}
+                        {% call detail_row(question.label) %}
+                            {% set answer = question.display_value(survey.answers) %}
+                            {{ value(answer) if answer else missing(_("Not answered")) }}
+                        {% endcall %}
+                    {% endfor %}
+                    {% for key in leftover_answer_keys %}
+                        {% call detail_row(key) %}{{ value(survey.answers[key]) }}{% endcall %}
+                    {% endfor %}
+                </dl>
+            {% else %}
+                <p class="text-body-md" style="color: var(--color-secondary-text);">
+                    {{ _("No signup survey answers for this user.") }}
+                </p>
+            {% endif %}
+        {% endcall %}
+
+        <div class="flex flex-wrap items-center gap-3">
+            {{ button(_("Edit user"), href=url_for('admin.edit_user', user_id=user.id)) }}
+            {% if user.totp_enabled and not user.oauth_provider %}
+                {{ confirm_action(
+                id="disable-2fa-dialog",
+                label=_("Disable 2FA"),
+                title=_("Disable two-factor authentication?"),
+                description=_("This removes the user's TOTP secret and backup codes."),
+                action=url_for('admin.disable_user_2fa', user_id=user.id),
+                confirm_label=_("Disable 2FA")
+                ) }}
+            {% endif %}
+            {% if user.id != current_user.id %}
+                {% if user.is_active %}
+                    {% if user.oauth_provider %}
+                        {% set disable_description = _("This ends every session they have signed in to and switches off their two-factor authentication. They will still sign in with %(provider)s when the account is enabled again.", provider=provider) %}
+                    {% else %}
+                        {% set disable_description = _("This ends every session they have signed in to, permanently removes their password, and switches off their two-factor authentication. They will have to set a new password when the account is enabled again.") %}
+                    {% endif %}
+                    {{ confirm_action(
+                    id="disable-account-dialog",
+                    label=_("Disable account"),
+                    title=_("Disable this account?"),
+                    description=disable_description,
+                    action=url_for('admin.disable_user_account', user_id=user.id),
+                    confirm_label=_("Disable account")
+                    ) }}
+                {% else %}
+                    {% if user.oauth_provider %}
+                        {% set enable_description = _("The user will be emailed to say so, and signs in with %(provider)s as before.", provider=provider) %}
+                    {% else %}
+                        {% set enable_description = _("The user will be emailed telling them to request a password reset — their old password no longer works.") %}
+                    {% endif %}
+                    {{ confirm_action(
+                    id="enable-account-dialog",
+                    label=_("Enable account"),
+                    title=_("Enable this account?"),
+                    description=enable_description,
+                    action=url_for('admin.enable_user_account', user_id=user.id),
+                    confirm_label=_("Enable account"),
+                    variant="secondary"
+                    ) }}
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 {% endblock %}

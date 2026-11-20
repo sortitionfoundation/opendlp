@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for admin invite management routes over a FakeUnitOfWork
 # ABOUTME: Drives the real admin Flask routes + invite service against a seeded fake store
 
+import re
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
@@ -35,8 +36,37 @@ class TestListInvitesPage:
 
         response = logged_in_admin.get("/admin/invites")
         assert response.status_code == 200
-        assert b"Total Invites" in response.data
-        assert b"Active Invites" in response.data
+        assert b"Total invites" in response.data
+        assert b"Active invites" in response.data
+
+    def test_list_invites_is_on_the_backoffice_design_with_the_invites_tab(
+        self, logged_in_admin: FlaskClient, fake_store, admin_user: User
+    ):
+        """The invites list is the Invites tab of Site Admin, with no GOV.UK markup."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
+
+        body = logged_in_admin.get("/admin/invites").get_data(as_text=True)
+
+        assert "govuk-" not in body
+        assert re.search(r'id="admin-tabs-tab-invites"[^>]*aria-selected="true"', body)
+        assert 'id="admin-tabs-panel-invites"' in body
+
+    def test_revoke_and_cleanup_ask_for_confirmation_on_their_forms(
+        self, logged_in_admin: FlaskClient, fake_store, admin_user: User
+    ):
+        """An active invite's row offers Revoke, and both destructive forms carry a confirmation."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            invite = generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
+            invite_id = invite.id
+
+        body = logged_in_admin.get("/admin/invites").get_data(as_text=True)
+
+        assert re.search(
+            rf'<form method="post"\s+action="/admin/invites/{invite_id}/revoke"\s+data-confirm="Are you sure', body
+        )
+        assert re.search(r'<form method="post"\s+action="/admin/invites/cleanup"\s+data-confirm="This will', body)
+        assert f'data-row-url="/admin/invites/{invite_id}"' in body
 
     def test_list_invites_shows_invite_codes(self, logged_in_admin: FlaskClient, fake_store, admin_user: User):
         """Invite list displays invite codes."""
@@ -77,6 +107,27 @@ class TestCreateInvite:
         """Regular users cannot access the create invite page."""
         response = logged_in_user.get("/admin/invites/create")
         assert response.status_code == 403
+
+    def test_create_invite_page_starts_with_the_user_role_chosen(self, logged_in_admin: FlaskClient):
+        """The form opens with the least powerful role already selected."""
+        body = logged_in_admin.get("/admin/invites/create").get_data(as_text=True)
+
+        assert re.search(r'value="USER"\s+checked', body)
+        assert not re.search(r'value="ADMIN"\s+checked', body)
+        assert "govuk-" not in body
+
+    def test_create_invite_shows_an_error_beside_the_field(self, logged_in_admin: FlaskClient):
+        """A refused email is reported next to its input, with the other values kept."""
+        response = logged_in_admin.post(
+            "/admin/invites/create",
+            data={"global_role": GlobalRole.ORGANISER.name, "email": "not-an-email", "expires_in_hours": "12"},
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert 'id="email-error"' in body or 'aria-invalid="true"' in body
+        assert re.search(r'value="ORGANISER"\s+checked', body)
+        assert 'value="12"' in body
 
     @pytest.mark.time_machine(datetime(2025, 1, 1, tzinfo=UTC))
     def test_create_invite_with_admin_role(self, logged_in_admin: FlaskClient, fake_store):
@@ -157,6 +208,38 @@ class TestViewInvite:
         response = logged_in_admin.get(f"/admin/invites/{invite_id}")
         assert response.status_code == 200
         assert b"Registration URL" in response.data and b"register" in response.data.lower()
+
+    def test_view_invite_offers_copy_buttons_and_revoke(
+        self, logged_in_admin: FlaskClient, fake_store, admin_user: User
+    ):
+        """The code and URL each have a copy button, and an active invite can be revoked."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            invite = generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
+            invite_id = invite.id
+            invite_code = invite.code
+
+        body = logged_in_admin.get(f"/admin/invites/{invite_id}").get_data(as_text=True)
+
+        assert f'data-copy-text="{invite_code}"' in body
+        assert re.search(rf'data-copy-text="http://[^"]+/auth/register/{invite_code}"', body)
+        assert re.search(rf'action="/admin/invites/{invite_id}/revoke"\s+data-confirm=', body)
+        assert re.search(r'<a href="/admin/invites"[^>]*aria-label="Back to Invites"', body, re.DOTALL)
+        assert "govuk-" not in body
+
+    def test_view_used_invite_links_to_the_user_and_cannot_be_revoked(
+        self, logged_in_admin: FlaskClient, fake_store, admin_user: User, regular_user: User
+    ):
+        """A used invite names who used it, with a link to their page, and offers no revoke."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            invite = generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
+            invite_id = invite.id
+            uow.user_invites.get(invite_id).use(regular_user.id)
+            uow.commit()
+
+        body = logged_in_admin.get(f"/admin/invites/{invite_id}").get_data(as_text=True)
+
+        assert f'href="/admin/users/{regular_user.id}"' in body
+        assert "/revoke" not in body
 
     def test_view_invite_invalid_id_redirects(self, logged_in_admin: FlaskClient):
         """Viewing an invalid invite ID redirects to the list."""

@@ -1,0 +1,20 @@
+{#
+ABOUTME: A button that asks for confirmation in an alert dialog before posting a Site Admin action
+ABOUTME: Used for the actions on a user's page whose consequences take a few sentences to explain
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import alert_dialog %}
+
+{% macro confirm_action(id, label, title, description, action, confirm_label, variant="danger") %}
+    {# Focus starts on Cancel: the dialog guards an action that is hard to undo. #}
+    <div x-data="modal({ initialOpen: false })" class="contents">
+        {{ button(label, variant=variant, id=id ~ "-open", attrs='@click="open()"', aria_haspopup="dialog") }}
+        {% call alert_dialog(id=id, title=title, description=description) %}
+            {{ button(_("Cancel"), variant="secondary", attrs='@click="close()" data-dialog-initial-focus') }}
+            <form method="post" action="{{ action }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ button(confirm_label, variant="danger" if variant == "danger" else "primary", type="submit") }}
+            </form>
+        {% endcall %}
+    </div>
+{% endmacro %}

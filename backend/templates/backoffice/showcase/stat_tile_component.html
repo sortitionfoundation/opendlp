@@ -1,0 +1,33 @@
+{#
+ABOUTME: Showcase section for the stat tile component
+ABOUTME: Displays a row of headline numbers in the grid a page would give them
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/stat_tile.html" import stat_tile %}
+
+{% macro stat_tile_section() %}
+  {% call showcase_section() %}
+    {{ showcase_title("Stat Tile Component") }}
+    {{ showcase_description("One headline number with its label. The page lays the tiles out in a grid; the number is not a heading.") }}
+
+    {% call showcase_example('{% from "backoffice/components/stat_tile.html" import stat_tile %}
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {{ stat_tile(_("Total users"), stats.total_users) }}
+        {{ stat_tile(_("Active users"), stats.active_users) }}
+      </div>') %}
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {{ stat_tile("Total users", 128) }}
+        {{ stat_tile("Active users", 117) }}
+        {{ stat_tile("Admins", 4) }}
+        {{ stat_tile("Organisers", 23) }}
+      </div>
+    {% endcall %}
+
+    {{ showcase_tokens([
+    "--color-tables-cards (background)",
+    "--color-secondary-text (label)",
+    "--color-display-text (number)"
+    ]) }}
+  {% endcall %}
+{% endmacro %}

@@ -176,7 +176,7 @@ class TestAdminUserView:
         login_as_admin(client, admin_user)
         response = client.get(f"/admin/users/{regular_user.id}")
         assert response.status_code == 200
-        assert b"Signup Survey" in response.data
+        assert b"Signup survey" in response.data
         assert b"Budapest" in response.data
         assert b"2 to 10 people" in response.data
         assert b"Where did you hear about us?" in response.data

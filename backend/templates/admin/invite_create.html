@@ -1,103 +1,53 @@
-{% extends "base.html" %}
-{% block title %}{{ _("Create Invite") }} - OpenDLP{% endblock %}
-{% block content %}
-    <div class="govuk-width-container">
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-two-thirds">
-                <div class="govuk-breadcrumbs">
-                    <ol class="govuk-breadcrumbs__list">
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">
-                            <a class="govuk-breadcrumbs__link"
-                               href="{{ url_for('admin.list_invites_page') }}">{{ _("Invite Management") }}</a>
-                        </li>
-                        <li class="govuk-breadcrumbs__list-item">{{ _("Create Invite") }}</li>
-                    </ol>
+{#
+ABOUTME: Site Admin form to create an invite - the role it grants, an optional email to send it to, and its lifetime
+ABOUTME: Errors show beside each field; a created invite opens on its own page
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "admin/_header.html" import inner_header %}
+{% from "backoffice/components/section.html" import section %}
+{% from "backoffice/components/input.html" import input, radio_group, first_error %}
+{% from "backoffice/components/button.html" import button %}
+
+{% block title %}{{ _("Create invite") }} - {{ _("Site Admin") }}{% endblock %}
+
+{% block page_header %}
+    {{ inner_header(title=_("Create invite"), back_href=url_for('admin.list_invites_page'), back_label=_("Back to Invites")) }}
+{% endblock %}
+
+{% block page_content %}
+    {% set role = form.global_role.data %}
+    <div class="flex flex-col gap-6 max-w-2xl">
+        {% call section() %}
+            <p class="text-body-md mb-6" style="color: var(--color-body-text);">
+                {{ _("Generate a new invite code for user registration") }}
+            </p>
+            <form method="post" novalidate class="flex flex-col gap-6">
+                {{ form.hidden_tag() }}
+                {{ radio_group(form.global_role.name,
+                label=form.global_role.label.text,
+                hint=form.global_role.description,
+                options=form.global_role.choices,
+                value=role.name if role.name is defined else (role or ""),
+                error=first_error(form.global_role.errors)) }}
+                {{ input(form.email.name,
+                label=form.email.label.text,
+                type="email",
+                value=form.email.data or "",
+                hint=form.email.description,
+                error=first_error(form.email.errors),
+                attrs='autocomplete="email"') }}
+                {{ input(form.expires_in_hours.name,
+                label=form.expires_in_hours.label.text,
+                type="number",
+                value=form.expires_in_hours.raw_data[0] if form.expires_in_hours.raw_data else (form.expires_in_hours.data if form.expires_in_hours.data is not none else ""),
+                hint=form.expires_in_hours.description,
+                error=first_error(form.expires_in_hours.errors),
+                classes="max-w-32") }}
+                <div class="flex items-center gap-4">
+                    {{ button(_("Create invite"), type="submit") }}
+                    {{ button(_("Cancel"), variant="secondary", href=url_for('admin.list_invites_page')) }}
                 </div>
-                {% if form.errors %}
-                    <div class="govuk-error-summary" data-module="govuk-error-summary">
-                        <div role="alert">
-                            <h2 class="govuk-error-summary__title">{{ _("There is a problem") }}</h2>
-                            <div class="govuk-error-summary__body">
-                                <ul class="govuk-list govuk-error-summary__list">
-                                    {% for field_name, errors in form.errors.items() %}
-                                        {% for error in errors %}
-                                            <li>
-                                                <a href="#{{ form[field_name].id }}">{{ error }}</a>
-                                            </li>
-                                        {% endfor %}
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-                <h1 class="govuk-heading-l govuk-!-margin-top-6">{{ _("Create New Invite") }}</h1>
-                <p class="govuk-body">{{ _("Generate a new invite code for user registration") }}</p>
-                <form method="post" novalidate>
-                    {{ form.hidden_tag() }}
-                    <div class="govuk-form-group {% if form.global_role.errors %}govuk-form-group--error{% endif %}">
-                        <fieldset class="govuk-fieldset">
-                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                                <h1 class="govuk-fieldset__heading">{{ form.global_role.label.text }}</h1>
-                            </legend>
-                            {% if form.global_role.description %}<div class="govuk-hint">{{ form.global_role.description }}</div>{% endif %}
-                            {% if form.global_role.errors %}
-                                <p class="govuk-error-message">
-                                    <span class="govuk-visually-hidden">Error:</span>
-                                    {{ form.global_role.errors[0] }}
-                                </p>
-                            {% endif %}
-                            <div class="govuk-radios" data-module="govuk-radios">
-                                {% for choice in form.global_role.choices %}
-                                    {% set value, label = choice.value, choice.label %}
-                                    <div class="govuk-radios__item">
-                                        <input class="govuk-radios__input"
-                                               id="global_role_{{ loop.index }}"
-                                               name="{{ form.global_role.name }}"
-                                               type="radio"
-                                               value="{{ value }}"
-                                               {% if form.global_role.data and form.global_role.data.name == value %}checked{% endif %}>
-                                        <label class="govuk-label govuk-radios__label"
-                                               for="global_role_{{ loop.index }}">{{ label }}</label>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </fieldset>
-                    </div>
-                    <div class="govuk-form-group {% if form.email.errors %}govuk-form-group--error{% endif %}">
-                        <label class="govuk-label govuk-label--m" for="{{ form.email.id }}">{{ form.email.label.text }}</label>
-                        {% if form.email.description %}<div class="govuk-hint">{{ form.email.description }}</div>{% endif %}
-                        {% if form.email.errors %}
-                            <p class="govuk-error-message">
-                                <span class="govuk-visually-hidden">Error:</span>
-                                {{ form.email.errors[0] }}
-                            </p>
-                        {% endif %}
-                        {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else "") , type="email") }}
-                    </div>
-                    <div class="govuk-form-group {% if form.expires_in_hours.errors %}govuk-form-group--error{% endif %}">
-                        <label class="govuk-label govuk-label--m"
-                               for="{{ form.expires_in_hours.id }}">{{ form.expires_in_hours.label.text }}</label>
-                        {% if form.expires_in_hours.description %}
-                            <div class="govuk-hint">{{ form.expires_in_hours.description }}</div>
-                        {% endif %}
-                        {% if form.expires_in_hours.errors %}
-                            <p class="govuk-error-message">
-                                <span class="govuk-visually-hidden">Error:</span>
-                                {{ form.expires_in_hours.errors[0] }}
-                            </p>
-                        {% endif %}
-                        {{ form.expires_in_hours(class="govuk-input govuk-input--width-5" + (" govuk-input--error" if form.expires_in_hours.errors else "") ) }}
-                    </div>
-                    <div class="govuk-button-group">
-                        <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create Invite") }}</button>
-                        <a class="govuk-link" href="{{ url_for('admin.list_invites_page') }}">{{ _("Cancel") }}</a>
-                    </div>
-                </form>
-            </div>
-        </div>
+            </form>
+        {% endcall %}
     </div>
 {% endblock %}

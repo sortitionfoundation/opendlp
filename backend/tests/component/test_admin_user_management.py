@@ -8,6 +8,7 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
+from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.user_service import create_user
@@ -85,6 +86,71 @@ class TestAdminUserListPermissions:
         assert "login" in response.location
 
 
+class TestSiteAdminLayout:
+    """Site Admin opens on the users list, and its list pages share a tab bar."""
+
+    def test_site_admin_index_redirects_to_the_users_list(self, logged_in_admin: FlaskClient) -> None:
+        """/admin/ has no page of its own; it lands on the Users tab."""
+        response = logged_in_admin.get("/admin/")
+        assert response.status_code == 302
+        assert response.location.endswith("/admin/users")
+
+    def test_site_admin_index_refused_to_a_regular_user(self, logged_in_user: FlaskClient) -> None:
+        """The redirect is still behind the admin check."""
+        assert logged_in_user.get("/admin/").status_code == 403
+
+    def test_users_list_is_on_the_backoffice_design(self, logged_in_admin: FlaskClient) -> None:
+        """The users list renders on the backoffice base, not the GOV.UK one."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert "backoffice/dist/main.css" in body
+        assert "govuk-" not in body
+
+    def test_users_list_has_the_users_tab_selected(self, logged_in_admin: FlaskClient) -> None:
+        """The Users tab is selected and the Invites tab links to the invites list."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert re.search(r'id="admin-tabs-tab-users"[^>]*aria-selected="true"', body)
+        assert re.search(r'href="/admin/invites"[^>]*\s+role="tab"[^>]*id="admin-tabs-tab-invites"', body)
+        assert 'id="admin-tabs-panel-users"' in body
+
+    def test_users_list_back_arrow_goes_to_your_projects(self, logged_in_admin: FlaskClient) -> None:
+        """The page header's back arrow leads to Your projects."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert re.search(r'<a href="/backoffice/dashboard"[^>]*aria-label="Back to Your projects"', body, re.DOTALL)
+
+
+class TestAdminUserList:
+    """What the users list shows."""
+
+    def test_shows_counts_and_users(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """The stat tiles and a row per user appear."""
+        _seed_user(fake_store, "listed@example.com", GlobalRole.USER, first_name="Listed", last_name="Person")
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert "Total users" in body
+        assert "2FA enabled" in body
+        assert "listed@example.com" in body
+        assert "Listed Person" in body
+
+    def test_a_row_links_to_the_users_page(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """Clicking a row opens the user's page."""
+        user = _seed_user(fake_store, "row@example.com", GlobalRole.USER)
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert f'data-row-url="/admin/users/{user.id}"' in body
+
+    def test_filters_keep_their_values(self, logged_in_admin: FlaskClient) -> None:
+        """The search box and selects show what was filtered on, with a count of matches."""
+        body = logged_in_admin.get("/admin/users?search=nobody&role=organiser&active=false").get_data(as_text=True)
+        assert 'value="nobody"' in body
+        assert re.search(r'<option value="organiser"\s+selected', body)
+        assert re.search(r'<option value="false"\s+selected', body)
+        assert "Users found: 0" in body
+        assert "No users found matching your criteria." in body
+
+    def test_points_to_invites_for_adding_a_user(self, logged_in_admin: FlaskClient) -> None:
+        """Users are added by invite, and the page says so with a link."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert re.search(r'To add a user, <a href="/admin/invites/create"[^>]*>create an invite</a> for them\.', body)
+
+
 class TestAdminUserView:
     """Admin view user details page."""
 
@@ -100,6 +166,124 @@ class TestAdminUserView:
         assert user.email.encode() in response.data
         assert user.first_name.encode() in response.data
         assert user.last_name.encode() in response.data
+
+    def test_view_user_is_on_the_backoffice_design(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """The user page has a back arrow to the users list and no GOV.UK markup."""
+        user = _seed_user(fake_store, "design@example.com", GlobalRole.USER)
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+
+        assert "govuk-" not in body
+        assert re.search(r'<a href="/admin/users"[^>]*aria-label="Back to Users"', body, re.DOTALL)
+        assert f'href="/admin/users/{user.id}/edit"' in body
+        assert f'href="/admin/users/{user.id}/2fa/audit-log"' in body
+
+    def test_an_oauth_user_shows_their_provider_and_no_2fa_link(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """Two-factor does not apply to an OAuth user, so there is no audit log link."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            oauth_user = User(
+                email="viewoauth@example.com",
+                global_role=GlobalRole.USER,
+                oauth_provider="google",
+                oauth_id="google456",
+            )
+            uow.users.add(oauth_user)
+            uow.commit()
+            user_id = oauth_user.id
+
+        body = logged_in_admin.get(f"/admin/users/{user_id}").get_data(as_text=True)
+
+        assert "Google" in body
+        assert "Not applicable (OAuth user)" in body
+        assert "/2fa/audit-log" not in body
+        assert "will still sign in with Google" in body
+
+    def test_disable_2fa_is_offered_only_when_2fa_is_on(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """The Disable 2FA dialog appears for a user with two-factor on, and not otherwise."""
+        user = _seed_user(fake_store, "no2fa@example.com", GlobalRole.USER)
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+        assert "disable-2fa-dialog" not in body
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.users.get(user.id).enable_totp("encrypted-secret")
+            uow.commit()
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+
+        assert 'id="disable-2fa-dialog-open"' in body
+        assert "Disable two-factor authentication?" in body
+        assert f'<form method="post" action="/admin/users/{user.id}/2fa/disable">' in body
+
+    def test_enabling_is_confirmed_in_a_dialog(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """A disabled user's page offers Enable account through a dialog that explains the email."""
+        user = _seed_user(fake_store, "disabled@example.com", GlobalRole.USER, is_active=False)
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+
+        assert 'id="enable-account-dialog-open"' in body
+        assert "Enable this account?" in body
+        assert "request a password reset" in body
+        assert f'<form method="post" action="/admin/users/{user.id}/enable">' in body
+
+
+class TestAdminUser2faAuditLog:
+    """The two-factor audit log page for one user."""
+
+    def _log(self, fake_store: FakeStore, user: User, action: str, **kwargs: object) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.two_factor_audit_logs.add(TwoFactorAuditLog(user_id=user.id, action=action, **kwargs))
+            uow.commit()
+
+    def test_each_known_action_has_a_translated_tag(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """Recorded actions show as labels, never as their stored tokens."""
+        user = _seed_user(fake_store, "audited@example.com", GlobalRole.USER)
+        self._log(fake_store, user, "enabled", performed_by=user.id)
+        self._log(fake_store, user, "backup_codes_regenerated", performed_by=user.id)
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}/2fa/audit-log").get_data(as_text=True)
+
+        assert ">Enabled</strong>" in body
+        assert ">Backup codes regenerated</strong>" in body
+        assert "backup_codes_regenerated" not in body
+        assert "Self" in body
+        assert "govuk-" not in body
+
+    def test_an_unknown_action_is_not_shown_raw(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """An action the page does not know shows a generic tag instead of the database token."""
+        user = _seed_user(fake_store, "oddlog@example.com", GlobalRole.USER)
+        self._log(fake_store, user, "some_future_event")
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}/2fa/audit-log").get_data(as_text=True)
+
+        assert ">Unknown action</strong>" in body
+        assert "some_future_event" not in body
+        assert "System" in body
+
+    def test_another_performer_is_named_by_email(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, admin_user: User
+    ) -> None:
+        """An admin who acted on the account is shown by their email, with the details collapsed."""
+        user = _seed_user(fake_store, "acted@example.com", GlobalRole.USER)
+        self._log(fake_store, user, "admin_disabled", performed_by=admin_user.id, metadata={"reason": "lost phone"})
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}/2fa/audit-log").get_data(as_text=True)
+
+        assert ">Admin disabled</strong>" in body
+        assert admin_user.email in body
+        assert "<details" in body
+        assert "lost phone" in body
+
+    def test_no_entries_says_so(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """A user with no two-factor history gets a message, not an empty table."""
+        user = _seed_user(fake_store, "quiet@example.com", GlobalRole.USER)
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}/2fa/audit-log").get_data(as_text=True)
+
+        assert "No 2FA audit log entries found for this user." in body
+        assert "audit-log-table" not in body
 
 
 class TestAdminUserEdit:
@@ -302,20 +486,17 @@ class TestAdminDisableAccount:
         assert f"/admin/users/{user.id}/enable".encode() in response.data
         assert f"/admin/users/{user.id}/disable".encode() not in response.data
 
-    def test_the_confirmation_sits_on_the_button_where_the_handler_reads_it(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore
-    ) -> None:
-        """document-actions.js reads e.target.dataset.confirm, and e.target is the button.
-
-        On the <form> the attribute is silently ignored and the destructive POST
-        goes through unconfirmed.
-        """
+    def test_disabling_is_confirmed_in_a_dialog(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """The Disable account button opens a dialog whose form does the POST."""
         user = _seed_user(fake_store, "active@example.com", GlobalRole.USER)
 
-        response = logged_in_admin.get(f"/admin/users/{user.id}")
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
 
-        button_tags = re.findall(r"<button[^>]*>", response.data.decode())
-        assert any("Are you sure you want to disable this account" in tag for tag in button_tags)
+        assert re.search(r'id="disable-account-dialog-open"[^>]*aria-haspopup="dialog"', body, re.DOTALL)
+        assert 'role="alertdialog"' in body
+        assert "Disable this account?" in body
+        assert "permanently removes their password" in body
+        assert re.search(rf'<form method="post" action="/admin/users/{user.id}/disable">', body)
 
     def test_an_admin_is_not_offered_a_button_on_their_own_page(
         self, logged_in_admin: FlaskClient, admin_user: User
@@ -426,6 +607,14 @@ class TestAdminNavigation:
         response = logged_in_admin.get("/dashboard")
         assert response.status_code == 200
         assert b"Site Admin" in response.data
+
+    def test_account_menu_opens_site_admin_in_the_same_tab(self, logged_in_admin: FlaskClient) -> None:
+        """Site Admin is on the backoffice design, so the account menu no longer sends it to another tab."""
+        body = logged_in_admin.get("/backoffice/dashboard").get_data(as_text=True)
+
+        link = re.search(r'<a[^>]*href="/admin/"[^>]*>', body)
+        assert link is not None
+        assert "target=" not in link.group(0)
 
     def test_admin_menu_not_visible_to_regular_user(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/dashboard")

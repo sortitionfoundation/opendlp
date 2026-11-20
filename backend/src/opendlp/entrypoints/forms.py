@@ -521,21 +521,21 @@ class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for editing user details (admin only)."""
 
     first_name = StringField(
-        _l("First Name"),
+        _l("First name"),
         validators=[Length(max=100)],
         description=_l("User's first name"),
         render_kw={"autocomplete": "given-name"},
     )
 
     last_name = StringField(
-        _l("Last Name"),
+        _l("Last name"),
         validators=[Length(max=100)],
         description=_l("User's last name"),
         render_kw={"autocomplete": "family-name"},
     )
 
     global_role = RadioField(
-        _l("Global Role"),
+        _l("Global role"),
         choices=_select_choices(global_role_options),
         coerce=coerce_for_enum(GlobalRole),
         validators=[DataRequired()],
@@ -547,23 +547,23 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for creating user invites (admin only)."""
 
     global_role = RadioField(
-        _l("Role for New User"),
+        _l("Role for the new user"),
         choices=_select_choices(global_role_options),
         coerce=coerce_for_enum(GlobalRole),
         validators=[DataRequired()],
         description=_l("The role that will be granted to the user who uses this invite"),
-        default="user",
+        default=GlobalRole.USER,
     )
 
     email = EmailField(
-        _l("Email Address (Optional)"),
+        _l("Email address"),
         validators=[Optional(), DomainEmailValidator(), EmailDoesNotExistValidator()],
         description=_l("Optional — if provided, the invite will be emailed to this address"),
         render_kw={"autocomplete": "email"},
     )
 
     expires_in_hours = IntegerField(
-        _l("Expires In (Hours)"),
+        _l("Expires in (hours)"),
         validators=[Optional()],
         description=_l("Optional — number of hours until the invite expires (default: 168 hours / 7 days)"),
         default=168,
