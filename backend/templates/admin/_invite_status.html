@@ -1,0 +1,15 @@
+{#
+ABOUTME: Macro rendering an invite's status - used, active or expired - as a design-system tag
+ABOUTME: Shared by the invites list and the invite page so the two always agree
+#}
+{% from "backoffice/components/tag.html" import tag %}
+
+{% macro invite_status(invite) %}
+    {% if invite.used_by %}
+        {{ tag(_("Used"), colour="grey") }}
+    {% elif invite.is_valid() %}
+        {{ tag(_("Active"), colour="green") }}
+    {% else %}
+        {{ tag(_("Expired"), colour="red") }}
+    {% endif %}
+{% endmacro %}
