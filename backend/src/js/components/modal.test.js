@@ -151,3 +151,49 @@ describe("modal closeAfterSubmit", () => {
     expect(state.isOpen).toBe(true);
   });
 });
+
+describe("modal focus", () => {
+  let opener;
+  let root;
+
+  beforeEach(() => {
+    opener = document.createElement("button");
+    root = document.createElement("div");
+    root.innerHTML =
+      '<button id="other">Other</button><button id="cancel" data-dialog-initial-focus>Cancel</button>';
+    document.body.append(opener, root);
+    opener.focus();
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  function openState() {
+    const state = modal({});
+    state.$root = root;
+    state.$nextTick = (callback) => callback();
+    return state;
+  }
+
+  it("moves focus to the control marked for initial focus on open", () => {
+    openState().open();
+    expect(document.activeElement.id).toBe("cancel");
+  });
+
+  it("returns focus to the opener when it closes", () => {
+    const state = openState();
+    state.open();
+    state.close();
+    expect(document.activeElement).toBe(opener);
+    expect(state.returnFocusTo).toBe(null);
+  });
+
+  it("leaves focus alone when nothing is marked for initial focus", () => {
+    root.querySelector("#cancel").removeAttribute("data-dialog-initial-focus");
+    const state = openState();
+    state.open();
+    expect(document.activeElement).toBe(opener);
+    expect(state.returnFocusTo).toBe(null);
+  });
+});

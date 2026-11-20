@@ -117,7 +117,7 @@ and give it a component render test.
 
 1. [x] `stat_tile` with showcase and test; move `detail_row` to components.
 2. [x] Index redirect, tabs, users list.
-3. [ ] User page with dialogs, edit user, audit log.
+3. [x] User page with dialogs, edit user, audit log.
 4. [ ] Invites list, invite page, create invite.
 5. [ ] Account menu link; `test_legacy_header.py`.
 6. [ ] Wording pass, then the `translate-catalogues` skill.

@@ -2,6 +2,10 @@
  * ABOUTME: Alpine component holding open/closed state for dialogs and overlays
  * ABOUTME: Closing can navigate to a URL, reload the page, or simply hide the modal
  *
+ * A modal whose content marks a control with data-dialog-initial-focus moves
+ * focus there when open() is called, and back to the opener when it closes
+ * without leaving the page.
+ *
  * Usage:
  *   <div x-data="modal({initialOpen: true, canClose: false, refreshOnClose: true})"
  *        @task-finished.window="setCanClose(true)">
@@ -33,9 +37,17 @@ export function modal(options) {
   return {
     isOpen: initialOpen,
     canClose: initialCanClose,
+    returnFocusTo: null,
 
     open: function () {
       this.isOpen = true;
+      var initial =
+        this.$root && this.$root.querySelector("[data-dialog-initial-focus]");
+      if (!initial) return;
+      this.returnFocusTo = document.activeElement;
+      this.$nextTick(function () {
+        initial.focus();
+      });
     },
 
     /**
@@ -55,6 +67,10 @@ export function modal(options) {
           this.$root.dispatchEvent(
             new CustomEvent("modal-closed", { bubbles: true }),
           );
+        }
+        if (this.returnFocusTo) {
+          this.returnFocusTo.focus();
+          this.returnFocusTo = null;
         }
       }
     },
