@@ -1,11 +1,12 @@
 {#
 ABOUTME: Site Admin page for one user - their details, signup survey answers and account actions
-ABOUTME: Disabling or enabling the account and switching off two-factor are confirmed in a dialog
+ABOUTME: Names are edited in place; disabling, enabling and switching off two-factor are confirmed in a dialog
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "admin/_header.html" import inner_header %}
 {% from "admin/_role_tag.html" import role_tag %}
 {% from "admin/_confirm.html" import confirm_action %}
+{% from "admin/_name_row.html" import name_row %}
 {% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/detail_row.html" import detail_row %}
 {% from "backoffice/components/button.html" import button %}
@@ -32,12 +33,12 @@ ABOUTME: Disabling or enabling the account and switching off two-factor are conf
             <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("User details") }}</h2>
             <dl>
                 {% call detail_row(_("Email")) %}{{ value(user.email) }}{% endcall %}
-                {% call detail_row(_("First name")) %}
-                    {{ value(user.first_name) if user.first_name else missing(_("Not provided")) }}
-                {% endcall %}
-                {% call detail_row(_("Last name")) %}
-                    {{ value(user.last_name) if user.last_name else missing(_("Not provided")) }}
-                {% endcall %}
+                {{ name_row(user, "first_name",
+                submitted=name_submitted.get("first_name"),
+                error=name_errors.get("first_name", "")) }}
+                {{ name_row(user, "last_name",
+                submitted=name_submitted.get("last_name"),
+                error=name_errors.get("last_name", "")) }}
                 {% call detail_row(_("Global role")) %}
                     <dd class="flex-1">{{ role_tag(user.global_role) }}</dd>
                 {% endcall %}
