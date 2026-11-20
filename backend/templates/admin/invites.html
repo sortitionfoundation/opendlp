@@ -1,133 +1,83 @@
-{% extends "base.html" %}
+{#
+ABOUTME: Site Admin invites list - counts, create and clean-up actions, and a table of every invite
+ABOUTME: The Invites tab of Site Admin; an unused invite that has not expired can be revoked from its row
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "admin/_header.html" import admin_header, admin_tab_panel %}
 {% from "admin/_role_tag.html" import role_tag %}
-{% block title %}{{ _("Invite Management") }} - OpenDLP{% endblock %}
-{% block content %}
-    <div class="govuk-breadcrumbs">
-        <ol class="govuk-breadcrumbs__list">
-            <li class="govuk-breadcrumbs__list-item">
-                <a class="govuk-breadcrumbs__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
-            </li>
-            <li class="govuk-breadcrumbs__list-item">{{ _("Invite Management") }}</li>
-        </ol>
-    </div>
-    <h1 class="govuk-heading-xl">{{ _("Invite Management") }}</h1>
-    <p class="govuk-body-m">{{ _("This is to manage invite codes for users of this site.") }}</p>
-    <!-- Create Invite Button -->
-    <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-bottom-6">
-        <a href="{{ url_for('admin.create_invite') }}"
-           class="govuk-button"
-           data-module="govuk-button">{{ _("Create New Invite") }}</a>
-        <form method="post"
-              action="{{ url_for('admin.cleanup_invites') }}"
-              style="display: inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <button type="submit"
-                    class="govuk-button govuk-button--warning"
-                    data-module="govuk-button"
-                    data-confirm="{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}">
-                {{ _("Clean Up Expired Invites") }}
-            </button>
-        </form>
-    </div>
-    <!-- Statistics Cards -->
-    <div class="govuk-grid-row govuk-!-margin-bottom-6">
-        <div class="govuk-grid-column-one-quarter">
-            <div class="stat-card">
-                <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Total Invites") }}</p>
-                <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.total_invites|int }}</p>
-            </div>
+{% from "admin/_invite_status.html" import invite_status %}
+{% from "backoffice/components/stat_tile.html" import stat_tile %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
+{% from "backoffice/components/alert.html" import alert %}
+
+{% block title %}{{ _("Invites") }} - {{ _("Site Admin") }}{% endblock %}
+
+{% block page_header %}{{ admin_header("invites") }}{% endblock %}
+
+{% block page_content %}
+    {% call admin_tab_panel("invites") %}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {{ stat_tile(_("Total invites"), stats.total_invites|int) }}
+            {{ stat_tile(_("Active invites"), stats.active_invites|int) }}
+            {{ stat_tile(_("Used invites"), stats.used_invites|int) }}
+            {{ stat_tile(_("Conversion rate"), stats.conversion_rate ~ "%") }}
         </div>
-        <div class="govuk-grid-column-one-quarter">
-            <div class="stat-card">
-                <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Active Invites") }}</p>
-                <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.active_invites|int }}</p>
-            </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            {{ button(_("Create invite"), href=url_for('admin.create_invite')) }}
+            <form method="post"
+                  action="{{ url_for('admin.cleanup_invites') }}"
+                  data-confirm="{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ button(_("Clean up expired invites"), variant="secondary", type="submit") }}
+            </form>
         </div>
-        <div class="govuk-grid-column-one-quarter">
-            <div class="stat-card">
-                <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Used Invites") }}</p>
-                <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.used_invites|int }}</p>
-            </div>
-        </div>
-        <div class="govuk-grid-column-one-quarter">
-            <div class="stat-card">
-                <p class="govuk-body-s govuk-!-margin-bottom-1">{{ _("Conversion Rate") }}</p>
-                <p class="govuk-heading-l govuk-!-margin-bottom-0">{{ stats.conversion_rate }}%</p>
-            </div>
-        </div>
-    </div>
-    <!-- Results Summary -->
-    <p class="govuk-body">{{ _('Showing %(count)s invites (including expired)', count=invites|length) }}</p>
-    <!-- Invites Table -->
-    {% if invites %}
-        <table class="govuk-table">
-            <thead class="govuk-table__head">
-                <tr class="govuk-table__row">
-                    <th scope="col" class="govuk-table__header">{{ _("Code") }}</th>
-                    <th scope="col" class="govuk-table__header">{{ _("Email") }}</th>
-                    <th scope="col" class="govuk-table__header">{{ _("Role") }}</th>
-                    <th scope="col" class="govuk-table__header">{{ _("Status") }}</th>
-                    <th scope="col" class="govuk-table__header">{{ _("Created") }}</th>
-                    <th scope="col" class="govuk-table__header">{{ _("Expires") }}</th>
-                    <th scope="col" class="govuk-table__header">{{ _("Actions") }}</th>
-                </tr>
-            </thead>
-            <tbody class="govuk-table__body">
-                {% for invite in invites %}
-                    <tr class="govuk-table__row">
-                        <td class="govuk-table__cell">
-                            <code>{{ invite.code }}</code>
-                        </td>
-                        <td class="govuk-table__cell">{{ invite.email or "—" }}</td>
-                        <td class="govuk-table__cell">
-                            {{ role_tag(invite.global_role) }}
-                        </td>
-                        <td class="govuk-table__cell">
-                            {% if invite.used_by %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _("Used") }}</strong>
-                            {% elif invite.is_valid() %}
-                                <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
-                            {% else %}
-                                <strong class="govuk-tag govuk-tag--red">{{ _("Expired") }}</strong>
-                            {% endif %}
-                        </td>
-                        <td class="govuk-table__cell">{{ invite.created_at|dateformat('medium') }}</td>
-                        <td class="govuk-table__cell">{{ invite.expires_at|dateformat('medium') }}</td>
-                        <td class="govuk-table__cell">
-                            <a href="{{ url_for('admin.view_invite', invite_id=invite.id) }}"
-                               class="govuk-link">{{ _("View") }}</a>
-                            {% if invite.is_valid() and not invite.used_by %}
-                                |
-                                <form method="post"
-                                      action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}"
-                                      style="display: inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit"
-                                            class="govuk-link"
-                                            style="background: none;
-                                                   border: none;
-                                                   padding: 0;
-                                                   cursor: pointer;
-                                                   color: #1d70b8;
-                                                   text-decoration: underline"
-                                            data-confirm="{{ _("Are you sure you want to revoke this invite?") }}">
-                                        {{ _("Revoke") }}
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="govuk-inset-text">
-            <p class="govuk-body">{{ _("No invites found. Create one to get started.") }}</p>
-        </div>
-    {% endif %}
-    <!-- Back Button -->
-    <div class="govuk-button-group govuk-!-margin-top-6">
-        <a href="{{ url_for('admin.index') }}"
-           class="govuk-button govuk-button--secondary">{{ _("Back to Site Admin") }}</a>
-    </div>
+
+        {% if invites %}
+            <p class="text-body-md" style="color: var(--color-secondary-text);">
+                {{ _("Showing %(count)s invites (including expired)", count=invites|length) }}
+            </p>
+            {% call table(id="invites-table") %}
+                {{ table_head([
+                {"label": _("Code")},
+                {"label": _("Email")},
+                {"label": _("Role")},
+                {"label": _("Status")},
+                {"label": _("Created")},
+                {"label": _("Expires")},
+                {"label": _("Actions"), "align": "right"}
+                ]) }}
+                {% call table_body() %}
+                    {% for invite in invites %}
+                        {% call table_row(row_url=url_for('admin.view_invite', invite_id=invite.id)) %}
+                            {% call table_cell_custom() %}<code>{{ invite.code }}</code>{% endcall %}
+                            {{ table_cell(invite.email or "—") }}
+                            {% call table_cell_custom() %}{{ role_tag(invite.global_role) }}{% endcall %}
+                            {% call table_cell_custom() %}{{ invite_status(invite) }}{% endcall %}
+                            {{ table_cell(invite.created_at|dateformat('medium')) }}
+                            {{ table_cell(invite.expires_at|dateformat('medium')) }}
+                            {% call table_cell_custom(align="right") %}
+                                <span class="inline-flex items-center gap-4">
+                                    <a href="{{ url_for('admin.view_invite', invite_id=invite.id) }}"
+                                       class="underline"
+                                       style="color: var(--color-links)">{{ _("View") }}</a>
+                                    {% if invite.is_valid() and not invite.used_by %}
+                                        <form method="post"
+                                              action="{{ url_for('admin.revoke_invite_route', invite_id=invite.id) }}"
+                                              data-confirm="{{ _("Are you sure you want to revoke this invite?") }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            {{ button(_("Revoke"), variant="tertiary", type="submit") }}
+                                        </form>
+                                    {% endif %}
+                                </span>
+                            {% endcall %}
+                        {% endcall %}
+                    {% endfor %}
+                {% endcall %}
+            {% endcall %}
+        {% else %}
+            {{ alert(_("No invites found. Create one to get started."), variant="info") }}
+        {% endif %}
+    {% endcall %}
 {% endblock %}

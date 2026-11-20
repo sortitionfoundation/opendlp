@@ -21,11 +21,10 @@ scenarios("../../features/admin-users.feature")
 def _(page: Page):
     """the user creates an invite."""
     page.goto(Urls.admin)
-    invite_links = page.get_by_text("Manage Invites")
-    invite_links.last.click()
-    page.get_by_text("Create New Invite").click()
+    page.get_by_role("tab", name="Invites").click()
+    page.get_by_role("button", name="Create invite").click()
     page.get_by_label("Admin — Full system access including user management").check()
-    page.click('button[type="submit"]')
+    page.get_by_role("button", name="Create invite").click()
 
 
 @then("the user sees the invite to give to the user")

@@ -30,7 +30,7 @@ def test_list_invites_page_accessible_to_admin(logged_in_admin: FlaskClient):
     """Admin can access the invite list page."""
     response = logged_in_admin.get("/admin/invites")
     assert response.status_code == 200
-    assert b"Invite Management" in response.data
+    assert b"Invites" in response.data
 
 
 @pytest.mark.time_machine(datetime(2025, 1, 1, tzinfo=UTC))
@@ -98,10 +98,11 @@ def test_view_invite_page_accessible_to_admin(client: FlaskClient, admin_user: U
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         invite = generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
         invite_id = invite.id
+        invite_code = invite.code
 
     response = client.get(f"/admin/invites/{invite_id}")
     assert response.status_code == 200
-    assert b"Invite Details" in response.data
+    assert f"Invite {invite_code}".encode() in response.data
 
 
 def test_revoke_invite_success(client: FlaskClient, admin_user: User, postgres_session_factory):

@@ -552,7 +552,7 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
         coerce=coerce_for_enum(GlobalRole),
         validators=[DataRequired()],
         description=_l("The role that will be granted to the user who uses this invite"),
-        default="user",
+        default=GlobalRole.USER,
     )
 
     email = EmailField(
