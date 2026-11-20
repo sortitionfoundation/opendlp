@@ -4,7 +4,19 @@ ABOUTME: Handles admin-only features like viewing and editing users, requires ad
 import uuid
 
 import structlog
-from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    Response,
+    abort,
+    current_app,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    render_template_string,
+    request,
+    url_for,
+)
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -12,8 +24,9 @@ from opendlp import bootstrap
 from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, leftover_answer_keys
+from opendlp.domain.users import User
 from opendlp.entrypoints.decorators import require_admin
-from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm
+from opendlp.entrypoints.forms import CreateInviteForm, EditUserNamesForm, EditUserRoleForm
 from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.exceptions import (
     CannotDisableSelf,
@@ -46,6 +59,19 @@ from opendlp.translations import gettext as _
 admin_bp = Blueprint("admin", __name__)
 
 logger = structlog.get_logger(__name__)
+
+# A user's names, each edited in place in a row of its own on their page
+# (templates/admin/_name_row.html).
+NAME_FIELDS = ("first_name", "last_name")
+
+# One name's row on its own, as htmx swaps it in for the row on the page, with
+# any flash appended out of band to the page's floating alerts.
+_NAME_ROW_RESPONSE = (
+    '{% from "admin/_name_row.html" import name_row %}'
+    '{% from "backoffice/components/floating_alerts.html" import floating_alerts %}'
+    "{{ name_row(user, field, submitted=submitted, error=error, return_focus=return_focus) }}"
+    "{{ floating_alerts(oob=true) }}"
+)
 
 
 @admin_bp.route("/")
@@ -145,20 +171,9 @@ def export_users_csv() -> ResponseReturnValue:
 @login_required
 @require_admin
 def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
-    """View a single user's details."""
+    """View a single user's details, with their names edited in place and their role in a dialog."""
     try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            user = get_user_by_id(uow, user_id, current_user.id)
-            survey = get_signup_survey(uow, user_id, current_user.id)
-
-        return render_template(
-            "admin/user_view.html",
-            user=user,
-            survey=survey,
-            survey_questions=SIGNUP_SURVEY_QUESTIONS,
-            leftover_answer_keys=leftover_answer_keys(survey.answers) if survey else [],
-        ), 200
+        return _user_page(user_id), 200
 
     except UserNotFoundError as e:
         logger.warning(
@@ -178,84 +193,149 @@ def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("admin.list_users"))
 
 
-@admin_bp.route("/users/<uuid:user_id>/edit", methods=["GET", "POST"])
+def _user_page(
+    user_id: uuid.UUID, name_errors: dict[str, str] | None = None, name_submitted: dict[str, str] | None = None
+) -> str:
+    """The user's page, optionally with a refused name's row left open with the reason."""
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        user = get_user_by_id(uow, user_id, current_user.id)
+        survey = get_signup_survey(uow, user_id, current_user.id)
+
+    return render_template(
+        "admin/user_view.html",
+        user=user,
+        survey=survey,
+        survey_questions=SIGNUP_SURVEY_QUESTIONS,
+        leftover_answer_keys=leftover_answer_keys(survey.answers) if survey else [],
+        role_form=EditUserRoleForm(obj=user),
+        name_errors=name_errors or {},
+        name_submitted=name_submitted or {},
+    )
+
+
+@admin_bp.route("/users/<uuid:user_id>/edit")
 @login_required
 @require_admin
 def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
-    """Edit a user's details."""
+    """A user is edited on their own page; this address is kept for old links."""
+    return redirect(url_for("admin.view_user", user_id=user_id))
+
+
+@admin_bp.route("/users/<uuid:user_id>/name", methods=["POST"])
+@login_required
+@require_admin
+def edit_user_name(user_id: uuid.UUID) -> ResponseReturnValue:
+    """Save one of a user's names, edited in place on their page.
+
+    Each name's row posts its own field, named by `field`. Over htmx the answer
+    is that row again: at rest with the saved name, the success flash appended
+    to the page's alerts, or still open with the reason under the field (422).
+    Without htmx a save goes back to the user's page, and a refusal renders the
+    page with that row open.
+    """
+    field = request.form.get("field", "")
+    if field not in NAME_FIELDS:
+        abort(400)
+
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            user = get_user_by_id(uow, user_id, current_user.id)
+            stored = get_user_by_id(uow, user_id, current_user.id)
+    except UserNotFoundError:
+        flash(_("User not found"), "error")
+        return _redirect(url_for("admin.list_users"))
 
-        form = EditUserForm(obj=user)
-
-        if form.validate_on_submit():
-            try:
-                # Form coerce function already converts to GlobalRole enum
-                global_role = form.global_role.data
-
-                with uow:
-                    updated_user = update_user(
-                        uow=uow,
-                        user_id=user_id,
-                        admin_user_id=current_user.id,
-                        first_name=form.first_name.data or "",
-                        last_name=form.last_name.data or "",
-                        global_role=global_role,
-                    )
-
-                flash(
-                    _("User '%(email)s' updated successfully", email=updated_user.email),
-                    "success",
+    # Built over the stored user, so the name this row did not post keeps its stored value.
+    form = EditUserNamesForm(obj=stored)
+    if form.validate_on_submit():
+        value = form[field].data or ""
+        try:
+            with uow:
+                user = update_user(
+                    uow=uow,
+                    user_id=user_id,
+                    admin_user_id=current_user.id,
+                    first_name=value if field == "first_name" else None,
+                    last_name=value if field == "last_name" else None,
                 )
-                return redirect(url_for("admin.view_user", user_id=user_id))
+        except Exception as e:
+            logger.error(
+                "Error updating user name", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+            )
+            error = _("An error occurred while updating the user")
+        else:
+            flash(_("User '%(email)s' updated successfully", email=user.email), "success")
+            if _is_htmx():
+                return _name_row_response(user, field, return_focus=request.form.get("return_focus") == "1"), 200
+            return redirect(url_for("admin.view_user", user_id=user_id))
+    else:
+        error = "\n".join(form[field].errors) or _("An error occurred while updating the user")
 
-            except UserNotFoundError as e:
-                logger.warning(
-                    "User not found for edit by admin",
-                    user_id=str(user_id),
-                    admin_user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("User not found"), "error")
-                return redirect(url_for("admin.list_users"))
-            except InsufficientPermissions as e:
-                logger.warning("Unauthorized user update attempt", user_id=str(current_user.id), error=str(e))
-                flash(_("You don't have permission to perform this action"), "error")
-                return redirect(url_for("admin.view_user", user_id=user_id))
-            except ValueError as e:
-                logger.warning(
-                    "Validation error updating user",
-                    user_id=str(user_id),
-                    admin_user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(str(e), "error")
-            except Exception as e:
-                logger.error(
-                    "Error updating user", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
-                )
-                flash(_("An error occurred while updating the user"), "error")
+    submitted = request.form.get(field, "")
+    if _is_htmx():
+        return _name_row_response(stored, field, submitted=submitted, error=error), 422
+    return _user_page(user_id, name_errors={field: error}, name_submitted={field: submitted}), 200
 
-        return render_template("admin/user_edit.html", form=form, user=user), 200
 
+@admin_bp.route("/users/<uuid:user_id>/role", methods=["POST"])
+@login_required
+@require_admin
+def edit_user_role(user_id: uuid.UUID) -> ResponseReturnValue:
+    """Change a user's global role, from the dialog on their page."""
+    form = EditUserRoleForm()
+    if not form.validate_on_submit():
+        flash(_("Choose a role for this user"), "error")
+        return redirect(url_for("admin.view_user", user_id=user_id))
+
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            user = update_user(
+                uow=uow,
+                user_id=user_id,
+                admin_user_id=current_user.id,
+                global_role=form.global_role.data,
+            )
     except UserNotFoundError as e:
         logger.warning(
-            "User not found for edit by admin", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+            "User not found for role change by admin",
+            user_id=str(user_id),
+            admin_user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("User not found"), "error")
         return redirect(url_for("admin.list_users"))
-    except InsufficientPermissions as e:
-        logger.warning("Unauthorized access to user edit", user_id=str(current_user.id), error=str(e))
-        flash(_("You don't have permission to view this page"), "error")
-        return redirect(url_for("main.dashboard"))
+    except ValueError as e:
+        logger.warning("Refused role change", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e))
+        flash(_("You cannot change your own role"), "error")
     except Exception as e:
-        logger.error(
-            "Error loading user edit page", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("An error occurred while loading the edit page"), "error")
-        return redirect(url_for("admin.list_users"))
+        logger.error("Error changing user role", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e))
+        flash(_("An error occurred while updating the user"), "error")
+    else:
+        flash(_("User '%(email)s' updated successfully", email=user.email), "success")
+    return redirect(url_for("admin.view_user", user_id=user_id))
+
+
+def _is_htmx() -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def _redirect(location: str) -> ResponseReturnValue:
+    """Redirect, telling htmx to load the page rather than swap it into the row."""
+    if _is_htmx():
+        response = make_response("", 200)
+        response.headers["HX-Redirect"] = location
+        return response
+    return redirect(location)
+
+
+def _name_row_response(
+    user: User, field: str, submitted: str | None = None, error: str = "", return_focus: bool = False
+) -> str:
+    return render_template_string(
+        _NAME_ROW_RESPONSE, user=user, field=field, submitted=submitted, error=error, return_focus=return_focus
+    )
 
 
 @admin_bp.route("/users/<uuid:user_id>/disable", methods=["POST"])

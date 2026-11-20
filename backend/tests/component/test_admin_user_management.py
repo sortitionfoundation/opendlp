@@ -14,6 +14,9 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeEmailAdapter, FakeStore, FakeUnitOfWork
 
+# What htmx sends with every request it makes, and what the routes answer differently.
+HTMX_HEADERS = {"HX-Request": "true"}
+
 
 def _second_client(app: Flask, user: User | None = None) -> FlaskClient:
     """A client separate from the conftest one, optionally signed in.
@@ -175,7 +178,7 @@ class TestAdminUserView:
 
         assert "govuk-" not in body
         assert re.search(r'<a href="/admin/users"[^>]*aria-label="Back to Users"', body, re.DOTALL)
-        assert f'href="/admin/users/{user.id}/edit"' in body
+        assert f'action="/admin/users/{user.id}/name"' in body
         assert f'href="/admin/users/{user.id}/2fa/audit-log"' in body
 
     def test_an_oauth_user_shows_their_provider_and_no_2fa_link(
@@ -287,89 +290,187 @@ class TestAdminUser2faAuditLog:
 
 
 class TestAdminUserEdit:
-    """Admin edit user functionality."""
+    """There is no edit page: a user is edited on their own page."""
 
-    def test_edit_user_page_accessible_to_admin(self, logged_in_admin: FlaskClient, regular_user: User) -> None:
+    def test_the_old_edit_address_goes_to_the_users_page(
+        self, logged_in_admin: FlaskClient, regular_user: User
+    ) -> None:
+        """There is no edit page any more; old links land on the user's page."""
         response = logged_in_admin.get(f"/admin/users/{regular_user.id}/edit")
-        assert response.status_code == 200
-        assert b"Edit User" in response.data or b"edit" in response.data.lower()
+        assert response.status_code == 302
+        assert response.location.endswith(f"/admin/users/{regular_user.id}")
 
-    def test_edit_user_not_accessible_to_regular_user(self, logged_in_user: FlaskClient, regular_user: User) -> None:
+    def test_edit_address_not_accessible_to_regular_user(self, logged_in_user: FlaskClient, regular_user: User) -> None:
         response = logged_in_user.get(f"/admin/users/{regular_user.id}/edit")
         assert response.status_code == 403
 
-    def test_edit_user_form_preselects_current_role(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
-        user = _seed_user(fake_store, "regular@example.com", GlobalRole.USER, "Reg", "User")
 
-        response = logged_in_admin.get(f"/admin/users/{user.id}/edit")
+class TestAdminUserNameEdit:
+    """A user's names are edited in place on their page, one at a time."""
+
+    def test_the_page_has_a_pencil_for_each_name(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """Both names are rows edited in place, posting to the name route."""
+        user = _seed_user(fake_store, "pencil@example.com", GlobalRole.USER, "Pen", "Cil")
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+
+        assert 'id="admin-user-first_name-row"' in body
+        assert 'id="admin-user-last_name-row"' in body
+        assert 'aria-label="Edit first name"' in body
+        assert 'aria-label="Edit last name"' in body
+
+    def test_saving_a_name_over_htmx_answers_with_the_row(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """The row comes back at rest with the new name, and the flash out of band."""
+        user = _seed_user(fake_store, "rename@example.com", GlobalRole.USER, "Old", "Name")
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name",
+            data={"field": "first_name", "first_name": "New", "return_focus": "1"},
+            headers=HTMX_HEADERS,
+        )
+
+        body = response.get_data(as_text=True)
         assert response.status_code == 200
+        assert 'id="admin-user-first_name-row"' in body
+        assert "New" in body
+        assert 'id="floating-alerts"' in body and "updated successfully" in body
+        assert "<html" not in body
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.users.get(user.id)
+            assert stored.first_name == "New"
+            assert stored.last_name == "Name"
 
-        data = response.data.decode()
-        assert re.search(r'value="USER"[^>]*?checked', data) is not None, "USER radio should be checked"
-        assert re.search(r'value="ADMIN"[^>]*?checked', data) is None, "ADMIN radio should not be checked"
+    def test_saving_a_name_without_htmx_goes_back_to_the_page(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """Without htmx the save redirects to the user's page."""
+        user = _seed_user(fake_store, "plain@example.com", GlobalRole.USER, "Plain", "Form")
 
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name", data={"field": "last_name", "last_name": "Post"}
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/admin/users/{user.id}")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).last_name == "Post"
+
+    def test_a_refused_name_over_htmx_stays_open_with_the_reason(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """Too long a name is refused with 422, the row open with what was typed."""
+        user = _seed_user(fake_store, "long@example.com", GlobalRole.USER, "Short", "Name")
+        too_long = "x" * 101
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name",
+            data={"field": "first_name", "first_name": too_long},
+            headers=HTMX_HEADERS,
+        )
+
+        body = response.get_data(as_text=True)
+        assert response.status_code == 422
+        assert f'value="{too_long}"' in body
+        assert 'aria-invalid="true"' in body
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).first_name == "Short"
+
+    def test_a_refused_name_without_htmx_renders_the_page_with_the_row_open(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """Without htmx a refusal shows the whole page, that row open with the reason."""
+        user = _seed_user(fake_store, "longplain@example.com", GlobalRole.USER, "Short", "Name")
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name", data={"field": "last_name", "last_name": "y" * 101}
+        )
+
+        body = response.get_data(as_text=True)
+        assert response.status_code == 200
+        assert "<html" in body
+        assert 'aria-invalid="true"' in body
+
+    def test_an_unknown_field_is_refused(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """Only the two names can be posted; the email cannot be changed this way."""
+        user = _seed_user(fake_store, "field@example.com", GlobalRole.USER)
+
+        response = logged_in_admin.post(f"/admin/users/{user.id}/name", data={"field": "email", "email": "x@y.z"})
+
+        assert response.status_code == 400
+
+    def test_a_regular_user_cannot_save_a_name(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
+        user = _seed_user(fake_store, "victim@example.com", GlobalRole.USER, "Keep", "Me")
+
+        response = logged_in_user.post(f"/admin/users/{user.id}/name", data={"field": "first_name", "first_name": "X"})
+
+        assert response.status_code == 403
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).first_name == "Keep"
+
+
+class TestAdminUserRoleEdit:
+    """A user's global role is changed in a dialog on their page."""
+
+    def test_the_role_dialog_preselects_the_current_role(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """The Change role dialog opens on the role the user has now."""
         organiser = _seed_user(fake_store, "organiser@example.com", GlobalRole.ORGANISER, "Global", "Organiser")
 
-        response = logged_in_admin.get(f"/admin/users/{organiser.id}/edit")
-        assert response.status_code == 200
+        body = logged_in_admin.get(f"/admin/users/{organiser.id}").get_data(as_text=True)
 
-        data = response.data.decode()
-        assert re.search(r'value="ORGANISER"[^>]*?checked', data) is not None, "ORGANISER radio should be checked"
+        assert 'id="change-role-open"' in body
+        assert f'action="/admin/users/{organiser.id}/role"' in body
+        assert re.search(r'value="ORGANISER"[^>]*?checked', body) is not None
+        assert re.search(r'value="USER"[^>]*?checked', body) is None
 
-    def test_edit_user_role_success(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+    def test_changing_the_role_saves_it_and_goes_back(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """The dialog's form changes the role and leaves the account active."""
         user = _seed_user(fake_store, "role@example.com", GlobalRole.USER, "Role", "Change")
 
-        response = logged_in_admin.post(
-            f"/admin/users/{user.id}/edit",
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "global_role": GlobalRole.ORGANISER.name,
-                "is_active": "y",
-            },
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-
-    def test_editing_a_user_leaves_them_active(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
-        """The edit form no longer carries the active flag - disabling has its own route."""
-        user = _seed_user(fake_store, "edited@example.com", GlobalRole.USER, "Ed", "Ited")
-
-        response = logged_in_admin.post(
-            f"/admin/users/{user.id}/edit",
-            data={
-                "first_name": "Renamed",
-                "last_name": user.last_name,
-                "global_role": user.global_role.name,
-            },
-            follow_redirects=False,
-        )
+        response = logged_in_admin.post(f"/admin/users/{user.id}/role", data={"global_role": GlobalRole.ORGANISER.name})
 
         assert response.status_code == 302
+        assert response.location.endswith(f"/admin/users/{user.id}")
         with FakeUnitOfWork(store=fake_store) as uow:
-            assert uow.users.get(user.id).is_active is True
+            stored = uow.users.get(user.id)
+            assert stored.global_role == GlobalRole.ORGANISER
+            assert stored.is_active is True
+
+    def test_an_invalid_role_is_refused(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """A role that is not one of the choices changes nothing."""
+        user = _seed_user(fake_store, "badrole@example.com", GlobalRole.USER)
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/role", data={"global_role": "EMPEROR"}, follow_redirects=True
+        )
+
+        assert b"Choose a role for this user" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).global_role == GlobalRole.USER
 
     def test_admin_cannot_change_own_role(self, logged_in_admin: FlaskClient, admin_user: User) -> None:
+        """Posting a new role for yourself is refused, and the page offers no dialog for it."""
         response = logged_in_admin.post(
-            f"/admin/users/{admin_user.id}/edit",
-            data={
-                "first_name": admin_user.first_name or "Admin",
-                "last_name": admin_user.last_name or "User",
-                "global_role": GlobalRole.USER.name,
-            },
-            follow_redirects=False,
+            f"/admin/users/{admin_user.id}/role", data={"global_role": GlobalRole.USER.name}, follow_redirects=True
         )
-        assert response.status_code == 200
-        assert b"Cannot change your own" in response.data or b"error" in response.data.lower()
+        assert b"You cannot change your own role" in response.data
 
-    def test_the_edit_form_has_no_active_checkbox(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
-        """Unticking a box mid-form is the wrong control for something this destructive."""
-        user = _seed_user(fake_store, "noactive@example.com", GlobalRole.USER)
+        body = logged_in_admin.get(f"/admin/users/{admin_user.id}").get_data(as_text=True)
+        assert "change-role-open" not in body
 
-        response = logged_in_admin.get(f"/admin/users/{user.id}/edit")
+    def test_a_regular_user_cannot_change_a_role(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
+        user = _seed_user(fake_store, "promote@example.com", GlobalRole.USER)
 
-        assert response.status_code == 200
-        assert b'name="is_active"' not in response.data
+        response = logged_in_user.post(f"/admin/users/{user.id}/role", data={"global_role": GlobalRole.ADMIN.name})
+
+        assert response.status_code == 403
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).global_role == GlobalRole.USER
 
 
 class TestAdminDisableAccount:

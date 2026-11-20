@@ -12,7 +12,7 @@ plus the small route changes listed below.
 | D1 | The index page | Dropped. `/admin/` redirects to the users list. The two list pages carry `tabs` (Users, Invites). |
 | D2 | Stat cards | A new `stat_tile` component, with a showcase entry and a test. All ten stats kept. |
 | D3 | Confirmations | `alert_dialog` for disable account, enable account and disable 2FA. Revoke invite and clean up keep `data-confirm`. |
-| D4 | Editing a user | A separate edit page, restyled. Editing in place is in `docs/agent/future_work/admin_user_inline_edit.md`. |
+| D4 | Editing a user | A separate edit page, restyled. Editing in place followed on the `admin-user-inline-edit` branch: names in place, role in a dialog, and the edit page redirects to the user page. |
 | D5 | Error summary | Dropped. Errors show beside each field, through `input()` / `radio_group()`. |
 | D6 | Wording | Brought into line with `docs/language.md` on this branch, then a translation pass. |
 

@@ -228,28 +228,40 @@ class TestAdminUserEdit:
     """Test admin edit user functionality."""
 
     def test_edit_user_name_success(self, client: FlaskClient, admin_user: User, test_users: list[User]):
-        """Test successfully editing user name."""
+        """Each name saves on its own from the user's page, against the real database."""
+        login_as_admin(client, admin_user)
+
+        user = test_users[0]
+        csrf_token = get_csrf_token(client, f"/admin/users/{user.id}")
+        for field, value in (("first_name", "NewFirst"), ("last_name", "NewLast")):
+            response = client.post(
+                f"/admin/users/{user.id}/name",
+                data={"field": field, field: value, "csrf_token": csrf_token},
+                follow_redirects=False,
+            )
+            assert response.status_code == 302
+            assert f"/admin/users/{user.id}" in response.location
+
+        view_response = client.get(f"/admin/users/{user.id}")
+        assert b"NewFirst" in view_response.data
+        assert b"NewLast" in view_response.data
+
+    def test_change_user_role_success(
+        self, client: FlaskClient, admin_user: User, test_users: list[User], postgres_session_factory
+    ):
+        """The role dialog's form changes the role, against the real database."""
         login_as_admin(client, admin_user)
 
         user = test_users[0]
         response = client.post(
-            f"/admin/users/{user.id}/edit",
-            data={
-                "first_name": "NewFirst",
-                "last_name": "NewLast",
-                "global_role": user.global_role.name,
-                "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}/edit"),
-            },
+            f"/admin/users/{user.id}/role",
+            data={"global_role": "ORGANISER", "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}")},
             follow_redirects=False,
         )
 
-        assert response.status_code == 302  # Redirect after success
-        assert f"/admin/users/{user.id}" in response.location
-
-        # Verify changes by viewing user
-        view_response = client.get(f"/admin/users/{user.id}")
-        assert b"NewFirst" in view_response.data
-        assert b"NewLast" in view_response.data
+        assert response.status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.users.get(user.id).global_role == GlobalRole.ORGANISER
 
 
 class TestAdminDisableAccount:
