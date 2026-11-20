@@ -1,4 +1,4 @@
-# ABOUTME: Component tests for the "Your projects" links on legacy GOV.UK pages (admin and error pages)
+# ABOUTME: Component tests for the "Your projects" links on legacy GOV.UK pages (the error pages)
 # ABOUTME: Checks the header link and the page-body links point at the backoffice dashboard, not the retired one
 
 import re
@@ -24,11 +24,6 @@ def _assert_no_old_dashboard_links(body: str) -> None:
 
 
 class TestLegacyHeaderYourProjectsLink:
-    def test_admin_page_links_to_backoffice_dashboard(self, logged_in_admin: FlaskClient) -> None:
-        response = logged_in_admin.get("/admin/")
-        assert response.status_code == 200
-        assert _your_projects_href(response.get_data(as_text=True)) == "/backoffice/dashboard"
-
     def test_404_page_links_to_backoffice_dashboard(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/no-such-page")
         assert response.status_code == 404
@@ -36,11 +31,6 @@ class TestLegacyHeaderYourProjectsLink:
 
 
 class TestPageBodyYourProjectsLinks:
-    def test_admin_index_back_link_goes_to_backoffice_dashboard(self, logged_in_admin: FlaskClient) -> None:
-        body = logged_in_admin.get("/admin/").get_data(as_text=True)
-        assert re.search(r'<a href="/backoffice/dashboard"[^>]*>Back to Your projects</a>', body)
-        _assert_no_old_dashboard_links(body)
-
     @pytest.mark.parametrize("code", ERROR_TEMPLATES)
     def test_error_page_links_to_backoffice_dashboard(self, app: Flask, regular_user: User, code: str) -> None:
         # The error pages only offer the Your projects link to a signed-in user.

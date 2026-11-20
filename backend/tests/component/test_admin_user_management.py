@@ -85,6 +85,71 @@ class TestAdminUserListPermissions:
         assert "login" in response.location
 
 
+class TestSiteAdminLayout:
+    """Site Admin opens on the users list, and its list pages share a tab bar."""
+
+    def test_site_admin_index_redirects_to_the_users_list(self, logged_in_admin: FlaskClient) -> None:
+        """/admin/ has no page of its own; it lands on the Users tab."""
+        response = logged_in_admin.get("/admin/")
+        assert response.status_code == 302
+        assert response.location.endswith("/admin/users")
+
+    def test_site_admin_index_refused_to_a_regular_user(self, logged_in_user: FlaskClient) -> None:
+        """The redirect is still behind the admin check."""
+        assert logged_in_user.get("/admin/").status_code == 403
+
+    def test_users_list_is_on_the_backoffice_design(self, logged_in_admin: FlaskClient) -> None:
+        """The users list renders on the backoffice base, not the GOV.UK one."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert "backoffice/dist/main.css" in body
+        assert "govuk-" not in body
+
+    def test_users_list_has_the_users_tab_selected(self, logged_in_admin: FlaskClient) -> None:
+        """The Users tab is selected and the Invites tab links to the invites list."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert re.search(r'id="admin-tabs-tab-users"[^>]*aria-selected="true"', body)
+        assert re.search(r'href="/admin/invites"[^>]*\s+role="tab"[^>]*id="admin-tabs-tab-invites"', body)
+        assert 'id="admin-tabs-panel-users"' in body
+
+    def test_users_list_back_arrow_goes_to_your_projects(self, logged_in_admin: FlaskClient) -> None:
+        """The page header's back arrow leads to Your projects."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert re.search(r'<a href="/backoffice/dashboard"[^>]*aria-label="Back to Your projects"', body, re.DOTALL)
+
+
+class TestAdminUserList:
+    """What the users list shows."""
+
+    def test_shows_counts_and_users(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """The stat tiles and a row per user appear."""
+        _seed_user(fake_store, "listed@example.com", GlobalRole.USER, first_name="Listed", last_name="Person")
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert "Total users" in body
+        assert "2FA enabled" in body
+        assert "listed@example.com" in body
+        assert "Listed Person" in body
+
+    def test_a_row_links_to_the_users_page(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """Clicking a row opens the user's page."""
+        user = _seed_user(fake_store, "row@example.com", GlobalRole.USER)
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert f'data-row-url="/admin/users/{user.id}"' in body
+
+    def test_filters_keep_their_values(self, logged_in_admin: FlaskClient) -> None:
+        """The search box and selects show what was filtered on, with a count of matches."""
+        body = logged_in_admin.get("/admin/users?search=nobody&role=organiser&active=false").get_data(as_text=True)
+        assert 'value="nobody"' in body
+        assert re.search(r'<option value="organiser"\s+selected', body)
+        assert re.search(r'<option value="false"\s+selected', body)
+        assert "Users found: 0" in body
+        assert "No users found matching your criteria." in body
+
+    def test_points_to_invites_for_adding_a_user(self, logged_in_admin: FlaskClient) -> None:
+        """Users are added by invite, and the page says so with a link."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert re.search(r'To add a user, <a href="/admin/invites/create"[^>]*>create an invite</a> for them\.', body)
+
+
 class TestAdminUserView:
     """Admin view user details page."""
 

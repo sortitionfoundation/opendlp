@@ -52,8 +52,8 @@ logger = structlog.get_logger(__name__)
 @login_required
 @require_admin
 def index() -> ResponseReturnValue:
-    """Site admin overview page with links to admin sections."""
-    return render_template("admin/index.html"), 200
+    """Site Admin opens on its first tab, the users list."""
+    return redirect(url_for("admin.list_users"))
 
 
 @admin_bp.route("/users")

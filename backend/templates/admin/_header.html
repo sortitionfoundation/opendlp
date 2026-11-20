@@ -1,0 +1,40 @@
+{#
+ABOUTME: Site Admin page header - the "Site Admin" title with the Users and Invites tabs
+ABOUTME: Used by the two list pages; the pages under them have a back arrow instead
+#}
+{% from "backoffice/components/page_header.html" import page_header %}
+{% from "backoffice/components/tabs.html" import tabs %}
+
+{% macro admin_header(active_tab) %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
+        {{ page_header(
+        title=_("Site Admin"),
+        back_href=url_for('backoffice.dashboard'),
+        back_label=_("Back to Your projects")
+        ) }}
+        <div class="mt-4">
+            {{ tabs(
+            id="admin-tabs",
+            aria_label=_("Site Admin sections"),
+            items=[
+            {"key": "users", "label": _("Users"), "href": url_for('admin.list_users'), "active": active_tab == "users"},
+            {"key": "invites", "label": _("Invites"), "href": url_for('admin.list_invites_page'), "active": active_tab == "invites"}
+            ]
+            ) }}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro admin_tab_panel(key) %}
+    <div id="admin-tabs-panel-{{ key }}"
+         role="tabpanel"
+         aria-labelledby="admin-tabs-tab-{{ key }}"
+         tabindex="0"
+         class="flex flex-col gap-6">{{ caller() }}</div>
+{% endmacro %}
+
+{% macro inner_header(title, back_href, back_label) %}
+    <div class="max-w-screen-2xl mx-auto px-6 py-4 w-full">
+        {{ page_header(title=title, back_href=back_href, back_label=back_label) }}
+    </div>
+{% endmacro %}
