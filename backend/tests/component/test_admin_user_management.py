@@ -480,6 +480,69 @@ class TestAdminUserNameEdit:
             assert uow.users.get(user.id).first_name == "Keep"
 
 
+class TestAdminUserRoleEdit:
+    """A user's global role is changed in a dialog on their page."""
+
+    def test_the_role_dialog_preselects_the_current_role(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """The Change role dialog opens on the role the user has now."""
+        organiser = _seed_user(fake_store, "organiser@example.com", GlobalRole.ORGANISER, "Global", "Organiser")
+
+        body = logged_in_admin.get(f"/admin/users/{organiser.id}").get_data(as_text=True)
+
+        assert 'id="change-role-open"' in body
+        assert f'action="/admin/users/{organiser.id}/role"' in body
+        assert re.search(r'value="ORGANISER"[^>]*?checked', body) is not None
+        assert re.search(r'value="USER"[^>]*?checked', body) is None
+
+    def test_changing_the_role_saves_it_and_goes_back(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """The dialog's form changes the role and leaves the account active."""
+        user = _seed_user(fake_store, "role@example.com", GlobalRole.USER, "Role", "Change")
+
+        response = logged_in_admin.post(f"/admin/users/{user.id}/role", data={"global_role": GlobalRole.ORGANISER.name})
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/admin/users/{user.id}")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.users.get(user.id)
+            assert stored.global_role == GlobalRole.ORGANISER
+            assert stored.is_active is True
+
+    def test_an_invalid_role_is_refused(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """A role that is not one of the choices changes nothing."""
+        user = _seed_user(fake_store, "badrole@example.com", GlobalRole.USER)
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/role", data={"global_role": "EMPEROR"}, follow_redirects=True
+        )
+
+        assert b"Choose a role for this user" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).global_role == GlobalRole.USER
+
+    def test_admin_cannot_change_own_role(self, logged_in_admin: FlaskClient, admin_user: User) -> None:
+        """Posting a new role for yourself is refused, and the page offers no dialog for it."""
+        response = logged_in_admin.post(
+            f"/admin/users/{admin_user.id}/role", data={"global_role": GlobalRole.USER.name}, follow_redirects=True
+        )
+        assert b"You cannot change your own role" in response.data
+
+        body = logged_in_admin.get(f"/admin/users/{admin_user.id}").get_data(as_text=True)
+        assert "change-role-open" not in body
+
+    def test_a_regular_user_cannot_change_a_role(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
+        user = _seed_user(fake_store, "promote@example.com", GlobalRole.USER)
+
+        response = logged_in_user.post(f"/admin/users/{user.id}/role", data={"global_role": GlobalRole.ADMIN.name})
+
+        assert response.status_code == 403
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).global_role == GlobalRole.USER
+
+
 class TestAdminDisableAccount:
     """Disabling has to leave no way back in until the account is enabled again."""
 
