@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the backoffice DB selection blueprint over a FakeUnitOfWork
 # ABOUTME: Drives the real DB selection routes + services (auth, render, validation, modal fragments, downloads, reset, history)
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
@@ -9,11 +10,12 @@ import pytest
 
 from opendlp.adapters import database
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import AssemblyRole, RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import respondent_service, target_csv_import
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection, NotFoundError
 from opendlp.service_layer.sortition import CheckDataResult
+from opendlp.service_layer.user_service import assign_assembly_role
 from tests.fakes import FakeUnitOfWork
 
 
@@ -954,7 +956,6 @@ class TestSaveCsvSettings:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "Gender",
-                "columns_to_keep_string": "Gender",
             },
             follow_redirects=True,
         )
@@ -970,7 +971,6 @@ class TestSaveCsvSettings:
             f"/backoffice/project/{assembly.id}/data/csv/settings",
             data={
                 "check_same_address_cols_string": "",
-                "columns_to_keep_string": "",
             },
             follow_redirects=True,
         )
@@ -989,7 +989,6 @@ class TestSaveCsvSettings:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "blabla",
-                "columns_to_keep_string": "Gender",
             },
         )
 
@@ -1016,13 +1015,37 @@ class TestSaveCsvSettings:
             data={
                 "check_same_address": "y",
                 "check_same_address_cols_string": "",
-                "columns_to_keep_string": "",
             },
         )
 
         assert response.status_code == 200
         assert b"You must specify address attributes" in response.data
         assert b"Save Settings" in response.data
+
+    def test_save_csv_settings_empties_the_columns_to_keep(self, logged_in_admin, admin_user, fake_store):
+        """Only the IDs of a selection are stored, so a save leaves no columns to keep - team defaults included."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly_id = create_assembly(
+                uow=uow,
+                title="Columns To Keep Assembly",
+                created_by_user_id=admin_user.id,
+                question="What should we select?",
+                first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+                number_to_select=10,
+            ).id
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_selection_settings(
+                uow=uow, user_id=admin_user.id, assembly_id=assembly_id, columns_to_keep=["first_name", "email"]
+            )
+
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_id}/data/csv/settings",
+            data={"check_same_address_cols_string": "", "columns_to_keep_string": "first_name"},
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.assemblies.get(assembly_id).selection_settings.columns_to_keep == []
 
     def test_save_csv_settings_requires_auth(self, client, assembly_with_csv_config_unconfirmed):
         """Save settings endpoint requires authentication."""
@@ -1033,23 +1056,299 @@ class TestSaveCsvSettings:
         assert "login" in response.location
 
 
-class TestCsvSelectionSettingsWarning:
-    """Tests for CSV selection settings confirmation warning."""
+HTMX = {"HX-Request": "true"}
 
-    def test_selection_page_shows_warning_when_settings_not_confirmed(
-        self, logged_in_admin, assembly_with_csv_config_unconfirmed
-    ):
-        """Selection page shows warning when settings are not confirmed."""
+
+def _settings_url(assembly_id) -> str:
+    return f"/backoffice/project/{assembly_id}/data/csv/settings"
+
+
+class TestSelectionSettingsDialog:
+    """The selection settings are a dialog, opened from a cog or from the banner that says selection waits for them."""
+
+    @staticmethod
+    def _dialog(client, assembly_id, **params) -> str:
+        response = client.get(_settings_url(assembly_id), query_string=params, headers=HTMX)
+        assert response.status_code == 200
+        return response.data.decode()
+
+    def test_htmx_gets_the_dialog_alone(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
         assembly = assembly_with_csv_config_unconfirmed
 
-        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection")
+        html = self._dialog(logged_in_admin, assembly.id)
+
+        assert "<html" not in html
+        assert 'role="dialog"' in html
+        assert "Selection settings" in html
+        assert "review and save these settings before running selection" in html
+        assert f'hx-post="{_settings_url(assembly.id)}"' in html
+        assert 'hx-target="#project-dialog-host"' in html
+
+    def test_without_htmx_the_address_is_the_selection_page_with_the_dialog_open(
+        self, logged_in_admin, assembly_with_csv_config
+    ):
+        assembly = assembly_with_csv_config
+
+        response = logged_in_admin.get(_settings_url(assembly.id))
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/project/{assembly.id}/selection?settings=1")
+        html = logged_in_admin.get(response.location).data.decode()
+        assert 'id="selection-settings-dialog"' in html
+        assert "Run Selection" in html
+
+    def test_the_selection_page_does_not_carry_the_dialog_unasked(self, logged_in_admin, assembly_with_csv_config):
+        html = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config.id}/selection").data.decode()
+
+        assert 'id="project-dialog-host"' in html
+        assert 'id="selection-settings-dialog"' not in html
+        assert 'name="check_same_address"' not in html
+
+    def test_the_cog_opens_the_dialog_in_place(self, logged_in_admin, assembly_with_csv_config):
+        assembly = assembly_with_csv_config
+
+        html = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection").data.decode()
+
+        cog = html.split('data-focus-id="selection-settings-cog"')[0].rsplit("<button", 1)[1]
+        cog += html.split('data-focus-id="selection-settings-cog"')[1].split(">")[0]
+        assert 'aria-label="Selection settings"' in cog
+        assert 'aria-haspopup="dialog"' in cog
+        assert f'hx-get="{_settings_url(assembly.id)}"' in cog
+        assert 'hx-target="#project-dialog-host"' in cog
+
+    def test_unconfirmed_settings_start_with_the_address_check_off(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        """A project held in OpenDLP has no address columns yet, so the box must not be pre-ticked."""
+        html = self._dialog(logged_in_admin, assembly_with_csv_config_unconfirmed.id)
+
+        checkbox = re.search(r'<input[^>]*name="check_same_address"[^>]*>', html)
+        assert checkbox, "No check_same_address checkbox in the selection settings"
+        assert "checked" not in checkbox.group(0)
+
+    def test_settings_do_not_ask_for_attributes_to_keep(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        """The downloads of a selection carry the columns of the respondents export, so there are none to choose."""
+        html = self._dialog(logged_in_admin, assembly_with_csv_config_unconfirmed.id)
+
+        assert "Attributes to Keep" not in html
+        assert "columns_to_keep_string" not in html
+
+    @staticmethod
+    def _address_attributes_classes(html: str) -> list[str]:
+        block = re.search(r'<div id="address-attributes"\s+class="([^"]*)"', html)
+        assert block, "No address attributes block in the selection settings"
+        return block.group(1).split()
+
+    def test_address_attributes_show_only_while_the_address_check_is_ticked(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        """They are hidden, and CSS shows them when the box is ticked; the attribute list sits with them."""
+        html = self._dialog(logged_in_admin, assembly_with_csv_config_unconfirmed.id)
+
+        classes = self._address_attributes_classes(html)
+        assert "hidden" in classes
+        assert "group-has-[[data-address-check]:checked]:flex" in classes
+        block_start = html.index('<div id="address-attributes"')
+        assert html.index("Available respondent attributes") > block_start
+        assert html.index('name="check_same_address_cols_string"') > block_start
+        assert html.index('name="check_same_address"') < block_start
+
+    def test_a_refused_save_answers_with_the_dialog_and_the_reason(self, logged_in_admin, assembly_with_csv_config):
+        """Over htmx: 422, so the dialog is swapped back in holding what was typed."""
+        response = logged_in_admin.post(
+            _settings_url(assembly_with_csv_config.id),
+            data={"check_same_address": "y", "check_same_address_cols_string": "blabla"},
+            headers=HTMX,
+        )
+
+        assert response.status_code == 422
+        html = response.data.decode()
+        assert "<html" not in html
+        assert "Unrecognised attribute names: blabla" in html
+        assert 'value="blabla"' in html
+
+    def test_address_attributes_holding_an_error_are_not_hidden(self, logged_in_admin, assembly_with_csv_config):
+        """An unticked box must not hide the error that refused the save."""
+        response = logged_in_admin.post(
+            _settings_url(assembly_with_csv_config.id),
+            data={"check_same_address_cols_string": "blabla"},
+            headers=HTMX,
+        )
+
+        html = response.data.decode()
+        assert "Unrecognised attribute names: blabla" in html
+        assert "hidden" not in self._address_attributes_classes(html)
+
+    def test_a_refused_save_without_htmx_is_the_selection_page_with_the_dialog_open(
+        self, logged_in_admin, assembly_with_csv_config
+    ):
+        response = logged_in_admin.post(
+            _settings_url(assembly_with_csv_config.id),
+            data={"check_same_address": "y", "check_same_address_cols_string": "blabla"},
+        )
 
         assert response.status_code == 200
-        assert b"review and save the selection settings" in response.data
-        assert b"Go to Data Settings" in response.data
-        assert b"source=csv" in response.data
-        assert b"mode=edit" in response.data
-        assert b"#selection-settings" in response.data
+        html = response.data.decode()
+        assert 'id="selection-settings-dialog"' in html
+        assert "Unrecognised attribute names: blabla" in html
+        assert "Run Selection" in html
+
+    def test_a_save_over_htmx_loads_the_selection_page(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.post(
+            _settings_url(assembly.id), data={"check_same_address_cols_string": ""}, headers=HTMX
+        )
+
+        assert response.status_code == 200
+        assert response.headers["HX-Redirect"].endswith(f"/backoffice/project/{assembly.id}/selection")
+
+    def test_opened_from_project_details_a_save_goes_back_there(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed, fake_store
+    ):
+        assembly = assembly_with_csv_config_unconfirmed
+        html = self._dialog(logged_in_admin, assembly.id, **{"from": "details"})
+        assert 'name="from" value="details"' in html
+
+        response = logged_in_admin.post(
+            _settings_url(assembly.id),
+            data={"check_same_address_cols_string": "", "from": "details"},
+            headers=HTMX,
+        )
+
+        assert response.headers["HX-Refresh"] == "true"
+        assert "HX-Redirect" not in response.headers
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.assemblies.get(assembly.id).csv.settings_confirmed is True
+
+    def test_opened_from_project_details_a_save_without_htmx_goes_back_there(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.post(
+            _settings_url(assembly.id), data={"check_same_address_cols_string": "", "from": "details"}
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/project/{assembly.id}#selection-settings")
+
+    def test_where_to_go_back_to_is_a_token_not_an_address(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        assembly = assembly_with_csv_config_unconfirmed
+        html = self._dialog(logged_in_admin, assembly.id, **{"from": "https://example.com/"})
+        assert 'name="from" value=""' in html
+
+        response = logged_in_admin.post(
+            _settings_url(assembly.id),
+            data={"check_same_address_cols_string": "", "from": "https://example.com/"},
+            headers=HTMX,
+        )
+
+        assert response.headers["HX-Redirect"].endswith(f"/backoffice/project/{assembly.id}/selection")
+
+    def test_the_dialog_can_be_saved_before_there_are_respondents(self, logged_in_admin, existing_assembly, fake_store):
+        """There are no columns to check the address attributes against, so none are checked."""
+        html = self._dialog(logged_in_admin, existing_assembly.id)
+        assert "Available respondent attributes" not in html
+
+        response = logged_in_admin.post(
+            _settings_url(existing_assembly.id), data={"check_same_address_cols_string": ""}, headers=HTMX
+        )
+
+        assert "HX-Redirect" in response.headers
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.assemblies.get(existing_assembly.id).csv.settings_confirmed is True
+
+    def test_a_reader_gets_neither_the_cog_nor_the_dialog(
+        self, logged_in_user, regular_user, assembly_with_csv_config_unconfirmed, fake_store
+    ):
+        assembly = assembly_with_csv_config_unconfirmed
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_assembly_role(uow, regular_user.id, assembly.id, AssemblyRole.READ_ONLY)
+
+        page = logged_in_user.get(f"/backoffice/project/{assembly.id}/selection").data.decode()
+        assert "selection-settings-cog" not in page
+        assert "Review selection settings" not in page
+        assert "Review and save the selection settings." in page
+
+        assert logged_in_user.get(_settings_url(assembly.id), headers=HTMX).status_code in (302, 403)
+        asked = logged_in_user.get(f"/backoffice/project/{assembly.id}/selection?settings=1").data.decode()
+        assert 'id="selection-settings-dialog"' not in asked
+
+
+class TestSelectionWaitingBanner:
+    """One banner names what selection is waiting for; the steps stay, with their actions disabled."""
+
+    @staticmethod
+    def _banner(html: str) -> str:
+        start = html.index('id="selection-waiting"')
+        return html[start : html.index("</ul>", start)]
+
+    def test_unconfirmed_settings_are_named_with_a_way_to_open_the_dialog(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        assembly = assembly_with_csv_config_unconfirmed
+
+        html = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection").data.decode()
+
+        banner = self._banner(html)
+        assert "Before you can run a selection:" in banner
+        assert "Review and save the selection settings." in banner
+        assert "Review selection settings" in banner
+        assert f'hx-get="{_settings_url(assembly.id)}"' in banner
+        assert "Add targets." not in banner
+        assert "Add respondents." not in banner
+
+    def test_a_project_with_nothing_is_told_everything_and_keeps_its_steps(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/selection").data.decode()
+
+        banner = self._banner(html)
+        assert "Add targets." in banner
+        assert f'href="/backoffice/project/{existing_assembly.id}/targets"' in banner
+        assert "Add respondents." in banner
+        assert f'href="/backoffice/project/{existing_assembly.id}/respondents"' in banner
+        assert "Review and save the selection settings." in banner
+        assert "Please set up your data on the Project Details tab" not in html
+        initial = _step(html, "initial-selection-step")
+        assert initial.count('disabled aria-disabled="true"') == 2
+        assert 'disabled aria-disabled="true"' in _step(html, "replacement-selection-step")
+        assert "Selection History" in html
+
+    def test_confirmed_settings_without_respondents_still_wait(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Settings saved before anyone registered must not let a selection run on nobody."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            target_csv_import.import_targets_from_csv(
+                uow, admin_user.id, existing_assembly.id, "feature,value,min,max\nGender,Male,1,2\nGender,Female,1,2"
+            )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_csv_config(uow=uow, user_id=admin_user.id, assembly_id=existing_assembly.id, settings_confirmed=True)
+
+        html = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/selection").data.decode()
+
+        banner = self._banner(html)
+        assert "Add respondents." in banner
+        assert "Add targets." not in banner
+        assert "Review and save the selection settings." not in banner
+        assert _step(html, "initial-selection-step").count('disabled aria-disabled="true"') == 2
+
+    def test_nothing_waiting_means_no_banner(self, logged_in_admin, assembly_with_csv_config):
+        html = logged_in_admin.get(f"/backoffice/project/{assembly_with_csv_config.id}/selection").data.decode()
+
+        assert 'id="selection-waiting"' not in html
+        assert 'disabled aria-disabled="true"' not in _step(html, "initial-selection-step")
+
+    def test_a_save_goes_back_to_the_selection_page(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly.id}/data/csv/settings",
+            data={"check_same_address_cols_string": ""},
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/project/{assembly.id}/selection")
 
     def test_selection_page_buttons_disabled_when_settings_not_confirmed(
         self, logged_in_admin, assembly_with_csv_config_unconfirmed

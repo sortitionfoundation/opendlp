@@ -226,6 +226,7 @@ class RegistrationPage:
         auto_reply_email_template_id: uuid.UUID | None = None,
         name: str = "",
         language: str = "",
+        auto_reply_enabled: bool = True,
     ):
         now = datetime.now(UTC)
         self.id = registration_page_id or uuid.uuid4()
@@ -241,6 +242,7 @@ class RegistrationPage:
         # HTML is kept while it is, so the author can switch back to it.
         self.thank_you_use_default = thank_you_use_default
         self.auto_reply_email_template_id = auto_reply_email_template_id
+        self.auto_reply_enabled = auto_reply_enabled
         self.activity: list[RegistrationPageActivity] = list(activity) if activity else []
         self.created_at = created_at or now
         self.updated_at = updated_at or now
@@ -333,6 +335,14 @@ class RegistrationPage:
         self.auto_reply_email_template_id = template_id
         self.updated_at = datetime.now(UTC)
 
+    def set_auto_reply_enabled(self, enabled: bool) -> None:
+        self.auto_reply_enabled = enabled
+        self.updated_at = datetime.now(UTC)
+
+    def sends_auto_reply(self) -> bool:
+        """True when someone registering through this page is sent the auto-reply."""
+        return self.auto_reply_enabled and self.auto_reply_email_template_id is not None
+
     def readiness_problems(self, source: HtmlSource) -> list[str]:
         """Human-readable reasons the (page, source) combo is not publishable."""
         problems: list[str] = []
@@ -415,6 +425,7 @@ class RegistrationPage:
             auto_reply_email_template_id=self.auto_reply_email_template_id,
             name=self.name,
             language=self.language,
+            auto_reply_enabled=self.auto_reply_enabled,
         )
 
     def __eq__(self, other: object) -> bool:

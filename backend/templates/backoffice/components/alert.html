@@ -71,10 +71,19 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
             {{ styles.icon }}
         </span>
 
-        {# Message: white-space: pre-line renders newlines in multi-line flashes #}
-        <p class="text-body-md flex-1" style="color: {{ styles.text }}; white-space: pre-line;">
-            {%- if use_caller %}{{ caller() }}{% else %}{{ message }}{% endif -%}
-        </p>
+        {# A caller's content goes in a div, as it may hold a list or paragraphs:
+           inside a <p> the browser closes the paragraph at the first of those,
+           leaving it empty but still taking its share of the row. Nor does it
+           get pre-line, which would turn the template's own line breaks into
+           blank lines between them. #}
+        {% if use_caller %}
+            <div class="text-body-md flex-1" style="color: {{ styles.text }};">{{ caller() }}</div>
+        {% else %}
+            {# Message: white-space: pre-line renders newlines in multi-line flashes #}
+            <p class="text-body-md flex-1" style="color: {{ styles.text }}; white-space: pre-line;">
+                {{- message -}}
+            </p>
+        {% endif %}
 
         {# Dismiss button: self-start pins it to the top right in multi-line alerts #}
         {% if dismissible %}

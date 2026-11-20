@@ -50,6 +50,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.tabular_data import TableProblem, TabularDataError
+from opendlp.service_layer.target_csv_import import TargetsCsvError
 from opendlp.service_layer.target_service import TargetLinkedError, TargetsNotSaved
 from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
 
@@ -84,6 +85,7 @@ CURATED = [
     AssemblyTitleTaken("Climate Assembly"),
     CannotCloneGSheetAssembly(),
     InvalidCloneOptions("Respondents need the registration questions. Clone the questions too."),
+    TargetsCsvError("Invalid percentage 'lots' for Region / North"),
 ]
 
 UNCURATED = [

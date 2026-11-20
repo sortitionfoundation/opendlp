@@ -522,6 +522,27 @@ class TestAssignAssemblyRole:
         assert role.role == AssemblyRole.ASSEMBLY_MANAGER
         assert len(user.assembly_roles) == 1
 
+    def test_holds_assembly_role_only_once_given_one(self, uow):
+        user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        assembly = Assembly(title="Test Assembly")
+        uow.users.add(user)
+        uow.assemblies.add(assembly)
+
+        assert user_service.holds_assembly_role(uow, user.id, assembly.id) is False
+
+        user_service.assign_assembly_role(
+            uow=uow, user_id=user.id, assembly_id=assembly.id, role=AssemblyRole.READ_ONLY
+        )
+
+        assert user_service.holds_assembly_role(uow, user.id, assembly.id) is True
+
+    def test_holds_assembly_role_is_false_for_nobody(self, uow):
+        assert user_service.holds_assembly_role(uow, uuid.uuid4(), uuid.uuid4()) is False
+
     def test_assign_assembly_role_user_not_found(self, uow):
         """Test role assignment fails when user not found."""
 

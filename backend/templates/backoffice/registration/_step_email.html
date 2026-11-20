@@ -17,6 +17,17 @@ ABOUTME: Included by assembly_registration.html when ?section=email
     {% set preview_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='preview') %}
     {% set back_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='thank-you') %}
                     {# Readiness banner — surfaces problems that would stop the auto-reply from actually being delivered #}
+    {% if email_template and not registration_page.auto_reply_enabled %}
+        <div class="rounded-lg p-4"
+             role="status"
+             style="background-color: var(--color-info-100);
+                    border: 1px solid var(--color-info-400);
+                    color: var(--color-info-600)">
+            <p class="text-body-md">
+                {{ _("The auto-reply is off. People who register through this page will not get an email.") }}
+            </p>
+        </div>
+    {% endif %}
     {% for problem in email_readiness_problems %}
         {% set is_error = problem.severity == "error" %}
         <div class="rounded-lg p-4"
@@ -77,19 +88,21 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                                     border: 1px solid var(--color-borders-dividers)">
                         <div class="flex items-center justify-between mb-4 gap-4">
                             <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Auto-reply email template") }}</h2>
-                                            {# Header right: the always-on indicator plus the editorial controls — Edit
+                                            {# Header right: the on/off checkbox plus the editorial controls — Edit
                                                swaps in place to Cancel/Save, mirroring the form step. The checkbox is
-                                               deliberately checked and disabled: the auto-reply is always sent in the
-                                               current version of the product. When a real need to switch it off
-                                               emerges, a proper service-layer enable/disable gets built and this
-                                               checkbox gets wired to it. x-scroll-preserve-links keeps the scroll
-                                               position across the Edit/Cancel page reloads, matching the form step. #}
+                                               saved with the rest of the form, so it can only be changed in edit mode.
+                                               An unticked checkbox is not submitted, so the hidden field tells the
+                                               save that the checkbox was there to untick. x-scroll-preserve-links
+                                               keeps the scroll position across the Edit/Cancel page reloads, matching
+                                               the form step. #}
                             <div class="flex items-center gap-4" x-scroll-preserve-links>
+                                {% if edit_mode %}<input type="hidden" name="auto_reply_enabled_shown" value="1" />{% endif %}
                                 {{ checkbox(name="auto_reply_enabled",
                                 label=_("Send auto-reply email"),
-                                checked=true,
-                                disabled=true,
-                                dim=false) }}
+                                checked=registration_page.auto_reply_enabled,
+                                disabled=not edit_mode,
+                                dim=false,
+                                value="1") }}
                                 {% if edit_mode %}
                                     {{ button(_("Cancel"), variant="secondary", href=email_view_url, attrs='@click="guardLeave($event)"') }}
                                     {{ button(_("Save") , type="submit", variant="primary", attrs='name="action" value="save"') }}
@@ -99,23 +112,25 @@ ABOUTME: Included by assembly_registration.html when ?section=email
                             </div>
                         </div>
                         <div class="space-y-4">
-                            {% set common_input_attrs %}{% if not edit_mode %}readonly aria-readonly="true" style="background-color: var(--color-subtle-background-panels); cursor: default;"{% endif %}{% endset %}
                             {# One row per field, labels in a shared column so the inputs line up;
-                               the help text is in each label's info icon. #}
+                               the help text is in each label's info icon. Outside edit mode the
+                               values are plain text, so nothing looks editable that is not. #}
                             <div class="space-y-3">
                                 {{ input(name="template_reply_to_name",
                                 label=_("Reply-to name"),
                                 info=_("Also shown as who the email is from."),
                                 inline=true,
                                 value=email_template.reply_to_name,
-                                attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                readonly=not edit_mode,
+                                attrs='maxlength="255"') }}
                                 {{ input(name="template_reply_to_email",
                                 label=_("Reply-to email address"),
                                 info=_("When someone replies to the auto-reply, their email goes here."),
                                 inline=true,
                                 type="email",
                                 value=email_template.reply_to_email,
-                                attrs=('maxlength="255" ' ~ common_input_attrs)|trim) }}
+                                readonly=not edit_mode,
+                                attrs='maxlength="255"') }}
                                             {# Template name is not exposed yet — one template per page, always called "Registration
 auto-reply". When multi-template support ships this becomes a visible input. #}
                                 {{ input(name="template_subject",
@@ -124,7 +139,7 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
                                 info=_("Dynamic fields allowed, e.g. {{ project.title }}."),
                                 inline=true,
                                 required=true,
-                                attrs=common_input_attrs|trim) }}
+                                readonly=not edit_mode) }}
                             </div>
                             {% set body_attrs %}
                                 {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"

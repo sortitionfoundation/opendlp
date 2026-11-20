@@ -173,9 +173,17 @@ calls it target sources (`target_sources`). Do not call it a "data source" in
 the interface: organisers read that as where a target's population figures come
 from, such as the census.
 
-**data source** is where a project's respondents come from: Google Sheets or
-a CSV upload, as chosen on the Data tab. It never means the question behind a
-target, nor where a target's percentages come from.
+**data source** is where a project's targets and respondents are managed: in
+OpenDLP or in Google Sheets, as chosen when the project is created and shown on
+the Data source card of the project details page. For a project held in
+OpenDLP it also covers how each arrives - "Target data source" and
+"Respondents data source". It never means the question behind a target, nor
+where a target's percentages come from.
+
+The third step of the Create new project dialog is named "Targets and people",
+which departs from **respondent** below. That was a deliberate choice for that
+one heading (sc-1024), to be looked at again with the rest of the glossary; the
+field labels in the same step say "respondents".
 
 **source of population figures** is the note a target can carry saying where
 its percentages come from - usually a link to the report, such as census tables
@@ -405,9 +413,10 @@ before sweeping the source.
    the database does.
 
 2. **Columns, fields and attributes in the selection settings.** The Google
-   Sheets form says "Address Columns", "Columns to Keep" and "ID Column", which is
+   Sheets form says "Address columns", "Columns to keep" and "ID column", which is
    right: they are columns in the spreadsheet. The database settings form has the
-   same settings as "Address Attributes" and "Attributes to Keep". "Fields" is
+   first of those as "Address attributes" (it has no "to keep" setting, as only
+   the IDs of a selection are stored). "Fields" is
    the word the rest of the interface uses for these ("Fields are defined by
-   your Google Sheets spreadsheet"), so "Address Fields" and "Fields to Keep" are
+   your Google Sheets spreadsheet"), so "Address Fields" is
    the likely answer, but this is waiting on a team discussion.

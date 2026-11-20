@@ -287,7 +287,7 @@ def send_registration_auto_reply(
     each carry their own auto-reply, so resolving by assembly could send a
     registrant the wrong language. Returns None (no record) when skipped -
     a respondent that came from anywhere but a registration page has no
-    auto-reply to send. When an auto-reply *is* configured but the respondent
+    auto-reply to send, and neither has one whose page has it turned off. When an auto-reply *is* configured but the respondent
     has no email address, logs a warning (a likely page misconfiguration) and
     writes no record. ``locale`` is the language the respondent registered in,
     which sets how dates in the email are written.
@@ -298,6 +298,9 @@ def send_registration_auto_reply(
         return None
     page = uow.registration_pages.get(respondent.registration_page_id)
     if page is None or page.auto_reply_email_template_id is None:
+        return None
+    if not page.sends_auto_reply():
+        logger.info("Auto-reply is turned off for registration page %s; skipping send", page.id)
         return None
     if not respondent.email:
         logger.warning(

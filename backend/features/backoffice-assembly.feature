@@ -17,95 +17,20 @@ Feature: Backoffice Assembly Management
     Given I am logged in as an admin user
     And there is an assembly called "Climate Assembly" with question "How should we address climate change?"
     When I visit the assembly details page for "Climate Assembly"
-    Then I should see the assembly question section
+    Then I should see "Basic details" as a section heading
     And I should see "How should we address climate change?"
-    And I should see the assembly details summary
     And I should see "Status"
     And I should see "Panel size"
     And I should see "Created"
 
-  Scenario: Assembly details page has edit button
-    Given I am logged in as an admin user
-    And there is an assembly called "Climate Assembly"
-    When I visit the assembly details page for "Climate Assembly"
-    Then I should see the "Edit project" button
+  # Editing a project's details is in project-details.feature
 
-  # Edit Assembly Page Tests
-
-  Scenario: User can navigate to edit assembly from details page
-    Given I am logged in as an admin user
-    And there is an assembly called "Climate Assembly"
-    When I visit the assembly details page for "Climate Assembly"
-    And I click the "Edit project" button
-    Then I should see the edit assembly page
-    And I should see "Edit project" as the page heading
-
-  Scenario: Edit assembly page displays form fields
-    Given I am logged in as an admin user
-    And there is an assembly called "Climate Assembly" with question "How should we address climate change?"
-    When I visit the edit assembly page for "Climate Assembly"
-    Then I should see the title input field
-    And I should see the question textarea field
-    And I should see the first event date field
-    And I should see the number to select field
-    And the title input should contain "Climate Assembly"
-    And the question textarea should contain "How should we address climate change?"
-
-  Scenario: Edit assembly page has save and cancel buttons
-    Given I am logged in as an admin user
-    And there is an assembly called "Climate Assembly"
-    When I visit the edit assembly page for "Climate Assembly"
-    Then I should see the "Save Changes" button
-    And I should see the "Cancel" button
-
-  Scenario: User can update assembly details
-    Given I am logged in as an admin user
-    And there is an assembly called "Climate Assembly"
-    When I visit the edit assembly page for "Climate Assembly"
-    And I fill in the title with "Updated Climate Assembly"
-    And I click the "Save Changes" button
-    Then I should see the assembly details page
-    And I should see "Updated Climate Assembly" as the page heading
-    And I should see "updated successfully"
-
-  # Create Assembly Page Tests
+  # Creating a project is in create-project.feature
 
   Scenario: Dashboard displays create assembly button
     Given I am logged in as an admin user
     When I visit the backoffice dashboard
     Then I should see the "Create project" button
-
-  Scenario: User can navigate to create assembly page from dashboard
-    Given I am logged in as an admin user
-    When I visit the backoffice dashboard
-    And I click the "Create project" button
-    Then I should see the create assembly page
-    And I should see "Create project" as the page heading
-
-  Scenario: Create assembly page displays form fields
-    Given I am logged in as an admin user
-    When I visit the create assembly page
-    Then I should see the title input field
-    And I should see the question textarea field
-    And I should see the first event date field
-    And I should see the number to select field
-
-  Scenario: Create assembly page has create and cancel buttons
-    Given I am logged in as an admin user
-    When I visit the create assembly page
-    Then I should see the "Create project" button
-    And I should see the "Cancel" button
-
-  Scenario: User can create a new assembly
-    Given I am logged in as an admin user
-    When I visit the create assembly page
-    And I fill in the title with "New Test Assembly"
-    And I fill in the question with "What should we discuss?"
-    And I fill in the number to select with "50"
-    And I click the "Create project" button
-    Then I should see the assembly details page
-    And I should see "New Test Assembly" as the page heading
-    And I should see "created successfully"
 
   Scenario: Empty state shows create assembly button
     Given I am logged in as an admin user

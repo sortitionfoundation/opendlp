@@ -93,6 +93,7 @@ from opendlp.service_layer.registration_page_service import (
     rename_registration_page,
     render_registration_form,
     reopen_registration_page,
+    set_auto_reply_enabled,
     unpublish_registration_page,
     update_registration_page,
     update_registration_page_html,
@@ -201,12 +202,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # same snapshot rather than two sequential read-only transactions.
         uow = bootstrap.get_flask_uow()
         with uow:
-            nav = get_assembly_nav_context(
-                uow,
-                current_user.id,
-                assembly_id,
-                request.args.get("source", ""),
-            )
+            nav = get_assembly_nav_context(uow, current_user.id, assembly_id)
             hub_context = registration_hub_context(uow, assembly_id, nav.data_source, nav.gsheet)
 
         return render_template(
@@ -252,12 +248,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
         # sequential read-only transactions.
         uow = bootstrap.get_flask_uow()
         with uow:
-            nav = get_assembly_nav_context(
-                uow,
-                current_user.id,
-                assembly_id,
-                request.args.get("source", ""),
-            )
+            nav = get_assembly_nav_context(uow, current_user.id, assembly_id)
 
             # Get registration page and HTML source from service layer
             page = _page_by_slug(uow, assembly_id, url_slug)
@@ -562,12 +553,7 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
         nav_uow = bootstrap.get_flask_uow()
         with nav_uow:
-            get_assembly_nav_context(
-                nav_uow,
-                current_user.id,
-                assembly_id,
-                "",
-            )
+            get_assembly_nav_context(nav_uow, current_user.id, assembly_id)
 
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -624,7 +610,7 @@ def _load_auto_reply_context(
     """Load the auto-reply template and readiness problems for the view route.
 
     Prefers the template currently assigned to the page. When nothing is assigned
-    (a legacy state from before the auto-reply became always-on) falls back to the
+    (a legacy state from before new pages had a template assigned) falls back to the
     first template stored for the assembly, so the editor still shows the
     pre-created copy for the manager to work on.
 
@@ -687,32 +673,11 @@ def _default_email_template_content() -> dict[str, str]:
     return {
         "name": _("Registration auto-reply"),
         "subject": _("Thanks for registering for {{ project.title }}"),
-        # Follows the team's own auto-reply. What OpenDLP knows is a dynamic field;
-        # what it doesn't, such as the session dates, is a [placeholder] to replace.
         "body_html": _(
-            "<p>Dear {{ respondent.first_name_or_friend }},</p>\n"
-            "<p>Thank you for registering your interest in <strong>{{ assembly.title }}</strong>, "
-            "which will look at the question:</p>\n"
-            "<p><strong>{{ assembly.question }}</strong></p>\n"
-            "<p>The assembly will meet on these dates:</p>\n"
-            "<ul>\n"
-            "    <li>[Date, time and place of each session]</li>\n"
-            "</ul>\n"
-            "<p><strong>What happens next</strong></p>\n"
-            "<p>When registration closes, we will choose the members of the assembly by lottery from "
-            "everyone who registered. Depending on how many people register, you will usually have "
-            "around a [10 to 20] in 100 chance of being selected.</p>\n"
-            "<ul>\n"
-            "    <li><strong>[Date]:</strong> if you have been selected, we will tell you by email or phone, "
-            "and arrange a short call to answer any questions you have.</li>\n"
-            "    <li><strong>[Date]:</strong> if you have not been selected, we will tell you by email.</li>\n"
-            "    <li><strong>{{ assembly.first_assembly_date_text }}:</strong> the first session of the assembly.</li>\n"
-            "</ul>\n"
-            "<p>You can read how we look after your details in our privacy policy: "
-            "[link to your privacy policy].</p>\n"
-            "<p>If you have any questions, or your plans change and you can no longer take part, "
-            "please reply to this email or write to {{ reply_to_email }} as soon as you can.</p>\n"
-            "<p>Kind regards,<br>[Your name]<br>[Your organisation]</p>"
+            "<p>Hi {{ respondent.first_name_or_friend }},</p>\n"
+            "<p>Thanks for registering for <strong>{{ project.title }}</strong>.</p>\n"
+            "<p>We'll be in touch about the assembly on {{ project.first_event_date_text }}.</p>\n"
+            "<p>Best wishes,<br>The team</p>"
         ),
     }
 
@@ -727,8 +692,9 @@ def _email_section_url(assembly_id: uuid.UUID, url_slug: str, edit: bool = False
 def _create_and_assign_default_template(assembly_id: uuid.UUID, page_id: uuid.UUID) -> None:
     """Create the default auto-reply template and assign it to the given page.
 
-    The auto-reply is always-on: a created template is an assigned template, and
-    this helper is the single place that enforces that invariant.
+    Whether the auto-reply is sent is the page's on/off setting, not whether it has a
+    template: a created template is an assigned template, and this helper is the
+    single place that enforces that invariant.
     """
     defaults = _default_email_template_content()
     uow = bootstrap.get_flask_uow()
@@ -753,11 +719,15 @@ def _handle_email_action_create(assembly_id: uuid.UUID, page: RegistrationPage) 
 
 def _handle_email_action_save(
     assembly_id: uuid.UUID,
-    url_slug: str,
-    template_id: uuid.UUID | None,
+    page: RegistrationPage,
     *,
     advance: bool = False,
 ) -> str:
+    # Save always targets the page's assigned template. The form does not choose a
+    # template, so a posted template_id is deliberately ignored — trusting it would
+    # let a request update a template belonging to a different assembly.
+    url_slug = page.url_slug
+    template_id = page.auto_reply_email_template_id
     if template_id is None:
         flash(_("There is no auto-reply email to save yet — set one up first"), "warning")
         return _email_section_url(assembly_id, url_slug)
@@ -775,6 +745,8 @@ def _handle_email_action_save(
             reply_to_name=request.form.get("template_reply_to_name", "").strip(),
             reply_to_email=request.form.get("template_reply_to_email", "").strip(),
         )
+        if request.form.get("auto_reply_enabled_shown"):
+            set_auto_reply_enabled(uow, current_user.id, page.id, bool(request.form.get("auto_reply_enabled")))
     flash(_("Auto-reply email saved"), "success")
     if advance:
         return editor_url(assembly_id, url_slug, section="preview")
@@ -788,7 +760,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID, url_slug: str) -
     """
     nav_uow = bootstrap.get_flask_uow()
     with nav_uow:
-        get_assembly_nav_context(nav_uow, current_user.id, assembly_id, "")
+        get_assembly_nav_context(nav_uow, current_user.id, assembly_id)
         page = _page_by_slug(nav_uow, assembly_id, url_slug)
 
     if action == "create":
@@ -796,15 +768,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID, url_slug: str) -
     if action not in ("save", "save_and_next"):
         flash(_("Unknown action — nothing was changed"), "warning")
         return _email_section_url(assembly_id, url_slug)
-    # Save always targets the page's assigned template. The form does not choose a
-    # template, so a posted template_id is deliberately ignored — trusting it would
-    # let a request update a template belonging to a different assembly.
-    return _handle_email_action_save(
-        assembly_id,
-        url_slug,
-        page.auto_reply_email_template_id,
-        advance=(action == "save_and_next"),
-    )
+    return _handle_email_action_save(assembly_id, page, advance=(action == "save_and_next"))
 
 
 @backoffice_registration_bp.route("/project/<uuid:assembly_id>/registration/<url_slug>/email/save", methods=["POST"])
@@ -816,11 +780,8 @@ def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> R
 
     - create   → create a template with default copy and assign it as the auto-reply.
                  Lands the user in edit mode so they can immediately customise it.
-    - save     → update subject / body_html / reply-to on the page's assigned template.
-
-    There is deliberately no enable/disable: the product currently always sends the
-    auto-reply. If a real need to switch it off emerges, that gets a first-class
-    service-layer method — not the old assign/unassign-as-a-toggle trick.
+    - save     → update subject / body_html / reply-to on the page's assigned template,
+                 and turn the auto-reply on or off when the form carried its checkbox.
     """
     action = request.form.get("action", "save")
     try:
@@ -927,7 +888,7 @@ def _create_default_auto_reply_template(assembly_id: uuid.UUID, page_id: uuid.UU
 
     Not fatal — if this fails (validation, race, etc.) we log and let the manager
     hit the "Set up auto-reply" fallback in the UI. The template is assigned
-    straight away: the auto-reply is always-on, so a page with a template sends it.
+    straight away, so a new page sends it unless the auto-reply is turned off.
     """
     try:
         _create_and_assign_default_template(assembly_id, page_id)
@@ -1103,12 +1064,7 @@ def download_registration_qr_code(assembly_id: uuid.UUID, url_slug: str) -> Resp
         # Verify user has permission to access this assembly
         nav_uow = bootstrap.get_flask_uow()
         with nav_uow:
-            get_assembly_nav_context(
-                nav_uow,
-                current_user.id,
-                assembly_id,
-                "",
-            )
+            get_assembly_nav_context(nav_uow, current_user.id, assembly_id)
 
         # The QR code encodes the short URL, so a short slug must be configured
         uow = bootstrap.get_flask_uow()

@@ -1,0 +1,13 @@
+{#
+ABOUTME: What project_details.edit_field answers a save with, for htmx to swap in
+ABOUTME: The row at rest, and out of band the flash, the time of the change, and the page title when that is what changed
+#}
+{% from "backoffice/components/floating_alerts.html" import floating_alerts %}
+{% from "backoffice/project_details/_rows.html" import project_field_row, updated_row %}
+{{ project_field_row(assembly, field, true, return_focus=return_focus) }}
+{{ floating_alerts(oob=true) }}
+{{ updated_row(assembly, oob=true) }}
+{% if field == "title" %}
+    <h1 id="project-page-title" hx-swap-oob="innerHTML">{{ assembly.title }}</h1>
+    <title>{{ assembly.title }} - {{ _("Project details") }}</title>
+{% endif %}

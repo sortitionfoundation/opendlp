@@ -21,13 +21,20 @@ from tests.fakes import FakeEmailAdapter, FakeUnitOfWork
 
 
 def _seed_page(
-    fake_store, assembly_id, *, url_slug="my-slug", form_html="<p>form</p>", auto_reply_template_id=None
+    fake_store,
+    assembly_id,
+    *,
+    url_slug="my-slug",
+    form_html="<p>form</p>",
+    auto_reply_template_id=None,
+    auto_reply_enabled=True,
 ) -> RegistrationPage:
     page = RegistrationPage(
         assembly_id=assembly_id,
         url_slug=url_slug,
         status=RegistrationPageStatus.TEST,
         auto_reply_email_template_id=auto_reply_template_id,
+        auto_reply_enabled=auto_reply_enabled,
     )
     html = RegistrationPageHtml(registration_page_id=page.id, form_html=form_html)
     with FakeUnitOfWork(store=fake_store) as uow:
@@ -220,9 +227,9 @@ class TestSaveAction:
         assert _list_templates(fake_store, assembly_id) == []
 
 
-class TestAlwaysOnAutoReply:
-    """The auto-reply cannot be switched off: no enable/disable actions, and the
-    checkbox renders as a checked, disabled indicator."""
+class TestTurningTheAutoReplyOff:
+    """The auto-reply is turned on and off with the step's checkbox, saved with the
+    rest of the form. There are no separate enable/disable actions."""
 
     def test_save_does_not_assign_an_unassigned_template(self, logged_in_admin, fake_store, assembly_id):
         # An unassigned template can only mean a partially-failed create (the data
@@ -264,22 +271,104 @@ class TestAlwaysOnAutoReply:
             assert saved.subject == template.subject
             assert saved.body_html == template.body_html
 
-    def test_checkbox_renders_checked_and_disabled_with_no_toggle_form(self, logged_in_admin, fake_store, assembly_id):
+    def _checkbox(self, html: str) -> tuple[str, str]:
+        """The checkbox's input tag, and the opening of the label wrapped around it."""
+        before, after = html.split('name="auto_reply_enabled"', 1)
+        return after.split(">", 1)[0], before.rsplit("<label", 1)[1]
+
+    def _save(self, client, assembly_id, **extra):
+        return client.post(
+            f"/backoffice/project/{assembly_id}/registration/my-slug/email/save",
+            data={"action": "save", "template_subject": "Subject", "template_body_html": "<p>Body</p>", **extra},
+        )
+
+    def test_view_mode_shows_a_read_only_checkbox_ticked_when_on(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
-        response = logged_in_admin.get(f"/backoffice/project/{assembly_id}/registration/my-slug?section=email")
+        html = _email_step(logged_in_admin, assembly_id, edit=False)
 
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert 'id="auto-reply-toggle"' not in html
-        checkbox = html.split('name="auto_reply_enabled"', 1)[1].split(">", 1)[0]
+        checkbox, label = self._checkbox(html)
         assert "checked" in checkbox
         assert "disabled" in checkbox
-        # Always on and never editable, so it has the read-only look rather than the dimmed one.
-        label = html.split('name="auto_reply_enabled"', 1)[0].rsplit("<label", 1)[1]
         assert "checkbox-readonly" in label
-        assert "checkbox-disabled" not in label
+        assert 'name="auto_reply_enabled_shown"' not in html
+
+    def test_view_mode_shows_it_unticked_when_off(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id, auto_reply_enabled=False)
+
+        checkbox, _label = self._checkbox(_email_step(logged_in_admin, assembly_id, edit=False))
+
+        assert "checked" not in checkbox
+        assert "disabled" in checkbox
+
+    def test_edit_mode_offers_a_checkbox_that_can_be_changed(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        html = _email_step(logged_in_admin, assembly_id, edit=True)
+
+        checkbox, _label = self._checkbox(html)
+        assert "checked" in checkbox
+        assert "disabled" not in checkbox
+        assert 'name="auto_reply_enabled_shown" value="1"' in html
+
+    def test_saving_it_unticked_turns_the_auto_reply_off(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        response = self._save(logged_in_admin, assembly_id, auto_reply_enabled_shown="1")
+
+        assert response.status_code == 302
+        page = _get_page(fake_store, assembly_id)
+        assert page.auto_reply_enabled is False
+        assert page.auto_reply_email_template_id == template.id
+        assert page.activity[-1].text == "Turned the auto-reply off"
+
+    def test_saving_it_ticked_turns_the_auto_reply_back_on(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id, auto_reply_enabled=False)
+
+        self._save(logged_in_admin, assembly_id, auto_reply_enabled_shown="1", auto_reply_enabled="1")
+
+        assert _get_page(fake_store, assembly_id).auto_reply_enabled is True
+
+    def test_a_save_without_the_checkbox_leaves_the_setting_alone(self, logged_in_admin, fake_store, assembly_id):
+        """A form from before the checkbox could be changed must not turn the auto-reply off."""
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        response = self._save(logged_in_admin, assembly_id)
+
+        assert response.status_code == 302
+        assert _get_page(fake_store, assembly_id).auto_reply_enabled is True
+        assert _get_template(fake_store, template.id).subject == "Subject"
+
+    def test_when_off_the_notice_replaces_every_readiness_message(self, logged_in_admin, fake_store, assembly_id):
+        """The seeded project has no email field, which is otherwise an error on this step."""
+        template = _seed_template(fake_store, assembly_id, body_html="<p>[Your name]</p>")
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id, auto_reply_enabled=False)
+
+        html = _email_step(logged_in_admin, assembly_id, edit=False)
+
+        assert "The auto-reply is off. People who register through this page will not get an email." in html
+        assert "Auto-reply cannot be sent" not in html
+        assert "Heads up" not in html
+        assert "Registrants still won" not in html
+        assert "Send test email" in html
+
+    def test_when_on_the_readiness_messages_show_and_the_notice_does_not(
+        self, logged_in_admin, fake_store, assembly_id
+    ):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        html = _email_step(logged_in_admin, assembly_id, edit=False)
+
+        assert "The auto-reply is off" not in html
+        assert "Auto-reply cannot be sent" in html
+        assert "Registrants still won" in html
 
 
 class TestErrorHandling:
@@ -436,7 +525,7 @@ class TestPageCreationSeedsDefaultTemplate:
         assert response.status_code == 302
         templates = _list_templates(fake_store, assembly_id)
         assert len(templates) == 1
-        # Assigned straight away — the auto-reply is always-on once a template exists.
+        # Assigned straight away, so the new page's auto-reply is sent unless turned off.
         page = _get_page(fake_store, assembly_id)
         assert page.auto_reply_email_template_id == templates[0].id
 
@@ -663,11 +752,23 @@ class TestReplyTo:
 
         body = _email_step(logged_in_admin, assembly_id, edit=False)
 
-        email_input = body[body.rindex("<input", 0, body.index('name="template_reply_to_email"')) :]
-        email_input = email_input[: email_input.index(">") + 1]
-        assert 'value="team@example.com"' in email_input
-        assert "readonly" in email_input
-        assert 'value="The Team"' in body
+        # Shown as text, not as inputs that look editable but are not.
+        for name in ("template_reply_to_name", "template_reply_to_email", "template_subject"):
+            assert f'name="{name}"' not in body
+        assert re.search(r"<p[^>]*>\s*team@example\.com\s*</p>", body)
+        assert re.search(r"<p[^>]*>\s*The Team\s*</p>", body)
+        assert re.search(r"<p[^>]*>\s*" + re.escape(template.subject) + r"\s*</p>", body)
+
+    def test_edit_mode_shows_reply_to_and_subject_as_inputs(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        body = _email_step(logged_in_admin, assembly_id, edit=True)
+
+        for name in ("template_reply_to_name", "template_reply_to_email", "template_subject"):
+            field = body[body.rindex("<input", 0, body.index(f'name="{name}"')) :]
+            field = field[: field.index(">") + 1]
+            assert "readonly" not in field
 
     def test_sent_from_address_is_not_shown(self, logged_in_admin, fake_store, assembly_id, monkeypatch):
         monkeypatch.setenv("SMTP_FROM_EMAIL", "noreply@example.org")

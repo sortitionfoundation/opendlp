@@ -2,17 +2,14 @@
 # ABOUTME: Drives dashboard, showcase, assembly data page, and data-source locking against a seeded fake store, no PostgreSQL
 
 import re
-from datetime import UTC, datetime, timedelta
 
 import pytest
 from flask.testing import FlaskClient
 
 from opendlp import config
-from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.entrypoints import context_processors
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.feature_flags import reload_flags
-from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -60,37 +57,6 @@ def showcase_production_client(production_client: FlaskClient, monkeypatch: pyte
     monkeypatch.setenv("FF_SHOWCASE", "true")
     reload_flags()
     return production_client
-
-
-@pytest.fixture
-def assembly_with_gsheet(fake_store: FakeStore, admin_user) -> tuple[Assembly, AssemblyGSheet]:
-    """An assembly with existing gsheet configuration in the shared store."""
-    with FakeUnitOfWork(store=fake_store) as uow:
-        assembly = create_assembly(
-            uow=uow,
-            title="Assembly with GSheet",
-            created_by_user_id=admin_user.id,
-            question="What should we configure?",
-            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
-            number_to_select=22,
-        )
-        detached_assembly = assembly.create_detached_copy()
-
-    with FakeUnitOfWork(store=fake_store) as uow:
-        gsheet = add_assembly_gsheet(
-            uow=uow,
-            assembly_id=assembly.id,
-            user_id=admin_user.id,
-            url="https://docs.google.com/spreadsheets/d/1234567890abcdef/edit",
-            team="uk",
-            select_registrants_tab="TestRespondents",
-            select_targets_tab="TestCategories",
-            id_column="test_id_column",
-            check_same_address=True,
-            generate_remaining_tab=False,
-        )
-        detached_gsheet = gsheet.create_detached_copy()
-    return detached_assembly, detached_gsheet
 
 
 class TestBackofficeDashboard:
@@ -151,6 +117,22 @@ class TestBackofficeShowcase:
         body = response.data.decode()
         missing = [name for name in names if name not in body]
         assert not missing, f"showcase does not list these icons: {missing}"
+
+    def test_showcase_presents_the_home_hero(self, client: FlaskClient) -> None:
+        """The Public pages tab draws the home page hero with its product demo, the demo's script included."""
+        response = client.get("/backoffice/showcase")
+        assert response.status_code == 200
+        body = response.data.decode()
+        assert 'data-tab="public"' in body
+        assert body.count("data-hero-visual") == 1
+        assert "data-hero-demo" in body
+        for scene in ("projects", "create", "targets", "selection", "dashboard"):
+            assert f'data-scene="{scene}"' in body
+        assert "js/hero-demo.js" in body
+        # every target the demo's script looks for is a real attribute, not escaped text
+        for name in ("create-project", "title", "size", "submit-create", "min-1", "max-3", "run", "modal"):
+            assert f'data-demo="{name}"' in body
+        assert "&#34;" not in body[body.index("data-hero-demo") :]
 
     def test_search_demo_empty_query(self, client: FlaskClient) -> None:
         """Search demo returns empty for no query."""
@@ -221,27 +203,18 @@ class TestShowcaseOnAProductionInstall:
         assert 'href="/backoffice/dev/patterns' not in body
 
 
-class TestBackofficeAssemblyDataPage:
-    """Test backoffice assembly data page functionality."""
+class TestWhereTheDataSourceTabWas:
+    """The Data Source tab is a card on the project details page; its address still leads somewhere useful."""
 
-    def test_view_assembly_data_page_with_gsheet_source(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
-        """Assembly data page loads with gsheet source parameter."""
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=gsheet")
-        assert response.status_code == 200
-        # Should show the gsheet configuration form
-        assert b"Spreadsheet URL" in response.data or b"Google" in response.data
-
-    def test_view_assembly_data_page_with_csv_source(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
-        """Assembly data page loads with csv source parameter."""
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
-        assert response.status_code == 200
-
-    def test_view_assembly_data_page_invalid_source_ignored(
-        self, logged_in_admin: FlaskClient, existing_assembly
+    @pytest.mark.parametrize("query", ["", "?source=gsheet", "?source=csv&mode=edit", "?source=invalid"])
+    def test_the_data_address_goes_to_the_data_source_card(
+        self, logged_in_admin: FlaskClient, existing_assembly, query: str
     ) -> None:
-        """Invalid source parameter is ignored."""
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=invalid")
-        assert response.status_code == 200
+        """Whatever an old bookmark carried in its query string."""
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data{query}")
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}#data-source")
 
     def test_view_assembly_data_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly) -> None:
         """Unauthenticated users are redirected to login."""
@@ -249,77 +222,13 @@ class TestBackofficeAssemblyDataPage:
         assert response.status_code == 302
         assert "login" in response.location
 
-    def test_view_assembly_data_nonexistent_assembly(self, logged_in_admin: FlaskClient) -> None:
-        """Accessing data page for non-existent assembly redirects with error."""
-        response = logged_in_admin.get("/backoffice/project/00000000-0000-0000-0000-000000000000/data")
-        assert response.status_code == 302
-
-
-class TestBackofficeDataSourceLocking:
-    """Test data source selector locking behavior."""
-
-    def test_data_source_locked_when_gsheet_config_exists(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet
+    def test_the_details_page_ignores_a_source_left_on_an_old_link(
+        self, logged_in_admin: FlaskClient, existing_assembly
     ) -> None:
-        """Data source selector is disabled when gsheet config exists."""
-        assembly, _ = assembly_with_gsheet
-        # Access data page without source param - should auto-select gsheet and lock
-        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data")
+        """?source= used to choose the data source for an undecided project; the stored choice does now."""
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}?source=gsheet")
+
         assert response.status_code == 200
-        # Selector should be disabled
-        assert b"disabled" in response.data
-        # Should show gsheet content (auto-selected)
-        assert b"Google Sheets Configuration" in response.data
-        # Should show locked message
-        assert b"locked" in response.data.lower()
-
-    def test_data_source_auto_selects_gsheet_when_config_exists(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet
-    ) -> None:
-        """Data source auto-selects gsheet when config exists, ignoring source param."""
-        assembly, _ = assembly_with_gsheet
-        # Try to access with csv source - should still show gsheet
-        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data?source=csv")
-        assert response.status_code == 200
-        # Should show gsheet content, not csv
-        assert b"Google Sheets Configuration" in response.data
-        # Should NOT show csv content
-        assert b"Upload a CSV file" not in response.data
-
-    def test_data_source_unlocked_when_no_config_exists(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
-        """Data source selector is enabled when no config exists."""
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data")
-        assert response.status_code == 200
-        # Selector should NOT be disabled (no config exists)
-        # Check that the x-data urlSelect attribute is present (indicates interactivity)
-        assert b"urlSelect" in response.data
-        # Should show standard message, not locked message
-        assert b"Choose how you want to import" in response.data
-
-    def test_data_source_unlocked_after_delete(self, logged_in_admin: FlaskClient, assembly_with_gsheet) -> None:
-        """Data source selector is unlocked after deleting config."""
-        assembly, _ = assembly_with_gsheet
-
-        # Delete the config
-        response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/gsheet/delete",
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-
-        # Selector should now be enabled (unlocked)
-        assert b"urlSelect" in response.data
-        # Should show standard message
-        assert b"Choose how you want to import" in response.data
-        # Should NOT show locked message
-        assert b"locked" not in response.data.lower() or b"Data source is locked" not in response.data
-
-    def test_gsheet_selected_shows_in_dropdown_when_locked(
-        self, logged_in_admin: FlaskClient, assembly_with_gsheet
-    ) -> None:
-        """Gsheet option is selected in dropdown when config exists."""
-        assembly, _ = assembly_with_gsheet
-        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data")
-        assert response.status_code == 200
-        # The gsheet option should be selected
-        assert b'value="gsheet" selected' in response.data or b'value="gsheet"' in response.data
+        html = response.data.decode()
+        assert "In OpenDLP" in html
+        assert "source=gsheet" not in html

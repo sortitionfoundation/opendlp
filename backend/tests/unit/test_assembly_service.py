@@ -10,7 +10,7 @@ from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, DataSource, GlobalRole
 from opendlp.service_layer import assembly_service, target_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -156,6 +156,44 @@ class TestCreateAssembly:
 
 class TestUpdateAssembly:
     """Test assembly update functionality."""
+
+    def test_an_update_moves_updated_at(self, uow):
+        """The details page shows when the project last changed, so a change has to record it."""
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Original Title")
+        uow.assemblies.add(assembly)
+        before = assembly.updated_at
+
+        assembly_service.update_assembly(uow, assembly.id, admin_user.id, title="Updated Title")
+
+        assert uow.assemblies.get(assembly.id).updated_at > before
+
+    def test_an_update_that_leaves_the_panel_size_reports_no_moved_targets(self, uow):
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Original Title", number_to_select=20)
+        uow.assemblies.add(assembly)
+
+        updated, changes = assembly_service.update_assembly_reporting_changes(
+            uow, assembly.id, admin_user.id, title="Updated Title", number_to_select=20
+        )
+
+        assert updated.title == "Updated Title"
+        assert changes == []
+
+    def test_a_new_panel_size_with_no_targets_reports_no_moved_targets(self, uow):
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Original Title", number_to_select=20)
+        uow.assemblies.add(assembly)
+
+        updated, changes = assembly_service.update_assembly_reporting_changes(
+            uow, assembly.id, admin_user.id, number_to_select=40
+        )
+
+        assert updated.number_to_select == 40
+        assert changes == []
 
     def test_update_assembly_success_admin(self, uow):
         """Test successful assembly update by admin."""
@@ -358,15 +396,16 @@ class TestListAssemblies:
         empty = Assembly(title="Empty")
         with_gsheet = Assembly(title="Sheet", gsheet=AssemblyGSheet(assembly_id=uuid.uuid4(), url=VALID_GSHEET_URL))
         with_respondents = Assembly(title="Database")
+        sheet_chosen = Assembly(title="Sheet chosen", data_source=DataSource.GSHEET)
         archived = Assembly(title="Archived")
         archived.archive()
-        for assembly in (empty, with_gsheet, with_respondents, archived):
+        for assembly in (empty, with_gsheet, with_respondents, sheet_chosen, archived):
             uow.assemblies.add(assembly)
         uow.respondents.add(Respondent(assembly_id=with_respondents.id, external_id="r1"))
 
         sources = {listing.assembly.title: listing.data_source for listing in assembly_service.list_assemblies(uow)}
 
-        assert sources == {"Empty": "", "Sheet": "gsheet", "Database": "csv"}
+        assert sources == {"Empty": "csv", "Sheet": "gsheet", "Database": "csv", "Sheet chosen": "gsheet"}
 
     def test_include_archived(self, uow):
         archived = Assembly(title="Archived")

@@ -326,6 +326,34 @@ Every email is sent with a plain-text version made from the HTML
 (`src/opendlp/domain/html_to_text.py`), which reads lists, quotes and
 horizontal lines as plain text would.
 
+### Turning it off
+
+Each page sends its auto-reply unless the step's **Send auto-reply email**
+checkbox is unticked. Like the rest of the step, it is changed in edit mode
+and saved with Save. The setting belongs to the page
+(`RegistrationPage.auto_reply_enabled`), so the page's other variants are not
+affected, and a copied page starts with the same setting.
+
+While it is off:
+
+- nobody who registers through the page is sent the email, and no send is
+  recorded against them;
+- the template is kept, so turning the auto-reply back on sends the same
+  email;
+- the step shows one notice saying the auto-reply is off, and none of its
+  other messages: neither the warnings described below nor the error that
+  the page collects no email address. They are about whether the email can
+  be delivered, and it is not being sent;
+- a test send still works, so the email can be checked before it is turned
+  back on.
+
+Turning it off or on is recorded in the page's activity. Nothing shows that
+record yet.
+
+An unticked checkbox is left out of a submitted form, so the step also sends
+a hidden `auto_reply_enabled_shown` field, and the setting only changes when
+that is present. A save from a form without the checkbox leaves it as it was.
+
 ### Where replies go
 
 The email is sent from the deployment's mail settings (`SMTP_FROM_EMAIL`,
@@ -345,7 +373,7 @@ each assembly. If neither is set, the email has no Reply-To, and the step
 shows a warning. Every send records the reply-to address it used.
 
 `{{ reply_to_email }}` puts that same reply-to address in the email, for a
-sentence such as the default's "please reply to this email or write to
+sentence such as "please reply to this email or write to
 {{ reply_to_email }}". When neither reply-to is set it is the address the email
 is sent from (`SMTP_FROM_EMAIL`), so the sentence always has an address in
 it; an organiser who wants no replies deletes the sentence. Its name is left
@@ -360,9 +388,9 @@ not translated: the email adapter that builds it doesn't know the reader's
 language. With no reply-to name, the From name is `SMTP_FROM_NAME` alone.
 
 The step warns about two more things in the email itself. Text in square
-brackets with a letter in it, such as `[Your name]`, is a placeholder the
-default auto-reply leaves for the organiser to replace; the warning lists the
-ones still there. And an email that shows the first assembly date, in either
+brackets with a letter in it, such as `[Your name]`, is a placeholder left for
+the organiser to replace, as in a template pasted in from elsewhere; the
+warning lists the ones still there. And an email that shows the first assembly date, in either
 form, warns while the assembly has no date, as it would send a blank. Like
 the reply-to warning, neither stops the page being published.
 

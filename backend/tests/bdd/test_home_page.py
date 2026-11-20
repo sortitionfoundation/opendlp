@@ -1,5 +1,7 @@
 """ABOUTME: BDD tests for the public home page served at /
-ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, its word lines up, and it fits a phone"""
+ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, the demo sits where the layout says and plays, and it fits a phone"""
+
+import re
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, scenarios, then, when
@@ -7,6 +9,9 @@ from pytest_bdd import given, scenarios, then, when
 from .config import Urls
 
 scenarios("../../features/home-page.feature")
+
+# the class the demo's script sets while it plays
+RUNNING = re.compile(r"(^|\s)is-running(\s|$)")
 
 
 @given("an anonymous visitor opens the home page")
@@ -28,10 +33,18 @@ def open_home_page_on_wide_screen(logged_out_page: Page) -> None:
     logged_out_page.wait_for_load_state("networkidle")
 
 
+@given("an anonymous visitor who prefers reduced motion opens the home page")
+def open_home_page_with_reduced_motion(logged_out_page: Page) -> None:
+    logged_out_page.emulate_media(reduced_motion="reduce")
+    logged_out_page.set_viewport_size({"width": 1440, "height": 900})
+    logged_out_page.goto(Urls.front_page)
+    logged_out_page.wait_for_load_state("networkidle")
+
+
 @then("they should see the home page hero")
 def see_hero(logged_out_page: Page) -> None:
-    expect(logged_out_page.get_by_role("heading", level=1)).to_contain_text("Bringing simplicity to sortition")
-    expect(logged_out_page.get_by_role("img", name="OpenDLP - Democratic Lottery Platform")).to_be_visible()
+    expect(logged_out_page.get_by_role("heading", level=1)).to_contain_text("Bringing Simplicity to Sortition")
+    expect(logged_out_page.locator("[data-hero-visual]")).to_be_visible()
 
 
 @when("they choose to sign in from the home page")
@@ -51,12 +64,39 @@ def no_horizontal_scroll(logged_out_page: Page) -> None:
     assert overflow == 0
 
 
-@then("the highlighted word should be centred under the logo")
-def highlighted_word_centred(logged_out_page: Page) -> None:
-    logo = logged_out_page.get_by_role("img", name="OpenDLP - Democratic Lottery Platform").bounding_box()
-    word = logged_out_page.get_by_role("heading", level=1).get_by_text("simplicity", exact=True).bounding_box()
-    assert logo is not None
-    assert word is not None
-    logo_centre = logo["x"] + logo["width"] / 2
-    word_centre = word["x"] + word["width"] / 2
-    assert abs(logo_centre - word_centre) < 1
+def _hero_boxes(page: Page) -> tuple[dict[str, float], dict[str, float]]:
+    heading = page.get_by_role("heading", level=1).bounding_box()
+    demo = page.locator("[data-hero-visual]").bounding_box()
+    assert heading is not None
+    assert demo is not None
+    return heading, demo
+
+
+@then("the product demo should sit to the right of the heading")
+def demo_beside_heading(logged_out_page: Page) -> None:
+    heading, demo = _hero_boxes(logged_out_page)
+    assert demo["x"] >= heading["x"] + heading["width"]
+
+
+@then("the product demo should sit below the heading")
+def demo_below_heading(logged_out_page: Page) -> None:
+    heading, demo = _hero_boxes(logged_out_page)
+    assert demo["y"] >= heading["y"] + heading["height"]
+
+
+@then("the product demo should move on from its first screen")
+def demo_plays(logged_out_page: Page) -> None:
+    demo = logged_out_page.locator("[data-hero-demo]")
+    expect(demo).to_have_class(RUNNING)
+    # Your projects first; the cursor clicks Create project about two seconds in.
+    expect(demo.locator('[data-scene="create"]')).to_be_visible(timeout=10_000)
+
+
+@then("the product demo should rest on the dashboard screen")
+def demo_at_rest(logged_out_page: Page) -> None:
+    demo = logged_out_page.locator("[data-hero-demo]")
+    expect(demo.locator('[data-scene="dashboard"]')).to_be_visible()
+    # A playing demo opens on Your projects, with the cursor showing.
+    expect(demo.locator('[data-scene="projects"]')).to_be_hidden()
+    expect(demo.locator('[data-demo="cursor"]')).to_be_hidden()
+    expect(demo).not_to_have_class(RUNNING)

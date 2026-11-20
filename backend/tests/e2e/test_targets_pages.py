@@ -64,20 +64,16 @@ class TestViewTargetsPage:
 class TestUploadTargetsCsv:
     def test_upload_valid_csv_creates_targets(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/upload"),
+            f"/backoffice/project/{existing_assembly.id}/data-source/upload-targets",
             data={
                 "csv_file": (io.BytesIO(VALID_TARGETS_CSV), "targets.csv"),
                 "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
             },
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
-        assert response.status_code == 302
-        assert f"/backoffice/project/{existing_assembly.id}/targets" in response.location
-
-        with logged_in_admin.session_transaction() as session:
-            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
-            assert any("Successfully imported" in msg for msg in flash_messages)
+        assert response.status_code == 200
+        assert b"target uploaded" in response.data or b"targets uploaded" in response.data
 
 
 class TestAddCategoriesFromColumns:

@@ -50,7 +50,7 @@ from opendlp.service_layer.password_reset_service import (
     send_password_reset_email,
     validate_reset_token,
 )
-from opendlp.service_layer.security import password_validators_help_text_html
+from opendlp.service_layer.security import password_requirements, password_validators_help_text_html
 from opendlp.service_layer.signup_rate_limit_service import (
     check_signup_rate_limit,
     record_signup,
@@ -496,7 +496,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
             return render_template(
                 "public/register.html",
                 form=form,
-                password_help=password_validators_help_text_html(),
+                password_requirements=password_requirements(),
                 show_questions=show_questions,
                 selected_method=selected_method,
             )
@@ -509,7 +509,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
     return render_template(
         "public/register.html",
         form=form,
-        password_help=password_validators_help_text_html(),
+        password_requirements=password_requirements(),
         show_questions=show_questions,
         selected_method=selected_method,
     )
@@ -691,8 +691,8 @@ def login_google() -> ResponseReturnValue:
     if safe_next_page:
         session["oauth_next"] = safe_next_page
 
-    # Redirect to Google OAuth - it has to be https, so do that
-    redirect_uri = url_for("auth.google_callback", _external=True, _scheme="https")
+    # Redirect to Google OAuth
+    redirect_uri = url_for("auth.google_callback", _external=True)
     response = oauth.google.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response
@@ -783,8 +783,8 @@ def login_microsoft() -> ResponseReturnValue:
     if safe_next_page:
         session["oauth_next"] = safe_next_page
 
-    # Redirect to Microsoft OAuth - it has to be https, so do that
-    redirect_uri = url_for("auth.microsoft_callback", _external=True, _scheme="https")
+    # Redirect to Microsoft OAuth
+    redirect_uri = url_for("auth.microsoft_callback", _external=True)
     response = oauth.microsoft.authorize_redirect(redirect_uri)
     assert isinstance(response, Response)
     return response

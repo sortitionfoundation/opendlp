@@ -17,7 +17,13 @@ from opendlp.domain.selection_settings import (
     SelectionSettings,
     Teams,
 )
-from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus
+from opendlp.domain.value_objects import (
+    AssemblyRole,
+    AssemblyStatus,
+    DataSource,
+    RespondentsSource,
+    TargetsSource,
+)
 
 from . import target_service
 from .exceptions import (
@@ -40,6 +46,9 @@ def create_assembly(
     question: str = "",
     first_assembly_date: date | None = None,
     number_to_select: int = 0,
+    data_source: DataSource = DataSource.UNDECIDED,
+    targets_source: TargetsSource = TargetsSource.UNDECIDED,
+    respondents_source: RespondentsSource = RespondentsSource.UNDECIDED,
 ) -> Assembly:
     """
     Create a new assembly.
@@ -77,6 +86,9 @@ def create_assembly(
         first_assembly_date=first_assembly_date,
         number_to_select=number_to_select,
         created_by_user_id=created_by_user_id,
+        data_source=data_source,
+        targets_source=targets_source,
+        respondents_source=respondents_source,
     )
 
     uow.assemblies.add(assembly)
@@ -120,14 +132,14 @@ def check_title_available(
         raise AssemblyTitleTaken(title.strip())
 
 
-def update_assembly(
+def update_assembly_reporting_changes(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
     user_id: uuid.UUID,
     **updates: Any,
-) -> Assembly:
+) -> tuple[Assembly, list[target_service.TargetValueChange]]:
     """
-    Update an assembly with new data.
+    Update an assembly with new data, and say which target values moved with it.
 
     Args:
         uow: Unit of Work for database operations
@@ -135,7 +147,8 @@ def update_assembly(
         user_id: ID of user performing the update
 
     Returns:
-        Updated Assembly instance
+        The updated Assembly, and the target values whose min/max were
+        recalculated because the panel size changed (empty otherwise)
 
     Raises:
         UserNotFoundError, AssemblyNotFoundError: If assembly or user not found
@@ -163,16 +176,81 @@ def update_assembly(
     for field, value in updates.items():
         if hasattr(assembly, field):
             setattr(assembly, field, value)
+    assembly.updated_at = datetime.now(UTC)
 
     # Targets whose min/max are derived from a percentage depend on the seat
-    # count, so they have to move with it. This is the single funnel for both the
-    # assembly edit form and the dedicated update_number_to_select route.
+    # count, so they have to move with it. This is the single funnel for the
+    # project details page and the dedicated update_number_to_select route.
+    changes: list[target_service.TargetValueChange] = []
     if assembly.number_to_select != previous_number_to_select:
-        target_service.recalculate_minmax_for_assembly(uow, assembly_id)
+        changes = target_service.recalculate_minmax_for_assembly(uow, assembly_id)
 
     # Explicit typing to satisfy mypy
     updated_assembly: Assembly = assembly
-    return updated_assembly
+    return updated_assembly, changes
+
+
+def update_assembly(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+    **updates: Any,
+) -> Assembly:
+    """
+    Update an assembly with new data.
+
+    Args:
+        uow: Unit of Work for database operations
+        assembly_id: ID of assembly to update
+        user_id: ID of user performing the update
+
+    Returns:
+        Updated Assembly instance
+
+    Raises:
+        UserNotFoundError, AssemblyNotFoundError: If assembly or user not found
+        InsufficientPermissions: If user cannot manage this assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    assembly, _changes = update_assembly_reporting_changes(uow, assembly_id, user_id, **updates)
+    return assembly
+
+
+def set_data_sources(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    data_source: DataSource | None = None,
+    targets_source: TargetsSource | None = None,
+    respondents_source: RespondentsSource | None = None,
+) -> Assembly:
+    """Record where a project's data is managed. None leaves a choice as it is.
+
+    Records a statement of intent only: whether the location can still change
+    is decided by the data (see determine_data_source), which callers check
+    before offering the choice.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="set data sources", required_role="assembly-manager or admin")
+
+    assembly.set_data_sources(
+        data_source=data_source,
+        targets_source=targets_source,
+        respondents_source=respondents_source,
+    )
+    detached: Assembly = assembly.create_detached_copy()
+    return detached
 
 
 def get_assembly_with_permissions(
@@ -685,38 +763,47 @@ class CSVUploadStatus:
     def has_data(self) -> bool:
         return self.respondents_count > 0 or self.targets_count > 0
 
-    @property
-    def selection_enabled(self) -> bool:
-        return self.respondents_count > 0 and self.targets_count > 0
 
+GSHEET_SOURCE = "gsheet"
+OPENDLP_SOURCE = "csv"
 
-VALID_DATA_SOURCES = ("gsheet", "csv", "")
+_STORED_DATA_SOURCES = {
+    DataSource.GSHEET: GSHEET_SOURCE,
+    DataSource.OPENDLP: OPENDLP_SOURCE,
+}
 
 
 def determine_data_source(
     gsheet: AssemblyGSheet | None,
     csv_status: CSVUploadStatus | None,
-    preferred_source: str = "",
+    stored: DataSource = DataSource.UNDECIDED,
 ) -> tuple[str, bool]:
     """Determine the active data source for an assembly and whether it is locked.
 
-    Once an assembly has a gsheet config or CSV data, that source is locked in.
-    Before any data exists the caller may express a preference (typically from
-    a ?source= query parameter), which is returned unlocked so the UI can
-    offer the other options.
+    Once an assembly has a gsheet config, a target or a respondent, that
+    source is locked in: the data decides, whatever was said. Before that the
+    answer is what the organiser chose (`stored`), and a project nobody has
+    chosen for is held in OpenDLP.
 
     Returns:
-        Tuple of (data_source, locked). data_source is one of "gsheet", "csv",
-        or "" (no source chosen yet). locked indicates whether the source is
+        Tuple of (data_source, locked). data_source is "gsheet", or "csv" for
+        a project held in OpenDLP. locked indicates whether the source is
         fixed by existing data.
     """
     if gsheet:
-        return "gsheet", True
+        return GSHEET_SOURCE, True
     if csv_status and csv_status.has_data:
-        return "csv", True
-    if preferred_source not in VALID_DATA_SOURCES:
-        preferred_source = ""
-    return preferred_source, False
+        return OPENDLP_SOURCE, True
+    return _STORED_DATA_SOURCES.get(stored, OPENDLP_SOURCE), False
+
+
+def stored_data_source(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> DataSource:
+    """What the organiser said about where this assembly's data is managed.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    assembly = uow.assemblies.get(assembly_id)
+    return assembly.data_source if assembly else DataSource.UNDECIDED
 
 
 def get_tab_enabled_states(
@@ -724,13 +811,18 @@ def get_tab_enabled_states(
     gsheet: AssemblyGSheet | None,
     csv_status: CSVUploadStatus | None,
 ) -> tuple[bool, bool, bool]:
-    """Return which of the (targets, respondents, selection) tabs are enabled."""
+    """Return which of the (targets, respondents, selection) tabs are enabled.
+
+    `csv_status` is not consulted: what a project held in OpenDLP holds no
+    longer decides which of its tabs open.
+    """
     if data_source == "gsheet":
         enabled = gsheet is not None
         return enabled, enabled, enabled
-    if data_source == "csv" and csv_status:
-        # targets is always enabled, as you can create from blank in the targets tab
-        return True, csv_status.has_respondents, csv_status.selection_enabled
+    if data_source == "csv":
+        # A project held in OpenDLP has every tab open from the start: each one
+        # says what it is waiting for and where to go to provide it.
+        return True, True, True
     return False, False, False
 
 
@@ -805,7 +897,7 @@ def list_assemblies(
             respondents_count=uow.respondents.count_by_assembly_id(assembly.id),
             csv_config=None,
         )
-        data_source, _locked = determine_data_source(assembly.gsheet, csv_status)
+        data_source, _locked = determine_data_source(assembly.gsheet, csv_status, assembly.data_source)
         listings.append(AssemblyListing(assembly=assembly.create_detached_copy(), data_source=data_source))
     return listings
 
@@ -833,7 +925,6 @@ def get_assembly_nav_context(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
-    preferred_source: str = "",
 ) -> AssemblyNavContext:
     """Load an assembly along with everything the backoffice nav shell needs.
 
@@ -845,7 +936,7 @@ def get_assembly_nav_context(
     assembly = get_assembly_with_permissions(uow, assembly_id, user_id)
     gsheet = get_assembly_gsheet(uow, assembly_id, user_id)
     csv_status = get_csv_upload_status(uow, user_id, assembly_id)
-    data_source, locked = determine_data_source(gsheet, csv_status, preferred_source)
+    data_source, locked = determine_data_source(gsheet, csv_status, assembly.data_source)
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
     return AssemblyNavContext(
         assembly=assembly,

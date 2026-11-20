@@ -125,7 +125,8 @@ opendlp projects clone PROJECT_ID --user-email admin@example.com --title "Traini
 
 **Available commands:**
 - `list` - One project per line, so it pipes into `grep`, `cut` and `sort`. The data source is
-  `gsheet`, `csv`, or `-` when none is chosen yet; only `csv` projects can be cloned.
+  `gsheet` or `csv` (held in OpenDLP, which is also what a project nobody has chosen for
+  reads as); a project with a Google Sheet attached cannot be cloned.
 - `clone` - Copy a project whose data is held in OpenDLP. `--user-email` must name an active
   admin, who becomes the copy's manager.
 

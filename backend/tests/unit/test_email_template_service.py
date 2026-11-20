@@ -414,3 +414,53 @@ class TestTemplateContentReadiness:
         page = self._page_with_body(uow, assembly, "<p>We start on {{ assembly.first_assembly_date_text }}.</p>")
 
         assert service.auto_reply_readiness_problems(uow, assembly.id, page_id=page.id) == []
+
+
+class TestReadinessWithTheAutoReplyOff:
+    """An auto-reply that is turned off is not going to be sent, so nothing can stop it being sent."""
+
+    def _off_page(self, uow, assembly: Assembly, **template_kwargs) -> RegistrationPage:
+        template = EmailTemplate(assembly_id=assembly.id, **(VALID | template_kwargs))
+        uow.email_templates.add(template)
+        page = RegistrationPage(
+            assembly_id=assembly.id, auto_reply_email_template_id=template.id, auto_reply_enabled=False
+        )
+        uow.registration_pages.add(page)
+        return page
+
+    def test_no_error_for_a_page_that_collects_no_email(self, uow):
+        assembly = _assembly(uow)
+        uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.NO))
+        page = self._off_page(uow, assembly)
+
+        assert service.auto_reply_readiness_problems(uow, assembly.id, page_id=page.id) == []
+
+    def test_no_warnings_for_every_warning_case_at_once(self, uow):
+        """Optional email, no reply-to, placeholders, and a first date the project lacks."""
+        assembly = _assembly(uow)
+        uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.YES_OPTIONAL))
+        page = self._off_page(uow, assembly, body_html="<p>[Your name] on {{ project.first_event_date_text }}</p>")
+
+        assert service.auto_reply_readiness_problems(uow, assembly.id, page_id=page.id) == []
+
+    def test_turning_it_back_on_brings_the_problems_back(self, uow):
+        assembly = _assembly(uow)
+        uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.NO))
+        page = self._off_page(uow, assembly)
+        page.set_auto_reply_enabled(True)
+
+        problems = service.auto_reply_readiness_problems(uow, assembly.id, page_id=page.id)
+
+        assert [p.severity for p in problems] == [
+            AutoReplyReadinessSeverity.ERROR,
+            AutoReplyReadinessSeverity.WARNING,
+        ]
+
+    def test_the_assembly_level_check_ignores_the_pages_setting(self, uow):
+        assembly = _assembly(uow)
+        uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.NO))
+        self._off_page(uow, assembly)
+
+        problems = service.auto_reply_readiness_problems(uow, assembly.id)
+
+        assert [p.severity for p in problems] == [AutoReplyReadinessSeverity.ERROR]

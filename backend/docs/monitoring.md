@@ -198,7 +198,7 @@ With the above CSV files, you should use:
 - `number_to_select`: 30
 - `id_column`: `unique_id`
 - Any non-default `SelectionSettings` values:
-  - set "Check Same Address" to False
+  - set "Check same address" to False
 
 ### Bootstrap commands
 

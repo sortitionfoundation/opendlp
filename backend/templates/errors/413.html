@@ -15,7 +15,7 @@
                 </p>
                 <div class="d-flex justify-content-center gap-3">
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('main.dashboard') }}"
+                        <a href="{{ url_for('backoffice.dashboard') }}"
                            class="btn btn-outline-primary">
                             <i class="bi bi-speedometer2"></i> {{ _("Your projects") }}
                         </a>

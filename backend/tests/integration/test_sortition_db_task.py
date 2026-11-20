@@ -1,13 +1,16 @@
 """ABOUTME: Integration tests for database-based Celery selection tasks
 ABOUTME: Tests _internal_load_db, _internal_write_db_results, and generate_selection_csvs with a real database"""
 
+import csv
 import uuid
+from io import StringIO
 from unittest.mock import patch
 
 import pytest
 from sortition_algorithms.settings import Settings
 
 from opendlp import config
+from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
@@ -29,6 +32,7 @@ from opendlp.entrypoints.celery.tasks import (
     run_select_from_db,
 )
 from opendlp.service_layer import respondent_auto_export
+from opendlp.service_layer.respondent_export_service import write_respondent_export
 from opendlp.service_layer.sortition import check_db_selection_data, generate_selection_csvs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.fakes import FakeRedis
@@ -329,11 +333,40 @@ class TestGenerateSelectionCsvs:
             all_ids.add(line.split(",")[0])
         assert all_ids == {"NB001", "NB002", "NB003", "NB004"}
 
+    def test_csvs_carry_the_columns_of_the_respondents_export(
+        self, postgres_session_factory, assembly_with_data, test_settings
+    ):
+        """Whatever the selection settings hold, a download has the columns the export has."""
+        assembly_id = assembly_with_data
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+        with patch.object(run_select_from_db, "update_state"):
+            success, _selected_panels, _ = run_select_from_db(
+                task_id=task_id,
+                assembly_id=assembly_id,
+                number_people_wanted=2,
+                settings=test_settings,
+                test_selection=False,
+                session_factory=postgres_session_factory,
+            )
+        assert success is True
+
+        export = CsvExportTarget()
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            selected_csv, remaining_csv = generate_selection_csvs(uow, assembly_id, task_id)
+            write_respondent_export(uow, assembly_id, status_filter=None, target=export)
+
+        export_header = export.getvalue().split("\n")[0]
+        assert "selection_status" in export_header
+        assert selected_csv.split("\n")[0].strip() == export_header
+        assert remaining_csv.split("\n")[0].strip() == export_header
+        selected_rows = list(csv.DictReader(StringIO(selected_csv.lstrip("\ufeff"))))
+        assert {row["selection_status"] for row in selected_rows} == {RespondentStatus.SELECTED.value}
+
     def test_includes_deleted_respondents_with_blanked_values(
         self, postgres_session_factory, assembly_with_data, test_settings
     ):
         """A respondent selected then deleted still appears in the historical CSV
-        with their external_id, but attribute values are the DATA DELETED placeholder."""
+        with their external_id and their status, and nothing else about them."""
         assembly_id = assembly_with_data
         task_id = _make_run_record(assembly_id, postgres_session_factory)
 
@@ -384,9 +417,11 @@ class TestGenerateSelectionCsvs:
         # The deleted respondent's external_id is still present
         selected_ids = {line.split(",")[0] for line in selected_lines[1:]}
         assert victim_ext_id in selected_ids
-        # The row for the deleted respondent contains the placeholder marker
-        deleted_row = next(line for line in selected_lines[1:] if line.split(",")[0] == victim_ext_id)
-        assert "DATA DELETED" in deleted_row
+        # The row for the deleted respondent says so, and holds none of their answers
+        rows = list(csv.DictReader(StringIO(selected_csv.lstrip("\ufeff"))))
+        deleted_row = next(row for row in rows if row["external_id"] == victim_ext_id)
+        assert deleted_row["selection_status"] == RespondentStatus.DELETED.value
+        assert deleted_row["Gender"] == ""
 
 
 class TestStoredIdColumnIgnored:

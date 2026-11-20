@@ -82,12 +82,20 @@ Requires wrapping element with x-data="modal({...})" Alpine component:
 {# ============================================================================
    MODAL — Alpine-driven content modal with header bar, scroll body, footer
 ============================================================================ #}
-{% macro modal(id="", title="", classes="") %}
+{% macro modal(id="", title="", classes="", wrap_body=true) %}
     {#
 Args:
   id: Optional id attribute for the modal
   title: Header title
   classes: Extra classes on the panel
+  wrap_body: Put the caller's content in the scrolling body. Pass false to
+    supply the body and a footer yourself, as a form that holds both has to:
+      {% call modal(id="x", title="X", wrap_body=false) %}
+        <form ...>
+          {% call dialog_body() %}...{% endcall %}
+          {% call dialog_footer() %}...{% endcall %}
+        </form>
+      {% endcall %}
 
 Requires wrapping element with x-data="modal({...})" Alpine component:
   - isOpen, canClose, close(), closeIfAllowed()
@@ -118,7 +126,11 @@ Requires wrapping element with x-data="modal({...})" Alpine component:
             {% endcall %}
             {# caller() is unreachable inside a {% call %} block (Jinja shadows it) — capture first #}
             {% set body_content = caller() %}
-            {% call dialog_body() %}{{ body_content }}{% endcall %}
+            {% if wrap_body %}
+                {% call dialog_body() %}{{ body_content }}{% endcall %}
+            {% else %}
+                {{ body_content }}
+            {% endif %}
         </div>
     </div>
 {% endmacro %}

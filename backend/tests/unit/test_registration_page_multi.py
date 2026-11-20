@@ -311,12 +311,75 @@ class TestDuplicateRegistrationPage:
 
         assert copy.auto_reply_email_template_id is None
 
+    def test_copy_keeps_the_auto_reply_turned_off(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        source = service.create_registration_page(uow, admin.id, assembly.id, name="English")
+        service.set_auto_reply_enabled(uow, admin.id, source.id, False)
+
+        copy = service.duplicate_registration_page(uow, admin.id, source.id, name="Español")
+
+        assert copy.auto_reply_enabled is False
+
     def test_stranger_cannot_duplicate(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         source = service.create_registration_page(uow, admin.id, assembly.id, name="English")
 
         with pytest.raises(RegistrationPageNotFoundError):
             service.duplicate_registration_page(uow, _stranger(uow).id, source.id, name="Español")
+
+
+class TestSetAutoReplyEnabled:
+    def test_turns_the_auto_reply_off_and_records_it(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="English")
+
+        updated = service.set_auto_reply_enabled(uow, admin.id, page.id, False)
+
+        assert updated.auto_reply_enabled is False
+        assert uow.registration_pages.get(page.id).auto_reply_enabled is False
+        last = updated.activity[-1]
+        assert last.action is RegistrationPageAction.EDIT
+        assert last.author_id == admin.id
+        assert last.text == "Turned the auto-reply off"
+
+    def test_turns_it_back_on_and_records_that(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="English")
+        service.set_auto_reply_enabled(uow, admin.id, page.id, False)
+
+        updated = service.set_auto_reply_enabled(uow, admin.id, page.id, True)
+
+        assert updated.auto_reply_enabled is True
+        assert updated.activity[-1].text == "Turned the auto-reply on"
+
+    def test_setting_the_value_it_already_has_records_nothing(self, uow):
+        """Saving the step without touching the checkbox must not fill the log."""
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="English")
+        before = uow.registration_pages.get(page.id)
+        activity_before, updated_at_before = list(before.activity), before.updated_at
+
+        service.set_auto_reply_enabled(uow, admin.id, page.id, True)
+
+        after = uow.registration_pages.get(page.id)
+        assert after.activity == activity_before
+        assert after.updated_at == updated_at_before
+
+    def test_viewer_cannot_change_it(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="English")
+
+        with pytest.raises(InsufficientPermissions):
+            service.set_auto_reply_enabled(uow, _viewer(uow, assembly).id, page.id, False)
+
+        assert uow.registration_pages.get(page.id).auto_reply_enabled is True
+
+    def test_stranger_is_told_the_page_does_not_exist(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="English")
+
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.set_auto_reply_enabled(uow, _stranger(uow).id, page.id, False)
 
 
 class TestDeleteRegistrationPage:

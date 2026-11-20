@@ -31,6 +31,12 @@ get different registers. *(A1)*
 - **Public registration pages (`templates/register/`) and all outbound email
   (`templates/emails/`): formal (*magázás*)** — "jelentkezzen be", "próbálja
   újra". A civic process writing to a stranger does not address them as *te*.
+- **The public home page (`templates/public/home.html`, `_hero.html`): informal
+  (*tegeződés*).** Its readers are would-be organisers deciding whether to use
+  OpenDLP, the same people the backoffice later addresses, and its earlier
+  strings already say "Hozz létre egy új projektet". Where it speaks as the
+  Sortition Foundation — real people — the first person plural is fine: "A
+  demokratikus sorsolás szakértői vagyunk". *(unreviewed)*
 - Keep the deferential "Kérjük" in apologetic messages. In the backoffice it
   pairs with the informal imperative — "Kérjük, próbáld újra" — which is fine and
   is the house style; in public text it pairs with the formal one — "Kérjük,
@@ -78,6 +84,10 @@ they are the same thing.
 | event | esemény | *(unreviewed)* |
 | framing question | a projekt témája | *(unreviewed)* |
 | first event date | az első esemény időpontja | *(unreviewed)* |
+| panel size | kiválasztandó létszám | *(unreviewed)* |
+| panel (the group that is drawn) | a kiválasztott csoport | *(unreviewed)* |
+| data source | adatforrás | *(unreviewed)* |
+| team / team member | csapat / csapattag | *(unreviewed)* |
 
 **assembly** is *közösségi gyűlés* in full. Bare *gyűlés* is too vague — it is any
 old meeting. Where the full term repeats several times in one short block of text
@@ -121,6 +131,22 @@ question. `Assembly Question` names the field where an organiser writes what the
 assembly is convened to decide, and Hungarian says that as a topic; *kérdése*
 reads as a query someone asked. No *fő*: the field is not one of several topics.
 The help text goes with it — "a fő téma, amellyel…", not "a fő kérdés". *(F28)*
+
+**panel size** replaced `Number of people to select`, which was already
+*Kiválasztandó emberek száma*, so it is *kiválasztandó létszám*: the same meaning,
+short enough for a label ("Kiválasztandó létszám: %(number)s") and a button
+("Kiválasztandó létszám szerkesztése"). It is not *csoport-összeállítás*: that word
+is kept for the sortition library's sense of **panel**, one candidate line-up out
+of many (F33). Where the interface means the people who end up drawn, as on the
+home page ("Decide what the panel should look like"), say *a kiválasztott
+csoport*. *(unreviewed)*
+
+**data source** is *adatforrás*, and its three choices are labels that the help
+text quotes, so they must match it word for word: `In OpenDLP` *Az OpenDLP-ben*,
+`In Google Sheets` *A Google Táblázatban*, `Decide later` *Később döntöm el*,
+`Create inside OpenDLP` *Létrehozás az OpenDLP-ben*, `Through OpenDLP
+registration` *OpenDLP-regisztrációval*. If a label changes, change the
+paragraph that quotes it as well. *(unreviewed)*
 
 ### Respondent fields
 
@@ -242,6 +268,18 @@ synonym of *főszervező*, and it does not. *(unreviewed)*
 | link (in the rich editor) | link | |
 | table (in the rich editor) | táblázat |  |
 | access (to a spreadsheet) | elérés | *(unreviewed)* |
+| tab (on an OpenDLP page) | fül | *(unreviewed)* |
+| new tab (in the browser) | új lap | *(unreviewed)* |
+| (opens in a new tab) | (új lapon nyílik meg) | *(unreviewed)* |
+| Go to the Targets tab | Tovább a Célszámok fülre | *(unreviewed)* |
+| CSV file | CSV-fájl | *(unreviewed)* |
+| (optional), after a field label | (nem kötelező) | *(unreviewed)* |
+| heading (an item in the questions list) | címsor | *(unreviewed)* |
+| Short text / Long text (question types) | Rövid szöveg / Hosszú szöveg | *(unreviewed)* |
+| Move to top / Move to bottom | Mozgatás a lista elejére / végére | *(unreviewed)* |
+| Cancel editing … (an icon button's label) | … szerkesztésének elvetése | *(unreviewed)* |
+| Reload the page | Töltsd újra az oldalt | *(unreviewed)* |
+| To confirm (status tag) | Megerősítendő | *(unreviewed)* |
 
 **cancel** as a button — backing out of a dialog or form without doing anything —
 is **Mégse**, the word every Hungarian UI uses for that button. Not
@@ -272,6 +310,24 @@ the other is **Statisztikák**, and where a string clearly means one of those �
 The bare `Dashboard` msgid cannot: the source uses the one string for both the
 per-assembly statistics tab and the nav link to the assembly list, so it takes
 the generic word until someone splits it. *(B11)*
+
+**A tab on one of OpenDLP's own pages** — the Targets, Respondents, Registration
+and Project Details tabs — is a *fül*: "a Célszámok fülön", "Tovább a Regisztráció
+fülre". That keeps three tabs apart: *fül* in the app, *munkalap* in a Google
+Sheet (B10), and *lap* in the browser ("új lapon nyílik meg"). One older entry,
+"…a Célszámok lapon állíthatod be", still says *lap* and should change once
+this is agreed. *(unreviewed)*
+
+**CSV file** is *CSV-fájl*, with the hyphen Hungarian spelling puts after an
+abbreviation in a compound. The older entries mostly say "CSV fájl", so the
+catalogue is mixed until this is settled one way and the older entries are
+brought into line. *(unreviewed)*
+
+**Cancel editing …** labels the cross that closes an edit-in-place field without
+saving, so it is *elvetés* (discarding): "Projektcím szerkesztésének elvetése".
+It is not *Mégse*, which is a button's visible text, not a description of what it
+does, and not *megszakítás*, which is for stopping something already running.
+*(unreviewed)*
 
 The rows above from *service account* to *table* came in with the replacement-selection
 and rich-editor strings in October 2026, and a native speaker reviewed them
@@ -365,6 +421,15 @@ compound in dense report lines — accepted as cosmetic. *(F33)*
   colon — "…ennél a sornál: %(row)d", "(az első ilyen sor: %(row)d)" — or start
   the sentence with it: "%(letter)s oszlop %(row)d. sorában…". This is the
   no-article rule (D16) applied, not a rewrite to dodge it.
+- **The colon also carries a value that would need a case ending.** A role
+  name or a position from a placeholder cannot take *-vá/-vé* or *-ra/-re*, so
+  it goes after a colon: `%(user)s is now %(role)s` is "%(user)s szerepköre
+  mostantól: %(role)s", and `Moved to position %(position)d of %(total)d` is "Új
+  pozíció: %(position)d / %(total)d". *(unreviewed)*
+- **Min and max in messages** are *minimum* and *maximum* in prose, *Min.* and
+  *Max.* only as column headings. "Max must be greater than or equal to min" is
+  said the other way round, as "A maximum nem lehet kisebb a minimumnál".
+  *(unreviewed)*
 
 ## Not translated
 
@@ -405,6 +470,13 @@ Two more were found and fixed in October 2026: the registration-page status
 badges `Test` read "Kezdés dátuma" (*Start date*) and `Closed` read "Menü
 bezárása" (*Close menu*). They are now *Teszt* and *Lezárva*, the latter a past
 participle per the status-value rule (F31).
+
+`Target` also read "Kezdés dátuma" (*Start date*). It is the target figure, used
+as a column heading in the selection and replacement reports and as a pie-chart
+label beside *Jelentkezők* and *Kiválasztva*, so it is now *Célszám*, per the
+glossary. That is the third entry seen with *Kezdés dátuma*, which belongs only to
+`Starts`. Before trusting any other entry that says it, check it against the
+English.
 
 The lesson survives the fix: **an entry not marked `fuzzy` is not evidence that
 anyone read it.** A bad fuzzy match auto-accepted years ago looks exactly like a

@@ -1,9 +1,20 @@
-# ABOUTME: Unit tests for the password hashing and verification helpers in service_layer.security
-# ABOUTME: Covers the hashes that must never match - unusable ones from a lockout, and empty ones
+# ABOUTME: Unit tests for the password helpers in service_layer.security
+# ABOUTME: Hashes that must never match, and the password rules the sign-up page lists against those enforced
+
+import pytest
 
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer.security import hash_password, verify_password
+from opendlp.service_layer import security
+from opendlp.service_layer.security import (
+    TempUser,
+    get_password_validators,
+    hash_password,
+    password_requirements,
+    validate_password_strength,
+    verify_password,
+)
+from opendlp.vendor import password_validation as pv
 
 
 class TestVerifyPassword:
@@ -32,3 +43,53 @@ class TestVerifyPassword:
         """An OAuth-only user has no password hash, and an empty guess is still not a password."""
         assert verify_password("anything", "") is False
         assert verify_password("", "") is False
+
+
+class TestPasswordRequirements:
+    """The sign-up page's short list of password rules, held to the validators that enforce them."""
+
+    def test_the_list_is_the_designs_wording(self):
+        assert password_requirements() == [
+            "10–256 characters",
+            "Not be numbers only",
+            "Not be a commonly used password",
+            "Not be too similar to your personal information",
+        ]
+
+    def test_the_length_line_takes_its_numbers_from_the_validators(self, monkeypatch):
+        validators = (pv.MinimumLengthValidator(min_length=12), pv.MaximumLengthValidator(max_length=64))
+        monkeypatch.setattr(security, "get_password_validators", lambda: validators)
+
+        assert password_requirements()[0] == "12–64 characters"
+
+    def test_every_validator_has_a_line(self):
+        """Adding or removing a validator has to change the list as well.
+
+        The two length validators share the first line. If this fails, make
+        password_requirements() say what the new set of validators enforces.
+        """
+        assert {type(validator) for validator in get_password_validators()} == {
+            pv.MinimumLengthValidator,
+            pv.MaximumLengthValidator,
+            pv.NumericPasswordValidator,
+            pv.SafeCommonPasswordValidator,
+            pv.UserAttributeSimilarityValidator,
+        }
+
+    @pytest.mark.parametrize(
+        ("password", "accepted"),
+        [
+            pytest.param("Kx7#mQ2vLp", True, id="10 characters"),
+            pytest.param("Kx7#mQ2vL", False, id="9 characters"),
+            pytest.param("Kx7#mQ2vLp" * 25 + "Kx7#mQ", True, id="256 characters"),
+            pytest.param("Kx7#mQ2vLp" * 25 + "Kx7#mQ2", False, id="257 characters"),
+            pytest.param("password123", False, id="a commonly used password"),
+            pytest.param("ann.smith@example", False, id="too similar to the email address"),
+            pytest.param("4719305826", False, id="numbers only"),
+            pytest.param("4719305826!", True, id="numbers and a symbol, no letter"),
+        ],
+    )
+    def test_each_line_is_enforced_as_written(self, password: str, accepted: bool):
+        user = TempUser(email="ann.smith@example.org", first_name="Ann", last_name="Smith")
+
+        assert validate_password_strength(password, user)[0] is accepted

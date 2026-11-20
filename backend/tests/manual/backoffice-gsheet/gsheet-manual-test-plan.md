@@ -3,6 +3,13 @@
 **Last Updated:** 2026-02-25
 **Related Spec:** [csv-upload-and-gsheet-flow-redesign-spec.md](../../../docs/agent/csv-upload-and-gsheet-flow-redesign-spec.md)
 
+> **Needs rewriting for sc-1024.** The steps below navigate by the Data Source
+> tab, which no longer exists. A Google Sheet's settings are now entered in
+> the last step of the Create new project dialog, or in the data source
+> settings dialog opened from the cog on the Data source card of the project
+> details page; the access check shows on that card. The checks themselves
+> still apply - only the way to each screen has changed.
+
 ## Overview
 
 This document provides manual test cases for the Google Sheet configuration feature in the backoffice UI. These tests complement the automated BDD tests by covering scenarios that require real Google Sheets integration, permission setup, and edge cases that are difficult to automate.
@@ -426,7 +433,7 @@ After testing, clean up:
 1. Navigate to assembly Selection tab
 
 **Expected Results:**
-- [ ] Warning alert displayed: "Please use the Data tab to set up your data before running a selection."
+- [ ] Warning alert displayed: "Please set up your data on the Project Details tab before running a selection."
 - [ ] "Configure Data Source" button visible and links to Data tab
 - [ ] "Back to Dashboard" button visible
 - [ ] No selection cards visible (Initial Selection, Replacement, Manage Tabs)

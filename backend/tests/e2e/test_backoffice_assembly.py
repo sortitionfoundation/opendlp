@@ -29,22 +29,23 @@ class TestBackofficeAssemblyDetails:
         assert response.status_code == 200
         assert existing_assembly.title.encode() in response.data
 
-    def test_registration_url_copy_widget_uses_csp_safe_data_attributes(
+    def test_registration_link_card_shows_the_pages_links(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
-        """The copy-URL button must drive the clipboard through utilities.js
-        data attributes, not an inline navigator.clipboard expression — the
-        latter fails silently under the CSP-safe Alpine build (`@alpinejs/csp`)."""
+        """The card links to the page's URL, its short URL, and the QR code download."""
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
+            page = create_registration_page_with_slugs(
+                uow, admin_user.id, existing_assembly.id, name="Registration page"
+            )
 
         response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}")
         assert response.status_code == 200
-        assert b"Registration Pages" in response.data
-        assert b"data-copy-text=" in response.data
-        assert b'data-copy-feedback="inline"' in response.data
-        # No inline JS expression — incompatible with the CSP-safe build.
-        assert b"navigator.clipboard.writeText(" not in response.data
+        body = response.get_data(as_text=True)
+        assert "Registration link" in body
+        assert f"/register/{page.url_slug}" in body
+        assert f"/r/{page.short_url_slug}" in body
+        assert f"/backoffice/project/{existing_assembly.id}/registration/{page.url_slug}/qr-code.png" in body
+        assert "See details" in body
 
     def test_registration_qr_code_endpoint_returns_png(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
@@ -69,23 +70,21 @@ class TestBackofficeAssemblyCreate:
     """Test backoffice assembly creation functionality."""
 
     def test_create_assembly_success(self, logged_in_admin):
-        """Test successful assembly creation."""
-        future_date = (datetime.now(UTC) + timedelta(days=30)).date()
+        """Saving the create dialog makes the project and sends htmx to its page."""
         response = logged_in_admin.post(
-            "/backoffice/project/new",
+            "/backoffice/project/new/save",
             data={
                 "title": "New Backoffice Assembly",
                 "question": "What should we discuss in this assembly?",
-                "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "number_to_select": "50",
+                "location": "csv",
                 "csrf_token": get_csrf_token(logged_in_admin, "/backoffice/project/new"),
             },
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        # Should redirect to view assembly page
-        assert response.status_code == 302
-        assert "/backoffice/project/" in response.location
+        assert response.status_code == 200
+        assert "/backoffice/project/" in response.headers["HX-Redirect"]
 
         # Check flash message
         with logged_in_admin.session_transaction() as session:
@@ -94,81 +93,90 @@ class TestBackofficeAssemblyCreate:
 
 
 class TestBackofficeAssemblyEdit:
-    """Test backoffice assembly editing functionality."""
+    """A project's details are edited in place on its details page."""
 
     def test_edit_assembly_success(self, logged_in_admin, existing_assembly):
-        """Test successful assembly editing."""
-        updated_title = "Updated Backoffice Assembly"
-        updated_question = "What is the updated question?"
-        future_date = (datetime.now(UTC) + timedelta(days=45)).date()
-
+        """Saving one value answers htmx with its row and flashes the save."""
+        details_url = f"/backoffice/project/{existing_assembly.id}"
         response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/edit",
+            f"{details_url}/edit-field",
             data={
-                "title": updated_title,
-                "question": updated_question,
-                "first_assembly_date": future_date.strftime("%Y-%m-%d"),
-                "number_to_select": "100",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}/edit"),
+                "field": "title",
+                "title": "Updated Backoffice Assembly",
+                "csrf_token": get_csrf_token(logged_in_admin, details_url),
             },
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        # Should redirect to view assembly page
-        assert response.status_code == 302
-        assert f"/backoffice/project/{existing_assembly.id}" in response.location
+        assert response.status_code == 200
+        assert b"Updated Backoffice Assembly" in response.data
+        assert b"Project details saved" in response.data
 
-        # Check flash message
-        with logged_in_admin.session_transaction() as session:
-            flash_messages = [msg[1] for msg in session.get("_flashes", [])]
-            assert any("updated successfully" in msg for msg in flash_messages)
+    def test_a_panel_size_that_moves_targets_says_so(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        """Edited in place, the recalculation happens on leaving the field, so it must not be silent."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.assemblies.get(existing_assembly.id).number_to_select = 20
+            value = TargetValue(value="North", min=0, max=0, percentage_target=50.0)
+            value.apply_percentage(20)
+            uow.target_categories.add(TargetCategory(assembly_id=existing_assembly.id, name="Region", values=[value]))
+            uow.commit()
+        details_url = f"/backoffice/project/{existing_assembly.id}"
+
+        response = logged_in_admin.post(
+            f"{details_url}/edit-field",
+            data={
+                "field": "number_to_select",
+                "number_to_select": "40",
+                "csrf_token": get_csrf_token(logged_in_admin, details_url),
+            },
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200
+        assert b"Panel size saved. Target min and max recalculated." in response.data
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            (category,) = uow.target_categories.get_by_assembly_id(existing_assembly.id)
+            assert category.values[0].max >= 20
 
     def test_complete_create_view_edit_workflow(self, logged_in_admin):
         """Test complete workflow: create -> view -> edit assembly."""
         # Step 1: Create assembly
-        future_date = (datetime.now(UTC) + timedelta(days=60)).date()
         create_response = logged_in_admin.post(
-            "/backoffice/project/new",
+            "/backoffice/project/new/save",
             data={
                 "title": "Workflow Test Assembly",
                 "question": "What should we test?",
-                "first_assembly_date": future_date.strftime("%Y-%m-%d"),
                 "number_to_select": "30",
+                "location": "csv",
                 "csrf_token": get_csrf_token(logged_in_admin, "/backoffice/project/new"),
             },
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        assert create_response.status_code == 302
-        assembly_url = create_response.location
+        assert create_response.status_code == 200
+        assembly_url = create_response.headers["HX-Redirect"]
 
         # Step 2: View the created assembly
         view_response = logged_in_admin.get(assembly_url)
         assert view_response.status_code == 200
         assert b"Workflow Test Assembly" in view_response.data
 
-        # Step 3: Extract assembly_id and edit
-        assembly_id = assembly_url.rstrip("/").split("/")[-1]
-        updated_date = (datetime.now(UTC) + timedelta(days=90)).date()
-        edit_response = logged_in_admin.post(
-            f"/backoffice/project/{assembly_id}/edit",
-            data={
-                "title": "Updated Workflow Test Assembly",
-                "question": "What should we test after update?",
-                "first_assembly_date": updated_date.strftime("%Y-%m-%d"),
-                "number_to_select": "40",
-                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly_id}/edit"),
-            },
-            follow_redirects=False,
-        )
+        # Step 3: Edit its title and its panel size in place
+        for field, value in (("title", "Updated Workflow Assembly"), ("number_to_select", "40")):
+            edit_response = logged_in_admin.post(
+                f"{assembly_url}/edit-field",
+                data={"field": field, field: value, "csrf_token": get_csrf_token(logged_in_admin, assembly_url)},
+                headers={"HX-Request": "true"},
+            )
+            assert edit_response.status_code == 200
 
-        assert edit_response.status_code == 302
-        assert f"/backoffice/project/{assembly_id}" in edit_response.location
-
-        # Step 4: Verify the update
-        final_view = logged_in_admin.get(f"/backoffice/project/{assembly_id}")
-        assert final_view.status_code == 200
-        assert b"Updated Workflow Test Assembly" in final_view.data
+        # Step 4: The details page shows both
+        final_view_response = logged_in_admin.get(assembly_url)
+        assert final_view_response.status_code == 200
+        assert b"Updated Workflow Assembly" in final_view_response.data
+        assert b'value="40"' in final_view_response.data
 
 
 @pytest.fixture
@@ -236,17 +244,19 @@ class TestBackofficeAddUserToAssembly:
         login_as_admin(client, admin_user)
 
         response = client.post(
-            f"/backoffice/project/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/team/add",
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.CONFIRMATION_CALLER.name,
-                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}/members"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}"),
             },
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        assert response.status_code == 302  # Redirect after success
-        assert f"/backoffice/project/{existing_assembly.id}/members" in response.location
+        # The dialog closes and the Team card comes back with the new member in it
+        assert response.status_code == 200
+        assert b'<div id="team" hx-swap-oob="true">' in response.data
+        assert regular_user.email.encode() in response.data
 
         # Reload user from database to get updated assembly_roles
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -267,13 +277,13 @@ class TestBackofficeAddUserToAssembly:
         login_as_admin(client, admin_user)
 
         response = client.post(
-            f"/backoffice/project/{existing_assembly.id}/members/add",
+            f"/backoffice/project/{existing_assembly.id}/team/add",
             data={
                 "user_id": str(regular_user.id),
                 "role": AssemblyRole.ASSEMBLY_MANAGER.name,
-                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}/members"),
+                "csrf_token": get_csrf_token(client, f"/backoffice/project/{existing_assembly.id}"),
             },
-            follow_redirects=True,
+            headers={"HX-Request": "true"},
         )
 
         assert response.status_code == 200
@@ -318,7 +328,7 @@ class TestBackofficeRemoveUserFromAssembly:
         )
 
         assert response.status_code == 302  # Redirect after success
-        assert f"/backoffice/project/{existing_assembly.id}/members" in response.location
+        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}#team")
 
         # Reload user from database to verify removal
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -431,19 +441,17 @@ class TestBackofficeCsvUpload:
         csv_content = "feature,value,min,max\nGender,Male,10,20\nGender,Female,10,20\nAge,18-30,5,15\nAge,31-50,5,15"
 
         response = logged_in_admin.post(
-            f"/backoffice/project/{existing_assembly.id}/targets/upload",
+            f"/backoffice/project/{existing_assembly.id}/data-source/upload-targets",
             data={
                 "csv_file": (BytesIO(csv_content.encode()), "targets.csv"),
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/project/{existing_assembly.id}/data?source=csv"
-                ),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{existing_assembly.id}"),
             },
             content_type="multipart/form-data",
-            follow_redirects=False,
+            headers={"HX-Request": "true"},
         )
 
-        assert response.status_code == 302
-        assert f"/backoffice/project/{existing_assembly.id}/targets" in response.location
+        assert response.status_code == 200
+        assert b"2 targets uploaded" in response.data
 
         # Verify targets were created
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -503,15 +511,13 @@ class TestBackofficeCsvDelete:
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly_with_targets.id}/data/delete-targets",
             data={
-                "csrf_token": get_csrf_token(
-                    logged_in_admin, f"/backoffice/project/{assembly_with_targets.id}/data?source=csv"
-                ),
+                "csrf_token": get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly_with_targets.id}"),
             },
             follow_redirects=False,
         )
 
         assert response.status_code == 302
-        assert "source=csv" in response.location
+        assert response.location.endswith(f"/backoffice/project/{assembly_with_targets.id}?data_source=1")
 
         # Verify targets were deleted
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -519,8 +525,8 @@ class TestBackofficeCsvDelete:
             assert len(categories) == 0
 
 
-class TestDataTabCreateTargetsFromRespondents:
-    """The data page dialog that builds target categories from respondent columns."""
+class TestTargetsTabCreateTargetsFromRespondents:
+    """The Targets tab dialog that builds target categories from respondent columns."""
 
     def _add_respondents(self, postgres_session_factory, assembly_id, respondents_data):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -529,7 +535,7 @@ class TestDataTabCreateTargetsFromRespondents:
             uow.commit()
 
     @pytest.mark.db_semantics
-    def test_data_page_offers_the_respondent_columns(
+    def test_targets_page_offers_the_respondent_columns(
         self, logged_in_admin, existing_assembly: Assembly, postgres_session_factory
     ):
         self._add_respondents(
@@ -538,7 +544,7 @@ class TestDataTabCreateTargetsFromRespondents:
             [("1", {"Gender": "Male", "Region": "North"}), ("2", {"Gender": "Female", "Region": "South"})],
         )
 
-        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/data?source=csv")
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/targets")
 
         assert response.status_code == 200
         html = response.data.decode()
@@ -572,7 +578,7 @@ class TestDataTabCreateTargetsFromRespondents:
             assert sorted(v.value for v in categories[0].values) == ["Female", "Male"]
 
     @pytest.mark.db_semantics
-    def test_selecting_nothing_returns_to_the_data_page(
+    def test_selecting_nothing_returns_to_the_targets_page(
         self, logged_in_admin, existing_assembly: Assembly, postgres_session_factory
     ):
         """Nothing was created, so there is nothing to go and set numbers for."""
@@ -585,4 +591,4 @@ class TestDataTabCreateTargetsFromRespondents:
         )
 
         assert response.status_code == 302
-        assert f"/backoffice/project/{existing_assembly.id}/data" in response.location
+        assert response.location.endswith(f"/backoffice/project/{existing_assembly.id}/targets")

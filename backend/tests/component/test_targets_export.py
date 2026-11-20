@@ -201,7 +201,7 @@ class TestRunExport:
         assert rows[0]["comment"] == "boosted"
         assert {r["category_comment"] for r in rows} == {"from the census"}
 
-    def test_a_download_uploads_back_through_the_upload_form(
+    def test_a_download_uploads_back_through_the_data_source_dialog(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
     ) -> None:
         """The point of the format: export, edit, and upload again."""
@@ -212,10 +212,10 @@ class TestRunExport:
             uow.commit()
 
         response = logged_in_admin.post(
-            _url(existing_assembly.id, "/upload"),
+            f"/backoffice/project/{existing_assembly.id}/data-source/upload-targets",
             data={"csv_file": (BytesIO(exported.get_data()), "targets.csv")},
             content_type="multipart/form-data",
-            follow_redirects=True,
+            headers={"HX-Request": "true"},
         )
 
         assert response.status_code == 200

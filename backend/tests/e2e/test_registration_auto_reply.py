@@ -24,6 +24,7 @@ from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
     page_for_assembly,
     publish_registration_page,
+    set_auto_reply_enabled,
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -258,3 +259,22 @@ def test_first_assembly_date_is_written_in_the_respondents_language(
     assert response.status_code == 302
 
     assert f"We start on {format_date(first_date, 'long', locale='de')}." in adapter.sent[0]["html_body"]
+
+
+def test_no_email_and_no_record_when_the_page_has_its_auto_reply_off(
+    client: FlaskClient, admin_user, postgres_session_factory
+) -> None:
+    """Someone registering through a page with its auto-reply turned off is recorded, and sent nothing."""
+    page = _build_published_page_with_auto_reply(postgres_session_factory, admin_user.id)
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        set_auto_reply_enabled(uow, admin_user.id, page.id, False)
+    adapter = FakeEmailAdapter()
+
+    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
+        _submit(client, page, "ada-off@example.com")
+
+    assert adapter.sent == []
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        respondents = uow.respondents.get_by_assembly_id(page.assembly_id, status=RespondentStatus.POOL)
+        assert len(respondents) == 1
+        assert uow.respondent_email_send_records.list_by_respondent(respondents[0].id) == []

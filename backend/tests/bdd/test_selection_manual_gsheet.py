@@ -52,7 +52,7 @@ def _(page: Page):
     """I can configure the options for selection in "manual gsheet setup"."""
     generate_remaining = page.get_by_label("Generate remaining tab")
     expect(generate_remaining).to_be_visible()
-    check_same_address = page.get_by_label("Check Same Address")
+    check_same_address = page.get_by_label("Check same address")
     expect(check_same_address).to_be_visible()
     check_same_address.set_checked(False)
 
@@ -60,8 +60,8 @@ def _(page: Page):
 @then("I can specify the categories and targets")
 def _(page: Page):
     """I can specify the categories and targets in "manual gsheet setup"."""
-    # there are two fields named "Targets Tab Name" - so select the one in the first fieldset (group)
-    categories_field = page.get_by_role("group", name="Initial/Test Selection").get_by_label("Targets Tab Name")
+    # there are two fields named "Targets tab name" - so select the one in the first fieldset (group)
+    categories_field = page.get_by_role("group", name="Initial/Test Selection").get_by_label("Targets tab name")
     expect(categories_field).to_be_visible()
 
 
@@ -71,8 +71,8 @@ def _(page: Page):
     url_field = page.get_by_label("Google Sheets URL")
     expect(url_field).to_be_visible()
     url_field.fill(VALID_GSHEET_URL)
-    # there are two fields named "Respondents Tab Name" - so select the one in the first fieldset (group)
-    respondents_field = page.get_by_role("group", name="Initial/Test Selection").get_by_label("Respondents Tab Name")
+    # there are two fields named "Respondents tab name" - so select the one in the first fieldset (group)
+    respondents_field = page.get_by_role("group", name="Initial/Test Selection").get_by_label("Respondents tab name")
     expect(respondents_field).to_be_visible()
     respondents_field.fill("All respondents")
 

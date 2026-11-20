@@ -43,6 +43,7 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_tab_enabled_states,
+    stored_data_source,
 )
 from opendlp.service_layer.exceptions import (
     ContentBlockInvalidError,
@@ -540,7 +541,7 @@ def _schema_page_context(
     with contextlib.suppress(ServiceLayerError):
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
-    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+    data_source, _locked = determine_data_source(gsheet, csv_status, stored_data_source(uow, assembly_id))
     has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
     hub_context: dict[str, Any] = {}
     if with_hub:

@@ -8,14 +8,15 @@ import pytest
 from flask.testing import FlaskClient
 from flask_babel import format_datetime
 
-from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer import sortition
-from opendlp.service_layer.assembly_service import create_assembly
+from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.user_service import create_user
 from tests.conftest import restore_flask_app_state
+from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeRedis, FakeStore, FakeUnitOfWork
 
 
@@ -82,6 +83,23 @@ def _mock_login_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None:
     mock_redis.get.return_value = None  # no counter = not rate-limited
     monkeypatch.setattr(
         "opendlp.service_layer.login_rate_limit_service._get_redis",
+        lambda: mock_redis,
+    )
+
+
+@pytest.fixture(autouse=True)
+def _mock_signup_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Prevent the open signup rate limit from connecting to Redis in component tests.
+
+    The same seam again, on the per-IP limit for open signups. A component test
+    that signs up by email with open signup on reaches it twice: checking the
+    counter on the way in, and recording the new account on the way out.
+    """
+    mock_redis = MagicMock()
+    mock_redis.get.return_value = None  # no counter = not rate-limited
+    mock_redis.pipeline.return_value = MagicMock()
+    monkeypatch.setattr(
+        "opendlp.service_layer.signup_rate_limit_service._get_redis",
         lambda: mock_redis,
     )
 
@@ -289,6 +307,45 @@ def existing_assembly(fake_store, admin_user):
             first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
         )
         return assembly.create_detached_copy()
+
+
+@pytest.fixture
+def assembly_with_gsheet(fake_store, admin_user) -> tuple[Assembly, AssemblyGSheet]:
+    """Create an assembly with an existing gsheet configuration in the shared store."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        assembly = create_assembly(
+            uow=uow,
+            title="Assembly with GSheet",
+            created_by_user_id=admin_user.id,
+            question="What should we configure?",
+            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+            number_to_select=22,
+        )
+        detached_assembly = assembly.create_detached_copy()
+
+    with FakeUnitOfWork(store=fake_store) as uow:
+        gsheet = add_assembly_gsheet(
+            uow=uow,
+            assembly_id=assembly.id,
+            user_id=admin_user.id,
+            url="https://docs.google.com/spreadsheets/d/1234567890abcdef/edit",
+            team="uk",
+            select_registrants_tab="TestRespondents",
+            select_targets_tab="TestCategories",
+            id_column="test_id_column",
+            check_same_address=True,
+            generate_remaining_tab=False,
+        )
+        detached_gsheet = gsheet.create_detached_copy()
+    return detached_assembly, detached_gsheet
+
+
+@pytest.fixture
+def existing_assembly_with_gsheet(fake_store, admin_user, existing_assembly) -> Assembly:
+    """The existing assembly, given a Google Sheets configuration with nothing but its URL."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        add_assembly_gsheet(uow=uow, assembly_id=existing_assembly.id, user_id=admin_user.id, url=VALID_GSHEET_URL)
+    return existing_assembly
 
 
 @pytest.fixture

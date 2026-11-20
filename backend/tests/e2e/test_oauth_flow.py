@@ -183,6 +183,7 @@ class TestOAuthRegistration:
                 "accept_data_agreement": "y",
                 "survey_location": "Berlin, Germany",
                 "survey_process_plan": "within_year",
+                "survey_heard_about_us": "event",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
@@ -201,7 +202,11 @@ class TestOAuthRegistration:
             assert user.global_role == GlobalRole.ORGANISER  # invite-less open signup
             survey = get_signup_survey(uow, user.id, admin_user.id)
             assert survey is not None
-            assert survey.answers == {"location": "Berlin, Germany", "process_plan": "within_year"}
+            assert survey.answers == {
+                "location": "Berlin, Germany",
+                "process_plan": "within_year",
+                "heard_about_us": "event",
+            }
 
     def test_register_google_without_invite_fails(self, client: FlaskClient, mock_oauth_token):
         """Test that OAuth registration fails without invite code in session."""
@@ -298,6 +303,8 @@ class TestOAuthAccountLinking:
 
             response = client.get("/profile/link-google", follow_redirects=False)
             assert response.status_code == 302
+            redirect_uri = mock_google.authorize_redirect.call_args.args[0]
+            assert redirect_uri.endswith("/profile/link-google/callback")
 
         # Store oauth_action in session
         with client.session_transaction() as session:
@@ -544,6 +551,8 @@ class TestMicrosoftOAuthAccountLinking:
 
             response = client.get("/profile/link-microsoft", follow_redirects=False)
             assert response.status_code == 302
+            redirect_uri = mock_microsoft.authorize_redirect.call_args.args[0]
+            assert redirect_uri.endswith("/profile/link-microsoft/callback")
 
         # Step 2: Complete OAuth callback
         with patch("opendlp.entrypoints.blueprints.profile.oauth.microsoft") as mock_microsoft:

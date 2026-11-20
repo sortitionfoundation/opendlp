@@ -375,6 +375,7 @@ def duplicate_registration_page(
         name=validated_name,
         language=language,
         auto_reply_email_template_id=_copy_auto_reply_template(uow, source, validated_name),
+        auto_reply_enabled=source.auto_reply_enabled,
     )
     page.record_create(user.id)
     page.activity[-1] = replace(page.activity[-1], text=f"Registration page copied from '{source.name}'")
@@ -639,6 +640,23 @@ def set_auto_reply_template(
     """
     _user, page = _load_manageable_page(uow, user_id, page_id)
     page.set_auto_reply_template(template_id)
+    return page.create_detached_copy()
+
+
+def set_auto_reply_enabled(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, enabled: bool
+) -> RegistrationPage:
+    """Turn the page's auto-reply on or off, keeping its template either way.
+
+    Records the change in the page's activity; setting the value it already has
+    changes nothing.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+    if page.auto_reply_enabled != enabled:
+        page.set_auto_reply_enabled(enabled)
+        page.record_edit(user.id, "Turned the auto-reply on" if enabled else "Turned the auto-reply off")
     return page.create_detached_copy()
 
 

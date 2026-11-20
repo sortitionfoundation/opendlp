@@ -16,6 +16,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.user_service import (
+    change_user_assembly_role,
     grant_user_assembly_role,
     revoke_user_assembly_role,
     sole_assembly_manager_id,
@@ -544,3 +545,127 @@ class TestSoleAssemblyManagerId:
         )
 
         assert sole_assembly_manager_id(uow, data["assembly"].id) == data["assembly_organiser_user"].id
+
+
+class TestChangingARoleKeepsAManager:
+    """Changing the only manager to another role orphans the assembly just as removing them would."""
+
+    def _second_manager(self, uow, data):
+        grant_user_assembly_role(
+            uow=uow,
+            user_id=data["target_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.ASSEMBLY_MANAGER,
+            current_user=data["admin_user"],
+        )
+
+    def test_the_sole_manager_cannot_demote_themselves(self, uow, setup_database):
+        data = setup_database
+
+        with pytest.raises(CannotRemoveLastAssemblyManager):
+            change_user_assembly_role(
+                uow=uow,
+                user_id=data["assembly_organiser_user"].id,
+                assembly_id=data["assembly"].id,
+                role=AssemblyRole.READ_ONLY,
+                current_user=data["assembly_organiser_user"],
+            )
+
+    def test_the_role_survives_the_refusal(self, uow, setup_database):
+        """The refusal has to happen before anything is changed."""
+        data = setup_database
+
+        with pytest.raises(CannotRemoveLastAssemblyManager):
+            change_user_assembly_role(
+                uow=uow,
+                user_id=data["assembly_organiser_user"].id,
+                assembly_id=data["assembly"].id,
+                role=AssemblyRole.CONFIRMATION_CALLER,
+                current_user=data["assembly_organiser_user"],
+            )
+
+        still_there = uow.users.get(data["assembly_organiser_user"].id)
+        assert still_there.get_assembly_role(data["assembly"].id) == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_the_sole_manager_may_be_re_saved_as_manager(self, uow, setup_database):
+        """Saving the dialog without changing anything is not a demotion."""
+        data = setup_database
+
+        assembly_role, _user = change_user_assembly_role(
+            uow=uow,
+            user_id=data["assembly_organiser_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.ASSEMBLY_MANAGER,
+            current_user=data["assembly_organiser_user"],
+        )
+
+        assert assembly_role.role == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_a_manager_may_step_down_once_there_is_another(self, uow, setup_database):
+        data = setup_database
+        self._second_manager(uow, data)
+
+        assembly_role, _user = change_user_assembly_role(
+            uow=uow,
+            user_id=data["assembly_organiser_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.READ_ONLY,
+            current_user=data["assembly_organiser_user"],
+        )
+
+        assert assembly_role.role == AssemblyRole.READ_ONLY
+
+    def test_an_admin_may_demote_the_only_manager(self, uow, setup_database):
+        """An admin can undo it, so they are not stopped."""
+        data = setup_database
+
+        assembly_role, _user = change_user_assembly_role(
+            uow=uow,
+            user_id=data["assembly_organiser_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.READ_ONLY,
+            current_user=data["admin_user"],
+        )
+
+        assert assembly_role.role == AssemblyRole.READ_ONLY
+
+    def test_a_change_is_persisted(self, uow, setup_database):
+        data = setup_database
+        self._second_manager(uow, data)
+
+        change_user_assembly_role(
+            uow=uow,
+            user_id=data["target_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.CONFIRMATION_CALLER,
+            current_user=data["admin_user"],
+        )
+        uow.commit()
+
+        reloaded = uow.users.get(data["target_user"].id)
+        assert reloaded.get_assembly_role(data["assembly"].id) == AssemblyRole.CONFIRMATION_CALLER
+
+    def test_someone_with_no_role_is_not_given_one(self, uow, setup_database):
+        """Changing a role never adds anyone to the team."""
+        data = setup_database
+
+        with pytest.raises(NotFoundError, match=r"has no role on assembly"):
+            change_user_assembly_role(
+                uow=uow,
+                user_id=data["target_user"].id,
+                assembly_id=data["assembly"].id,
+                role=AssemblyRole.READ_ONLY,
+                current_user=data["admin_user"],
+            )
+
+    def test_an_unknown_user_is_reported(self, uow, setup_database):
+        data = setup_database
+
+        with pytest.raises(NotFoundError):
+            change_user_assembly_role(
+                uow=uow,
+                user_id=uuid.uuid4(),
+                assembly_id=data["assembly"].id,
+                role=AssemblyRole.READ_ONLY,
+                current_user=data["admin_user"],
+            )

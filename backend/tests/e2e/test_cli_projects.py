@@ -50,20 +50,20 @@ class TestProjectsList:
         assert result.exit_code == 0, result.output
         assert result.output.splitlines() == [
             f"{projects['database']}\tactive\tcsv\tDatabase project",
-            f"{projects['empty']}\tactive\t-\tEmpty project",
+            f"{projects['empty']}\tactive\tcsv\tEmpty project",
         ]
 
     def test_include_archived(self, projects, cli_with_session_factory):
         result = cli_with_session_factory(cli, ["projects", "list", "--include-archived"])
 
         assert result.exit_code == 0, result.output
-        assert f"{projects['archived']}\tarchived\t-\tArchived project" in result.output.splitlines()
+        assert f"{projects['archived']}\tarchived\tcsv\tArchived project" in result.output.splitlines()
 
     def test_member_filter(self, projects, cli_with_session_factory):
         result = cli_with_session_factory(cli, ["projects", "list", "--member", "member@example.com"])
 
         assert result.exit_code == 0, result.output
-        assert result.output.splitlines() == [f"{projects['empty']}\tactive\t-\tEmpty project"]
+        assert result.output.splitlines() == [f"{projects['empty']}\tactive\tcsv\tEmpty project"]
 
     def test_unknown_member_refused(self, projects, cli_with_session_factory):
         result = cli_with_session_factory(cli, ["projects", "list", "--member", "nobody@example.com"])

@@ -127,3 +127,36 @@ class TestStepperExtraAttrsEscaping:
             "]) }}"
         )
         assert 'data-cy="step-one"' in html
+
+
+class TestStepperWithoutIds:
+    """A wizard in a dialog the server redraws must not give the dialog host a step to keep focus on."""
+
+    _ITEMS = (
+        'items=[{"key": "a", "label": "One", "href": "#", "state": "done", "disabled": true},'
+        ' {"key": "b", "label": "Two", "href": "#", "state": "active"}]'
+    )
+
+    def test_ids_false_leaves_out_id_and_focus_id(self):
+        html = _render(f'{{{{ stepper(id="s", aria_label="Steps", mode="wizard", ids=false, {self._ITEMS}) }}}}')
+
+        assert 'id="s-tab-' not in html
+        assert "data-focus-id" not in html
+        assert "x-focus-preserve" not in html
+
+    def test_ids_are_there_by_default(self):
+        html = _render(f'{{{{ stepper(id="s", aria_label="Steps", mode="wizard", {self._ITEMS}) }}}}')
+
+        assert 'id="s-tab-a"' in html
+        assert 'id="s-tab-b"' in html
+        assert 'data-focus-id="s-tab-b"' in html
+
+    def test_a_disabled_step_passes_extra_attributes_through(self):
+        html = _render(
+            '{{ stepper(id="s", aria_label="Steps", mode="wizard", ids=false, items=['
+            '{"key": "a", "label": "One", "href": "#", "state": "done", "disabled": true, "data-step-settled": "true"}'
+            "]) }}"
+        )
+
+        assert 'aria-disabled="true"' in html
+        assert 'data-step-settled="true"' in html

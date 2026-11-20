@@ -1,0 +1,25 @@
+{#
+ABOUTME: Showcase section for the public home page's hero, drawn with its real text and the product demo it plays:
+ABOUTME: five simplified backoffice screens built from the design-system macros
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description %}
+{# With context: the hero's Contact us button reads support_email_address. #}
+{% from "public/_hero.html" import home_hero with context %}
+
+{% macro hero_frame() %}
+    <div class="rounded-lg overflow-hidden"
+         style="border: 1px solid var(--color-borders-dividers)">{{ caller() }}</div>
+{% endmacro %}
+
+{% macro home_hero_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Home Page Hero") }}
+        {{ showcase_description("The hero of the public home page (templates/public/_hero.html): the slogan, the pitch, the two calls to action and the proof lines on the left, the product demo on the right; stacked from below lg.") }}
+        {{ showcase_description("templates/public/_hero_demo.html, played by src/js/hero-demo.js: five simplified backoffice screens built from the design-system macros. A cursor creates a project, names it, sets the targets, runs the selection, and the dashboard's pies show a panel that matches every target. Pauses off screen; with reduced motion it rests on the dashboard.") }}
+        {% call hero_frame() %}
+            {% call home_hero(heading_tag="h3") %}
+                {% include "public/_hero_demo.html" %}
+            {% endcall %}
+        {% endcall %}
+    {% endcall %}
+{% endmacro %}
