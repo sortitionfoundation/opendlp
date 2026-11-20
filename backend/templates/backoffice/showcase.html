@@ -14,6 +14,7 @@
 {% from "backoffice/showcase/switch_component.html" import switch_section %}
 {% from "backoffice/showcase/card_component.html" import card_section %}
 {% from "backoffice/showcase/section_component.html" import section_section %}
+{% from "backoffice/showcase/stat_tile_component.html" import stat_tile_section %}
 {% from "backoffice/showcase/navigation_component.html" import navigation_section %}
 {% from "backoffice/showcase/avatar_component.html" import avatar_section %}
 {% from "backoffice/showcase/account_menu_component.html" import account_menu_section %}
@@ -108,6 +109,7 @@
                                 <option value="components:select-dropdown">Select Dropdown</option>
                                 <option value="components:card">Card</option>
                                 <option value="components:section">Section</option>
+                                <option value="components:stat-tile">Stat Tile</option>
                                 <option value="components:modal">Modal</option>
                                 <option value="components:progress">Progress Bar</option>
                                 <option value="components:table">Table</option>
@@ -177,6 +179,7 @@
                              style="scroll-margin-top: 6rem">{{ select_dropdown_section() }}</div>
                         <div id="card" data-tab="components" style="scroll-margin-top: 6rem;">{{ card_section() }}</div>
                         <div id="section" data-tab="components" style="scroll-margin-top: 6rem;">{{ section_section() }}</div>
+                        <div id="stat-tile" data-tab="components" style="scroll-margin-top: 6rem;">{{ stat_tile_section() }}</div>
                         <div id="modal" data-tab="components" style="scroll-margin-top: 6rem;">{{ modal_section() }}</div>
                         <div id="progress" data-tab="components" style="scroll-margin-top: 6rem;">{{ progress_section() }}</div>
                         <div id="table" data-tab="components" style="scroll-margin-top: 6rem;">{{ table_section() }}</div>

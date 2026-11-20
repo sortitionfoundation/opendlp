@@ -115,10 +115,10 @@ and give it a component render test.
 
 ## Order
 
-1. `stat_tile` with showcase and test; move `detail_row` to components.
-2. Index redirect, tabs, users list.
-3. User page with dialogs, edit user, audit log.
-4. Invites list, invite page, create invite.
-5. Account menu link; `test_legacy_header.py`.
-6. Wording pass, then the `translate-catalogues` skill.
-7. `just check`, `just test-nobdd`, then `just build-all && just test-bdd-headless`.
+1. [x] `stat_tile` with showcase and test; move `detail_row` to components.
+2. [ ] Index redirect, tabs, users list.
+3. [ ] User page with dialogs, edit user, audit log.
+4. [ ] Invites list, invite page, create invite.
+5. [ ] Account menu link; `test_legacy_header.py`.
+6. [ ] Wording pass, then the `translate-catalogues` skill.
+7. [ ] `just check`, `just test-nobdd`, then `just build-all && just test-bdd-headless`.
