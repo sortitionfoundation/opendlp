@@ -14,7 +14,7 @@ ABOUTME: through which one cursor creates a project, sets its targets, runs the 
 {% from "backoffice/components/input.html" import input %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/tag.html" import tag %}
-{% from "backoffice/components/icons.html" import icon_check, icon_plus %}
+{% from "backoffice/components/icons.html" import icon_check, icon_plus, icon_pause, icon_play %}
 {% from "backoffice/components/modal.html" import progress_bar, status_badge, dialog_header %}
 {% from "backoffice/components/alert.html" import alert %}
 {% set project_title = _("Citizens' Assembly on Climate") %}
@@ -198,4 +198,15 @@ ABOUTME: through which one cursor creates a project, sets its targets, runs the 
         </div>
         <svg class="hero-demo__cursor" data-demo="cursor" viewBox="0 0 20 24" width="20" height="24"><path d="M1 1l0 17 4.5-4 3 7 3-1.3-3-6.8h6z" fill="#2F3442" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
     </div>
+    {# Pauses the demo where it is and plays it on from there: moving content that starts by itself needs a way
+       to stop it (WCAG 2.2.2). Under the frame rather than in it, because the frame is aria-hidden. A toggle
+       button: the name stays "Pause the demo", aria-pressed says whether it is paused, and the icon follows
+       aria-pressed. Hidden until the script plays the demo: without JavaScript, or for a visitor who prefers
+       reduced motion, the demo rests on its last screen and there is nothing to pause. #}
+    {{ button(variant="icon",
+    icon=icon_pause(classes="hero-demo__toggle-pause") ~ icon_play(classes="hero-demo__toggle-play"),
+    aria_label=_("Pause the demo"),
+    aria_pressed="false",
+    classes="hero-demo__toggle",
+    attrs="data-hero-demo-toggle hidden") }}
 </div>

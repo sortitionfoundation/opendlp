@@ -1,28 +1,54 @@
 // ABOUTME: Plays the home page hero demo: one cursor works through five simplified backoffice screens
-// ABOUTME: (create a project, set targets, run the selection, see the result), on a loop, paused off screen.
+// ABOUTME: (create a project, set targets, run the selection, see the result), on a loop, with a pause button.
 //
 // The markup is templates/public/_hero_demo.html, the styles the .hero-demo rules in main.css. The script finds every target by its data-demo name and
 // reads what to type from data-type, so it carries no words and works at any width and in any language.
 // Under prefers-reduced-motion it only sizes the window, and the stylesheet shows the last scene at rest.
+//
+// Every wait in the timeline is a wait on one pausable clock, so the demo can stop where it is and later play on
+// from there. Two things hold the clock: the visitor's pause button, and the hero being off screen. They are separate
+// holds, so the hero coming back on screen never undoes the visitor's pause. A hold also pauses the animations
+// already running in the frame - a move of the cursor, a click, the pies drawing, the fade between loops - and
+// releasing the last hold plays them on.
+
+import { pausableClock } from "../lib/pausable-clock.js";
 
 const WIDTH = 800;
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+// The two reasons the demo stops.
+const VISITOR = "visitor";
+const OFFSCREEN = "offscreen";
+
+/**
+ * Pause the animations running inside the element, CSS transitions included,
+ * and return a function that plays them on.
+ */
+function freezeAnimations(element) {
+  if (typeof element.getAnimations !== "function") return () => {};
+  const running = element
+    .getAnimations({ subtree: true })
+    .filter((animation) => animation.playState === "running");
+  running.forEach((animation) => animation.pause());
+  // One that has since been cancelled stays cancelled: playing it would start it again.
+  return () =>
+    running
+      .filter((animation) => animation.playState === "paused")
+      .forEach((animation) => animation.play());
 }
 
 /**
- * Play the demo in root.
+ * Play the demo in root, and wire its pause button.
  *
  * @param {HTMLElement} root the element marked data-hero-demo
  */
 export function startHeroDemo(root) {
   const cursor = root.querySelector('[data-demo="cursor"]');
+  const frame = root.querySelector(".hero-demo__frame");
+  const toggle = root.querySelector("[data-hero-demo-toggle]");
   const el = (name) => root.querySelector(`[data-demo="${name}"]`);
   const scenes = [...root.querySelectorAll("[data-scene]")];
   let cx = 600;
   let cy = 420;
-  let visible = true;
   let scale = 1;
 
   const fit = () => {
@@ -34,19 +60,42 @@ export function startHeroDemo(root) {
   if ("ResizeObserver" in window) new ResizeObserver(fit).observe(root);
   else window.addEventListener("resize", fit);
   // Reduced motion: the window is sized, and the stylesheet keeps the last scene at rest.
+  // Nothing moves, so the pause button stays hidden.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  let thaw = () => {};
+  const clock = pausableClock({
+    onChange: (running) => {
+      if (!running) {
+        thaw = freezeAnimations(frame);
+        return;
+      }
+      thaw();
+      thaw = () => {};
+    },
+  });
+  const sleep = (ms) => clock.sleep(ms);
+
+  // The button's name stays "Pause the demo"; aria-pressed says whether it is paused.
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      const pause = toggle.getAttribute("aria-pressed") !== "true";
+      toggle.setAttribute("aria-pressed", String(pause));
+      if (pause) clock.hold(VISITOR);
+      else clock.release(VISITOR);
+    });
+    toggle.hidden = false;
+  }
 
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(
       ([entry]) => {
-        visible = entry.isIntersecting;
+        if (entry.isIntersecting) clock.release(OFFSCREEN);
+        else clock.hold(OFFSCREEN);
       },
       { threshold: 0.2 },
     ).observe(root);
   }
-  const whenVisible = async () => {
-    while (!visible) await sleep(300);
-  };
 
   const show = (name) =>
     scenes.forEach((s) =>
@@ -56,7 +105,7 @@ export function startHeroDemo(root) {
   // The cursor lives in the frame, unscaled; targets live in the scaled app layer.
   const centreOf = (target) => {
     const t = target.getBoundingClientRect();
-    const f = root.querySelector(".hero-demo__frame").getBoundingClientRect();
+    const f = frame.getBoundingClientRect();
     return [t.left - f.left + t.width * 0.5, t.top - f.top + t.height * 0.55];
   };
   const moveTo = async (target, ms = 700) => {
@@ -125,7 +174,6 @@ export function startHeroDemo(root) {
   const run = async () => {
     root.classList.add("is-running");
     for (;;) {
-      await whenVisible();
       reset();
       show("projects");
       await sleep(900);
@@ -178,7 +226,7 @@ export function startHeroDemo(root) {
       root
         .querySelectorAll(".hero-demo__pie")
         .forEach((p, i) =>
-          setTimeout(() => p.classList.add("is-drawn"), i * 250),
+          sleep(i * 250).then(() => p.classList.add("is-drawn")),
         );
       await sleep(5000);
       root.classList.add("is-fading");

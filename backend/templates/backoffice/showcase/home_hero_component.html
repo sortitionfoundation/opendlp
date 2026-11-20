@@ -15,7 +15,7 @@ ABOUTME: five simplified backoffice screens built from the design-system macros
     {% call showcase_section() %}
         {{ showcase_title("Home Page Hero") }}
         {{ showcase_description("The hero of the public home page (templates/public/_hero.html): the slogan, the pitch, the two calls to action and the proof lines on the left, the product demo on the right; stacked from below lg.") }}
-        {{ showcase_description("templates/public/_hero_demo.html, played by src/js/init/hero-demo.js: five simplified backoffice screens built from the design-system macros. A cursor creates a project, names it, sets the targets, runs the selection, and the dashboard's pies show a panel that matches every target. Pauses off screen; with reduced motion it rests on the dashboard.") }}
+        {{ showcase_description("templates/public/_hero_demo.html, played by src/js/init/hero-demo.js: five simplified backoffice screens built from the design-system macros. A cursor creates a project, names it, sets the targets, runs the selection, and the dashboard's pies show a panel that matches every target. The button under the frame pauses it where it is and plays it on (a toggle: aria-pressed while paused); it also pauses off screen; with reduced motion it rests on the dashboard and the button stays hidden.") }}
         {% call hero_frame() %}
             {% call home_hero(heading_tag="h3") %}
                 {% include "public/_hero_demo.html" %}
