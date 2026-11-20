@@ -26,7 +26,7 @@ from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, leftover_answer_keys
 from opendlp.domain.users import User
 from opendlp.entrypoints.decorators import require_admin
-from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm, EditUserNamesForm, EditUserRoleForm
+from opendlp.entrypoints.forms import CreateInviteForm, EditUserNamesForm, EditUserRoleForm
 from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.exceptions import (
     CannotDisableSelf,
@@ -214,84 +214,12 @@ def _user_page(
     )
 
 
-@admin_bp.route("/users/<uuid:user_id>/edit", methods=["GET", "POST"])
+@admin_bp.route("/users/<uuid:user_id>/edit")
 @login_required
 @require_admin
 def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
-    """Edit a user's details."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            user = get_user_by_id(uow, user_id, current_user.id)
-
-        form = EditUserForm(obj=user)
-
-        if form.validate_on_submit():
-            try:
-                # Form coerce function already converts to GlobalRole enum
-                global_role = form.global_role.data
-
-                with uow:
-                    updated_user = update_user(
-                        uow=uow,
-                        user_id=user_id,
-                        admin_user_id=current_user.id,
-                        first_name=form.first_name.data or "",
-                        last_name=form.last_name.data or "",
-                        global_role=global_role,
-                    )
-
-                flash(
-                    _("User '%(email)s' updated successfully", email=updated_user.email),
-                    "success",
-                )
-                return redirect(url_for("admin.view_user", user_id=user_id))
-
-            except UserNotFoundError as e:
-                logger.warning(
-                    "User not found for edit by admin",
-                    user_id=str(user_id),
-                    admin_user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("User not found"), "error")
-                return redirect(url_for("admin.list_users"))
-            except InsufficientPermissions as e:
-                logger.warning("Unauthorized user update attempt", user_id=str(current_user.id), error=str(e))
-                flash(_("You don't have permission to perform this action"), "error")
-                return redirect(url_for("admin.view_user", user_id=user_id))
-            except ValueError as e:
-                logger.warning(
-                    "Validation error updating user",
-                    user_id=str(user_id),
-                    admin_user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(str(e), "error")
-            except Exception as e:
-                logger.error(
-                    "Error updating user", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
-                )
-                flash(_("An error occurred while updating the user"), "error")
-
-        return render_template("admin/user_edit.html", form=form, user=user), 200
-
-    except UserNotFoundError as e:
-        logger.warning(
-            "User not found for edit by admin", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("User not found"), "error")
-        return redirect(url_for("admin.list_users"))
-    except InsufficientPermissions as e:
-        logger.warning("Unauthorized access to user edit", user_id=str(current_user.id), error=str(e))
-        flash(_("You don't have permission to view this page"), "error")
-        return redirect(url_for("main.dashboard"))
-    except Exception as e:
-        logger.error(
-            "Error loading user edit page", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
-        )
-        flash(_("An error occurred while loading the edit page"), "error")
-        return redirect(url_for("admin.list_users"))
+    """A user is edited on their own page; this address is kept for old links."""
+    return redirect(url_for("admin.view_user", user_id=user_id))
 
 
 @admin_bp.route("/users/<uuid:user_id>/name", methods=["POST"])

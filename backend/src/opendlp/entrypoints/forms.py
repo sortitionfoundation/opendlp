@@ -545,32 +545,6 @@ class EditUserRoleForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
-class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """Form for editing user details (admin only)."""
-
-    first_name = StringField(
-        _l("First name"),
-        validators=[Length(max=100)],
-        description=_l("User's first name"),
-        render_kw={"autocomplete": "given-name"},
-    )
-
-    last_name = StringField(
-        _l("Last name"),
-        validators=[Length(max=100)],
-        description=_l("User's last name"),
-        render_kw={"autocomplete": "family-name"},
-    )
-
-    global_role = RadioField(
-        _l("Global role"),
-        choices=_select_choices(global_role_options),
-        coerce=coerce_for_enum(GlobalRole),
-        validators=[DataRequired()],
-        description=_l("User's global role determines their permissions across the system"),
-    )
-
-
 class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for creating user invites (admin only)."""
 
