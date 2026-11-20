@@ -533,6 +533,18 @@ class EditUserNamesForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
+class EditUserRoleForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """Form for an admin changing a user's global role, in a dialog on the user's page."""
+
+    global_role = RadioField(
+        _l("Global role"),
+        choices=_select_choices(global_role_options),
+        coerce=coerce_for_enum(GlobalRole),
+        validators=[DataRequired()],
+        description=_l("User's global role determines their permissions across the system"),
+    )
+
+
 class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for editing user details (admin only)."""
 

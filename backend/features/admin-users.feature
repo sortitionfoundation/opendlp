@@ -43,3 +43,8 @@ Feature: Manage Users
     When the admin edits their first name to "Renamed" and presses Enter
     Then the admin sees the first name "Renamed" without leaving the page
     And the user's first name is "Renamed" after a reload
+
+  Scenario: Change a user's role
+    Given there is a disposable user
+    When the admin changes their role to Organiser
+    Then the user's role is Organiser
