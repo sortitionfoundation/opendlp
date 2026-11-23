@@ -68,6 +68,31 @@ class TestListInvitesPage:
         assert re.search(r'<form method="post"\s+action="/admin/invites/cleanup"\s+data-confirm="This will', body)
         assert f'data-row-url="/admin/invites/{invite_id}"' in body
 
+    def test_invite_actions_share_a_line_with_the_count(
+        self, logged_in_admin: FlaskClient, fake_store, admin_user: User
+    ):
+        """The count comes first on the line, then Create invite and Clean up, pushed to the right."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
+
+        body = logged_in_admin.get("/admin/invites").get_data(as_text=True)
+
+        row = re.search(
+            r"Showing 1 invites \(including expired\)\s*</p>\s*<div[^>]*ml-auto[^>]*>(.*?)</form>", body, re.DOTALL
+        )
+        assert row is not None
+        assert "Create invite" in row.group(1)
+        assert "Clean up expired invites" in row.group(1)
+
+    def test_invite_actions_stay_on_the_right_with_no_invites(self, logged_in_admin: FlaskClient):
+        """With no invites there is no count, and the actions keep their place."""
+        body = logged_in_admin.get("/admin/invites").get_data(as_text=True)
+
+        assert "Showing" not in body
+        assert re.search(
+            r'<div class="flex flex-wrap items-center gap-3 ml-auto">\s*<a href="/admin/invites/create"', body
+        )
+
     def test_list_invites_shows_invite_codes(self, logged_in_admin: FlaskClient, fake_store, admin_user: User):
         """Invite list displays invite codes."""
         with FakeUnitOfWork(store=fake_store) as uow:

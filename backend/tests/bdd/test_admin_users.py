@@ -218,3 +218,35 @@ def _(admin_logged_in_page: Page, disposable_user: User):
     admin_logged_in_page.goto(f"{Urls.admin_users}/{disposable_user.id}")
     row = admin_logged_in_page.locator("dl > div", has_text="Global role")
     expect(row.locator("strong").first).to_have_text("Organiser")
+
+
+@given("the admin has searched the users for the disposable user among organisers")
+def _(admin_logged_in_page: Page, disposable_user: User):
+    """search for the user by email, with the role filter on Organiser."""
+    page = admin_logged_in_page
+    page.goto(Urls.admin_users)
+    clear = page.get_by_role("button", name="Clear search")
+    expect(clear).to_be_hidden()
+    page.get_by_label("Search by name or email").fill(disposable_user.email)
+    expect(clear).to_be_visible()
+    page.get_by_label("Role").select_option("organiser")
+    page.get_by_role("button", name="Apply filters").click()
+    expect(page.get_by_label("Search by name or email")).to_have_value(disposable_user.email)
+
+
+@when("the admin clears the search")
+def _(admin_logged_in_page: Page):
+    """press the clear icon inside the search box."""
+    page = admin_logged_in_page
+    with page.expect_navigation():
+        page.get_by_role("button", name="Clear search").click()
+
+
+@then("the search is empty and the role filter is kept")
+def _(admin_logged_in_page: Page):
+    """the list reloads without the search term but still filtered by role."""
+    page = admin_logged_in_page
+    expect(page.get_by_label("Search by name or email")).to_have_value("")
+    expect(page.get_by_role("button", name="Clear search")).to_be_hidden()
+    expect(page.get_by_label("Role")).to_have_value("organiser")
+    assert "role=organiser" in page.url

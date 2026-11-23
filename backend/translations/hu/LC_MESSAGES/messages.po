@@ -5241,6 +5241,11 @@ msgid "Conversion rate"
 msgstr "Beváltási arány"
 
 #: templates/admin/invites.html
+#, python-format
+msgid "Showing %(count)s invites (including expired)"
+msgstr "%(count)s meghívó látható (a lejártakkal együtt)"
+
+#: templates/admin/invites.html
 msgid "This will permanently delete all expired, unused invites. Are you sure?"
 msgstr ""
 "Ez véglegesen töröl minden lejárt, fel nem használt meghívót. Biztos vagy"
@@ -5250,11 +5255,6 @@ msgstr ""
 #, fuzzy
 msgid "Clean up expired invites"
 msgstr "Lejárt meghívók törlése"
-
-#: templates/admin/invites.html
-#, python-format
-msgid "Showing %(count)s invites (including expired)"
-msgstr "%(count)s meghívó látható (a lejártakkal együtt)"
 
 #: templates/admin/invites.html
 msgid "Code"
@@ -5581,12 +5581,18 @@ msgstr "Add meg a nevet vagy e-mail címet…"
 
 #: templates/admin/users.html
 #, fuzzy
+msgid "Clear search"
+msgstr "Keresés törlése"
+
+#: templates/admin/users.html
+#, fuzzy
 msgid "Apply filters"
 msgstr "Szűrők alkalmazása"
 
 #: templates/admin/users.html
-msgid "Clear"
-msgstr "Törlés"
+#, fuzzy
+msgid "Clear all"
+msgstr "Összes törlése"
 
 #: templates/admin/users.html
 #, fuzzy, python-format
@@ -5595,9 +5601,14 @@ msgstr ""
 "Felhasználó hozzáadásához %(link_start)shozz létre neki egy "
 "meghívót%(link_end)s."
 
-#: templates/admin/users.html
-msgid "Export users as CSV"
-msgstr "Felhasználók exportálása CSV-be"
+#: templates/admin/users.html templates/backoffice/assembly_dashboard.html
+#: templates/backoffice/assembly_respondents.html
+#: templates/backoffice/assembly_targets.html
+#: templates/backoffice/dashboard_export_modal.html
+#: templates/backoffice/respondents/export_modal.html
+#: templates/backoffice/targets/export_modal.html
+msgid "Export"
+msgstr "Exportálás"
 
 #: templates/admin/users.html
 #, fuzzy, python-format
@@ -5651,15 +5662,6 @@ msgstr "Diagram"
 #: templates/backoffice/components/rich_editor.html
 msgid "Table"
 msgstr "Táblázat"
-
-#: templates/backoffice/assembly_dashboard.html
-#: templates/backoffice/assembly_respondents.html
-#: templates/backoffice/assembly_targets.html
-#: templates/backoffice/dashboard_export_modal.html
-#: templates/backoffice/respondents/export_modal.html
-#: templates/backoffice/targets/export_modal.html
-msgid "Export"
-msgstr "Exportálás"
 
 #: templates/backoffice/assembly_dashboard.html
 msgid "No dashboard to display yet."

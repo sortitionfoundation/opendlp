@@ -43,7 +43,9 @@ ABOUTME: The Users tab of Site Admin; each row opens the user's page
                     {{ input("search",
                     label=_("Search by name or email"),
                     value=search_term or "",
-                    placeholder=_("Enter name or email…")) }}
+                    placeholder=_("Enter name or email…"),
+                    clear_label=_("Clear search"),
+                    clear_submits=true) }}
                 </div>
                 <div>{{ select("role", label=_("Role"), options=role_options, value=role_filter or "") }}</div>
                 <div>
@@ -56,11 +58,9 @@ ABOUTME: The Users tab of Site Admin; each row opens the user's page
                     ],
                     value=active_filter or "") }}
                 </div>
-                <div class="flex items-center gap-4 pb-1">
+                <div class="flex items-center gap-4">
                     {{ button(_("Apply filters"), type="submit") }}
-                    <a href="{{ url_for('admin.list_users') }}"
-                       class="text-body-md underline"
-                       style="color: var(--color-links)">{{ _("Clear") }}</a>
+                    {{ button(_("Clear all"), variant="tertiary", href=url_for('admin.list_users')) }}
                 </div>
             </form>
         {% endcall %}
@@ -71,7 +71,7 @@ ABOUTME: The Users tab of Site Admin; each row opens the user's page
                 link_start=('<a href="' ~ url_for('admin.create_invite') ~ '" class="underline" style="color: var(--color-links)">')|safe,
                     link_end=("</a>"|safe)) }}
             </p>
-            {{ button(_("Export users as CSV"), variant="secondary", href=url_for('admin.export_users_csv')) }}
+            {{ button(_("Export"), variant="secondary", href=url_for('admin.export_users_csv')) }}
         </div>
 
         {% if search_term or role_filter or active_filter %}

@@ -25,19 +25,23 @@ ABOUTME: The Invites tab of Site Admin; an unused invite that has not expired ca
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-            {{ button(_("Create invite"), href=url_for('admin.create_invite')) }}
-            <form method="post"
-                  action="{{ url_for('admin.cleanup_invites') }}"
-                  data-confirm="{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                {{ button(_("Clean up expired invites"), variant="secondary", type="submit") }}
-            </form>
+            {% if invites %}
+                <p class="text-body-md" style="color: var(--color-secondary-text);">
+                    {{ _("Showing %(count)s invites (including expired)", count=invites|length) }}
+                </p>
+            {% endif %}
+            <div class="flex flex-wrap items-center gap-3 ml-auto">
+                {{ button(_("Create invite"), href=url_for('admin.create_invite')) }}
+                <form method="post"
+                      action="{{ url_for('admin.cleanup_invites') }}"
+                      data-confirm="{{ _("This will permanently delete all expired, unused invites. Are you sure?") }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {{ button(_("Clean up expired invites"), variant="secondary", type="submit") }}
+                </form>
+            </div>
         </div>
 
         {% if invites %}
-            <p class="text-body-md" style="color: var(--color-secondary-text);">
-                {{ _("Showing %(count)s invites (including expired)", count=invites|length) }}
-            </p>
             {% call table(id="invites-table") %}
                 {{ table_head([
                 {"label": _("Code")},

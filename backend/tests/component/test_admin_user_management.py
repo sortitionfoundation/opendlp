@@ -148,6 +148,20 @@ class TestAdminUserList:
         assert "Users found: 0" in body
         assert "No users found matching your criteria." in body
 
+    def test_search_can_be_cleared_and_filters_cleared_all_at_once(self, logged_in_admin: FlaskClient) -> None:
+        """The search box has a clear button that resubmits, and Clear all is a tertiary button."""
+        body = logged_in_admin.get("/admin/users?search=smith").get_data(as_text=True)
+        assert re.search(r'x-data="clearableInput"[^>]*data-clear-submits="true"', body, re.DOTALL)
+        assert 'aria-label="Clear search"' in body
+        assert re.search(
+            r'<a href="/admin/users"\s+role="button"\s+class="btn btn--tertiary"[^>]*><span>Clear all</span>', body
+        )
+
+    def test_export_button_says_export(self, logged_in_admin: FlaskClient) -> None:
+        """The export button links to the CSV export under a one-word label."""
+        body = logged_in_admin.get("/admin/users").get_data(as_text=True)
+        assert re.search(r'<a href="/admin/users/export"[^>]*><span>Export</span></a>', body)
+
     def test_points_to_invites_for_adding_a_user(self, logged_in_admin: FlaskClient) -> None:
         """Users are added by invite, and the page says so with a link."""
         body = logged_in_admin.get("/admin/users").get_data(as_text=True)
