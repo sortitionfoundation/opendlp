@@ -4,7 +4,7 @@ ABOUTME: In-memory repositories that implement the same interfaces as real ones"
 import uuid
 from collections.abc import Collection, Iterable
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import gspread
 
@@ -71,6 +71,9 @@ from opendlp.service_layer.repositories import (
     UserSignupSurveyRepository,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork, UnitOfWorkError
+
+if TYPE_CHECKING:
+    from opendlp.service_layer.unit_of_work import EventHandlers
 
 
 class FakeRepository(AbstractRepository):
@@ -1229,9 +1232,14 @@ class FakeUnitOfWork(AbstractUnitOfWork):
     The repositories are only bound inside the ``with`` block, as they are on the
     real UnitOfWork. The ``fake_<name>`` aliases are unaffected and stay usable
     throughout as the arrange/inspect seam.
+
+    With no ``event_handlers`` it runs none: a recorded event lands on
+    ``uow.events`` for the test to assert on and nothing else happens. Pass
+    ``handlers.EVENT_HANDLERS`` to run the application's handlers.
     """
 
-    def __init__(self, store: FakeStore | None = None) -> None:
+    def __init__(self, store: FakeStore | None = None, event_handlers: "EventHandlers | None" = None) -> None:
+        super().__init__(event_handlers if event_handlers is not None else {})
         self._shared = store is not None
         self._store = store if store is not None else FakeStore()
         # The legacy ``uow.fake_users`` alias is bound once and never withdrawn.
@@ -1256,6 +1264,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
 
     def __enter__(self) -> AbstractUnitOfWork:
         self._bind_repositories(open_context=True)
+        self._start_events()
         if self._shared:
             self._take_snapshot()
         return self
@@ -1274,6 +1283,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.committed = True
         if self._shared and self._snapshot is not None:
             self._take_snapshot()
+        self._run_after_commit_callbacks()
 
     def commit_and_reset(self) -> None:
         """Commit the work so far, then carry on against the same in-memory store.
@@ -1301,6 +1311,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
             for name in _REPO_NAMES:
                 getattr(self._store, name)._items.clear()
         self.committed = False
+        self._discard_after_commit_callbacks()
 
     def expire_all(self) -> None:
         """No-op for in-memory repositories — record the call for assertions."""
