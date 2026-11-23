@@ -7,12 +7,16 @@ import structlog
 
 from opendlp.adapters.tabular_export import AbstractTabularExportTarget, TabularData
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, UserSignupSurvey, leftover_answer_keys
+from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 
 from .exceptions import InsufficientPermissions, UserNotFoundError
 from .permissions import has_global_admin
 from .unit_of_work import AbstractUnitOfWork
 
 logger = structlog.get_logger(__name__)
+
+# The tab a Google Sheets export of the users writes to when none is given.
+USERS_WORKSHEET_NAME = "OpenDLP Users"
 
 
 def _require_admin(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID, action: str) -> None:
@@ -63,7 +67,36 @@ def export_users(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID, *, target: A
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     _require_admin(uow, admin_user_id, "export users")
+    _write_users(uow, target, "users")
 
+
+def export_users_to_gsheet(
+    uow: AbstractUnitOfWork,
+    admin_user_id: uuid.UUID,
+    *,
+    spreadsheet_url: str,
+    worksheet_name: str,
+    target: AbstractTabularExportTarget,
+) -> None:
+    """
+    Export every user with their signup survey answers to a tab of a Google Sheet (admin only).
+
+    Nothing about the destination is saved: different admins may want the users
+    in different spreadsheets, so each export names its own. A blank tab name
+    means USERS_WORKSHEET_NAME.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _require_admin(uow, admin_user_id, "export users")
+    # Validate the URL BEFORE writing: gspread's URL parsing is laxer than the
+    # domain validator, and the write clears the tab.
+    GoogleSpreadsheetURLValidator().validate_str(spreadsheet_url.strip())
+    _write_users(uow, target, worksheet_name.strip() or USERS_WORKSHEET_NAME)
+
+
+def _write_users(uow: AbstractUnitOfWork, target: AbstractTabularExportTarget, sheet_title: str) -> None:
+    """Build the users table and write it to the target as one sheet. Assumes an
+    open uow and an already-authorised caller."""
     surveys = {survey.user_id: survey for survey in uow.user_signup_surveys.all()}
     leftover: set[str] = set()
     for survey in surveys.values():
@@ -97,4 +130,4 @@ def export_users(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID, *, target: A
             *(answers.get(key, "") for key in question_keys),
             *(answers.get(key, "") for key in leftover_keys),
         ])
-    target.write_sheet("users", TabularData(headers=headers, rows=rows))
+    target.write_sheet(sheet_title, TabularData(headers=headers, rows=rows))

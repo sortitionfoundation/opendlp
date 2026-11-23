@@ -7,6 +7,9 @@ from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import signup_survey_service, user_service
 from opendlp.service_layer.exceptions import InsufficientPermissions
+from tests.fakes import FakeGSheetExportTarget
+
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
 
 
 def _make_user(uow, email: str, role: GlobalRole = GlobalRole.USER):
@@ -110,3 +113,50 @@ class TestExportUsers:
 
         with pytest.raises(InsufficientPermissions):
             signup_survey_service.export_users(uow, requester.id, target=CsvExportTarget())
+
+
+class TestExportUsersToGSheet:
+    def test_writes_the_users_to_the_named_tab(self, uow):
+        admin = _make_user(uow, "admin@example.com", GlobalRole.ADMIN)
+        _make_user(uow, "someone@example.com")
+
+        target = FakeGSheetExportTarget()
+        signup_survey_service.export_users_to_gsheet(
+            uow, admin.id, spreadsheet_url=SHEET_URL, worksheet_name="  Team list ", target=target
+        )
+
+        ((title, table),) = target.writes
+        assert title == "Team list"
+        assert table.headers[:4] == ["email", "first_name", "last_name", "global_role"]
+        assert sorted(row[0] for row in table.rows) == ["admin@example.com", "someone@example.com"]
+
+    def test_a_blank_tab_name_writes_to_opendlp_users(self, uow):
+        admin = _make_user(uow, "admin@example.com", GlobalRole.ADMIN)
+
+        target = FakeGSheetExportTarget()
+        signup_survey_service.export_users_to_gsheet(
+            uow, admin.id, spreadsheet_url=SHEET_URL, worksheet_name=" ", target=target
+        )
+
+        ((title, _table),) = target.writes
+        assert title == "OpenDLP Users"
+
+    def test_a_bad_url_is_refused_before_anything_is_written(self, uow):
+        admin = _make_user(uow, "admin@example.com", GlobalRole.ADMIN)
+
+        target = FakeGSheetExportTarget()
+        with pytest.raises(ValueError):
+            signup_survey_service.export_users_to_gsheet(
+                uow, admin.id, spreadsheet_url="https://example.com/sheet", worksheet_name="", target=target
+            )
+        assert target.writes == []
+
+    def test_non_admin_is_refused(self, uow):
+        requester = _make_user(uow, "user@example.com")
+
+        target = FakeGSheetExportTarget()
+        with pytest.raises(InsufficientPermissions):
+            signup_survey_service.export_users_to_gsheet(
+                uow, requester.id, spreadsheet_url=SHEET_URL, worksheet_name="", target=target
+            )
+        assert target.writes == []
