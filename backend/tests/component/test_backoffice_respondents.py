@@ -997,6 +997,25 @@ class TestViewRespondentDeletionUI:
         assert b"gdpr" in response.data
         assert b"Confirm delete" not in response.data
 
+    def test_the_deleted_banner_is_information_not_an_error(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        """The banner records a deletion that was asked for and done; nothing went wrong, so it is not red."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent = create_respondent(
+                uow, admin_user.id, existing_assembly.id, external_id="R-GONE", attributes={}, email="x@example.com"
+            )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            delete_respondent(uow, admin_user.id, existing_assembly.id, respondent.id, comment="gdpr")
+
+        response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/respondents/{respondent.id}")
+        banner = re.search(r"<div\b([^>]*)>\s*<strong>Personal data deleted</strong>", response.data.decode())
+        assert banner is not None
+        assert "var(--color-info-background)" in banner.group(1)
+        assert "var(--color-info-border)" in banner.group(1)
+        assert "red-" not in banner.group(1)
+        assert "--color-error" not in banner.group(1)
+
 
 class TestDeleteRespondentRoute:
     """POST /backoffice/project/<id>/respondents/<id>/delete branches."""
