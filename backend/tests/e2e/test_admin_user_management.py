@@ -190,7 +190,7 @@ class TestAdminUserView:
 
 
 class TestAdminUserExport:
-    """Test the users CSV export."""
+    """Test the users export."""
 
     def test_export_includes_users_and_survey_answers(
         self, client: FlaskClient, admin_user: User, regular_user: User, postgres_session_factory
@@ -199,7 +199,10 @@ class TestAdminUserExport:
             save_signup_survey(uow, regular_user.id, {"location": "Budapest"})
 
         login_as_admin(client, admin_user)
-        response = client.get("/admin/users/export")
+        response = client.post(
+            "/admin/users/export/run",
+            data={"file_type": "csv", "csrf_token": get_csrf_token(client, "/admin/users")},
+        )
         assert response.status_code == 200
         assert response.mimetype == "text/csv"
         assert "attachment" in response.headers["Content-Disposition"]
@@ -220,7 +223,11 @@ class TestAdminUserExport:
                 "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
-        response = client.get("/admin/users/export", follow_redirects=False)
+        response = client.post(
+            "/admin/users/export/run",
+            data={"file_type": "csv", "csrf_token": get_csrf_token(client, "/dashboard")},
+            follow_redirects=False,
+        )
         assert response.status_code in (302, 403)
 
 

@@ -1434,8 +1434,19 @@ msgid "An error occurred while loading the user list"
 msgstr "Hiba történt a felhasználólista betöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/admin.py
+#: src/opendlp/entrypoints/blueprints/backoffice.py
+#: src/opendlp/entrypoints/blueprints/targets.py
+msgid "Only CSV and Google Sheets exports are available for now"
+msgstr "Jelenleg csak CSV-be és Google Táblázatba lehet exportálni"
+
+#: src/opendlp/entrypoints/blueprints/admin.py
 msgid "You don't have permission to export users"
 msgstr "Nincs jogosultságod a felhasználók exportálásához"
+
+#: src/opendlp/entrypoints/blueprints/admin.py
+#, fuzzy
+msgid "Users exported to Google Sheets"
+msgstr "A felhasználók exportálva a Google Táblázatba"
 
 #: src/opendlp/entrypoints/blueprints/admin.py
 #: src/opendlp/service_layer/two_factor_service.py
@@ -1824,11 +1835,6 @@ msgstr "Hiba történt az irányítópult betöltése közben"
 #: src/opendlp/entrypoints/blueprints/backoffice.py
 msgid "You don't have permission to export the dashboard"
 msgstr "Nincs jogosultságod az irányítópult exportálásához"
-
-#: src/opendlp/entrypoints/blueprints/backoffice.py
-#: src/opendlp/entrypoints/blueprints/targets.py
-msgid "Only CSV and Google Sheets exports are available for now"
-msgstr "Jelenleg csak CSV-be és Google Táblázatba lehet exportálni"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py
 msgid "Dashboard exported to Google Sheets."
@@ -5013,7 +5019,7 @@ msgid "Support links"
 msgstr "Súgó linkek"
 
 #: templates/admin/_confirm.html templates/admin/invite_create.html
-#: templates/admin/user_view.html
+#: templates/admin/user_view.html templates/admin/users_export_modal.html
 #: templates/backoffice/assembly_edit_respondent.html
 #: templates/backoffice/assembly_view_respondent.html
 #: templates/backoffice/components/db_replacement_modal.html
@@ -5601,7 +5607,8 @@ msgstr ""
 "Felhasználó hozzáadásához %(link_start)shozz létre neki egy "
 "meghívót%(link_end)s."
 
-#: templates/admin/users.html templates/backoffice/assembly_dashboard.html
+#: templates/admin/users.html templates/admin/users_export_modal.html
+#: templates/backoffice/assembly_dashboard.html
 #: templates/backoffice/assembly_respondents.html
 #: templates/backoffice/assembly_targets.html
 #: templates/backoffice/dashboard_export_modal.html
@@ -5637,6 +5644,43 @@ msgstr "felhasználó"
 #: templates/admin/users.html
 msgid "No users found matching your criteria."
 msgstr "Nincs a feltételeknek megfelelő felhasználó."
+
+#: templates/admin/users_export_modal.html
+#, fuzzy
+msgid "Export users"
+msgstr "Felhasználók exportálása"
+
+#: templates/admin/users_export_modal.html
+#, fuzzy
+msgid "Every user, with their answers to the signup survey."
+msgstr "Minden felhasználó, a regisztrációs kérdőívre adott válaszaikkal."
+
+#: templates/admin/users_export_modal.html
+#: templates/backoffice/dashboard_export_modal.html
+#: templates/backoffice/targets/export_modal.html
+msgid "File type"
+msgstr "Fájltípus"
+
+#: templates/admin/users_export_modal.html
+#: templates/backoffice/dashboard_export_modal.html
+#: templates/backoffice/targets/export_modal.html
+msgid "CSV"
+msgstr "CSV"
+
+#: templates/admin/users_export_modal.html
+#: templates/backoffice/dashboard_export_modal.html
+#: templates/backoffice/respondents/export_modal.html
+#: templates/backoffice/targets/export_modal.html
+#: templates/main/view_assembly_data.html
+msgid "Google Sheets"
+msgstr "Google Táblázat"
+
+#: templates/admin/users_export_modal.html
+#: templates/backoffice/dashboard_export_modal.html
+#: templates/backoffice/respondents/export_modal.html
+#: templates/backoffice/targets/export_modal.html
+msgid "Available when a Google service account is configured."
+msgstr "Akkor érhető el, ha be van állítva Google szolgáltatásfiók."
 
 #: templates/backoffice/assembly_dashboard.html
 #: templates/backoffice/components/assembly_tabs.html
@@ -6407,31 +6451,8 @@ msgid "Export includes only the data currently displayed in the table view."
 msgstr "Az exportálás csak a táblázatnézetben éppen látható adatokat tartalmazza."
 
 #: templates/backoffice/dashboard_export_modal.html
-#: templates/backoffice/targets/export_modal.html
-msgid "File type"
-msgstr "Fájltípus"
-
-#: templates/backoffice/dashboard_export_modal.html
-#: templates/backoffice/targets/export_modal.html
-msgid "CSV"
-msgstr "CSV"
-
-#: templates/backoffice/dashboard_export_modal.html
 msgid "Xls"
 msgstr "Xls"
-
-#: templates/backoffice/dashboard_export_modal.html
-#: templates/backoffice/respondents/export_modal.html
-#: templates/backoffice/targets/export_modal.html
-#: templates/main/view_assembly_data.html
-msgid "Google Sheets"
-msgstr "Google Táblázat"
-
-#: templates/backoffice/dashboard_export_modal.html
-#: templates/backoffice/respondents/export_modal.html
-#: templates/backoffice/targets/export_modal.html
-msgid "Available when a Google service account is configured."
-msgstr "Akkor érhető el, ha be van állítva Google szolgáltatásfiók."
 
 #: templates/backoffice/targets_force_unlink_confirm.html
 msgid "Confirm target changes"

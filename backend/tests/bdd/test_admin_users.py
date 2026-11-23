@@ -1,3 +1,4 @@
+import pathlib
 import re
 from collections.abc import Callable
 
@@ -250,3 +251,47 @@ def _(admin_logged_in_page: Page):
     expect(page.get_by_role("button", name="Clear search")).to_be_hidden()
     expect(page.get_by_label("Role")).to_have_value("organiser")
     assert "role=organiser" in page.url
+
+
+@when("the admin opens the users export dialog")
+def _(admin_logged_in_page: Page):
+    """open the Export dialog from the users list."""
+    page = admin_logged_in_page
+    page.goto(Urls.admin_users)
+    page.get_by_role("button", name="Export").click()
+    dialog = page.get_by_role("dialog", name="Export users")
+    expect(dialog).to_be_visible()
+    expect(dialog.get_by_label("CSV")).to_be_checked()
+
+
+@then("a CSV of the users downloads when the admin runs the export", target_fixture="users_csv")
+def _(admin_logged_in_page: Page) -> str:
+    """run the export and read the downloaded file."""
+    page = admin_logged_in_page
+    dialog = page.get_by_role("dialog", name="Export users")
+    with page.expect_download() as download_info:
+        dialog.get_by_role("button", name="Export").click()
+    download = download_info.value
+    assert download.suggested_filename == "opendlp-users.csv"
+    expect(dialog).to_be_hidden()
+    return pathlib.Path(download.path()).read_text(encoding="utf-8")
+
+
+@then("the CSV includes the disposable user")
+def _(users_csv: str, disposable_user: User):
+    """the disposable user has a row."""
+    assert disposable_user.email in users_csv
+
+
+@when("the admin cancels the users export")
+def _(admin_logged_in_page: Page):
+    """press Cancel in the dialog."""
+    dialog = admin_logged_in_page.get_by_role("dialog", name="Export users")
+    dialog.get_by_role("button", name="Cancel").click()
+    expect(dialog).to_be_hidden()
+
+
+@then("keyboard focus is back on the users Export button")
+def _(admin_logged_in_page: Page):
+    """focus returns to the button that opened the dialog."""
+    expect(admin_logged_in_page.locator('[data-focus-id="users-export"]')).to_be_focused()

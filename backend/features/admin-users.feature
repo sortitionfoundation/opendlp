@@ -54,3 +54,14 @@ Feature: Manage Users
     And the admin has searched the users for the disposable user among organisers
     When the admin clears the search
     Then the search is empty and the role filter is kept
+
+  Scenario: Export the users as a CSV file
+    Given there is a disposable user
+    When the admin opens the users export dialog
+    Then a CSV of the users downloads when the admin runs the export
+    And the CSV includes the disposable user
+
+  Scenario: Back out of the users export
+    When the admin opens the users export dialog
+    And the admin cancels the users export
+    Then keyboard focus is back on the users Export button
