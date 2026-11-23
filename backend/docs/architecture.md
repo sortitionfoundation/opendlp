@@ -205,6 +205,38 @@ also removes the reliance on the countdown for ordering. When a second
 after-commit side effect arrives, build that, and replace the direct calls with
 one handler.
 
+The machinery for that now exists, and the automatic export is the next thing
+to move onto it:
+
+- `domain/events.py` holds the events: frozen dataclasses, named in the past
+  tense, carrying ids and small values and never personal data.
+- A service says something happened with `uow.record(event)`. The handlers
+  registered for that event's exact type in `service_layer/handlers.py` run
+  there and then as `handler(event, uow)`, inside the caller's transaction.
+  What a handler writes commits or rolls back with the change that caused the
+  event, and an exception from a handler fails the request.
+- A handler that needs something done outside the database registers it with
+  `uow.after_commit(callback)`. Callbacks run once the commit has succeeded -
+  at the end of the block, or at a commit in the middle of it - and are dropped
+  on rollback. A callback that raises is logged and never fails the request. A
+  callback must not touch the database; the UnitOfWork refuses one that leaves
+  work in the session. Work that needs the database goes in a Celery task the
+  callback queues.
+- A callback is run at most once: a process that dies between the commit and
+  the callback loses it. Nothing here guarantees delivery.
+
+Which to reach for:
+
+| The reaction...                                             | Goes in                       |
+| ----------------------------------------------------------- | ----------------------------- |
+| must be true when the change commits                        | a handler                     |
+| must happen only if the change commits, and may fail alone  | an after-commit callback      |
+| produces a value the caller needs                           | a direct call, not an event   |
+
+`FakeUnitOfWork` runs no handlers unless it is given some, so a unit test of a
+service asserts on `uow.events`. The design and its decisions are in
+[docs/agent/event-message-bus/plan.md](agent/event-message-bus/plan.md).
+
 The task itself is the one place that knowingly breaks the "external I/O
 outside the block" rule: `run_auto_export` reads the config and respondents,
 writes to Google, then records the result and commits, all in one block, with
