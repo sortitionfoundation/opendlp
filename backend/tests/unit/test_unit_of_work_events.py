@@ -190,6 +190,38 @@ class TestAfterCommit:
 
         assert calls == ["commit", "callback"]
 
+    def test_the_fake_runs_a_callback_when_the_block_exits_cleanly(self):
+        calls = []
+        uow = FakeUnitOfWork()
+
+        with uow:
+            uow.after_commit(lambda: calls.append("ran"))
+            assert calls == []
+
+        assert calls == ["ran"]
+        assert uow.committed is False
+
+    def test_the_fake_runs_a_callback_while_its_repositories_are_still_open(self):
+        seen = []
+        uow = FakeUnitOfWork()
+
+        with uow:
+            uow.after_commit(lambda: seen.append(uow.users.all()))
+
+        assert seen == [[]]
+
+    def test_the_fake_with_a_private_store_drops_a_callback_when_the_block_raises(self):
+        calls = []
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(ValueError, match="boom"), uow:  # noqa: PT012
+            uow.after_commit(lambda: calls.append("ran"))
+            raise ValueError("boom")
+        with uow:
+            uow.commit()
+
+        assert calls == []
+
     @pytest.mark.parametrize("uow", _both_kinds({}), ids=["sql", "fake"])
     def test_a_callback_runs_once_however_many_commits_follow(self, uow):
         calls = []
