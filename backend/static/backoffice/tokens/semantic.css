@@ -106,10 +106,12 @@
     --color-warning-400: #D9822B;
     --color-warning-600: #A6631E;
 
-    /* Error - Red */
-    --color-error-100: #FDEBEC;
-    --color-error-400: #C70039;
-    --color-error-600: #90003F;
+    /* Error - Red, from the Colors section of the OpenDLP UI Figma file
+       (node 1275:8124). Its own red, not the brand crimson, so an error
+       never looks like a primary action or a brand accent. */
+    --color-error-100: #FCEBE7;
+    --color-error-400: #D6361A;
+    --color-error-600: #B42318;
 
     /* Info - Blue */
     --color-info-100: #E8F1FA;
