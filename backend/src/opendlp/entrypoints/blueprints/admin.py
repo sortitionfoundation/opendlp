@@ -21,12 +21,14 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.adapters.tabular_export import CsvExportTarget
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExportTarget
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, leftover_answer_keys
 from opendlp.domain.users import User
+from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_admin
 from opendlp.entrypoints.forms import CreateInviteForm, EditUserNamesForm, EditUserRoleForm
+from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
 from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.exceptions import (
     CannotDisableSelf,
@@ -42,7 +44,12 @@ from opendlp.service_layer.invite_service import (
     list_invites,
     revoke_invite,
 )
-from opendlp.service_layer.signup_survey_service import export_users, get_signup_survey
+from opendlp.service_layer.signup_survey_service import (
+    USERS_WORKSHEET_NAME,
+    export_users,
+    export_users_to_gsheet,
+    get_signup_survey,
+)
 from opendlp.service_layer.two_factor_service import TwoFactorSetupError
 from opendlp.service_layer.user_service import (
     disable_user,
@@ -146,24 +153,75 @@ def list_users() -> ResponseReturnValue:
         return render_template("errors/500.html"), 500
 
 
-@admin_bp.route("/users/export")
+@admin_bp.route("/users/export/modal")
 @login_required
 @require_admin
-def export_users_csv() -> ResponseReturnValue:
-    """Download every user with their signup survey answers as a CSV file."""
+def export_users_modal() -> ResponseReturnValue:
+    """Render the users export modal fragment (HTMX-loaded).
+
+    The spreadsheet URL always starts empty: where the users go is each
+    admin's own choice, so it is not saved between exports.
+    """
+    return render_template(
+        "admin/users_export_modal.html",
+        worksheet_name=USERS_WORKSHEET_NAME,
+        service_account_email=get_service_account_email(),
+    ), 200
+
+
+@admin_bp.route("/users/export/run", methods=["POST"])
+@login_required
+@require_admin
+def run_users_export() -> ResponseReturnValue:
+    """Export every user with their signup survey answers: CSV download or Google Sheets write."""
+    users_url = url_for("admin.list_users")
+    file_type = request.form.get("file_type", "csv")
+    if file_type not in ("csv", "gsheet"):
+        flash(_("Only CSV and Google Sheets exports are available for now"), "error")
+        return redirect(users_url)
+
     try:
+        if file_type == "gsheet":
+            return _run_users_gsheet_export(users_url)
         target = CsvExportTarget()
         uow = bootstrap.get_flask_uow()
         with uow:
             export_users(uow, current_user.id, target=target)
     except InsufficientPermissions:
         flash(_("You don't have permission to export users"), "error")
-        return redirect(url_for("admin.list_users"))
+        return redirect(users_url)
 
     return Response(
         target.getvalue(),
         mimetype="text/csv",
         headers={"Content-Disposition": 'attachment; filename="opendlp-users.csv"'},
+    )
+
+
+def _run_users_gsheet_export(users_url: str) -> ResponseReturnValue:
+    """Export the users to a tab of a caller-supplied Google Spreadsheet.
+
+    The shared flow handles the credentials guard, the URL requirement and the
+    error flashes; a permission error propagates to the caller's handler.
+    """
+
+    def export(spreadsheet_url: str, worksheet_name: str, target: AbstractGSheetExportTarget) -> None:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_users_to_gsheet(
+                uow,
+                current_user.id,
+                spreadsheet_url=spreadsheet_url,
+                worksheet_name=worksheet_name,
+                target=target,
+            )
+
+    return run_gsheet_export_flow(
+        redirect_url=users_url,
+        export=export,
+        success_message=_("Users exported to Google Sheets"),
+        log_event="Google Sheets users export failed",
+        log_context={"user_id": str(current_user.id)},
     )
 
 

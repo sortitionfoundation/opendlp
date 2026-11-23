@@ -71,7 +71,8 @@ ABOUTME: The Users tab of Site Admin; each row opens the user's page
                 link_start=('<a href="' ~ url_for('admin.create_invite') ~ '" class="underline" style="color: var(--color-links)">')|safe,
                     link_end=("</a>"|safe)) }}
             </p>
-            {{ button(_("Export"), variant="secondary", href=url_for('admin.export_users_csv')) }}
+            {{ button(_("Export"), variant="secondary",
+            attrs='data-focus-id="users-export" hx-get="' ~ url_for('admin.export_users_modal') ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
         </div>
 
         {% if search_term or role_filter or active_filter %}
@@ -137,4 +138,5 @@ ABOUTME: The Users tab of Site Admin; each row opens the user's page
             {{ alert(_("No users found matching your criteria."), variant="info") }}
         {% endif %}
     {% endcall %}
+    <div id="export-modal-container" data-fragment-dialog-host></div>
 {% endblock %}

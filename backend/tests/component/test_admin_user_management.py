@@ -157,10 +157,15 @@ class TestAdminUserList:
             r'<a href="/admin/users"\s+role="button"\s+class="btn btn--tertiary"[^>]*><span>Clear all</span>', body
         )
 
-    def test_export_button_says_export(self, logged_in_admin: FlaskClient) -> None:
-        """The export button links to the CSV export under a one-word label."""
+    def test_export_button_opens_the_export_dialog(self, logged_in_admin: FlaskClient) -> None:
+        """Export loads its dialog into the page's dialog host, under a one-word label."""
         body = logged_in_admin.get("/admin/users").get_data(as_text=True)
-        assert re.search(r'<a href="/admin/users/export"[^>]*><span>Export</span></a>', body)
+        assert re.search(
+            r'<button[^>]*hx-get="/admin/users/export/modal"[^>]*hx-target="#export-modal-container"[^>]*>'
+            r"\s*<span>Export</span>",
+            body,
+        )
+        assert re.search(r'<div id="export-modal-container" data-fragment-dialog-host>', body)
 
     def test_points_to_invites_for_adding_a_user(self, logged_in_admin: FlaskClient) -> None:
         """Users are added by invite, and the page says so with a link."""
