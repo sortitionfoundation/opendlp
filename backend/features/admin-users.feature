@@ -48,3 +48,9 @@ Feature: Manage Users
     Given there is a disposable user
     When the admin changes their role to Organiser
     Then the user's role is Organiser
+
+  Scenario: Clear a search with one click
+    Given there is a disposable user
+    And the admin has searched the users for the disposable user among organisers
+    When the admin clears the search
+    Then the search is empty and the role filter is kept
