@@ -1,8 +1,9 @@
-"""ABOUTME: Jinja render tests for the form input macros in backoffice/components/input.html
-ABOUTME: Covers the switch's checkbox semantics, the select's optgroup support and the info icons and inline input"""
+"""ABOUTME: Jinja render tests for the form input macros in backoffice/components/input.html and the dropdowns
+ABOUTME: Covers the switch's checkbox semantics, the select's optgroups, the info icons, inline input and error colours"""
 
 import re
 
+import pytest
 from flask import Flask, render_template_string
 
 from opendlp import config
@@ -21,7 +22,10 @@ def _render(macro_call: str) -> str:
     app = _make_app()
     with app.test_request_context("/"):
         return render_template_string(
-            '{% from "backoffice/components/input.html" import input, select, switch, textarea %}' + macro_call,
+            '{% from "backoffice/components/input.html" import input, select, switch, textarea, checkbox, radio_group,'
+            " file_input %}"
+            '{% from "backoffice/components/select_dropdown.html" import select_dropdown %}'
+            '{% from "backoffice/components/search_dropdown.html" import search_dropdown %}' + macro_call,
         )
 
 
@@ -134,3 +138,53 @@ class TestTextareaInfo:
 
         assert "body-info" not in html
         assert "aria-describedby" not in html
+
+
+ERROR = "Enter a value"
+OPTIONS = '[{"value": "a", "label": "A"}, {"value": "b", "label": "B"}]'
+# Every field macro, in its error state. None is marked required: a required
+# field's asterisk is drawn in --color-primary-action, and is not an error.
+FIELDS_IN_ERROR = {
+    "input": f'{{{{ input("f", label="Field", error="{ERROR}") }}}}',
+    "textarea": f'{{{{ textarea("f", label="Field", error="{ERROR}") }}}}',
+    "select": f'{{{{ select("f", label="Field", options={OPTIONS}, error="{ERROR}") }}}}',
+    "checkbox": f'{{{{ checkbox("f", label="Field", error="{ERROR}") }}}}',
+    "radio_group": f'{{{{ radio_group("f", label="Field", options={OPTIONS}, error="{ERROR}") }}}}',
+    "file_input": f'{{{{ file_input("f", label="Field", error="{ERROR}") }}}}',
+    "switch": f'{{{{ switch("f", label="Field", error="{ERROR}") }}}}',
+    "select_dropdown": f'{{{{ select_dropdown("f", {OPTIONS}, label="Field", error="{ERROR}") }}}}',
+    "search_dropdown": f'{{{{ search_dropdown("f", label="Field", fetch_url="/search", error="{ERROR}") }}}}',
+}
+# The macros that draw a border round the field, and turn it red in error.
+BORDERED = ("input", "textarea", "select", "select_dropdown", "search_dropdown")
+
+
+class TestErrorColours:
+    """A field in error is drawn in the error colours, never in the brand crimson of the primary action."""
+
+    @pytest.mark.parametrize("macro", FIELDS_IN_ERROR)
+    def test_the_message_is_in_the_error_text_colour(self, macro: str) -> None:
+        html = _render(FIELDS_IN_ERROR[macro])
+
+        message = re.search(r"<p\b([^>]*)>\s*" + re.escape(ERROR) + r"\s*</p>", html)
+        assert message is not None
+        assert re.search(r"(?<![-\w])color:\s*var\(--color-error-text\)", message.group(1))
+
+    @pytest.mark.parametrize("macro", BORDERED)
+    def test_the_border_is_in_the_error_border_colour(self, macro: str) -> None:
+        html = _render(FIELDS_IN_ERROR[macro])
+
+        assert "border: 1px solid var(--color-error-border)" in html
+
+    @pytest.mark.parametrize("macro", FIELDS_IN_ERROR)
+    def test_nothing_is_in_the_primary_action_colour(self, macro: str) -> None:
+        html = _render(FIELDS_IN_ERROR[macro])
+
+        assert "--color-primary-action" not in html
+
+    @pytest.mark.parametrize("macro", BORDERED)
+    def test_without_an_error_the_border_is_the_usual_one(self, macro: str) -> None:
+        html = _render(FIELDS_IN_ERROR[macro].replace(f', error="{ERROR}"', ""))
+
+        assert "border: 1px solid var(--color-borders-dividers)" in html
+        assert "--color-error-border" not in html

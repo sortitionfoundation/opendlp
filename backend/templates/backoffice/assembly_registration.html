@@ -141,15 +141,15 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {% if registration_status == "CLOSED" %}
                             <div class="rounded-lg p-4 mb-6"
                                  role="alert"
-                                 style="background-color: var(--color-error-100);
-                                        border: 1px solid var(--color-error-400)">
-                                <p class="text-body-md" style="color: var(--color-error-600);">
+                                 style="background-color: var(--color-error-background);
+                                        border: 1px solid var(--color-error-border)">
+                                <p class="text-body-md" style="color: var(--color-error-text);">
                                     <span class="font-semibold">⛔ {{ _("Registration closed") }}:</span>
                                     {{ _("Visitors who follow the form URL are redirected to the closed page.") }}
                                     {% if active_section != "preview" %}
                                         <a href="{{ section_base }}?section=preview"
                                            class="underline"
-                                           style="color: var(--color-error-600);">{{ _("Go to Preview and publish to re-open it.") }}</a>
+                                           style="color: var(--color-error-text);">{{ _("Go to Preview and publish to re-open it.") }}</a>
                                     {% endif %}
                                 </p>
                             </div>

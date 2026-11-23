@@ -24,14 +24,14 @@ ABOUTME: Dynamic form in sections at the questions list's headings, with a requi
     {% if error_summary %}
         {# Sits above everything else, so the first thing a failed save shows is why it failed. #}
         <div class="mb-6 rounded-lg p-4 flex flex-col gap-2"
-             style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);"
+             style="background-color: var(--color-error-background); border: 1px solid var(--color-error-border);"
              role="alert"
              aria-labelledby="error-summary-title">
-            <h2 id="error-summary-title" class="text-label-lg" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h2>
-            <p class="text-body-md" style="color: var(--color-error-600);">{{ _("Your changes have not been saved.") }}</p>
+            <h2 id="error-summary-title" class="text-label-lg" style="color: var(--color-error-text);">{{ _("There is a problem") }}</h2>
+            <p class="text-body-md" style="color: var(--color-error-text);">{{ _("Your changes have not been saved.") }}</p>
             <ul class="list-disc pl-6 text-body-md">
                 {% for item in error_summary %}
-                    <li><a href="{{ item.href }}" class="underline" style="color: var(--color-error-600);">{{ item.text }}</a></li>
+                    <li><a href="{{ item.href }}" class="underline" style="color: var(--color-error-text);">{{ item.text }}</a></li>
                 {% endfor %}
             </ul>
         </div>
@@ -156,7 +156,7 @@ ABOUTME: Dynamic form in sections at the questions list's headings, with a requi
                                             </div>
                                         </div>
                                         {% if field_error %}
-                                            <p id="{{ form_field_name }}-error" class="text-body-sm" style="color: var(--color-primary-action); white-space: pre-line;">{{ field_error }}</p>
+                                            <p id="{{ form_field_name }}-error" class="text-body-sm" style="color: var(--color-error-text); white-space: pre-line;">{{ field_error }}</p>
                                         {% endif %}
                                     </fieldset>
                                 {% else %}

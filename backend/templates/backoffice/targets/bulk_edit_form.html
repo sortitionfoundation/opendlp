@@ -132,7 +132,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             attrs='data-field="value"') }}
             {% if row_error %}
                 <p class="text-body-sm mt-1"
-                   style="color: var(--color-primary-action);
+                   style="color: var(--color-error-text);
                           white-space: pre-line">{{ row_error }}</p>
             {% endif %}
         </td>
@@ -253,7 +253,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         <div x-show="!deleted">
             {% if block_error %}
                 <p class="text-body-sm mb-2"
-                   style="color: var(--color-primary-action);
+                   style="color: var(--color-error-text);
                           white-space: pre-line">{{ block_error }}</p>
             {% endif %}
             <div class="mb-4 flex flex-wrap items-end gap-3">

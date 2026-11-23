@@ -124,6 +124,7 @@
     --color-warning-border: var(--color-warning-400);
     --color-warning-text: var(--color-warning-600);
     --color-error-background: var(--color-error-100);
+    --color-error-border: var(--color-error-400);
     --color-error-text: var(--color-error-600);
     --color-info-background: var(--color-info-100);
     --color-info-border: var(--color-info-400);
