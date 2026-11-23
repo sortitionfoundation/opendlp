@@ -5,6 +5,7 @@ ABOUTME: One row per page with status, registration count and a per-row actions 
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/archived_banner.html" import archived_banner %}
 {% block title %}{{ assembly.title }} - Registration{% endblock %}
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
@@ -22,5 +23,6 @@ ABOUTME: One row per page with status, registration count and a per-row actions 
     </div>
 {% endblock %}
 {% block page_content %}
+    {{ archived_banner(assembly, can_unarchive=can_manage_project|default(false)) }}
     {% include "backoffice/registration/_hub.html" %}
 {% endblock %}

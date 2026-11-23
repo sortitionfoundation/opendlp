@@ -9,6 +9,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
 {% from "backoffice/components/card.html" import card, card_body, card_footer %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/archived_banner.html" import archived_banner %}
 {% from "backoffice/components/pagination.html" import pagination %}
 {% block title %}{{ _("Selection") }} - {{ assembly.title }}{% endblock %}
 {% block page_header %}
@@ -30,6 +31,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     </div>
 {% endblock %}
 {% block page_content %}
+    {{ archived_banner(assembly, can_unarchive=can_manage_project|default(false)) }}
     {# Selection Progress Modal - shown when current_selection parameter is present #}
     {# Pure HTMX approach: server controls close button state, HTMX swaps entire modal content #}
     {% if current_selection and run_record %}

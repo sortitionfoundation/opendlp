@@ -1,5 +1,5 @@
 # ABOUTME: Component tests for archiving and unarchiving a project, over a FakeUnitOfWork
-# ABOUTME: Covers who is offered the Archive button, its disabled state, and the archive and unarchive routes
+# ABOUTME: Covers the Archive button and its disabled state, the routes, and the banner on every project tab
 
 import re
 
@@ -9,6 +9,7 @@ from flask.testing import FlaskClient
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus
+from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
 from opendlp.service_layer.user_service import assign_assembly_role
 from tests.fakes import FakeStore, FakeUnitOfWork
 
@@ -219,3 +220,76 @@ class TestUnarchiveRoute:
 
         assert response.request.path == "/backoffice/dashboard"
         assert "Project not found" in response.data.decode()
+
+
+# Every page that renders the project tabs. "{editor}" is the registration
+# editor, which opens on the page the archived_project fixture gives the project.
+PROJECT_TABS = [
+    "",
+    "/dashboard",
+    "/targets",
+    "/registration",
+    "/registration/{editor}",
+    "/respondent-schema",
+    "/target-sources",
+    "/respondents",
+    "/selection",
+]
+
+
+@pytest.fixture
+def archived_project(fake_store: FakeStore, admin_user, existing_assembly: Assembly) -> tuple[Assembly, str]:
+    """The existing project, archived, and the url_slug of a registration page it has."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        page = create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="English")
+    _set_status(fake_store, existing_assembly, AssemblyStatus.ARCHIVED)
+    return existing_assembly, page.url_slug
+
+
+def _tab_url(project: tuple[Assembly, str], tab: str) -> str:
+    assembly, url_slug = project
+    return _details(assembly) + tab.format(editor=url_slug)
+
+
+class TestArchivedBanner:
+    @pytest.mark.parametrize("tab", PROJECT_TABS)
+    def test_a_manager_sees_it_with_the_unarchive_button_on_every_tab(
+        self, manager: FlaskClient, archived_project: tuple[Assembly, str], tab: str
+    ) -> None:
+        response = manager.get(_tab_url(archived_project, tab))
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert html.count('id="archived-banner"') == 1
+        assert "This project is archived. It doesn't appear in project lists." in html
+        assert f'action="{_details(archived_project[0])}/unarchive"' in html
+        assert _button_tags(html, "Unarchive project")
+
+    @pytest.mark.parametrize("tab", PROJECT_TABS)
+    def test_a_reader_sees_it_without_the_button(
+        self, reader: FlaskClient, archived_project: tuple[Assembly, str], tab: str
+    ) -> None:
+        response = reader.get(_tab_url(archived_project, tab))
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert html.count('id="archived-banner"') == 1
+        assert "/unarchive" not in html
+        assert "Unarchive project" not in html
+
+    def test_it_is_information_not_a_warning(
+        self, manager: FlaskClient, archived_project: tuple[Assembly, str]
+    ) -> None:
+        html = manager.get(_details(archived_project[0])).data.decode()
+
+        banner_start = html.rindex("<div", 0, html.index('id="archived-banner"'))
+        banner_tag = html[banner_start : html.index(">", banner_start)]
+        assert "var(--color-info-100)" in banner_tag
+        assert "var(--color-warning-100)" not in banner_tag
+
+    @pytest.mark.parametrize("tab", ["", "/targets", "/registration", "/respondents", "/selection"])
+    def test_an_active_project_has_none(self, manager: FlaskClient, existing_assembly: Assembly, tab: str) -> None:
+        html = manager.get(f"{_details(existing_assembly)}{tab}").data.decode()
+
+        assert "archived-banner" not in html
+        assert "This project is archived." not in html

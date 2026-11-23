@@ -356,6 +356,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             dashboard_view=view,
             dashboard_sections=dashboard_sections,
             dashboard_tables=dashboard_tables,
+            can_manage_project=can_manage_assembly(current_user, nav.assembly),
         ), 200
     except NotFoundError as e:
         logger.warning(
@@ -641,7 +642,7 @@ def archive_project(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @backoffice_bp.route("/project/<uuid:assembly_id>/unarchive", methods=["POST"])
 @login_required
 def unarchive_project(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Unarchive a project, so it is back in the project lists."""
+    """Unarchive a project, from the banner an archived project shows on every tab."""
     project_url = url_for("backoffice.view_assembly", assembly_id=assembly_id)
     try:
         uow = bootstrap.get_flask_uow()

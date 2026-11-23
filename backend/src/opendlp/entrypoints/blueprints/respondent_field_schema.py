@@ -52,6 +52,7 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
     ServiceLayerError,
 )
+from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
@@ -573,6 +574,7 @@ def _schema_page_context(
         "targets_enabled": targets_enabled,
         "respondents_enabled": respondents_enabled,
         "selection_enabled": selection_enabled,
+        "can_manage_project": can_manage_assembly(current_user, assembly),
     }
 
 

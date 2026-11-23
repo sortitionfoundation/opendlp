@@ -213,6 +213,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
+            can_manage_project=can_manage_assembly(current_user, nav.assembly),
             **hub_context,
         ), 200
     except InsufficientPermissions as e:

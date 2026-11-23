@@ -55,6 +55,7 @@ from opendlp.service_layer.exceptions import (
     NotFoundError,
     ServiceLayerError,
 )
+from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.target_source_service import (
     AgeBracketSpec,
     ExactCopySpec,
@@ -249,6 +250,7 @@ def _page_context(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, with_hub: boo
         "targets_enabled": targets_enabled,
         "respondents_enabled": respondents_enabled,
         "selection_enabled": selection_enabled,
+        "can_manage_project": can_manage_assembly(current_user, assembly),
     }
 
 

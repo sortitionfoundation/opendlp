@@ -10,6 +10,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/archived_banner.html" import archived_banner %}
 
 {% block title %}{{ _("Targets") }} - {{ assembly.title }}{% endblock %}
 
@@ -34,6 +35,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
 {% endblock %}
 
 {% block page_content %}
+    {{ archived_banner(assembly, can_unarchive=can_manage|default(false)) }}
     {% if data_source == "gsheet" and gsheet %}
         {# Google Sheet source - show info about where targets are configured #}
         {% call info_card(title=_("Targets are configured in Google Sheets")) %}

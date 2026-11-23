@@ -1,0 +1,38 @@
+{#
+ABOUTME: The banner an archived project shows at the top of every one of its tabs
+ABOUTME: Says the project is archived, and gives its managers the Unarchive button
+#}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/button.html" import button %}
+{% macro archived_banner(assembly, can_unarchive=false) %}
+    {#
+    Renders nothing for an active project, so every tab can call it.
+
+    It sits at the top of the tab's content rather than in assembly_tabs: the
+    page header that holds the tabs is sticky, and a banner there would stay
+    pinned over every scroll. An archived project is still fully editable, so
+    this is information rather than a warning, and uses the info variant.
+
+    Args:
+        assembly: The project the tab shows
+        can_unarchive: Whether the viewer manages the project, and so gets the
+            Unarchive button. The route asks can_manage_assembly.
+
+    Usage:
+        {{ archived_banner(assembly, can_unarchive=can_manage_project) }}
+    #}
+    {% if not assembly.is_active() %}
+        {% call alert(variant="info", id="archived-banner", use_caller=true) %}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p>{{ _("This project is archived. It doesn't appear in project lists.") }}</p>
+                {% if can_unarchive %}
+                    <form method="post"
+                          action="{{ url_for('backoffice.unarchive_project', assembly_id=assembly.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        {{ button(_("Unarchive project"), type="submit", variant="secondary") }}
+                    </form>
+                {% endif %}
+            </div>
+        {% endcall %}
+    {% endif %}
+{% endmacro %}

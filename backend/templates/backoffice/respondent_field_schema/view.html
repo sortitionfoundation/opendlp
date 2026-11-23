@@ -7,6 +7,7 @@ ABOUTME: Read-only rows of questions, headings and text with order controls; edi
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/archived_banner.html" import archived_banner %}
 {% from "backoffice/registration/_step_dialog.html" import step_dialog %}
 {% block title %}{{ _("Registration questions") }} - {{ assembly.title }}{% endblock %}
 {% block head %}
@@ -36,6 +37,7 @@ ABOUTME: Read-only rows of questions, headings and text with order controls; edi
     </div>
 {% endblock %}
 {% block page_content %}
+    {{ archived_banner(assembly, can_unarchive=can_manage_project|default(false)) }}
     {% include "backoffice/registration/_hub.html" %}
 {% endblock %}
 {% block page_overlay %}
