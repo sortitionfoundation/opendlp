@@ -1,5 +1,5 @@
 # ABOUTME: Component tests for archiving and unarchiving a project, over a FakeUnitOfWork
-# ABOUTME: Covers the Archive button and its disabled state, the routes, and the banner on every project tab
+# ABOUTME: Covers the Archive button, the routes, the banner on every project tab and the Archived projects page
 
 import re
 
@@ -293,3 +293,128 @@ class TestArchivedBanner:
 
         assert "archived-banner" not in html
         assert "This project is archived." not in html
+
+
+ARCHIVED_PAGE = "/backoffice/projects/archived"
+
+
+def _project(fake_store: FakeStore, title: str, status: AssemblyStatus = AssemblyStatus.ARCHIVED) -> Assembly:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        assembly = Assembly(title=title, question=f"What is {title} for?", status=status)
+        uow.assemblies.add(assembly)
+        uow.commit()
+        return assembly.create_detached_copy()
+
+
+class TestArchivedProjectsPage:
+    def test_an_admin_sees_every_archived_project_and_no_active_one(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient
+    ) -> None:
+        jury = _project(fake_store, "Climate Jury")
+        panel = _project(fake_store, "Health Panel")
+        active = _project(fake_store, "Transport Assembly", status=AssemblyStatus.ACTIVE)
+
+        response = logged_in_admin.get(ARCHIVED_PAGE)
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Archived projects" in html
+        assert f'href="{_details(jury)}"' in html
+        assert f'href="{_details(panel)}"' in html
+        assert f'id="assembly-{active.id}"' not in html
+        assert html.count(">Archived</strong>") == 2
+
+    def test_anyone_else_sees_only_their_own(
+        self, fake_store: FakeStore, logged_in_user: FlaskClient, regular_user
+    ) -> None:
+        theirs = _project(fake_store, "Climate Jury")
+        someone_elses = _project(fake_store, "Health Panel")
+        _with_role(fake_store, logged_in_user, regular_user, theirs, AssemblyRole.READ_ONLY)
+
+        html = logged_in_user.get(ARCHIVED_PAGE).data.decode()
+
+        assert f'id="assembly-{theirs.id}"' in html
+        assert f'id="assembly-{someone_elses.id}"' not in html
+
+    def test_the_search_narrows_by_title_and_keeps_what_was_typed(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient
+    ) -> None:
+        jury = _project(fake_store, "Climate Jury")
+        panel = _project(fake_store, "Health Panel")
+
+        html = logged_in_admin.get(f"{ARCHIVED_PAGE}?q=+jury+").data.decode()
+
+        assert f'id="assembly-{jury.id}"' in html
+        assert f'id="assembly-{panel.id}"' not in html
+        assert 'role="search"' in html
+        assert 'method="get"' in html
+        assert 'type="search"' in html
+        assert 'name="q"' in html
+        assert 'value="jury"' in html
+
+    def test_a_search_that_finds_nothing_says_so_and_offers_them_all(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient
+    ) -> None:
+        _project(fake_store, "Climate Jury")
+
+        html = logged_in_admin.get(f"{ARCHIVED_PAGE}?q=zebra").data.decode()
+
+        assert "No archived projects match 'zebra'" in html
+        assert f'href="{ARCHIVED_PAGE}"' in html
+        assert "Show all archived projects" in html
+
+    def test_what_was_searched_for_is_shown_as_text(self, logged_in_admin: FlaskClient) -> None:
+        html = logged_in_admin.get(f"{ARCHIVED_PAGE}?q=<b>bold</b>").data.decode()
+
+        assert "<b>bold</b>" not in html
+        assert "No archived projects match '&lt;b&gt;bold&lt;/b&gt;'" in html
+
+    def test_with_nothing_archived_it_says_so(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        html = logged_in_admin.get(ARCHIVED_PAGE).data.decode()
+
+        assert 'id="no-archived-projects-card"' in html
+        assert "No archived projects" in html
+        assert f'id="assembly-{existing_assembly.id}"' not in html
+
+    def test_it_leads_back_to_your_projects(self, logged_in_admin: FlaskClient) -> None:
+        html = logged_in_admin.get(ARCHIVED_PAGE).data.decode()
+
+        assert 'href="/backoffice/dashboard"' in html
+        assert 'aria-label="Back to Your projects"' in html
+
+    def test_it_needs_a_sign_in(self, client: FlaskClient) -> None:
+        response = client.get(ARCHIVED_PAGE)
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+    def test_an_unexpected_error_still_renders_the_page(
+        self, monkeypatch: pytest.MonkeyPatch, logged_in_admin: FlaskClient
+    ) -> None:
+        def broken(*_args, **_kwargs):
+            raise RuntimeError("the database went away")
+
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.backoffice.get_user_archived_assemblies", broken)
+
+        response = logged_in_admin.get(ARCHIVED_PAGE)
+
+        assert response.status_code == 500
+        assert "No archived projects" in response.data.decode()
+
+
+class TestYourProjects:
+    def test_it_links_to_the_archived_projects(self, logged_in_user: FlaskClient) -> None:
+        html = logged_in_user.get("/backoffice/dashboard").data.decode()
+
+        assert f'href="{ARCHIVED_PAGE}"' in html
+        assert "Archived projects" in html
+
+    def test_an_archived_project_leaves_it(self, fake_store: FakeStore, logged_in_admin: FlaskClient) -> None:
+        archived = _project(fake_store, "Climate Jury")
+        active = _project(fake_store, "Health Panel", status=AssemblyStatus.ACTIVE)
+
+        html = logged_in_admin.get("/backoffice/dashboard").data.decode()
+
+        assert f'id="assembly-{active.id}"' in html
+        assert f'id="assembly-{archived.id}"' not in html
+        assert ">Active</strong>" not in html

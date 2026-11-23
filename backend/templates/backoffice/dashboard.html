@@ -3,8 +3,9 @@ ABOUTME: Backoffice dashboard page showing the user's projects
 ABOUTME: Uses base_page.html for standard layout with navigation and footer
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/card.html" import card, link_card %}
+{% from "backoffice/components/card.html" import card %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/project_card.html" import project_card %}
 
 {% block title %}{{ _("Your projects") }}{% endblock %}
 
@@ -13,11 +14,15 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
        the page. Without JavaScript each is a link to the same address, which is
        this page with the dialog already open. #}
     {% set open_create_dialog = 'hx-get="' ~ url_for('data_source.new_project') ~ '" hx-target="#project-dialog-host" hx-swap="innerHTML"' %}
-    <div class="flex justify-between items-center mb-2">
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-2">
         <h1 style="color: var(--color-display-text);" class="text-display-lg">{{ _("Your projects") }}</h1>
-        {% if perms.create_assembly %}
-            {{ button(_("Create project"), href=url_for('data_source.new_project'), variant="primary", aria_haspopup="dialog", attrs=open_create_dialog ~ ' data-focus-id="create-project"') }}
-        {% endif %}
+        <div class="flex flex-wrap items-center gap-3">
+            {# Archived projects leave this list; this is where they are found again. #}
+            {{ button(_("Archived projects"), href=url_for('backoffice.archived_projects'), variant="secondary") }}
+            {% if perms.create_assembly %}
+                {{ button(_("Create project"), href=url_for('data_source.new_project'), variant="primary", aria_haspopup="dialog", attrs=open_create_dialog ~ ' data-focus-id="create-project"') }}
+            {% endif %}
+        </div>
     </div>
     <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">{{ _("Welcome back, %(name)s!", name=current_user.display_name) }}</p>
 
@@ -27,18 +32,7 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
         {% if assemblies %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% for assembly in assemblies %}
-                    {% call link_card(href=url_for('backoffice.view_assembly', assembly_id=assembly.id), title=assembly.title, subtitle=_("Created: %(date)s", date=assembly.created_at|dateformat('medium')), id="assembly-" ~ assembly.id, classes="assembly-card") %}
-                        {% if assembly.question %}
-                            <p style="color: var(--color-body-text);" class="text-body-md mb-4">
-                                {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}…{% endif %}
-                            </p>
-                        {% endif %}
-                        {% if assembly.first_assembly_date %}
-                            <p style="color: var(--color-secondary-text);" class="text-body-sm">
-                                {{ _("Starts: %(date)s", date=assembly.first_assembly_date|dateformat('medium')) }}
-                            </p>
-                        {% endif %}
-                    {% endcall %}
+                    {{ project_card(assembly) }}
                 {% endfor %}
             </div>
         {% else %}

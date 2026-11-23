@@ -55,6 +55,7 @@ from opendlp.service_layer.registration_page_service import (
     list_registration_pages,
 )
 from opendlp.service_layer.user_service import (
+    get_user_archived_assemblies,
     get_user_assemblies,
     revoke_user_assembly_role,
     search_assembly_candidate_users,
@@ -91,6 +92,25 @@ def dashboard() -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Backoffice dashboard error", user_id=str(current_user.id), error=str(e))
         return render_template("backoffice/dashboard.html", assemblies=[]), 500
+
+
+@backoffice_bp.route("/projects/archived")
+@login_required
+def archived_projects() -> ResponseReturnValue:
+    """The archived projects the user can see, newest first, optionally searched by title.
+
+    Admins see every archived project, everyone else those they hold a role on.
+    """
+    search = request.args.get("q", "").strip()
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            assemblies = get_user_archived_assemblies(uow, current_user.id, title_search=search)
+
+        return render_template("backoffice/archived_projects.html", assemblies=assemblies, search=search), 200
+    except Exception as e:
+        logger.exception("Archived projects error", user_id=str(current_user.id), error=str(e))
+        return render_template("backoffice/archived_projects.html", assemblies=[], search=search), 500
 
 
 @backoffice_bp.route("/assembly/<path:rest>")
