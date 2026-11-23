@@ -43,8 +43,11 @@ ABOUTME: Cards for the project's basic details (edited in place), data source, r
                 {{ project_field_row(assembly, "title", can_manage_project) }}
                 {{ project_field_row(assembly, "question", can_manage_project) }}
                 {% call plain_row(_("Status")) %}
-                    <dd class="flex-1">
+                    <dd class="flex-1 flex flex-wrap items-center gap-x-4 gap-y-2">
                         {{ tag(assembly_status_labels[assembly.status], colour="green" if assembly.is_active() else "grey") }}
+                        {% if can_manage_project and assembly.is_active() %}
+                            {% include "backoffice/project_details/_archive_control.html" %}
+                        {% endif %}
                     </dd>
                 {% endcall %}
                 {{ project_field_row(assembly, "number_to_select", can_manage_project) }}

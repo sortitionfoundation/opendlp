@@ -1,5 +1,5 @@
 """ABOUTME: Backoffice routes for admin UI using Pines UI + Tailwind CSS
-ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source, and team members"""
+ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, archiving, data source, and team members"""
 
 import uuid
 
@@ -24,8 +24,11 @@ from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
 from opendlp.entrypoints.registration_link_card import featured_registration_page, registration_tab_link_text
 from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
+    archive_assembly,
     get_assembly_creator_name,
     get_assembly_nav_context,
+    published_registration_pages,
+    unarchive_assembly,
     update_assembly,
 )
 from opendlp.service_layer.dashboard_stats import (
@@ -38,6 +41,7 @@ from opendlp.service_layer.dashboard_stats import (
     get_dashboard_gsheet_config,
 )
 from opendlp.service_layer.exceptions import (
+    CannotArchiveWithPublishedPages,
     CannotRemoveLastAssemblyManager,
     InsufficientPermissions,
     NotFoundError,
@@ -159,6 +163,9 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             created_by_name=created_by_name,
             project_dialog=project_dialog,
             can_manage_project=can_manage_project,
+            # The service refuses to archive while a page is published, so the
+            # button says so before anyone tries.
+            archive_blocked=bool(published_registration_pages(registration_pages)),
             csv_settings_confirmed=bool(nav.csv_status.csv_config and nav.csv_status.csv_config.settings_confirmed),
             targets_row=targets_row(nav.assembly, nav.csv_status.targets_count),
             respondents_row=respondents_row(nav.assembly, nav.csv_status.respondents_count),
@@ -597,6 +604,63 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
         )
         flash(_("An error occurred while removing the user from the project"), "error")
         return redirect(team_url)
+
+
+@backoffice_bp.route("/project/<uuid:assembly_id>/archive", methods=["POST"])
+@login_required
+def archive_project(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Archive a project, from the Status row on its details page.
+
+    Nothing is deleted: the project only leaves the project lists. A refusal,
+    such as a registration page that is still published, comes back as a flash.
+    """
+    project_url = url_for("backoffice.view_assembly", assembly_id=assembly_id)
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            archive_assembly(uow, assembly_id, current_user.id)
+        flash(_("Project archived"), "success")
+    except CannotArchiveWithPublishedPages as e:
+        logger.info("Refused to archive assembly with a published page", assembly_id=str(assembly_id))
+        flash(e.user_msg(), "error")
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions to archive assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to archive this project"), "error")
+    except NotFoundError as e:
+        logger.warning("Assembly not found to archive", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Project not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return redirect(project_url)
+
+
+@backoffice_bp.route("/project/<uuid:assembly_id>/unarchive", methods=["POST"])
+@login_required
+def unarchive_project(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Unarchive a project, so it is back in the project lists."""
+    project_url = url_for("backoffice.view_assembly", assembly_id=assembly_id)
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            unarchive_assembly(uow, assembly_id, current_user.id)
+        flash(_("Project unarchived"), "success")
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions to unarchive assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to unarchive this project"), "error")
+    except NotFoundError as e:
+        logger.warning("Assembly not found to unarchive", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Project not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return redirect(project_url)
 
 
 @backoffice_bp.route("/project/<uuid:assembly_id>/members/search")

@@ -1,0 +1,221 @@
+# ABOUTME: Component tests for archiving and unarchiving a project, over a FakeUnitOfWork
+# ABOUTME: Covers who is offered the Archive button, its disabled state, and the archive and unarchive routes
+
+import re
+
+import pytest
+from flask.testing import FlaskClient
+
+from opendlp.domain.assembly import Assembly
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus
+from opendlp.service_layer.user_service import assign_assembly_role
+from tests.fakes import FakeStore, FakeUnitOfWork
+
+
+def _details(assembly: Assembly) -> str:
+    return f"/backoffice/project/{assembly.id}"
+
+
+def _status_row(html: str) -> str:
+    """The Status row's value: the tag, and the Archive button and its dialog when offered."""
+    start = html.index(">Status</dt>")
+    return html[start : html.index("</dd>", start)]
+
+
+def _button_tags(html: str, label: str) -> list[str]:
+    """The opening tag of every button whose text is the label."""
+    return re.findall(rf"<button[^>]*>\s*<span>{re.escape(label)}</span>", html)
+
+
+def _stored(fake_store: FakeStore, assembly: Assembly) -> Assembly:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return uow.assemblies.get(assembly.id).create_detached_copy()
+
+
+def _set_status(fake_store: FakeStore, assembly: Assembly, status: AssemblyStatus) -> None:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        uow.assemblies.get(assembly.id).status = status
+        uow.commit()
+
+
+def _seed_page(fake_store: FakeStore, assembly: Assembly, name: str, status: RegistrationPageStatus) -> None:
+    page = RegistrationPage(assembly_id=assembly.id, name=name, url_slug=name.lower(), status=status)
+    with FakeUnitOfWork(store=fake_store) as uow:
+        uow.registration_pages.add(page)
+        uow.commit()
+
+
+def _with_role(fake_store: FakeStore, client: FlaskClient, user, assembly: Assembly, role: AssemblyRole):
+    with FakeUnitOfWork(store=fake_store) as uow:
+        assign_assembly_role(uow, user.id, assembly.id, role)
+    return client
+
+
+@pytest.fixture
+def manager(fake_store: FakeStore, logged_in_user: FlaskClient, regular_user, existing_assembly: Assembly):
+    """The regular user, signed in, managing the project alongside its creator."""
+    return _with_role(fake_store, logged_in_user, regular_user, existing_assembly, AssemblyRole.ASSEMBLY_MANAGER)
+
+
+@pytest.fixture
+def reader(fake_store: FakeStore, logged_in_user: FlaskClient, regular_user, existing_assembly: Assembly):
+    """The regular user, signed in, with a read-only role on the project."""
+    return _with_role(fake_store, logged_in_user, regular_user, existing_assembly, AssemblyRole.READ_ONLY)
+
+
+class TestArchiveButton:
+    @pytest.mark.parametrize("who", ["logged_in_admin", "manager"])
+    def test_an_admin_and_a_manager_get_the_button_and_its_confirmation(
+        self, request, who: str, existing_assembly: Assembly
+    ) -> None:
+        client: FlaskClient = request.getfixturevalue(who)
+
+        row = _status_row(client.get(_details(existing_assembly)).data.decode())
+
+        [opener, confirm] = _button_tags(row, "Archive project")
+        assert 'aria-haspopup="dialog"' in opener
+        assert "disabled" not in opener
+        assert 'type="submit"' in confirm
+        assert "btn--danger" in confirm
+        assert 'x-data="confirmDialog"' in row
+        assert f'action="{_details(existing_assembly)}/archive"' in row
+        assert 'name="csrf_token"' in row
+        assert "Archive this project?" in row
+        assert "It will no longer appear in project lists." in row
+        assert "Nothing is deleted, and you can unarchive it at any time." in row
+        assert _button_tags(row, "Keep it active")
+
+    @pytest.mark.parametrize("role", [AssemblyRole.READ_ONLY, AssemblyRole.CONFIRMATION_CALLER])
+    def test_other_team_members_get_the_status_alone(
+        self, fake_store: FakeStore, logged_in_user: FlaskClient, regular_user, existing_assembly: Assembly, role
+    ) -> None:
+        client = _with_role(fake_store, logged_in_user, regular_user, existing_assembly, role)
+
+        row = _status_row(client.get(_details(existing_assembly)).data.decode())
+
+        assert "Active" in row
+        assert "Archive project" not in row
+        assert "/archive" not in row
+
+    def test_a_published_page_disables_it_and_says_why(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        _seed_page(fake_store, existing_assembly, "English", RegistrationPageStatus.PUBLISHED)
+
+        row = _status_row(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        [button] = _button_tags(row, "Archive project")
+        assert 'disabled aria-disabled="true"' in button
+        assert 'aria-describedby="archive-blocked-reason"' in button
+        assert 'id="archive-blocked-reason"' in row
+        assert "A registration page is published. Close it before archiving the project." in row
+        assert f'href="{_details(existing_assembly)}/registration"' in row
+        assert "Go to Registration" in row
+        assert "/archive" not in row
+        assert "confirmDialog" not in row
+
+    @pytest.mark.parametrize("status", [RegistrationPageStatus.TEST, RegistrationPageStatus.CLOSED])
+    def test_test_and_closed_pages_leave_it_enabled(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, status
+    ) -> None:
+        _seed_page(fake_store, existing_assembly, "English", status)
+
+        row = _status_row(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "archive-blocked-reason" not in row
+        assert f'action="{_details(existing_assembly)}/archive"' in row
+
+    def test_an_archived_project_reads_archived_in_grey_with_no_button(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        _set_status(fake_store, existing_assembly, AssemblyStatus.ARCHIVED)
+
+        row = _status_row(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "Archived" in row
+        assert "var(--color-subtle-background-panels)" in row
+        assert "var(--color-success-background)" not in row
+        assert "Archive project" not in row
+
+
+class TestArchiveRoute:
+    def test_a_manager_archives_the_project(
+        self, fake_store: FakeStore, manager: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        response = manager.post(f"{_details(existing_assembly)}/archive", follow_redirects=True)
+
+        assert response.request.path == _details(existing_assembly)
+        assert "Project archived" in response.data.decode()
+        assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ARCHIVED
+
+    def test_it_redirects_to_the_project(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        response = logged_in_admin.post(f"{_details(existing_assembly)}/archive")
+
+        assert response.status_code == 302
+        assert response.location == _details(existing_assembly)
+
+    def test_a_reader_is_refused(self, fake_store: FakeStore, reader: FlaskClient, existing_assembly: Assembly) -> None:
+        response = reader.post(f"{_details(existing_assembly)}/archive", follow_redirects=True)
+
+        assert response.request.path == _details(existing_assembly)
+        assert "You don&#39;t have permission to archive this project" in response.data.decode()
+        assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ACTIVE
+
+    def test_a_published_page_is_refused_by_name(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        _seed_page(fake_store, existing_assembly, "Welsh", RegistrationPageStatus.PUBLISHED)
+
+        response = logged_in_admin.post(f"{_details(existing_assembly)}/archive", follow_redirects=True)
+
+        assert response.request.path == _details(existing_assembly)
+        assert (
+            "The registration page &#39;Welsh&#39; is published. Close it before archiving this project."
+            in response.data.decode()
+        )
+        assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ACTIVE
+
+    def test_an_unknown_project_goes_back_to_your_projects(self, logged_in_admin: FlaskClient) -> None:
+        response = logged_in_admin.post(
+            "/backoffice/project/00000000-0000-0000-0000-000000000000/archive", follow_redirects=True
+        )
+
+        assert response.request.path == "/backoffice/dashboard"
+        assert "Project not found" in response.data.decode()
+
+    def test_it_needs_a_sign_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
+        response = client.post(f"{_details(existing_assembly)}/archive")
+
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
+
+class TestUnarchiveRoute:
+    def test_a_manager_unarchives_the_project(
+        self, fake_store: FakeStore, manager: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        _set_status(fake_store, existing_assembly, AssemblyStatus.ARCHIVED)
+
+        response = manager.post(f"{_details(existing_assembly)}/unarchive", follow_redirects=True)
+
+        assert response.request.path == _details(existing_assembly)
+        assert "Project unarchived" in response.data.decode()
+        assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ACTIVE
+
+    def test_a_reader_is_refused(self, fake_store: FakeStore, reader: FlaskClient, existing_assembly: Assembly) -> None:
+        _set_status(fake_store, existing_assembly, AssemblyStatus.ARCHIVED)
+
+        response = reader.post(f"{_details(existing_assembly)}/unarchive", follow_redirects=True)
+
+        assert response.request.path == _details(existing_assembly)
+        assert "You don&#39;t have permission to unarchive this project" in response.data.decode()
+        assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ARCHIVED
+
+    def test_an_unknown_project_goes_back_to_your_projects(self, logged_in_admin: FlaskClient) -> None:
+        response = logged_in_admin.post(
+            "/backoffice/project/00000000-0000-0000-0000-000000000000/unarchive", follow_redirects=True
+        )
+
+        assert response.request.path == "/backoffice/dashboard"
+        assert "Project not found" in response.data.decode()
