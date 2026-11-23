@@ -61,6 +61,12 @@ not an admin can neither remove the only manager nor change them to another
 role (`CannotRemoveLastAssemblyManager`); an admin can do both, because an
 admin can put a manager back.
 
+`can_manage_assembly` is also what archiving and unarchiving a project ask:
+in the service, for the Archive button on the project details page, and for the
+Unarchive button in the banner an archived project shows on every tab. An
+archived project stays editable, by the same people as before. See
+[the archiving plan](agent/1379-archive-project/plan.md).
+
 Those two shapes are what a future policy object
 (`Policy(user).can_view(assembly)`) can absorb without touching call sites, so
 keep to them.
