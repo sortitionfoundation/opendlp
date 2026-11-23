@@ -7,9 +7,11 @@ from typing import Protocol, runtime_checkable
 from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.domain.validators import SlugError
 from opendlp.translations import gettext as _
+from opendlp.translations import ngettext
 
 __all__ = [
     "AssemblyNotFoundError",
+    "CannotArchiveWithPublishedPages",
     "CannotRemoveLastAssemblyManager",
     "CannotRemoveLastAuthMethod",
     "CuratedMessage",
@@ -348,6 +350,27 @@ class CannotRemoveLastAssemblyManager(CuratedMessage, ServiceLayerError):
     def __init__(self) -> None:
         super().__init__(
             _("A project must keep at least one Project Manager. Add another one before removing this one.")
+        )
+
+
+class CannotArchiveWithPublishedPages(CuratedMessage, ServiceLayerError):
+    """Raised when archiving a project while any of its registration pages is published.
+
+    A published page is still taking registrations, so it is closed first, from
+    the registration pages list. Archiving does not close it on the organiser's
+    behalf. ``page_names`` holds the published pages' names, which the message
+    lists.
+    """
+
+    def __init__(self, page_names: list[str]) -> None:
+        self.page_names = page_names
+        super().__init__(
+            ngettext(
+                "The registration page %(names)s is published. Close it before archiving this project.",
+                "The registration pages %(names)s are published. Close them before archiving this project.",
+                len(page_names),
+                names=", ".join(f"'{name}'" for name in page_names),
+            )
         )
 
 

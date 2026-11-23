@@ -2,6 +2,7 @@
 ABOUTME: Provides functions for assembly creation, updates, permissions, and lifecycle management"""
 
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any, cast
@@ -9,6 +10,7 @@ from typing import Any, cast
 from opendlp.domain import events
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.selection_settings import (
     DEFAULT_ADDRESS_COLS,
     DEFAULT_COLS_TO_KEEP,
@@ -20,7 +22,6 @@ from opendlp.domain.selection_settings import (
 )
 from opendlp.domain.value_objects import (
     AssemblyRole,
-    AssemblyStatus,
     DataSource,
     RespondentsSource,
     TargetsSource,
@@ -30,11 +31,18 @@ from . import target_service
 from .exceptions import (
     AssemblyNotFoundError,
     AssemblyTitleTaken,
+    CannotArchiveWithPublishedPages,
     GoogleSheetConfigNotFoundError,
     InsufficientPermissions,
     UserNotFoundError,
 )
-from .permissions import can_create_assembly, can_manage_assembly, can_view_assembly
+from .permissions import (
+    MANAGE_ROLE,
+    can_create_assembly,
+    can_manage_assembly,
+    can_view_assembly,
+    load_user_and_assembly,
+)
 from .unit_of_work import AbstractUnitOfWork
 from .user_service import assign_assembly_role, get_user_assemblies
 
@@ -308,13 +316,27 @@ def get_assembly_creator_name(uow: AbstractUnitOfWork, assembly: Assembly) -> st
     return creator.display_name if creator else ""
 
 
+def published_registration_pages(pages: Iterable[RegistrationPage]) -> list[RegistrationPage]:
+    """The pages that stop an assembly being archived: the published ones.
+
+    The project details page asks this of the pages it has already loaded, to
+    say why its Archive button is disabled, so the rule is written once.
+    """
+    return [page for page in pages if page.status is RegistrationPageStatus.PUBLISHED]
+
+
 def archive_assembly(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
     user_id: uuid.UUID,
 ) -> Assembly:
     """
-    Archive an assembly.
+    Archive an assembly, so it leaves the project lists. Nothing is deleted.
+
+    Refused while any of its registration pages is published, because a
+    published page is still taking registrations. Its test and closed pages
+    stay as they are, and keep their addresses. An assembly that is already
+    archived is left as it is.
 
     Args:
         uow: Unit of Work for database operations
@@ -322,32 +344,58 @@ def archive_assembly(
         user_id: ID of user performing the archival
 
     Returns:
-        Archived Assembly instance
+        The archived Assembly, detached
 
     Raises:
-        NotFoundError: If assembly or user not found
+        UserNotFoundError, AssemblyNotFoundError: If the user or assembly is not found
+        InsufficientPermissions: If user cannot manage this assembly
+        CannotArchiveWithPublishedPages: If any of its registration pages is published
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="archive assembly", required_role=MANAGE_ROLE)
+
+    if assembly.is_active():
+        published = published_registration_pages(uow.registration_pages.list_by_assembly_id(assembly_id))
+        if published:
+            raise CannotArchiveWithPublishedPages([page.name for page in published])
+        assembly.archive()
+
+    detached: Assembly = assembly.create_detached_copy()
+    return detached
+
+
+def unarchive_assembly(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> Assembly:
+    """
+    Unarchive an assembly, so it is back in the project lists.
+
+    Who may is the same as for archiving. An assembly that is already active is
+    left as it is.
+
+    Returns:
+        The active Assembly, detached
+
+    Raises:
+        UserNotFoundError, AssemblyNotFoundError: If the user or assembly is not found
         InsufficientPermissions: If user cannot manage this assembly
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    user = uow.users.get(user_id)
-    if not user:
-        raise UserNotFoundError(f"User {user_id} not found")
-
-    assembly = uow.assemblies.get(assembly_id)
-    if not assembly:
-        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-
-    # Check permissions
+    user, assembly = load_user_and_assembly(uow, user_id, assembly_id)
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(action="archive assembly", required_role="assembly-manager or admin")
+        raise InsufficientPermissions(action="unarchive assembly", required_role=MANAGE_ROLE)
 
-    # Archive the assembly
-    assembly.status = AssemblyStatus.ARCHIVED
+    if not assembly.is_active():
+        assembly.reactivate()
 
-    # Explicit typing to satisfy mypy
-    archived_assembly: Assembly = assembly
-    return archived_assembly
+    detached: Assembly = assembly.create_detached_copy()
+    return detached
 
 
 def get_user_accessible_assemblies(
