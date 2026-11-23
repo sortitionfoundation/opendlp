@@ -1273,6 +1273,13 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         # Match SqlAlchemyUnitOfWork: roll back the shared store on exception.
         if self._shared and exc_type is not None:
             self.rollback()
+        # Match SqlAlchemyUnitOfWork: a clean exit is a commit as far as the
+        # after-commit callbacks go, and any other exit drops them. ``committed``
+        # is left alone - it records an explicit commit() by the code under test.
+        if exc_type is None:
+            self._run_after_commit_callbacks()
+        else:
+            self._discard_after_commit_callbacks()
         self._bind_repositories(open_context=False)
 
     def _take_snapshot(self) -> None:
