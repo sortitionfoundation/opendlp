@@ -151,13 +151,19 @@ Checked, nothing missing:
 - **Status pills and dots** in the error colours ("Closed", "Withdrawn")
   always carry their word.
 
+## Foundations labels
+
+The Foundations tab prints each swatch's value as plain text, which does not
+follow the token. Three had drifted, none of them an error colour, and now
+print their tokens' values: the brand-700 swatch said #0F5389 where the token
+is #5E003A (`showcase/primitive_tokens.html`); `--color-tables-cards` said
+"→ neutral-100" where it is neutral-0, and `--color-focus-ring` said
+"→ brand-200" where it is brand-400 (`showcase/semantic_tokens.html`).
+`tests/unit/test_showcase_token_labels.py` compares every primitive swatch's
+hex and every semantic swatch's arrow with the token files.
+
 ## Seen, not changed
 
 - `file_input` and `switch` show an error message, but it has no `id`, and the
   control has no `aria-invalid` or `aria-describedby`, so a screen reader is
   not told the two belong together. No page passes either an error today.
-- The Foundations tab has three labels that do not match their tokens, none of
-  them an error colour: the brand-700 swatch says #0F5389 where the token is
-  #5E003A (`showcase/primitive_tokens.html`); `--color-tables-cards` says
-  "→ neutral-100" where it is neutral-0, and `--color-focus-ring` says
-  "→ brand-200" where it is brand-400 (`showcase/semantic_tokens.html`).
