@@ -277,8 +277,13 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
             .all()
         )
 
-    def get_assemblies_for_user(self, user_id: uuid.UUID) -> Iterable[Assembly]:
-        """Get the active assemblies the user holds a role on, newest first.
+    def get_assemblies_for_user(
+        self, user_id: uuid.UUID, status: AssemblyStatus = AssemblyStatus.ACTIVE, title_search: str = ""
+    ) -> Iterable[Assembly]:
+        """Get the assemblies with this status the user holds a role on, newest first.
+
+        A non-empty `title_search` keeps only those whose title contains it,
+        ignoring case.
 
         Purely a role lookup - it asks no question about the user's global role.
         Who is entitled to see more than their own assemblies is a policy
@@ -293,32 +298,33 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
             orm.user_assembly_roles.c.user_id == user_id
         )
 
-        return (
-            self.session
-            .query(Assembly)
-            .filter(
-                and_(
-                    orm.assemblies.c.id.in_(assembly_ids_subquery),
-                    orm.assemblies.c.status == AssemblyStatus.ACTIVE,
-                )
+        query = self.session.query(Assembly).filter(
+            and_(
+                orm.assemblies.c.id.in_(assembly_ids_subquery),
+                orm.assemblies.c.status == status,
             )
-            .order_by(orm.assemblies.c.created_at.desc())
-            .all()
         )
+        if title_search:
+            query = query.filter(orm.assemblies.c.title.ilike(f"%{title_search}%"))
+        return query.order_by(orm.assemblies.c.created_at.desc()).all()
 
-    def search_by_title(self, search_term: str) -> Iterable[Assembly]:
-        """Search assemblies by title (case-insensitive partial match)."""
+    def search_by_title(self, search_term: str, status: AssemblyStatus = AssemblyStatus.ACTIVE) -> Iterable[Assembly]:
+        """Search the assemblies with this status by title, newest first.
+
+        A case-insensitive partial match, so an empty search term matches every
+        title.
+        """
         return (
             self.session
             .query(Assembly)
             .filter(orm.assemblies.c.title.ilike(f"%{search_term}%"))
-            .filter_by(status=AssemblyStatus.ACTIVE)
+            .filter_by(status=status)
             .order_by(orm.assemblies.c.created_at.desc())
             .all()
         )
 
     def get_assemblies_by_status(self, status: AssemblyStatus) -> Iterable[Assembly]:
-        """Get assemblies by their status."""
+        """Get assemblies by their status, newest first."""
         return self.session.query(Assembly).filter_by(status=status).order_by(orm.assemblies.c.created_at.desc()).all()
 
     def list_filtered(
