@@ -188,3 +188,29 @@ class TestErrorColours:
 
         assert "border: 1px solid var(--color-borders-dividers)" in html
         assert "--color-error-border" not in html
+
+
+class TestInputClearButton:
+    def test_a_clear_label_adds_a_named_clear_button_shown_only_with_text(self):
+        html = _render('{{ input("search", label="Search", clear_label="Clear search") }}')
+
+        assert 'x-data="clearableInput"' in html
+        button = re.search(r"<button[^>]*>", html)
+        assert button is not None
+        assert 'type="button"' in button.group(0)
+        assert 'aria-label="Clear search"' in button.group(0)
+        assert 'x-show="hasText"' in button.group(0)
+        assert "x-cloak" in button.group(0)
+
+    def test_clearing_resubmits_only_when_asked_to(self):
+        plain = _render('{{ input("search", label="Search", clear_label="Clear search") }}')
+        submits = _render('{{ input("search", label="Search", clear_label="Clear search", clear_submits=true) }}')
+
+        assert "data-clear-submits" not in plain
+        assert 'data-clear-submits="true"' in submits
+
+    def test_without_a_clear_label_there_is_no_clear_button(self):
+        html = _render('{{ input("search", label="Search") }}')
+
+        assert "clearableInput" not in html
+        assert "<button" not in html

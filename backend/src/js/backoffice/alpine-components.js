@@ -8,6 +8,7 @@ import { autoGrowTextarea } from "../components/auto-grow-textarea.js";
 import { bulkTargetsCategory } from "../components/bulk-targets-category.js";
 import { bulkTargetsValueRow } from "../components/bulk-targets-value-row.js";
 import { charCount } from "../components/char-count.js";
+import { clearableInput } from "../components/clearable-input.js";
 import { dialogLeaveGuard } from "../components/dialog-leave-guard.js";
 import { infoToggletip } from "../components/info-toggletip.js";
 import { inlineEdit } from "../components/inline-edit.js";
@@ -51,6 +52,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("modal", modal);
   Alpine.data("progressModalDemo", progressModalDemo);
   Alpine.data("charCount", charCount);
+  Alpine.data("clearableInput", clearableInput);
   Alpine.data("registrationMethod", registrationMethod);
   Alpine.data("registrationPageRow", registrationPageRow);
   Alpine.data("replacementSuggestions", replacementSuggestions);

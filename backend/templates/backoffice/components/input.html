@@ -22,10 +22,10 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {%- endmacro %}
 
 
-{% from "backoffice/components/icons.html" import icon_check_12 %}
+{% from "backoffice/components/icons.html" import icon_check_12, icon_close %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/rich_editor.html" import rich_editor_controls %}
-{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="", info="", inline=false, described_by_id="") %}
+{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="", info="", inline=false, described_by_id="", clear_label="", clear_submits=false) %}
     {#
     Text input component using semantic design tokens.
 
@@ -54,9 +54,14 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         link_text: Text for the link (defaults to value if not provided)
         dim: When disabled, controls whether the value text is dimmed (default true).
              Pass dim=false to keep body-text colour for read-only display contexts.
+        clear_label: Accessible name for a clear (×) button inside the input,
+                     shown once it holds text. Leave empty for no button.
+        clear_submits: When true, clearing also resubmits the input's form, for
+                       a filter field where empty means "no filter".
 
     Usage:
         {{ input("email", label="Email Address", type="email", placeholder="you@example.com") }}
+        {{ input("search", label="Search", value=term, clear_label="Clear search", clear_submits=true) }}
         {{ input("password", label="Password", type="password", required=true) }}
         {{ input("title", label="Assembly Title", value=assembly.title, error=errors.title) }}
         {{ input("url", label="Spreadsheet URL", value=gsheet.url, readonly=true, link_url=gsheet.url, link_text="View Spreadsheet") }}
@@ -104,6 +109,11 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {# Input field — password inputs get a show/hide toggle button #}
             {% if type == "password" %}
                 <div class="flex items-center gap-2">
+            {% elif clear_label %}
+                <div class="relative"
+                     x-data="clearableInput"
+                     @input="update()"
+                     {% if clear_submits %}data-clear-submits="true"{% endif %}>
             {% endif %}
             <input
                 type="{{ type }}"
@@ -122,7 +132,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                    does not name a form control to a screen reader. #}
                 {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
                 {% if attrs %}{{ attrs | safe }}{% endif %}
-                class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 {{ classes }}"
+                class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150{% if clear_label and type != "password" %} pr-11{% endif %} {{ classes }}"
                 style="
                        background-color: var(--color-page-background);
                        border: 1px solid {% if has_error %}var(--color-error-border){% else %}var(--color-borders-dividers){% endif %};
@@ -146,6 +156,15 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                            color: var(--color-body-text);
                           "
                 >Show</button>
+                </div>
+            {% elif clear_label %}
+                <button type="button"
+                        x-show="hasText"
+                        x-cloak
+                        @click="clear()"
+                        aria-label="{{ clear_label }}"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded cursor-pointer"
+                        style="color: var(--color-secondary-text);">{{ icon_close(classes="w-4 h-4") }}</button>
                 </div>
             {% endif %}
         {% endif %}
