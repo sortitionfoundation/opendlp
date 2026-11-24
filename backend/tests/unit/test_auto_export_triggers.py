@@ -9,7 +9,7 @@ import pytest
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
-from opendlp.domain.events import RespondentsChanged
+from opendlp.domain.events import RespondentsChanged, RespondentSchemaChanged
 from opendlp.domain.registration_content_block import form_item_ref
 from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule
 from opendlp.domain.respondent_field_schema import (
@@ -25,12 +25,19 @@ from opendlp.service_layer.assembly_service import delete_respondents_for_assemb
 from opendlp.service_layer.derivation_service import create_derived_field
 from opendlp.service_layer.registration_submission_service import submit_registration_by_assembly_id
 from opendlp.service_layer.respondent_field_schema_service import (
+    ReconciliationDiff,
     add_choice_option,
     add_field,
+    apply_reconciliation,
+    delete_derived_field,
     delete_field,
     initialise_empty_schema,
     move_form_item,
+    populate_schema_from_headers,
+    remove_choice_option,
+    rename_derived_field,
     reorder_form_items,
+    update_choice_option,
     update_field,
 )
 from opendlp.service_layer.respondent_service import (
@@ -168,43 +175,101 @@ class TestRespondentChangesTriggerAnExport:
 
 
 class TestSchemaChangesTriggerAnExport:
-    def test_add_field(self, uow, dispatch):
+    def test_add_field(self, uow):
         user, assembly = _seed(uow)
         add_field(uow, user.id, assembly.id, "colour")
-        dispatch.assert_called_once()
+        assert RespondentSchemaChanged(assembly.id) in uow.events
 
-    def test_update_field(self, uow, dispatch):
+    def test_update_field(self, uow):
         user, assembly = _seed(uow)
         field = _add_field(uow, assembly)
         update_field(uow, user.id, assembly.id, field.id, label="Favourite colour")
-        dispatch.assert_called_once()
+        assert RespondentSchemaChanged(assembly.id) in uow.events
 
-    def test_reorder_form_items(self, uow, dispatch):
+    def test_reorder_form_items(self, uow):
         """The export's column order follows the questions list."""
         user, assembly = _seed(uow)
         first = _add_field(uow, assembly, "colour")
         second = _add_field(uow, assembly, "shape")
         reorder_form_items(uow, user.id, assembly.id, [form_item_ref(second), form_item_ref(first)])
-        dispatch.assert_called_once()
+        assert RespondentSchemaChanged(assembly.id) in uow.events
 
-    def test_move_form_item(self, uow, dispatch):
+    def test_move_form_item(self, uow):
         user, assembly = _seed(uow)
         _add_field(uow, assembly, "colour")
         second = _add_field(uow, assembly, "shape")
         move_form_item(uow, user.id, assembly.id, form_item_ref(second), "up")
-        dispatch.assert_called_once()
+        assert RespondentSchemaChanged(assembly.id) in uow.events
 
-    def test_add_choice_option(self, uow, dispatch):
+    def test_add_choice_option(self, uow):
         user, assembly = _seed(uow)
         field = _add_field(uow, assembly)
         add_choice_option(uow, user.id, assembly.id, field.id, "Green")
-        dispatch.assert_called_once()
+        assert RespondentSchemaChanged(assembly.id) in uow.events
 
-    def test_delete_field(self, uow, dispatch):
+    def test_delete_field(self, uow):
         user, assembly = _seed(uow)
         field = _add_field(uow, assembly)
         delete_field(uow, user.id, assembly.id, field.id)
-        dispatch.assert_called_once()
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
+    def test_populate_schema_from_headers(self, uow):
+        _user, assembly = _seed(uow)
+        populate_schema_from_headers(uow, assembly.id, ["id", "colour"], "id")
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
+    def test_initialise_empty_schema(self, uow):
+        user, assembly = _seed(uow)
+        initialise_empty_schema(uow, user.id, assembly.id)
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
+    def test_update_choice_option(self, uow):
+        user, assembly = _seed(uow)
+        field = _add_field(uow, assembly)
+        update_choice_option(uow, user.id, assembly.id, field.id, "Red", "Crimson")
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
+    def test_remove_choice_option(self, uow):
+        user, assembly = _seed(uow)
+        field = _add_field(uow, assembly)
+        remove_choice_option(uow, user.id, assembly.id, field.id, "Red")
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
+    def test_delete_derived_field(self, uow):
+        """The field's values leave every respondent, so its column leaves the export."""
+        _user, assembly = _seed(uow)
+        field = _add_field(uow, assembly)
+        delete_derived_field(uow, assembly.id, field)
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
+    def test_rename_derived_field(self, uow):
+        _user, assembly = _seed(uow)
+        field = _add_field(uow, assembly)
+        rename_derived_field(uow, assembly.id, field, "hue")
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
+    def test_rename_derived_field_to_the_same_key_records_nothing(self, uow):
+        _user, assembly = _seed(uow)
+        field = _add_field(uow, assembly)
+        rename_derived_field(uow, assembly.id, field, "colour")
+        assert uow.events == []
+
+    def test_apply_reconciliation(self, uow):
+        _user, assembly = _seed(uow)
+        apply_reconciliation(uow, assembly.id, ReconciliationDiff(assembly_id=assembly.id, new_keys=["shape"]))
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
+    def test_apply_reconciliation_with_nothing_new_records_nothing(self, uow):
+        _user, assembly = _seed(uow)
+        apply_reconciliation(uow, assembly.id, ReconciliationDiff(assembly_id=assembly.id))
+        assert uow.events == []
+
+    def test_moving_an_item_to_where_it_already_is_records_nothing(self, uow):
+        user, assembly = _seed(uow)
+        first = _add_field(uow, assembly, "colour")
+        _add_field(uow, assembly, "shape")
+        move_form_item(uow, user.id, assembly.id, form_item_ref(first), "top")
+        assert uow.events == []
 
 
 class TestNothingFiresWhenAutoExportIsOff:

@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from opendlp.config import to_bool
+from opendlp.domain import events
 from opendlp.domain.registration_content_block import (
     FieldSection,
     FormItem,
@@ -51,7 +52,6 @@ from opendlp.service_layer.form_order import (
     renumber,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
-from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.tabular_data import (
     Column,
     HeaderCheck,
@@ -220,7 +220,7 @@ def populate_schema_from_headers(
 
     uow.respondent_field_definitions.bulk_add(rows)
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
     return len(rows)
 
 
@@ -242,7 +242,7 @@ def initialise_empty_schema(
     rows = _build_fixed_rows(assembly_id)
     uow.respondent_field_definitions.bulk_add(rows)
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
     return len(rows)
 
 
@@ -312,7 +312,7 @@ def add_field(
     _place_after(uow, assembly_id, field, after)
     uow.respondent_field_definitions.add(field)
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
     return field.create_detached_copy()
 
 
@@ -428,7 +428,7 @@ def update_field(
         # them one at a time does; a key that can never match again is stale.
         _drop_small_mapping_keys(uow, assembly_id, field.field_key, removed_values)
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -552,7 +552,7 @@ def add_choice_option(
     new_options.append(ChoiceOption(value=value, help_text=help_text))
     field.update(options=new_options)
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -593,7 +593,7 @@ def update_choice_option(
         # producing wrong derived data with no visible symptom — rename in step.
         _rename_small_mapping_keys(uow, assembly_id, field.field_key, old_value, new_value)
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -692,7 +692,7 @@ def remove_choice_option(
     # it so the config mirrors the source's real option set.
     _drop_small_mapping_keys(uow, assembly_id, field.field_key, {value})
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -741,7 +741,7 @@ def reorder_form_items(
         raise _list_changed_error()
     renumber([by_ref[ref] for ref in ordered])
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
 
 
 def move_form_item(
@@ -776,7 +776,7 @@ def move_form_item(
     if destination != index:
         renumber(items)
         record_questions_changed(uow, assembly_id)
-        request_auto_export(uow, assembly_id)
+        uow.record(events.RespondentSchemaChanged(assembly_id))
     return destination + 1, len(items)
 
 
@@ -878,7 +878,7 @@ def delete_derived_field(
     uow.respondent_field_mapping_entries.delete_all_for_field(field.id)
     uow.respondents.remove_attribute(assembly_id, field.field_key)
     uow.respondent_field_definitions.delete(field)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
 
 
 def rename_derived_field(
@@ -911,7 +911,7 @@ def rename_derived_field(
     field.field_key = new_field_key
     field.updated_at = datetime.now(UTC)
     uow.respondents.rename_attribute(assembly_id, old_field_key, new_field_key)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
 
 
 def delete_field(
@@ -945,7 +945,7 @@ def delete_field(
         )
     uow.respondent_field_definitions.delete(field)
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
 
 
 # ---------------------------------------------------------------------------
@@ -1051,7 +1051,7 @@ def apply_reconciliation(
     ]
     uow.respondent_field_definitions.bulk_add(new_rows)
     record_questions_changed(uow, assembly_id)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentSchemaChanged(assembly_id))
     return len(new_rows)
 
 
