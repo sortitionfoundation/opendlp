@@ -189,6 +189,25 @@ describe("modal focus", () => {
     expect(state.returnFocusTo).toBe(null);
   });
 
+  it("prefers the checked radio when every radio in a group is marked", () => {
+    root.innerHTML =
+      '<input type="radio" name="role" id="user" data-dialog-initial-focus>' +
+      '<input type="radio" name="role" id="admin" data-dialog-initial-focus checked>';
+    openState().open();
+    expect(document.activeElement.id).toBe("admin");
+  });
+
+  it("does not move focus when a close is blocked", () => {
+    const state = modal({ canClose: false });
+    state.$root = root;
+    state.$nextTick = (callback) => callback();
+    state.open();
+    state.close();
+    expect(state.isOpen).toBe(true);
+    expect(document.activeElement.id).toBe("cancel");
+    expect(state.returnFocusTo).toBe(opener);
+  });
+
   it("leaves focus alone when nothing is marked for initial focus", () => {
     root.querySelector("#cancel").removeAttribute("data-dialog-initial-focus");
     const state = openState();
