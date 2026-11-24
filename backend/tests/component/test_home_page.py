@@ -63,6 +63,20 @@ def demo_toggle(html: str) -> DemoToggle:
     return toggle
 
 
+def test_demo_toggle_parser_copes_with_void_unclosed_and_stray_tags() -> None:
+    """The parser behind demo_toggle: a void element inside the button, a <p> closed by its parent's end tag, and a
+    stray end tag with nothing open."""
+    toggle = demo_toggle(
+        '<div class="frame"><p>Intro'
+        '<button type="button" data-hero-demo-toggle aria-pressed="false"><span><img src="pause.svg" alt=""></span>'
+        "</button></div></span>"
+    )
+    assert toggle.attrs["aria-pressed"] == "false"
+    assert toggle.ancestors == [{"class": "frame"}, {}]
+    assert toggle.inner == ["<span>", '<img src="pause.svg" alt="">']
+    assert toggle.open == []
+
+
 def slogan_parts(html: str) -> list[str]:
     """The heading's text in three parts: before the highlighted word, the word, after it."""
     heading = html[html.index("<h1") : html.index("</h1>")]
