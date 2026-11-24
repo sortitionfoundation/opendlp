@@ -17,6 +17,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import opendlp.logging
 from opendlp import bootstrap, config
 from opendlp.domain.respondent_field_schema import DERIVATION_TYPE_LABELS, ON_REGISTRATION_PAGE_LABELS
+from opendlp.domain.users import MAX_NAME_LENGTH
 from opendlp.domain.value_objects import (
     DataSource,
     RespondentsSource,
@@ -161,6 +162,8 @@ def register_context_processors(app: Flask) -> None:
     app.jinja_env.globals["respondents_source_labels"] = respondents_source_labels
     app.jinja_env.globals["derivation_type_labels"] = DERIVATION_TYPE_LABELS
     app.jinja_env.globals["on_registration_page_labels"] = ON_REGISTRATION_PAGE_LABELS
+    # The shared name row is imported, and sets its field's maxlength from this.
+    app.jinja_env.globals["MAX_NAME_LENGTH"] = MAX_NAME_LENGTH
     # Translates a stored library error, such as a cached Google Sheets access check,
     # in the language of whoever views it.
     app.jinja_env.globals["translate_error_code"] = translate_error_code

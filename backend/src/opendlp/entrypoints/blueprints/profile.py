@@ -23,7 +23,7 @@ from werkzeug.wrappers import Response
 from opendlp import bootstrap
 from opendlp.domain.value_objects import global_role_descriptions, global_role_labels
 from opendlp.entrypoints.extensions import oauth
-from opendlp.entrypoints.forms import ChangeOwnPasswordForm, EditOwnProfileForm, SetPasswordForm
+from opendlp.entrypoints.forms import ChangeOwnPasswordForm, EditUserNamesForm, SetPasswordForm
 from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.exceptions import CannotRemoveLastAuthMethod, InvalidCredentials, PasswordTooWeak
 from opendlp.service_layer.security import (
@@ -114,7 +114,7 @@ def edit() -> ResponseReturnValue:
         abort(400)
 
     # Built over the stored user, so the name this row did not post keeps its stored value.
-    form = EditOwnProfileForm(obj=current_user)
+    form = EditUserNamesForm(obj=current_user)
     if form.validate_on_submit():
         value = form[field].data or ""
         try:

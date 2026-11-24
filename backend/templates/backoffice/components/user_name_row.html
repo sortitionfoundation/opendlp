@@ -1,0 +1,55 @@
+{#
+ABOUTME: One of a user's names, edited in place: the value with a pencil, or a field with a tick and an X
+ABOUTME: Shared by My account and a user's page in Site Admin, which each say where it posts and what its row is called
+#}
+{% from "backoffice/components/inline_edit_row.html" import inline_edit_row %}
+{#
+    A row of a details list whose value is one of a user's names, edited
+    where it is shown. The row itself, and how it behaves, is inline_edit_row
+    (components/inline_edit_row.html); this names it for each of the two names
+    and holds what a name field is: its labels, and at most MAX_NAME_LENGTH
+    characters, as EditUserNamesForm enforces.
+
+    Args:
+        field: "first_name" or "last_name" - the form field, and the input's id
+        value: The stored value
+        action: Where the row's form posts
+        id_prefix: Starts the row's id, which htmx swaps the answer in for:
+               the row is "<id_prefix>-<field>-row"
+        own_names: The names are the viewer's own, so the browser may offer
+               to fill them in. Off for someone else's names, where it would
+               offer the viewer's.
+        submitted: What was typed, when it was refused; defaults to the value
+        error: Why it was refused. A row with an error opens still editing,
+               the field focused.
+        return_focus: The save came from inside the row (the tick or Enter):
+               focus the pencil once htmx has swapped the row in
+#}
+{% macro user_name_row(field, value, action, id_prefix, own_names=false, submitted=none, error="", return_focus=false) %}
+    {% if field == "first_name" %}
+        {% set label = _("First name") %}
+        {% set edit_label = _("Edit first name") %}
+        {% set save_label = _("Save first name") %}
+        {% set cancel_label = _("Cancel editing first name") %}
+        {% set autocomplete = "given-name" if own_names else "off" %}
+    {% else %}
+        {% set label = _("Last name") %}
+        {% set edit_label = _("Edit last name") %}
+        {% set save_label = _("Save last name") %}
+        {% set cancel_label = _("Cancel editing last name") %}
+        {% set autocomplete = "family-name" if own_names else "off" %}
+    {% endif %}
+    {{ inline_edit_row(
+    row_id=id_prefix ~ "-" ~ field ~ "-row",
+    field=field,
+    label=label,
+    value=value or "",
+    action=action,
+    edit_label=edit_label,
+    save_label=save_label,
+    cancel_label=cancel_label,
+    submitted=submitted,
+    error=error,
+    return_focus=return_focus,
+    field_attrs='maxlength="' ~ MAX_NAME_LENGTH ~ '" autocomplete="' ~ autocomplete ~ '"') }}
+{% endmacro %}
