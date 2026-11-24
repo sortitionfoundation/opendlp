@@ -1,6 +1,6 @@
 {#
 ABOUTME: One key/value row of a details list, as on the profile, project details and Site Admin pages
-ABOUTME: The caller supplies the <dd>s - the value, and optionally a trailing action
+ABOUTME: The caller supplies the <dd>s - the value, and optionally a trailing action - or uses detail_value for plain text
 #}
 {% macro detail_row(term) %}
     <div class="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-3 border-b last:border-b-0"
@@ -8,4 +8,9 @@ ABOUTME: The caller supplies the <dd>s - the value, and optionally a trailing ac
         <dt class="text-label-lg sm:w-48 shrink-0" style="color: var(--color-secondary-text);">{{ term }}</dt>
         {{ caller() }}
     </div>
+{% endmacro %}
+
+{# A detail_row's value when it is plain text: {% call detail_row(_("Email")) %}{{ detail_value(user.email) }}{% endcall %} #}
+{% macro detail_value(text) %}
+    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">{{ text }}</dd>
 {% endmacro %}
