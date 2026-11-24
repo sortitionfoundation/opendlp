@@ -1,9 +1,10 @@
 # Domain events and a message bus in the service layer
 
-Status: **third draft, no open questions** (2026-11-23). Nothing is
-implemented. Doctor Chewie's answers from two review rounds are folded into the
-design and recorded in [Decisions](#decisions). Awaiting the go-ahead to
-implement phases 1 and 2.
+Status: **phases 1 and 2 implemented** on branch `event-message-bus`
+(2026-11-24). Phase 3, the activity log, needs its own plan under sc-922.
+Doctor Chewie's answers from two review rounds are folded into the design and
+recorded in [Decisions](#decisions). What was built differs from this plan in
+the ways listed under [As built](#as-built).
 
 Source: [chapter 8](https://www.cosmicpython.com/book/chapter_08_events_and_message_bus.html)
 of _Architecture Patterns with Python_, with chapters 9 and 10 read for where
@@ -272,6 +273,30 @@ Each numbered step is a commit that leaves the suite green.
 Phases 1 and 2 need no migration, no new dependency and no new translatable
 strings. `tenacity` (in the dev group today) is not needed: Celery already
 retries the export.
+
+## As built
+
+- **Composition, not a base class.** The event code is in `UnitOfWorkEvents`
+  (`service_layer/unit_of_work_events.py`). `AbstractUnitOfWork` declares
+  `record`, `after_commit` and `events` as abstract and both implementations
+  delegate. Agreed after phase 1 was reviewed.
+- **A runaway handler chain raises `EventChainError`**, defined beside
+  `UnitOfWorkEvents`, not `UnitOfWorkError`.
+- **A callback may return a value**, which is ignored, so
+  `schedule_auto_export` keeps its `bool` for the task that calls it directly.
+- **The locked-out export task opens no UnitOfWork.** It calls
+  `schedule_auto_export` without reading the config first. The task it queues
+  re-reads the config and does nothing if auto-export has been stopped.
+- **The writer inventory found nothing new.** The 27 sites were still the
+  complete list. `add_respondent_comment` changes a respondent and records no
+  event, as before: comments are not in the export. The activity log plan
+  should decide whether it wants one.
+- **The gap noted in `docs/background_tasks.md` is closed.** A change folded
+  into a running export has always committed before the export reads.
+- **Seven of the schema service's thirteen sites had no trigger test.** They
+  have one now, as does `configure_target_source`.
+- **One new e2e test**: a public registration on an auto-exporting assembly
+  queues the export, and the respondent is committed when it does.
 
 ## Risks
 
