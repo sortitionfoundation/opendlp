@@ -97,25 +97,6 @@ def schedule_auto_export(assembly_id: uuid.UUID, redis_client: Redis | None = No
     return True
 
 
-def request_auto_export(
-    uow: AbstractUnitOfWork,
-    assembly_id: uuid.UUID,
-    redis_client: Redis | None = None,
-) -> bool:
-    """Ask for the assembly's respondents to be exported again, if auto-export is on.
-
-    Schedules at once, without waiting for the caller's commit. Returns whether
-    a task was queued, which is False when auto-export is off, when one is
-    already pending, or when scheduling failed.
-
-    The caller is expected to manage the `uow` context (`with uow: ...`).
-    """
-    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
-    if config is None or not config.auto_export:
-        return False
-    return schedule_auto_export(assembly_id, redis_client)
-
-
 def run_auto_export(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,

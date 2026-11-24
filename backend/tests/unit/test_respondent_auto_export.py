@@ -18,7 +18,6 @@ from opendlp.service_layer.respondent_auto_export import (
     AUTO_EXPORT_DELAY_SECONDS,
     handle_respondents_changed,
     pending_key,
-    request_auto_export,
     run_auto_export,
     schedule_auto_export,
 )
@@ -184,72 +183,6 @@ class TestScheduleAutoExport:
             assert schedule_auto_export(assembly_id) is True
 
         assert redis.get(pending_key(assembly_id)) is not None
-
-
-class TestRequestAutoExport:
-    def test_no_config_dispatches_nothing(self, uow):
-        assembly = Assembly(title="Test Assembly")
-        uow.assemblies.add(assembly)
-        with patch(_DISPATCH) as dispatch:
-            assert request_auto_export(uow, assembly.id, redis_client=FakeRedis()) is False
-        dispatch.assert_not_called()
-
-    def test_auto_export_off_dispatches_nothing(self, uow):
-        assembly = _assembly_with_config(uow, auto_export=False)
-        with patch(_DISPATCH) as dispatch:
-            assert request_auto_export(uow, assembly.id, redis_client=FakeRedis()) is False
-        dispatch.assert_not_called()
-
-    def test_dispatches_one_task_with_the_delay(self, uow):
-        """The first request marks the assembly pending and queues a delayed task."""
-        assembly = _assembly_with_config(uow, auto_export=True)
-        redis = FakeRedis()
-        with patch(_DISPATCH) as dispatch:
-            assert request_auto_export(uow, assembly.id, redis_client=redis) is True
-        dispatch.assert_called_once_with(kwargs={"assembly_id": assembly.id}, countdown=AUTO_EXPORT_DELAY_SECONDS)
-        assert redis.get(pending_key(assembly.id)) is not None
-
-    def test_second_request_while_pending_is_folded_into_the_first(self, uow):
-        assembly = _assembly_with_config(uow, auto_export=True)
-        redis = FakeRedis()
-        with patch(_DISPATCH) as dispatch:
-            request_auto_export(uow, assembly.id, redis_client=redis)
-            assert request_auto_export(uow, assembly.id, redis_client=redis) is False
-        assert dispatch.call_count == 1
-
-    def test_requests_for_different_assemblies_are_independent(self, uow):
-        first = _assembly_with_config(uow, auto_export=True)
-        second = _assembly_with_config(uow, auto_export=True)
-        redis = FakeRedis()
-        with patch(_DISPATCH) as dispatch:
-            request_auto_export(uow, first.id, redis_client=redis)
-            request_auto_export(uow, second.id, redis_client=redis)
-        assert dispatch.call_count == 2
-
-    def test_redis_failure_is_logged_and_swallowed(self, uow, caplog):
-        """A broken Redis must not fail the change that asked for the export."""
-        assembly = _assembly_with_config(uow, auto_export=True)
-        with patch(_DISPATCH) as dispatch, caplog.at_level("WARNING"):
-            assert request_auto_export(uow, assembly.id, redis_client=_BrokenRedis()) is False
-        dispatch.assert_not_called()
-        assert "Could not schedule automatic export" in caplog.text
-        assert "redis is down" in caplog.text
-
-    def test_broker_failure_is_logged_and_swallowed(self, uow, caplog):
-        assembly = _assembly_with_config(uow, auto_export=True)
-        with patch(_DISPATCH, side_effect=OSError("broker unreachable")), caplog.at_level("WARNING"):
-            assert request_auto_export(uow, assembly.id, redis_client=FakeRedis()) is False
-        assert "Could not schedule automatic export" in caplog.text
-
-    def test_uses_the_configured_redis_when_none_is_given(self, uow):
-        assembly = _assembly_with_config(uow, auto_export=True)
-        redis = FakeRedis()
-        with (
-            patch.object(respondent_auto_export, "_get_redis", return_value=redis),
-            patch(_DISPATCH),
-        ):
-            assert request_auto_export(uow, assembly.id) is True
-        assert redis.get(pending_key(assembly.id)) is not None
 
 
 class TestRunAutoExport:
