@@ -1293,7 +1293,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
     def record(self, event: "Event") -> None:
         self._events.record(event, self)
 
-    def after_commit(self, callback: "Callable[[], None]") -> None:
+    def after_commit(self, callback: "Callable[[], object]") -> None:
         self._events.after_commit(callback)
 
     def _take_snapshot(self) -> None:

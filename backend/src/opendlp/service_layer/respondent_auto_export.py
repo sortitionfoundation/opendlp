@@ -3,6 +3,7 @@ ABOUTME: Debounces requests through Redis and hands the export to a Celery task"
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 
 import structlog
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
     from redis import Redis
 
     from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
+    from opendlp.domain.events import RespondentsChanged, RespondentSchemaChanged
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 logger = structlog.get_logger(__name__)
@@ -54,29 +56,32 @@ def lock_key(assembly_id: uuid.UUID) -> str:
     return f"{_LOCK_KEY_PREFIX}{assembly_id}"
 
 
-def request_auto_export(
-    uow: AbstractUnitOfWork,
-    assembly_id: uuid.UUID,
-    redis_client: Redis | None = None,
-) -> bool:
-    """Ask for the assembly's respondents to be exported again, if auto-export is on.
+def handle_respondents_changed(event: RespondentsChanged | RespondentSchemaChanged, uow: AbstractUnitOfWork) -> None:
+    """Have the assembly's respondents exported again once this change commits, if auto-export is on.
 
-    Called by every service that changes what the export would contain. It is a
-    side effect of someone else's request - a member of the public registering,
-    an organiser editing - so it never raises: Redis or broker trouble is logged
-    and the caller's work goes ahead regardless. Returns whether a task was
-    queued, which is False when auto-export is off, when one is already
-    pending, or when scheduling failed.
-
-    Candidate for a ``RespondentsChanged`` domain event once the UnitOfWork
-    collects events and dispatches them after commit; until then each writer
-    calls this directly.
-
-    The caller is expected to manage the `uow` context (`with uow: ...`).
+    The handler for both events that change what the export would contain: the
+    respondents themselves, and the fields that make up its columns. It reads
+    the config in the caller's transaction and leaves the scheduling, which is
+    outside the database, to run after the commit - so a change that rolls
+    back queues nothing, and the task cannot run before the change is there
+    to read.
     """
-    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
+    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(event.assembly_id, EXPORT_KIND)
     if config is None or not config.auto_export:
-        return False
+        return
+    uow.after_commit(partial(schedule_auto_export, event.assembly_id))
+
+
+def schedule_auto_export(assembly_id: uuid.UUID, redis_client: Redis | None = None) -> bool:
+    """Queue the export task for the assembly unless one is already pending.
+
+    Does not look at the config: the task re-reads it and does nothing if
+    auto-export has been stopped. It is a side effect of someone else's
+    request - a member of the public registering, an organiser editing - so it
+    never raises: Redis or broker trouble is logged and swallowed. Returns
+    whether a task was queued, which is False when one is already pending or
+    when scheduling failed.
+    """
     try:
         r = redis_client or _get_redis()
         if not r.set(pending_key(assembly_id), "1", nx=True, ex=_PENDING_TTL_SECONDS):
@@ -90,6 +95,25 @@ def request_auto_export(
         logger.exception("Could not schedule automatic export", assembly_id=str(assembly_id), error=str(exc))
         return False
     return True
+
+
+def request_auto_export(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    redis_client: Redis | None = None,
+) -> bool:
+    """Ask for the assembly's respondents to be exported again, if auto-export is on.
+
+    Schedules at once, without waiting for the caller's commit. Returns whether
+    a task was queued, which is False when auto-export is off, when one is
+    already pending, or when scheduling failed.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
+    if config is None or not config.auto_export:
+        return False
+    return schedule_auto_export(assembly_id, redis_client)
 
 
 def run_auto_export(
