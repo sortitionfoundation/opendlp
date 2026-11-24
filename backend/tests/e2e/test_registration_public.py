@@ -219,7 +219,17 @@ class TestRegistrationFormRendering:
 
         assert b"govuk-footer" in response.data
         assert b"https://docs.democraticlottery.org/data-and-legal/cookies/" in response.data
-        assert b"https://docs.democraticlottery.org/data-and-legal/data-agreement/" in response.data
+
+    def test_public_form_footer_omits_the_user_data_agreement(
+        self, client: FlaskClient, published_registration_page: RegistrationPage
+    ) -> None:
+        """The User Data Agreement is for platform users, not respondents, and the
+        form may carry its own data link, so the footer leaves it out."""
+        response = client.get(
+            route_url(client, "registration.show_registration_form", url_slug=published_registration_page.url_slug)
+        )
+
+        assert b"https://docs.democraticlottery.org/data-and-legal/data-agreement/" not in response.data
 
 
 class TestRegistrationFormSubmission:

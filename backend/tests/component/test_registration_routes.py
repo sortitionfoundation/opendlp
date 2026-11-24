@@ -456,6 +456,28 @@ class TestRegistrationClosed:
         assert b"Registration Closed" in response.data
 
 
+class TestRegistrationFooter:
+    """The public registration pages' footer keeps the cookies link but drops the
+    User Data Agreement, which is for platform users, not respondents."""
+
+    def _assert_footer(self, response) -> None:  # type: ignore[no-untyped-def]
+        assert response.status_code == 200
+        footer = response.data.split(b'<footer class="govuk-footer"', 1)[1]
+        assert b"Cookies" in footer
+        assert b"User Data Agreement" not in footer
+
+    def test_form_footer(self, client: FlaskClient, fake_store, admin_user: User) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        self._assert_footer(client.get(f"/register/{page.url_slug}"))
+
+    def test_thank_you_footer(self, client: FlaskClient, fake_store, admin_user: User) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        self._assert_footer(client.get(f"/register/{page.url_slug}/thank-you"))
+
+    def test_closed_footer(self, client: FlaskClient) -> None:
+        self._assert_footer(client.get("/registration-closed"))
+
+
 class TestUrlHelpers:
     def test_registration_url_matches_route(self, app) -> None:
         with app.test_request_context("http://example.org/"):
