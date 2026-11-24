@@ -142,11 +142,11 @@ class TestRespondentChangesTriggerAnExport:
         reset_selection_status(uow, user.id, assembly.id)
         assert RespondentsChanged(assembly.id) in uow.events
 
-    def test_delete_all_respondents(self, uow, dispatch):
+    def test_delete_all_respondents(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly)
         delete_respondents_for_assembly(uow, user.id, assembly.id)
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
     def test_derived_field_recompute(self, uow, dispatch):
         user, assembly = _seed(uow)
