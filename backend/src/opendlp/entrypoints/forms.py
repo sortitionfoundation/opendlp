@@ -35,6 +35,7 @@ from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
 from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, SignupSurveyQuestion, SurveyFieldType
+from opendlp.domain.users import MAX_NAME_LENGTH
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.validators import validate_email as domain_validate_email
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
@@ -235,13 +236,13 @@ class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any
 
     first_name = StringField(
         _l("First Name"),
-        validators=[DataRequired(), Length(max=100)],
+        validators=[DataRequired(), Length(max=MAX_NAME_LENGTH)],
         render_kw={"autocomplete": "given-name"},
     )
 
     last_name = StringField(
         _l("Last Name"),
-        validators=[DataRequired(), Length(max=100)],
+        validators=[DataRequired(), Length(max=MAX_NAME_LENGTH)],
         render_kw={"autocomplete": "family-name"},
     )
 
@@ -518,19 +519,17 @@ class EditAssemblyGSheetForm(AssemblyGSheetForm):
 
 
 class EditUserNamesForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """Form for an admin editing a user's names, each saved on its own from the user's page."""
+    """Form for editing a user's names, each saved on its own from a row edited in place.
 
-    first_name = StringField(
-        _l("First name"),
-        validators=[Length(max=100)],
-        render_kw={"autocomplete": "given-name"},
-    )
+    Used by My account for your own names, and by a user's page in Site Admin
+    for theirs. Neither renders the form: the fields are drawn by the shared
+    row (templates/backoffice/components/user_name_row.html), which carries the
+    labels, maxlength and autocomplete.
+    """
 
-    last_name = StringField(
-        _l("Last name"),
-        validators=[Length(max=100)],
-        render_kw={"autocomplete": "family-name"},
-    )
+    first_name = StringField(_l("First name"), validators=[Length(max=MAX_NAME_LENGTH)])
+
+    last_name = StringField(_l("Last name"), validators=[Length(max=MAX_NAME_LENGTH)])
 
 
 class EditUserRoleForm(FlaskForm):  # type: ignore[no-any-unimported]
@@ -599,24 +598,6 @@ class AddUserToAssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
         validators=[DataRequired()],
         description=_l("Select the role this user will have on the project"),
         default=AssemblyRole.CONFIRMATION_CALLER.name,
-    )
-
-
-class EditOwnProfileForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """Form for users to edit their own profile."""
-
-    first_name = StringField(
-        _l("First name"),
-        validators=[Length(max=100)],
-        description=_l("Your first name"),
-        render_kw={"autocomplete": "given-name"},
-    )
-
-    last_name = StringField(
-        _l("Last name"),
-        validators=[Length(max=100)],
-        description=_l("Your last name"),
-        render_kw={"autocomplete": "family-name"},
     )
 
 

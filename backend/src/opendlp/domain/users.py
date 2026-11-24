@@ -17,6 +17,10 @@ UNUSABLE_PASSWORD_PREFIX = "!"  # noqa: S105 - a marker for hashes that cannot m
 # in the session cookie and the remember-me cookie.
 SESSION_ID_SEPARATOR = "|"
 
+# The longest a user's first or last name may be: the column's size, and what
+# every form and field that takes a name enforces.
+MAX_NAME_LENGTH = 100
+
 
 class User:
     """User domain model for authentication and role management."""

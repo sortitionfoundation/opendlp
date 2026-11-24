@@ -9,7 +9,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
-from opendlp.domain.users import User
+from opendlp.domain.users import MAX_NAME_LENGTH, User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.exceptions import UserNotFoundError
 from opendlp.service_layer.user_service import create_user
@@ -339,6 +339,21 @@ class TestAdminUserNameEdit:
         assert 'aria-label="Edit first name"' in body
         assert 'aria-label="Edit last name"' in body
 
+    @pytest.mark.parametrize("field", ["first_name", "last_name"])
+    def test_a_name_field_is_limited_and_not_filled_with_the_admins_own(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, field: str
+    ) -> None:
+        """The field takes as many characters as the form allows, and the browser is not
+        asked to fill it in: it would offer the admin's own name, not the user's."""
+        user = _seed_user(fake_store, "limits@example.com", GlobalRole.USER, "Lim", "Its")
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+
+        field_input = re.search(rf'<input[^>]*name="{field}"[^>]*>', body)
+        assert field_input is not None
+        assert f'maxlength="{MAX_NAME_LENGTH}"' in field_input.group(0)
+        assert 'autocomplete="off"' in field_input.group(0)
+
     def test_saving_a_name_over_htmx_answers_with_the_row(
         self, logged_in_admin: FlaskClient, fake_store: FakeStore
     ) -> None:
@@ -382,7 +397,7 @@ class TestAdminUserNameEdit:
     ) -> None:
         """Too long a name is refused with 422, the row open with what was typed."""
         user = _seed_user(fake_store, "long@example.com", GlobalRole.USER, "Short", "Name")
-        too_long = "x" * 101
+        too_long = "x" * (MAX_NAME_LENGTH + 1)
 
         response = logged_in_admin.post(
             f"/admin/users/{user.id}/name",
@@ -404,7 +419,7 @@ class TestAdminUserNameEdit:
         user = _seed_user(fake_store, "longplain@example.com", GlobalRole.USER, "Short", "Name")
 
         response = logged_in_admin.post(
-            f"/admin/users/{user.id}/name", data={"field": "last_name", "last_name": "y" * 101}
+            f"/admin/users/{user.id}/name", data={"field": "last_name", "last_name": "y" * (MAX_NAME_LENGTH + 1)}
         )
 
         body = response.get_data(as_text=True)

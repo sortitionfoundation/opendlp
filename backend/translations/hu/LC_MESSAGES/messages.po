@@ -1136,13 +1136,13 @@ msgstr ""
 "(pl. keresztnév, vezetéknév, e-mail). Megjegyzés: felülírásra kerül, ha a"
 " Csapat beállítás nem 'Egyedi'."
 
-#: src/opendlp/entrypoints/forms.py templates/admin/_name_row.html
-#: templates/backoffice/profile/_name_row.html
+#: src/opendlp/entrypoints/forms.py
+#: templates/backoffice/components/user_name_row.html
 msgid "First name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py templates/admin/_name_row.html
-#: templates/backoffice/profile/_name_row.html
+#: src/opendlp/entrypoints/forms.py
+#: templates/backoffice/components/user_name_row.html
 msgid "Last name"
 msgstr "Vezetéknév"
 
@@ -1196,14 +1196,6 @@ msgstr "Válaszd ki a projekthez hozzáadni kívánt felhasználót"
 #: src/opendlp/entrypoints/forms.py
 msgid "Select the role this user will have on the project"
 msgstr "Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a projektben"
-
-#: src/opendlp/entrypoints/forms.py
-msgid "Your first name"
-msgstr "Keresztnév"
-
-#: src/opendlp/entrypoints/forms.py
-msgid "Your last name"
-msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Current password"
@@ -5094,30 +5086,6 @@ msgstr "Felhasznált"
 msgid "Expired"
 msgstr "Lejárt"
 
-#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
-msgid "Edit first name"
-msgstr "Keresztnév szerkesztése"
-
-#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
-msgid "Save first name"
-msgstr "Keresztnév mentése"
-
-#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
-msgid "Cancel editing first name"
-msgstr "Keresztnév szerkesztésének elvetése"
-
-#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
-msgid "Edit last name"
-msgstr "Vezetéknév szerkesztése"
-
-#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
-msgid "Save last name"
-msgstr "Vezetéknév mentése"
-
-#: templates/admin/_name_row.html templates/backoffice/profile/_name_row.html
-msgid "Cancel editing last name"
-msgstr "Vezetéknév szerkesztésének elvetése"
-
 #: templates/admin/invite_create.html templates/admin/invites.html
 msgid "Create invite"
 msgstr "Meghívó létrehozása"
@@ -7627,6 +7595,30 @@ msgstr "Elfogadva. A módosítás megtartásához mentsd el."
 #: templates/backoffice/components/url_display.html
 msgid "Copied to clipboard"
 msgstr "Vágólapra másolva"
+
+#: templates/backoffice/components/user_name_row.html
+msgid "Edit first name"
+msgstr "Keresztnév szerkesztése"
+
+#: templates/backoffice/components/user_name_row.html
+msgid "Save first name"
+msgstr "Keresztnév mentése"
+
+#: templates/backoffice/components/user_name_row.html
+msgid "Cancel editing first name"
+msgstr "Keresztnév szerkesztésének elvetése"
+
+#: templates/backoffice/components/user_name_row.html
+msgid "Edit last name"
+msgstr "Vezetéknév szerkesztése"
+
+#: templates/backoffice/components/user_name_row.html
+msgid "Save last name"
+msgstr "Vezetéknév mentése"
+
+#: templates/backoffice/components/user_name_row.html
+msgid "Cancel editing last name"
+msgstr "Vezetéknév szerkesztésének elvetése"
 
 #: templates/backoffice/data_source/_dialog.html
 msgid "Create new project"

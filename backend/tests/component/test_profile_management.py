@@ -10,7 +10,7 @@ from flask import Flask, url_for
 from flask.testing import FlaskClient
 from werkzeug.test import TestResponse
 
-from opendlp.domain.users import User
+from opendlp.domain.users import MAX_NAME_LENGTH, User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.blueprints import profile as profile_blueprint
 from opendlp.service_layer.security import verify_password
@@ -128,7 +128,7 @@ class TestNamesEditedInPlace:
         assert f'<label for="{field}">' in html
         field_input = _tag(html, "input", f'name="{field}"')
         assert f'autocomplete="{autocomplete}"' in field_input
-        assert 'maxlength="100"' in field_input
+        assert f'maxlength="{MAX_NAME_LENGTH}"' in field_input
         assert "autofocus" not in field_input
         assert 'x-ref="edit"' in _tag(html, "button", f'aria-label="Edit {name}"')
         assert 'type="submit"' in _tag(html, "button", f'aria-label="Save {name}"')
@@ -220,7 +220,7 @@ class TestNamesEditedInPlace:
     def test_a_refused_name_comes_back_open_with_the_reason(
         self, logged_in_user: FlaskClient, fake_store: FakeStore, regular_user: User
     ) -> None:
-        too_long = "x" * 101
+        too_long = "x" * (MAX_NAME_LENGTH + 1)
 
         response = logged_in_user.post(
             "/profile/edit", data={"field": "first_name", "first_name": too_long}, headers=_HTMX
@@ -279,7 +279,9 @@ class TestNamesEditedInPlace:
     def test_without_htmx_a_refused_name_renders_my_account_with_the_row_open(
         self, logged_in_user: FlaskClient
     ) -> None:
-        response = logged_in_user.post("/profile/edit", data={"field": "first_name", "first_name": "x" * 101})
+        response = logged_in_user.post(
+            "/profile/edit", data={"field": "first_name", "first_name": "x" * (MAX_NAME_LENGTH + 1)}
+        )
 
         assert response.status_code == 200
         _assert_page_is_named(response.data, "My account")

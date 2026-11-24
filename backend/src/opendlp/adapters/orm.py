@@ -41,6 +41,7 @@ from opendlp.domain.respondent_field_schema import (
 )
 from opendlp.domain.respondents import RespondentComment
 from opendlp.domain.targets import TargetValue
+from opendlp.domain.users import MAX_NAME_LENGTH
 from opendlp.domain.value_objects import (
     AssemblyRole,
     AssemblyStatus,
@@ -267,8 +268,8 @@ users = Table(
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column("email", String(255), nullable=False, index=True, unique=True),
-    Column("first_name", String(100), nullable=False, default=""),
-    Column("last_name", String(100), nullable=False, default=""),
+    Column("first_name", String(MAX_NAME_LENGTH), nullable=False, default=""),
+    Column("last_name", String(MAX_NAME_LENGTH), nullable=False, default=""),
     Column("password_hash", String(255), nullable=True),
     Column("oauth_provider", String(50), nullable=True),
     Column("oauth_id", String(255), nullable=True),
