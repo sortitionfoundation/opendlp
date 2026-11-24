@@ -96,7 +96,7 @@ def _add_field(uow: FakeUnitOfWork, assembly: Assembly, field_key: str = "colour
 
 
 class TestRespondentChangesTriggerAnExport:
-    def test_registration_submission(self, uow, dispatch):
+    def test_registration_submission(self, uow):
         _user, assembly = _seed(uow, with_fixed_schema=True)
 
         result = submit_registration_by_assembly_id(
@@ -106,7 +106,7 @@ class TestRespondentChangesTriggerAnExport:
         )
 
         assert result.respondent is not None, result.field_errors
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
     def test_create_respondent(self, uow):
         user, assembly = _seed(uow)
