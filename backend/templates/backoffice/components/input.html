@@ -125,7 +125,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 {{ classes }}"
                 style="
                        background-color: var(--color-page-background);
-                       border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                       border: 1px solid {% if has_error %}var(--color-error-border){% else %}var(--color-borders-dividers){% endif %};
                        color: var(--color-input-text);
                        {% if disabled %}
                            background-color: var(--color-subtle-background-panels);
@@ -158,7 +158,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         {% if has_error %}
             <p id="{{ input_id }}-error"
                class="text-body-sm{{ under_input }}"
-               style="color: var(--color-primary-action);
+               style="color: var(--color-error-text);
                       white-space: pre-line">{{ error }}</p>
         {% endif %}
     </div>
@@ -252,7 +252,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 {{ "resize-y" if resizable else "resize-none" }} {{ classes }}"
             style="
                    background-color: var(--color-page-background);
-                   border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                   border: 1px solid {% if has_error %}var(--color-error-border){% else %}var(--color-borders-dividers){% endif %};
                    color: var(--color-input-text);
                    {% if disabled %}
                        background-color: var(--color-subtle-background-panels);
@@ -264,7 +264,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
         {# Error message #}
         {% if has_error %}
-            <p id="{{ input_id }}-error" class="text-body-sm" style="color: var(--color-primary-action); white-space: pre-line;">{{ error }}</p>
+            <p id="{{ input_id }}-error" class="text-body-sm" style="color: var(--color-error-text); white-space: pre-line;">{{ error }}</p>
         {% endif %}
     </div>
 {% endmacro %}
@@ -328,7 +328,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 cursor-pointer {{ classes }}"
             style="
                    background-color: var(--color-page-background);
-                   border: 1px solid {% if has_error %}var(--color-primary-action){% else %}var(--color-borders-dividers){% endif %};
+                   border: 1px solid {% if has_error %}var(--color-error-border){% else %}var(--color-borders-dividers){% endif %};
                    color: var(--color-input-text);
                    {% if disabled %}
                        background-color: var(--color-subtle-background-panels);
@@ -356,7 +356,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
         {# Error message #}
         {% if has_error %}
-            <p id="{{ input_id }}-error" class="text-body-sm" style="color: var(--color-primary-action); white-space: pre-line;">{{ error }}</p>
+            <p id="{{ input_id }}-error" class="text-body-sm" style="color: var(--color-error-text); white-space: pre-line;">{{ error }}</p>
         {% endif %}
     </div>
 {% endmacro %}
@@ -438,7 +438,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 <p id="{{ input_id }}-hint" class="text-body-sm" style="color: var(--color-secondary-text); margin-left: 24px;">{{ hint }}</p>
             {% endif %}
             {% if has_error %}
-                <p id="{{ input_id }}-error" class="text-body-sm" style="color: var(--color-primary-action); margin-left: 24px; white-space: pre-line;">{{ error }}</p>
+                <p id="{{ input_id }}-error" class="text-body-sm" style="color: var(--color-error-text); margin-left: 24px; white-space: pre-line;">{{ error }}</p>
             {% endif %}
         {% endif %}
     </div>
@@ -532,7 +532,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 {% endfor %}
             </div>
             {% if has_error %}
-                <p id="{{ input_id }}-error" class="text-body-sm" style="color: var(--color-primary-action); white-space: pre-line;">{{ error }}</p>
+                <p id="{{ input_id }}-error" class="text-body-sm" style="color: var(--color-error-text); white-space: pre-line;">{{ error }}</p>
             {% endif %}
         {% endif %}
     </fieldset>
@@ -604,7 +604,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
         {# Error message #}
         {% if has_error %}
-            <p class="text-body-sm" style="color: var(--color-primary-action); white-space: pre-line;">{{ error }}</p>
+            <p class="text-body-sm" style="color: var(--color-error-text); white-space: pre-line;">{{ error }}</p>
         {% endif %}
     </div>
 {% endmacro %}
@@ -685,7 +685,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 <p class="text-body-sm" style="color: var(--color-secondary-text); margin-left: 52px;">{{ hint }}</p>
             {% endif %}
             {% if has_error %}
-                <p class="text-body-sm" style="color: var(--color-primary-action); margin-left: 52px; white-space: pre-line;">{{ error }}</p>
+                <p class="text-body-sm" style="color: var(--color-error-text); margin-left: 52px; white-space: pre-line;">{{ error }}</p>
             {% endif %}
         {% endif %}
     </div>

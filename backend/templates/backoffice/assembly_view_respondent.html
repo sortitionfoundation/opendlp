@@ -89,8 +89,12 @@ becomes a disabled input/textarea so the page reads as a read-only form.
 {% endmacro %}
 {% block page_content %}
     {% if is_deleted and delete_comment %}
-        <div class="mb-6 p-4 border border-red-300 bg-red-50 rounded"
-             style="color: var(--color-headings)">
+        {# A record of a deletion someone asked for and made, not an error, so
+           it is drawn in the info colours rather than red. #}
+        <div class="mb-6 p-4 rounded"
+             style="background-color: var(--color-info-background);
+                    border: 1px solid var(--color-info-border);
+                    color: var(--color-headings)">
             <strong>{{ _("Personal data deleted") }}</strong>
             <br>
             {% set author = comment_authors.get(delete_comment.author_id) if comment_authors else none %}
