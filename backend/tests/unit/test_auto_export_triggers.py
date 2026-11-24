@@ -9,6 +9,7 @@ import pytest
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
+from opendlp.domain.events import RespondentsChanged
 from opendlp.domain.registration_content_block import form_item_ref
 from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule
 from opendlp.domain.respondent_field_schema import (
@@ -107,40 +108,39 @@ class TestRespondentChangesTriggerAnExport:
         assert result.respondent is not None, result.field_errors
         dispatch.assert_called_once()
 
-    def test_create_respondent(self, uow, dispatch):
+    def test_create_respondent(self, uow):
         user, assembly = _seed(uow)
         create_respondent(uow, user.id, assembly.id, "R1", {})
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
-    def test_update_respondent(self, uow, dispatch):
+    def test_update_respondent(self, uow):
         user, assembly = _seed(uow)
         respondent = _add_respondent(uow, assembly)
         update_respondent(uow, user.id, assembly.id, respondent.id, "fix", email="b@example.com")
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
-    def test_status_transition(self, uow, dispatch):
+    def test_status_transition(self, uow):
         user, assembly = _seed(uow)
         respondent = _add_respondent(uow, assembly, RespondentStatus.SELECTED)
         transition_respondent_status(uow, user.id, assembly.id, respondent.id, RespondentStatus.CONFIRMED, "called")
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
-    def test_delete_respondent(self, uow, dispatch):
+    def test_delete_respondent(self, uow):
         user, assembly = _seed(uow)
         respondent = _add_respondent(uow, assembly)
         delete_respondent(uow, user.id, assembly.id, respondent.id, "asked to be removed")
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
-    def test_csv_import(self, uow, dispatch):
+    def test_csv_import(self, uow):
         user, assembly = _seed(uow)
         import_respondents_from_csv(uow=uow, user_id=user.id, assembly_id=assembly.id, csv_content="id,colour\n1,Red\n")
-        # The schema update and the import both ask; the pending key folds them into one dispatch.
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
-    def test_reset_selection_status(self, uow, dispatch):
+    def test_reset_selection_status(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly, RespondentStatus.SELECTED)
         reset_selection_status(uow, user.id, assembly.id)
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
     def test_delete_all_respondents(self, uow, dispatch):
         user, assembly = _seed(uow)
