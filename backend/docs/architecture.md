@@ -191,22 +191,28 @@ which is what the pattern is for.
   logical unit of work. It commits everything pending, including the caller's,
   so reach for it deliberately rather than to make a test pass.
 
-### After-commit side effects: the case for domain events
+### Domain events and after-commit side effects
 
-Some work must happen *after* the entrypoint's block commits, not inside it.
-The first example is the automatic respondent export:
-`respondent_auto_export.request_auto_export(uow, assembly_id)` is called by
-every service that changes respondents or their schema, and queues a Celery
-task with a countdown so the task reads committed data. Today that is a direct
-call in a dozen services, each marked as a candidate for a `RespondentsChanged`
-event. The book's answer is domain events collected on the aggregate or the
-UnitOfWork and dispatched by a message bus once the commit has happened, which
-also removes the reliance on the countdown for ordering. When a second
-after-commit side effect arrives, build that, and replace the direct calls with
-one handler.
+Some reactions to a change do not belong in the service that made it. The
+automatic respondent export is the first: two dozen service functions change
+what the export would contain, and none of them should know that a Google
+Sheet exists. Each records an event - `RespondentsChanged(assembly_id)` or
+`RespondentSchemaChanged(assembly_id)` - and one handler,
+`respondent_auto_export.handle_respondents_changed`, decides what follows. It
+reads the export config in the caller's transaction and, if auto-export is on,
+registers `schedule_auto_export` to run after the commit. So a change that
+rolls back queues nothing, and the task can never run before the change is
+there to read.
 
-The machinery for that now exists, and the automatic export is the next thing
-to move onto it:
+This follows chapter 8 of *Architecture Patterns with Python*, with two
+departures. Events are recorded on the UnitOfWork, not on aggregates, because
+bulk repository writes have no aggregate to hold them. And handlers run when
+the event is recorded, in the caller's transaction, instead of being published
+by a message bus after the commit - services do not own the commit here (see
+the convention above), so "after the commit" is something a handler asks for
+explicitly. There are events but no commands.
+
+How it works:
 
 - `domain/events.py` holds the events: frozen dataclasses, named in the past
   tense, carrying ids and small values and never personal data.

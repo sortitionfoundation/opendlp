@@ -100,14 +100,22 @@ organiser has ticked "Automatically export" on a successful Google Sheets
 export.
 
 **How it is queued:** every service that changes what the export would
-contain calls `respondent_auto_export.request_auto_export(uow, assembly_id)`.
-That sets a per-assembly `auto_export_pending:<id>` key in Redis (`SET NX`)
-and queues the task with a 30-second countdown; while the key is set, further
-requests are folded into the queued run. The countdown also lets the caller's
-transaction commit before the task reads. Under continuous change an assembly
-exports at most about once every 30 seconds. `request_auto_export` never
-raises - a failure to schedule is logged and the change that asked for it
-goes ahead.
+contain records a domain event on the UnitOfWork:
+`uow.record(events.RespondentsChanged(assembly_id))`, or
+`RespondentSchemaChanged` for a change to the fields. The handler for both,
+`respondent_auto_export.handle_respondents_changed`, checks in the caller's
+transaction that auto-export is on and registers
+`schedule_auto_export(assembly_id)` to run once that transaction has
+committed. A change that rolls back queues nothing. See
+[Domain events](architecture.md#domain-events-and-after-commit-side-effects).
+
+`schedule_auto_export` sets a per-assembly `auto_export_pending:<id>` key in
+Redis (`SET NX`) and queues the task with a 30-second countdown; while the key
+is set, further requests are folded into the queued run. The countdown is only
+a debounce: the change is already committed when the task is queued. Under
+continuous change an assembly exports at most about once every 30 seconds.
+`schedule_auto_export` never raises - a failure to schedule is logged and the
+change that asked for it has already gone through.
 
 **What it does:** takes a per-assembly Redis lock (re-queues itself if another
 run holds it; this is its own lock, separate from the one-writing-task rule
@@ -117,13 +125,11 @@ and writes every respondent matching the saved status filter to the saved
 tab. There is no `SelectionRunRecord` and no acting user.
 
 Deleting the pending key before the read means a change that asks for an
-export after the delete gets a fresh run. One small gap remains: a change
-that asked just *before* the delete (so was folded into this run) but whose
-transaction commits *after* the read is missed until the next change. The
-window is the few milliseconds between a service calling
-`request_auto_export` and its entrypoint committing, and it heals itself on
-the next change. The proper fix is to request the export after commit, which
-is the domain-events work noted in `docs/architecture.md`.
+export after the delete gets a fresh run, and a change folded into this run
+asked before the delete - and had committed before it asked - so the read
+sees it. One gap remains: scheduling happens at most once, so a web or worker
+process that dies between its commit and the scheduling call loses that
+request, and the sheet is stale until the next change.
 
 **Failures:** an `ExportTargetError` (sheet unshared, deleted, API error or
 rate limit) is retried up to 3 times with exponential backoff and jitter.

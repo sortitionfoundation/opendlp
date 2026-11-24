@@ -182,6 +182,27 @@ context. See [docs/architecture.md](docs/architecture.md#the-unitofwork-conventi
 for why this departs from *Architecture Patterns with Python*, and for the
 judgement calls the checker cannot make.
 
+### Events
+
+A service that changes something other parts of the system react to says so
+with `uow.record(event)` - it does not call the reaction itself. Events are
+frozen dataclasses in `src/opendlp/domain/events.py`, named in the past tense,
+carrying ids and never personal data. Handlers are listed in
+`src/opendlp/service_layer/handlers.py` and run at once as
+`handler(event, uow)`, inside the caller's transaction; one that fails fails
+the request.
+
+- A new function that creates, changes or deletes respondents must record
+  `events.RespondentsChanged(assembly_id)`; one that changes the respondent
+  fields must record `events.RespondentSchemaChanged(assembly_id)`. The
+  automatic Google Sheets export depends on it.
+- Anything outside the database (queueing a Celery task, a Redis key) goes in
+  `uow.after_commit(callback)`, so it only happens if the change commits. A
+  callback must not touch the database.
+- In a unit test, `FakeUnitOfWork` runs no handlers: assert on `uow.events`.
+
+See [docs/architecture.md](docs/architecture.md#domain-events-and-after-commit-side-effects).
+
 ### Database Patterns
 
 - Foreign keys are regular UUID columns (not SQLAlchemy relationships in domain)
