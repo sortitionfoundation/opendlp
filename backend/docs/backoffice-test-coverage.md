@@ -188,7 +188,7 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | SVC-USR-1 | `get_user_assemblies()` | :white_check_mark: | [H] | [BDD-ASM](../features/backoffice-assembly.feature): *"Dashboard displays create assembly button"* |
 | SVC-USR-2 | `grant_user_assembly_role()` | :white_check_mark: | [H][P][V] | [BDD-MEM](../features/backoffice-assembly-members.feature): *"Admin can see add user form"* |
 | SVC-USR-3 | `revoke_user_assembly_role()` | :white_check_mark: | [H][P][V] | [BDD-MEM](../features/backoffice-assembly-members.feature): *"I should see remove buttons"* |
-| SVC-USR-4 | `get_user_archived_assemblies()` | :white_check_mark: | [H][P][E] | [BDD-ASM](../features/backoffice-assembly.feature): *"A project manager archives a project and unarchives it"* |
+| SVC-USR-4 | `get_user_archived_assemblies()` | :white_check_mark: | [H][P][N] | [BDD-ASM](../features/backoffice-assembly.feature): *"A project manager archives a project and unarchives it"* |
 
 ### sortition.py
 

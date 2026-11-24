@@ -5673,26 +5673,6 @@ msgstr ""
 
 #: templates/backoffice/archived_projects.html
 #, fuzzy
-msgid "Search by project title"
-msgstr "Keresés projektcím szerint"
-
-#: templates/backoffice/archived_projects.html
-#, fuzzy
-msgid "Search"
-msgstr "Keresés"
-
-#: templates/backoffice/archived_projects.html
-#, fuzzy, python-format
-msgid "No archived projects match '%(search)s'"
-msgstr "Nincs találat az archivált projektek között erre: '%(search)s'"
-
-#: templates/backoffice/archived_projects.html
-#, fuzzy
-msgid "Show all archived projects"
-msgstr "Az összes archivált projekt megjelenítése"
-
-#: templates/backoffice/archived_projects.html
-#, fuzzy
 msgid "No archived projects"
 msgstr "Nincsenek archivált projektek"
 

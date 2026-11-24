@@ -538,20 +538,6 @@ class TestGetUserArchivedAssemblies:
 
         assert [a.title for a in assemblies] == ["Theirs"]
 
-    @pytest.mark.parametrize("role", [GlobalRole.ADMIN, GlobalRole.USER])
-    def test_a_title_search_narrows_the_list_ignoring_case(self, uow, role):
-        user = self._user(uow, role)
-        jury = self._assembly(uow, "Climate Jury")
-        panel = self._assembly(uow, "Health Panel")
-        for assembly in (jury, panel):
-            user.assembly_roles.append(
-                UserAssemblyRole(user_id=user.id, assembly_id=assembly.id, role=AssemblyRole.ASSEMBLY_MANAGER)
-            )
-
-        assemblies = user_service.get_user_archived_assemblies(uow, user.id, title_search="climate")
-
-        assert [a.title for a in assemblies] == ["Climate Jury"]
-
     def test_user_not_found(self, uow):
         with pytest.raises(UserNotFoundError):
             user_service.get_user_archived_assemblies(uow, uuid.uuid4())

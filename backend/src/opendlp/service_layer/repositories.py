@@ -147,12 +147,9 @@ class AssemblyRepository(AbstractRepository):
 
     @abc.abstractmethod
     def get_assemblies_for_user(
-        self, user_id: uuid.UUID, status: AssemblyStatus = AssemblyStatus.ACTIVE, title_search: str = ""
+        self, user_id: uuid.UUID, status: AssemblyStatus = AssemblyStatus.ACTIVE
     ) -> Iterable[Assembly]:
         """Get the assemblies with this status the user holds a role on, newest first.
-
-        A non-empty `title_search` keeps only those whose title contains it,
-        ignoring case.
 
         A role lookup, not a permission check. Whether someone is entitled to
         see more than this is decided by `service_layer.permissions`.
@@ -165,12 +162,8 @@ class AssemblyRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def search_by_title(self, search_term: str, status: AssemblyStatus = AssemblyStatus.ACTIVE) -> Iterable[Assembly]:
-        """Search the assemblies with this status by title, newest first.
-
-        A case-insensitive partial match, so an empty search term matches every
-        title.
-        """
+    def search_by_title(self, search_term: str) -> Iterable[Assembly]:
+        """Search assemblies by title (case-insensitive partial match)."""
         raise NotImplementedError
 
     @abc.abstractmethod

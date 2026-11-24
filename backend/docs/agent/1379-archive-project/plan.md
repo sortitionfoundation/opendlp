@@ -17,6 +17,10 @@ out of the project lists, and brought back. Nothing is deleted.
 - **Editing:** an archived project stays fully editable on every tab, behind a
   banner. Nothing is made read-only; read-only archived projects are a later
   slice.
+- **Finding them again:** the Archived projects page is a plain list of the
+  archived projects the viewer may see, as the story asks: sc-46 wants "a page
+  which will show archived projects, so they can be recovered". It has no
+  search, as no other project list has one.
 
 ## 2. What was already there
 
@@ -49,17 +53,15 @@ out of the project lists, and brought back. Nothing is deleted.
 
 ### Repositories
 
-`get_assemblies_for_user()` and `search_by_title()` take a `status`, active by
-default, so every existing caller is unchanged. `get_assemblies_for_user()`
-also takes a `title_search`, a case-insensitive "title contains". A status
-parameter rather than new methods keeps the member's role subquery in one
-place.
+`get_assemblies_for_user()` takes a `status`, active by default, so every
+existing caller is unchanged. A status parameter rather than a new method keeps
+the member's role subquery in one place.
 
 `user_service.get_user_archived_assemblies()` sits beside
 `get_user_assemblies()` and chooses the same way: an admin
-(`can_see_all_assemblies`) gets `search_by_title(q, ARCHIVED)`, where an empty
-search matches every title; anyone else gets their own through
-`get_assemblies_for_user(user_id, ARCHIVED, q)`.
+(`can_see_all_assemblies`) gets every archived project through
+`get_assemblies_by_status(ARCHIVED)`; anyone else gets their own through
+`get_assemblies_for_user(user_id, ARCHIVED)`. Both list newest first.
 
 The fake repository used to differ from the SQL one: its `search_by_title`
 ignored the status, and its `get_assemblies_by_status` did not sort. Both now
@@ -103,10 +105,11 @@ lists.", with an **Unarchive project** button for managers.
 ### Archived projects page
 
 `GET /backoffice/projects/archived` (`backoffice.archived_projects`), linked from
-the header row of Your projects. The cards are the dashboard's, moved into
-`components/project_card.html`, here with the status tag on each. The search is
-a plain GET form (`q`), so a search is an ordinary link. The empty state says
-whether nothing is archived or nothing matched.
+the header row of Your projects. It is a plain list, newest first: every
+archived project for an admin, the ones they hold a role on for anyone else.
+The cards are the dashboard's, moved into `components/project_card.html`, here
+with the status tag on each, and each opens its project, where it can be
+unarchived. With nothing archived, the page says so.
 
 ## 4. Not in this slice
 
@@ -126,11 +129,12 @@ whether nothing is archived or nothing matched.
 - Unit: `tests/unit/test_assembly_service.py` (`TestArchiveAssembly`,
   `TestUnarchiveAssembly`) and `tests/unit/test_user_service.py`
   (`TestGetUserArchivedAssemblies`).
-- Contract: `tests/contract/test_assembly_repo.py`, for the status and title
-  parameters and the fake's ordering.
+- Contract: `tests/contract/test_assembly_repo.py`, for the status parameter,
+  and the fake's status filter and ordering.
 - Component: `tests/component/test_archive_project.py` — who gets which button,
   the disabled state, both routes with their refusals, the banner on every tab
-  for a manager and a reader, and the Archived projects page and its search.
+  for a manager and a reader, and the Archived projects page with its empty
+  state.
 - JS: `src/js/components/confirm-dialog.test.js`.
 - BDD: "A project manager archives a project and unarchives it" in
   `features/backoffice-assembly.feature`.

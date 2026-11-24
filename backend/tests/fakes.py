@@ -263,7 +263,7 @@ class FakeAssemblyRepository(FakeRepository, AssemblyRepository):
         return self._newest_first(assembly for assembly in self._items if assembly.is_active())
 
     def get_assemblies_for_user(
-        self, user_id: uuid.UUID, status: AssemblyStatus = AssemblyStatus.ACTIVE, title_search: str = ""
+        self, user_id: uuid.UUID, status: AssemblyStatus = AssemblyStatus.ACTIVE
     ) -> Iterable[Assembly]:
         """Get the assemblies with this status the user holds a role on, newest first.
 
@@ -272,7 +272,7 @@ class FakeAssemblyRepository(FakeRepository, AssemblyRepository):
         """
         user = self._users.get(user_id)
         assembly_ids = {role.assembly_id for role in user.assembly_roles} if user else set()
-        return [assembly for assembly in self.search_by_title(title_search, status) if assembly.id in assembly_ids]
+        return [assembly for assembly in self.get_assemblies_by_status(status) if assembly.id in assembly_ids]
 
     def get_assemblies_by_status(self, status: AssemblyStatus) -> Iterable[Assembly]:
         """Get assemblies by their status, newest first."""
@@ -288,10 +288,10 @@ class FakeAssemblyRepository(FakeRepository, AssemblyRepository):
             assemblies = [a for a in assemblies if a.id in assembly_ids]
         return self._newest_first(assemblies)
 
-    def search_by_title(self, search_term: str, status: AssemblyStatus = AssemblyStatus.ACTIVE) -> Iterable[Assembly]:
-        """Search the assemblies with this status by title (case-insensitive partial match), newest first."""
+    def search_by_title(self, search_term: str) -> Iterable[Assembly]:
+        """Search the active assemblies by title (case-insensitive partial match), newest first."""
         search_term = search_term.lower()
-        return [assembly for assembly in self.get_assemblies_by_status(status) if search_term in assembly.title.lower()]
+        return [assembly for assembly in self.get_active_assemblies() if search_term in assembly.title.lower()]
 
 
 class FakeUserInviteRepository(FakeRepository, UserInviteRepository):

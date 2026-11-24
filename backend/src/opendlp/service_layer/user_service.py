@@ -198,12 +198,11 @@ def get_user_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Ass
     return list(uow.assemblies.get_assemblies_for_user(user_id))
 
 
-def get_user_archived_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID, title_search: str = "") -> list[Assembly]:
+def get_user_archived_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Assembly]:
     """Get the archived assemblies a user can find again, newest first.
 
     Who sees which is decided as in get_user_assemblies: an admin sees every
-    archived assembly, anyone else those they hold a role on. A non-empty
-    `title_search` keeps only those whose title contains it, ignoring case.
+    archived assembly, anyone else those they hold a role on.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -212,11 +211,9 @@ def get_user_archived_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID, ti
         raise UserNotFoundError(f"User {user_id} not found")
 
     if can_see_all_assemblies(user):
-        return list(uow.assemblies.search_by_title(title_search, status=AssemblyStatus.ARCHIVED))
+        return list(uow.assemblies.get_assemblies_by_status(AssemblyStatus.ARCHIVED))
 
-    return list(
-        uow.assemblies.get_assemblies_for_user(user_id, status=AssemblyStatus.ARCHIVED, title_search=title_search)
-    )
+    return list(uow.assemblies.get_assemblies_for_user(user_id, status=AssemblyStatus.ARCHIVED))
 
 
 def assign_assembly_role(

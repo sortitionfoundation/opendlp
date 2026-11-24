@@ -336,39 +336,6 @@ class TestArchivedProjectsPage:
         assert f'id="assembly-{theirs.id}"' in html
         assert f'id="assembly-{someone_elses.id}"' not in html
 
-    def test_the_search_narrows_by_title_and_keeps_what_was_typed(
-        self, fake_store: FakeStore, logged_in_admin: FlaskClient
-    ) -> None:
-        jury = _project(fake_store, "Climate Jury")
-        panel = _project(fake_store, "Health Panel")
-
-        html = logged_in_admin.get(f"{ARCHIVED_PAGE}?q=+jury+").data.decode()
-
-        assert f'id="assembly-{jury.id}"' in html
-        assert f'id="assembly-{panel.id}"' not in html
-        assert 'role="search"' in html
-        assert 'method="get"' in html
-        assert 'type="search"' in html
-        assert 'name="q"' in html
-        assert 'value="jury"' in html
-
-    def test_a_search_that_finds_nothing_says_so_and_offers_them_all(
-        self, fake_store: FakeStore, logged_in_admin: FlaskClient
-    ) -> None:
-        _project(fake_store, "Climate Jury")
-
-        html = logged_in_admin.get(f"{ARCHIVED_PAGE}?q=zebra").data.decode()
-
-        assert "No archived projects match 'zebra'" in html
-        assert f'href="{ARCHIVED_PAGE}"' in html
-        assert "Show all archived projects" in html
-
-    def test_what_was_searched_for_is_shown_as_text(self, logged_in_admin: FlaskClient) -> None:
-        html = logged_in_admin.get(f"{ARCHIVED_PAGE}?q=<b>bold</b>").data.decode()
-
-        assert "<b>bold</b>" not in html
-        assert "No archived projects match '&lt;b&gt;bold&lt;/b&gt;'" in html
-
     def test_with_nothing_archived_it_says_so(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         html = logged_in_admin.get(ARCHIVED_PAGE).data.decode()
 

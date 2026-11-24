@@ -143,21 +143,6 @@ class TestSearchByTitle:
         results = list(assembly_repo_backend.repo.search_by_title("climate"))
         assert [assembly.title for assembly in results] == ["Climate Assembly"]
 
-    def test_finds_archived_assemblies_when_asked(self, assembly_repo_backend: ContractBackend):
-        _add_assembly(assembly_repo_backend, title="Climate Assembly")
-        _add_assembly(assembly_repo_backend, title="Climate Jury", status=AssemblyStatus.ARCHIVED)
-
-        results = list(assembly_repo_backend.repo.search_by_title("CLIMATE", status=AssemblyStatus.ARCHIVED))
-        assert [assembly.title for assembly in results] == ["Climate Jury"]
-
-    def test_an_empty_search_term_matches_every_title(self, assembly_repo_backend: ContractBackend):
-        _add_assembly(assembly_repo_backend, title="Active")
-        _add_assembly(assembly_repo_backend, title="Archived 1", status=AssemblyStatus.ARCHIVED)
-        _add_assembly(assembly_repo_backend, title="Archived 2", status=AssemblyStatus.ARCHIVED)
-
-        results = list(assembly_repo_backend.repo.search_by_title("", status=AssemblyStatus.ARCHIVED))
-        assert sorted(assembly.title for assembly in results) == ["Archived 1", "Archived 2"]
-
     def test_orders_newest_first(self, assembly_repo_backend: ContractBackend):
         _add_assembly(assembly_repo_backend, title="Older panel", created_at=datetime(2026, 1, 1, tzinfo=UTC))
         _add_assembly(assembly_repo_backend, title="Newer panel", created_at=datetime(2026, 6, 1, tzinfo=UTC))
@@ -236,20 +221,6 @@ class TestGetAssembliesForUser:
 
         results = list(assembly_repo_backend.repo.get_assemblies_for_user(user.id, status=AssemblyStatus.ARCHIVED))
         assert [assembly.title for assembly in results] == ["Archived"]
-
-    def test_a_title_search_narrows_them_ignoring_case(self, assembly_repo_backend: ContractBackend):
-        user = assembly_repo_backend.make_user()
-        jury = _add_assembly(assembly_repo_backend, title="Climate Jury", status=AssemblyStatus.ARCHIVED)
-        panel = _add_assembly(assembly_repo_backend, title="Health Panel", status=AssemblyStatus.ARCHIVED)
-        assembly_repo_backend.grant_assembly_role(user, jury)
-        assembly_repo_backend.grant_assembly_role(user, panel)
-
-        results = list(
-            assembly_repo_backend.repo.get_assemblies_for_user(
-                user.id, status=AssemblyStatus.ARCHIVED, title_search="jURY"
-            )
-        )
-        assert [assembly.title for assembly in results] == ["Climate Jury"]
 
 
 class TestCreatedByUserId:

@@ -97,20 +97,19 @@ def dashboard() -> ResponseReturnValue:
 @backoffice_bp.route("/projects/archived")
 @login_required
 def archived_projects() -> ResponseReturnValue:
-    """The archived projects the user can see, newest first, optionally searched by title.
+    """The archived projects the user can see, newest first.
 
     Admins see every archived project, everyone else those they hold a role on.
     """
-    search = request.args.get("q", "").strip()
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            assemblies = get_user_archived_assemblies(uow, current_user.id, title_search=search)
+            assemblies = get_user_archived_assemblies(uow, current_user.id)
 
-        return render_template("backoffice/archived_projects.html", assemblies=assemblies, search=search), 200
+        return render_template("backoffice/archived_projects.html", assemblies=assemblies), 200
     except Exception as e:
         logger.exception("Archived projects error", user_id=str(current_user.id), error=str(e))
-        return render_template("backoffice/archived_projects.html", assemblies=[], search=search), 500
+        return render_template("backoffice/archived_projects.html", assemblies=[]), 500
 
 
 @backoffice_bp.route("/assembly/<path:rest>")
