@@ -7,6 +7,7 @@ from datetime import date
 import pytest
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.events import RespondentSchemaChanged
 from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule, LargeMappingRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
@@ -89,6 +90,14 @@ def _linked_field(uow: FakeUnitOfWork, assembly: Assembly, category: TargetCateg
 
 
 class TestConfigureExactCopy:
+    def test_records_that_the_respondent_schema_changed(self, uow):
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Gender", ["Male", "Female", "Other"])
+
+        configure_target_source(uow, user.id, assembly.id, category.id, ExactCopySpec())
+
+        assert RespondentSchemaChanged(assembly.id) in uow.events
+
     def test_creates_a_linked_choice_field_mirroring_the_target(self, uow):
         user, assembly = _seed(uow)
         category = _add_category(uow, assembly, "Gender", ["Male", "Female", "Other"])
