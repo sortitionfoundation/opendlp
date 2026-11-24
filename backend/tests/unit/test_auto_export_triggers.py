@@ -148,7 +148,7 @@ class TestRespondentChangesTriggerAnExport:
         delete_respondents_for_assembly(uow, user.id, assembly.id)
         assert RespondentsChanged(assembly.id) in uow.events
 
-    def test_derived_field_recompute(self, uow, dispatch):
+    def test_derived_field_recompute(self, uow):
         user, assembly = _seed(uow)
         source = RespondentFieldDefinition(
             assembly_id=assembly.id,
@@ -164,7 +164,7 @@ class TestRespondentChangesTriggerAnExport:
             uow, user.id, assembly.id, field_key="age", label="Age", source_field_key="date_of_birth", rule=rule
         )
 
-        dispatch.assert_called_once()
+        assert RespondentsChanged(assembly.id) in uow.events
 
 
 class TestSchemaChangesTriggerAnExport:

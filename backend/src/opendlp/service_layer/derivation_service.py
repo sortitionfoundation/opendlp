@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from typing import Any
 
+from opendlp.domain import events
 from opendlp.domain.respondent_derivation import (
     DEFAULT_FALLBACK,
     AgeBracketRule,
@@ -45,7 +46,6 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly
-from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.tabular_data import clean_table, rows_from_csv
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import lazy_gettext as _l
@@ -490,7 +490,7 @@ def _recompute(
             if raw and raw not in unmatched and len(unmatched) < UNMATCHED_SAMPLE_SIZE:
                 unmatched.append(raw)
 
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentsChanged(assembly_id))
 
     completed_runs = sum(
         1
