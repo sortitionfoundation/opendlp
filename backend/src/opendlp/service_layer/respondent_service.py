@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any, cast
 
+from opendlp.domain import events
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import (
@@ -41,7 +42,6 @@ from opendlp.service_layer.permissions import (
     can_manage_assembly,
     can_view_assembly,
 )
-from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_service import (
     check_id_column_in_headers,
     respondent_header_check,
@@ -101,7 +101,7 @@ def create_respondent(
     apply_derivations(respondent, field_definitions, load_mapping_lookups(uow, field_definitions))
 
     uow.respondents.add(respondent)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentsChanged(assembly_id))
     return respondent.create_detached_copy()
 
 
@@ -267,7 +267,7 @@ def import_respondents_from_rows(
     # Seed the field schema on first import; reconcile (add new keys,
     # preserve absent ones) on subsequent imports.
     update_schema_from_headers(uow, assembly_id, list(headers), id_column)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentsChanged(assembly_id))
 
     return [r.create_detached_copy() for r in respondents], errors, id_column
 
@@ -377,7 +377,7 @@ def reset_selection_status(
             completed_at=now,
         )
     )
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentsChanged(assembly_id))
     return count
 
 
@@ -532,7 +532,7 @@ def delete_respondent(
     assert isinstance(respondent, Respondent)
 
     respondent.delete_personal_data(author_id=user_id, comment=comment)
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentsChanged(assembly_id))
 
 
 def update_respondent(
@@ -594,7 +594,7 @@ def update_respondent(
         load_mapping_lookups(uow, field_definitions),
         keep_supplied_on_fallback=False,
     )
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentsChanged(assembly_id))
 
 
 def add_respondent_comment(
@@ -757,4 +757,4 @@ def transition_respondent_status(
         author_id=user_id,
         comment=comment,
     )
-    request_auto_export(uow, assembly_id)
+    uow.record(events.RespondentsChanged(assembly_id))
