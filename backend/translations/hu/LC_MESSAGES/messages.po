@@ -1147,7 +1147,6 @@ msgid "Last name"
 msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py templates/admin/user_view.html
-#, fuzzy
 msgid "Global role"
 msgstr "Globális szerepkör"
 
@@ -1171,7 +1170,6 @@ msgid "Optional — if provided, the invite will be emailed to this address"
 msgstr "Nem kötelező – ha megadod, a meghívó e-mailben erre a címre megy ki"
 
 #: src/opendlp/entrypoints/forms.py
-#, fuzzy
 msgid "Expires in (hours)"
 msgstr "Lejárat (óra)"
 
@@ -5121,7 +5119,6 @@ msgid "Cancel editing last name"
 msgstr "Vezetéknév szerkesztésének elvetése"
 
 #: templates/admin/invite_create.html templates/admin/invites.html
-#, fuzzy
 msgid "Create invite"
 msgstr "Meghívó létrehozása"
 
@@ -5145,9 +5142,8 @@ msgid "Invite %(code)s"
 msgstr "Meghívó: %(code)s"
 
 #: templates/admin/invite_view.html
-#, fuzzy
 msgid "Invite code"
-msgstr "Meghívókód"
+msgstr "Meghívó kód"
 
 #: templates/admin/invite_view.html
 #, fuzzy
@@ -5201,7 +5197,6 @@ msgid "Expires"
 msgstr "Lejárat"
 
 #: templates/admin/invite_view.html
-#, fuzzy
 msgid "Used by"
 msgstr "Felhasználta"
 
@@ -5222,27 +5217,22 @@ msgid "Are you sure you want to revoke this invite? This action cannot be undone
 msgstr "Biztosan visszavonod ezt a meghívót? Ez a művelet nem vonható vissza."
 
 #: templates/admin/invite_view.html
-#, fuzzy
 msgid "Revoke invite"
 msgstr "Meghívó visszavonása"
 
 #: templates/admin/invites.html
-#, fuzzy
 msgid "Total invites"
 msgstr "Összes meghívó"
 
 #: templates/admin/invites.html
-#, fuzzy
 msgid "Active invites"
 msgstr "Aktív meghívók"
 
 #: templates/admin/invites.html
-#, fuzzy
 msgid "Used invites"
 msgstr "Felhasznált meghívók"
 
 #: templates/admin/invites.html
-#, fuzzy
 msgid "Conversion rate"
 msgstr "Beváltási arány"
 
@@ -5258,7 +5248,6 @@ msgstr ""
 " benne?"
 
 #: templates/admin/invites.html
-#, fuzzy
 msgid "Clean up expired invites"
 msgstr "Lejárt meghívók törlése"
 
@@ -5302,7 +5291,6 @@ msgid "No invites found. Create one to get started."
 msgstr "Nincs meghívó. Hozz létre egyet a kezdéshez."
 
 #: templates/admin/user_2fa_audit_log.html
-#, fuzzy
 msgid "2FA audit log"
 msgstr "Kétlépcsős azonosítás eseménynaplója"
 
@@ -5324,17 +5312,14 @@ msgid "Disabled"
 msgstr "Kikapcsolva"
 
 #: templates/admin/user_2fa_audit_log.html
-#, fuzzy
 msgid "Admin disabled"
 msgstr "Adminisztrátor kapcsolta ki"
 
 #: templates/admin/user_2fa_audit_log.html
-#, fuzzy
 msgid "Backup code used"
 msgstr "Tartalék kód felhasználva"
 
 #: templates/admin/user_2fa_audit_log.html
-#, fuzzy
 msgid "Backup codes regenerated"
 msgstr "Tartalék kódok újragenerálva"
 
@@ -5354,7 +5339,6 @@ msgid "Action"
 msgstr "Művelet"
 
 #: templates/admin/user_2fa_audit_log.html
-#, fuzzy
 msgid "Performed by"
 msgstr "Végrehajtotta"
 
@@ -5402,12 +5386,10 @@ msgid "Save role"
 msgstr "Szerepkör mentése"
 
 #: templates/admin/user_view.html
-#, fuzzy
 msgid "User details"
 msgstr "Felhasználó adatai"
 
 #: templates/admin/user_view.html
-#, fuzzy
 msgid "Account status"
 msgstr "Fiók állapota"
 
@@ -5440,7 +5422,6 @@ msgid "View 2FA audit log"
 msgstr "Kétlépcsős azonosítás eseménynaplójának megtekintése"
 
 #: templates/admin/user_view.html
-#, fuzzy
 msgid "Data agreement"
 msgstr "Adatkezelési megállapodás"
 
@@ -5454,12 +5435,10 @@ msgid "Not agreed"
 msgstr "Nincs elfogadva"
 
 #: templates/admin/user_view.html
-#, fuzzy
 msgid "Account created"
 msgstr "Fiók létrehozva"
 
 #: templates/admin/user_view.html
-#, fuzzy
 msgid "Signup survey"
 msgstr "Regisztrációs kérdőív"
 
@@ -5508,7 +5487,6 @@ msgstr ""
 "jelszót kell beállítania."
 
 #: templates/admin/user_view.html
-#, fuzzy
 msgid "Disable account"
 msgstr "Fiók letiltása"
 
@@ -5536,7 +5514,6 @@ msgstr ""
 "jelszó-visszaállítást – a régi jelszava már nem működik."
 
 #: templates/admin/user_view.html
-#, fuzzy
 msgid "Enable account"
 msgstr "Fiók engedélyezése"
 
@@ -5546,12 +5523,10 @@ msgid "Enable this account?"
 msgstr "Engedélyezed ezt a fiókot?"
 
 #: templates/admin/users.html
-#, fuzzy
 msgid "Total users"
 msgstr "Összes felhasználó"
 
 #: templates/admin/users.html
-#, fuzzy
 msgid "Active users"
 msgstr "Aktív felhasználók"
 
@@ -5564,12 +5539,10 @@ msgid "Organisers"
 msgstr "Főszervezők"
 
 #: templates/admin/users.html
-#, fuzzy
 msgid "Password users"
 msgstr "Jelszavas felhasználók"
 
 #: templates/admin/users.html
-#, fuzzy
 msgid "2FA enabled"
 msgstr "Kétlépcsős azonosítás bekapcsolva"
 
@@ -5591,7 +5564,6 @@ msgid "Clear search"
 msgstr "Keresés törlése"
 
 #: templates/admin/users.html
-#, fuzzy
 msgid "Apply filters"
 msgstr "Szűrők alkalmazása"
 
