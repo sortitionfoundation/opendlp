@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from opendlp.domain.events import Event
-    from opendlp.service_layer.unit_of_work import EventHandler
+    from opendlp.service_layer.unit_of_work_events import EventHandler
 
 # Each handler is called as handler(event, uow) when uow.record(event) is
 # called, inside the caller's open `with uow:` block. A handler never opens or

@@ -6,7 +6,6 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Any, Self
 
-import structlog
 from sqlalchemy import text
 
 from opendlp.adapters.sql_repository import (
@@ -35,10 +34,11 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserRepository,
     SqlAlchemyUserSignupSurveyRepository,
 )
+from opendlp.service_layer.unit_of_work_events import UnitOfWorkEvents
 
 if TYPE_CHECKING:
     import uuid
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable
     from types import TracebackType
 
     from sqlalchemy.orm import Session, sessionmaker
@@ -70,19 +70,7 @@ if TYPE_CHECKING:
         UserRepository,
         UserSignupSurveyRepository,
     )
-
-    #: Called with the event and the UnitOfWork it was recorded on, inside that
-    #: UnitOfWork's open context. Typed loosely on the event because each
-    #: handler takes its own Event subclass.
-    EventHandler = Callable[[Any, "AbstractUnitOfWork"], None]
-    EventHandlers = Mapping[type[Event], Sequence[EventHandler]]
-
-logger = structlog.get_logger(__name__)
-
-#: How many handlers deep one recorded event may reach, a handler recording an
-#: event of its own counting as one level. Far more than any real chain needs;
-#: it exists to turn a cycle of handlers into an error instead of a hang.
-MAX_EVENT_CHAIN_DEPTH = 10
+    from opendlp.service_layer.unit_of_work_events import EventHandlers
 
 
 class AbstractUnitOfWork(abc.ABC):
@@ -92,7 +80,8 @@ class AbstractUnitOfWork(abc.ABC):
     A service calls ``record(event)`` to say that something happened; the
     handlers registered for that event run there and then, in the same
     transaction. A handler that needs something done outside the database
-    registers it with ``after_commit``. See docs/architecture.md.
+    registers it with ``after_commit``. Implementations hand both to a
+    ``UnitOfWorkEvents``. See docs/architecture.md.
     """
 
     users: UserRepository
@@ -120,20 +109,6 @@ class AbstractUnitOfWork(abc.ABC):
     email_templates: EmailTemplateRepository
     respondent_email_send_records: RespondentEmailSendRecordRepository
 
-    # The attributes below are annotated here rather than on the class because
-    # the class-level annotations are read as the list of repository names.
-    def __init__(self, event_handlers: EventHandlers | None = None) -> None:
-        """
-        Args:
-            event_handlers: the handlers to call for each recorded event. Left
-                as None, the application's registry in
-                ``service_layer/handlers.py`` is used.
-        """
-        self.events: list[Event] = []
-        self._event_handlers: EventHandlers | None = event_handlers
-        self._after_commit_callbacks: list[Callable[[], None]] = []
-        self._event_chain_depth = 0
-
     def __enter__(self) -> Self:
         return self
 
@@ -148,6 +123,13 @@ class AbstractUnitOfWork(abc.ABC):
         else:
             self.commit()
 
+    @property
+    @abc.abstractmethod
+    def events(self) -> list[Event]:
+        """Everything recorded since the context was opened, whether or not it went on to commit."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def record(self, event: Event) -> None:
         """Note that something happened, and run its handlers now.
 
@@ -155,32 +137,10 @@ class AbstractUnitOfWork(abc.ABC):
         of the caller's transaction: what they write commits or rolls back with
         the change that caused the event, and an exception from one propagates
         to the caller like any other failure in the service.
-
-        ``events`` keeps everything recorded since the context was opened,
-        whether or not it went on to commit.
         """
-        self.events.append(event)
-        if self._event_chain_depth >= MAX_EVENT_CHAIN_DEPTH:
-            raise UnitOfWorkError(
-                f"{type(event).__name__} was recorded {MAX_EVENT_CHAIN_DEPTH} handlers deep. "
-                "Event handlers are probably recording each other's events in a cycle."
-            )
-        self._event_chain_depth += 1
-        try:
-            for handler in self._handlers_for(event):
-                handler(event, self)
-        finally:
-            self._event_chain_depth -= 1
+        raise NotImplementedError
 
-    def _handlers_for(self, event: Event) -> Sequence[EventHandler]:
-        if self._event_handlers is None:
-            # Imported here because the handlers reach modules that import this
-            # one: handlers -> services -> celery tasks -> bootstrap -> here.
-            from opendlp.service_layer import handlers  # noqa: PLC0415
-
-            self._event_handlers = handlers.EVENT_HANDLERS
-        return self._event_handlers.get(type(event), ())
-
+    @abc.abstractmethod
     def after_commit(self, callback: Callable[[], None]) -> None:
         """Run callback once the work in progress has committed.
 
@@ -193,28 +153,7 @@ class AbstractUnitOfWork(abc.ABC):
         transaction it would have belonged to is over; work that needs the
         database belongs in the task the callback queues.
         """
-        self._after_commit_callbacks.append(callback)
-
-    def _run_after_commit_callbacks(self) -> bool:
-        """Run and forget the pending callbacks. Returns whether there were any."""
-        callbacks, self._after_commit_callbacks = self._after_commit_callbacks, []
-        for callback in callbacks:
-            try:
-                callback()
-            except Exception as exc:
-                # The change is already committed, so a side effect that fails
-                # must not turn a successful request into an error.
-                logger.exception("After-commit callback failed", callback=repr(callback), error=str(exc))
-        return bool(callbacks)
-
-    def _discard_after_commit_callbacks(self) -> None:
-        self._after_commit_callbacks = []
-
-    def _start_events(self) -> None:
-        """Forget the events and callbacks of any earlier use. Called on entering the context."""
-        self.events = []
-        self._after_commit_callbacks = []
-        self._event_chain_depth = 0
+        raise NotImplementedError
 
     @abc.abstractmethod
     def commit(self) -> None:
@@ -299,8 +238,14 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     """
 
     def __init__(self, session_factory: sessionmaker, event_handlers: EventHandlers | None = None) -> None:
-        super().__init__(event_handlers)
+        """
+        Args:
+            event_handlers: the handlers to call for each recorded event. Left
+                as None, the application's registry in
+                ``service_layer/handlers.py`` is used.
+        """
         self.session_factory = session_factory
+        self._events = UnitOfWorkEvents(event_handlers)
         self._session: Session | None = None
         self._close_repositories()
 
@@ -316,7 +261,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def __enter__(self) -> Self:
         self._session = self.session_factory()
-        self._start_events()
+        self._events.start()
 
         # Initialize repositories with the session
         self.users = SqlAlchemyUserRepository(self.session)
@@ -365,7 +310,17 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
             self._session = None
             self._close_repositories()
             # Whatever is still pending belongs to a commit that failed.
-            self._discard_after_commit_callbacks()
+            self._events.discard_callbacks()
+
+    @property
+    def events(self) -> list[Event]:
+        return self._events.events
+
+    def record(self, event: Event) -> None:
+        self._events.record(event, self)
+
+    def after_commit(self, callback: Callable[[], None]) -> None:
+        self._events.after_commit(callback)
 
     def commit(self) -> None:
         """Commit the current transaction, then run the after-commit callbacks."""
@@ -390,7 +345,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         next after a mid-block commit. Either is a bug, so it is refused here,
         where the first test to exercise the callback will find it.
         """
-        if not self._run_after_commit_callbacks():
+        if not self._events.run_callbacks():
             return
         session = self.session
         if session.new or session.dirty or session.deleted:
@@ -402,7 +357,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     def rollback(self) -> None:
         """Rollback the current transaction and drop its after-commit callbacks."""
         self.session.rollback()
-        self._discard_after_commit_callbacks()
+        self._events.discard_callbacks()
 
     def flush(self) -> None:
         """
