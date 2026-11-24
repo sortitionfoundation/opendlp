@@ -2,6 +2,7 @@
 # ABOUTME: Drives the real admin Flask routes + invite service against a seeded fake store
 
 import re
+import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
@@ -263,8 +264,26 @@ class TestViewInvite:
 
         body = logged_in_admin.get(f"/admin/invites/{invite_id}").get_data(as_text=True)
 
-        assert f'href="/admin/users/{regular_user.id}"' in body
+        link = re.search(rf'<a href="/admin/users/{regular_user.id}"[^>]*>\s*(.*?)\s*</a>', body, re.DOTALL)
+        assert link is not None
+        assert link.group(1) == regular_user.email
         assert "/revoke" not in body
+
+    def test_view_used_invite_falls_back_to_the_id_when_the_user_is_gone(
+        self, logged_in_admin: FlaskClient, fake_store, admin_user: User
+    ):
+        """An invite whose user can no longer be found still says who used it, by their ID."""
+        gone_id = uuid.uuid4()
+        with FakeUnitOfWork(store=fake_store) as uow:
+            invite = generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
+            invite_id = invite.id
+            uow.user_invites.get(invite_id).use(gone_id)
+            uow.commit()
+
+        response = logged_in_admin.get(f"/admin/invites/{invite_id}")
+
+        assert response.status_code == 200
+        assert re.search(rf'<a href="/admin/users/{gone_id}"[^>]*>\s*{gone_id}\s*</a>', response.get_data(as_text=True))
 
     def test_view_invite_invalid_id_redirects(self, logged_in_admin: FlaskClient):
         """Viewing an invalid invite ID redirects to the list."""

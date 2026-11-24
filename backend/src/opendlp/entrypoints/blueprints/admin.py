@@ -51,6 +51,7 @@ from opendlp.service_layer.signup_survey_service import (
     get_signup_survey,
 )
 from opendlp.service_layer.two_factor_service import TwoFactorSetupError
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.user_service import (
     disable_user,
     enable_user,
@@ -726,8 +727,9 @@ def view_invite(invite_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             invite = get_invite_details(uow, invite_id, current_user.id)
+            used_by_email = _used_by_email(uow, invite.used_by)
 
-        return render_template("admin/invite_view.html", invite=invite), 200
+        return render_template("admin/invite_view.html", invite=invite, used_by_email=used_by_email), 200
 
     except InviteNotFoundError as e:
         logger.warning(
@@ -745,6 +747,20 @@ def view_invite(invite_id: uuid.UUID) -> ResponseReturnValue:
         )
         flash(_("An error occurred while loading the invite details"), "error")
         return redirect(url_for("admin.list_invites_page"))
+
+
+def _used_by_email(uow: AbstractUnitOfWork, used_by: uuid.UUID | None) -> str:
+    """The email of the user who used an invite, or blank when unused or the user is gone.
+
+    Expects an open uow and an admin caller.
+    """
+    if used_by is None:
+        return ""
+    try:
+        return get_user_by_id(uow, used_by, current_user.id).email
+    except UserNotFoundError:
+        # The invite outlived its user; the page falls back to showing the ID.
+        return ""
 
 
 @admin_bp.route("/invites/<uuid:invite_id>/revoke", methods=["POST"])
