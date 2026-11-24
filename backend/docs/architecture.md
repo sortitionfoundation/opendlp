@@ -224,6 +224,10 @@ to move onto it:
   callback queues.
 - A callback is run at most once: a process that dies between the commit and
   the callback loses it. Nothing here guarantees delivery.
+- `AbstractUnitOfWork` only declares `record`, `after_commit` and `events`. The
+  code is in `UnitOfWorkEvents` (`service_layer/unit_of_work_events.py`); each
+  UnitOfWork implementation owns one, delegates to it, and tells it when the
+  context was entered, committed or rolled back.
 
 Which to reach for:
 
@@ -278,6 +282,7 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 | `report_translation`         | Translates `sortition-algorithms` `RunReport` output to HTML                                       | `sortition-algorithms`, `tabulate`                                          |
 | `repositories`               | Abstract repository interfaces (one per aggregate)                                                 | ABC + domain types                                                          |
 | `unit_of_work`               | `AbstractUnitOfWork` + `SqlAlchemyUnitOfWork` managing session + repositories (incl. `commit_and_reset()` for multiple units of work in one context) | SQLAlchemy                                                                  |
+| `unit_of_work_events`        | `UnitOfWorkEvents`: the events, handler dispatch and after-commit callbacks of one UnitOfWork, which both UnitOfWork implementations delegate to | `handlers` (resolved lazily) |
 | `exceptions`                 | Service-layer exception hierarchy (auth, permissions, tokens, invites, OAuth)                      | —                                                                           |
 | `db_utils`                   | `create_tables`, `drop_tables`, `seed_database` helpers for dev/test                               | SQLAlchemy                                                                  |
 

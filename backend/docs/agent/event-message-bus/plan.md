@@ -105,8 +105,10 @@ Rules for events:
 
 ### 2. Recording and dispatch
 
-Added to `AbstractUnitOfWork` as concrete methods, so the real and fake UoW
-share them:
+Declared on `AbstractUnitOfWork` as abstract methods. The code lives in a
+separate class, `UnitOfWorkEvents` in `service_layer/unit_of_work_events.py`.
+The real and fake UoW each own one and delegate to it, so the abstract class
+stays an interface with no state of its own:
 
 ```python
 def record(self, event: Event) -> None:
@@ -125,6 +127,10 @@ def after_commit(self, callback: Callable[[], None]) -> None:
 - `commit()` runs the pending callbacks after the database commit succeeds.
   Each is wrapped: an exception is logged with `structlog` and the rest still
   run. `rollback()` and a failed commit discard them.
+- `UnitOfWorkEvents` does the dispatch, the depth guard and the callback list.
+  Each UoW tells it where the transaction has got to: `start()` on entering
+  the context, `run_callbacks()` after a commit, `discard_callbacks()` on a
+  rollback. `record` passes the UoW in, so it holds no reference back to it.
 - Callbacks take no `uow` and do no database work. They queue a Celery task or
   touch Redis. Work that needs the database belongs in the task.
 
@@ -236,9 +242,11 @@ Branch `event-message-bus` off `main`.
 1. **Plumbing.** No behaviour change.
    1. `domain/events.py` with `Event`, `RespondentsChanged` and
       `RespondentSchemaChanged`.
-   2. `record`, `after_commit` and `events` on `AbstractUnitOfWork`; callbacks
-      run in `SqlAlchemyUnitOfWork.commit()` and `commit_and_reset()`, with the
-      nothing-pending check; discarded on rollback. Unit tests.
+   2. `UnitOfWorkEvents` holding the dispatch and the callbacks. `record`,
+      `after_commit` and `events` abstract on `AbstractUnitOfWork`, delegated
+      by `SqlAlchemyUnitOfWork`; callbacks run in its `commit()` and
+      `commit_and_reset()`, with the nothing-pending check; discarded on
+      rollback. Unit tests.
    3. `service_layer/handlers.py` with an empty registry, resolved lazily.
       A test that `import opendlp.service_layer.unit_of_work` works from a
       fresh interpreter.

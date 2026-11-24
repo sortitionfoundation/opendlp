@@ -71,9 +71,13 @@ from opendlp.service_layer.repositories import (
     UserSignupSurveyRepository,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork, UnitOfWorkError
+from opendlp.service_layer.unit_of_work_events import UnitOfWorkEvents
 
 if TYPE_CHECKING:
-    from opendlp.service_layer.unit_of_work import EventHandlers
+    from collections.abc import Callable
+
+    from opendlp.domain.events import Event
+    from opendlp.service_layer.unit_of_work_events import EventHandlers
 
 
 class FakeRepository(AbstractRepository):
@@ -1239,7 +1243,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
     """
 
     def __init__(self, store: FakeStore | None = None, event_handlers: "EventHandlers | None" = None) -> None:
-        super().__init__(event_handlers if event_handlers is not None else {})
+        self._events = UnitOfWorkEvents(event_handlers if event_handlers is not None else {})
         self._shared = store is not None
         self._store = store if store is not None else FakeStore()
         # The legacy ``uow.fake_users`` alias is bound once and never withdrawn.
@@ -1264,7 +1268,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
 
     def __enter__(self) -> AbstractUnitOfWork:
         self._bind_repositories(open_context=True)
-        self._start_events()
+        self._events.start()
         if self._shared:
             self._take_snapshot()
         return self
@@ -1277,10 +1281,20 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         # after-commit callbacks go, and any other exit drops them. ``committed``
         # is left alone - it records an explicit commit() by the code under test.
         if exc_type is None:
-            self._run_after_commit_callbacks()
+            self._events.run_callbacks()
         else:
-            self._discard_after_commit_callbacks()
+            self._events.discard_callbacks()
         self._bind_repositories(open_context=False)
+
+    @property
+    def events(self) -> "list[Event]":
+        return self._events.events
+
+    def record(self, event: "Event") -> None:
+        self._events.record(event, self)
+
+    def after_commit(self, callback: "Callable[[], None]") -> None:
+        self._events.after_commit(callback)
 
     def _take_snapshot(self) -> None:
         self._snapshot = {name: list(getattr(self._store, name)._items) for name in _REPO_NAMES}
@@ -1290,7 +1304,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.committed = True
         if self._shared and self._snapshot is not None:
             self._take_snapshot()
-        self._run_after_commit_callbacks()
+        self._events.run_callbacks()
 
     def commit_and_reset(self) -> None:
         """Commit the work so far, then carry on against the same in-memory store.
@@ -1318,7 +1332,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
             for name in _REPO_NAMES:
                 getattr(self._store, name)._items.clear()
         self.committed = False
-        self._discard_after_commit_callbacks()
+        self._events.discard_callbacks()
 
     def expire_all(self) -> None:
         """No-op for in-memory repositories — record the call for assertions."""

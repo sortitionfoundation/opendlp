@@ -1,4 +1,4 @@
-"""ABOUTME: Unit tests for recording domain events on a UnitOfWork
+"""ABOUTME: Unit tests for UnitOfWorkEvents and for the UnitOfWorks that delegate to it
 ABOUTME: Covers handler dispatch, after-commit callbacks and the guards around both"""
 
 import subprocess
@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from opendlp.domain.events import Event, RespondentsChanged, RespondentSchemaChanged
 from opendlp.service_layer import handlers
-from opendlp.service_layer.unit_of_work import MAX_EVENT_CHAIN_DEPTH, SqlAlchemyUnitOfWork, UnitOfWorkError
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork, UnitOfWorkError
+from opendlp.service_layer.unit_of_work_events import MAX_EVENT_CHAIN_DEPTH, EventChainError, UnitOfWorkEvents
 from tests.fakes import FakeUnitOfWork
 
 
@@ -37,6 +38,148 @@ def _sql_uow(event_handlers=None, pending=False):
 
 def _both_kinds(event_handlers=None):
     return [_sql_uow(event_handlers)[0], FakeUnitOfWork(event_handlers=event_handlers)]
+
+
+class TestUnitOfWorkEvents:
+    """The class on its own. ``uow`` is only ever passed through to the handlers, so any object will do."""
+
+    def test_starts_with_no_events(self):
+        assert UnitOfWorkEvents({}).events == []
+
+    def test_a_recorded_event_is_kept(self):
+        events = UnitOfWorkEvents({})
+
+        events.record(Ping(1), object())
+
+        assert events.events == [Ping(1)]
+
+    def test_handlers_are_called_with_the_event_and_the_unit_of_work(self):
+        calls = []
+        uow = object()
+        events = UnitOfWorkEvents({Ping: [lambda event, uow: calls.append((event, uow))]})
+
+        events.record(Ping(1), uow)
+
+        assert calls == [(Ping(1), uow)]
+
+    def test_every_handler_for_the_event_is_called_in_order(self):
+        calls = []
+        events = UnitOfWorkEvents({
+            Ping: [lambda event, uow: calls.append("first"), lambda event, uow: calls.append("second")]
+        })
+
+        events.record(Ping(), object())
+
+        assert calls == ["first", "second"]
+
+    def test_dispatch_is_by_exact_type(self):
+        calls = []
+        events = UnitOfWorkEvents({Event: [lambda event, uow: calls.append(event)]})
+
+        events.record(Ping(), object())
+
+        assert calls == []
+
+    def test_an_event_with_no_handlers_is_still_recorded(self):
+        events = UnitOfWorkEvents({RespondentSchemaChanged: [lambda event, uow: None]})
+
+        events.record(Ping(), object())
+
+        assert events.events == [Ping()]
+
+    def test_a_handler_exception_propagates(self):
+        def broken(event, uow):
+            raise ValueError("handler failed")
+
+        events = UnitOfWorkEvents({Ping: [broken]})
+
+        with pytest.raises(ValueError, match="handler failed"):
+            events.record(Ping(), object())
+
+    def test_handlers_recording_in_a_cycle_are_stopped(self):
+        events = UnitOfWorkEvents({Ping: [lambda event, uow: events.record(Ping(event.number + 1), uow)]})
+
+        with pytest.raises(EventChainError, match="cycle"):
+            events.record(Ping(), object())
+
+        assert len(events.events) == MAX_EVENT_CHAIN_DEPTH + 1
+
+    def test_the_depth_guard_does_not_outlive_the_chain_that_tripped_it(self):
+        events = UnitOfWorkEvents({Ping: [lambda event, uow: events.record(Ping(event.number + 1), uow)]})
+
+        with pytest.raises(EventChainError):
+            events.record(Ping(), object())
+        events.record(RespondentsChanged(uuid.uuid4()), object())
+
+    def test_with_no_handlers_given_the_application_registry_is_used(self, monkeypatch):
+        calls = []
+        monkeypatch.setitem(handlers.EVENT_HANDLERS, Ping, [lambda event, uow: calls.append(event)])
+
+        UnitOfWorkEvents().record(Ping(), object())
+
+        assert calls == [Ping()]
+
+    def test_a_callback_waits_for_run_callbacks(self):
+        calls = []
+        events = UnitOfWorkEvents({})
+
+        events.after_commit(lambda: calls.append("ran"))
+
+        assert calls == []
+        assert events.run_callbacks() is True
+        assert calls == ["ran"]
+
+    def test_run_callbacks_says_when_there_were_none(self):
+        assert UnitOfWorkEvents({}).run_callbacks() is False
+
+    def test_a_callback_runs_once(self):
+        calls = []
+        events = UnitOfWorkEvents({})
+        events.after_commit(lambda: calls.append("ran"))
+
+        events.run_callbacks()
+
+        assert events.run_callbacks() is False
+        assert calls == ["ran"]
+
+    def test_a_discarded_callback_never_runs(self):
+        calls = []
+        events = UnitOfWorkEvents({})
+        events.after_commit(lambda: calls.append("ran"))
+
+        events.discard_callbacks()
+
+        assert events.run_callbacks() is False
+        assert calls == []
+
+    def test_a_failing_callback_is_logged_and_the_rest_still_run(self):
+        calls = []
+        events = UnitOfWorkEvents({})
+
+        def broken():
+            raise RuntimeError("redis is down")
+
+        events.after_commit(broken)
+        events.after_commit(lambda: calls.append("ran"))
+        with structlog.testing.capture_logs() as logs:
+            events.run_callbacks()
+
+        assert calls == ["ran"]
+        assert [(log["event"], log["log_level"], log["error"]) for log in logs] == [
+            ("After-commit callback failed", "error", "redis is down")
+        ]
+
+    def test_start_forgets_events_and_callbacks(self):
+        calls = []
+        events = UnitOfWorkEvents({})
+        events.record(Ping(), object())
+        events.after_commit(lambda: calls.append("ran"))
+
+        events.start()
+
+        assert events.events == []
+        assert events.run_callbacks() is False
+        assert calls == []
 
 
 class TestRecord:
@@ -66,34 +209,6 @@ class TestRecord:
             uow.record(Ping())
 
         assert seen == [[]]
-
-    def test_every_handler_for_the_event_is_called_in_order(self):
-        calls = []
-        uow = FakeUnitOfWork(
-            event_handlers={Ping: [lambda event, uow: calls.append("first"), lambda event, uow: calls.append("second")]}
-        )
-
-        with uow:
-            uow.record(Ping())
-
-        assert calls == ["first", "second"]
-
-    def test_dispatch_is_by_exact_type(self):
-        calls = []
-        uow = FakeUnitOfWork(event_handlers={Event: [lambda event, uow: calls.append(event)]})
-
-        with uow:
-            uow.record(Ping())
-
-        assert calls == []
-
-    def test_an_event_with_no_handlers_is_still_recorded(self):
-        uow = FakeUnitOfWork(event_handlers={RespondentSchemaChanged: [lambda event, uow: None]})
-
-        with uow:
-            uow.record(Ping())
-
-        assert uow.events == [Ping()]
 
     def test_a_handler_exception_reaches_the_caller(self):
         def broken(event, uow):
@@ -126,18 +241,10 @@ class TestRecord:
     def test_handlers_recording_in_a_cycle_are_stopped(self):
         uow = FakeUnitOfWork(event_handlers={Ping: [lambda event, uow: uow.record(Ping(event.number + 1))]})
 
-        with uow, pytest.raises(UnitOfWorkError, match="cycle"):
+        with uow, pytest.raises(EventChainError, match="cycle"):
             uow.record(Ping())
 
         assert len(uow.events) == MAX_EVENT_CHAIN_DEPTH + 1
-
-    def test_the_depth_guard_does_not_outlive_the_chain_that_tripped_it(self):
-        uow = FakeUnitOfWork(event_handlers={Ping: [lambda event, uow: uow.record(Ping(event.number + 1))]})
-
-        with uow:
-            with pytest.raises(UnitOfWorkError):
-                uow.record(Ping())
-            uow.record(RespondentsChanged(uuid.uuid4()))
 
     @pytest.mark.parametrize("uow", _both_kinds({}), ids=["sql", "fake"])
     def test_entering_the_context_again_starts_with_no_events(self, uow):
