@@ -290,7 +290,8 @@ def edit_user_name(user_id: uuid.UUID) -> ResponseReturnValue:
     is that row again: at rest with the saved name, the success flash appended
     to the page's alerts, or still open with the reason under the field (422).
     Without htmx a save goes back to the user's page, and a refusal renders the
-    page with that row open.
+    page with that row open (422). A user who no longer exists sends the admin
+    back to the users list, by HX-Redirect over htmx.
     """
     field = request.form.get("field", "")
     if field not in NAME_FIELDS:
@@ -317,8 +318,11 @@ def edit_user_name(user_id: uuid.UUID) -> ResponseReturnValue:
                     first_name=value if field == "first_name" else None,
                     last_name=value if field == "last_name" else None,
                 )
+        except UserNotFoundError:
+            flash(_("User not found"), "error")
+            return _redirect(url_for("admin.list_users"))
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "Error updating user name", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
             )
             error = _("An error occurred while updating the user")
@@ -333,7 +337,7 @@ def edit_user_name(user_id: uuid.UUID) -> ResponseReturnValue:
     submitted = request.form.get(field, "")
     if _is_htmx():
         return _name_row_response(stored, field, submitted=submitted, error=error), 422
-    return _user_page(user_id, name_errors={field: error}, name_submitted={field: submitted}), 200
+    return _user_page(user_id, name_errors={field: error}, name_submitted={field: submitted}), 422
 
 
 @admin_bp.route("/users/<uuid:user_id>/role", methods=["POST"])
@@ -368,7 +372,9 @@ def edit_user_role(user_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning("Refused role change", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e))
         flash(_("You cannot change your own role"), "error")
     except Exception as e:
-        logger.error("Error changing user role", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e))
+        logger.exception(
+            "Error changing user role", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
         flash(_("An error occurred while updating the user"), "error")
     else:
         flash(_("User '%(email)s' updated successfully", email=user.email), "success")

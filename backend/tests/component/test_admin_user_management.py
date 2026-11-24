@@ -11,6 +11,7 @@ from flask.testing import FlaskClient
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.service_layer.exceptions import UserNotFoundError
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeEmailAdapter, FakeStore, FakeUnitOfWork
 
@@ -353,7 +354,7 @@ class TestAdminUserNameEdit:
         body = response.get_data(as_text=True)
         assert response.status_code == 200
         assert 'id="admin-user-first_name-row"' in body
-        assert "New" in body
+        assert re.search(r">\s*New\s*<", body) is not None
         assert 'id="floating-alerts"' in body and "updated successfully" in body
         assert "<html" not in body
         with FakeUnitOfWork(store=fake_store) as uow:
@@ -407,9 +408,88 @@ class TestAdminUserNameEdit:
         )
 
         body = response.get_data(as_text=True)
-        assert response.status_code == 200
+        assert response.status_code == 422
         assert "<html" in body
-        assert 'aria-invalid="true"' in body
+        assert 'id="last_name-error"' in body
+        assert 'id="first_name-error"' not in body
+        assert "100 characters" in body
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).last_name == "Name"
+
+    def test_a_blank_name_clears_it(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
+        """An emptied field saves an empty name, rather than leaving the name as it was."""
+        user = _seed_user(fake_store, "blank@example.com", GlobalRole.USER, "Gone", "Stays")
+
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name", data={"field": "first_name", "first_name": ""}, headers=HTMX_HEADERS
+        )
+
+        assert response.status_code == 200
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.users.get(user.id)
+            assert stored.first_name == ""
+            assert stored.last_name == "Stays"
+
+    def test_an_unknown_user_over_htmx_redirects_to_the_users_list(self, logged_in_admin: FlaskClient) -> None:
+        """htmx is told to load the users list, rather than swap a redirect into the row."""
+        response = logged_in_admin.post(
+            f"/admin/users/{uuid.uuid4()}/name", data={"field": "first_name", "first_name": "X"}, headers=HTMX_HEADERS
+        )
+
+        assert response.status_code == 200
+        assert response.headers["HX-Redirect"] == "/admin/users"
+        assert logged_in_admin.get("/admin/users").get_data(as_text=True).count("User not found") == 1
+
+    def test_an_unknown_user_without_htmx_redirects_to_the_users_list(self, logged_in_admin: FlaskClient) -> None:
+        response = logged_in_admin.post(
+            f"/admin/users/{uuid.uuid4()}/name", data={"field": "first_name", "first_name": "X"}
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith("/admin/users")
+        assert "HX-Redirect" not in response.headers
+
+    def test_a_user_gone_by_the_save_redirects_to_the_users_list(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A user who goes between the page loading the user and the save is reported as not found."""
+        user = _seed_user(fake_store, "vanish@example.com", GlobalRole.USER, "Van", "Ish")
+
+        def _gone(**kwargs: object) -> User:
+            raise UserNotFoundError(f"User {user.id} not found")
+
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.admin.update_user", _gone)
+        response = logged_in_admin.post(
+            f"/admin/users/{user.id}/name", data={"field": "first_name", "first_name": "X"}, headers=HTMX_HEADERS
+        )
+
+        assert response.headers["HX-Redirect"] == "/admin/users"
+
+    def test_an_unexpected_error_leaves_the_row_open_and_is_logged(
+        self,
+        logged_in_admin: FlaskClient,
+        fake_store: FakeStore,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """A failed save answers 422 with a generic reason, never the exception's text."""
+        user = _seed_user(fake_store, "boom@example.com", GlobalRole.USER, "Keep", "Me")
+
+        def _boom(**kwargs: object) -> User:
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.admin.update_user", _boom)
+        with caplog.at_level("ERROR"):
+            response = logged_in_admin.post(
+                f"/admin/users/{user.id}/name", data={"field": "first_name", "first_name": "X"}, headers=HTMX_HEADERS
+            )
+
+        body = response.get_data(as_text=True)
+        assert response.status_code == 422
+        assert "An error occurred while updating the user" in body
+        assert "database exploded" not in body
+        assert "Error updating user name" in caplog.text
+        assert "Traceback" in caplog.text
 
     def test_an_unknown_field_is_refused(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
         """Only the two names can be posted; the email cannot be changed this way."""
@@ -472,15 +552,53 @@ class TestAdminUserRoleEdit:
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.users.get(user.id).global_role == GlobalRole.USER
 
-    def test_admin_cannot_change_own_role(self, logged_in_admin: FlaskClient, admin_user: User) -> None:
+    def test_admin_cannot_change_own_role(
+        self, logged_in_admin: FlaskClient, admin_user: User, fake_store: FakeStore
+    ) -> None:
         """Posting a new role for yourself is refused, and the page offers no dialog for it."""
         response = logged_in_admin.post(
             f"/admin/users/{admin_user.id}/role", data={"global_role": GlobalRole.USER.name}, follow_redirects=True
         )
         assert b"You cannot change your own role" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(admin_user.id).global_role == GlobalRole.ADMIN
 
         body = logged_in_admin.get(f"/admin/users/{admin_user.id}").get_data(as_text=True)
         assert "change-role-open" not in body
+
+    def test_changing_an_unknown_users_role_says_so(self, logged_in_admin: FlaskClient) -> None:
+        response = logged_in_admin.post(f"/admin/users/{uuid.uuid4()}/role", data={"global_role": GlobalRole.USER.name})
+
+        assert response.status_code == 302
+        assert response.location.endswith("/admin/users")
+        assert "User not found" in logged_in_admin.get("/admin/users").get_data(as_text=True)
+
+    def test_an_unexpected_error_changing_the_role_is_logged(
+        self,
+        logged_in_admin: FlaskClient,
+        fake_store: FakeStore,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """A failed change goes back to the user's page with a generic message, never the exception's text."""
+        user = _seed_user(fake_store, "roleboom@example.com", GlobalRole.USER)
+
+        def _boom(**kwargs: object) -> User:
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.admin.update_user", _boom)
+        with caplog.at_level("ERROR"):
+            response = logged_in_admin.post(
+                f"/admin/users/{user.id}/role", data={"global_role": GlobalRole.ADMIN.name}, follow_redirects=True
+            )
+
+        body = response.get_data(as_text=True)
+        assert "An error occurred while updating the user" in body
+        assert "database exploded" not in body
+        assert "Error changing user role" in caplog.text
+        assert "Traceback" in caplog.text
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(user.id).global_role == GlobalRole.USER
 
     def test_a_regular_user_cannot_change_a_role(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
         user = _seed_user(fake_store, "promote@example.com", GlobalRole.USER)
