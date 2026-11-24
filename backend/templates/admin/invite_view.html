@@ -54,7 +54,7 @@ ABOUTME: An invite that is still active can be revoked from here
                         <dd class="text-body-md flex-1">
                             <a href="{{ url_for('admin.view_user', user_id=invite.used_by) }}"
                                class="underline"
-                               style="color: var(--color-links)">{{ invite.used_by }}</a>
+                               style="color: var(--color-links)">{{ used_by_email or invite.used_by }}</a>
                         </dd>
                     {% endcall %}
                     {% call detail_row(_("Used")) %}
