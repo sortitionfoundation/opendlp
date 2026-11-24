@@ -1,9 +1,9 @@
 """ABOUTME: BDD tests for the public home page served at /
-ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, the demo sits where the layout says and plays, and it fits a phone"""
+ABOUTME: Drives a real browser to check the hero renders, sign-in works from it, the demo sits where the layout says, plays and pauses, and it fits a phone"""
 
 import re
 
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, scenarios, then, when
 
 from .config import Urls
@@ -12,6 +12,16 @@ scenarios("../../features/home-page.feature")
 
 # the class the demo's script sets while it plays
 RUNNING = re.compile(r"(^|\s)is-running(\s|$)")
+
+# What the demo shows at a moment: the screen, where the cursor is, and what has been typed.
+DEMO_STATE = """() => {
+    const root = document.querySelector("[data-hero-demo]");
+    return JSON.stringify({
+        scene: root.querySelector(".hero-demo__scene.is-active")?.dataset.scene,
+        cursor: getComputedStyle(root.querySelector('[data-demo="cursor"]')).transform,
+        typed: [...root.querySelectorAll("[data-type]")].map((input) => input.value),
+    });
+}"""
 
 
 @given("an anonymous visitor opens the home page")
@@ -100,3 +110,48 @@ def demo_at_rest(logged_out_page: Page) -> None:
     expect(demo.locator('[data-scene="projects"]')).to_be_hidden()
     expect(demo.locator('[data-demo="cursor"]')).to_be_hidden()
     expect(demo).not_to_have_class(RUNNING)
+
+
+@then("there should be no button to pause the demo")
+def no_pause_button(logged_out_page: Page) -> None:
+    expect(logged_out_page.locator("[data-hero-demo-toggle]")).to_be_hidden()
+
+
+def _pause_button(page: Page) -> Locator:
+    return page.get_by_role("button", name="Pause the demo")
+
+
+@when("they pause the product demo from the keyboard")
+def pause_demo_from_keyboard(logged_out_page: Page) -> None:
+    toggle = _pause_button(logged_out_page)
+    # Tab from the top of the page until the button has focus, so it is in the tab order.
+    for _ in range(20):
+        logged_out_page.keyboard.press("Tab")
+        # The frame's buttons are pictures of buttons: focus passes them by.
+        assert logged_out_page.evaluate("!document.activeElement.closest('.hero-demo__frame')")
+        if toggle.evaluate("button => button === document.activeElement"):
+            break
+    expect(toggle).to_be_focused()
+    logged_out_page.keyboard.press("Space")
+    expect(toggle).to_have_attribute("aria-pressed", "true")
+
+
+@then("the product demo should hold still")
+def demo_holds_still(logged_out_page: Page) -> None:
+    held = logged_out_page.evaluate(DEMO_STATE)
+    logged_out_page.wait_for_timeout(3_000)
+    assert logged_out_page.evaluate(DEMO_STATE) == held
+
+
+@when("they play the product demo from the keyboard")
+def play_demo_from_keyboard(logged_out_page: Page) -> None:
+    toggle = _pause_button(logged_out_page)
+    expect(toggle).to_be_focused()
+    logged_out_page.keyboard.press("Enter")
+    expect(toggle).to_have_attribute("aria-pressed", "false")
+
+
+@then("the product demo should move on again")
+def demo_moves_on_again(logged_out_page: Page) -> None:
+    held = logged_out_page.evaluate(DEMO_STATE)
+    logged_out_page.wait_for_function(f"(held) => ({DEMO_STATE})() !== held", arg=held, timeout=10_000)

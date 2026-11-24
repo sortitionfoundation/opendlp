@@ -2,6 +2,7 @@
 # ABOUTME: Checks it renders for every visitor, links to the account pages, and offers signed-in users their dashboard
 
 import re
+from html.parser import HTMLParser
 from typing import Any
 
 import flask_babel
@@ -12,6 +13,68 @@ from flask.testing import FlaskClient
 from opendlp.feature_flags import default_dashboard_endpoint
 
 SLOGAN_MSGID = "Bringing %(highlight)s to Sortition"
+
+_VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+
+class DemoToggle(HTMLParser):
+    """The hero demo's pause button: its attributes, the tags inside it, and the attributes of each element around it."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.open: list[tuple[str, dict[str, str | None]]] = []
+        self.attrs: dict[str, str | None] = {}
+        self.ancestors: list[dict[str, str | None]] = []
+        self.inner: list[str] = []
+        self.depth = 0  # how deep inside the button the parser is; 0 outside it
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if self.depth:
+            self.inner.append(self.get_starttag_text() or "")
+            if tag not in _VOID_ELEMENTS:
+                self.depth += 1
+        elif not self.attrs and "data-hero-demo-toggle" in attributes:
+            self.attrs = attributes
+            self.ancestors = [element for _, element in self.open]
+            self.depth = 1
+        if tag not in _VOID_ELEMENTS:
+            self.open.append((tag, attributes))
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        # A self-closing tag, such as an icon's <rect/>, opens nothing.
+        if self.depth:
+            self.inner.append(self.get_starttag_text() or "")
+
+    def handle_endtag(self, tag: str) -> None:
+        if self.depth and tag not in _VOID_ELEMENTS:
+            self.depth -= 1
+        # An element left open, such as a <p> or <li>, is closed by its parent's end tag.
+        for index in range(len(self.open) - 1, -1, -1):
+            if self.open[index][0] == tag:
+                del self.open[index:]
+                break
+
+
+def demo_toggle(html: str) -> DemoToggle:
+    toggle = DemoToggle()
+    toggle.feed(html)
+    assert toggle.attrs, "no element carries data-hero-demo-toggle"
+    return toggle
+
+
+def test_demo_toggle_parser_copes_with_void_unclosed_and_stray_tags() -> None:
+    """The parser behind demo_toggle: a void element inside the button, a <p> closed by its parent's end tag, and a
+    stray end tag with nothing open."""
+    toggle = demo_toggle(
+        '<div class="frame"><p>Intro'
+        '<button type="button" data-hero-demo-toggle aria-pressed="false"><span><img src="pause.svg" alt=""></span>'
+        "</button></div></span>"
+    )
+    assert toggle.attrs["aria-pressed"] == "false"
+    assert toggle.ancestors == [{"class": "frame"}, {}]
+    assert toggle.inner == ["<span>", '<img src="pause.svg" alt="">']
+    assert toggle.open == []
 
 
 def slogan_parts(html: str) -> list[str]:
@@ -79,6 +142,38 @@ class TestHomePage:
             assert f'data-demo="{name}"' in response.text
         assert "&#34;" not in response.text[response.text.index("data-hero-demo") :]
         assert "A short demonstration of OpenDLP" in response.text
+
+    def test_hero_demo_has_a_pause_button_outside_its_hidden_frame(self, client: FlaskClient) -> None:
+        """A toggle button pauses the demo (WCAG 2.2.2), reachable by assistive technology.
+
+        Its name stays the same and aria-pressed carries the state. It sits in the demo but outside the
+        aria-hidden frame, and is hidden until the script plays the demo: without JavaScript the demo
+        rests on its last screen and there is nothing to pause.
+        """
+        response = client.get("/")
+        toggle = demo_toggle(response.text)
+        assert toggle.attrs["type"] == "button"
+        assert toggle.attrs["aria-label"] == "Pause the demo"
+        assert toggle.attrs["aria-pressed"] == "false"
+        assert "hidden" in toggle.attrs
+        assert any("data-hero-demo" in element for element in toggle.ancestors)
+        assert not any(element.get("aria-hidden") == "true" for element in toggle.ancestors)
+        # both icons are drawn; the stylesheet shows the one aria-pressed calls for
+        inner = "".join(toggle.inner)
+        assert "hero-demo__toggle-pause" in inner
+        assert "hero-demo__toggle-play" in inner
+
+    def test_hero_demo_frame_keeps_its_buttons_out_of_the_tab_order(self, client: FlaskClient) -> None:
+        """The frame is a picture, and its buttons are pictures of buttons.
+
+        aria-hidden keeps them from screen readers; without inert they would still take focus, and a
+        keyboard user would land on controls a screen reader says are not there.
+        """
+        response = client.get("/")
+        frame = re.search(r'<div class="hero-demo__frame"[^>]*>', response.text)
+        assert frame is not None
+        assert 'aria-hidden="true"' in frame.group(0)
+        assert re.search(r"\sinert[\s>]", frame.group(0))
 
     def test_footer_links_to_known_destinations(self, client: FlaskClient, app: Flask) -> None:
         response = client.get("/")

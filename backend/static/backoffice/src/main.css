@@ -2081,4 +2081,14 @@ body {
     .hero-demo__pie.is-drawn { transition: --sweep 1.2s ease-out; --sweep: 360deg; }
     .hero-demo.is-fading .hero-demo__app { transition: opacity .6s; opacity: 0; }
     @media (prefers-reduced-motion: reduce) { .hero-demo__pie { --sweep: 360deg; } }
+    /* The pause button: an icon button under the frame's right corner, 44px round so it is easy to tap,
+       on the frame's white with the frame's border and shadow so it reads as the demo's control.
+       Its icon follows aria-pressed - pause while the demo plays, play while it is paused - so the two
+       can never disagree. Hidden by its hidden attribute until the script plays the demo. */
+    .hero-demo .hero-demo__toggle { display: flex; width: 44px; height: 44px; padding: 0; margin: 8px 0 0 auto;
+        border-radius: 9999px; background-color: var(--color-neutral-0); border: 1px solid var(--color-neutral-300);
+        box-shadow: 0 2px 6px rgba(94, 0, 58, 0.12); }
+    .hero-demo .hero-demo__toggle .btn-icon, .hero-demo .hero-demo__toggle .btn-icon svg { width: 20px; height: 20px; }
+    .hero-demo__toggle[aria-pressed="true"] .hero-demo__toggle-pause,
+    .hero-demo__toggle:not([aria-pressed="true"]) .hero-demo__toggle-play { display: none; }
 }
