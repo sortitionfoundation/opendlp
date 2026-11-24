@@ -3,8 +3,11 @@
  * ABOUTME: Closing can navigate to a URL, reload the page, or simply hide the modal
  *
  * A modal whose content marks a control with data-dialog-initial-focus moves
- * focus there when open() is called, and back to the opener when it closes
- * without leaving the page.
+ * focus there when open() is called, and back to the opener whenever it
+ * closes - even a close that then navigates or reloads, where the return is
+ * harmless. Where several controls are marked, as when a radio group passes
+ * the attribute to every radio, the checked one wins, as the radio group
+ * pattern expects; otherwise the first marked control does.
  *
  * Usage:
  *   <div x-data="modal({initialOpen: true, canClose: false, refreshOnClose: true})"
@@ -42,7 +45,9 @@ export function modal(options) {
     open: function () {
       this.isOpen = true;
       var initial =
-        this.$root && this.$root.querySelector("[data-dialog-initial-focus]");
+        this.$root &&
+        (this.$root.querySelector("[data-dialog-initial-focus]:checked") ||
+          this.$root.querySelector("[data-dialog-initial-focus]"));
       if (!initial) return;
       this.returnFocusTo = document.activeElement;
       this.$nextTick(function () {
