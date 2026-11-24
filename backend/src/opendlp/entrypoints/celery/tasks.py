@@ -35,6 +35,7 @@ from opendlp.adapters.sortition_progress import DatabaseProgressReporter
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, ExportTargetError
 from opendlp.bootstrap import bootstrap
 from opendlp.config import RedisCfg
+from opendlp.domain.events import RespondentsChanged
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
@@ -813,9 +814,6 @@ def _internal_write_db_results(
     selected_panels: list[frozenset[str]],
     session_factory: sessionmaker | None = None,
 ) -> RunReport:
-    # Imported here because respondent_auto_export dispatches this module's tasks.
-    from opendlp.service_layer.respondent_auto_export import request_auto_export  # noqa: PLC0415
-
     report = RunReport()
     _append_run_log(
         task_id,
@@ -834,8 +832,8 @@ def _internal_write_db_results(
             if run_record is None or run_record.user_id is None:
                 raise SelectionRunRecordNotFoundError(f"Selection run {task_id} not found or has no user_id")
             uow.respondents.bulk_mark_as_selected(assembly_id, selected_ext_ids, task_id, run_record.user_id)
+            uow.record(RespondentsChanged(assembly_id))
             uow.commit()
-            request_auto_export(uow, assembly_id)
 
         _update_selection_record(
             task_id=task_id,
@@ -1047,7 +1045,7 @@ def auto_export_respondents(
 ) -> bool:
     """Rewrite an assembly's respondent export sheet after its respondents changed.
 
-    Queued by ``respondent_auto_export.request_auto_export`` with a countdown.
+    Queued by ``respondent_auto_export.schedule_auto_export`` with a countdown.
     Holds a per-assembly lock while writing so two runs cannot interleave; if
     the lock is taken, asks for another run and returns. Clears the pending
     key before reading, so a change that lands mid-export schedules a follow-up
@@ -1060,8 +1058,7 @@ def auto_export_respondents(
     lock = r.lock(respondent_auto_export.lock_key(assembly_id), timeout=respondent_auto_export.LOCK_TIMEOUT_SECONDS)
     if not lock.acquire(blocking=False):
         r.delete(respondent_auto_export.pending_key(assembly_id))
-        with bootstrap(session_factory=session_factory) as uow:
-            respondent_auto_export.request_auto_export(uow, assembly_id, redis_client=r)
+        respondent_auto_export.schedule_auto_export(assembly_id, redis_client=r)
         return False
     try:
         r.delete(respondent_auto_export.pending_key(assembly_id))
