@@ -9,7 +9,7 @@ ABOUTME: The Users tab of Site Admin; each row opens the user's page
 {% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/input.html" import input, select %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom, table_cell_link %}
 {% from "backoffice/components/pagination.html" import pagination %}
 {% from "backoffice/components/tag.html" import tag %}
 {% from "backoffice/components/alert.html" import alert %}
@@ -116,11 +116,7 @@ ABOUTME: The Users tab of Site Admin; each row opens the user's page
                                     {% endif %}
                                 {% endcall %}
                                 {{ table_cell(user.created_at|dateformat('medium')) }}
-                                {% call table_cell_custom(align="right") %}
-                                    <a href="{{ url_for('admin.view_user', user_id=user.id) }}"
-                                       class="underline"
-                                       style="color: var(--color-links)">{{ _("View") }}</a>
-                                {% endcall %}
+                                {{ table_cell_link(_("View"), href=url_for('admin.view_user', user_id=user.id), align="right") }}
                             {% endcall %}
                         {% endfor %}
                     {% endcall %}

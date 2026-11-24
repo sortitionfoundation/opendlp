@@ -7,7 +7,7 @@ ABOUTME: An invite that is still active can be revoked from here
 {% from "admin/_role_tag.html" import role_tag %}
 {% from "admin/_invite_status.html" import invite_status %}
 {% from "backoffice/components/section.html" import section %}
-{% from "backoffice/components/detail_row.html" import detail_row %}
+{% from "backoffice/components/detail_row.html" import detail_row, detail_value %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/url_display.html" import copy_button %}
@@ -17,10 +17,6 @@ ABOUTME: An invite that is still active can be revoked from here
 {% block page_header %}
     {{ inner_header(title=_("Invite %(code)s", code=invite.code), back_href=url_for('admin.list_invites_page'), back_label=_("Back to Invites")) }}
 {% endblock %}
-
-{% macro value(text) %}
-    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">{{ text }}</dd>
-{% endmacro %}
 
 {% block page_content %}
     {% set active = invite.is_valid() and not invite.used_by %}
@@ -43,7 +39,7 @@ ABOUTME: An invite that is still active can be revoked from here
                     </dd>
                 {% endcall %}
                 {% if invite.email %}
-                    {% call detail_row(_("Email")) %}{{ value(invite.email) }}{% endcall %}
+                    {% call detail_row(_("Email")) %}{{ detail_value(invite.email) }}{% endcall %}
                 {% endif %}
                 {% call detail_row(_("Role")) %}
                     <dd class="flex-1">{{ role_tag(invite.global_role) }}</dd>
@@ -51,8 +47,8 @@ ABOUTME: An invite that is still active can be revoked from here
                 {% call detail_row(_("Status")) %}
                     <dd class="flex-1">{{ invite_status(invite) }}</dd>
                 {% endcall %}
-                {% call detail_row(_("Created")) %}{{ value(invite.created_at|datetimeformat('long')) }}{% endcall %}
-                {% call detail_row(_("Expires")) %}{{ value(invite.expires_at|datetimeformat('long')) }}{% endcall %}
+                {% call detail_row(_("Created")) %}{{ detail_value(invite.created_at|datetimeformat('long')) }}{% endcall %}
+                {% call detail_row(_("Expires")) %}{{ detail_value(invite.expires_at|datetimeformat('long')) }}{% endcall %}
                 {% if invite.used_by %}
                     {% call detail_row(_("Used by")) %}
                         <dd class="text-body-md flex-1">
@@ -62,7 +58,7 @@ ABOUTME: An invite that is still active can be revoked from here
                         </dd>
                     {% endcall %}
                     {% call detail_row(_("Used")) %}
-                        {{ value(invite.used_at|datetimeformat('long') if invite.used_at else _("Unknown")) }}
+                        {{ detail_value(invite.used_at|datetimeformat('long') if invite.used_at else _("Unknown")) }}
                     {% endcall %}
                 {% endif %}
             </dl>

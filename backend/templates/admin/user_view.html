@@ -10,7 +10,7 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
 {% from "backoffice/components/modal.html" import modal, dialog_body, dialog_footer %}
 {% from "backoffice/components/input.html" import radio_group %}
 {% from "backoffice/components/section.html" import section %}
-{% from "backoffice/components/detail_row.html" import detail_row %}
+{% from "backoffice/components/detail_row.html" import detail_row, detail_value %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/tag.html" import tag %}
 
@@ -19,10 +19,6 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
 {% block page_header %}
     {{ inner_header(title=user.email, back_href=url_for('admin.list_users'), back_label=_("Back to Users")) }}
 {% endblock %}
-
-{% macro value(text) %}
-    <dd class="text-body-md flex-1" style="color: var(--color-body-text);">{{ text }}</dd>
-{% endmacro %}
 
 {% macro role_dialog(user, form) %}
     {% set role = form.global_role.data %}
@@ -58,7 +54,7 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
         {% call section() %}
             <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("User details") }}</h2>
             <dl>
-                {% call detail_row(_("Email")) %}{{ value(user.email) }}{% endcall %}
+                {% call detail_row(_("Email")) %}{{ detail_value(user.email) }}{% endcall %}
                 {{ name_row(user, "first_name",
                 submitted=name_submitted.get("first_name"),
                 error=name_errors.get("first_name", "")) }}
@@ -85,7 +81,7 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
                     </dd>
                 {% endcall %}
                 {% call detail_row(_("Sign-in method")) %}
-                    {{ value(provider if provider else _("Password")) }}
+                    {{ detail_value(provider if provider else _("Password")) }}
                 {% endcall %}
                 {% call detail_row(_("Two-factor authentication")) %}
                     <dd class="text-body-md flex-1 flex flex-col items-start gap-2"
@@ -109,12 +105,12 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
                 {% endcall %}
                 {% call detail_row(_("Data agreement")) %}
                     {% if user.user_data_agreement_agreed_at %}
-                        {{ value(_("Agreed on %(date)s", date=user.user_data_agreement_agreed_at|datetimeformat('long'))) }}
+                        {{ detail_value(_("Agreed on %(date)s", date=user.user_data_agreement_agreed_at|datetimeformat('long'))) }}
                     {% else %}
                         {{ missing(_("Not agreed")) }}
                     {% endif %}
                 {% endcall %}
-                {% call detail_row(_("Account created")) %}{{ value(user.created_at|datetimeformat('long')) }}{% endcall %}
+                {% call detail_row(_("Account created")) %}{{ detail_value(user.created_at|datetimeformat('long')) }}{% endcall %}
             </dl>
         {% endcall %}
 
@@ -125,11 +121,11 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
                     {% for question in survey_questions %}
                         {% call detail_row(question.label) %}
                             {% set answer = question.display_value(survey.answers) %}
-                            {{ value(answer) if answer else missing(_("Not answered")) }}
+                            {{ detail_value(answer) if answer else missing(_("Not answered")) }}
                         {% endcall %}
                     {% endfor %}
                     {% for key in leftover_answer_keys %}
-                        {% call detail_row(key) %}{{ value(survey.answers[key]) }}{% endcall %}
+                        {% call detail_row(key) %}{{ detail_value(survey.answers[key]) }}{% endcall %}
                     {% endfor %}
                 </dl>
             {% else %}
