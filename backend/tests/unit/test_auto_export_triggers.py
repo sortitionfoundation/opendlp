@@ -1,5 +1,5 @@
-# ABOUTME: Checks that every service that changes the respondent export asks for an auto-export
-# ABOUTME: Drives the real services over a FakeUnitOfWork with a fake Redis and a patched Celery dispatch
+# ABOUTME: Checks that every service that changes the respondent export records the event that schedules one
+# ABOUTME: Drives the real services over a FakeUnitOfWork and reads the events it collected
 
 from collections.abc import Iterator
 from datetime import date
@@ -20,7 +20,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, GSheetExportKind, RespondentStatus
-from opendlp.service_layer import respondent_auto_export
+from opendlp.service_layer import handlers, respondent_auto_export
 from opendlp.service_layer.assembly_service import delete_respondents_for_assembly
 from opendlp.service_layer.derivation_service import create_derived_field
 from opendlp.service_layer.registration_submission_service import submit_registration_by_assembly_id
@@ -65,7 +65,7 @@ def dispatch() -> Iterator[MagicMock]:
 
 
 def _seed(uow: FakeUnitOfWork, *, with_fixed_schema: bool = False) -> tuple[User, Assembly]:
-    """An admin and an assembly with auto-export on; the schema is seeded before the config so it fires nothing."""
+    """An admin and an assembly with auto-export on."""
     user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
     uow.users.add(user)
     assembly = Assembly(title="Test Assembly")
@@ -272,13 +272,27 @@ class TestSchemaChangesTriggerAnExport:
         assert uow.events == []
 
 
-class TestNothingFiresWhenAutoExportIsOff:
-    def test_respondent_change_on_a_plain_assembly(self, uow, dispatch):
-        user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        uow.users.add(user)
-        assembly = Assembly(title="No auto export")
-        uow.assemblies.add(assembly)
+class TestRecordedEventsReachTheExport:
+    """One service end to end with the application's handlers; the handler itself is tested on its own."""
 
-        create_respondent(uow, user.id, assembly.id, "R1", {})
+    def test_a_respondent_change_schedules_the_export_once_committed(self, dispatch):
+        with FakeUnitOfWork(event_handlers=handlers.EVENT_HANDLERS) as uow:
+            user, assembly = _seed(uow)
+
+            create_respondent(uow, user.id, assembly.id, "R1", {})
+
+            dispatch.assert_not_called()
+            uow.commit()
+
+        dispatch.assert_called_once()
+
+    def test_a_respondent_change_on_an_assembly_without_auto_export_schedules_nothing(self, dispatch):
+        with FakeUnitOfWork(event_handlers=handlers.EVENT_HANDLERS) as uow:
+            user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+            uow.users.add(user)
+            assembly = Assembly(title="No auto export")
+            uow.assemblies.add(assembly)
+
+            create_respondent(uow, user.id, assembly.id, "R1", {})
 
         dispatch.assert_not_called()
