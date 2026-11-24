@@ -141,7 +141,7 @@ class AbstractUnitOfWork(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def after_commit(self, callback: Callable[[], None]) -> None:
+    def after_commit(self, callback: Callable[[], object]) -> None:
         """Run callback once the work in progress has committed.
 
         For side effects outside the database that must only happen if the
@@ -319,7 +319,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     def record(self, event: Event) -> None:
         self._events.record(event, self)
 
-    def after_commit(self, callback: Callable[[], None]) -> None:
+    def after_commit(self, callback: Callable[[], object]) -> None:
         self._events.after_commit(callback)
 
     def commit(self) -> None:

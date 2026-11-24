@@ -50,7 +50,7 @@ class UnitOfWorkEvents:
         """
         self.events: list[Event] = []
         self._handlers: EventHandlers | None = handlers
-        self._callbacks: list[Callable[[], None]] = []
+        self._callbacks: list[Callable[[], object]] = []
         self._chain_depth = 0
 
     def start(self) -> None:
@@ -88,7 +88,7 @@ class UnitOfWorkEvents:
             self._handlers = handlers.EVENT_HANDLERS
         return self._handlers.get(type(event), ())
 
-    def after_commit(self, callback: Callable[[], None]) -> None:
+    def after_commit(self, callback: Callable[[], object]) -> None:
         """Hold callback until ``run_callbacks`` or ``discard_callbacks``."""
         self._callbacks.append(callback)
 
