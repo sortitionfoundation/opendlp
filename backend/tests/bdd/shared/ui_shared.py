@@ -31,7 +31,7 @@ def _(logged_out_page: Page):
 @given("the user is signed in")
 def _(admin_logged_in_page: Page):
     """the user is signed in."""
-    admin_logged_in_page.goto(Urls.dashboard)
+    admin_logged_in_page.goto(Urls.backoffice_dashboard)
 
 
 @given("there is an assembly created", target_fixture="assembly")
@@ -84,8 +84,9 @@ def _(page: Page):
 
 @when("the user signs out")
 def _(page: Page):
-    """the user signs out."""
-    page.get_by_text("Sign out").click()
+    """the user signs out, from the account menu."""
+    page.get_by_role("button", name="Test Admin").click()
+    page.get_by_role("link", name="Sign out").click()
 
 
 @when("the user accepts the data agreement")

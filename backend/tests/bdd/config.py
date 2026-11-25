@@ -1,5 +1,4 @@
 import re
-import typing
 import urllib.parse
 
 # The value is milliseconds - so 5000 is 5 seconds
@@ -29,9 +28,6 @@ class Urls:
     front_page = f"{base}/"
     login = f"{base}/auth/login"
     register = f"{base}/auth/register"
-    dashboard = f"{base}/dashboard"
-    view_assembly_list = f"{base}/dashboard"
-    create_assembly = f"{base}/assemblies/new"
     admin = f"{base}/admin/"
     admin_users = f"{base}/admin/users"
     admin_invites = f"{base}/admin/invites"
@@ -51,20 +47,6 @@ class Urls:
     # flag, or by `just flask-bdd`, which does not. So waiting for a login to
     # finish means accepting either dashboard.
     any_dashboard = re.compile(rf"^{re.escape(base)}/(backoffice/)?dashboard/?$")
-
-    assembly_urls: typing.ClassVar = {
-        "view_assembly": "{base}/assemblies/{assembly_id}",
-        "view_assembly_data": "{base}/assemblies/{assembly_id}/data",
-        "view_assembly_members": "{base}/assemblies/{assembly_id}/members",
-        "update_assembly": "{base}/assemblies/{assembly_id}/edit",
-        "gsheet_configure": "{base}/assemblies/{assembly_id}/gsheet",
-        "gsheet_select": "{base}/assemblies/{assembly_id}/gsheet_select",
-        "gsheet_replace": "{base}/assemblies/{assembly_id}/gsheet_replace",
-    }
-
-    @classmethod
-    def for_assembly(cls, url_name: str, assembly_id: str) -> str:
-        return cls.assembly_urls[url_name].format(base=cls.base, assembly_id=assembly_id)
 
     @classmethod
     def backoffice_assembly_url(cls, assembly_id: str) -> str:

@@ -28,10 +28,10 @@ def user_logged_in_as_admin(admin_logged_in_page):
 
 
 @given("the user is on a page with paginated content")
-def user_on_paginated_page(logged_in_page, assembly_with_many_runs):
-    """Navigate to a page with pagination (old data page with run history)."""
+def user_on_paginated_page(logged_in_page, assembly_with_many_runs_and_gsheet):
+    """Navigate to a page with pagination (the Selection tab, with its history of runs)."""
     page = logged_in_page
-    page.goto(f"http://localhost:5002/assemblies/{assembly_with_many_runs.id}/data")
+    page.goto(f"http://localhost:5002/backoffice/project/{assembly_with_many_runs_and_gsheet.id}/selection?history=all")
     page.wait_for_load_state("networkidle")
 
 
