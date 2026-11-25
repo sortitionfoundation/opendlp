@@ -55,6 +55,22 @@ describe("confirmDialog", () => {
     expect(state.$refs.opener.focus).toHaveBeenCalled();
   });
 
+  it("finds the opener while the dialog is still there", () => {
+    // Alpine resolves $refs from the element a call came from. cancel() comes
+    // from inside the dialog, and once the dialog is gone that element can no
+    // longer reach any ref - as this $refs, empty while closed, stands in for.
+    const state = buildDialog();
+    const refs = state.$refs;
+    Object.defineProperty(state, "$refs", {
+      get: () => (state.isOpen ? refs : {}),
+    });
+    state.open();
+
+    state.cancel();
+
+    expect(refs.opener.focus).toHaveBeenCalled();
+  });
+
   it("survives a missing ref rather than throwing", () => {
     const state = buildDialog();
     state.$refs = {};

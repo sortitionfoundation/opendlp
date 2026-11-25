@@ -47,9 +47,14 @@ export function confirmDialog() {
 
     cancel: function () {
       var self = this;
+      // Find the opener before the dialog goes. cancel() is called from inside
+      // the dialog (Escape, the backdrop, the safe action), and Alpine resolves
+      // $refs from the element a call came from: once x-if has removed that
+      // element from the page, it can no longer reach the opener.
+      var opener = self.$refs.opener;
       self.isOpen = false;
       self.$nextTick(function () {
-        if (self.$refs.opener) self.$refs.opener.focus();
+        if (opener) opener.focus();
       });
     },
   };

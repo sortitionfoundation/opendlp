@@ -1238,17 +1238,29 @@ def archive_the_project(page: Page):
 def archive_the_project_closing_its_published_page(page: Page, name: str):
     """Archive through the confirmation dialog, ticking the box that closes the published page.
 
-    Everything in the dialog is done from the keyboard: Archive waits for the
-    tick, so Shift+Tab from the focused safe action passes over it to the box.
+    A tick does not outlive the dialog: cancelled with Escape, it gives the
+    focus back to Archive project, and opens again with the box unticked. The
+    rest is done from the keyboard: Archive waits for the tick, so Shift+Tab
+    from the focused safe action passes over it to the box.
     """
-    page.get_by_role("button", name="Archive project", exact=True).click()
+    opener = page.get_by_role("button", name="Archive project", exact=True)
     dialog = page.get_by_role("alertdialog", name="Archive this project?")
-    expect(dialog).to_be_visible()
-    archive = dialog.get_by_role("button", name="Archive project", exact=True)
-    expect(archive).to_be_disabled()
-    expect(dialog.get_by_role("button", name="Keep it active")).to_be_focused()
-    page.keyboard.press("Shift+Tab")
     box = dialog.get_by_role("checkbox", name=f"Close the published registration page '{name}'")
+    archive = dialog.get_by_role("button", name="Archive project", exact=True)
+    keep_it_active = dialog.get_by_role("button", name="Keep it active")
+
+    opener.click()
+    expect(keep_it_active).to_be_focused()
+    box.check()
+    page.keyboard.press("Escape")
+    expect(dialog).to_have_count(0)
+    expect(opener).to_be_focused()
+
+    page.keyboard.press("Enter")
+    expect(keep_it_active).to_be_focused()
+    expect(box).not_to_be_checked()
+    expect(archive).to_be_disabled()
+    page.keyboard.press("Shift+Tab")
     expect(box).to_be_focused()
     page.keyboard.press("Space")
     expect(box).to_be_checked()
