@@ -146,7 +146,6 @@ The entry-point list lives in `esbuild.config.mjs`, keyed by output path:
 | Source                                 | Served as                                  |
 | -------------------------------------- | ------------------------------------------ |
 | `src/js/utilities.js`                  | `static/js/utilities.js`                   |
-| `src/js/alpine-components.js`          | `static/js/alpine-components.js`           |
 | `src/js/alpine-scroll-manager.js`      | `static/js/alpine-scroll-manager.js`       |
 | `src/js/htmx-422-swap.js`              | `static/js/htmx-422-swap.js`               |
 | `src/js/backoffice/alpine-components.js` | `static/backoffice/js/alpine-components.js` |

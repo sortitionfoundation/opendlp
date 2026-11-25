@@ -203,8 +203,6 @@
         <script nonce="{{ csp_nonce }}"
                 src="{{ url_for('static', filename='js/utilities.js', v=static_hashes('js/utilities.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"
-                src="{{ url_for('static', filename='js/alpine-components.js', v=static_hashes('js/alpine-components.js')) }}"></script>
-        <script nonce="{{ csp_nonce }}"
                 defer
                 src="{{ url_for('static', filename='js/vendor/alpine-csp.js', v=static_hashes('js/vendor/alpine-csp.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"

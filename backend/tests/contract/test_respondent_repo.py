@@ -303,22 +303,6 @@ class TestResetAllToPool:
         assert reloaded.comments == []
 
 
-class TestCountNonPool:
-    def test_counts_non_pool(self, respondent_backend: ContractBackend):
-        assembly = respondent_backend.make_assembly()
-        _make_respondent(respondent_backend, assembly.id, external_id="R001", status=RespondentStatus.POOL)
-        _make_respondent(respondent_backend, assembly.id, external_id="R002", status=RespondentStatus.SELECTED)
-        _make_respondent(respondent_backend, assembly.id, external_id="R003", status=RespondentStatus.CONFIRMED)
-
-        assert respondent_backend.repo.count_non_pool(assembly.id) == 2
-
-    def test_returns_zero_when_all_pool(self, respondent_backend: ContractBackend):
-        assembly = respondent_backend.make_assembly()
-        _make_respondent(respondent_backend, assembly.id, external_id="R001")
-
-        assert respondent_backend.repo.count_non_pool(assembly.id) == 0
-
-
 class TestGetAttributeColumns:
     def test_returns_sorted_keys(self, respondent_backend: ContractBackend):
         assembly = respondent_backend.make_assembly()
@@ -551,14 +535,6 @@ class TestIncludeDeletedFiltering:
         _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
 
         assert respondent_backend.repo.count_by_assembly_id(assembly.id, include_deleted=True) == 2
-
-    def test_count_non_pool_excludes_deleted(self, respondent_backend: ContractBackend):
-        assembly = respondent_backend.make_assembly()
-        _make_respondent(respondent_backend, assembly.id, external_id="R-POOL", status=RespondentStatus.POOL)
-        _make_respondent(respondent_backend, assembly.id, external_id="R-SEL", status=RespondentStatus.SELECTED)
-        _make_respondent(respondent_backend, assembly.id, external_id="R-DEAD", status=RespondentStatus.DELETED)
-
-        assert respondent_backend.repo.count_non_pool(assembly.id) == 1
 
     def test_reset_all_to_pool_skips_deleted(self, respondent_backend: ContractBackend):
         assembly = respondent_backend.make_assembly()

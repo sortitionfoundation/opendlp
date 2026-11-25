@@ -149,17 +149,13 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | SVC-ASM-5 | `get_user_accessible_assemblies()` | :white_check_mark: | [H] | [BDD-ASM](../features/backoffice-assembly.feature): *"Dashboard displays create assembly button"* |
 | SVC-GS-1 | `add_assembly_gsheet()` | :white_check_mark: | [H][V] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User can create new gsheet configuration"* |
 | SVC-GS-2 | `update_assembly_gsheet()` | :white_check_mark: | [H][V] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User can update existing configuration"* |
-| SVC-GS-3 | `remove_assembly_gsheet()` | :white_check_mark: | [H][N] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User can delete configuration"* |
 | SVC-GS-4 | `get_assembly_gsheet()` | :white_check_mark: | [H] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User sees readonly view when config exists"* |
 | SVC-TGT-1 | `create_target_category()` | :x: | - | **No user flow** |
 | SVC-TGT-2 | `get_targets_for_assembly()` | :large_orange_diamond: | [H] | [BDD-CSV](../features/backoffice-csv-upload.feature): *"Targets page shows gsheet info"* |
-| SVC-TGT-3 | `update_target_category()` | :x: | - | **No user flow** |
-| SVC-TGT-4 | `delete_target_category()` | :x: | - | **No user flow** |
 | SVC-TGT-5 | `import_targets_from_csv()` | :large_orange_diamond: | [H] | [BDD-CSV](../features/backoffice-csv-upload.feature): *"After uploading targets"* |
 | SVC-TGT-6 | `delete_targets_for_assembly()` | :large_orange_diamond: | [H] | - |
 | SVC-TGT-7 | `add_target_value()` | :x: | - | **No user flow** |
 | SVC-TGT-8 | `update_target_value()` | :x: | - | **No user flow** |
-| SVC-TGT-9 | `delete_target_value()` | :x: | - | **No user flow** |
 | SVC-CSV-1 | `get_or_create_csv_config()` | :white_check_mark: | [H] | [BDD-CSV](../features/backoffice-csv-upload.feature): *"CSV upload section appears"* |
 | SVC-CSV-2 | `update_csv_config()` | :white_check_mark: | [H] | - |
 | SVC-CSV-3 | `get_csv_upload_status()` | :white_check_mark: | [H] | [BDD-CSV](../features/backoffice-csv-upload.feature): *"Both upload buttons are active initially"* |
@@ -173,7 +169,6 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | SVC-RSP-2 | `import_respondents_from_csv()` | :white_check_mark: | [H][V] | [BDD-CSV](../features/backoffice-csv-upload.feature): *"Both tabs enabled after both CSVs uploaded"* |
 | SVC-RSP-3 | `reset_selection_status()` | :x: | - | **No user flow** |
 | SVC-RSP-4 | `get_respondents_for_assembly()` | :large_orange_diamond: | [H] | [BDD-CSV](../features/backoffice-csv-upload.feature): *"Respondents page shows gsheet info"* |
-| SVC-RSP-5 | `count_non_pool_respondents()` | :x: | - | **No user flow** |
 | SVC-RSP-6 | `get_respondent_attribute_columns()` | :x: | - | **No user flow** |
 | SVC-RSP-7 | `get_respondent_attribute_value_counts()` | :x: | - | **No user flow** |
 
@@ -418,7 +413,7 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 |----|-----|--------|----------------|
 | GAP-5 | BO-ASM-6 `update-number-to-select` not tested | Possible regression risk | Add test for HTMX endpoint |
 | GAP-6 | BO-TGT-1, BO-RSP-1 view pages not tested | Rendering issues undetected | Add basic render tests |
-| GAP-7 | SVC-RSP-5,6,7 respondent attribute functions | Attribute handling issues | Add service-level tests |
+| GAP-7 | SVC-RSP-6,7 respondent attribute functions | Attribute handling issues | Add service-level tests |
 | GAP-8 | Large CSV handling | Performance issues undetected | Add load tests |
 
 ### Low Priority Gaps

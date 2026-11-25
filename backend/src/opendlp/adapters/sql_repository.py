@@ -1486,20 +1486,6 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             respondent.reset_to_pool(author_id, selection_run_id)
         return len(rows)
 
-    def count_non_pool(self, assembly_id: uuid.UUID) -> int:
-        return (
-            self.session
-            .query(Respondent)
-            .filter(
-                and_(
-                    orm.respondents.c.assembly_id == assembly_id,
-                    orm.respondents.c.selection_status != RespondentStatus.POOL,
-                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
-                )
-            )
-            .count()
-        )
-
     def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
         respondent = (
             self.session

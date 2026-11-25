@@ -5,6 +5,7 @@ import uuid
 
 import pytest
 
+from opendlp.adapters.database import start_mappers
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
@@ -173,8 +174,17 @@ class TestPermissionRefusals:
             )
 
 
+def _save_one(uow, admin, assembly, edit: TargetCategoryEdit, force_unlink: bool = False) -> None:
+    target_service.save_all_targets(uow, admin.id, assembly.id, [edit], force_unlink=force_unlink)
+
+
 class TestTargetLinkedGuards:
     """Renaming or deleting a category that fields feed needs an explicit force-unlink."""
+
+    @pytest.fixture(autouse=True)
+    def _mapped(self):
+        """A save marks the category's values as changed, which needs the mappers even over fakes."""
+        start_mappers()
 
     @pytest.fixture
     def admin(self, uow):
@@ -211,7 +221,7 @@ class TestTargetLinkedGuards:
         category, _field = self._linked_category(uow, assembly)
 
         with pytest.raises(TargetLinkedError) as excinfo:
-            target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="Sex")
+            _save_one(uow, admin, assembly, TargetCategoryEdit(category_id=category.id, name="Sex"))
 
         (block,) = excinfo.value.blocks
         assert block.action == LinkAction.RENAME
@@ -222,7 +232,7 @@ class TestTargetLinkedGuards:
     def test_rename_with_force_unlink_proceeds_and_unlinks(self, uow, admin, assembly):
         category, field = self._linked_category(uow, assembly)
 
-        target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="Sex", force_unlink=True)
+        _save_one(uow, admin, assembly, TargetCategoryEdit(category_id=category.id, name="Sex"), force_unlink=True)
 
         assert category.name == "Sex"
         assert field.target_category_id is None
@@ -230,8 +240,8 @@ class TestTargetLinkedGuards:
     def test_editing_without_renaming_needs_no_force(self, uow, admin, assembly):
         category, field = self._linked_category(uow, assembly)
 
-        target_service.update_target_category(
-            uow, admin.id, assembly.id, category.id, name="Gender", comment="census 2021"
+        _save_one(
+            uow, admin, assembly, TargetCategoryEdit(category_id=category.id, name="Gender", comment="census 2021")
         )
 
         assert category.comment == "census 2021"
@@ -241,10 +251,16 @@ class TestTargetLinkedGuards:
         category, field = self._linked_category(uow, assembly)
 
         with pytest.raises(TargetLinkedError) as excinfo:
-            target_service.delete_target_category(uow, admin.id, assembly.id, category.id)
+            _save_one(uow, admin, assembly, TargetCategoryEdit(category_id=category.id, name="Gender", deleted=True))
         assert excinfo.value.blocks[0].action == LinkAction.DELETE
 
-        target_service.delete_target_category(uow, admin.id, assembly.id, category.id, force_unlink=True)
+        _save_one(
+            uow,
+            admin,
+            assembly,
+            TargetCategoryEdit(category_id=category.id, name="Gender", deleted=True),
+            force_unlink=True,
+        )
 
         assert uow.target_categories.get(category.id) is None
         assert field.target_category_id is None
@@ -291,7 +307,7 @@ class TestTargetLinkedGuards:
         category, derived, respondent = self._derived_category(uow, assembly)
 
         # No confirmation: nothing is unlinked and nothing is lost.
-        target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="Area")
+        _save_one(uow, admin, assembly, TargetCategoryEdit(category_id=category.id, name="Area"))
 
         assert category.name == "Area"
         assert derived.field_key == "Area"
@@ -303,7 +319,7 @@ class TestTargetLinkedGuards:
         category, derived, _respondent = self._derived_category(uow, assembly)
 
         with pytest.raises(FieldDefinitionConflictError, match="already exists"):
-            target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="postcode")
+            _save_one(uow, admin, assembly, TargetCategoryEdit(category_id=category.id, name="postcode"))
 
         assert category.name == "Region"
         assert derived.field_key == "Region"
@@ -312,13 +328,19 @@ class TestTargetLinkedGuards:
         category, derived, respondent = self._derived_category(uow, assembly)
 
         with pytest.raises(TargetLinkedError) as excinfo:
-            target_service.delete_target_category(uow, admin.id, assembly.id, category.id)
+            _save_one(uow, admin, assembly, TargetCategoryEdit(category_id=category.id, name="Region", deleted=True))
         (block,) = excinfo.value.blocks
         # The confirmation separates what is unlinked from what is deleted
         assert block.field_labels == []
         assert block.deleted_labels == ["Region"]
 
-        target_service.delete_target_category(uow, admin.id, assembly.id, category.id, force_unlink=True)
+        _save_one(
+            uow,
+            admin,
+            assembly,
+            TargetCategoryEdit(category_id=category.id, name="Region", deleted=True),
+            force_unlink=True,
+        )
 
         assert uow.respondent_field_definitions.get(derived.id) is None
         assert respondent.attributes == {"postcode": "E1 6AN"}

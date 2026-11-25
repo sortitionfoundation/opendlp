@@ -764,53 +764,6 @@ class TestAssemblyGSheetOperations:
 
         assert "does not have a Google Spreadsheet configuration" in str(exc_info.value)
 
-    def test_remove_assembly_gsheet_success(self, uow):
-        """Test successful AssemblyGSheet removal."""
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        uow.users.add(admin_user)
-
-        future_date = date.today() + timedelta(days=30)
-        assembly = Assembly(
-            title="Test Assembly",
-            question="Test question?",
-            first_assembly_date=future_date,
-        )
-        uow.assemblies.add(assembly)
-
-        # Add existing gsheet
-        existing_gsheet = AssemblyGSheet(assembly_id=assembly.id, url=VALID_GSHEET_URL)
-        uow.assembly_gsheets.add(existing_gsheet)
-
-        assembly_service.remove_assembly_gsheet(
-            uow=uow,
-            assembly_id=assembly.id,
-            user_id=admin_user.id,
-        )
-
-        assert len(uow.assembly_gsheets.all()) == 0
-
-    def test_remove_assembly_gsheet_not_found(self, uow):
-        """Test AssemblyGSheet removal fails when gsheet doesn't exist."""
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        uow.users.add(admin_user)
-
-        future_date = date.today() + timedelta(days=30)
-        assembly = Assembly(
-            title="Test Assembly",
-            question="Test question?",
-            first_assembly_date=future_date,
-        )
-        uow.assemblies.add(assembly)
-
-        with pytest.raises(GoogleSheetConfigNotFoundError) as exc_info:
-            assembly_service.remove_assembly_gsheet(
-                uow=uow,
-                assembly_id=assembly.id,
-                user_id=admin_user.id,
-            )
-
-        assert "does not have a Google Spreadsheet configuration" in str(exc_info.value)
-
     def test_get_assembly_gsheet_success(self, uow):
         """Test successful AssemblyGSheet retrieval."""
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")

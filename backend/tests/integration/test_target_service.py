@@ -308,65 +308,6 @@ Gender,Female,10,15"""
         assert len(fc) == 0
 
 
-class TestUpdateTargetCategory:
-    def test_update_category_name(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2:
-            updated = target_service.update_target_category(
-                uow2, admin_user.id, test_assembly.id, category.id, name="Sex"
-            )
-        assert updated.name == "Sex"
-
-    def test_update_nonexistent_category_raises(
-        self, admin_user: User, test_assembly: Assembly, postgres_session_factory
-    ):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow, pytest.raises(NotFoundError):
-            target_service.update_target_category(uow, admin_user.id, test_assembly.id, uuid.uuid4(), name="Nope")
-
-    def test_update_category_wrong_assembly_raises(
-        self, admin_user: User, test_assembly: Assembly, other_assembly: Assembly, postgres_session_factory
-    ):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2, pytest.raises(NotFoundError):
-            target_service.update_target_category(uow2, admin_user.id, other_assembly.id, category.id, name="Nope")
-
-    def test_update_category_insufficient_permissions(
-        self, admin_user: User, regular_user: User, test_assembly: Assembly, postgres_session_factory
-    ):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2, pytest.raises(InsufficientPermissions):
-            target_service.update_target_category(uow2, regular_user.id, test_assembly.id, category.id, name="X")
-
-
-class TestDeleteTargetCategory:
-    def test_delete_category(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2:
-            target_service.delete_target_category(uow2, admin_user.id, test_assembly.id, category.id)
-        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow3:
-            cats = target_service.get_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
-        assert len(cats) == 0
-
-    def test_delete_nonexistent_raises(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow, pytest.raises(NotFoundError):
-            target_service.delete_target_category(uow, admin_user.id, test_assembly.id, uuid.uuid4())
-
-
 class TestAddTargetValue:
     def test_add_value_to_category(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
@@ -481,29 +422,6 @@ class TestUpdateTargetValue:
             target_service.update_target_value(
                 uow2, admin_user.id, test_assembly.id, category.id, uuid.uuid4(), "Male", 5, 10
             )
-
-
-class TestDeleteTargetValue:
-    def test_delete_value(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2:
-            cat = target_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
-        value_id = cat.values[0].value_id
-        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow3:
-            updated = target_service.delete_target_value(uow3, admin_user.id, test_assembly.id, category.id, value_id)
-        assert len(updated.values) == 0
-
-    def test_delete_nonexistent_value_raises(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2, pytest.raises(NotFoundError):
-            target_service.delete_target_value(uow2, admin_user.id, test_assembly.id, category.id, uuid.uuid4())
 
 
 class TestDeleteTargetsForAssembly:

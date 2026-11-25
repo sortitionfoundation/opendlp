@@ -155,7 +155,7 @@ the copy step is wired into the build.
 For complex logic, use `Alpine.data()` components in external JS:
 
 ```javascript
-// static/js/alpine-components.js
+// src/js/backoffice/alpine-components.js
 document.addEventListener("alpine:init", () => {
   Alpine.data("teamSelector", (initial) => ({
     selectedTeam: initial || "other",
