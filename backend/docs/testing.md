@@ -124,10 +124,10 @@ in `tests/e2e/` or `tests/integration/`), anything dispatching Celery, or
 anything asserting real cross-process visibility.
 
 ```python
-# tests/component/test_assembly_crud.py drives the real routes over a FakeStore
-def test_create_assembly_success(logged_in_admin, fake_store):
-    response = logged_in_admin.post("/assemblies/new", data={...})
-    assert response.status_code == 302
+# tests/component/test_create_project_dialog.py drives the real routes over a FakeStore
+def test_saving_creates_the_project(logged_in_admin, fake_store):
+    response = logged_in_admin.post("/backoffice/project/new/save", data={...}, headers={"HX-Request": "true"})
+    assert response.status_code == 200
     # assert on the real fake-store state, not on a mock
 ```
 

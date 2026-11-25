@@ -25,12 +25,10 @@ English discards the translation in every language — see the i18n section of
 Write new strings to this guide; fix old drift in a deliberate pass of its own,
 one term at a time, as was done for Google Sheets.
 
-**The legacy screens are out of scope.** The templates under `main/` (apart from
-the home page), `targets/`, `respondents/`, `db_selection/` and `gsheets/`, served
-by the `*_legacy` blueprints, are due to be retired. Much of the drift below
-lives there — the Title Case headings, the old "category" vocabulary — and is not
-worth a retranslation to fix. This guide is for the backoffice, the public
-registration pages and the emails.
+**The legacy screens are gone.** The signed-in GOV.UK pages under
+`/assemblies/...` held much of the old drift — the Title Case headings, the old
+"category" vocabulary — and were deleted rather than reworded. This guide is for
+the backoffice, the public registration pages and the emails.
 
 The sections below are settled. Things the English has not yet made up its mind
 about are listed under [Still open](#still-open) at the foot, each with a

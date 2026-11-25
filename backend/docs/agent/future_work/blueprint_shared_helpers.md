@@ -19,13 +19,12 @@ def _is_htmx() -> bool:
     return request.headers.get("HX-Request") == "true"
 ```
 
-Defined, identically, in `data_source.py`, `db_selection_backoffice.py`,
-`profile.py`, `project_details.py`, `respondent_field_schema.py`,
-`target_sources.py`, `targets.py` and `targets_legacy.py` - about 70 call sites
-between them. `gsheets.py:1143` inlines the same check (inverted) rather than
+Defined, identically, in `admin.py`, `data_source.py`,
+`db_selection_backoffice.py`, `profile.py`, `project_details.py`,
+`respondent_field_schema.py`, `target_sources.py` and `targets.py`. `gsheets.py:1143` inlines the same check (inverted) rather than
 defining it.
 
-### 2. The HTMX-aware redirect - three named copies, three inlined
+### 2. The HTMX-aware redirect - three named copies, one inlined
 
 ```python
 def _redirect(location: str) -> ResponseReturnValue:
@@ -45,8 +44,6 @@ def _redirect(location: str) -> ResponseReturnValue:
 The same branch is written out inline in:
 
 - `respondent_field_schema.py:772` (`_target_sources_redirect`)
-- `targets_legacy.py:368` (delete of a linked target)
-- `gsheets_legacy.py:782` (always HTMX there, so only the header half)
 
 This is the one with real risk. A plain 302 in answer to an HTMX request is
 followed by htmx and the whole target page is swapped into the fragment that
@@ -68,28 +65,17 @@ This is how an HTMX response that is not a full page carries a flash. A
 knowing the macro's path. Low risk, small win; worth doing alongside 1 and 2
 because the next HTMX dialog will need it too.
 
-### 4. `_can_manage(assembly_id)` - two copies that have already drifted
+### 4. `_can_manage(assembly_id)` - one copy, and better not shared
 
-`targets.py:91` and `targets_legacy.py:55` both load the user and the assembly
-in their own UnitOfWork and call `can_manage_assembly`. The `targets_legacy.py`
-copy wraps it in `except Exception: pass`, so any failure - a database error
-included - reads as "cannot manage". `tests/e2e/test_service_error_propagation.py`
-(`test_permission_check_failure_is_not_swallowed`) records that `targets.py`
-had the same bug and was fixed; the legacy copy was not.
+`targets.py:91` loads the user and the assembly in its own UnitOfWork and calls
+`can_manage_assembly`. There was a second copy in the legacy targets blueprint,
+which had drifted (it swallowed every exception as "cannot manage"); it went
+with the legacy pages.
 
-Two ways to go:
-
-- **Leave both alone.** `targets_legacy.py` is on the list in
-  [delete_legacy_pages.md](delete_legacy_pages.md), and the drift dies with it.
-  Fix the swallowed exception in place if the legacy page is going to live a
-  while.
-- **Do not share it.** Other routes (`backoffice.py:113`, `gsheets.py:383`,
-  `respondents.py:606`) call `can_manage_assembly` on an assembly they already
-  loaded in the request's one UnitOfWork, which is the better pattern. A shared
-  `_can_manage` would encourage the second-UnitOfWork version.
-
-Recommendation: not a candidate for the shared module. Fix or delete the legacy
-copy.
+Do not share what is left. Other routes (`backoffice.py:113`, `gsheets.py:383`,
+`respondents.py:606`) call `can_manage_assembly` on an assembly they already
+loaded in the request's one UnitOfWork, which is the better pattern. A shared
+`_can_manage` would encourage the second-UnitOfWork version.
 
 ### 5. Refusals that go to the dashboard - covered elsewhere
 
@@ -112,12 +98,6 @@ issue.
   `backoffice.view_assembly`, but with different arguments (query params vs the
   `#team` anchor). `entrypoints/data_source_urls.py` already holds the one that
   is shared. A two-line wrapper over `url_for` gains nothing.
-- **`HX-Refresh` when a task finishes** - four copies of the same three lines in
-  the progress routes of `db_selection_legacy.py` and `gsheets_legacy.py`. Real
-  duplication, but all in legacy pages due for deletion.
-- **`_parse_comma_list`** (`db_selection_legacy.py:460`) and its inline twin at
-  `db_selection_backoffice.py:498`. Legacy again; the backoffice one could call a
-  shared helper, but it is one line.
 - **`dev.py`'s `_handle_*` functions** - many, but each is one dev service, not a
   copy of another.
 
@@ -141,8 +121,7 @@ def render_flashes_oob() -> str: ...
 ```
 
 Then, file by file, delete the local copy and import the shared one, and
-replace the inlined versions in `respondent_field_schema.py`, `gsheets.py`, and
-(if not deleted first) `targets_legacy.py` and `gsheets_legacy.py`.
+replace the inlined versions in `respondent_field_schema.py` and `gsheets.py`.
 
 `_settings_redirect` should go entirely - its name implies something
 settings-specific that is not there. `_settings_return_url` beside it is

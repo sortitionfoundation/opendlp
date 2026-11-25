@@ -59,8 +59,5 @@ does with `error_count`. It does not need the rows themselves.
    organiser can then be built from. That is the larger change, and it would
    also let the messages be translated, which they are not today.
 
-`respondents_legacy.py` shows the same strings in a flash message and does not
-log them, so it needs nothing.
-
 A test that uploads a file with a duplicate ID and asserts the ID is absent
 from the captured log output would hold the fix in place.
