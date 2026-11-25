@@ -43,6 +43,9 @@ class User:
         totp_enabled_at: datetime | None = None,
         email_confirmed_at: datetime | None = None,
         sessions_invalidated_at: datetime | None = None,
+        user_data_agreement_version: str | None = None,
+        terms_agreed_at: datetime | None = None,
+        terms_version: str | None = None,
     ):
         validate_email(email)
 
@@ -59,7 +62,12 @@ class User:
         self.global_role = global_role
         self.created_at = created_at or datetime.now(UTC)
         self.is_active = is_active
+        # What the user agreed to, when, and which version of each document. A
+        # user who agreed before versions were recorded has a time and no version.
         self.user_data_agreement_agreed_at = user_data_agreement_agreed_at
+        self.user_data_agreement_version = user_data_agreement_version
+        self.terms_agreed_at = terms_agreed_at
+        self.terms_version = terms_version
         self.totp_secret_encrypted = totp_secret_encrypted
         self.totp_enabled = totp_enabled
         self.totp_enabled_at = totp_enabled_at
@@ -176,9 +184,15 @@ class User:
                 return role.role
         return None
 
-    def mark_data_agreement_agreed(self) -> None:
-        """Mark that the user has agreed to the data agreement at the current time."""
+    def mark_data_agreement_agreed(self, version: str) -> None:
+        """Record that the user agreed to this version of the data agreement, now."""
         self.user_data_agreement_agreed_at = datetime.now(UTC)
+        self.user_data_agreement_version = version
+
+    def mark_terms_agreed(self, version: str) -> None:
+        """Record that the user agreed to this version of the Terms and Conditions, now."""
+        self.terms_agreed_at = datetime.now(UTC)
+        self.terms_version = version
 
     def enable_totp(self, encrypted_secret: str) -> None:
         """Enable TOTP 2FA with encrypted secret."""
@@ -233,6 +247,9 @@ class User:
             totp_enabled_at=self.totp_enabled_at,
             email_confirmed_at=self.email_confirmed_at,
             sessions_invalidated_at=self.sessions_invalidated_at,
+            user_data_agreement_version=self.user_data_agreement_version,
+            terms_agreed_at=self.terms_agreed_at,
+            terms_version=self.terms_version,
         )
         detached_user.assembly_roles = [r.create_detached_copy() for r in self.assembly_roles]
         return detached_user

@@ -101,6 +101,46 @@ class TestUserORM:
 
         assert retrieved_user.sessions_invalidated_at is None
 
+    def test_what_the_user_agreed_to_round_trips(self, postgres_session: Session):
+        """The time and version of each agreement survive the database."""
+        user = User(
+            email="agreed@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed_password",  # pragma: allowlist secret
+        )
+        user.mark_terms_agreed("2026-12")
+        user.mark_data_agreement_agreed("4")
+        terms_agreed_at = user.terms_agreed_at
+
+        postgres_session.add(user)
+        postgres_session.commit()
+        postgres_session.expunge_all()
+
+        retrieved_user = postgres_session.query(User).filter_by(email="agreed@example.com").first()
+
+        assert retrieved_user.terms_agreed_at == terms_agreed_at
+        assert retrieved_user.terms_agreed_at.tzinfo is not None
+        assert retrieved_user.terms_version == "2026-12"
+        assert retrieved_user.user_data_agreement_agreed_at is not None
+        assert retrieved_user.user_data_agreement_version == "4"
+
+    def test_a_user_who_agreed_to_nothing_has_no_versions(self, postgres_session: Session):
+        user = User(
+            email="agreed-nothing@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed_password",  # pragma: allowlist secret
+        )
+
+        postgres_session.add(user)
+        postgres_session.commit()
+        postgres_session.expunge_all()
+
+        retrieved_user = postgres_session.query(User).filter_by(email="agreed-nothing@example.com").first()
+
+        assert retrieved_user.terms_agreed_at is None
+        assert retrieved_user.terms_version is None
+        assert retrieved_user.user_data_agreement_version is None
+
     def test_user_oauth_fields(self, postgres_session: Session):
         """Test that OAuth fields are properly stored and retrieved."""
         user = User(

@@ -310,6 +310,29 @@ HELP_SITE_COOKIES=https://docs.democraticlottery.org/data-and-legal/cookies/
 KNOWLEDGE_HUB_URL=https://docs.democraticlottery.org/
 ```
 
+### Versions of the Terms and Conditions and the Data Agreement
+
+Signing up agrees to the Terms and Conditions and the data agreement with one
+tickbox. Each new user is recorded with the time they agreed and the version of
+each document in force then, so that once a document changes it is clear who
+agreed to which text. See
+[What sign-up records](personal-data.md#what-sign-up-records).
+
+```bash
+# The version of the Terms and Conditions that sign-up records (default: 1)
+# TERMS_VERSION=1
+
+# The version of the data agreement that sign-up records (default: 1)
+# DATA_AGREEMENT_VERSION=1
+```
+
+A version is a short label of at most 50 characters; a blank value counts as
+unset. Raise a document's version when its published text changes, for example
+to `2`, at the time the new text goes up: people who sign up from then on are
+recorded with the new version, and everyone before keeps the version they agreed
+to. Version 1 is the text in force when sign-up began recording versions.
+Raising a version does not ask anyone who already has an account to agree again.
+
 ### Session and cookie lifetimes
 
 `SESSION_COOKIE_*` and `REMEMBER_COOKIE_*` control the only two cookies OpenDLP sets.
