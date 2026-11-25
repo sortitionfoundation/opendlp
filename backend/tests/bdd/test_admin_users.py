@@ -49,51 +49,43 @@ def _(normal_user: User, assembly: Assembly, assembly_user_role_creator: Callabl
 @step("the non-admin user cannot see the assembly")
 def _(normal_logged_in_page: Page, assembly: Assembly):
     """the non-admin user cannot see the assembly."""
-    normal_logged_in_page.goto(Urls.dashboard)
+    normal_logged_in_page.goto(Urls.backoffice_dashboard)
+    expect(normal_logged_in_page.get_by_role("heading", name="Your projects", level=1)).to_be_visible()
     expect(normal_logged_in_page.locator("main")).not_to_contain_text(assembly.title)
 
 
 @when("the admin adds them to the assembly")
 def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
-    """the admin adds them to the assembly."""
-    admin_logged_in_page.goto(Urls.for_assembly("view_assembly_members", str(assembly.id)))
-    # Search for the normal user by email using the HTMX search input
-    search_input = admin_logged_in_page.locator("#user_search")
-    search_input.type(normal_user.email)
-    # Wait for search results to appear
-    admin_logged_in_page.wait_for_selector(".search-result-item")
-    # Click on the matching user result
-    admin_logged_in_page.get_by_role("button", name=re.compile(normal_user.email)).first.click()
-    # Select the default role (Confirmation Caller)
-    admin_logged_in_page.get_by_label("Confirmation Caller — Can call confirmations for selected participants").check()
-    # Submit the form
-    admin_logged_in_page.get_by_role("button", name="Add User to Assembly").click()
-    # Wait for the success message
-    expect(admin_logged_in_page.locator(".govuk-notification-banner")).to_contain_text("added to assembly")
+    """the admin adds them to the assembly, from the Team card of its details page."""
+    page = admin_logged_in_page
+    page.goto(Urls.backoffice_assembly_url(str(assembly.id)))
+    team = page.locator("#team")
+    team.get_by_role("button", name="Add a team member", exact=True).click()
+    dialog = page.get_by_role("dialog", name="Add a team member")
+    dialog.locator("#user_id_search").fill("normal")
+    dialog.get_by_role("option", name=normal_user.email).click()
+    dialog.locator("#team-member-role").select_option(value="CONFIRMATION_CALLER")
+    with page.expect_response(lambda response: response.url.endswith("/team/add")):
+        dialog.get_by_role("button", name="Add", exact=True).click()
+    expect(team.get_by_role("row").filter(has_text=normal_user.email)).to_be_visible()
 
 
 @when("the admin removes them from the assembly")
 def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
-    """the admin removes them from the assembly."""
-    admin_logged_in_page.goto(Urls.for_assembly("view_assembly_members", str(assembly.id)))
-    # Find the remove button for the normal user in the team members table
-    # TODO: consider matching by user if we ever have more than one
-    remove_button = admin_logged_in_page.get_by_role("button", name="Remove").first
-    # Set up the dialog handler BEFORE clicking to catch the confirmation dialog
-    admin_logged_in_page.on("dialog", lambda dialog: dialog.accept())
-    # Click the remove button (it will show a confirmation dialog which we'll accept)
-    remove_button.click()
-    # Wait for the success message
-    expect(admin_logged_in_page.locator(".govuk-notification-banner")).to_contain_text("removed from assembly")
+    """the admin removes them from the assembly, from the Team card of its details page."""
+    page = admin_logged_in_page
+    page.goto(Urls.backoffice_assembly_url(str(assembly.id)))
+    team = page.locator("#team")
+    page.once("dialog", lambda dialog: dialog.accept())
+    team.get_by_role("row").filter(has_text=normal_user.email).get_by_role("button", name="Remove").click()
+    expect(team).not_to_contain_text(normal_user.email)
 
 
 @then("the non-admin user can see the assembly")
 def _(normal_logged_in_page: Page, assembly: Assembly):
     """the non-admin user can see the assembly."""
-    # Refresh the page to see the updated assembly list (user was just added)
-    # and as we just switched users, we'll be back at the dashboard page
-    normal_logged_in_page.goto(Urls.for_assembly("view_assembly", str(assembly.id)))
-    expect(normal_logged_in_page.locator("main")).to_contain_text(assembly.title)
+    normal_logged_in_page.goto(Urls.backoffice_assembly_url(str(assembly.id)))
+    expect(normal_logged_in_page.get_by_role("heading", name=assembly.title, level=1)).to_be_visible()
 
 
 def _disable_account(page: Page, user: User) -> None:

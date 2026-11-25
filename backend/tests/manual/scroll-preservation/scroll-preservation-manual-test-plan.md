@@ -232,7 +232,8 @@ Open browser developer console (F12) for verification commands:
 **Precondition:** User on page with very long content
 
 **Steps:**
-1. Navigate to assembly data page with many selection run records
+1. Navigate to the project's Selection tab with many selection run records
+   (`/backoffice/project/<assembly-id>/selection?history=all`)
    (Or use TC-SP-04 step 3 with `height: '5000px'`)
 2. Scroll to bottom: `window.scrollTo(0, 4500)`
 3. Verify position: `window.scrollY`
@@ -312,11 +313,11 @@ Open browser developer console (F12) for verification commands:
 
 ### TC-SP-14: Pagination with Scroll Preservation
 
-**Precondition:** Assembly with multiple selection run records (old data page)
+**Precondition:** Project with more than 15 selection run records
 
 **Steps:**
-1. Navigate to `http://localhost:5000/assemblies/<assembly-id>/data`
-2. Scroll down to "Selection Run History" section
+1. Navigate to `http://localhost:5000/backoffice/project/<assembly-id>/selection?history=all`
+2. Scroll down to the selection history
 3. Note exact scroll position
 4. Click "Next" or page number in pagination
 5. Verify scroll restoration
@@ -327,7 +328,7 @@ Open browser developer console (F12) for verification commands:
 - [ ] URL clean after restoration
 - [ ] User doesn't lose their place
 
-**Note:** Pagination links need to use `$preserveScroll()` - this will be implemented in Phase 5 of Selection Tab
+**Note:** The pagination component preserves scroll by default (`x-scroll-preserve-links`).
 
 ---
 

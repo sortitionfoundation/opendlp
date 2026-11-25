@@ -554,20 +554,21 @@ def _is_admin_signed_in(page: Page) -> bool:
     """
     Check if the user signed in is an admin
 
-    - check for site admin link
+    - check for site admin link, which only an admin's page carries
     - assumes that we are on a signed in page already
     """
-    admin_link = page.get_by_role("link", name="Site Admin")
-    return admin_link.is_visible()
+    # the link sits in the account menu, which is closed, so look for it in the
+    # page rather than on screen
+    return page.locator("a", has_text="Site Admin").count() > 0
 
 
 @pytest.fixture
 def admin_logged_in_page(page: Page, admin_user):
     """Page with admin user logged in"""
     # we might already be logged in - try
-    page.goto(Urls.dashboard)
+    page.goto(Urls.backoffice_dashboard)
     page.wait_for_load_state()
-    if page.url == Urls.dashboard:
+    if page.url == Urls.backoffice_dashboard:
         if not _is_admin_signed_in(page):
             page.context.clear_cookies()
             _login(page, admin_user.email, ADMIN_PASSWORD)
@@ -580,9 +581,9 @@ def admin_logged_in_page(page: Page, admin_user):
 def normal_logged_in_page(page: Page, normal_user):
     """Page with normal user logged in"""
     # we might already be logged in - try
-    page.goto(Urls.dashboard)
+    page.goto(Urls.backoffice_dashboard)
     page.wait_for_load_state()
-    if page.url == Urls.dashboard:
+    if page.url == Urls.backoffice_dashboard:
         if _is_admin_signed_in(page):
             page.context.clear_cookies()
             _login(page, normal_user.email, NORMAL_PASSWORD)
@@ -673,32 +674,6 @@ def existing_assembly(assembly_creator):
 def assembly_with_gsheet(assembly_gsheet_creator):
     """Create assembly with Google Sheet configured"""
     assembly, _gsheet = assembly_gsheet_creator(title="Assembly with GSheet")
-    return assembly
-
-
-@pytest.fixture
-def assembly_with_many_runs(test_database, admin_user, assembly_creator):
-    """Create assembly with many selection run records for testing pagination"""
-    assembly = assembly_creator(title="Assembly with Many Runs")
-    session_factory = test_database
-    uow = SqlAlchemyUnitOfWork(session_factory)
-
-    # Create 100 selection run records to test pagination
-    with uow:
-        for i in range(100):
-            run_record = SelectionRunRecord(
-                assembly_id=assembly.id,
-                task_id=uuid.uuid4(),
-                status=SelectionRunStatus.COMPLETED if i % 3 == 0 else SelectionRunStatus.FAILED,
-                task_type=SelectionTaskType.SELECT_GSHEET if i % 2 == 0 else SelectionTaskType.LOAD_GSHEET,
-                user_id=admin_user.id,
-                comment=f"Test run {i}",
-                created_at=datetime.now(UTC) - timedelta(hours=i),
-                completed_at=datetime.now(UTC) - timedelta(hours=i) + timedelta(minutes=5),
-            )
-            uow.selection_run_records.add(run_record)
-        uow.commit()
-
     return assembly
 
 

@@ -538,28 +538,46 @@ goes to `future_work/`, the rest are left.
 
 Each step leaves the suite green, so each is a commit (or a few).
 
-1. **Baseline.** `just test-nobdd-cov`; save the per-file coverage in the
+1. [x] **Baseline.** `just test-nobdd-cov`; save the per-file coverage in the
    scratchpad. `just build-all`, then run the BDD suite once to confirm a clean
    start.
-2. **Convert BDD** (section 5) while the legacy pages still exist: step files,
+2. [x] **Convert BDD** (section 5) while the legacy pages still exist: step files,
    `tests/bdd/config.py` and `conftest.py` move to backoffice URLs; add the
    database implementation of `selection.feature`. Feature files unchanged.
-3. **Repoint live callers** (section 2.2): `admin.py`, footer links, service
+3. [ ] **Repoint live callers** (section 2.2): `admin.py`, footer links, service
    docs prose. Replace `default_dashboard_endpoint()` with the literal.
-4. **Port tests and add e2e smokes**: do the deletion on a throwaway branch,
+4. [ ] **Port tests and add e2e smokes**: do the deletion on a throwaway branch,
    diff coverage, come back and write what the diff asks for (4.1, 4.3).
-5. **Delete** the four `*_legacy` blueprints, the nine `main` routes, the five
+5. [ ] **Delete** the four `*_legacy` blueprints, the nine `main` routes, the five
    template folders and the wholly-legacy test files; edit the mixed test
    files; add the two redirects, their tests and the retirement test.
-6. **Remove flags**: helpers in `feature_flags.py`, `env.example`,
+6. [ ] **Remove flags**: helpers in `feature_flags.py`, `env.example`,
    `TEST_FEATURE_FLAGS` entries, `test_dashboard_feature_flags.py`.
-7. **Orphans** (section 2.4, section 6 JavaScript): forms, service functions,
+7. [ ] **Orphans** (section 2.4, section 6 JavaScript): forms, service functions,
    the repository method, `team-selector.js` and its bundle. Second coverage
    diff to confirm nothing live lost cover.
-8. **Catalogues and baseline**: regenerate translations, `.secrets.baseline`.
-9. **Docs** (section 6), including the two new `future_work/` notes.
-10. `just check`, then `just test` in full (serial, output to a file).
-11. **Blueprint reorganisation** (section 7) — separate PR.
+8. [ ] **Catalogues and baseline**: regenerate translations, `.secrets.baseline`.
+9. [ ] **Docs** (section 6), including the two new `future_work/` notes.
+10. [ ] `just check`, then `just test` in full (serial, output to a file).
+11. [ ] **Blueprint reorganisation** (section 7) — separate PR.
+
+Notes from step 2:
+
+- Baseline: 8,375 non-BDD tests passed, 96.52% coverage.
+- The database run of `selection.feature` fits the shared step text. "I check
+  the data" is a test selection, since the Selection tab offers no separate
+  check for data held in OpenDLP (the `selection/db/check` route exists but
+  nothing in the interface posts to it). "I am asked for the number to select"
+  is the dialog's "1 place is to be filled", with the number field behind
+  "Change the number of replacements".
+- On the Google Sheets replacement path, a finished check's messages are not in
+  the replacement dialog, which moves straight to the number field. The step
+  reads them from the run in the selection history, in a second tab.
+- `scroll-preservation.feature`: the pagination scenario now uses the Selection
+  tab's history and passes headless. Three of the other four scenarios fail
+  headless, as they did before; the file stays skipped in CI.
+- "the user signs out" opens the account menu first: the backoffice keeps
+  "Sign out" inside it.
 
 I stop and ask, rather than decide, if any of these turns up:
 
