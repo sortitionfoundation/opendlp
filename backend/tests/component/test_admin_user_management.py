@@ -3,6 +3,7 @@
 
 import re
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from flask import Flask
@@ -13,6 +14,7 @@ from opendlp.domain.users import MAX_NAME_LENGTH, User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.exceptions import UserNotFoundError
 from opendlp.service_layer.user_service import create_user
+from tests.component.conftest import expected_timestamp
 from tests.fakes import FakeEmailAdapter, FakeStore, FakeUnitOfWork
 
 # What htmx sends with every request it makes, and what the routes answer differently.
@@ -250,6 +252,83 @@ class TestAdminUserView:
         assert "Enable this account?" in body
         assert "request a password reset" in body
         assert f'<form method="post" action="/admin/users/{user.id}/enable">' in body
+
+
+def _agreement_value(body: str, term: str) -> str:
+    """The text of one row's value on the user page, found by its term."""
+    match = re.search(rf"<dt[^>]*>{term}</dt>\s*<dd[^>]*>([^<]*)</dd>", body)
+    assert match is not None, f"no {term} row"
+    return match.group(1).strip()
+
+
+class TestAdminUserAgreements:
+    """The user page says when they agreed to each document, and which version."""
+
+    def test_a_user_who_signed_up_shows_both_documents_with_their_versions(
+        self, app: Flask, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        user = _seed_user(fake_store, "agreed@example.com", GlobalRole.ORGANISER)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.users.get(user.id)
+            stored.mark_terms_agreed("2")
+            stored.mark_data_agreement_agreed("5")
+            uow.commit()
+            terms_at, data_at = stored.terms_agreed_at, stored.user_data_agreement_agreed_at
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+
+        assert _agreement_value(body, "Terms and conditions") == (
+            f"Agreed on {expected_timestamp(app, terms_at)}, version 2"
+        )
+        assert _agreement_value(body, "Data agreement") == f"Agreed on {expected_timestamp(app, data_at)}, version 5"
+
+    def test_the_terms_come_before_the_data_agreement(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        user = _seed_user(fake_store, "order@example.com", GlobalRole.USER)
+
+        body = logged_in_admin.get(f"/admin/users/{user.id}").get_data(as_text=True)
+
+        assert body.find(">Terms and conditions</dt>") < body.find(">Data agreement</dt>")
+
+    def test_an_agreement_from_before_versions_shows_its_time_alone(
+        self, app: Flask, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """Accounts made before versions were recorded have the data agreement's time and nothing else."""
+        agreed_at = datetime(2025, 9, 1, 12, 0, tzinfo=UTC)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            older = User(
+                email="older@example.com",
+                global_role=GlobalRole.ORGANISER,
+                password_hash="hash",  # pragma: allowlist secret
+                user_data_agreement_agreed_at=agreed_at,
+            )
+            uow.users.add(older)
+            uow.commit()
+            user_id = older.id
+
+        body = logged_in_admin.get(f"/admin/users/{user_id}").get_data(as_text=True)
+
+        assert _agreement_value(body, "Data agreement") == f"Agreed on {expected_timestamp(app, agreed_at)}"
+        assert _agreement_value(body, "Terms and conditions") == "Not agreed"
+
+    def test_a_user_who_agreed_to_nothing_says_so_for_both(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            made_by_an_admin = User(
+                email="cli@example.com",
+                global_role=GlobalRole.ADMIN,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+            uow.users.add(made_by_an_admin)
+            uow.commit()
+            user_id = made_by_an_admin.id
+
+        body = logged_in_admin.get(f"/admin/users/{user_id}").get_data(as_text=True)
+
+        assert _agreement_value(body, "Terms and conditions") == "Not agreed"
+        assert _agreement_value(body, "Data agreement") == "Not agreed"
 
 
 class TestAdminUser2faAuditLog:
