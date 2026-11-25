@@ -10,8 +10,6 @@ import pytest
 from flask import Flask, url_for
 from flask.testing import FlaskClient
 
-from opendlp.feature_flags import default_dashboard_endpoint
-
 SLOGAN_MSGID = "Bringing %(highlight)s to Sortition"
 
 _VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
@@ -259,7 +257,7 @@ class TestHomePage:
         header_start = response.text.index("<section")
         header = response.text[header_start : response.text.index("</section>", header_start)]
         with app.test_request_context():
-            dashboard_url = url_for(default_dashboard_endpoint())
+            dashboard_url = url_for("backoffice.dashboard")
         assert f'href="{dashboard_url}"' in header
         assert "Dashboard" in header
         assert 'href="/auth/login"' not in header

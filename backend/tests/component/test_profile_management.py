@@ -408,7 +408,7 @@ class TestProfilePagesOnTheBackofficeDesign:
         assert b"target=" not in my_account_link.group(0)
 
     def test_view_links_back_to_the_projects_list(self, app: Flask, logged_in_user: FlaskClient) -> None:
-        """The old page linked to main.dashboard, which 404s unless the old dashboard is enabled."""
+        """The back link goes to the list of projects."""
         with app.test_request_context():
             projects_url = url_for("backoffice.dashboard")
         response = logged_in_user.get("/profile")

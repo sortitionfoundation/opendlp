@@ -1545,3 +1545,51 @@ class TestProcessCeleryFinalResult:
         assert result.selected_ids == selected
         assert result.run_report is run_report
         assert result.log_messages == ["Done"]
+
+
+class TestStartGsheetReplaceLoadTask:
+    """Starting the check of a spreadsheet's replacement tabs."""
+
+    def _admin_and_assembly(self, uow) -> tuple[User, Assembly]:
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+        assembly.selection_settings = SelectionSettings(
+            assembly_id=assembly.id,
+            check_same_address_cols=["address1", "postcode"],
+            columns_to_keep=["first_name", "last_name", "age"],
+        )
+        return admin_user, assembly
+
+    def test_it_records_the_run_and_hands_the_replacement_tabs_to_the_task(self, uow):
+        admin_user, assembly = self._admin_and_assembly(uow)
+        gsheet = AssemblyGSheet(assembly_id=assembly.id, url=VALID_GSHEET_URL)
+        uow.assembly_gsheets.add(gsheet)
+
+        with patch("opendlp.service_layer.sortition.tasks.load_gsheet.delay") as mock_celery:
+            mock_celery.return_value = Mock(id="celery-task-id")
+            task_id = sortition.start_gsheet_replace_load_task(uow, admin_user.id, assembly.id)
+
+        record = uow.selection_run_records.get_by_task_id(task_id)
+        assert record is not None
+        assert record.task_type == SelectionTaskType.LOAD_REPLACEMENT_GSHEET
+        assert record.status == SelectionRunStatus.PENDING
+        assert record.celery_task_id == "celery-task-id"
+        assert record.user_id == admin_user.id
+        assert uow.committed
+
+        mock_celery.assert_called_once()
+        data_source = mock_celery.call_args[1]["data_source"]
+        assert mock_celery.call_args[1]["task_id"] == task_id
+        assert isinstance(data_source, GSheetDataSource)
+        assert data_source.feature_tab_name == gsheet.replace_targets_tab
+        assert data_source.people_tab_name == gsheet.replace_registrants_tab
+
+    def test_a_project_with_no_spreadsheet_is_refused(self, uow):
+        admin_user, assembly = self._admin_and_assembly(uow)
+
+        with pytest.raises(GoogleSheetConfigNotFoundError, match="No Google Sheets configuration found"):
+            sortition.start_gsheet_replace_load_task(uow, admin_user.id, assembly.id)
+
+        assert list(uow.selection_run_records.get_by_assembly_id(assembly.id)) == []

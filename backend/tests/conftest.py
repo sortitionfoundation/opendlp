@@ -169,12 +169,9 @@ ENV_KEYS_TESTS_MAY_INHERIT = (
 )
 
 # Flags the suite wants on whatever .env says. Applied after the scrub, and set
-# rather than defaulted, so a developer's .env cannot win.
-TEST_FEATURE_FLAGS = {
-    # Keep the legacy /dashboard available for tests that still target it.
-    "FF_OLD_DEFAULT_DASHBOARD": "true",
-    "FF_DASHBOARD_SWITCH_LINKS": "true",
-}
+# rather than defaulted, so a developer's .env cannot win. There are none at
+# present; a flag the whole suite needs goes here.
+TEST_FEATURE_FLAGS: dict[str, str] = {}
 
 
 def _leaky_env_keys() -> list[str]:

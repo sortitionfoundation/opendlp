@@ -29,10 +29,7 @@ def _second_organiser(fake_store: FakeStore) -> User:
 
 
 class TestCreateAssemblyGate:
-    """Both create-assembly routes are gated by the capability, not by a role."""
-
-    def test_organiser_can_reach_the_legacy_create_form(self, logged_in_organiser: FlaskClient) -> None:
-        assert logged_in_organiser.get("/assemblies/new").status_code == 200
+    """Creating a project is gated by the capability, not by a role."""
 
     def test_organiser_can_reach_the_backoffice_create_dialog(self, logged_in_organiser: FlaskClient) -> None:
         assert logged_in_organiser.get("/backoffice/project/new").status_code == 200
@@ -65,14 +62,14 @@ class TestOrganiserReachesWhatTheyCreate:
             headers={"HX-Request": "true"},
         )
 
-        response = logged_in_organiser.get("/dashboard")
+        response = logged_in_organiser.get("/backoffice/dashboard")
         assert b"On my dashboard" in response.data
 
 
 class TestOrganiserCannotReachSomeoneElsesAssembly:
     def test_dashboard_does_not_list_it(self, logged_in_organiser: FlaskClient, existing_assembly: Assembly) -> None:
         """existing_assembly belongs to the admin, so it is not the organiser's to see."""
-        response = logged_in_organiser.get("/dashboard")
+        response = logged_in_organiser.get("/backoffice/dashboard")
         assert response.status_code == 200
         assert existing_assembly.title.encode() not in response.data
 
@@ -129,27 +126,17 @@ class TestDashboardGating:
         response = logged_in_user.get("/backoffice/dashboard")
         assert b"ask a Project Manager to add you" in response.data
 
-    def test_legacy_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
-        response = logged_in_organiser.get("/dashboard")
-        assert response.status_code == 200
-        assert b"Create Assembly" in response.data
-
-    def test_legacy_dashboard_hides_create_from_a_user(self, logged_in_user: FlaskClient) -> None:
-        response = logged_in_user.get("/dashboard")
-        assert response.status_code == 200
-        assert b"Create Assembly" not in response.data
-
     def test_site_admin_link_shown_to_an_admin(self, logged_in_admin: FlaskClient) -> None:
-        response = logged_in_admin.get("/dashboard")
+        response = logged_in_admin.get("/backoffice/dashboard")
         assert b"Site Admin" in response.data
 
     def test_site_admin_link_hidden_from_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
         """It used to be shown to organisers, and led straight to a 403."""
-        response = logged_in_organiser.get("/dashboard")
+        response = logged_in_organiser.get("/backoffice/dashboard")
         assert b"Site Admin" not in response.data
 
     def test_site_admin_link_hidden_from_a_user(self, logged_in_user: FlaskClient) -> None:
-        response = logged_in_user.get("/dashboard")
+        response = logged_in_user.get("/backoffice/dashboard")
         assert b"Site Admin" not in response.data
 
 

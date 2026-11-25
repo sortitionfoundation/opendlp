@@ -187,7 +187,7 @@ class Test2FALoginFlow:
 
         # Should redirect to dashboard after successful verification
         assert response.status_code == 302
-        assert response.headers["Location"] == "/dashboard"
+        assert response.headers["Location"] == "/backoffice/dashboard"
 
         # Verify user is logged in
         with client.session_transaction() as session:

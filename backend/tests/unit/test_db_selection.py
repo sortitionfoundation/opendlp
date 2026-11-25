@@ -15,7 +15,6 @@ from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.entrypoints.blueprints.db_selection_legacy import _parse_comma_list
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
@@ -187,34 +186,6 @@ class TestCheckDbSelectionData:
         assert len(result.errors) == 1
         assert result.num_features == 0
         assert result.num_people == 0
-
-
-class TestParseCommaList:
-    """Tests for the _parse_comma_list helper."""
-
-    def test_empty_string(self):
-        assert _parse_comma_list("") == []
-
-    def test_logically_empty_string(self):
-        assert _parse_comma_list(" , ,") == []
-
-    def test_none(self):
-        assert _parse_comma_list(None) == []
-
-    def test_single_item(self):
-        assert _parse_comma_list("age") == ["age"]
-
-    def test_multiple_items(self):
-        assert _parse_comma_list("age, gender, postcode") == ["age", "gender", "postcode"]
-
-    def test_strips_whitespace(self):
-        assert _parse_comma_list("  age ,  gender  , postcode ") == ["age", "gender", "postcode"]
-
-    def test_ignores_empty_entries(self):
-        assert _parse_comma_list("age,,gender,") == ["age", "gender"]
-
-    def test_trailing_comma(self):
-        assert _parse_comma_list("age, gender,") == ["age", "gender"]
 
 
 class TestDbSelectionSettingsForm:

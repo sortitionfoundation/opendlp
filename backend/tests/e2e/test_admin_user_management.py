@@ -225,7 +225,7 @@ class TestAdminUserExport:
         )
         response = client.post(
             "/admin/users/export/run",
-            data={"file_type": "csv", "csrf_token": get_csrf_token(client, "/dashboard")},
+            data={"file_type": "csv", "csrf_token": get_csrf_token(client, "/backoffice/dashboard")},
             follow_redirects=False,
         )
         assert response.status_code in (302, 403)
@@ -283,7 +283,7 @@ class TestAdminDisableAccount:
         with victim_client.session_transaction() as session:
             session["_user_id"] = victim.get_id()
             session["_fresh"] = True
-        assert victim_client.get("/dashboard").status_code == 200
+        assert victim_client.get("/backoffice/dashboard").status_code == 200
 
         login_as_admin(client, admin_user)
         response = client.post(
@@ -293,7 +293,7 @@ class TestAdminDisableAccount:
         )
         assert response.status_code == 302
 
-        assert victim_client.get("/dashboard", follow_redirects=False).status_code == 302
+        assert victim_client.get("/backoffice/dashboard", follow_redirects=False).status_code == 302
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             stored = uow.users.get(victim.id)
             assert stored.is_active is False

@@ -147,7 +147,7 @@ def list_users() -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized access to user list", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error("Error listing users for admin", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while loading the user list"), "error")
@@ -243,7 +243,7 @@ def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized access to user view", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error(
             "Error viewing user for admin", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
@@ -450,7 +450,7 @@ def disable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized account disable attempt", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to perform this action"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error(
             "Error disabling user account", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
@@ -515,7 +515,7 @@ def enable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized account enable attempt", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to perform this action"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error(
             "Error enabling user account", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
@@ -555,7 +555,7 @@ def disable_user_2fa(user_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized 2FA disable attempt", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to perform this action"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error(
             "Error disabling 2FA for user", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
@@ -603,7 +603,7 @@ def view_user_2fa_audit_log(user_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized 2FA audit log access", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error(
             "Error viewing 2FA audit log for user",
@@ -634,7 +634,7 @@ def list_invites_page() -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized access to invite list", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error("Error listing invites for admin", user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while loading the invite list"), "error")
@@ -740,7 +740,7 @@ def view_invite(invite_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized access to invite view", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to view this page"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error(
             "Error viewing invite for admin", invite_id=str(invite_id), user_id=str(current_user.id), error=str(e)
@@ -788,7 +788,7 @@ def revoke_invite_route(invite_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Unauthorized invite revocation attempt", user_id=str(current_user.id), error=str(e))
         flash(_("You don't have permission to perform this action"), "error")
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.error("Error revoking invite", invite_id=str(invite_id), user_id=str(current_user.id), error=str(e))
         flash(_("An error occurred while revoking the invite"), "error")

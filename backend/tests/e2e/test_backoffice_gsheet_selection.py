@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from opendlp.domain.selection_settings import DEFAULT_ADDRESS_COLS, DEFAULT_COLS_TO_KEEP, DEFAULT_ID_COLUMN
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
 from opendlp.service_layer.sortition import InvalidSelection
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -59,6 +60,30 @@ class TestBackofficeGSheetFormSubmission:
         assert response.status_code == 200
         assert b"Data source settings saved" in response.data
         assert b"docs.google.com/spreadsheets/d/1abc123" in response.data
+
+    @pytest.mark.db_semantics
+    def test_the_dialog_shows_the_selection_settings_that_are_saved(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
+    ):
+        """The ID column, address columns and columns to keep live on SelectionSettings, not on the sheet.
+
+        A form filled from the sheet alone would show them as form defaults
+        rather than as what is saved.
+        """
+        assembly, _gsheet = assembly_with_gsheet
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            sel_settings = uow.assemblies.get(assembly.id).selection_settings
+            assert sel_settings.id_column == DEFAULT_ID_COLUMN["uk"]
+            assert sel_settings.check_same_address_cols == DEFAULT_ADDRESS_COLS["uk"]
+            assert sel_settings.columns_to_keep == DEFAULT_COLS_TO_KEEP["uk"]
+            address_cols_string = sel_settings.check_same_address_cols_string
+            columns_to_keep_string = sel_settings.columns_to_keep_string
+
+        response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/data-source", headers=HTMX)
+
+        assert response.status_code == 200
+        assert f'value="{address_cols_string}"'.encode() in response.data
+        assert f'value="{columns_to_keep_string}"'.encode() in response.data
 
     def test_update_gsheet_config_success(self, logged_in_admin, assembly_with_gsheet):
         """Test successfully updating an existing gsheet configuration."""

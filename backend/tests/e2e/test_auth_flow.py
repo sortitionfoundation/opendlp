@@ -111,7 +111,7 @@ class TestAuthenticationFlow:
 
         assert response.status_code == 302
         # Should redirect to dashboard after login
-        assert response.headers["Location"] == "/dashboard"
+        assert response.headers["Location"] == "/backoffice/dashboard"
 
         # Verify user is logged in
         with client.session_transaction() as sess:
@@ -382,7 +382,7 @@ class TestAuthenticationEdgeCases:
             follow_redirects=False,
         )
         assert response.status_code == 302
-        assert response.headers["Location"] == "/dashboard"
+        assert response.headers["Location"] == "/backoffice/dashboard"
 
     def test_login_succeeds_under_rate_limit(self, client: FlaskClient, regular_user: User):
         """Test that login works fine with fewer failures than the limit."""
@@ -408,7 +408,7 @@ class TestAuthenticationEdgeCases:
             follow_redirects=False,
         )
         assert response.status_code == 302
-        assert response.headers["Location"] == "/dashboard"
+        assert response.headers["Location"] == "/backoffice/dashboard"
 
     def test_csrf_protection_enabled(self, client: FlaskClient, regular_user: User):
         """Test that CSRF protection rejects a login POST without a valid token."""
@@ -430,7 +430,7 @@ class TestAuthenticationEdgeCases:
         # The request must be rejected by the CSRF error handler (400), not
         # redirected to the dashboard, and the user must not be logged in.
         assert response.status_code == 400
-        assert response.headers.get("Location") != "/dashboard"
+        assert response.headers.get("Location") != "/backoffice/dashboard"
         with client.session_transaction() as sess:
             assert "_user_id" not in sess
 
@@ -461,7 +461,7 @@ class TestEmailConfirmation:
             follow_redirects=False,
         )
         assert response.status_code == 302
-        assert response.headers["Location"] == "/dashboard"
+        assert response.headers["Location"] == "/backoffice/dashboard"
 
         # Verify email is confirmed
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:

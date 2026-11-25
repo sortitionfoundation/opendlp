@@ -1148,3 +1148,53 @@ class TestGetAssemblyCreatorName:
         assembly = assembly_service.create_assembly(uow=uow, title="Theirs", created_by_user_id=creator.id)
 
         assert assembly_service.get_assembly_creator_name(uow, assembly) == "nameless"
+
+
+class TestGetOrCreateSelectionSettings:
+    def _admin_and_assembly(self, uow) -> tuple[User, Assembly]:
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Test Assembly", question="Test question?")
+        uow.assemblies.add(assembly)
+        return admin_user, assembly
+
+    def test_a_project_with_no_settings_is_given_the_defaults(self, uow):
+        admin_user, assembly = self._admin_and_assembly(uow)
+        assert assembly.selection_settings is None
+
+        settings = assembly_service.get_or_create_selection_settings(uow, admin_user.id, assembly.id)
+
+        assert settings.assembly_id == assembly.id
+        assert uow.assemblies.get(assembly.id).selection_settings is not None
+        assert uow.committed
+
+    def test_settings_already_held_are_returned_as_they_are(self, uow):
+        admin_user, assembly = self._admin_and_assembly(uow)
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, id_column="person_ref")
+
+        settings = assembly_service.get_or_create_selection_settings(uow, admin_user.id, assembly.id)
+
+        assert settings.id_column == "person_ref"
+        assert not uow.committed
+
+    def test_someone_with_no_role_on_the_project_is_refused(self, uow):
+        _admin_user, assembly = self._admin_and_assembly(uow)
+        stranger = User(email="stranger@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(stranger)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.get_or_create_selection_settings(uow, stranger.id, assembly.id)
+
+        assert assembly.selection_settings is None
+
+    def test_an_unknown_user_is_refused(self, uow):
+        _admin_user, assembly = self._admin_and_assembly(uow)
+
+        with pytest.raises(UserNotFoundError):
+            assembly_service.get_or_create_selection_settings(uow, uuid.uuid4(), assembly.id)
+
+    def test_an_unknown_project_is_refused(self, uow):
+        admin_user, _assembly = self._admin_and_assembly(uow)
+
+        with pytest.raises(AssemblyNotFoundError):
+            assembly_service.get_or_create_selection_settings(uow, admin_user.id, uuid.uuid4())

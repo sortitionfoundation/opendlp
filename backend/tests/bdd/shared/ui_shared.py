@@ -171,23 +171,21 @@ def _(page: Page, test_database: sessionmaker):
             uow.commit()
 
     # If user was redirected to login (password registration), log them in
-    if not Urls.any_dashboard.match(page.url):
+    if page.url != Urls.backoffice_dashboard:
         page.goto(Urls.login)
         page.fill('input[name="email"]', NEWUSER_EMAIL)
         page.fill('input[name="password"]', FRESH_PASSWORD)
         page.click('button[type="submit"]')
 
     # Now user should be on dashboard
-    # The header link says "Your projects" too, so wait for the heading. The
-    # legacy list page, still the landing page when FF_OLD_DEFAULT_DASHBOARD is
-    # set, keeps its old heading.
-    expect(page.get_by_role("heading", name=re.compile(r"^Your (projects|Assemblies)$"))).to_be_visible()
+    # The header link says "Your projects" too, so wait for the heading.
+    expect(page.get_by_role("heading", name="Your projects", exact=True)).to_be_visible()
 
 
 @then("the user should see the default view for an authorised user")
 def _(page: Page):
     """the user should see the default view for an authorised user."""
-    expect(page).to_have_url(Urls.any_dashboard)
+    expect(page).to_have_url(Urls.backoffice_dashboard)
 
 
 @then("the user should be told they are signed out on the sign in page")

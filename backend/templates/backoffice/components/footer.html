@@ -20,11 +20,6 @@ ABOUTME: Site-wide footer with support links and version info
                    target="_blank"
                    class="text-body-sm transition duration-150 ease-in-out hover:opacity-80"
                    style="color: var(--color-secondary-text)">{{ _("Cookies") }}</a>
-                {% if feature("dashboard_switch_links") %}
-                    <a href="{{ url_for('main.dashboard') }}"
-                       class="text-body-sm transition duration-150 ease-in-out hover:opacity-80"
-                       style="color: var(--color-secondary-text)">{{ _("Old Dashboard") }}</a>
-                {% endif %}
                 <a href="https://github.com/sortitionfoundation/opendlp"
                    target="_blank"
                    class="text-body-sm transition duration-150 ease-in-out hover:opacity-80"

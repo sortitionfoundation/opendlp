@@ -1,4 +1,3 @@
-import re
 import urllib.parse
 
 # The value is milliseconds - so 5000 is 5 seconds
@@ -41,12 +40,6 @@ class Urls:
     backoffice_targets_assembly = "{base}/backoffice/project/{assembly_id}/targets"
     backoffice_respondents_assembly = "{base}/backoffice/project/{assembly_id}/respondents"
     backoffice_selection_assembly = "{base}/backoffice/project/{assembly_id}/selection"
-
-    # Where a login lands depends on FF_OLD_DEFAULT_DASHBOARD, and the BDD server
-    # can be started either way - by the test_server fixture, which inherits the
-    # flag, or by `just flask-bdd`, which does not. So waiting for a login to
-    # finish means accepting either dashboard.
-    any_dashboard = re.compile(rf"^{re.escape(base)}/(backoffice/)?dashboard/?$")
 
     @classmethod
     def backoffice_assembly_url(cls, assembly_id: str) -> str:

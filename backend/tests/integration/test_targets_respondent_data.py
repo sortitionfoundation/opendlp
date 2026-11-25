@@ -194,23 +194,12 @@ class TestFakeRespondentRepositoryValueCounts:
 # ── Endpoint Tests ────────────────────────────────────────────
 
 
-class TestAddMissingValuesEndpoint:
-    def test_requires_login(self) -> None:
-        app = create_app("testing")
-        client = app.test_client()
-        assembly_id = uuid.uuid4()
-        category_id = uuid.uuid4()
-        response = client.post(f"/assemblies/{assembly_id}/targets/categories/{category_id}/values/add-missing")
-        assert response.status_code == 302
-        assert "/auth/login" in response.location
-
-
 class TestAddCategoriesFromColumnsEndpoint:
     def test_requires_login(self) -> None:
         app = create_app("testing")
         client = app.test_client()
         assembly_id = uuid.uuid4()
-        response = client.post(f"/assemblies/{assembly_id}/targets/categories/add-from-columns")
+        response = client.post(f"/backoffice/project/{assembly_id}/targets/categories/add-from-columns")
         assert response.status_code == 302
         assert "/auth/login" in response.location
 
