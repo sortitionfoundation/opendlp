@@ -1,5 +1,5 @@
 // ABOUTME: Unit tests for the confirmDialog Alpine component
-// ABOUTME: Covers opening and cancelling the confirmation, and where the focus goes each time
+// ABOUTME: Covers opening and cancelling the confirmation, where the focus goes each time, and its box
 
 import { describe, expect, it, vi } from "vitest";
 
@@ -28,6 +28,21 @@ describe("confirmDialog", () => {
     expect(state.isOpen).toBe(true);
     expect(state.$refs.safeAction.focus).toHaveBeenCalled();
     expect(state.$refs.opener.focus).not.toHaveBeenCalled();
+  });
+
+  it("starts with its box unticked", () => {
+    expect(buildDialog().ticked).toBe(false);
+  });
+
+  it("unticks a box left ticked by an earlier opening", () => {
+    const state = buildDialog();
+    state.open();
+    state.ticked = true;
+    state.cancel();
+
+    state.open();
+
+    expect(state.ticked).toBe(false);
   });
 
   it("closes on cancel and gives the focus back to the opener", () => {

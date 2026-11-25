@@ -1234,6 +1234,31 @@ def archive_the_project(page: Page):
     page.wait_for_load_state("networkidle")
 
 
+@when(parsers.parse('I archive the project, closing its published registration page "{name}"'))
+def archive_the_project_closing_its_published_page(page: Page, name: str):
+    """Archive through the confirmation dialog, ticking the box that closes the published page.
+
+    Everything in the dialog is done from the keyboard: Archive waits for the
+    tick, so Shift+Tab from the focused safe action passes over it to the box.
+    """
+    page.get_by_role("button", name="Archive project", exact=True).click()
+    dialog = page.get_by_role("alertdialog", name="Archive this project?")
+    expect(dialog).to_be_visible()
+    archive = dialog.get_by_role("button", name="Archive project", exact=True)
+    expect(archive).to_be_disabled()
+    expect(dialog.get_by_role("button", name="Keep it active")).to_be_focused()
+    page.keyboard.press("Shift+Tab")
+    box = dialog.get_by_role("checkbox", name=f"Close the published registration page '{name}'")
+    expect(box).to_be_focused()
+    page.keyboard.press("Space")
+    expect(box).to_be_checked()
+    expect(archive).to_be_enabled()
+    page.keyboard.press("Tab")
+    expect(archive).to_be_focused()
+    page.keyboard.press("Enter")
+    page.wait_for_load_state("networkidle")
+
+
 @when("I unarchive the project")
 def unarchive_the_project(page: Page):
     """Unarchive from the banner an archived project shows."""

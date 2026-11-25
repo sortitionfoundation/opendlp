@@ -46,6 +46,17 @@ Feature: Backoffice Assembly Management
     When I visit the backoffice dashboard
     Then I should see an assembly card with title "Riverside Panel"
 
+  Scenario: A project manager archives a project and closes its published registration page
+    Given I am logged in as a normal user
+    And there is an assembly called "Harbour Jury" with a published registration form
+    And I am assigned to "Harbour Jury" as "assembly-manager"
+    When I visit the assembly details page for "Harbour Jury"
+    And I archive the project, closing its published registration page "Registration page"
+    Then I should see "Project archived, and its published registration page closed"
+    And I should see "This project is archived. It doesn't appear in project lists."
+    When I visit the registration tab for "Harbour Jury"
+    Then the registration should be shown as closed
+
   # Creating a project is in create-project.feature
 
   Scenario: Dashboard displays create assembly button
