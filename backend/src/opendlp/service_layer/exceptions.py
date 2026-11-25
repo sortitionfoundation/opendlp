@@ -356,10 +356,11 @@ class CannotRemoveLastAssemblyManager(CuratedMessage, ServiceLayerError):
 class CannotArchiveWithPublishedPages(CuratedMessage, ServiceLayerError):
     """Raised when archiving a project while any of its registration pages is published.
 
-    A published page is still taking registrations, so it is closed first, from
-    the registration pages list. Archiving does not close it on the organiser's
-    behalf. ``page_names`` holds the published pages' names, which the message
-    lists.
+    A published page is still taking registrations, so it is closed first:
+    from the registration pages list, or by archiving with ``force``, which the
+    Archive dialog asks for with a checkbox. Without it, archiving does not
+    close a page on the organiser's behalf. ``page_names`` holds the published
+    pages' names, which the message lists.
     """
 
     def __init__(self, page_names: list[str]) -> None:

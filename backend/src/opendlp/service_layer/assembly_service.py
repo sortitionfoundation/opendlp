@@ -43,8 +43,13 @@ from .permissions import (
     can_view_assembly,
     load_user_and_assembly,
 )
+from .registration_page_service import close_registration_page
 from .unit_of_work import AbstractUnitOfWork
 from .user_service import assign_assembly_role, get_user_assemblies
+
+# The reason a registration page's activity gives when archiving closed it. In
+# English, like the registration page service's own entries.
+_CLOSED_BY_ARCHIVING = "Closed when the project was archived"
 
 
 def create_assembly(
@@ -317,10 +322,10 @@ def get_assembly_creator_name(uow: AbstractUnitOfWork, assembly: Assembly) -> st
 
 
 def published_registration_pages(pages: Iterable[RegistrationPage]) -> list[RegistrationPage]:
-    """The pages that stop an assembly being archived: the published ones.
+    """The pages that stop an assembly being archived, unless archiving closes them: the published ones.
 
     The project details page asks this of the pages it has already loaded, to
-    say why its Archive button is disabled, so the rule is written once.
+    name them in its Archive dialog, so the rule is written once.
     """
     return [page for page in pages if page.status is RegistrationPageStatus.PUBLISHED]
 
@@ -329,19 +334,23 @@ def archive_assembly(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
     user_id: uuid.UUID,
+    force: bool = False,
 ) -> Assembly:
     """
     Archive an assembly, so it leaves the project lists. Nothing is deleted.
 
-    Refused while any of its registration pages is published, because a
-    published page is still taking registrations. Its test and closed pages
-    stay as they are, and keep their addresses. An assembly that is already
-    archived is left as it is.
+    A published registration page is still taking registrations, so while any
+    is, archiving is refused - unless ``force`` is set. Then each published page
+    is closed first, through close_registration_page(), in the same unit of
+    work, so closing keeps its own checks and records who closed the page and
+    why. Test and closed pages stay as they are, and keep their addresses. An
+    assembly that is already archived is left as it is, and so are its pages.
 
     Args:
         uow: Unit of Work for database operations
         assembly_id: ID of assembly to archive
         user_id: ID of user performing the archival
+        force: Close the published registration pages instead of refusing
 
     Returns:
         The archived Assembly, detached
@@ -349,7 +358,7 @@ def archive_assembly(
     Raises:
         UserNotFoundError, AssemblyNotFoundError: If the user or assembly is not found
         InsufficientPermissions: If user cannot manage this assembly
-        CannotArchiveWithPublishedPages: If any of its registration pages is published
+        CannotArchiveWithPublishedPages: If any of its registration pages is published, and force is not set
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -359,8 +368,10 @@ def archive_assembly(
 
     if assembly.is_active():
         published = published_registration_pages(uow.registration_pages.list_by_assembly_id(assembly_id))
-        if published:
+        if published and not force:
             raise CannotArchiveWithPublishedPages([page.name for page in published])
+        for page in published:
+            close_registration_page(uow, user_id, page.id, text=_CLOSED_BY_ARCHIVING)
         assembly.archive()
 
     detached: Assembly = assembly.create_detached_copy()
