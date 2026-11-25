@@ -200,7 +200,7 @@ class TestProtectedPagesAndSession:
     """Auth-decorator, render branches, root page and session persistence."""
 
     def test_dashboard_view_access(self, logged_in_user: FlaskClient) -> None:
-        response = logged_in_user.get("/dashboard")
+        response = logged_in_user.get("/backoffice/dashboard")
         assert response.status_code == 200
         assert b"Assemblies" in response.data or b"assemblies" in response.data
 
@@ -215,17 +215,17 @@ class TestProtectedPagesAndSession:
         assert "Dashboard" in response.text
 
     def test_protected_page_redirects_when_not_logged_in(self, client: FlaskClient) -> None:
-        response = client.get("/dashboard")
+        response = client.get("/backoffice/dashboard")
         assert response.status_code == 302
         assert "login" in response.location
 
     def test_protected_page_accessible_when_logged_in(self, logged_in_user: FlaskClient) -> None:
-        response = logged_in_user.get("/dashboard")
+        response = logged_in_user.get("/backoffice/dashboard")
         assert response.status_code == 200
 
     def test_session_persistence_across_requests(self, logged_in_user: FlaskClient) -> None:
         for _ in range(3):
-            response = logged_in_user.get("/dashboard")
+            response = logged_in_user.get("/backoffice/dashboard")
             assert response.status_code == 200
 
 
@@ -240,13 +240,13 @@ class TestCacheHeaders:
         assert "Expires" not in response.headers or response.headers.get("Expires") != "0"
 
     def test_dashboard_has_no_cache_headers_when_logged_in(self, logged_in_user: FlaskClient) -> None:
-        response = logged_in_user.get("/dashboard")
+        response = logged_in_user.get("/backoffice/dashboard")
         assert response.status_code == 200
         cache_control = response.headers.get("Cache-Control", "")
         assert "no-cache" in cache_control or "no-store" in cache_control
 
     def test_dashboard_redirects_when_logged_out(self, client: FlaskClient) -> None:
-        response = client.get("/dashboard")
+        response = client.get("/backoffice/dashboard")
         assert response.status_code == 302
         assert "login" in response.location
         assert "Cache-Control" not in response.headers or "no-cache" not in response.headers.get("Cache-Control", "")

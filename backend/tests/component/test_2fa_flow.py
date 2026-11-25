@@ -84,7 +84,7 @@ class Test2FALoginFlow:
         )
 
         assert response.status_code == 302
-        assert response.headers["Location"] == "/dashboard"
+        assert response.headers["Location"] == "/backoffice/dashboard"
 
         with client.session_transaction() as session:
             assert "_user_id" in session

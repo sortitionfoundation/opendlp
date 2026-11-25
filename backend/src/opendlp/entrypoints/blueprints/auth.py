@@ -25,7 +25,7 @@ from opendlp.entrypoints.forms import (
     RegistrationForm,
     ResendConfirmationForm,
 )
-from opendlp.feature_flags import default_dashboard_endpoint, has_feature
+from opendlp.feature_flags import has_feature
 from opendlp.service_layer import totp_service
 from opendlp.service_layer.email_confirmation_service import (
     confirm_email_with_token,
@@ -94,7 +94,7 @@ def get_safe_next_page(next_page: str | None, default: str = "") -> str:
 def login() -> ResponseReturnValue:
     """User login page."""
     if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
+        return redirect(url_for("backoffice.dashboard"))
 
     form = LoginForm()
     show_resend_confirmation = False
@@ -137,7 +137,7 @@ def login() -> ResponseReturnValue:
 
                 # Redirect to next page if specified, otherwise dashboard
                 next_page = request.args.get("next")
-                return redirect(get_safe_next_page(next_page, default=url_for(default_dashboard_endpoint())))
+                return redirect(get_safe_next_page(next_page, default=url_for("backoffice.dashboard")))
 
         except RateLimitExceeded:
             flash(_("Invalid email or password"), "error")
@@ -254,7 +254,7 @@ def _complete_2fa_login(uow: AbstractUnitOfWork, user_id: uuid.UUID, is_backup_c
         flash(_("Signed in successfully"), "success")
 
     # Redirect to next page or dashboard
-    return redirect(get_safe_next_page(next_page, default=url_for(default_dashboard_endpoint())))
+    return redirect(get_safe_next_page(next_page, default=url_for("backoffice.dashboard")))
 
 
 @auth_bp.route("/login/verify-2fa", methods=["GET", "POST"])
@@ -345,7 +345,7 @@ def _complete_registration(user: User, token: EmailConfirmationToken | None) -> 
     if token is None:
         login_user(user)
         flash(_("Registration successful! Welcome to OpenDLP."), "success")
-        return redirect(url_for(default_dashboard_endpoint()))
+        return redirect(url_for("backoffice.dashboard"))
 
     email_adapter = get_email_adapter()
     template_renderer = get_template_renderer(current_app)
@@ -466,7 +466,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
     every path.
     """
     if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
+        return redirect(url_for("backoffice.dashboard"))
 
     form = RegistrationForm()
 
@@ -539,7 +539,7 @@ def confirm_email(token: str) -> ResponseReturnValue:
             if not sign_in(user):
                 return redirect(url_for("auth.login"))
             flash(_("Email confirmed successfully! You can now sign in."), "success")
-            return redirect(url_for(default_dashboard_endpoint()))
+            return redirect(url_for("backoffice.dashboard"))
         except InvalidConfirmationToken as e:
             flash(str(e), "error")
             return redirect(url_for("auth.login"))
@@ -586,7 +586,7 @@ def resend_confirmation() -> ResponseReturnValue:
 def forgot_password() -> ResponseReturnValue:
     """Request password reset page."""
     if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
+        return redirect(url_for("backoffice.dashboard"))
 
     form = PasswordResetRequestForm()
 
@@ -640,7 +640,7 @@ def forgot_password() -> ResponseReturnValue:
 def reset_password(token: str) -> ResponseReturnValue:
     """Reset password page with token."""
     if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
+        return redirect(url_for("backoffice.dashboard"))
 
     form = PasswordResetForm()
 
@@ -684,7 +684,7 @@ def reset_password(token: str) -> ResponseReturnValue:
 def login_google() -> ResponseReturnValue:
     """Initiate Google OAuth login flow."""
     if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
+        return redirect(url_for("backoffice.dashboard"))
 
     # Store redirect URL in session for post-OAuth redirect
     safe_next_page = get_safe_next_page(request.args.get("next"))
@@ -760,7 +760,7 @@ def google_callback() -> ResponseReturnValue:
 
         # Redirect to next page or dashboard
         next_page = session.pop("oauth_next", None)
-        return redirect(get_safe_next_page(next_page, default=url_for(default_dashboard_endpoint())))
+        return redirect(get_safe_next_page(next_page, default=url_for("backoffice.dashboard")))
 
     except InvalidInvite as e:
         # User needs an invite code - send them back to the registration page
@@ -776,7 +776,7 @@ def google_callback() -> ResponseReturnValue:
 def login_microsoft() -> ResponseReturnValue:
     """Initiate Microsoft OAuth login flow."""
     if current_user.is_authenticated:
-        return redirect(url_for(default_dashboard_endpoint()))
+        return redirect(url_for("backoffice.dashboard"))
 
     # Store redirect URL in session for post-OAuth redirect
     safe_next_page = get_safe_next_page(request.args.get("next"))
@@ -853,7 +853,7 @@ def microsoft_callback() -> ResponseReturnValue:
 
         # Redirect to next page or dashboard
         next_page = session.pop("oauth_next", None)
-        return redirect(get_safe_next_page(next_page, default=url_for(default_dashboard_endpoint())))
+        return redirect(get_safe_next_page(next_page, default=url_for("backoffice.dashboard")))
 
     except InvalidInvite as e:
         # User needs an invite code - send them back to the registration page

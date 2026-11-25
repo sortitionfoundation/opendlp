@@ -1,7 +1,6 @@
 """ABOUTME: pytest-bdd step definitions for email confirmation flows.
 ABOUTME: Covers password registration, login blocking, email verification, OAuth auto-confirmation, resend, and rate limiting."""
 
-import re
 import time
 from datetime import UTC, datetime, timedelta
 
@@ -63,7 +62,7 @@ def _():
 def _(page: Page):
     """Verify user is not logged in."""
     # Check that we're not on the dashboard
-    assert not Urls.any_dashboard.match(page.url)
+    assert page.url != Urls.backoffice_dashboard
 
 
 @then("the user should be directed to the login page with a confirmation message")
@@ -131,7 +130,7 @@ def _(page: Page, test_database: sessionmaker):
             assert user.is_email_confirmed()
     else:
         # Password user - verify they're on dashboard
-        expect(page).to_have_url(Urls.any_dashboard)
+        expect(page).to_have_url(Urls.backoffice_dashboard)
 
 
 @then("the user should see a success message")
@@ -158,11 +157,9 @@ def _(page: Page):
     # Check if this is an OAuth test - if so, skip page verification
     # (We can't simulate full OAuth login flow in BDD tests)
     if not page.url.endswith("/auth/register"):
-        expect(page).to_have_url(Urls.any_dashboard)
-        # The header link says "Your projects" too, so wait for the heading. The
-        # legacy list page, still the landing page when FF_OLD_DEFAULT_DASHBOARD is
-        # set, keeps its old heading.
-        expect(page.get_by_role("heading", name=re.compile(r"^Your (projects|Assemblies)$"))).to_be_visible()
+        expect(page).to_have_url(Urls.backoffice_dashboard)
+        # The header link says "Your projects" too, so wait for the heading.
+        expect(page.get_by_role("heading", name="Your projects", exact=True)).to_be_visible()
 
 
 @given("the user has registered and confirmed their email")
@@ -328,7 +325,7 @@ def _(test_database: sessionmaker):
 @then("the user should be able to login successfully")
 def _(page: Page):
     """Verify successful login."""
-    expect(page).to_have_url(Urls.any_dashboard)
+    expect(page).to_have_url(Urls.backoffice_dashboard)
 
 
 @given("the user has confirmed their email once")
@@ -339,7 +336,7 @@ def _(page: Page, unconfirmed_user: dict):
     page.goto(confirmation_url)
     page.click('button[type="submit"]')
     # Wait for confirmation to complete
-    expect(page).to_have_url(Urls.any_dashboard)
+    expect(page).to_have_url(Urls.backoffice_dashboard)
 
 
 @when("the user clicks the confirmation link again")

@@ -21,7 +21,7 @@ def signed_in_with_a_password(page: Page, disposable_user) -> None:
     page.fill('input[name="email"]', DISPOSABLE_EMAIL)
     page.fill('input[name="password"]', DISPOSABLE_PASSWORD)
     page.click('button[type="submit"]')
-    page.wait_for_url(Urls.any_dashboard)
+    page.wait_for_url(Urls.backoffice_dashboard)
 
 
 @given("I am on My account")

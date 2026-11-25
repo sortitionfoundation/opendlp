@@ -633,11 +633,11 @@ class TestAdminDisableAccount:
     ) -> None:
         victim = _seed_user(fake_store, "victim@example.com", GlobalRole.USER)
         victim_client = _second_client(app, victim)
-        assert victim_client.get("/dashboard").status_code == 200
+        assert victim_client.get("/backoffice/dashboard").status_code == 200
 
         logged_in_admin.post(f"/admin/users/{victim.id}/disable")
 
-        response = victim_client.get("/dashboard", follow_redirects=False)
+        response = victim_client.get("/backoffice/dashboard", follow_redirects=False)
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -651,7 +651,7 @@ class TestAdminDisableAccount:
 
         logged_in_admin.post(f"/admin/users/{victim.id}/enable")
 
-        response = victim_client.get("/dashboard", follow_redirects=False)
+        response = victim_client.get("/backoffice/dashboard", follow_redirects=False)
         assert response.status_code == 302
         assert "login" in response.location
 
@@ -857,7 +857,7 @@ class TestAdminNavigation:
     """Admin navigation menu visibility by role."""
 
     def test_admin_menu_visible_to_admin(self, logged_in_admin: FlaskClient) -> None:
-        response = logged_in_admin.get("/dashboard")
+        response = logged_in_admin.get("/backoffice/dashboard")
         assert response.status_code == 200
         assert b"Site Admin" in response.data
 
@@ -870,7 +870,7 @@ class TestAdminNavigation:
         assert "target=" not in link.group(0)
 
     def test_admin_menu_not_visible_to_regular_user(self, logged_in_user: FlaskClient) -> None:
-        response = logged_in_user.get("/dashboard")
+        response = logged_in_user.get("/backoffice/dashboard")
         assert response.status_code == 200
 
         data = response.data.decode()

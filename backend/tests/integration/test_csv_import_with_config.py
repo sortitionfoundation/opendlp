@@ -75,6 +75,27 @@ user003,Charlie Brown,charlie@example.com,28"""
             assert respondents[2].external_id == "user003"
             assert resolved_id_column == "external_id"
 
+    def test_adding_to_existing_respondents_skips_ids_already_held(
+        self, postgres_session_factory, admin_user, test_assembly
+    ):
+        """Without replace_existing, a row whose ID is already in the database is skipped and reported."""
+        first = "external_id,name\nuser001,Alice Smith\nuser002,Bob Jones"
+        second = "external_id,name\nuser002,Robert Jones\nuser003,Charlie Brown"
+
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            import_respondents_from_csv(
+                uow=uow, user_id=admin_user.id, assembly_id=test_assembly.id, csv_content=first, replace_existing=False
+            )
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            respondents, errors, _ = import_respondents_from_csv(
+                uow=uow, user_id=admin_user.id, assembly_id=test_assembly.id, csv_content=second, replace_existing=False
+            )
+
+            assert [r.external_id for r in respondents] == ["user003"]
+            assert errors == ["Row 2: skipped duplicate external_id: user002"]
+            held = {r.external_id: r.attributes["name"] for r in uow.respondents.get_by_assembly_id(test_assembly.id)}
+            assert held == {"user001": "Alice Smith", "user002": "Bob Jones", "user003": "Charlie Brown"}
+
     def test_import_with_custom_id_column(self, postgres_session_factory, admin_user, test_assembly):
         """Test CSV import with custom id_column configured"""
         # Configure custom id_column

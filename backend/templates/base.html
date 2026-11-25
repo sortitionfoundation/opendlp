@@ -180,12 +180,6 @@
                                    href="{{ help_site_cookies }}"
                                    target="_blank">{{ _("Cookies") }}</a>
                             </li>
-                            {% if feature("dashboard_switch_links") %}
-                                <li class="govuk-footer__inline-list-item">
-                                    <a class="govuk-footer__link"
-                                       href="{{ url_for('backoffice.dashboard') }}">{{ _("New Dashboard") }}</a>
-                                </li>
-                            {% endif %}
                             <li class="govuk-footer__inline-list-item">
                                 <a class="govuk-footer__link"
                                    href="https://github.com/sortitionfoundation/opendlp"

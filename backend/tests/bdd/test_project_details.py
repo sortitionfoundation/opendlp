@@ -91,7 +91,7 @@ def read_only_member_signed_in(page: Page, project, normal_user, test_database) 
     page.fill('input[name="email"]', normal_user.email)
     page.fill('input[name="password"]', NORMAL_PASSWORD)
     page.click('button[type="submit"]')
-    page.wait_for_url(Urls.any_dashboard)
+    page.wait_for_url(Urls.backoffice_dashboard)
 
 
 @when(parsers.parse('I edit the {name} to "{value}" and press Enter'))

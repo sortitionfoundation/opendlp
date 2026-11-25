@@ -185,9 +185,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.backoffice_registration import backoffice_registration_bp  # noqa: PLC0415
     from .blueprints.data_source import data_source_bp  # noqa: PLC0415
     from .blueprints.db_selection_backoffice import db_selection_backoffice_bp  # noqa: PLC0415
-    from .blueprints.db_selection_legacy import db_selection_legacy_bp  # noqa: PLC0415
     from .blueprints.gsheets import gsheets_bp  # noqa: PLC0415
-    from .blueprints.gsheets_legacy import gsheets_legacy_bp  # noqa: PLC0415
     from .blueprints.health import health_bp  # noqa: PLC0415
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
@@ -195,16 +193,12 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.registration import registration_bp  # noqa: PLC0415
     from .blueprints.respondent_field_schema import respondent_field_schema_bp  # noqa: PLC0415
     from .blueprints.respondents import respondents_bp  # noqa: PLC0415
-    from .blueprints.respondents_legacy import respondents_legacy_bp  # noqa: PLC0415
     from .blueprints.target_sources import target_sources_bp  # noqa: PLC0415
     from .blueprints.targets import targets_bp  # noqa: PLC0415
-    from .blueprints.targets_legacy import targets_legacy_bp  # noqa: PLC0415
     from .blueprints.wellknown import wellknown_bp  # noqa: PLC0415
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
-    app.register_blueprint(gsheets_legacy_bp)
-    app.register_blueprint(db_selection_legacy_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(profile_bp)
     app.register_blueprint(health_bp)
@@ -222,8 +216,6 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(respondents_bp, url_prefix="/backoffice")
     app.register_blueprint(respondent_field_schema_bp, url_prefix="/backoffice")
     app.register_blueprint(target_sources_bp, url_prefix="/backoffice")
-    app.register_blueprint(targets_legacy_bp)
-    app.register_blueprint(respondents_legacy_bp)
     app.register_blueprint(wellknown_bp)
     app.register_blueprint(registration_bp)  # No url_prefix - routes define full paths
 

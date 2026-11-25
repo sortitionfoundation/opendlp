@@ -156,7 +156,7 @@ class TestOAuthRegistration:
             response = client.get("/auth/login/google/callback", follow_redirects=False)
 
             assert response.status_code == 302
-            assert response.headers["Location"] == "/dashboard"
+            assert response.headers["Location"] == "/backoffice/dashboard"
 
         # Verify user was created and logged in
         with client.session_transaction() as session:
@@ -194,7 +194,7 @@ class TestOAuthRegistration:
             mock_google.authorize_access_token.return_value = mock_oauth_token
             response = client.get("/auth/login/google/callback", follow_redirects=False)
             assert response.status_code == 302
-            assert response.headers["Location"] == "/dashboard"
+            assert response.headers["Location"] == "/backoffice/dashboard"
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             user = uow.users.get_by_email("oauthuser@example.com")
@@ -249,7 +249,7 @@ class TestOAuthLogin:
             response = client.get("/auth/login/google/callback", follow_redirects=False)
 
             assert response.status_code == 302
-            assert response.headers["Location"] == "/dashboard"
+            assert response.headers["Location"] == "/backoffice/dashboard"
 
         # Verify user is logged in
         with client.session_transaction() as session:
@@ -270,7 +270,7 @@ class TestOAuthLogin:
             response = client.get("/auth/login/google/callback", follow_redirects=False)
 
             assert response.status_code == 302
-            assert response.headers["Location"] == "/dashboard"
+            assert response.headers["Location"] == "/backoffice/dashboard"
 
         # Verify user is logged in
         with client.session_transaction() as session:
@@ -437,7 +437,7 @@ class TestMicrosoftOAuthRegistration:
             response = client.get("/auth/login/microsoft/callback", follow_redirects=False)
 
             assert response.status_code == 302
-            assert response.headers["Location"] == "/dashboard"
+            assert response.headers["Location"] == "/backoffice/dashboard"
 
         # Verify user was created and logged in
         with client.session_transaction() as session:
@@ -472,7 +472,7 @@ class TestMicrosoftOAuthRegistration:
             mock_microsoft.authorize_access_token.return_value = mock_microsoft_oauth_token
             response = client.get("/auth/login/microsoft/callback", follow_redirects=False)
             assert response.status_code == 302
-            assert response.headers["Location"] == "/dashboard"
+            assert response.headers["Location"] == "/backoffice/dashboard"
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             user = uow.users.get_by_email("msuser@example.com")
@@ -522,7 +522,7 @@ class TestMicrosoftOAuthLogin:
             response = client.get("/auth/login/microsoft/callback", follow_redirects=False)
 
             assert response.status_code == 302
-            assert response.headers["Location"] == "/dashboard"
+            assert response.headers["Location"] == "/backoffice/dashboard"
 
         # Verify user is logged in
         with client.session_transaction() as session:

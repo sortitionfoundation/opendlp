@@ -33,33 +33,6 @@ def reload_flags() -> None:
     _flags = collect_flags()
 
 
-# Endpoints for the legacy ("old") dashboard and the backoffice ("new") dashboard.
-OLD_DASHBOARD_ENDPOINT = "main.dashboard"
-NEW_DASHBOARD_ENDPOINT = "backoffice.dashboard"
-
-
-def default_dashboard_endpoint() -> str:
-    """Return the Flask endpoint for the user's default dashboard.
-
-    Controlled by FF_OLD_DEFAULT_DASHBOARD: when enabled, the old dashboard is
-    the default landing page; otherwise the new backoffice dashboard is.
-    """
-    if has_feature("old_default_dashboard"):
-        return OLD_DASHBOARD_ENDPOINT
-    return NEW_DASHBOARD_ENDPOINT
-
-
-def old_dashboard_route_enabled() -> bool:
-    """Whether the legacy /dashboard route should be reachable at all.
-
-    The route stays on while either flag is set: FF_OLD_DEFAULT_DASHBOARD (the
-    user lands there after login) or FF_DASHBOARD_SWITCH_LINKS (the
-    cross-dashboard switch links need a working target). When both are off,
-    the route is fully disabled.
-    """
-    return has_feature("old_default_dashboard") or has_feature("dashboard_switch_links")
-
-
 def showcase_enabled() -> bool:
     """Whether the component showcase at /backoffice/showcase is reachable.
 
