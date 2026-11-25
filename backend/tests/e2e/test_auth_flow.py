@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 from flask.testing import FlaskClient
 
+from opendlp.config import get_data_agreement_version, get_terms_version
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
@@ -73,7 +74,7 @@ class TestAuthenticationFlow:
                 "email": "newuser@example.com",
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
@@ -159,7 +160,7 @@ class TestOpenSignup:
             "email": "opensignup@example.com",
             "password": "securepassword123",  # pragma: allowlist secret
             "password_confirm": "securepassword123",  # pragma: allowlist secret
-            "accept_data_agreement": "y",
+            "accept_terms_and_data_agreement": "y",
             "csrf_token": get_csrf_token(client, url),
         }
         data.update(extra_data)
@@ -188,6 +189,10 @@ class TestOpenSignup:
             user = uow.users.get_by_email("opensignup@example.com")
             assert user is not None
             assert user.global_role == GlobalRole.ORGANISER
+            assert user.terms_agreed_at is not None
+            assert user.terms_version == get_terms_version()
+            assert user.user_data_agreement_agreed_at is not None
+            assert user.user_data_agreement_version == get_data_agreement_version()
             survey = get_signup_survey(uow, user.id, admin_user.id)
             assert survey is not None
             assert survey.answers == {
@@ -280,7 +285,7 @@ class TestRegistrationServiceErrors:
                 "email": "edgecase@example.com",
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=True,
@@ -553,7 +558,7 @@ class TestSignupTurnstile:
             "email": "turnstile-user@example.com",
             "password": "securepassword123",  # pragma: allowlist secret
             "password_confirm": "securepassword123",  # pragma: allowlist secret
-            "accept_data_agreement": "y",
+            "accept_terms_and_data_agreement": "y",
             "csrf_token": get_csrf_token(client, "/auth/register"),
         }
 

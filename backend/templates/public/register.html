@@ -186,23 +186,43 @@ ABOUTME: Unified SSO + email registration with a method chooser - Figma node 557
                     {{ signup_survey_fields(form) }}
                 </div>
             {% endif %}
+            {# One tickbox agrees to the Terms and Conditions and the data
+               agreement together, for every sign-up method. Each document has
+               its own link, outside the label so that following one never ticks
+               the box; they open in a new tab so nothing typed here is lost.
+               The sentence about emails is a notice, not a second agreement:
+               it is the tickbox's hint, so it is read out with it, and nothing
+               is stored for it. #}
             <fieldset class="flex flex-col gap-3">
                 <legend class="text-heading-lg" style="color: var(--color-headings);">
-                    {{ _("Data Agreement") }}
+                    {{ _("Terms and data agreement") }}
                 </legend>
-                <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                    {{ _("Please read and accept our data agreement to proceed.") }}
-                    <a href="{{ help_site_data_agreement }}"
-                       class="underline"
-                       style="color: var(--color-links);"
-                       target="_blank"
-                       rel="noopener noreferrer">{{ _("View data agreement") }}</a>
-                </p>
-                {{ checkbox(form.accept_data_agreement.name,
-                label=form.accept_data_agreement.label.text,
-                checked=form.accept_data_agreement.data,
+                <div class="text-body-sm flex flex-col gap-1.5"
+                     style="color: var(--color-secondary-text);">
+                    <p>{{ _("Please read and accept our terms and our data agreement to proceed.") }}</p>
+                    <ul class="flex flex-wrap gap-x-6 gap-y-1.5">
+                        <li>
+                            <a href="{{ help_site_terms }}"
+                               class="underline"
+                               style="color: var(--color-links);"
+                               target="_blank"
+                               rel="noopener noreferrer">{{ _("View terms and conditions") }}</a>
+                        </li>
+                        <li>
+                            <a href="{{ help_site_data_agreement }}"
+                               class="underline"
+                               style="color: var(--color-links);"
+                               target="_blank"
+                               rel="noopener noreferrer">{{ _("View data agreement") }}</a>
+                        </li>
+                    </ul>
+                </div>
+                {{ checkbox(form.accept_terms_and_data_agreement.name,
+                label=form.accept_terms_and_data_agreement.label.text,
+                checked=form.accept_terms_and_data_agreement.data,
                 required=true,
-                error=form.accept_data_agreement.errors | join("\n"))
+                hint=_("We'll email you about important changes to OpenDLP and to these documents."),
+                error=form.accept_terms_and_data_agreement.errors | join("\n"))
                 }}
             </fieldset>
             {# The beta disclaimer is information, not an agreement: there is

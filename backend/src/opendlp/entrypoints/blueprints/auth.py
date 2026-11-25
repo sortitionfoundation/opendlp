@@ -65,6 +65,11 @@ auth_bp = Blueprint("auth", __name__)
 
 logger = structlog.get_logger(__name__)
 
+# Whether the sign-up page's tickbox, which agrees to the Terms and Conditions
+# and the data agreement together, was ticked before handing off to Google or
+# Microsoft. The callback records the agreement on the account it creates.
+OAUTH_AGREED_SESSION_KEY = "oauth_accept_terms_and_data_agreement"
+
 
 def sign_in(user: User, remember: bool = False) -> bool:
     """Sign a user in, saying so plainly when the account has been disabled.
@@ -393,11 +398,12 @@ def _start_oauth_registration(form: RegistrationForm, provider: str, *, show_que
     """Stash the shared registration fields and hand off to an OAuth provider.
 
     The provider supplies the email and name in the callback; here we only carry
-    the invite code, data agreement and any survey answers across the redirect so
-    google_callback / microsoft_callback can finish creating the account.
+    the invite code, the agreement to the terms and the data agreement, and any
+    survey answers across the redirect so google_callback / microsoft_callback
+    can finish creating the account.
     """
     session["oauth_invite_code"] = form.invite_code.data or ""
-    session["oauth_accept_agreement"] = form.accept_data_agreement.data or False
+    session[OAUTH_AGREED_SESSION_KEY] = form.accept_terms_and_data_agreement.data or False
     if show_questions:
         session["oauth_survey_answers"] = form.survey_answers()
     else:
@@ -426,13 +432,15 @@ def _register_with_email(form: RegistrationForm, *, show_questions: bool) -> Res
             # After form validation, required fields are guaranteed to be non-None
             assert form.email.data is not None
             assert form.password.data is not None
+            agreed = form.accept_terms_and_data_agreement.data or False
             user, token = create_user(
                 uow=uow,
                 email=form.email.data,
                 password=form.password.data,
                 first_name=form.first_name.data or "",
                 last_name=form.last_name.data or "",
-                accept_data_agreement=form.accept_data_agreement.data or False,
+                accept_terms=agreed,
+                accept_data_agreement=agreed,
                 **_registration_role_args(form.invite_code.data),
             )
             if show_questions:
@@ -462,8 +470,8 @@ def register(invite_code: str = "") -> ResponseReturnValue:
     One form serves all three buttons. The Google and Microsoft buttons submit it
     with action=google/microsoft and hand off to the provider (which supplies the
     email and name); the email button (action=email) collects an email and
-    password here. The shared invite code, survey and data agreement apply to
-    every path.
+    password here. The shared invite code, survey, and the one tickbox that
+    agrees to the terms and the data agreement apply to every path.
     """
     if current_user.is_authenticated:
         return redirect(url_for(default_dashboard_endpoint()))
@@ -722,6 +730,7 @@ def google_callback() -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
 
         # Try to find or create OAuth user
+        agreed = session.get(OAUTH_AGREED_SESSION_KEY, False)
         with uow:
             user, created = find_or_create_oauth_user(
                 uow=uow,
@@ -731,7 +740,8 @@ def google_callback() -> ResponseReturnValue:
                 first_name=first_name,
                 last_name=last_name,
                 invite_code=session.get("oauth_invite_code"),
-                accept_data_agreement=session.get("oauth_accept_agreement", False),
+                accept_terms=agreed,
+                accept_data_agreement=agreed,
                 open_signup=has_feature("open_signup"),
             )
             # Survey answers were gathered on the registration form and carried
@@ -746,7 +756,7 @@ def google_callback() -> ResponseReturnValue:
 
         # Clear OAuth session data
         session.pop("oauth_invite_code", None)
-        session.pop("oauth_accept_agreement", None)
+        session.pop(OAUTH_AGREED_SESSION_KEY, None)
         session.pop("oauth_survey_answers", None)
 
         # Log user in
@@ -815,6 +825,7 @@ def microsoft_callback() -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
 
         # Try to find or create OAuth user
+        agreed = session.get(OAUTH_AGREED_SESSION_KEY, False)
         with uow:
             user, created = find_or_create_oauth_user(
                 uow=uow,
@@ -824,7 +835,8 @@ def microsoft_callback() -> ResponseReturnValue:
                 first_name=first_name,
                 last_name=last_name,
                 invite_code=session.get("oauth_invite_code"),
-                accept_data_agreement=session.get("oauth_accept_agreement", False),
+                accept_terms=agreed,
+                accept_data_agreement=agreed,
                 open_signup=has_feature("open_signup"),
             )
             # Survey answers were gathered on the registration form and carried
@@ -839,7 +851,7 @@ def microsoft_callback() -> ResponseReturnValue:
 
         # Clear OAuth session data
         session.pop("oauth_invite_code", None)
-        session.pop("oauth_accept_agreement", None)
+        session.pop(OAUTH_AGREED_SESSION_KEY, None)
         session.pop("oauth_survey_answers", None)
 
         # Log user in

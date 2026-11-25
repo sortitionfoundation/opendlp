@@ -10,6 +10,7 @@ from flask.testing import FlaskClient
 from werkzeug.wrappers import Response
 
 from opendlp.adapters.database import start_mappers
+from opendlp.config import get_data_agreement_version, get_terms_version
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
@@ -140,7 +141,7 @@ class TestOAuthRegistration:
             data={
                 "action": "google",
                 "invite_code": valid_invite.code,
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
@@ -169,6 +170,11 @@ class TestOAuthRegistration:
             assert user.oauth_provider == "google"
             assert user.oauth_id == "google-oauth-id-12345"
             assert user.password_hash is None  # No password for OAuth-only user
+            # The tickbox on the sign-up page reached the new account across the redirect
+            assert user.terms_agreed_at is not None
+            assert user.terms_version == get_terms_version()
+            assert user.user_data_agreement_agreed_at is not None
+            assert user.user_data_agreement_version == get_data_agreement_version()
 
     def test_register_google_saves_survey_answers(
         self, client: FlaskClient, postgres_session_factory, admin_user: User, mock_oauth_token, open_signup
@@ -180,7 +186,7 @@ class TestOAuthRegistration:
             data={
                 "action": "google",
                 "invite_code": "",
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
                 "survey_location": "Berlin, Germany",
                 "survey_process_plan": "within_year",
                 "survey_heard_about_us": "event",
@@ -420,7 +426,7 @@ class TestMicrosoftOAuthRegistration:
             data={
                 "action": "microsoft",
                 "invite_code": valid_invite.code,
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
@@ -450,6 +456,11 @@ class TestMicrosoftOAuthRegistration:
             assert user.oauth_provider == "microsoft"
             assert user.oauth_id == "microsoft-oauth-id-67890"
             assert user.password_hash is None  # No password for OAuth-only user
+            # The tickbox on the sign-up page reached the new account across the redirect
+            assert user.terms_agreed_at is not None
+            assert user.terms_version == get_terms_version()
+            assert user.user_data_agreement_agreed_at is not None
+            assert user.user_data_agreement_version == get_data_agreement_version()
 
     def test_register_microsoft_saves_survey_answers(
         self, client: FlaskClient, postgres_session_factory, admin_user: User, mock_microsoft_oauth_token, open_signup
@@ -460,7 +471,7 @@ class TestMicrosoftOAuthRegistration:
             data={
                 "action": "microsoft",
                 "invite_code": "",
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
                 "survey_location": "Vienna, Austria",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },

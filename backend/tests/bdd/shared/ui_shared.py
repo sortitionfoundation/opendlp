@@ -5,11 +5,14 @@ from playwright.sync_api import Page, expect
 from pytest_bdd import given, then, when
 from sqlalchemy.orm import sessionmaker
 
+from opendlp.config import get_data_agreement_version, get_terms_version
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 from ..config import ADMIN_EMAIL, ADMIN_PASSWORD, FRESH_PASSWORD, Urls
 
 NEWUSER_EMAIL = "newuser@example.com"
+AGREEMENT_LABEL = "I agree to the Terms and Conditions and the Data Agreement"
+EMAILS_SENTENCE = "We'll email you about important changes to OpenDLP and to these documents."
 BETA_DISCLAIMER = (
     "Registration for OpenDLP is currently only open for beta testing. Please contact us if you intend to use it in "
     "actual democratic lottery processes and/or with actual personal datasets."
@@ -57,8 +60,7 @@ def _(page: Page):
     page.fill('input[name="email"]', NEWUSER_EMAIL)
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
-    page.get_by_role("checkbox", name="Accept Data Agreement").check()
-    # Note: Don't check data agreement here - let the explicit steps handle it
+    page.get_by_role("checkbox", name=AGREEMENT_LABEL).check()
 
 
 @when("the user uses a valid invite code")
@@ -70,8 +72,7 @@ def _(page: Page, user_invite: str):
     page.fill('input[name="email"]', NEWUSER_EMAIL)
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
-    page.get_by_role("checkbox", name="Accept Data Agreement").check()
-    # Note: Don't check data agreement here - let the explicit steps handle it
+    page.get_by_role("checkbox", name=AGREEMENT_LABEL).check()
 
 
 @when("the user finishes registration")
@@ -88,18 +89,18 @@ def _(page: Page):
     page.get_by_text("Sign out").click()
 
 
-@when("the user accepts the data agreement")
+@when("the user agrees to the terms and the data agreement")
 def _(page: Page):
-    """the user accepts the data agreement."""
-    checkbox = page.get_by_role("checkbox", name="Accept Data Agreement")
+    """the user ticks the one box that agrees to both documents."""
+    checkbox = page.get_by_role("checkbox", name=AGREEMENT_LABEL)
     if not checkbox.is_checked():
         checkbox.check()
 
 
-@when("the user does not accept the data agreement")
+@when("the user does not agree to the terms and the data agreement")
 def _(page: Page):
-    """the user does not accept the data agreement."""
-    checkbox = page.get_by_role("checkbox", name="Accept Data Agreement")
+    """the user leaves the box that agrees to both documents unticked."""
+    checkbox = page.get_by_role("checkbox", name=AGREEMENT_LABEL)
     if checkbox.is_checked():
         checkbox.uncheck()
 
@@ -132,10 +133,45 @@ def _(page: Page):
     expect(page.get_by_text(BETA_DISCLAIMER)).to_be_visible()
     contact = page.get_by_role("link", name="contact us")
     expect(contact).to_have_attribute("href", re.compile(r"^mailto:[^@\s]+@[^@\s]+$"))
-    # The data agreement's tickbox is the only one
+    # The agreement's tickbox is the only one
     tickboxes = page.get_by_role("checkbox")
     expect(tickboxes).to_have_count(1)
-    expect(tickboxes).to_have_accessible_name(re.compile(r"^Accept Data Agreement"))
+    expect(tickboxes).to_have_accessible_name(re.compile(rf"^{AGREEMENT_LABEL}"))
+
+
+@then("the user should be asked to agree to the terms and the data agreement")
+def _(page: Page):
+    """one tickbox for both documents, a link to each, and the notice about emails read out with it."""
+    expect(page.get_by_role("group", name="Terms and data agreement")).to_be_visible()
+    tickbox = page.get_by_role("checkbox", name=AGREEMENT_LABEL)
+    expect(tickbox).not_to_be_checked()
+    expect(tickbox).to_have_accessible_description(EMAILS_SENTENCE)
+    for name in ("View terms and conditions", "View data agreement"):
+        link = page.get_by_role("link", name=name)
+        expect(link).to_have_attribute("href", re.compile(r"^https://"))
+        expect(link).to_have_attribute("target", "_blank")
+
+
+@then("the user should be told to agree to the terms and the data agreement")
+def _(page: Page):
+    """the form comes back with the reason under the tickbox."""
+    tickbox = page.get_by_role("checkbox", name=AGREEMENT_LABEL)
+    expect(tickbox).to_have_attribute("aria-invalid", "true")
+    expect(tickbox).to_have_accessible_description(
+        f"{EMAILS_SENTENCE} You must accept the terms and the data agreement to register"
+    )
+
+
+@then("the user's agreement to the terms and the data agreement should be recorded")
+def _(test_database: sessionmaker):
+    """the new account carries the time and the version of each document."""
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        user = uow.users.get_by_email(NEWUSER_EMAIL)
+        assert user is not None
+        assert user.terms_agreed_at is not None
+        assert user.terms_version == get_terms_version()
+        assert user.user_data_agreement_agreed_at is not None
+        assert user.user_data_agreement_version == get_data_agreement_version()
 
 
 @then("the user should be directed to try registering again")

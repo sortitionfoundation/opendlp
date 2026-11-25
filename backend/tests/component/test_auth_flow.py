@@ -48,7 +48,7 @@ class TestRegistration:
                 "email": "newuser@example.com",
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
             },
         )
         assert response.status_code == 200
@@ -65,7 +65,7 @@ class TestRegistration:
                 "email": "newuser@example.com",
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
             },
         )
         assert response.status_code == 200
@@ -90,7 +90,7 @@ class TestRegistration:
                 "email": "newuser@example.com",
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "differentpassword",  # pragma: allowlist secret
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
             },
         )
         assert response.status_code == 200
