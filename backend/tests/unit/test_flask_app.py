@@ -110,7 +110,7 @@ class TestFlaskApp:
             # Test 404 handler
             response = client.get("/nonexistent-route")
             assert response.status_code == 404
-            assert b"Page Not Found" in response.data or b"404" in response.data
+            assert b"Page not found" in response.data
 
     def test_security_headers_applied(self) -> None:
         """Test that secure security headers are applied."""
@@ -337,14 +337,14 @@ class TestErrorHandlers:
         """Test 404 error handler."""
         response = client.get("/does-not-exist")
         assert response.status_code == 404
-        assert b"404" in response.data or b"Not Found" in response.data
+        assert b"Page not found" in response.data
 
     def test_404_handler_returns_proper_template(self, client: FlaskClient) -> None:
         """Test 404 handler uses proper template."""
         response = client.get("/invalid-route")
         assert response.status_code == 404
         # Should contain elements from our 404 template
-        assert b"Page Not Found" in response.data or b"404" in response.data
+        assert b"Page not found" in response.data
 
     def test_csrf_error_handler_returns_friendly_page(self) -> None:
         """An expired/missing CSRF token renders the friendly 400 page, not a bare error."""
@@ -355,7 +355,7 @@ class TestErrorHandlers:
         # POST to a CSRF-protected form without a token to trigger a CSRFError.
         response = client.post("/auth/login", data={"email": "a@b.com", "password": "x"})
         assert response.status_code == 400
-        assert b"Form Expired" in response.data
+        assert b"The form has expired" in response.data
 
 
 class TestConfiguration:

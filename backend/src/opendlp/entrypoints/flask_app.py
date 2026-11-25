@@ -36,7 +36,7 @@ from opendlp.entrypoints.context_processors import (
     inject_feature_flags,
     inject_template_globals,
 )
-from opendlp.entrypoints.extensions import html_lang, init_extensions
+from opendlp.entrypoints.extensions import html_lang, init_extensions, login_manager
 from opendlp.entrypoints.template_filters import register_template_filters
 from opendlp.feature_flags import has_feature
 from opendlp.service_layer.error_translation import translate_error_code
@@ -228,8 +228,39 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(registration_bp)  # No url_prefix - routes define full paths
 
 
+def _settle_the_user() -> None:
+    """Load the signed-in user now, or settle this request on nobody if that fails."""
+    try:
+        current_user._get_current_object()
+    except Exception:
+        # Loading the user reads the database, which may be what failed. Settle
+        # the request on an anonymous user, as Flask-Login does when nobody is
+        # signed in, so that nothing later in the request tries the database
+        # again. The page then offers what it offers a visitor who is not
+        # signed in.
+        login_manager._update_request_context_with_user()
+
+
+def render_server_error_page() -> str:
+    """Render the 500 page, which must render even when the database is down.
+
+    The page reads nothing from the database, but Flask-Login loads the
+    signed-in user from it the first time anything in the request asks for
+    current_user - and rendering asks: the context processors, the locale
+    selector and the page itself all do. When the database is what failed,
+    each of those fails again, and the visitor gets the server's bare error
+    instead of this page. So the user is settled first.
+    """
+    _settle_the_user()
+    return render_template("errors/500.html")
+
+
 def register_error_handlers(app: Flask) -> None:
-    """Register error handlers for common HTTP errors."""
+    """Register error handlers for common HTTP errors.
+
+    The pages in templates/errors/ are on the public layout, as whoever meets
+    one may not be signed in.
+    """
 
     @app.errorhandler(404)
     def not_found(error: HTTPException) -> tuple[str, int]:
@@ -238,9 +269,9 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(500)
     def internal_error(error: HTTPException) -> tuple[str, int]:
-        """Handle 500 Internal Server errors."""
+        """Handle 500 Internal Server errors, with a page that needs no database."""
         app.logger.error(f"Server Error: {error}")
-        return render_template("errors/500.html"), 500
+        return render_server_error_page(), 500
 
     @app.errorhandler(403)
     def forbidden(error: HTTPException) -> tuple[str, int]:
