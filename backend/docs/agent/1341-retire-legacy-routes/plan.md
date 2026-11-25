@@ -544,20 +544,20 @@ Each step leaves the suite green, so each is a commit (or a few).
 2. [x] **Convert BDD** (section 5) while the legacy pages still exist: step files,
    `tests/bdd/config.py` and `conftest.py` move to backoffice URLs; add the
    database implementation of `selection.feature`. Feature files unchanged.
-3. [ ] **Repoint live callers** (section 2.2): `admin.py`, footer links, service
+3. [x] **Repoint live callers** (section 2.2): `admin.py`, footer links, service
    docs prose. Replace `default_dashboard_endpoint()` with the literal.
-4. [ ] **Port tests and add e2e smokes**: do the deletion on a throwaway branch,
+4. [x] **Port tests and add e2e smokes**: do the deletion on a throwaway branch,
    diff coverage, come back and write what the diff asks for (4.1, 4.3).
-5. [ ] **Delete** the four `*_legacy` blueprints, the nine `main` routes, the five
+5. [x] **Delete** the four `*_legacy` blueprints, the nine `main` routes, the five
    template folders and the wholly-legacy test files; edit the mixed test
    files; add the two redirects, their tests and the retirement test.
-6. [ ] **Remove flags**: helpers in `feature_flags.py`, `env.example`,
+6. [x] **Remove flags**: helpers in `feature_flags.py`, `env.example`,
    `TEST_FEATURE_FLAGS` entries, `test_dashboard_feature_flags.py`.
-7. [ ] **Orphans** (section 2.4, section 6 JavaScript): forms, service functions,
+7. [x] **Orphans** (section 2.4, section 6 JavaScript): forms, service functions,
    the repository method, `team-selector.js` and its bundle. Second coverage
    diff to confirm nothing live lost cover.
-8. [ ] **Catalogues and baseline**: regenerate translations, `.secrets.baseline`.
-9. [ ] **Docs** (section 6), including the two new `future_work/` notes.
+8. [x] **Catalogues and baseline**: regenerate translations, `.secrets.baseline`.
+9. [x] **Docs** (section 6), including the two new `future_work/` notes.
 10. [ ] `just check`, then `just test` in full (serial, output to a file).
 11. [ ] **Blueprint reorganisation** (section 7) — separate PR.
 
@@ -578,6 +578,55 @@ Notes from step 2:
   headless, as they did before; the file stays skipped in CI.
 - "the user signs out" opens the account menu first: the backoffice keeps
   "Sign out" inside it.
+
+Notes from steps 3 to 9:
+
+- Steps 3, 5 and 6 went in as one commit: the suite ran with the legacy
+  dashboard flags on, so the callers, the routes and the flags could not be
+  changed apart and stay green.
+- The redirect endpoints are `main.dashboard_redirect` and
+  `main.assembly_redirect`, so a stale `url_for("main.dashboard")` fails
+  loudly rather than quietly redirecting.
+- **Coverage diff (Q4).** Outside the deleted and edited files, 18 lines in
+  four modules lost cover. Three were behaviours whose only test drove a legacy
+  page, and are ported:
+  - a CSV added to existing respondents skips IDs already held
+    (`tests/integration/test_csv_import_with_config.py`);
+  - starting the check of a spreadsheet's replacement tabs records the run and
+    dispatches the task (`tests/unit/test_sortition_service.py`);
+  - `get_or_create_selection_settings`, now called only by the dev service docs
+    (`tests/unit/test_assembly_service.py`).
+  The round trip of selection settings through the Google Sheets form, one of
+  the two rows marked "to watch", is ported to the data source dialog
+  (`tests/e2e/test_backoffice_gsheet_selection.py`). The other, the user search,
+  already had its `db_semantics` twins in `tests/e2e/test_backoffice_assembly.py`.
+  A second diff after step 7 showed no surviving module with more missing lines.
+- **E2E smokes (Q5).** None added: create, edit, add and remove a team member,
+  user search and saving Google Sheets settings each already had a PostgreSQL
+  smoke under a backoffice name.
+- **Orphans (Q8).** The list in section 2.4 was re-derived from the imports of
+  the deleted modules and matched exactly. The seven unit tests of the link
+  rule that called `update_target_category` and `delete_target_category` now
+  call `save_all_targets`, so the rule keeps its tests.
+- **Secrets baseline.** Left alone: the hook passes, and a regenerated baseline
+  pulls in 300 lines of unrelated entries.
+
+**Found and left, for a decision** (code only the legacy pages used that is not
+in section 2.4, so not deleted):
+
+- `ManageOldTabsStatus.is_fresh` (`domain/value_objects.py`): only a legacy
+  template read it. Three lines, now untested.
+- `grant_user_assembly_role(..., email_adapter, template_renderer,
+  url_generator)` (`service_layer/user_service.py`): only the legacy members
+  route passed the adapters. The backoffice sends the email itself with
+  `send_assembly_role_assigned_email`, so the three parameters and the branch
+  that uses them are dead.
+- `POST /backoffice/project/<id>/selection/db/check`
+  (`db_selection_backoffice.check_db_data`): a live route with tests, but
+  nothing in the interface posts to it.
+- `tests/unit/test_env_scrub.py::test_the_declared_test_flags_are_on` passes
+  vacuously while `TEST_FEATURE_FLAGS` is empty. It guards the mechanism Q10
+  kept, so it stays.
 
 I stop and ask, rather than decide, if any of these turns up:
 

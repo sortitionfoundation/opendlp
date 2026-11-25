@@ -234,7 +234,7 @@ order:
 **Conventions to write down (cheap, do first)**
 
 1. **Promote `_is_htmx()` to a shared helper.** It's currently duplicated in
-   `targets.py` and `targets_legacy.py`. One `is_htmx()` in a shared
+   several blueprints (see `future_work/blueprint_shared_helpers.md`). One `is_htmx()` in a shared
    entrypoints util, used everywhere.
 2. **House style for interactive forms:** always carry both `action`/`method`
    *and* `hx-*`. Public flows must keep the plain fallback; admin flows may
@@ -246,7 +246,7 @@ order:
 4. **Response conventions:** `422` for validation fragments (the existing
    `htmx-422-swap.js` already supports this); `HX-Trigger` for "something
    changed, refresh siblings" events; `HX-Redirect` for server-driven
-   navigation (already used in `gsheets_legacy.py`).
+   navigation (already used in `data_source.py`).
 
 **Modals**
 

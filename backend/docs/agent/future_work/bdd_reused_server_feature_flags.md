@@ -8,25 +8,26 @@ issue.
 The BDD fixture (`test_server` in `tests/bdd/conftest.py`) reuses a server it
 finds on port 5002 rather than starting one. A server started by hand with
 `just flask-bdd` does not have the feature flags the suite needs, the fixture
-does not notice, and nine scenarios fail with a 404 that looks like a bug in
+does not notice, and seven scenarios fail with a 404 that looks like a bug in
 the application:
 
 | Scenarios | Route | Flag it needs |
 | --- | --- | --- |
-| `test_assembly_crud.py`: the two "list page" scenarios | legacy `/dashboard` | `FF_OLD_DEFAULT_DASHBOARD` or `FF_DASHBOARD_SWITCH_LINKS` |
 | `test_backoffice.py`: the three thank-you page scenarios | `/register/<slug>/thank-you` | `FF_REGISTRATION_PAGE` |
 | `test_backoffice.py`: the four image scenarios in the visual editor | the public image route | `FF_REGISTRATION_PAGE` |
 
-Stopping the hand-started server and re-running made all nine pass, with no
-change to the code.
+Stopping the hand-started server and re-running made them all pass, with no
+change to the code. (When this was written two more scenarios failed the same
+way, for want of the legacy dashboard's flags; that page and its flags have
+since been deleted.)
 
 ## Why the flags differ
 
 A server the fixture starts gets them from two places:
 
-- `FF_OLD_DEFAULT_DASHBOARD` and `FF_DASHBOARD_SWITCH_LINKS` are set in the
-  pytest process by `TEST_FEATURE_FLAGS` in `tests/conftest.py`, and the
-  fixture hands its environment on (`env = os.environ.copy()`);
+- any flag in `TEST_FEATURE_FLAGS` in `tests/conftest.py` (empty at present)
+  is set in the pytest process, and the fixture hands its environment on
+  (`env = os.environ.copy()`);
 - `FF_REGISTRATION_PAGE` is pinned by the fixture itself.
 
 The `flask-bdd` recipe in the `justfile` sets `FLASK_APP`, `DB_PORT`,
@@ -49,7 +50,7 @@ on a mismatch. Two gaps:
 
 ## Suggested fix
 
-1. Set the three flags in the `flask-bdd` recipe, beside the other inline
+1. Set the flags in the `flask-bdd` recipe, beside the other inline
    variables, so a hand-started server matches a fixture-started one.
 2. Have `/health/bdd` report the flags the suite depends on. One list should
    say which those are, read by the recipe's documentation, the endpoint and

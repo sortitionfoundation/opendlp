@@ -30,8 +30,7 @@ statuses and comments.
 
 - `entrypoints/blueprints/respondents.py` - `upload_respondents_csv` and
   `apply_upload_diff` via `_run_csv_import(..., replace_existing=True)`.
-- `entrypoints/blueprints/respondents_legacy.py` - `upload_respondents_csv`.
-- `entrypoints/blueprints/targets.py`, `targets_legacy.py` -
+- `entrypoints/blueprints/targets.py` -
   `import_targets_from_csv(..., replace_existing=True)`.
 
 ## Options
