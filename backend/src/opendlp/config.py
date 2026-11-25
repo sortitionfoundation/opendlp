@@ -542,6 +542,11 @@ class FlaskBaseConfig:
         self.HELP_SITE_DATA_AGREEMENT: str = os.environ.get(
             "HELP_SITE_DATA_AGREEMENT", "https://docs.democraticlottery.org/data-and-legal/data-agreement/"
         )
+        # The Terms and Conditions, which the sign-up page asks people to agree to
+        # together with the data agreement
+        self.HELP_SITE_TERMS: str = os.environ.get(
+            "HELP_SITE_TERMS", "https://docs.democraticlottery.org/data-and-legal/terms/"
+        )
         self.HELP_SITE_COOKIES: str = os.environ.get(
             "HELP_SITE_COOKIES", "https://docs.democraticlottery.org/data-and-legal/cookies/"
         )

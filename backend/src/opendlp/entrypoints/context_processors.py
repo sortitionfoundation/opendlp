@@ -140,6 +140,7 @@ class HelpSiteUrls(NamedTuple):
 
     home: str
     data_agreement: str
+    terms: str
     cookies: str
     knowledge_hub: str
 
@@ -150,6 +151,7 @@ def get_help_site_urls() -> HelpSiteUrls:
     return HelpSiteUrls(
         home=flask_config.HELP_SITE_HOME,
         data_agreement=flask_config.HELP_SITE_DATA_AGREEMENT,
+        terms=flask_config.HELP_SITE_TERMS,
         cookies=flask_config.HELP_SITE_COOKIES,
         knowledge_hub=flask_config.KNOWLEDGE_HUB_URL,
     )
@@ -195,6 +197,7 @@ def inject_template_globals() -> dict[str, str | Callable]:
         "support_email_address": get_support_email(),
         "help_site_home": help_site_urls.home,
         "help_site_data_agreement": help_site_urls.data_agreement,
+        "help_site_terms": help_site_urls.terms,
         "help_site_cookies": help_site_urls.cookies,
         "knowledge_hub_url": help_site_urls.knowledge_hub,
     }

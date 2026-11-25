@@ -286,7 +286,8 @@ description, provisioning steps, and operator runbook.
 ### Help Site URLs
 
 External help site URLs linked from base templates (header "Help" link, and the footer
-"User Data Agreement" and "Cookies" links):
+"User Data Agreement" and "Cookies" links), and from the sign-up page, which links to
+the two documents it asks people to agree to:
 
 ```bash
 # Help site landing page (replaces the in-app support page)
@@ -294,6 +295,10 @@ HELP_SITE_HOME=https://docs.democraticlottery.org/help/
 
 # Data agreement page (replaces the in-app user data agreement page)
 HELP_SITE_DATA_AGREEMENT=https://docs.democraticlottery.org/data-and-legal/data-agreement/
+
+# Terms and Conditions page. The sign-up page links to it beside the data
+# agreement, and its one tickbox agrees to both.
+HELP_SITE_TERMS=https://docs.democraticlottery.org/data-and-legal/terms/
 
 # Cookies page, linked from the footer of every page including the public
 # registration form. Must accurately list the cookies we set - see
