@@ -105,6 +105,10 @@ def _build_security_form_elements() -> str:
 
 registration_bp = Blueprint("registration", __name__)
 
+# The paths the public registration pages are served under: the form and its
+# thank-you page, images and documents, and the short URLs.
+REGISTRATION_PATH_PREFIXES = ("/register/", "/r/")
+
 
 def registration_url(url_slug: str) -> str:
     """External URL of the public registration form for a slug."""
@@ -114,6 +118,15 @@ def registration_url(url_slug: str) -> str:
 def short_url(short_url_slug: str) -> str:
     """External short URL that redirects to the registration form."""
     return url_for("registration.short_url_redirect", short_url_slug=short_url_slug, _external=True)
+
+
+def is_registration_path(path: str) -> bool:
+    """Whether a request path is one of the registration pages' addresses.
+
+    A missing page there gets the registration pages' own 404 page, in their
+    GOV.UK look, from the app's 404 handler - see register/not_found.html.
+    """
+    return path.startswith(REGISTRATION_PATH_PREFIXES)
 
 
 def registration_url_prefix() -> str:

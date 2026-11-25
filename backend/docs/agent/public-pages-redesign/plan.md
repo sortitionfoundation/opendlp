@@ -88,7 +88,8 @@ GOV.UK long term, out of scope** (see the scope boundary at the top; decided wit
 Hamish on PR #331):
 
 - `register/form.html`, `register/closed.html`, `register/thank_you.html`,
-  `register/thank_you_default.html`
+  `register/thank_you_default.html`, and `register/not_found.html`, the 404
+  page for an address under `/register/` or `/r/` (sc-1340)
 - These keep `base_public.html` and the GOV.UK assets indefinitely. Multi-reg-page
   work continues on them in GOV.UK style (branch
   `830-multiple-reg-pages-frontend-stable`).
@@ -308,7 +309,9 @@ phase 3; not used on the redesigned page.
 
 - **2026-11-25 (error pages, sc-1340)** — The five error pages moved from
   `base.html` to one layout on `public/base.html` (`errors/base.html`), with
-  Your projects or the home page as the way back. They stay in
+  Your projects or the home page as the way back; a missing page under
+  `/register/` or `/r/` gets `register/not_found.html`, in the registration
+  pages' GOV.UK look, instead. They stay in
   `templates/errors/`, added to Tailwind's scan, as fifteen legacy routes
   render `errors/500.html` themselves. The 500 handler now settles the
   signed-in user before rendering, so the page renders with the database

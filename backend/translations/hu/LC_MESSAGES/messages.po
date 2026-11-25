@@ -2100,6 +2100,7 @@ msgid "Image not found"
 msgstr "A kép nem található"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py
+#: templates/register/not_found.html
 msgid "Registration page not found"
 msgstr "A regisztrációs oldal nem található"
 
@@ -11996,6 +11997,25 @@ msgid ""
 msgstr ""
 "Ez a regisztrációs oldal még nem éles – teszt alatt áll. A beküldött "
 "adatokat nem használjuk fel a kiválasztásoknál."
+
+#: templates/register/not_found.html
+#, fuzzy
+msgid "If you typed the web address, check it is correct."
+msgstr "Ha begépelte a webcímet, ellenőrizze, hogy helyes-e."
+
+#: templates/register/not_found.html
+#, fuzzy
+msgid "If you pasted the web address, check you copied the entire address."
+msgstr "Ha bemásolta a webcímet, ellenőrizze, hogy a teljes címet másolta-e ki."
+
+#: templates/register/not_found.html
+#, fuzzy
+msgid ""
+"If the web address is correct, or you followed a link, contact the event "
+"organisers."
+msgstr ""
+"Ha a webcím helyes, vagy egy linket követett, forduljon az esemény "
+"szervezőihez."
 
 #: templates/register/thank_you.html templates/register/thank_you_default.html
 msgid "Thank You"

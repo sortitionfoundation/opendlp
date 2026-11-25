@@ -1,0 +1,19 @@
+{#
+ABOUTME: The registration pages' own "page not found" page, in their GOV.UK look, sent with a 404
+ABOUTME: The app's 404 handler sends it for an address under /register/ or /r/; anywhere else gets errors/404.html
+#}
+{% extends "base_public.html" %}
+{% block extra_head %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block title %}{{ _("Registration page not found") }} - OpenDLP{% endblock %}
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h1 class="govuk-heading-l">{{ _("Registration page not found") }}</h1>
+            <p class="govuk-body">{{ _("If you typed the web address, check it is correct.") }}</p>
+            <p class="govuk-body">{{ _("If you pasted the web address, check you copied the entire address.") }}</p>
+            <p class="govuk-body">
+                {{ _("If the web address is correct, or you followed a link, contact the event organisers.") }}
+            </p>
+        </div>
+    </div>
+{% endblock %}

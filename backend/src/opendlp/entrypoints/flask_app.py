@@ -261,10 +261,20 @@ def register_error_handlers(app: Flask) -> None:
     The pages in templates/errors/ are on the public layout, as whoever meets
     one may not be signed in.
     """
+    from .blueprints.registration import is_registration_path  # noqa: PLC0415
 
     @app.errorhandler(404)
     def not_found(error: HTTPException) -> tuple[str, int]:
-        """Handle 404 Not Found errors."""
+        """Handle 404 Not Found errors.
+
+        A missing page at a registration address gets the registration pages'
+        own page, in their GOV.UK look: its visitor has only seen that look.
+        Decided here by the path, not by the registration blueprint's own
+        handler, which would never see an address that matches no route,
+        such as /register/<slug>/ with a trailing slash.
+        """
+        if is_registration_path(request.path):
+            return render_template("register/not_found.html"), 404
         return render_template("errors/404.html"), 404
 
     @app.errorhandler(500)

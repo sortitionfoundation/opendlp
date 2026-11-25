@@ -78,8 +78,29 @@ they fail.
 
 ## 3. What a registration visitor sees
 
-A missing page under `/register/…` or `/r/…` gets the same 404 page as any
-other address, in the backoffice design.
+A missing page under `/register/…` or `/r/…` gets the registration pages' own
+404 page, `register/not_found.html`: "Registration page not found", on
+`base_public.html` in their GOV.UK look, with the GOV.UK pattern's advice — if
+you typed the address, check it; if you pasted it, check you copied all of it;
+if it is right, or you followed a link, contact the event organisers. The
+visitor of a registration page has only ever seen that look, may well have
+typed a short URL off a leaflet, and has no projects and no reason to go to
+OpenDLP's home page, so the page offers no way back into the app. It carries
+the registration pages' `noindex` meta tag, as `closed.html` does.
+
+- **Decided by the path**, in the app's 404 handler:
+  `is_registration_path()`, beside the routes in `blueprints/registration.py`,
+  holds the two prefixes. A 404 handler on the registration blueprint would
+  see only the 404s its own views raise — an unknown slug or short URL, a
+  missing image or document, the feature switched off — and never an address
+  that matches no route, such as `/register/<slug>/` with a trailing slash.
+- **A closed page** still redirects to `/registration-closed`, from
+  `/register/<slug>` and from its short URL: nothing raises a 404 there.
+- `/register-assets/images/…`, the images served by id, is not under either
+  prefix: a missing one gets the ordinary 404 page, which no one sees, as
+  the browser asked for an image.
+- Giving registration visitors the backoffice 404 page as well takes only
+  the path check out of the 404 handler, with `register/not_found.html`.
 
 ## 4. Tests
 
@@ -94,6 +115,11 @@ other address, in the backoffice design.
   wording.
 - `tests/component/test_legacy_header.py` checks the GOV.UK header's Your
   projects link on `base.html` itself, as no error page uses that header now.
+- `tests/component/test_registration_routes.py`, beside the other registration
+  pages' tests (`TestRegistrationPageNotFound`): an unknown page, short URL and
+  thank-you page, addresses no route matches, the feature switched off, other
+  addresses getting the usual page, and a closed page still redirecting; and
+  `is_registration_path()` on its own in `TestUrlHelpers`.
 
 ## 5. Not in this change
 
