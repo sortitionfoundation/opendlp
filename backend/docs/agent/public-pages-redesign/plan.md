@@ -79,8 +79,9 @@ Templates still extending a GOV.UK base, grouped by journey:
 - `auth/confirm_email.html`, `auth/resend_confirmation.html` — **migrated** (phase 3)
 - `main/index.html` (public landing) — **migrated** to `public/home.html`
 
-(The error pages `errors/400|403|404|413|500.html` are seen by both audiences and
-**stay GOV.UK** with the respondent journey — decided 2026-10-08.)
+(The error pages `errors/400|403|404|413|500.html` are seen by both audiences.
+They stayed GOV.UK on 2026-10-08, and **moved to the design system** with
+sc-1340 on 2026-11-25 — see `docs/agent/1340-error-pages-backoffice/plan.md`.)
 
 **Respondent registration journey (`base_public.html`, chrome-less)** — **stays
 GOV.UK long term, out of scope** (see the scope boundary at the top; decided with
@@ -108,8 +109,10 @@ restyled (`main/dashboard.html` + old dashboard behind `FF_OLD_DEFAULT_DASHBOARD
    use it, and they leave GOV.UK with the legacy authenticated pages (they did, in
    `869-profile-backoffice`, and the macro went with them).
 4. **Public landing** (`main/index.html`) — **done**, replaced by `public/home.html`.
-5. ~~Error pages~~ — **stay GOV.UK** (decided 2026-10-08): respondents see them,
-   so the same widest-audience argument applies as for the registration forms.
+5. **Error pages** — kept GOV.UK on 2026-10-08, as respondents see them;
+   **moved** to the public layout with sc-1340 (2026-11-25), still in
+   `templates/errors/`, which Tailwind now scans. See
+   `docs/agent/1340-error-pages-backoffice/plan.md`.
 6. **Partial teardown** — once the account journey has migrated: delete
    `base.html` (when nothing extends it) and the `govuk_*` macros only the account
    pages used. `base_public.html`, `css/application.css`,
@@ -302,6 +305,14 @@ phase 3; not used on the redesigned page.
 - `process_plan` field type: radio (current form) vs select (Figma).
 
 ## Session log
+
+- **2026-11-25 (error pages, sc-1340)** — The five error pages moved from
+  `base.html` to one layout on `public/base.html` (`errors/base.html`), with
+  Your projects or the home page as the way back. They stay in
+  `templates/errors/`, added to Tailwind's scan, as fifteen legacy routes
+  render `errors/500.html` themselves. The 500 handler now settles the
+  signed-in user before rendering, so the page renders with the database
+  down. Details in `docs/agent/1340-error-pages-backoffice/plan.md`.
 
 - **2026-10-28 (phases 2 and 3 — every auth blueprint page)** — On branch
   `public-auth-pages-redesign`, one commit per group: login, verify-2FA, the
