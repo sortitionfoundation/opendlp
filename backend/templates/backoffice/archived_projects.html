@@ -1,0 +1,43 @@
+{#
+ABOUTME: The Archived projects page: a plain list of the archived projects the user can see
+ABOUTME: Admins see every archived project and everyone else their own; each card opens the project
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/page_header.html" import page_header %}
+{% from "backoffice/components/card.html" import card %}
+{% from "backoffice/components/project_card.html" import project_card %}
+
+{% block title %}{{ _("Archived projects") }}{% endblock %}
+
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
+        {{ page_header(
+        title=_("Archived projects"),
+        back_href=url_for('backoffice.dashboard'),
+        back_label=_("Back to Your projects")
+        ) }}
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">
+        {{ _("Archived projects don't appear in Your projects. Open one to unarchive it.") }}
+    </p>
+
+    <section aria-label="{{ _('Archived projects') }}">
+        {% if assemblies %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for assembly in assemblies %}
+                    {{ project_card(assembly, show_status=true) }}
+                {% endfor %}
+            </div>
+        {% else %}
+            {% call card(id="no-archived-projects-card") %}
+                <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No archived projects") }}</p>
+                <p style="color: var(--color-secondary-text);" class="text-body-md">
+                    {{ _("A project that is archived is kept here, and can be unarchived from its own page.") }}
+                </p>
+            {% endcall %}
+        {% endif %}
+    </section>
+{% endblock %}

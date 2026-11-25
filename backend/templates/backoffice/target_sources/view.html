@@ -6,6 +6,7 @@ ABOUTME: Opens as a takeover dialog over the registration hub; set-up and upload
 {% from "backoffice/components/info_card.html" import info_card %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/archived_banner.html" import archived_banner %}
 {% from "backoffice/registration/_step_dialog.html" import step_dialog %}
 {% block title %}{{ _("Link targets to questions") }} - {{ assembly.title }}{% endblock %}
 {% block page_header %}
@@ -27,6 +28,7 @@ ABOUTME: Opens as a takeover dialog over the registration hub; set-up and upload
     </div>
 {% endblock %}
 {% block page_content %}
+    {{ archived_banner(assembly, can_unarchive=can_manage_project|default(false)) }}
     {% include "backoffice/registration/_hub.html" %}
 {% endblock %}
 {% block page_overlay %}

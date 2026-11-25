@@ -7,6 +7,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/archived_banner.html" import archived_banner %}
 {% from "backoffice/components/modal.html" import dialog_close_icon %}
 {% from "backoffice/components/stepper.html" import stepper %}
 {% from "backoffice/components/registration_page_list.html" import registration_page_list %}
@@ -45,6 +46,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
     </div>
 {% endblock %}
 {% block page_content %}
+    {{ archived_banner(assembly, can_unarchive=can_manage|default(false)) }}
     {# The editor renders as a takeover modal (see the page_overlay block); this block
        only paints the registration pages list behind it. The view passes page_takeover,
        so base_page marks this content inert — a dimmed, non-interactive backdrop. #}

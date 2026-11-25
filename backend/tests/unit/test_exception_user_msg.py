@@ -11,6 +11,7 @@ from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     AssemblyTitleTaken,
+    CannotArchiveWithPublishedPages,
     CannotCloneGSheetAssembly,
     CannotDisableSelf,
     CannotRemoveLastAssemblyManager,
@@ -78,6 +79,7 @@ CURATED = [
     CannotRemoveLastAuthMethod(),
     CannotDisableSelf(),
     CannotRemoveLastAssemblyManager(),
+    CannotArchiveWithPublishedPages(["English", "Welsh"]),
     FieldDefinitionConflictError("A choice field must keep at least one option"),
     ContentBlockInvalidError("Add a heading, some text, or both"),
     SelectionAlreadyRunning(_RUNNING_SELECTION),

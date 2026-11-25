@@ -11,7 +11,7 @@ from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import user_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -489,6 +489,58 @@ class TestGetUserAssemblies:
 
         with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.get_user_assemblies(uow=uow, user_id=uuid.uuid4())
+
+
+class TestGetUserArchivedAssemblies:
+    """The Archived projects page: admins find every archived project, everyone else their own."""
+
+    @staticmethod
+    def _user(uow, role: GlobalRole) -> User:
+        user = User(
+            email=f"{role.value}@example.com",
+            global_role=role,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(user)
+        return user
+
+    @staticmethod
+    def _assembly(uow, title: str, status: AssemblyStatus = AssemblyStatus.ARCHIVED, days_ago: int = 0) -> Assembly:
+        assembly = Assembly(
+            title=title,
+            status=status,
+            created_at=datetime(2026, 6, 1, tzinfo=UTC) - timedelta(days=days_ago),
+        )
+        uow.assemblies.add(assembly)
+        return assembly
+
+    def test_an_admin_sees_every_archived_project_newest_first(self, uow):
+        admin = self._user(uow, GlobalRole.ADMIN)
+        self._assembly(uow, "Older archive", days_ago=10)
+        self._assembly(uow, "Newer archive", days_ago=1)
+        self._assembly(uow, "Still active", status=AssemblyStatus.ACTIVE)
+
+        assemblies = user_service.get_user_archived_assemblies(uow, admin.id)
+
+        assert [a.title for a in assemblies] == ["Newer archive", "Older archive"]
+
+    def test_anyone_else_sees_only_the_archived_projects_they_hold_a_role_on(self, uow):
+        organiser = self._user(uow, GlobalRole.ORGANISER)
+        theirs = self._assembly(uow, "Theirs")
+        self._assembly(uow, "Someone else's")
+        active = self._assembly(uow, "Theirs, still active", status=AssemblyStatus.ACTIVE)
+        for assembly in (theirs, active):
+            organiser.assembly_roles.append(
+                UserAssemblyRole(user_id=organiser.id, assembly_id=assembly.id, role=AssemblyRole.READ_ONLY)
+            )
+
+        assemblies = user_service.get_user_archived_assemblies(uow, organiser.id)
+
+        assert [a.title for a in assemblies] == ["Theirs"]
+
+    def test_user_not_found(self, uow):
+        with pytest.raises(UserNotFoundError):
+            user_service.get_user_archived_assemblies(uow, uuid.uuid4())
 
 
 class TestAssignAssemblyRole:

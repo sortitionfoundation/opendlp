@@ -146,8 +146,10 @@ class AssemblyRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_assemblies_for_user(self, user_id: uuid.UUID) -> Iterable[Assembly]:
-        """Get the active assemblies the user holds a role on, newest first.
+    def get_assemblies_for_user(
+        self, user_id: uuid.UUID, status: AssemblyStatus = AssemblyStatus.ACTIVE
+    ) -> Iterable[Assembly]:
+        """Get the assemblies with this status the user holds a role on, newest first.
 
         A role lookup, not a permission check. Whether someone is entitled to
         see more than this is decided by `service_layer.permissions`.
@@ -156,7 +158,7 @@ class AssemblyRepository(AbstractRepository):
 
     @abc.abstractmethod
     def get_assemblies_by_status(self, status: AssemblyStatus) -> Iterable[Assembly]:
-        """Get assemblies by their status."""
+        """Get assemblies by their status, newest first."""
         raise NotImplementedError
 
     @abc.abstractmethod

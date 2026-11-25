@@ -12,7 +12,7 @@ from opendlp.adapters.url_generator import URLGenerator
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.users import User, UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole, assembly_role_options
 
 from . import two_factor_service
 from .email_confirmation_service import create_confirmation_token
@@ -196,6 +196,24 @@ def get_user_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Ass
 
     # Regular users see only assemblies they have specific roles for
     return list(uow.assemblies.get_assemblies_for_user(user_id))
+
+
+def get_user_archived_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Assembly]:
+    """Get the archived assemblies a user can find again, newest first.
+
+    Who sees which is decided as in get_user_assemblies: an admin sees every
+    archived assembly, anyone else those they hold a role on.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+
+    if can_see_all_assemblies(user):
+        return list(uow.assemblies.get_assemblies_by_status(AssemblyStatus.ARCHIVED))
+
+    return list(uow.assemblies.get_assemblies_for_user(user_id, status=AssemblyStatus.ARCHIVED))
 
 
 def assign_assembly_role(

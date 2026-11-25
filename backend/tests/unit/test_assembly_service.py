@@ -2,11 +2,12 @@
 ABOUTME: Tests assembly creation, updates, permissions, and lifecycle management with fake repositories"""
 
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User, UserAssemblyRole
@@ -15,6 +16,7 @@ from opendlp.service_layer import assembly_service, target_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     AssemblyTitleTaken,
+    CannotArchiveWithPublishedPages,
     GoogleSheetConfigNotFoundError,
     InsufficientPermissions,
     UserNotFoundError,
@@ -498,6 +500,26 @@ class TestGetAssemblyWithPermissions:
             assembly_service.get_assembly_with_permissions(uow=uow, assembly_id=assembly.id, user_id=regular_user.id)
 
 
+def _admin(uow) -> User:
+    admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+    uow.users.add(admin)
+    return admin
+
+
+def _member(uow, assembly: Assembly, role: AssemblyRole) -> User:
+    """A user whose only standing on the assembly is this role on it."""
+    user = User(email=f"{role.value}@example.com", global_role=GlobalRole.USER, password_hash="hash")
+    user.assembly_roles.append(UserAssemblyRole(user_id=user.id, assembly_id=assembly.id, role=role))
+    uow.users.add(user)
+    return user
+
+
+def _registration_page(uow, assembly: Assembly, name: str, status: RegistrationPageStatus) -> RegistrationPage:
+    page = RegistrationPage(assembly_id=assembly.id, name=name, url_slug=name.lower().replace(" ", "-"), status=status)
+    uow.registration_pages.add(page)
+    return page
+
+
 class TestArchiveAssembly:
     """Test assembly archival functionality."""
 
@@ -533,6 +555,163 @@ class TestArchiveAssembly:
 
         with pytest.raises(InsufficientPermissions):
             assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=regular_user.id)
+
+    def test_the_projects_manager_can_archive_it(self, uow):
+        assembly = Assembly(title="Managed")
+        uow.assemblies.add(assembly)
+        manager = _member(uow, assembly, AssemblyRole.ASSEMBLY_MANAGER)
+
+        archived = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=manager.id)
+
+        assert archived.status == AssemblyStatus.ARCHIVED
+        assert uow.assemblies.get(assembly.id).status == AssemblyStatus.ARCHIVED
+
+    @pytest.mark.parametrize("role", [AssemblyRole.CONFIRMATION_CALLER, AssemblyRole.READ_ONLY])
+    def test_other_team_members_are_refused(self, uow, role):
+        assembly = Assembly(title="Not theirs to archive")
+        uow.assemblies.add(assembly)
+        member = _member(uow, assembly, role)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=member.id)
+
+        assert uow.assemblies.get(assembly.id).status == AssemblyStatus.ACTIVE
+
+    def test_archiving_marks_the_project_updated_and_returns_a_detached_copy(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Finished", updated_at=datetime(2026, 1, 1, tzinfo=UTC))
+        uow.assemblies.add(assembly)
+
+        archived = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id)
+
+        assert archived is not uow.assemblies.get(assembly.id)
+        assert uow.assemblies.get(assembly.id).updated_at > datetime(2026, 1, 1, tzinfo=UTC)
+
+    def test_a_published_page_refuses_it_and_names_the_published_pages(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Still recruiting")
+        uow.assemblies.add(assembly)
+        _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+        _registration_page(uow, assembly, "Welsh", RegistrationPageStatus.PUBLISHED)
+        _registration_page(uow, assembly, "Draft", RegistrationPageStatus.TEST)
+        _registration_page(uow, assembly, "Last year", RegistrationPageStatus.CLOSED)
+
+        with pytest.raises(CannotArchiveWithPublishedPages) as exc_info:
+            assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id)
+
+        assert exc_info.value.page_names == ["English", "Welsh"]
+        assert exc_info.value.user_msg() == (
+            "The registration pages 'English', 'Welsh' are published. Close them before archiving this project."
+        )
+        assert uow.assemblies.get(assembly.id).status == AssemblyStatus.ACTIVE
+
+    def test_the_refusal_names_a_single_page_in_the_singular(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Still recruiting")
+        uow.assemblies.add(assembly)
+        _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+
+        with pytest.raises(CannotArchiveWithPublishedPages) as exc_info:
+            assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id)
+
+        assert exc_info.value.user_msg() == (
+            "The registration page 'English' is published. Close it before archiving this project."
+        )
+
+    def test_test_and_closed_pages_stay_as_they_are(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Done recruiting")
+        uow.assemblies.add(assembly)
+        draft = _registration_page(uow, assembly, "Draft", RegistrationPageStatus.TEST)
+        closed = _registration_page(uow, assembly, "Closed", RegistrationPageStatus.CLOSED)
+
+        archived = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id)
+
+        assert archived.status == AssemblyStatus.ARCHIVED
+        assert uow.registration_pages.get(draft.id).status == RegistrationPageStatus.TEST
+        assert uow.registration_pages.get(closed.id).status == RegistrationPageStatus.CLOSED
+
+    def test_an_archived_project_is_left_as_it_is(self, uow):
+        admin = _admin(uow)
+        archived_at = datetime(2026, 1, 1, tzinfo=UTC)
+        assembly = Assembly(title="Archived already", status=AssemblyStatus.ARCHIVED, updated_at=archived_at)
+        uow.assemblies.add(assembly)
+
+        result = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id)
+
+        assert result.status == AssemblyStatus.ARCHIVED
+        assert uow.assemblies.get(assembly.id).updated_at == archived_at
+
+    def test_an_unknown_project_is_not_found(self, uow):
+        admin = _admin(uow)
+
+        with pytest.raises(AssemblyNotFoundError):
+            assembly_service.archive_assembly(uow=uow, assembly_id=uuid.uuid4(), user_id=admin.id)
+
+
+class TestUnarchiveAssembly:
+    """Unarchiving: the same people as archiving, and nothing else changes."""
+
+    def test_an_admin_can_unarchive_a_project(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(
+            title="Back again", status=AssemblyStatus.ARCHIVED, updated_at=datetime(2026, 1, 1, tzinfo=UTC)
+        )
+        uow.assemblies.add(assembly)
+
+        active = assembly_service.unarchive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id)
+
+        assert active.status == AssemblyStatus.ACTIVE
+        assert active is not uow.assemblies.get(assembly.id)
+        assert uow.assemblies.get(assembly.id).status == AssemblyStatus.ACTIVE
+        assert uow.assemblies.get(assembly.id).updated_at > datetime(2026, 1, 1, tzinfo=UTC)
+
+    def test_the_projects_manager_can_unarchive_it(self, uow):
+        assembly = Assembly(title="Back again", status=AssemblyStatus.ARCHIVED)
+        uow.assemblies.add(assembly)
+        manager = _member(uow, assembly, AssemblyRole.ASSEMBLY_MANAGER)
+
+        active = assembly_service.unarchive_assembly(uow=uow, assembly_id=assembly.id, user_id=manager.id)
+
+        assert active.status == AssemblyStatus.ACTIVE
+
+    @pytest.mark.parametrize("role", [AssemblyRole.CONFIRMATION_CALLER, AssemblyRole.READ_ONLY])
+    def test_other_team_members_are_refused(self, uow, role):
+        assembly = Assembly(title="Not theirs to unarchive", status=AssemblyStatus.ARCHIVED)
+        uow.assemblies.add(assembly)
+        member = _member(uow, assembly, role)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.unarchive_assembly(uow=uow, assembly_id=assembly.id, user_id=member.id)
+
+        assert uow.assemblies.get(assembly.id).status == AssemblyStatus.ARCHIVED
+
+    def test_someone_without_a_role_is_refused(self, uow):
+        outsider = User(email="outsider@example.com", global_role=GlobalRole.ORGANISER, password_hash="hash")
+        uow.users.add(outsider)
+        assembly = Assembly(title="Someone else's", status=AssemblyStatus.ARCHIVED)
+        uow.assemblies.add(assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.unarchive_assembly(uow=uow, assembly_id=assembly.id, user_id=outsider.id)
+
+    def test_an_active_project_is_left_as_it_is(self, uow):
+        admin = _admin(uow)
+        updated_at = datetime(2026, 1, 1, tzinfo=UTC)
+        assembly = Assembly(title="Never archived", updated_at=updated_at)
+        uow.assemblies.add(assembly)
+
+        result = assembly_service.unarchive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id)
+
+        assert result.status == AssemblyStatus.ACTIVE
+        assert uow.assemblies.get(assembly.id).updated_at == updated_at
+
+    def test_an_unknown_user_is_not_found(self, uow):
+        assembly = Assembly(title="Archived", status=AssemblyStatus.ARCHIVED)
+        uow.assemblies.add(assembly)
+
+        with pytest.raises(UserNotFoundError):
+            assembly_service.unarchive_assembly(uow=uow, assembly_id=assembly.id, user_id=uuid.uuid4())
 
 
 class TestGetUserAccessibleAssemblies:

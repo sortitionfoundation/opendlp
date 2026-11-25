@@ -89,6 +89,9 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | BO-ASM-4 | `/assembly/<id>/edit` | GET | :white_check_mark: | [H][P][N] | [BDD-ASM](../features/backoffice-assembly.feature): *"User can navigate to edit assembly"* |
 | BO-ASM-5 | `/assembly/<id>/edit` | POST | :white_check_mark: | [H][V][N] | [BDD-ASM](../features/backoffice-assembly.feature): *"User can update assembly details"* |
 | BO-ASM-6 | `/assembly/<id>/update-number-to-select` | POST | :x: | - | **No BDD scenario** |
+| BO-ASM-7 | `/project/<id>/archive` | POST | :white_check_mark: | [H][P][V][N] | [BDD-ASM](../features/backoffice-assembly.feature): *"A project manager archives a project and unarchives it"* |
+| BO-ASM-8 | `/project/<id>/unarchive` | POST | :white_check_mark: | [H][P][N] | [BDD-ASM](../features/backoffice-assembly.feature): *"A project manager archives a project and unarchives it"* |
+| BO-ASM-9 | `/projects/archived` | GET | :white_check_mark: | [H][P][E] | [BDD-ASM](../features/backoffice-assembly.feature): *"A project manager archives a project and unarchives it"* |
 | BO-DAT-1 | `/assembly/<id>/data` | GET | :white_check_mark: | [H][P][N][E] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User can navigate to data tab"* |
 | BO-DAT-2 | `/assembly/<id>/data/upload-targets` | POST | :large_orange_diamond: | [H] | [BDD-CSV](../features/backoffice-csv-upload.feature): *"After uploading targets, People upload becomes active"* |
 | BO-DAT-3 | `/assembly/<id>/data/delete-targets` | POST | :large_orange_diamond: | [H] | - |
@@ -145,7 +148,8 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | SVC-ASM-1 | `create_assembly()` | :white_check_mark: | [H][V] | [BDD-ASM](../features/backoffice-assembly.feature): *"User can create a new assembly"* |
 | SVC-ASM-2 | `update_assembly()` | :white_check_mark: | [H][V] | [BDD-ASM](../features/backoffice-assembly.feature): *"User can update assembly details"* |
 | SVC-ASM-3 | `get_assembly_with_permissions()` | :white_check_mark: | [H][P][N] | [BDD-MEM](../features/backoffice-assembly-members.feature): *"Non-admin user without role cannot access"* |
-| SVC-ASM-4 | `archive_assembly()` | :x: | - | **No user flow** |
+| SVC-ASM-4 | `archive_assembly()` | :white_check_mark: | [H][P][V][N][E] | [BDD-ASM](../features/backoffice-assembly.feature): *"A project manager archives a project and unarchives it"* |
+| SVC-ASM-7 | `unarchive_assembly()` | :white_check_mark: | [H][P][N][E] | [BDD-ASM](../features/backoffice-assembly.feature): *"A project manager archives a project and unarchives it"* |
 | SVC-ASM-5 | `get_user_accessible_assemblies()` | :white_check_mark: | [H] | [BDD-ASM](../features/backoffice-assembly.feature): *"Dashboard displays create assembly button"* |
 | SVC-GS-1 | `add_assembly_gsheet()` | :white_check_mark: | [H][V] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User can create new gsheet configuration"* |
 | SVC-GS-2 | `update_assembly_gsheet()` | :white_check_mark: | [H][V] | [BDD-GS](../features/backoffice-assembly-gsheet.feature): *"User can update existing configuration"* |
@@ -184,6 +188,7 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | SVC-USR-1 | `get_user_assemblies()` | :white_check_mark: | [H] | [BDD-ASM](../features/backoffice-assembly.feature): *"Dashboard displays create assembly button"* |
 | SVC-USR-2 | `grant_user_assembly_role()` | :white_check_mark: | [H][P][V] | [BDD-MEM](../features/backoffice-assembly-members.feature): *"Admin can see add user form"* |
 | SVC-USR-3 | `revoke_user_assembly_role()` | :white_check_mark: | [H][P][V] | [BDD-MEM](../features/backoffice-assembly-members.feature): *"I should see remove buttons"* |
+| SVC-USR-4 | `get_user_archived_assemblies()` | :white_check_mark: | [H][P][N] | [BDD-ASM](../features/backoffice-assembly.feature): *"A project manager archives a project and unarchives it"* |
 
 ### sortition.py
 
@@ -227,6 +232,7 @@ BDD feature files describe user flows in human-readable Gherkin format. These ar
 | BDD-ASM-13 | Create assembly page displays form fields | [H] | GET /assembly/new |
 | BDD-ASM-14 | User can create a new assembly | [H] | POST /assembly/new |
 | BDD-ASM-15 | Empty state shows create assembly button | [H][E] | GET /dashboard |
+| BDD-ASM-16 | A project manager archives a project and unarchives it | [H] | POST /project/<id>/archive, POST /project/<id>/unarchive, GET /projects/archived |
 
 #### [backoffice-assembly-members.feature](../features/backoffice-assembly-members.feature) (BDD-MEM)
 

@@ -88,6 +88,23 @@ class TestGetAssembliesByStatus:
         results = list(assembly_repo_backend.repo.get_assemblies_by_status(AssemblyStatus.ARCHIVED))
         assert len(results) == 0
 
+    def test_orders_newest_first(self, assembly_repo_backend: ContractBackend):
+        _add_assembly(
+            assembly_repo_backend,
+            title="Older",
+            status=AssemblyStatus.ARCHIVED,
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        _add_assembly(
+            assembly_repo_backend,
+            title="Newer",
+            status=AssemblyStatus.ARCHIVED,
+            created_at=datetime(2026, 6, 1, tzinfo=UTC),
+        )
+
+        results = list(assembly_repo_backend.repo.get_assemblies_by_status(AssemblyStatus.ARCHIVED))
+        assert [assembly.title for assembly in results] == ["Newer", "Older"]
+
 
 class TestSearchByTitle:
     def test_finds_by_partial_match(self, assembly_repo_backend: ContractBackend):
@@ -118,6 +135,20 @@ class TestSearchByTitle:
 
         results = list(assembly_repo_backend.repo.search_by_title("nonexistent"))
         assert len(results) == 0
+
+    def test_excludes_archived_assemblies(self, assembly_repo_backend: ContractBackend):
+        _add_assembly(assembly_repo_backend, title="Climate Assembly")
+        _add_assembly(assembly_repo_backend, title="Climate Jury", status=AssemblyStatus.ARCHIVED)
+
+        results = list(assembly_repo_backend.repo.search_by_title("climate"))
+        assert [assembly.title for assembly in results] == ["Climate Assembly"]
+
+    def test_orders_newest_first(self, assembly_repo_backend: ContractBackend):
+        _add_assembly(assembly_repo_backend, title="Older panel", created_at=datetime(2026, 1, 1, tzinfo=UTC))
+        _add_assembly(assembly_repo_backend, title="Newer panel", created_at=datetime(2026, 6, 1, tzinfo=UTC))
+
+        results = list(assembly_repo_backend.repo.search_by_title("panel"))
+        assert [assembly.title for assembly in results] == ["Newer panel", "Older panel"]
 
 
 class TestGetAssembliesForUser:
@@ -179,6 +210,17 @@ class TestGetAssembliesForUser:
 
         results = list(assembly_repo_backend.repo.get_assemblies_for_user(user.id))
         assert [assembly.title for assembly in results] == ["Newer", "Older"]
+
+    def test_returns_the_archived_ones_when_asked(self, assembly_repo_backend: ContractBackend):
+        user = assembly_repo_backend.make_user()
+        archived = _add_assembly(assembly_repo_backend, title="Archived", status=AssemblyStatus.ARCHIVED)
+        active = _add_assembly(assembly_repo_backend, title="Active")
+        _add_assembly(assembly_repo_backend, title="Someone else's archive", status=AssemblyStatus.ARCHIVED)
+        assembly_repo_backend.grant_assembly_role(user, archived)
+        assembly_repo_backend.grant_assembly_role(user, active)
+
+        results = list(assembly_repo_backend.repo.get_assemblies_for_user(user.id, status=AssemblyStatus.ARCHIVED))
+        assert [assembly.title for assembly in results] == ["Archived"]
 
 
 class TestCreatedByUserId:

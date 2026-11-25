@@ -25,6 +25,27 @@ Feature: Backoffice Assembly Management
 
   # Editing a project's details is in project-details.feature
 
+  # Archiving
+
+  Scenario: A project manager archives a project and unarchives it
+    Given I am logged in as a normal user
+    And there is an assembly called "Riverside Panel" created by admin
+    And I am assigned to "Riverside Panel" as "assembly-manager"
+    When I visit the assembly details page for "Riverside Panel"
+    And I archive the project
+    Then I should see "Project archived"
+    And I should see "This project is archived. It doesn't appear in project lists."
+    When I visit the backoffice dashboard
+    Then I should not see "Riverside Panel"
+    When I click the "Archived projects" button
+    Then I should see an assembly card with title "Riverside Panel"
+    When I click the "Go to Assembly" button for "Riverside Panel"
+    And I unarchive the project
+    Then I should see "Project unarchived"
+    And I should not see "This project is archived."
+    When I visit the backoffice dashboard
+    Then I should see an assembly card with title "Riverside Panel"
+
   # Creating a project is in create-project.feature
 
   Scenario: Dashboard displays create assembly button

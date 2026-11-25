@@ -1222,6 +1222,25 @@ def assign_user_to_assembly(email: str, title: str, role: str, admin_user, norma
         )
 
 
+@when("I archive the project")
+def archive_the_project(page: Page):
+    """Archive from the Status row, through the confirmation dialog."""
+    page.get_by_role("button", name="Archive project", exact=True).click()
+    dialog = page.get_by_role("alertdialog", name="Archive this project?")
+    expect(dialog).to_be_visible()
+    # The safe action takes the focus, so a stray Enter keeps the project active.
+    expect(dialog.get_by_role("button", name="Keep it active")).to_be_focused()
+    dialog.get_by_role("button", name="Archive project", exact=True).click()
+    page.wait_for_load_state("networkidle")
+
+
+@when("I unarchive the project")
+def unarchive_the_project(page: Page):
+    """Unarchive from the banner an archived project shows."""
+    page.get_by_role("button", name="Unarchive project", exact=True).click()
+    page.wait_for_load_state("networkidle")
+
+
 @when(parsers.parse('I click the "{tab_name}" tab'))
 def click_tab(page: Page, tab_name: str):
     """Click a tab in the tab navigation."""

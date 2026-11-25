@@ -1862,6 +1862,26 @@ msgstr "Nincs jogosultságod felhasználókat eltávolítani ebből a projektbő
 msgid "An error occurred while removing the user from the project"
 msgstr "Hiba történt a felhasználó projektből való eltávolítása közben"
 
+#: src/opendlp/entrypoints/blueprints/backoffice.py
+#, fuzzy
+msgid "Project archived"
+msgstr "Projekt archiválva"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py
+#, fuzzy
+msgid "You don't have permission to archive this project"
+msgstr "Nincs jogosultságod a projekt archiválásához"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py
+#, fuzzy
+msgid "Project unarchived"
+msgstr "A projekt archiválása visszavonva"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py
+#, fuzzy
+msgid "You don't have permission to unarchive this project"
+msgstr "Nincs jogosultságod a projekt archiválásának visszavonásához"
+
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py
 #, python-format
 msgid "Details for %(name)s"
@@ -4096,6 +4116,21 @@ msgstr ""
 "eltávolítása előtt adj hozzá egy másikat."
 
 #: src/opendlp/service_layer/exceptions.py
+#, fuzzy, python-format
+msgid ""
+"The registration page %(names)s is published. Close it before archiving "
+"this project."
+msgid_plural ""
+"The registration pages %(names)s are published. Close them before "
+"archiving this project."
+msgstr[0] ""
+"%(names)s regisztrációs oldal közzé van téve. Zárd le, mielőtt archiválod"
+" a projektet."
+msgstr[1] ""
+"%(names)s regisztrációs oldalak közzé vannak téve. Zárd le őket, mielőtt "
+"archiválod a projektet."
+
+#: src/opendlp/service_layer/exceptions.py
 msgid "A project that uses a Google Sheet cannot be cloned"
 msgstr ""
 
@@ -4978,7 +5013,7 @@ msgstr "Fontos"
 
 #: templates/backoffice/base_page.html
 #: templates/backoffice/components/footer.html templates/base.html
-#: templates/base_public.html templates/public/home.html
+#: templates/public/home.html
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
@@ -5050,7 +5085,8 @@ msgstr "Súgó linkek"
 msgid "Cancel"
 msgstr "Mégse"
 
-#: templates/admin/_header.html templates/backoffice/assembly_dashboard.html
+#: templates/admin/_header.html templates/backoffice/archived_projects.html
+#: templates/backoffice/assembly_dashboard.html
 #: templates/backoffice/assembly_details.html
 #: templates/backoffice/assembly_registration.html
 #: templates/backoffice/assembly_registration_list.html
@@ -5621,6 +5657,33 @@ msgstr "Google Táblázat"
 #: templates/backoffice/targets/export_modal.html
 msgid "Available when a Google service account is configured."
 msgstr "Akkor érhető el, ha be van állítva Google szolgáltatásfiók."
+
+#: templates/backoffice/archived_projects.html
+#: templates/backoffice/dashboard.html
+#, fuzzy
+msgid "Archived projects"
+msgstr "Archivált projektek"
+
+#: templates/backoffice/archived_projects.html
+#, fuzzy
+msgid "Archived projects don't appear in Your projects. Open one to unarchive it."
+msgstr ""
+"Az archivált projektek nem jelennek meg a Projektjeid oldalon. Nyiss meg "
+"egyet az archiválás visszavonásához."
+
+#: templates/backoffice/archived_projects.html
+#, fuzzy
+msgid "No archived projects"
+msgstr "Nincsenek archivált projektek"
+
+#: templates/backoffice/archived_projects.html
+#, fuzzy
+msgid ""
+"A project that is archived is kept here, and can be unarchived from its "
+"own page."
+msgstr ""
+"Az archivált projekt itt marad meg, és a saját oldalán vonható vissza az "
+"archiválása."
 
 #: templates/backoffice/assembly_dashboard.html
 #: templates/backoffice/components/assembly_tabs.html
@@ -6356,16 +6419,6 @@ msgstr "Projekt létrehozása"
 msgid "Welcome back, %(name)s!"
 msgstr "Üdvözlünk újra, %(name)s!"
 
-#: templates/backoffice/dashboard.html templates/public/_hero_demo.html
-#, python-format
-msgid "Created: %(date)s"
-msgstr "Létrehozva: %(date)s"
-
-#: templates/backoffice/dashboard.html
-#, python-format
-msgid "Starts: %(date)s"
-msgstr "Kezdés: %(date)s"
-
 #: templates/backoffice/dashboard.html
 msgid "No projects yet"
 msgstr "Még nincsenek projektek"
@@ -6477,6 +6530,16 @@ msgstr "Fiók menü"
 #: templates/backoffice/components/alert.html
 msgid "Dismiss"
 msgstr "Bezárás"
+
+#: templates/backoffice/components/archived_banner.html
+#, fuzzy
+msgid "This project is archived. It doesn't appear in project lists."
+msgstr "Ez a projekt archiválva van. Nem jelenik meg a projektlistákban."
+
+#: templates/backoffice/components/archived_banner.html
+#, fuzzy
+msgid "Unarchive project"
+msgstr "Archiválás visszavonása"
 
 #: templates/backoffice/components/assembly_tabs.html
 msgid "Project Details"
@@ -7033,6 +7096,17 @@ msgstr "Előző"
 #: templates/respondents/view_respondents.html
 msgid "Next"
 msgstr "Következő"
+
+#: templates/backoffice/components/project_card.html
+#: templates/public/_hero_demo.html
+#, python-format
+msgid "Created: %(date)s"
+msgstr "Létrehozva: %(date)s"
+
+#: templates/backoffice/components/project_card.html
+#, python-format
+msgid "Starts: %(date)s"
+msgstr "Kezdés: %(date)s"
 
 #: templates/backoffice/components/registration_page_list.html
 msgid "Create registration page"
@@ -8188,6 +8262,42 @@ msgstr "Az OAuth-felhasználók a szolgáltatójuk biztonságára támaszkodnak"
 #: templates/backoffice/profile/view.html
 msgid "Manage"
 msgstr "Kezelés"
+
+#: templates/backoffice/project_details/_archive_control.html
+#, fuzzy
+msgid "Archive project"
+msgstr "Projekt archiválása"
+
+#: templates/backoffice/project_details/_archive_control.html
+#, fuzzy
+msgid "A registration page is published. Close it before archiving the project."
+msgstr ""
+"Egy regisztrációs oldal közzé van téve. Zárd le, mielőtt archiválod a "
+"projektet."
+
+#: templates/backoffice/project_details/_archive_control.html
+#, fuzzy
+msgid "Go to Registration"
+msgstr "Tovább a Regisztráció fülre"
+
+#: templates/backoffice/project_details/_archive_control.html
+#, fuzzy
+msgid "Archive this project?"
+msgstr "Archiválod ezt a projektet?"
+
+#: templates/backoffice/project_details/_archive_control.html
+#, fuzzy
+msgid ""
+"It will no longer appear in project lists. Nothing is deleted, and you "
+"can unarchive it at any time."
+msgstr ""
+"Nem jelenik meg többé a projektlistákban. Semmi sem törlődik, és az "
+"archiválást bármikor visszavonhatod."
+
+#: templates/backoffice/project_details/_archive_control.html
+#, fuzzy
+msgid "Keep it active"
+msgstr "Maradjon aktív"
 
 #: templates/backoffice/project_details/_data_source_card.html
 msgid "Data source"
