@@ -377,65 +377,7 @@ class TestResetSelectionStatus:
         assert not any(c.action == RespondentAction.RESET for c in pool_resp.comments)
 
 
-class TestCountNonPoolRespondents:
-    def test_count_non_pool_with_mixed_statuses(self, uow, admin_user: User, test_assembly: Assembly):
-        """Test counting non-POOL respondents with mixed statuses."""
-        respondent_service.create_respondent(
-            uow,
-            admin_user.id,
-            test_assembly.id,
-            external_id="NB001",
-            attributes={},
-            selection_status=RespondentStatus.SELECTED,
-        )
-        respondent_service.create_respondent(
-            uow,
-            admin_user.id,
-            test_assembly.id,
-            external_id="NB002",
-            attributes={},
-            selection_status=RespondentStatus.CONFIRMED,
-        )
-        respondent_service.create_respondent(
-            uow,
-            admin_user.id,
-            test_assembly.id,
-            external_id="NB003",
-            attributes={},
-            selection_status=RespondentStatus.POOL,
-        )
-
-        count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
-
-        assert count == 2
-
-    def test_count_non_pool_all_pool(self, uow, admin_user: User, test_assembly: Assembly):
-        """Test counting non-POOL respondents when all are POOL."""
-        respondent_service.create_respondent(
-            uow,
-            admin_user.id,
-            test_assembly.id,
-            external_id="NB001",
-            attributes={},
-        )
-        respondent_service.create_respondent(
-            uow,
-            admin_user.id,
-            test_assembly.id,
-            external_id="NB002",
-            attributes={},
-        )
-
-        count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
-
-        assert count == 0
-
-    def test_count_non_pool_empty_assembly(self, uow, admin_user: User, test_assembly: Assembly):
-        """Test counting non-POOL respondents for assembly with no respondents."""
-        count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
-
-        assert count == 0
-
+class TestCountHeldRespondents:
     def test_count_held_counts_selected_and_confirmed_only(self, uow, admin_user: User, test_assembly: Assembly):
         """Held respondents are those selected or confirmed; withdrawn and pool respondents are not counted."""
         for external_id, status in [
@@ -454,7 +396,6 @@ class TestCountNonPoolRespondents:
             )
 
         assert respondent_service.count_held_respondents(uow, test_assembly.id) == 2
-        assert respondent_service.count_non_pool_respondents(uow, test_assembly.id) == 3
 
 
 class TestGetRespondentsForAssembly:

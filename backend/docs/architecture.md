@@ -82,18 +82,11 @@ src/opendlp/
 
 All blueprints live in `src/opendlp/entrypoints/blueprints/` and are registered in `flask_app.py::register_blueprints`.
 
-### Legacy vs. backoffice blueprints
+### Which design system a blueprint uses
 
-The backoffice UI is being rebuilt on a Tailwind CSS design; the legacy UI (and auth, profile, admin) uses the GOV.UK Design System. Both UIs use Alpine.js and some HTMX. Several features have paired blueprints during the transition:
+The signed-in pages, the auth pages and Site Admin are built on the Tailwind CSS backoffice design. The public registration pages (`registration`) and the error pages use the GOV.UK Design System. Both use Alpine.js and some HTMX.
 
-| Legacy (GOV.UK Design System, top-level URLs) | Backoffice (Tailwind CSS, `/backoffice/...`)                           |
-| --------------------------------------------- | ---------------------------------------------------------------------- |
-| `gsheets_legacy.py`                           | `gsheets.py`                                                           |
-| `db_selection_legacy.py`                      | `db_selection_backoffice.py`                                           |
-| `targets_legacy.py`                           | `targets.py`                                                           |
-| `respondents_legacy.py`                       | _(rolled into `backoffice.py`; dedicated blueprint split-out pending)_ |
-
-The `*_legacy` blueprints will be retired: first their links are removed from the main navigation, then the code is deleted once the Tailwind equivalents are trusted.
+The backoffice replaced an earlier set of signed-in GOV.UK pages under `/assemblies/<id>/...`, which have been deleted. Two of their addresses still answer, as redirects in `main`, so old bookmarks keep working: `/dashboard` and `/assemblies/<id>`.
 
 ### Blueprint summary
 
@@ -103,23 +96,19 @@ The `*_legacy` blueprints will be retired: first their links are removed from th
 | `health`                  | —                            | JSON health check (`/health`, `/health/bdd`, `/health/monitor_selection`)                      | Public               | 3      |
 | `registration`            | `/register`, `/r`            | Public registration forms — form render, submit, thank-you, short-URL redirect; bot protection | Public               | ~8     |
 | `auth`                    | `/auth`                      | Login, register, password reset, email confirmation, Google/Microsoft OAuth, 2FA verify        | Mixed                | 18     |
-| `main`                    | —                            | Landing page, dashboard, assembly view, legacy member management                               | Mixed                | 11     |
+| `main`                    | —                            | Landing page; redirects from the retired `/dashboard` and `/assemblies/<id>` addresses         | Mixed                | 3      |
 | `profile`                 | — (mounts at `/profile/...`) | Self-service profile, password change, OAuth linking, 2FA setup                                | Login                | 15     |
 | `admin`                   | `/admin`                     | User and invite management, admin 2FA controls                                                 | Admin                | 11     |
 | `backoffice`              | `/backoffice`                | Assembly dashboard/CRUD, data upload, members, showcase; currently also hosts respondent pages | Login                | 16     |
 | `gsheets`                 | `/backoffice`                | Google Sheets config, selection, replacement, tab management (Tailwind UI)                       | Login + assembly mgr | 19     |
 | `db_selection_backoffice` | `/backoffice`                | Database-driven selection (Tailwind UI)                                                          | Login + assembly mgr | 10     |
 | `targets`                 | `/backoffice`                | Target categories/values, CSV upload, target checking (Tailwind UI)                              | Login + assembly mgr | 14     |
-| `gsheets_legacy`          | —                            | Legacy Google Sheets workflow                                                                  | Login + assembly mgr | 21     |
-| `db_selection_legacy`     | —                            | Legacy database selection + settings                                                           | Login + assembly mgr | 12     |
-| `targets_legacy`          | —                            | Legacy target management                                                                       | Login + assembly mgr | 11     |
-| `respondents_legacy`      | —                            | Legacy respondent listing + CSV upload                                                         | Login                | 3      |
 | `dev`                     | `/backoffice`                | Interactive service-layer docs, frontend pattern showcase (dev builds only)                    | Admin                | 4      |
 
 Notes:
 
 - The `dev` blueprint is only registered when `config.is_production()` is false.
-- Legacy URLs use `/assemblies/<id>/...`; newer backoffice URLs use `/backoffice/project/<id>/...` (note the singular `project`; the older `/backoffice/assembly/<id>/...` redirects there).
+- Backoffice URLs use `/backoffice/project/<id>/...` (note the singular `project`; the older `/backoffice/assembly/<id>/...` redirects there).
 - `auth_bp` previously mounted at `/`; it now mounts at `/auth`.
 
 ---
@@ -297,7 +286,7 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 `assembly_service.py` currently bundles several loosely related concerns. Grouped by responsibility:
 
 - **Assembly CRUD & permissions** — `create_assembly`, `update_assembly`, `get_assembly_with_permissions`, …
-- **Google Sheets config** — `add_assembly_gsheet`, `update_assembly_gsheet`, `remove_assembly_gsheet`, `get_assembly_gsheet`
+- **Google Sheets config** — `add_assembly_gsheet`, `update_assembly_gsheet`, `get_assembly_gsheet`
 - **CSV config** — `get_or_create_csv_config`, `update_csv_config`, `get_csv_upload_status`
 - **Selection settings** — `get_or_create_selection_settings`, …
 - **Deletion** — `delete_respondents_for_assembly`
@@ -308,9 +297,9 @@ Target management used to live here too. It now has its own module.
 
 `target_service.py` owns everything about target categories and values:
 
-- **CRUD** — `get_targets_for_assembly`, `create_target_category`, `update_target_category`,
-  `delete_target_category`, `add_target_value`, `update_target_value`, `delete_target_value`,
-  `delete_targets_for_assembly`
+- **CRUD** — `get_targets_for_assembly`, `create_target_category`, `add_target_value`,
+  `update_target_value`, `delete_targets_for_assembly`, and `save_all_targets`, the bulk save
+  the Targets page uses to rename, edit and delete categories and values in one go
 - **CSV import** — `import_targets_from_csv`, and the percentage derivation that fills in
   values the spreadsheet did not carry
 - **The bulk save** — `save_all_targets`, which is what the targets page posts to: one
@@ -369,7 +358,7 @@ Celery workers live in `src/opendlp/entrypoints/celery/`.
 
 ```mermaid
 flowchart LR
-    gsheets_bp[gsheets / gsheets_legacy]
+    gsheets_bp[gsheets]
     db_sel_bp[db_selection_* blueprints]
     sortition_svc[service_layer/sortition.py]
     tasks[entrypoints/celery/tasks.py]
@@ -415,10 +404,6 @@ flowchart LR
         gsheets_bp
         db_sel_bo[db_selection_backoffice]
         targets_bp
-        gsheets_legacy_bp[gsheets_legacy]
-        db_sel_legacy[db_selection_legacy]
-        targets_legacy_bp[targets_legacy]
-        respondents_legacy_bp[respondents_legacy]
     end
 
     subgraph Svc["Services"]
@@ -442,7 +427,6 @@ flowchart LR
     admin_bp --> user_svc & invite_svc & two_factor_svc
     auth_bp --> user_svc & email_confirm_svc & password_reset_svc & totp_svc & login_rate_svc
     registration_bp --> reg_bot_svc
-    main_bp --> assembly_svc & user_svc & permissions_svc
     profile_bp --> user_svc & two_factor_svc
     backoffice_bp --> assembly_svc & target_svc & user_svc & respondent_svc & permissions_svc
     dev_bp --> assembly_svc & respondent_svc & permissions_svc
@@ -451,10 +435,6 @@ flowchart LR
     db_sel_bo --> assembly_svc & respondent_svc & sortition_svc & report_xl
     targets_bp --> assembly_svc & target_svc & target_check_svc
 
-    gsheets_legacy_bp --> assembly_svc & sortition_svc & report_xl
-    db_sel_legacy --> assembly_svc & respondent_svc & sortition_svc
-    targets_legacy_bp --> assembly_svc & target_svc & target_check_svc
-    respondents_legacy_bp --> assembly_svc & respondent_svc
 ```
 
 ### Dependency matrix
@@ -464,17 +444,13 @@ flowchart LR
 | **admin**          |          |        |  ✓   |            |           |   ✓    |  ✓  |            |          |      |          |          |       |              |
 | **auth**           |          |        |  ✓   |            |           |        |     |     ✓      |    ✓     |  ✓   |    ✓     |          |       |              |
 | **registration**   |          |        |      |            |           |        |     |            |          |      |          |    ✓     |       |              |
-| **main**           |    ✓     |        |  ✓   |            |           |        |     |            |          |      |          |          |   ✓   |              |
+| **main**           |          |        |      |            |           |        |     |            |          |      |          |          |       |              |
 | **profile**        |          |        |  ✓   |            |           |        |  ✓  |            |          |      |          |          |       |              |
 | **backoffice**     |    ✓     |   ✓    |  ✓   |     ✓      |           |        |     |            |          |      |          |          |   ✓   |              |
 | **dev**            |    ✓     |        |      |     ✓      |           |        |     |            |          |      |          |          |   ✓   |              |
 | **gsheets**        |    ✓     |        |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
 | **db_sel_bo**      |    ✓     |        |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
 | **targets**        |    ✓     |   ✓    |      |            |           |        |     |            |          |      |          |          |       |      ✓       |
-| **gsheets_legacy** |    ✓     |        |      |            |     ✓     |        |     |            |          |      |          |          |       |              |
-| **db_sel_legacy**  |    ✓     |        |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
-| **targets_legacy** |    ✓     |   ✓    |      |            |           |        |     |            |          |      |          |          |       |      ✓       |
-| **respondents_lg** |    ✓     |        |      |     ✓      |           |        |     |            |          |      |          |          |       |              |
 
 ---
 
@@ -513,16 +489,12 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 | ------------------------- | ------ | -------- | --------------------------------------------------------------------------------------- |
 | `admin`                   | 11     | 3        | Well-focused.                                                                           |
 | `auth`                    | 18     | 5        | Complex but necessary.                                                                  |
-| `main`                    | 11     | 3        | Legacy member-management routes to be moved to backoffice.                              |
+| `main`                    | 3      | —        | The landing page and two redirects from retired addresses.                              |
 | `profile`                 | 15     | 2        | Well-focused.                                                                           |
 | `backoffice`              | 16     | 4        | Currently hosts respondent pages; dedicated `respondents` backoffice blueprint planned. |
-| `gsheets`                 | 19     | 4        | New backoffice UI; paired with legacy.                                                  |
-| `db_selection_backoffice` | 10     | 6        | New backoffice UI; paired with legacy.                                                  |
-| `targets`                 | 14     | 2        | New backoffice UI; paired with legacy.                                                  |
-| `gsheets_legacy`          | 21     | 3        | To be retired once New backoffice version is trusted.                                   |
-| `db_selection_legacy`     | 12     | 3        | To be retired.                                                                          |
-| `targets_legacy`          | 11     | 2        | To be retired.                                                                          |
-| `respondents_legacy`      | 3      | 2        | To be retired.                                                                          |
+| `gsheets`                 | 19     | 4        | Backoffice UI.                                                                          |
+| `db_selection_backoffice` | 10     | 6        | Backoffice UI.                                                                          |
+| `targets`                 | 14     | 2        | Backoffice UI.                                                                          |
 | `dev`                     | 4      | 3        | Non-production only; admin-guarded.                                                     |
 | `health`                  | 3      | —        | Public; includes `/health/monitor_selection` (focused, returns 500 on `NOT_CONFIGURED`).|
 | `wellknown`               | 3      | —        | Public.                                                                                 |
@@ -541,13 +513,12 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 
 ### Open recommendations
 
-1. **Retire legacy blueprints:** remove from main nav, then delete `*_legacy.py` once the Tailwind backoffice equivalents are trusted in production.
-2. **Split out respondents backoffice blueprint** from `backoffice.py`.
-3. **Consider splitting `assembly_service` further** — target management has been split out into `target_service`; CSV config is still a distinct concern sitting alongside assembly CRUD.
-4. **Consider splitting `sortition`** — GSheet and DB selection workflows share only status helpers.
-5. **Standardise URL patterns:** legacy uses `/assemblies/<id>/…`, backoffice uses `/backoffice/project/<id>/…`. Legacy retirement will remove this inconsistency.
+1. **Split out respondents backoffice blueprint** from `backoffice.py`.
+2. **Consider splitting `assembly_service` further** — target management has been split out into `target_service`; CSV config is still a distinct concern sitting alongside assembly CRUD.
+3. **Consider splitting `sortition`** — GSheet and DB selection workflows share only status helpers.
 
 ### Addressed since the previous version of this doc
 
+- The legacy `*_legacy` blueprints and their `/assemblies/<id>/…` pages are deleted; every signed-in page is under `/backoffice/…` (or `/admin`, `/profile`).
 - Dev routes are now in their own blueprint (`blueprints/dev.py`) and only registered outside production.
 - Services live in `service_layer/` (previously documented as `services/`).

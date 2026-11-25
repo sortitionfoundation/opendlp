@@ -9,7 +9,6 @@ import esbuild from "esbuild";
 // entry here is all that is needed to ship a new script.
 const ENTRY_POINTS = {
   "js/utilities": "src/js/utilities.js",
-  "js/alpine-components": "src/js/alpine-components.js",
   "js/alpine-scroll-manager": "src/js/alpine-scroll-manager.js",
   "js/htmx-422-swap": "src/js/htmx-422-swap.js",
   "js/hero-demo": "src/js/hero-demo.js",

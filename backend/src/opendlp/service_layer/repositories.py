@@ -613,11 +613,6 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def count_non_pool(self, assembly_id: uuid.UUID) -> int:
-        """Count respondents for an assembly that are not in POOL status."""
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def remove_attribute(self, assembly_id: uuid.UUID, key: str) -> int:
         """Remove one attribute from every non-deleted respondent of an assembly.
 

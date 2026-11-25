@@ -449,14 +449,6 @@ def get_respondents_for_assembly_paginated(
     return [r.create_detached_copy() for r in respondents], total_count
 
 
-def count_non_pool_respondents(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:
-    """Count respondents for an assembly that are not in POOL status.
-
-    The caller is expected to manage the `uow` context (`with uow: ...`).
-    """
-    return uow.respondents.count_non_pool(assembly_id)
-
-
 def count_held_respondents(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:
     """Count respondents for an assembly who currently hold a place: selected or confirmed.
 

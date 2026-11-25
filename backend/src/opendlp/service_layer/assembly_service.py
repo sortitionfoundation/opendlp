@@ -549,47 +549,6 @@ def update_assembly_gsheet(
     return assembly_gsheet.create_detached_copy()
 
 
-def remove_assembly_gsheet(
-    uow: AbstractUnitOfWork,
-    assembly_id: uuid.UUID,
-    user_id: uuid.UUID,
-) -> None:
-    """
-    Remove a Google Spreadsheet configuration from an assembly.
-
-    Args:
-        uow: Unit of Work for database operations
-        assembly_id: ID of assembly to remove gsheet from
-        user_id: ID of user performing the operation
-
-    Raises:
-        UserNotFoundError: If user not found
-        AssemblyNotFoundError: If assembly not found
-        GoogleSheetConfigNotFoundError: If gsheet not found
-        InsufficientPermissions: If user cannot manage this assembly
-
-    The caller is expected to manage the `uow` context (`with uow: ...`).
-    """
-    user = uow.users.get(user_id)
-    if not user:
-        raise UserNotFoundError(f"User {user_id} not found")
-
-    assembly = uow.assemblies.get(assembly_id)
-    if not assembly:
-        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-
-    # Check permissions
-    if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(action="remove assembly gsheet", required_role="assembly-manager or admin")
-
-    # Get the existing gsheet
-    assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
-    if not assembly_gsheet:
-        raise GoogleSheetConfigNotFoundError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
-
-    uow.assembly_gsheets.delete(assembly_gsheet)
-
-
 def get_assembly_gsheet(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,

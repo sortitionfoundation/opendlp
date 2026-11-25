@@ -33,7 +33,7 @@ from wtforms.validators import (
 
 from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
-from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH
+from opendlp.domain.targets import MAX_COMMENT_LENGTH
 from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, SignupSurveyQuestion, SurveyFieldType
 from opendlp.domain.users import MAX_NAME_LENGTH
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
@@ -370,10 +370,6 @@ class ProjectDetailsStepForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
-class CreateAssemblyForm(AssemblyForm):
-    """Form specifically for creating assemblies."""
-
-
 class EditAssemblyForm(AssemblyForm):
     """Form specifically for editing assemblies."""
 
@@ -650,37 +646,6 @@ class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
 
-class AddTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """Form for adding a new target category."""
-
-    name = StringField(
-        _l("Target Name"),
-        validators=[DataRequired(), Length(min=1, max=255)],
-        description=_l("e.g. Gender, Age, Ethnicity"),
-    )
-
-
-class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """Form for editing a target category's name, comment and source."""
-
-    name = StringField(
-        _l("Target Name"),
-        validators=[DataRequired(), Length(min=1, max=255)],
-    )
-
-    comment = TextAreaField(
-        _l("Notes"),
-        validators=[Optional(), Length(max=MAX_COMMENT_LENGTH)],
-        description=_l("Optional — why these targets were chosen"),
-    )
-
-    source_url = StringField(
-        _l("Data Source"),
-        validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH)],
-        description=_l("Optional — where the percentages came from, such as a link to a report"),
-    )
-
-
 class TargetValueForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for adding or editing a target value."""
 
@@ -720,36 +685,6 @@ class SaveAllTargetsForm(FlaskForm):  # type: ignore[no-any-unimported]
     A page of many categories and values does not fit WTForms' one-form-one-object
     model, so the fields are parsed out of request.form by save_all_parser.
     """
-
-
-class UploadRespondentsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """Form for uploading a CSV file of respondents."""
-
-    csv_file = FileField(
-        _l("CSV File"),
-        validators=[
-            FileRequired(message=_l("Please select a CSV file to upload")),
-            FileAllowed(["csv"], message=_l("Only CSV files are allowed")),
-        ],
-        description=_l("Select a CSV file containing respondent data"),
-    )
-
-    replace_existing = BooleanField(
-        _l("Replace all existing respondents"),
-        description=_l(
-            "Warning: this will delete all existing respondents for this project before importing. "
-            "Uncheck to add to existing respondents."
-        ),
-        default=True,
-    )
-
-    id_column = StringField(
-        _l("ID Column"),
-        validators=[Optional(), Length(max=100)],
-        description=_l(
-            "Name of column containing unique identifiers. If blank, the first column in the CSV will be used."
-        ),
-    )
 
 
 class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]

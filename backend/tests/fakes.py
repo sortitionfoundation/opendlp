@@ -1000,15 +1000,6 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                 counts[r.selection_status] = counts.get(r.selection_status, 0) + 1
         return counts
 
-    def count_non_pool(self, assembly_id: uuid.UUID) -> int:
-        return sum(
-            1
-            for r in self._items
-            if r.assembly_id == assembly_id
-            and r.selection_status != RespondentStatus.POOL
-            and r.selection_status != RespondentStatus.DELETED
-        )
-
     def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
         for r in self._items:
             if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED and r.attributes:
