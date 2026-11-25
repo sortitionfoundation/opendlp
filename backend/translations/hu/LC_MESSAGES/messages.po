@@ -893,18 +893,16 @@ msgid "Passwords must match"
 msgstr "A jelszavaknak egyeznie kell"
 
 #: src/opendlp/entrypoints/forms.py
-msgid "Accept Data Agreement"
-msgstr "Adatkezelési megállapodás elfogadása"
+#, fuzzy
+msgid "I agree to the Terms and Conditions and the Data Agreement"
+msgstr "Elfogadom a felhasználási feltételeket és az adatkezelési megállapodást"
 
 #: src/opendlp/entrypoints/forms.py
-msgid "You must accept the data agreement to register"
+#, fuzzy
+msgid "You must accept the terms and the data agreement to register"
 msgstr ""
-"A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
-"megállapodásunkat"
-
-#: src/opendlp/entrypoints/forms.py
-msgid "I agree to the data agreement"
-msgstr "Elfogadom az adatkezelési megállapodást"
+"A regisztrációhoz el kell fogadnod a felhasználási feltételeket és az "
+"adatkezelési megállapodást"
 
 #: src/opendlp/entrypoints/forms.py
 msgid "Enter your email address to receive a password reset link"
@@ -5390,6 +5388,20 @@ msgid "Save role"
 msgstr "Szerepkör mentése"
 
 #: templates/admin/user_view.html
+#, fuzzy, python-format
+msgid "Agreed on %(date)s, version %(version)s"
+msgstr "Elfogadva: %(date)s, verzió: %(version)s"
+
+#: templates/admin/user_view.html
+#, fuzzy, python-format
+msgid "Agreed on %(date)s"
+msgstr "Elfogadva: %(date)s"
+
+#: templates/admin/user_view.html
+msgid "Not agreed"
+msgstr "Nincs elfogadva"
+
+#: templates/admin/user_view.html
 msgid "User details"
 msgstr "Felhasználó adatai"
 
@@ -5426,17 +5438,13 @@ msgid "View 2FA audit log"
 msgstr "Kétlépcsős azonosítás eseménynaplójának megtekintése"
 
 #: templates/admin/user_view.html
+#, fuzzy
+msgid "Terms and conditions"
+msgstr "Felhasználási feltételek"
+
+#: templates/admin/user_view.html
 msgid "Data agreement"
 msgstr "Adatkezelési megállapodás"
-
-#: templates/admin/user_view.html
-#, fuzzy, python-format
-msgid "Agreed on %(date)s"
-msgstr "Elfogadva: %(date)s"
-
-#: templates/admin/user_view.html
-msgid "Not agreed"
-msgstr "Nincs elfogadva"
 
 #: templates/admin/user_view.html
 msgid "Account created"
@@ -11854,18 +11862,30 @@ msgstr ""
 "segíthessünk neked."
 
 #: templates/public/register.html
-msgid "Data Agreement"
-msgstr "Adatkezelési Megállapodás"
+#, fuzzy
+msgid "Terms and data agreement"
+msgstr "Felhasználási feltételek és adatkezelési megállapodás"
 
 #: templates/public/register.html
-msgid "Please read and accept our data agreement to proceed."
+#, fuzzy
+msgid "Please read and accept our terms and our data agreement to proceed."
 msgstr ""
-"A folytatáshoz kérjük, olvasd el és fogadd el az adatkezelési "
-"megállapodásunkat."
+"A folytatáshoz kérjük, olvasd el és fogadd el a felhasználási "
+"feltételeinket és az adatkezelési megállapodásunkat."
+
+#: templates/public/register.html
+#, fuzzy
+msgid "View terms and conditions"
+msgstr "Felhasználási feltételek megtekintése"
 
 #: templates/public/register.html
 msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
+
+#: templates/public/register.html
+#, fuzzy
+msgid "We'll email you about important changes to OpenDLP and to these documents."
+msgstr "Az OpenDLP és e dokumentumok fontos változásairól e-mailben értesítünk."
 
 #: templates/public/register.html
 msgid "Beta disclaimer"
