@@ -1,6 +1,7 @@
 # 1341: Retire the legacy (GOV.UK) signed-in pages
 
-Status: **agreed, in progress.** Doctor Chewie's answers to Q1–Q14 are folded
+Status: **first PR implemented** (steps 1–10); step 11, the blueprint
+reorganisation, is the second PR. Doctor Chewie's answers to Q1–Q14 are folded
 in as decisions (section 3 lists them in one place). Progress is ticked off in
 section 8. **O1** in section 5.2 was not answered, so the conservative reading
 stands: the other nine `admin-users.feature` scenarios are left alone.
@@ -558,7 +559,9 @@ Each step leaves the suite green, so each is a commit (or a few).
    diff to confirm nothing live lost cover.
 8. [x] **Catalogues and baseline**: regenerate translations, `.secrets.baseline`.
 9. [x] **Docs** (section 6), including the two new `future_work/` notes.
-10. [ ] `just check`, then `just test` in full (serial, output to a file).
+10. [x] `just check`, then `just test` in full (serial, output to a file).
+    Result: 977 JavaScript tests and 8,368 Python tests passed, 5 skipped (the
+    scroll-preservation scenarios, as before), coverage 97.18%.
 11. [ ] **Blueprint reorganisation** (section 7) — separate PR.
 
 Notes from step 2:
