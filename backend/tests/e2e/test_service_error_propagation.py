@@ -95,13 +95,13 @@ class TestSelectionPageErrorPropagation:
     URL = "/backoffice/project/{}/selection"
 
     def test_gsheet_lookup_failure_is_not_suppressed(self, logged_in_admin, existing_assembly):
-        with patch("opendlp.entrypoints.blueprints.gsheets.get_assembly_gsheet", side_effect=boom()):
+        with patch("opendlp.entrypoints.blueprints.selection.get_assembly_gsheet", side_effect=boom()):
             response = logged_in_admin.get(self.URL.format(existing_assembly.id))
 
         assert response.status_code == 302
 
     def test_csv_status_lookup_failure_is_not_suppressed(self, logged_in_admin, existing_assembly):
-        with patch("opendlp.entrypoints.blueprints.gsheets.get_csv_upload_status", side_effect=boom()):
+        with patch("opendlp.entrypoints.blueprints.selection.get_csv_upload_status", side_effect=boom()):
             response = logged_in_admin.get(self.URL.format(existing_assembly.id))
 
         assert response.status_code == 302

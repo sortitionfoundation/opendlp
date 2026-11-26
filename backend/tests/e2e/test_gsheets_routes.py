@@ -554,10 +554,10 @@ class TestSelectionPageWithManageTabsContext:
         mock_result.tab_names = []
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.selection.get_selection_run_status", return_value=mock_result),
             patch(
-                "opendlp.entrypoints.blueprints.gsheets.get_manage_old_tabs_status",
+                "opendlp.entrypoints.blueprints.selection.get_manage_old_tabs_status",
                 return_value=ManageOldTabsStatus(ManageOldTabsState.LIST_RUNNING),
             ),
         ):
@@ -585,10 +585,10 @@ class TestSelectionPageWithManageTabsContext:
         mock_result.tab_names = ["Selection_2024-01-01", "Remaining_2024-01-01"]
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.selection.get_selection_run_status", return_value=mock_result),
             patch(
-                "opendlp.entrypoints.blueprints.gsheets.get_manage_old_tabs_status",
+                "opendlp.entrypoints.blueprints.selection.get_manage_old_tabs_status",
                 return_value=ManageOldTabsStatus(ManageOldTabsState.LIST_COMPLETED),
             ),
         ):
@@ -610,8 +610,8 @@ class TestSelectionPageWithManageTabsContext:
         mock_result = _make_mock_result(mock_record)
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.selection.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_manage_tabs={task_id}")
 
@@ -636,8 +636,8 @@ class TestSelectionPageWithReplacementContext:
         mock_result = _make_mock_result(mock_record, log_messages=["Loading replacement data..."])
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.selection.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_replacement={task_id}")
 
@@ -667,10 +667,10 @@ class TestSelectionPageWithReplacementContext:
         )
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
-            patch("opendlp.entrypoints.blueprints.gsheets.minimum_selection", return_value=3),
-            patch("opendlp.entrypoints.blueprints.gsheets.maximum_selection", return_value=15),
+            patch("opendlp.entrypoints.blueprints.selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.selection.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.selection.minimum_selection", return_value=3),
+            patch("opendlp.entrypoints.blueprints.selection.maximum_selection", return_value=15),
         ):
             response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/selection?current_replacement={task_id}")
 
