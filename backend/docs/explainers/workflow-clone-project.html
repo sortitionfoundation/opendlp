@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<!--
+ABOUTME: Explainer with embedded mermaid flow charts for cloning a project held in OpenDLP.
+ABOUTME: Covers which parts can be copied, which combinations are allowed or blocked, and what changes in the copy.
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Workflow: cloning a project</title>
+        <style>
+            :root {
+                --link: #1d70b8;
+                --ink: #0b0c0c;
+                --muted: #505a5f;
+                --paper: #ffffff;
+                --panel: #f3f2f1;
+                --highlight: #fff7d6;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                max-width: 1100px;
+                margin: 2rem auto;
+                padding: 0 1.25rem 4rem;
+                color: var(--ink);
+                line-height: 1.5;
+                background: var(--paper);
+            }
+            h1, h2, h3 { color: var(--ink); line-height: 1.2; }
+            h1 { border-bottom: 3px solid var(--link); padding-bottom: .5rem; margin-top: 0; }
+            h2 { margin-top: 2.5rem; border-bottom: 1px solid #b1b4b6; padding-bottom: .25rem; }
+            a { color: var(--link); }
+            p.lede { font-size: 1.1rem; color: var(--muted); }
+
+            .legend {
+                display: flex;
+                gap: .5rem;
+                flex-wrap: wrap;
+                font-size: .85rem;
+                margin: 1rem 0 .5rem;
+            }
+            .legend span {
+                padding: .2rem .55rem;
+                border-radius: 3px;
+                border: 1px solid rgba(0,0,0,.15);
+            }
+            .leg-always  { background: #cce2f7; }
+            .leg-on      { background: #c8e6c9; }
+            .leg-off     { background: #fad7a8; }
+            .leg-never   { background: #d7ccc8; border-style: dashed !important; border-color: #5d4037 !important; }
+            .leg-blocked { background: #f6c6c0; }
+            .leg-check   { background: #ffffff; border-color: #505a5f !important; }
+
+            .flowchart {
+                background: var(--panel);
+                padding: 1rem;
+                border-radius: 4px;
+                overflow-x: auto;
+                margin: 1rem 0 .5rem;
+            }
+            .hint {
+                font-size: .9rem;
+                color: var(--muted);
+                margin: 0 0 2rem;
+            }
+
+            details {
+                background: #f8f8f8;
+                border-left: 4px solid var(--link);
+                padding: .75rem 1rem;
+                margin: .5rem 0;
+                border-radius: 2px;
+            }
+            details summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+            details[open] summary { margin-bottom: .5rem; }
+
+            .callout {
+                background: var(--highlight);
+                border-left: 4px solid #b58840;
+                padding: .75rem 1rem;
+                margin: 1rem 0;
+                border-radius: 2px;
+            }
+            .callout p:last-child { margin-bottom: 0; }
+
+            .glossary dt {
+                font-weight: 700;
+                margin-top: 1.25rem;
+                color: var(--link);
+            }
+            .glossary dd {
+                margin-left: 1.25rem;
+                margin-top: .25rem;
+            }
+            code {
+                background: #eef;
+                padding: 1px 5px;
+                border-radius: 2px;
+                font-size: .9em;
+                word-break: break-all;
+            }
+            ul, ol { padding-left: 1.4rem; }
+            li { margin: .15rem 0; }
+
+            table {
+                border-collapse: collapse;
+                margin: .5rem 0;
+                font-size: .95rem;
+            }
+            th, td {
+                border: 1px solid #b1b4b6;
+                padding: .35rem .6rem;
+                text-align: left;
+                vertical-align: top;
+            }
+            th { background: var(--panel); }
+            td.yes { color: #00703c; font-weight: 600; }
+            td.no  { color: #505a5f; }
+            tr.blocked td { background: #fbe4e1; }
+            tr.blocked td.verdict { color: #d4351c; font-weight: 700; }
+            td.verdict { font-weight: 600; }
+
+  /* Highlight a section briefly when jumped to via fragment link */
+            :target {
+                animation: flash 1.5s ease-out;
+            }
+            @keyframes flash {
+                0%   { background: var(--highlight); }
+                100% { background: transparent; }
+            }
+
+            .mermaid .node rect, .mermaid .node polygon { cursor: pointer; }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    </head>
+    <body>
+        <h1>Workflow: cloning a project</h1>
+        <p class="lede">
+            Cloning makes a copy of an existing <a href="#g-project">project</a>, for demos and training. You choose which parts come with it. This page shows what can and can't be copied, which choices fit together, and what is different about the copy.
+        </p>
+
+        <div class="callout">
+            <p>
+                <strong>The copy is a separate project.</strong> Once it is made, editing or deleting either the original or the copy never touches the other. Nothing in the copy points back at the original.
+            </p>
+            <p>
+                <strong>Only projects held in OpenDLP can be cloned.</strong> A project whose <a href="#g-data-source">data source</a> is Google Sheets is refused.
+            </p>
+            <p>
+                <strong>An admin does it, for now.</strong> Cloning is a command an admin runs on the server; there is no button for it in the app yet. If you want a project cloned, ask an admin and tell them which parts you want &mdash; see <a href="#asking">asking for a clone</a>.
+            </p>
+        </div>
+
+        <div class="legend" aria-label="Flow chart legend">
+            <span class="leg-always">Always copied</span>
+            <span class="leg-on">Your choice &mdash; copied unless you say not</span>
+            <span class="leg-off">Your choice &mdash; only copied if you ask</span>
+            <span class="leg-never">Never copied</span>
+            <span class="leg-blocked">Refused</span>
+            <span class="leg-check">A check or a choice</span>
+        </div>
+
+        <h2 id="overview">The whole process</h2>
+        <p>
+            A clone either happens completely or not at all: if any check fails, nothing is created.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef check   fill:#ffffff,stroke:#505a5f,color:#0b0c0c
+    classDef always  fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef blocked fill:#f6c6c0,stroke:#d4351c,color:#0b0c0c
+
+    A["Pick the project&lt;br/&gt;to clone"]:::check
+    B["Choose which&lt;br/&gt;parts to copy"]:::check
+    C{"Checks pass?"}:::check
+    D["Choose the&lt;br/&gt;copy's title"]:::check
+    E["Copy the parts,&lt;br/&gt;with the changes&lt;br/&gt;a copy needs"]:::always
+    F(["New project, ready to use.&lt;br/&gt;The admin who cloned it&lt;br/&gt;is its Project Manager."]):::always
+    X(["Nothing is created"]):::blocked
+
+    A --> B --> C
+    C -- yes --> D --> E --> F
+    C -- no --> X
+    D -- no free title --> X
+
+    click A "#checks" "Which projects can be cloned"
+    click B "#parts" "What can be copied"
+    click C "#checks" "The checks"
+    click D "#title" "Choosing the title"
+    click E "#changes" "What changes in the copy"
+    click X "#checks" "The checks"
+            </pre>
+        </div>
+        <p class="hint">
+            Click any box to jump to the chart that expands it.
+        </p>
+
+        <h2 id="parts">What can be copied</h2>
+        <p>
+            A project is made of several parts. Some always come with the copy, some are your choice, and some never come.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef always  fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef on      fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef off     fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef never   fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c,stroke-dasharray:5 5
+
+    P(["The original project"])
+
+    subgraph ALWAYS["Always copied"]
+        direction TB
+        A1["Framing question,&lt;br/&gt;first event date"]:::always
+        A2["Number of people&lt;br/&gt;to select"]:::always
+        A3["Selection settings"]:::always
+    end
+
+    subgraph ON["Copied unless you say not"]
+        direction TB
+        O1["Targets,&lt;br/&gt;with their computed questions"]:::on
+        O2["Registration questions,&lt;br/&gt;headings and text"]:::on
+        O3["Registration pages,&lt;br/&gt;with their images, documents&lt;br/&gt;and emails"]:::on
+    end
+
+    subgraph OFF["Only copied if you ask"]
+        direction TB
+        F1["Respondents"]:::off
+        F2["Team members&lt;br/&gt;and their roles"]:::off
+    end
+
+    subgraph NEVER["Never copied"]
+        direction TB
+        N1["Selection history"]:::never
+        N2["Record of emails&lt;br/&gt;sent to respondents"]:::never
+        N3["Google Sheets&lt;br/&gt;export settings"]:::never
+        N4["Reply-to name&lt;br/&gt;and email"]:::never
+        N5["Comments on&lt;br/&gt;respondents"]:::never
+        N6["Deleted respondents"]:::never
+    end
+
+    P --> ALWAYS
+    P --> ON
+    P --> OFF
+    P -.-x NEVER
+
+    click O1 "#combinations" "Which choices fit together"
+    click O2 "#combinations" "Which choices fit together"
+    click O3 "#combinations" "Which choices fit together"
+    click F1 "#respondents" "Copying respondents"
+    click F2 "#team" "Team members"
+    click N1 "#never" "Why some parts are never copied"
+    click N2 "#never" "Why some parts are never copied"
+    click N3 "#never" "Why some parts are never copied"
+    click N4 "#never" "Why some parts are never copied"
+    click N5 "#never" "Why some parts are never copied"
+    click N6 "#never" "Why some parts are never copied"
+            </pre>
+        </div>
+        <p class="hint">
+            The title is not in the chart: the copy always gets a title of its own, see <a href="#title">choosing the title</a>.
+        </p>
+
+        <details id="never">
+            <summary>Why some parts are never copied</summary>
+            <ul>
+                <li><strong>Selection history.</strong> The copy hasn't run any selections. Its history starts empty.</li>
+                <li><strong>Record of emails sent.</strong> It records real emails sent to real people from the original. It says nothing true about the copy.</li>
+                <li><strong>Google Sheets export settings.</strong> If the original sends its respondents to a spreadsheet automatically, copying that would send the copy's demo respondents into the original's real spreadsheet.</li>
+                <li><strong>Reply-to name and email</strong>, on the project and on each of its emails. Left blank so that emails sent from a demo never invite replies to the real organiser.</li>
+                <li><strong>Comments on respondents.</strong> They are history about the original's selections.</li>
+                <li><strong>Deleted respondents.</strong> All that is left of a deleted respondent is an empty row, kept so the original's records still make sense after their details were removed. The copy has no such records.</li>
+            </ul>
+        </details>
+
+        <h2 id="combinations">Which choices fit together</h2>
+        <p>
+            Some parts only work alongside others, so some choices are refused. The rules come from how the parts depend on each other:
+        </p>
+        <ul>
+            <li><strong>A registration page needs its registration questions.</strong> The page is built from the questions; without them it would accept answers that fit nowhere.</li>
+            <li><strong>Respondents need the registration questions.</strong> A respondent's answers are filed under the questions, and the respondent screens use the questions to show them.</li>
+            <li><strong>Computed questions need both the targets and the registration questions.</strong> A <a href="#g-computed">computed question</a> works out a target's value from another question's answer, so it is no use without either. If either is left out, computed questions are quietly dropped &mdash; this is never refused.</li>
+        </ul>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart TD
+    classDef check   fill:#ffffff,stroke:#505a5f,color:#0b0c0c
+    classDef ok      fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef blocked fill:#f6c6c0,stroke:#d4351c,color:#0b0c0c
+
+    Q{"Copy the&lt;br/&gt;registration questions?"}:::check
+
+    Q -- no --> NQR{"Copy the&lt;br/&gt;registration pages?"}:::check
+    NQR -- yes --> B1(["Refused:&lt;br/&gt;a registration page&lt;br/&gt;needs its questions"]):::blocked
+    NQR -- no --> NQP{"Copy the&lt;br/&gt;respondents?"}:::check
+    NQP -- yes --> B2(["Refused:&lt;br/&gt;respondents need&lt;br/&gt;the questions"]):::blocked
+    NQP -- no --> NQT{"Copy the&lt;br/&gt;targets?"}:::check
+    NQT -- yes --> OK1(["Allowed: targets with&lt;br/&gt;no question linked to them,&lt;br/&gt;no computed questions"]):::ok
+    NQT -- no --> OK2(["Allowed: just the&lt;br/&gt;project details and&lt;br/&gt;selection settings"]):::ok
+
+    Q -- yes --> YQT{"Copy the&lt;br/&gt;targets?"}:::check
+    YQT -- yes --> T1["Questions stay linked&lt;br/&gt;to their targets;&lt;br/&gt;computed questions copied"]:::ok
+    YQT -- no --> T2["Questions linked to targets&lt;br/&gt;become ordinary questions;&lt;br/&gt;computed questions dropped"]:::ok
+    T1 --> YQR{"Registration pages&lt;br/&gt;and respondents"}:::check
+    T2 --> YQR
+    YQR --> OK3(["Allowed: copy either,&lt;br/&gt;both or neither"]):::ok
+    OK3 -. "respondents have&lt;br/&gt;their own checks" .-> RS["Copying respondents"]:::check
+
+    click RS "#respondents" "Copying respondents"
+    click OK3 "#respondents" "Copying respondents"
+            </pre>
+        </div>
+        <p class="hint">
+            The targets, registration questions and registration pages are all copied unless you say not. So asking to leave out <em>only</em> the registration questions is refused: you have to say you want the registration pages left out too. That is on purpose &mdash; it stops the pages disappearing from the copy without anyone noticing.
+        </p>
+
+        <h3 id="matrix">Every combination of targets, questions and pages</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Targets</th>
+                    <th>Registration questions</th>
+                    <th>Registration pages</th>
+                    <th>Result</th>
+                    <th>What the copy has</th>
+                    <th>Respondents can come too?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="yes">Copied</td><td class="yes">Copied</td><td class="yes">Copied</td>
+                    <td class="verdict">Allowed (the default)</td>
+                    <td>Everything set up as in the original, computed questions included.</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td class="yes">Copied</td><td class="yes">Copied</td><td class="no">Left out</td>
+                    <td class="verdict">Allowed</td>
+                    <td>As above, with no registration page. You can build a new one.</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td class="no">Left out</td><td class="yes">Copied</td><td class="yes">Copied</td>
+                    <td class="verdict">Allowed</td>
+                    <td>No targets. Questions that answered a target become ordinary questions. Computed questions are dropped.</td>
+                    <td>Yes, without their computed answers</td>
+                </tr>
+                <tr>
+                    <td class="no">Left out</td><td class="yes">Copied</td><td class="no">Left out</td>
+                    <td class="verdict">Allowed</td>
+                    <td>As above, with no registration page.</td>
+                    <td>Yes, without their computed answers</td>
+                </tr>
+                <tr>
+                    <td class="yes">Copied</td><td class="no">Left out</td><td class="no">Left out</td>
+                    <td class="verdict">Allowed</td>
+                    <td>Targets with no question linked to them yet &mdash; how a project looks before its registration page is built. No computed questions.</td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td class="no">Left out</td><td class="no">Left out</td><td class="no">Left out</td>
+                    <td class="verdict">Allowed</td>
+                    <td>Just the project details and selection settings: an empty project to fill from scratch.</td>
+                    <td>No</td>
+                </tr>
+                <tr class="blocked">
+                    <td>Copied</td><td>Left out</td><td>Copied</td>
+                    <td class="verdict">Refused</td>
+                    <td>A registration page needs its questions.</td>
+                    <td>&mdash;</td>
+                </tr>
+                <tr class="blocked">
+                    <td>Left out</td><td>Left out</td><td>Copied</td>
+                    <td class="verdict">Refused</td>
+                    <td>A registration page needs its questions.</td>
+                    <td>&mdash;</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="hint">
+            Team members can be added to any allowed combination; they don't depend on anything else.
+        </p>
+
+        <h2 id="checks">The checks before anything is copied</h2>
+        <p>
+            These run in this order. The first one that fails stops the clone, and nothing is created.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart TD
+    classDef check   fill:#ffffff,stroke:#505a5f,color:#0b0c0c
+    classDef ok      fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef blocked fill:#f6c6c0,stroke:#d4351c,color:#0b0c0c
+
+    S(["Admin runs the clone"])
+    C1{"Respondents asked for?&lt;br/&gt;Then: stated they hold&lt;br/&gt;no real personal data?"}:::check
+    C2{"Do the chosen parts&lt;br/&gt;fit together?"}:::check
+    C3{"Is the person named&lt;br/&gt;an active admin?"}:::check
+    C4{"Does the project exist,&lt;br/&gt;and is it held in OpenDLP&lt;br/&gt;rather than Google Sheets?"}:::check
+    C5{"Respondents asked for?&lt;br/&gt;Then: confirm the count&lt;br/&gt;on screen"}:::check
+    C6{"Is there a free title?"}:::check
+    OK(["Clone goes ahead"]):::ok
+
+    X1(["Refused"]):::blocked
+    X2(["Refused"]):::blocked
+    X3(["Refused"]):::blocked
+    X4(["Refused"]):::blocked
+    X5(["Cancelled"]):::blocked
+    X6(["Refused"]):::blocked
+
+    S --> C1
+    C1 -- "not asked, or stated" --> C2
+    C1 -- "asked, not stated" --> X1
+    C2 -- yes --> C3
+    C2 -- no --> X2
+    C3 -- yes --> C4
+    C3 -- no --> X3
+    C4 -- yes --> C5
+    C4 -- no --> X4
+    C5 -- "not asked, or confirmed" --> C6
+    C5 -- "answered no" --> X5
+    C6 -- yes --> OK
+    C6 -- no --> X6
+
+    click C1 "#respondents" "Copying respondents"
+    click X1 "#respondents" "Copying respondents"
+    click C2 "#combinations" "Which choices fit together"
+    click X2 "#combinations" "Which choices fit together"
+    click C5 "#respondents" "Copying respondents"
+    click C6 "#title" "Choosing the title"
+    click X6 "#title" "Choosing the title"
+            </pre>
+        </div>
+        <ul>
+            <li><strong>An active admin.</strong> The clone is made in the name of an admin, who must be named and must have an active account. That admin becomes the copy's creator and its Project Manager.</li>
+            <li><strong>Held in OpenDLP.</strong> A project with Google Sheets as its data source is refused &mdash; its respondents and targets live in the spreadsheet, not in OpenDLP, so there is nothing here to copy. A project that hasn't chosen a data source yet can be cloned.</li>
+            <li><strong>Archived projects</strong> can be cloned. The copy is always active.</li>
+            <li><strong>No check on publishing.</strong> It doesn't matter whether the original's registration page was ever published.</li>
+        </ul>
+
+        <h2 id="title">Choosing the title</h2>
+        <p>
+            A new project's title may not be the same as the title of another project you can see that is not archived. Capital letters and spaces at either end don't count, so &ldquo;Climate Assembly&rdquo; and &ldquo;climate assembly &rdquo; are the same title. This rule applies when creating or renaming a project too, not just when cloning.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart TD
+    classDef check   fill:#ffffff,stroke:#505a5f,color:#0b0c0c
+    classDef ok      fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef blocked fill:#f6c6c0,stroke:#d4351c,color:#0b0c0c
+
+    G{"Title given?"}:::check
+
+    G -- yes --> GF{"Already used by a&lt;br/&gt;project you can see?"}:::check
+    GF -- no --> UG(["Use the given title"]):::ok
+    GF -- yes --> XG(["Refused:&lt;br/&gt;choose another title"]):::blocked
+
+    G -- no --> T1{"#quot;Original title (copy)#quot;&lt;br/&gt;free?"}:::check
+    T1 -- yes --> U1(["Use it"]):::ok
+    T1 -- no --> T2{"#quot;Original title (copy 2)#quot;&lt;br/&gt;free?"}:::check
+    T2 -- yes --> U2(["Use it"]):::ok
+    T2 -- no --> TN["... try (copy 3)&lt;br/&gt;up to (copy 9)"]:::check
+    TN -- "one is free" --> UN(["Use the first free one"]):::ok
+    TN -- "none free" --> XN(["Refused:&lt;br/&gt;give a title"]):::blocked
+            </pre>
+        </div>
+        <p class="hint">
+            The admin running the clone can see every project, so in practice the title is checked against every project that isn't archived. The &ldquo;(copy)&rdquo; ending is always in English.
+        </p>
+
+        <h2 id="respondents">Copying respondents</h2>
+        <p>
+            Respondents are the one part of a project that can hold real people's details. Copying them makes a second copy that would have to be found and blanked if someone asked for their details to be deleted. So it is never the default, and it takes two deliberate steps:
+        </p>
+        <ol>
+            <li>Asking for respondents is refused unless you also state that the project is <strong>for training or a demo</strong> &mdash; that the respondents hold no real personal data.</li>
+            <li>Then a confirmation on screen names how many will be copied: &ldquo;This will copy 412 respondents. Confirm they contain no real personal data&rdquo;. Answering no cancels the clone. (A script can skip this question.)</li>
+        </ol>
+        <p>
+            Each respondent copied:
+        </p>
+        <ul>
+            <li>keeps their answers, email and other details;</li>
+            <li>loses their answers to computed questions if those weren't copied (see <a href="#combinations">which choices fit together</a>), so the copy looks like a project that never had them;</li>
+            <li>is linked to the copy of the registration page they came through, or to no page if the pages weren't copied;</li>
+            <li>has no comments and no selection history.</li>
+        </ul>
+
+        <h3 id="status">Respondent status</h3>
+        <p>
+            By default everyone goes back into the pool, as if nothing had happened to them yet. The copy is a starting point for a demo, and has no selection history to explain why anyone would be selected or confirmed. If the demo needs to start part way through &mdash; to show replacements or confirmation calls, say &mdash; you can ask to <strong>keep the respondents' statuses</strong> instead. Asking to keep statuses without copying respondents is refused.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef check fill:#ffffff,stroke:#505a5f,color:#0b0c0c
+    classDef pool  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef keep  fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef never fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c,stroke-dasharray:5 5
+
+    S{"Status in&lt;br/&gt;the original"}:::check
+
+    S -- "Pool, Selected,&lt;br/&gt;Confirmed, Withdrawn" --> K{"Keep statuses?"}:::check
+    K -- "no (default)" --> P(["Pool"]):::pool
+    K -- yes --> SAME(["Same status&lt;br/&gt;as the original"]):::keep
+
+    S -- "Test submission" --> TS(["Test submission&lt;br/&gt;(either way)"]):::keep
+    S -- "Deleted" --> D(["Not copied&lt;br/&gt;(either way)"]):::never
+            </pre>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Status in the original</th><th>In the copy, by default</th><th>In the copy, keeping statuses</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Pool</td><td>Pool</td><td>Pool</td></tr>
+                <tr><td>Selected</td><td>Pool</td><td>Selected</td></tr>
+                <tr><td>Confirmed</td><td>Pool</td><td>Confirmed</td></tr>
+                <tr><td>Withdrawn</td><td>Pool</td><td>Withdrawn</td></tr>
+                <tr><td>Test submission</td><td>Test submission</td><td>Test submission</td></tr>
+                <tr><td>Deleted</td><td>Not copied</td><td>Not copied</td></tr>
+            </tbody>
+        </table>
+        <ul>
+            <li><strong>Test submissions stay test submissions.</strong> Putting them in the pool would mix test data into the selection; the app only lets that happen as a deliberate step.</li>
+            <li><strong>Deleted respondents are never copied</strong> &mdash; see <a href="#never">why some parts are never copied</a>.</li>
+        </ul>
+
+        <h2 id="team">Team members</h2>
+        <p>
+            Only copied if you ask. Everyone on the original's team gets the same role on the copy. The admin who runs the clone is always the copy's Project Manager, even if they had a different role on the original.
+        </p>
+
+        <h2 id="changes">What is different about the copy</h2>
+        <p>
+            Even the parts that are copied can't all be copied exactly. These things change:
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef always fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef on     fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+
+    subgraph PROJ["The project"]
+        direction TB
+        P1["New title"]:::always
+        P2["Active, even if the&lt;br/&gt;original is archived"]:::always
+        P3["Created by, and managed by,&lt;br/&gt;the admin who cloned it"]:::always
+        P4["Reply-to name and&lt;br/&gt;email left blank"]:::always
+    end
+
+    subgraph PAGES["Registration pages"]
+        direction TB
+        R1["Always in test,&lt;br/&gt;never published"]:::on
+        R2["New web addresses&lt;br/&gt;and short codes"]:::on
+        R3["Images and documents&lt;br/&gt;point at the copy's own"]:::on
+        R4["Activity log starts afresh:&lt;br/&gt;#quot;cloned from ...#quot;"]:::on
+        R5["Emails keep their wording,&lt;br/&gt;reply-to left blank"]:::on
+    end
+            </pre>
+        </div>
+        <ul>
+            <li><strong>Always in test.</strong> Copying a published page would put a second live registration page on the internet without anyone pressing publish. A test page also keeps its web address editable. If the demo needs a published page, publish the copy's page in the usual way.</li>
+            <li><strong>New web addresses.</strong> Every registration page needs its own web address and short code, so the copy's are made fresh from its new title. The admin gets a list of the new addresses when the clone finishes.</li>
+            <li><strong>Images and documents.</strong> The copy gets its own copy of every image and document, and its pages and emails are changed to use them. So the copy keeps working even if the original is deleted.</li>
+            <li><strong>Activity log.</strong> The original's log names people who never touched the copy, so it isn't copied. The copy's log starts with one entry saying where it was cloned from.</li>
+            <li><strong>&ldquo;Registration page needs updating&rdquo;.</strong> If the original's page was behind its questions, so is the copy's; if it was up to date, so is the copy's.</li>
+        </ul>
+
+        <h2 id="asking">Asking for a clone</h2>
+        <p>
+            When you ask an admin for a clone, tell them:
+        </p>
+        <ul>
+            <li>which project to copy (its web address in the backoffice is enough);</li>
+            <li>the title you want, if not &ldquo;&hellip; (copy)&rdquo;;</li>
+            <li>which of the targets, registration questions and registration pages to <strong>leave out</strong>, if any;</li>
+            <li>whether to copy the respondents &mdash; and if so, that they hold no real personal data, and whether to keep their statuses;</li>
+            <li>whether to copy the team members.</li>
+        </ul>
+        <details>
+            <summary>For the admin running it</summary>
+            <p>
+                <code>opendlp projects list</code> finds the project's ID. Then:
+            </p>
+            <p>
+                <code>opendlp projects clone PROJECT_ID --user-email admin@example.com [--title "..."] [--no-targets] [--no-questions] [--no-registration] [--respondents --for-training-or-demo] [--preserve-respondent-status] [--team] [--yes]</code>
+            </p>
+            <p>
+                See <code>docs/cli.md</code> for the details.
+            </p>
+        </details>
+
+        <h2 id="glossary">Glossary</h2>
+        <dl class="glossary">
+            <dt id="g-project">Project</dt>
+            <dd>
+                What an organiser sets up in OpenDLP to find the people for one event: its data, targets, registration page, team and selections.
+            </dd>
+            <dt id="g-data-source">Data source</dt>
+            <dd>
+                Where a project's targets and respondents are managed: in OpenDLP or in Google Sheets. Only projects managed in OpenDLP can be cloned.
+            </dd>
+            <dt id="g-computed">Computed question</dt>
+            <dd>
+                A registration question nobody answers: its value is worked out from another question's answer, such as an age range from a date of birth, so that it can be matched to a target.
+            </dd>
+            <dt id="g-respondent">Respondent</dt>
+            <dd>
+                Anyone in a project's data, whatever their status: in the pool, selected, or confirmed.
+            </dd>
+            <dt id="g-team">Team member</dt>
+            <dd>
+                A user with a role on a project, such as Project Manager or Confirmation Caller.
+            </dd>
+        </dl>
+
+        <script>
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'default',
+                securityLevel: 'loose',
+                flowchart: { curve: 'basis', useMaxWidth: true }
+            });
+
+  // When a flow-chart click jumps to a <details>, open it so the content is visible.
+            window.addEventListener('hashchange', () => {
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+  // Also handle the case where the page loads with a hash already set.
+            window.addEventListener('load', () => {
+                if (!window.location.hash) return;
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+        </script>
+    </body>
+</html>
