@@ -20,9 +20,10 @@ def _is_htmx() -> bool:
 ```
 
 Defined, identically, in `admin.py`, `data_source.py`,
-`db_selection_backoffice.py`, `profile.py`, `project_details.py`,
-`respondent_field_schema.py`, `target_sources.py` and `targets.py`. `gsheets.py:1143` inlines the same check (inverted) rather than
-defining it.
+`db_selection.py`, `profile.py`, `project_details.py`,
+`respondent_field_schema.py`, `target_sources.py` and `targets.py`.
+`data_source.py:841` also inlines the same check (inverted), in the Google
+Sheets access check route.
 
 ### 2. The HTMX-aware redirect - three named copies, one inlined
 
@@ -38,7 +39,7 @@ def _redirect(location: str) -> ResponseReturnValue:
 
 - `data_source.py:90` as `_redirect`
 - `profile.py:73` as `_redirect`
-- `db_selection_backoffice.py:419` as `_settings_redirect` - same body, docstring
+- `db_selection.py:370` as `_settings_redirect` - same body, docstring
   and all; the name is the only "settings" thing about it.
 
 The same branch is written out inline in:
@@ -72,7 +73,7 @@ because the next HTMX dialog will need it too.
 which had drifted (it swallowed every exception as "cannot manage"); it went
 with the legacy pages.
 
-Do not share what is left. Other routes (`backoffice.py:113`, `gsheets.py:383`,
+Do not share what is left. Other routes (`backoffice.py:113`, `selection.py:371`,
 `respondents.py:606`) call `can_manage_assembly` on an assembly they already
 loaded in the request's one UnitOfWork, which is the better pattern. A shared
 `_can_manage` would encourage the second-UnitOfWork version.
@@ -121,7 +122,7 @@ def render_flashes_oob() -> str: ...
 ```
 
 Then, file by file, delete the local copy and import the shared one, and
-replace the inlined versions in `respondent_field_schema.py` and `gsheets.py`.
+replace the inlined versions in `respondent_field_schema.py` and `data_source.py`.
 
 `_settings_redirect` should go entirely - its name implies something
 settings-specific that is not there. `_settings_return_url` beside it is

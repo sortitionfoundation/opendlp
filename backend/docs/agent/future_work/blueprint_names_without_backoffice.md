@@ -12,7 +12,6 @@ nothing.
 
 | Blueprint | Module | `url_for` references | Test patch targets |
 | --- | --- | --- | --- |
-| `db_selection_backoffice` | `blueprints/db_selection_backoffice.py` | 12 | 11 |
 | `backoffice_registration` | `blueprints/backoffice_registration.py` | 47 | 16 |
 | `backoffice` | `blueprints/backoffice.py` | 167 | 4 |
 
@@ -20,10 +19,9 @@ Counts are across `src/`, `templates/` and `tests/`, taken on 2026-11-25.
 
 ## What to do
 
-- **`db_selection_backoffice` → `db_selection`.** Already part of the plan for
-  splitting the selection blueprints
-  (`docs/agent/1341-retire-legacy-routes/plan.md`, section 7), so it needs
-  nothing more here.
+- **`db_selection_backoffice` → `db_selection`.** Done, with the split of the
+  selection blueprints (`docs/agent/1341-retire-legacy-routes/plan.md`,
+  section 7).
 - **`backoffice_registration` → `registration_editor`** or similar. It cannot
   simply drop the qualifier: `registration` is taken by the public
   registration pages (`blueprints/registration.py`), which are a different
@@ -40,9 +38,7 @@ Counts are across `src/`, `templates/` and `tests/`, taken on 2026-11-25.
 - every `patch("opendlp.entrypoints.blueprints.<module>.<name>")` in the
   tests. A patch aimed at a module that only re-exports a name does not
   intercept the call, so each moved test has to be run, not just imported;
-- test file names that follow the blueprint
-  (`tests/component/test_db_selection_backoffice.py`,
-  `tests/e2e/test_db_selection_backoffice.py`);
+- test file names that follow the blueprint;
 - the blueprint tables in [docs/architecture.md](../../architecture.md).
 
 URLs do not change, so nothing outside the repository is affected.
