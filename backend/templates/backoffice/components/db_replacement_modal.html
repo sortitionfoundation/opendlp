@@ -5,7 +5,7 @@
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/input.html" import input %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
-{% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
+{% set close_url = url_for('selection.view_assembly_selection', assembly_id=assembly.id) %}
 {% set plan = replacement_plan %}
 {% set form = replacement_form|default({}) %}
 {% set validation = replacement_validation|default(none) %}

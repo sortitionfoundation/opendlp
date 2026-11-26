@@ -436,7 +436,9 @@ def _start_rerun(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, run: Selection
 def _redirect_after_save(assembly_id: uuid.UUID, task_id: uuid.UUID | None, recheck_url: str) -> ResponseReturnValue:
     """To the new selection run if one was started, otherwise back to the check."""
     if task_id is not None:
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=task_id))
+        return redirect(
+            url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_selection=task_id)
+        )
     return redirect_preserving_scroll(recheck_url)
 
 

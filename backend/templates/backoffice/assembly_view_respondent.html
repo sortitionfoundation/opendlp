@@ -253,7 +253,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
                                 {{ table_cell(comment.created_at|datetimeformat('long') ) }}
                                 {{ table_cell(author.email if author else comment.author_id|string) }}
                                 {% if comment.action.value in ("SELECT", "RESET") and comment.selection_run_id %}
-                                    {% set run_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=comment.selection_run_id) %}
+                                    {% set run_url = url_for('selection.view_assembly_selection', assembly_id=assembly.id, current_selection=comment.selection_run_id) %}
                                     {% call table_cell_custom() %}
                                         <a href="{{ run_url }}" class="underline" style="color: var(--color-links);">{{ action_label }}</a>
                                     {% endcall %}

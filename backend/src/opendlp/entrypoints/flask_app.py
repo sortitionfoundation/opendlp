@@ -185,7 +185,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.backoffice_registration import backoffice_registration_bp  # noqa: PLC0415
     from .blueprints.data_source import data_source_bp  # noqa: PLC0415
     from .blueprints.db_selection_backoffice import db_selection_backoffice_bp  # noqa: PLC0415
-    from .blueprints.gsheet_selection import gsheets_bp  # noqa: PLC0415
+    from .blueprints.gsheet_selection import gsheet_selection_bp  # noqa: PLC0415
     from .blueprints.health import health_bp  # noqa: PLC0415
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
@@ -193,6 +193,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.registration import registration_bp  # noqa: PLC0415
     from .blueprints.respondent_field_schema import respondent_field_schema_bp  # noqa: PLC0415
     from .blueprints.respondents import respondents_bp  # noqa: PLC0415
+    from .blueprints.selection import selection_bp  # noqa: PLC0415
     from .blueprints.target_sources import target_sources_bp  # noqa: PLC0415
     from .blueprints.targets import targets_bp  # noqa: PLC0415
     from .blueprints.wellknown import wellknown_bp  # noqa: PLC0415
@@ -210,7 +211,8 @@ def register_blueprints(app: Flask) -> None:
         from .blueprints.dev import dev_bp  # noqa: PLC0415
 
         app.register_blueprint(dev_bp, url_prefix="/backoffice")
-    app.register_blueprint(gsheets_bp, url_prefix="/backoffice")
+    app.register_blueprint(selection_bp, url_prefix="/backoffice")
+    app.register_blueprint(gsheet_selection_bp, url_prefix="/backoffice")
     app.register_blueprint(db_selection_backoffice_bp, url_prefix="/backoffice")
     app.register_blueprint(targets_bp, url_prefix="/backoffice")
     app.register_blueprint(respondents_bp, url_prefix="/backoffice")

@@ -69,13 +69,13 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
             if not csv_config.settings_confirmed:
                 flash(_("Please review and save the selection settings before running selection"), "warning")
-                return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, settings=1))
+                return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, settings=1))
 
             task_id = start_db_select_task(uow, current_user.id, assembly_id, test_selection=test_mode)
 
         return redirect(
             url_for(
-                "gsheets.view_assembly_selection",
+                "selection.view_assembly_selection",
                 assembly_id=assembly_id,
                 current_selection=task_id,
             )
@@ -85,17 +85,17 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_to_running_task(assembly_id, e)
     except InvalidSelection as e:
         flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
         flash(_("Failed to start selection task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions:
         flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Error starting DB selection", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the selection task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 @db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/replacement/run", methods=["POST"])
@@ -116,7 +116,7 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
             if not csv_config.settings_confirmed:
                 flash(_("Please review and save the selection settings before running selection"), "warning")
-                return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, settings=1))
+                return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, settings=1))
 
             plan = build_replacement_plan(uow, current_user.id, assembly_id)
             validation = validate_replacement_form(uow, assembly_id, plan, request.form, check_feasibility=recheck)
@@ -139,7 +139,7 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(
             url_for(
-                "gsheets.view_assembly_selection",
+                "selection.view_assembly_selection",
                 assembly_id=assembly_id,
                 current_selection=task_id,
             )
@@ -149,7 +149,7 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_to_running_task(assembly_id, e)
     except InvalidSelection as e:
         flash(_("Could not start replacement selection: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
     except NotFoundError:
         flash(_("Project not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
@@ -159,7 +159,7 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Error starting DB replacement selection", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the replacement selection"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 @db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/modal-progress/<uuid:run_id>")
@@ -229,7 +229,7 @@ def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRe
         flash(_("Task cancelled"), "info")
         return redirect(
             url_for(
-                "gsheets.view_assembly_selection",
+                "selection.view_assembly_selection",
                 assembly_id=assembly_id,
                 current_selection=run_id,
             )
@@ -237,11 +237,11 @@ def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRe
     except InvalidSelection as e:
         logger.warning("Cannot cancel task", error=str(e))
         flash(_("Cannot cancel task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning("Task not found for cancel", error=str(e))
         flash(_("Task not found"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions to cancel task", error=str(e))
         flash(_("You don't have permission to cancel this task"), "error")
@@ -249,7 +249,7 @@ def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRe
     except Exception as e:
         logger.exception("Cancel DB selection error", error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 @db_selection_backoffice_bp.route(
@@ -272,17 +272,17 @@ def download_db_selected(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         )
     except NotFoundError as e:
         flash(str(e), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InvalidSelection as e:
         flash(str(e), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
     except InsufficientPermissions:
         flash(_("You don't have permission to download this data"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Download selected CSV error", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while generating the download"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 @db_selection_backoffice_bp.route(
@@ -305,17 +305,17 @@ def download_db_remaining(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Response
         )
     except NotFoundError as e:
         flash(str(e), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InvalidSelection as e:
         flash(str(e), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
     except InsufficientPermissions:
         flash(_("You don't have permission to download this data"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Download remaining CSV error", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while generating the download"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 @db_selection_backoffice_bp.route(
@@ -341,17 +341,17 @@ def download_db_selection_report(assembly_id: uuid.UUID, run_id: uuid.UUID) -> R
         )
     except NotFoundError as e:
         flash(str(e), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except SelectionReportError as e:
         flash(str(e), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
     except InsufficientPermissions:
         flash(_("You don't have permission to download this data"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Download selection report error", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while generating the download"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 SETTINGS_DIALOG_TEMPLATE = "backoffice/components/selection_settings_dialog.html"
@@ -368,7 +368,7 @@ def _settings_return_url(assembly_id: uuid.UUID, came_from: str) -> str:
     """The page the settings dialog was opened from. A token picks it, never an address from the request."""
     if came_from == SETTINGS_FROM_DETAILS:
         return url_for("backoffice.view_assembly", assembly_id=assembly_id, _anchor="selection-settings")
-    return url_for("gsheets.view_assembly_selection", assembly_id=assembly_id)
+    return url_for("selection.view_assembly_selection", assembly_id=assembly_id)
 
 
 def _settings_redirect(location: str) -> ResponseReturnValue:
@@ -412,7 +412,7 @@ def db_settings_dialog(assembly_id: uuid.UUID) -> ResponseReturnValue:
     the dialog open, so the address works as a link.
     """
     if not _is_htmx():
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, settings=1))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, settings=1))
     try:
         return _render_settings_dialog(assembly_id, request.args.get("from", ""))
     except NotFoundError:
@@ -510,7 +510,7 @@ def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             count = reset_selection_status(uow, current_user.id, assembly_id)
 
         flash(_("Reset %(count)s respondents to the pool", count=count), "success")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
     except SelectionAlreadyRunning as e:
         return redirect_to_running_task(assembly_id, e)
@@ -519,8 +519,8 @@ def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions:
         flash(_("You don't have permission to reset selection status"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Reset DB selection error", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while resetting respondent status"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))

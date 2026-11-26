@@ -500,7 +500,7 @@ class TestHeaderFields:
         assert report.selection_url == "https://example.test/back/sel"
         assert len(url.calls) == 1
         endpoint, kwargs = url.calls[0]
-        assert endpoint == "gsheets.view_assembly_selection_with_run"
+        assert endpoint == "selection.view_assembly_selection_with_run"
         assert kwargs["assembly_id"] == assembly.id
         assert kwargs["run_id"] == record.task_id
         assert kwargs["_external"] is True

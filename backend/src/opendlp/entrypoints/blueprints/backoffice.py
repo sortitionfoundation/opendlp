@@ -523,7 +523,7 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
         number_to_select = request.form.get("number_to_select", type=int)
         if number_to_select is None or number_to_select < 1:
             flash(_("Please enter a valid positive number"), "error")
-            return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, edit_number=1))
+            return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, edit_number=1))
 
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -535,7 +535,7 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
 
         flash(_("Panel size updated to %(number)s", number=updated_assembly.number_to_select), "success")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to update number_to_select for assembly",
@@ -544,7 +544,7 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
             error=str(e),
         )
         flash(_("You don't have permission to edit this project"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for update", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)

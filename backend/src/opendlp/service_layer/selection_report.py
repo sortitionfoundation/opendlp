@@ -157,7 +157,7 @@ def build_selection_report(
     categories = [_build_category_report(cat, pool_respondents, selected_respondents) for cat in record.targets_used]
 
     selection_url = url_generator.generate_url(
-        "gsheets.view_assembly_selection_with_run",
+        "selection.view_assembly_selection_with_run",
         _external=True,
         assembly_id=assembly_id,
         run_id=task_id,

@@ -55,7 +55,7 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                             <p class="text-body-sm">
                                 {{ _("Panel size:") }}
                                 <span class="text-heading-sm">{{ assembly.number_to_select }}</span>
-                                <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, edit_number=1) }}"
+                                <a href="{{ url_for('selection.view_assembly_selection', assembly_id=assembly.id, edit_number=1) }}"
                                    class="text-label-md hover:underline ml-2"
                                    style="color: var(--color-links)">{{ _("Edit") }}</a>
                             </p>
@@ -72,7 +72,7 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                 <div class="flex flex-wrap gap-2 lg:justify-end">
                     {% if active_initial_selection_run_id %}
                         {{ button(_("View Running Selection") ,
-                        href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=active_initial_selection_run_id),
+                        href=url_for('selection.view_assembly_selection', assembly_id=assembly.id, current_selection=active_initial_selection_run_id),
                         variant="primary") }}
                     {% elif is_db and held > 0 %}
                         {# Someone holds a place, so the only way to a fresh selection is a reset #}
@@ -88,13 +88,13 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                     {% else %}
                         {% if not is_db %}
                             <form method="post"
-                                  action="{{ url_for('gsheets.start_selection_load', assembly_id=assembly.id) }}"
+                                  action="{{ url_for('gsheet_selection.start_selection_load', assembly_id=assembly.id) }}"
                                   class="inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 {{ button(_("Check Spreadsheet") , type="submit", variant="secondary") }}
                             </form>
                         {% endif %}
-                        {% set run_url = url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) if is_db else url_for('gsheets.start_selection_run', assembly_id=assembly.id) %}
+                        {% set run_url = url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) if is_db else url_for('gsheet_selection.start_selection_run', assembly_id=assembly.id) %}
                         <form method="post" action="{{ run_url }}?test=1" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Run Test Selection") , type="submit", variant="secondary", disabled=waiting) }}
@@ -140,7 +140,7 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                 <div class="flex flex-wrap gap-2 lg:justify-end">
                     {% set replacement_blocked = is_db and not replacement_enabled %}
                     {{ button(_("Select replacements") ,
-                    href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, replacement_modal='open'),
+                    href=url_for('selection.view_assembly_selection', assembly_id=assembly.id, replacement_modal='open'),
                     variant="primary",
                     disabled=replacement_blocked,
                     aria_describedby="replacement-step-hint" if replacement_blocked else "") }}
