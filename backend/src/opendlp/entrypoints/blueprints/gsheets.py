@@ -952,6 +952,7 @@ def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID
 
 @gsheets_bp.route("/project/<uuid:assembly_id>/replacement/load", methods=["POST"])
 @login_required
+@require_assembly_management
 def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a replacement data validation task."""
     try:
@@ -989,6 +990,7 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @gsheets_bp.route("/project/<uuid:assembly_id>/replacement/run", methods=["POST"])
 @login_required
+@require_assembly_management
 def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Start a replacement selection task."""
     try:
@@ -1051,6 +1053,7 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @gsheets_bp.route("/project/<uuid:assembly_id>/replacement/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
+@require_assembly_management
 def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Cancel a running replacement task."""
     try:
