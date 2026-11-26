@@ -1,12 +1,13 @@
 """ABOUTME: The data source dialogs: creating a project in three steps, and a project's data source settings
 ABOUTME: One form drawn by the server at every step, swapped into the page's dialog host over htmx"""
 
+import time
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from flask import Blueprint, flash, make_response, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, make_response, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from werkzeug.datastructures import MultiDict
@@ -27,6 +28,7 @@ from opendlp.service_layer.assembly_service import (
     OPENDLP_SOURCE,
     AssemblyNavContext,
     add_assembly_gsheet,
+    get_assembly_gsheet,
     get_assembly_nav_context,
     get_user_assemblies,
     is_title_available,
@@ -37,7 +39,7 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.csv_upload_stash import StashedUpload
 from opendlp.service_layer.csv_upload_stash import stash as stash_pending_upload
 from opendlp.service_layer.exceptions import AssemblyTitleTaken, InvalidSelection
-from opendlp.service_layer.gsheet_access_check import forget_cached_result
+from opendlp.service_layer.gsheet_access_check import check_gsheet_access, forget_cached_result, store_cached_result
 from opendlp.service_layer.project_creation_service import (
     ProjectDetails,
     create_project,
@@ -786,3 +788,61 @@ def save(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Data source settings saved"), "success")
     _warn_if_no_columns_to_keep(form)
     return _redirect(_details_url(assembly_id, check=1))
+
+
+@data_source_bp.route("/project/<uuid:assembly_id>/gsheet/check", methods=["POST"])
+@login_required
+@require_assembly_management
+def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Check what the service account can do with the configured spreadsheet.
+
+    Always asks Google: the cache only serves page views that did not ask for
+    a check. Returns the status panel for HTMX; a plain form post redirects to
+    the project details page, which shows the result from the cache.
+    """
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+    if gsheet is None:
+        return render_template(
+            "backoffice/components/gsheet_access_status.html",
+            gsheet_access_assembly_id=assembly_id,
+            gsheet_access_unavailable_reason=_("This project has no Google Sheets configuration."),
+        ), 404
+
+    if not get_service_account_email():
+        return render_template(
+            "backoffice/components/gsheet_access_status.html",
+            gsheet_access_assembly_id=assembly_id,
+            gsheet_access_unavailable_reason=_(
+                "The spreadsheet cannot be checked: no Google service account is configured."
+            ),
+        )
+
+    # No UnitOfWork is open here: the Google calls can take seconds.
+    started = time.perf_counter()
+    client = current_app.extensions["gsheet_access_client_factory"]()
+    result = check_gsheet_access(
+        client,
+        gsheet.url,
+        selection_tabs=(gsheet.select_registrants_tab, gsheet.select_targets_tab),
+        replacement_tabs=(gsheet.replace_registrants_tab, gsheet.replace_targets_tab, gsheet.already_selected_tab),
+        now=datetime.now(UTC),
+    )
+    logger.info(
+        "Google Sheets access checked",
+        assembly_id=str(assembly_id),
+        user_id=str(current_user.id),
+        status=result.status.value,
+        seconds=round(time.perf_counter() - started, 2),
+    )
+    store_cached_result(assembly_id, result)
+
+    if request.headers.get("HX-Request") != "true":
+        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+    return render_template(
+        "backoffice/components/gsheet_access_status.html",
+        gsheet_access_assembly_id=assembly_id,
+        gsheet_access_result=result,
+        can_check_gsheet_access=True,
+    )

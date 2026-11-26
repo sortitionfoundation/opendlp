@@ -1,12 +1,10 @@
-"""ABOUTME: Backoffice Google Sheets routes for selection, replacement and tab management tasks, and the access check
-ABOUTME: Provides /backoffice/project/*/selection/*, replacement/*, manage-tabs/* task routes and gsheet/check"""
+"""ABOUTME: Backoffice Google Sheets routes for selection, replacement and tab management tasks
+ABOUTME: Provides the /backoffice/project/*/selection/*, replacement/* and manage-tabs/* task routes"""
 
-import time
 import uuid
-from datetime import UTC, datetime
 
 import structlog
-from flask import current_app, flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
@@ -17,14 +15,12 @@ from opendlp.entrypoints.blueprints.selection import (
     redirect_to_running_task,
     selection_bp,
 )
-from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.service_layer.assembly_service import (
     get_assembly_gsheet,
     get_assembly_with_permissions,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
-from opendlp.service_layer.gsheet_access_check import check_gsheet_access, store_cached_result
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.selection_history import name_history
 from opendlp.service_layer.sortition import (
@@ -552,64 +548,3 @@ def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
         logger.error("Error cancelling task", run_id=str(run_id), error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
-
-
-# --- GSheet config views ---
-
-
-@gsheets_bp.route("/project/<uuid:assembly_id>/gsheet/check", methods=["POST"])
-@login_required
-@require_assembly_management
-def check_gsheet_access_route(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Check what the service account can do with the configured spreadsheet.
-
-    Always asks Google: the cache only serves page views that did not ask for
-    a check. Returns the status panel for HTMX; a plain form post redirects to
-    the project details page, which shows the result from the cache.
-    """
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-    if gsheet is None:
-        return render_template(
-            "backoffice/components/gsheet_access_status.html",
-            gsheet_access_assembly_id=assembly_id,
-            gsheet_access_unavailable_reason=_("This project has no Google Sheets configuration."),
-        ), 404
-
-    if not get_service_account_email():
-        return render_template(
-            "backoffice/components/gsheet_access_status.html",
-            gsheet_access_assembly_id=assembly_id,
-            gsheet_access_unavailable_reason=_(
-                "The spreadsheet cannot be checked: no Google service account is configured."
-            ),
-        )
-
-    # No UnitOfWork is open here: the Google calls can take seconds.
-    started = time.perf_counter()
-    client = current_app.extensions["gsheet_access_client_factory"]()
-    result = check_gsheet_access(
-        client,
-        gsheet.url,
-        selection_tabs=(gsheet.select_registrants_tab, gsheet.select_targets_tab),
-        replacement_tabs=(gsheet.replace_registrants_tab, gsheet.replace_targets_tab, gsheet.already_selected_tab),
-        now=datetime.now(UTC),
-    )
-    logger.info(
-        "Google Sheets access checked",
-        assembly_id=str(assembly_id),
-        user_id=str(current_user.id),
-        status=result.status.value,
-        seconds=round(time.perf_counter() - started, 2),
-    )
-    store_cached_result(assembly_id, result)
-
-    if request.headers.get("HX-Request") != "true":
-        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
-    return render_template(
-        "backoffice/components/gsheet_access_status.html",
-        gsheet_access_assembly_id=assembly_id,
-        gsheet_access_result=result,
-        can_check_gsheet_access=True,
-    )
