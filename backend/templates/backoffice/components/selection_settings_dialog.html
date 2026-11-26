@@ -20,7 +20,7 @@ ABOUTME: A fragment dialog, opened by a cog on the Select and Replace tab and on
             tab, which is where saving then goes back to; otherwise empty
 #}
 {% set form = selection_settings_form %}
-{% set action_url = url_for('db_selection_backoffice.save_db_settings', assembly_id=assembly.id) %}
+{% set action_url = url_for('db_selection.save_db_settings', assembly_id=assembly.id) %}
 <div x-data="modal({ initialOpen: true })">
     {% call modal(id="selection-settings-dialog", title=_("Selection settings"), wrap_body=false) %}
         <form method="post"

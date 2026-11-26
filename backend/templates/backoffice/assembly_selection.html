@@ -55,7 +55,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {% endif %}
     {% if data_source == "csv" %}
         {# CSV/Database source - show selection options #}
-        {% set settings_url = url_for('db_selection_backoffice.db_settings_dialog', assembly_id=assembly.id) %}
+        {% set settings_url = url_for('db_selection.db_settings_dialog', assembly_id=assembly.id) %}
         {# What selection is waiting for, each with the way to provide it. The
            steps below stay on the page with their actions disabled meanwhile. #}
         {% if selection_waiting %}
@@ -191,7 +191,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                                             title="{{ _('Download selected CSV') }}"
                                                         {% endset %}
                                                         {{ button(variant="icon",
-                                                        href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=run_record.task_id) ,
+                                                        href=url_for('db_selection.download_db_selected', assembly_id=assembly.id, run_id=run_record.task_id) ,
                                                         icon=icon_download(classes="w-4 h-4"),
                                                         attrs=download_attrs
                                                         ) }}

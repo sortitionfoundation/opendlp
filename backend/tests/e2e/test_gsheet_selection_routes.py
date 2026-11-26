@@ -1,5 +1,5 @@
-"""ABOUTME: End-to-end tests for gsheets blueprint routes: replacement, manage tabs, and context helpers
-ABOUTME: Covers replacement_progress_modal, manage tabs CRUD, cancel flows, and _get_*_context() coverage"""
+"""ABOUTME: End-to-end tests for the Google Sheets selection task routes: replacement and manage tabs
+ABOUTME: Covers the progress modals, starting and cancelling tasks, and the Selection page opening on a running task"""
 
 import uuid
 from datetime import UTC, datetime

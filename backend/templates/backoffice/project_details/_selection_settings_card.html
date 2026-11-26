@@ -29,7 +29,7 @@ ABOUTME: Says whether the settings are confirmed; a cog opens the selection sett
                 icon=icon_settings(),
                 aria_label=_("Selection settings"),
                 aria_haspopup="dialog",
-                attrs='data-focus-id="selection-settings-cog" hx-get="' ~ url_for('db_selection_backoffice.db_settings_dialog', assembly_id=assembly.id, from='details') ~ '" hx-target="#project-dialog-host" hx-swap="innerHTML"') }}
+                attrs='data-focus-id="selection-settings-cog" hx-get="' ~ url_for('db_selection.db_settings_dialog', assembly_id=assembly.id, from='details') ~ '" hx-target="#project-dialog-host" hx-swap="innerHTML"') }}
             {% endif %}
         </div>
     {% endcall %}

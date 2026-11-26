@@ -334,7 +334,7 @@ class TestCsvSelectionCancel:
 class TestCsvSelectionDownload:
     """Tests for the CSV selection download error branches and auth."""
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
     def test_download_handles_not_found_error(self, mock_generate, logged_in_admin, assembly_with_csv_config):
         """NotFoundError redirects with error message."""
         assembly = assembly_with_csv_config
@@ -349,7 +349,7 @@ class TestCsvSelectionDownload:
         assert response.status_code == 200
         assert b"not found" in response.data.lower()
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.generate_selection_csvs")
+    @patch("opendlp.entrypoints.blueprints.db_selection.generate_selection_csvs")
     def test_download_handles_invalid_selection_error(self, mock_generate, logged_in_admin, assembly_with_csv_config):
         """InvalidSelection error redirects with error message."""
         assembly = assembly_with_csv_config
@@ -664,7 +664,7 @@ class TestCsvSelectionReset:
         assert response.status_code == 200
         assert b"Reset all to pool" in response.data
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.reset_selection_status")
+    @patch("opendlp.entrypoints.blueprints.db_selection.reset_selection_status")
     def test_reset_csv_selection_handles_not_found(self, mock_reset, logged_in_admin, assembly_with_csv_config):
         """A NotFoundError from the reset service redirects with a not-found error."""
         assembly = assembly_with_csv_config
