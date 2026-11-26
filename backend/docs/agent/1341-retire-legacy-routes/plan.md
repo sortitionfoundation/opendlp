@@ -1,7 +1,7 @@
 # 1341: Retire the legacy (GOV.UK) signed-in pages
 
-Status: **first PR implemented** (steps 1–10); step 11, the blueprint
-reorganisation, is the second PR. Doctor Chewie's answers to Q1–Q14 are folded
+Status: **implemented**. Steps 1–10 are the first PR; step 11, the blueprint
+reorganisation, is the second, on branch `1341-blueprint-split`. Doctor Chewie's answers to Q1–Q14 are folded
 in as decisions (section 3 lists them in one place). Progress is ticked off in
 section 8. **O1** in section 5.2 was not answered, so the conservative reading
 stands: the other nine `admin-users.feature` scenarios are left alone.
@@ -562,7 +562,8 @@ Each step leaves the suite green, so each is a commit (or a few).
 10. [x] `just check`, then `just test` in full (serial, output to a file).
     Result: 977 JavaScript tests and 8,368 Python tests passed, 5 skipped (the
     scroll-preservation scenarios, as before), coverage 97.18%.
-11. [ ] **Blueprint reorganisation** (section 7) — separate PR.
+11. [x] **Blueprint reorganisation** (section 7) — separate PR, on branch
+    `1341-blueprint-split`, cut from the tip of `1341-retire-legacy-routes`.
 
 Notes from step 2:
 
@@ -660,3 +661,28 @@ I stop and ask, rather than decide, if any of these turns up:
 | The database run of `selection.feature` does not fit the shared step text | medium | stop-and-ask, section 5.1; fallback is a `future_work/` note rather than a bent feature |
 | Converted BDD steps are flakier (dialogs, modals) than the page-per-step legacy ones | medium | borrow locators and waits from the `replacement-selection` and `project-details` step files |
 | The follow-up rename conflicts with open branches | medium | separate PR, timed by you |
+
+Notes from step 11:
+
+- The shape is as in 7.2: `selection` (5 routes and the page renderer),
+  `gsheet_selection` (12 task routes), `db_selection` (10 routes, the suffix
+  dropped) and `gsheet/check` in `data_source`. No URL changed.
+- Commits, in order: the Selection page moves to `selection.py` with the
+  blueprint object still shared; `gsheet/check` moves; `gsheets.py` becomes
+  `gsheet_selection.py`; the blueprints get their own names and every
+  `url_for` follows; `db_selection_backoffice` is renamed.
+- `_load_features_pending` lost its underscore: it is defined in `selection.py`
+  and the replacement progress route in `gsheet_selection.py` imports it.
+  `redirect_to_running_task` also lives in `selection.py`, since both task
+  blueprints use it.
+- Patch targets were re-aimed by the address each test requests, not by
+  search and replace: a test that loads the Selection page patches
+  `selection`, one that calls a task route patches `gsheet_selection`. The
+  unused imports were pruned from both modules first, so a patch aimed at a
+  module that does not use the name fails rather than passing unnoticed.
+- Test files renamed: `e2e/test_gsheets_routes.py` to
+  `test_gsheet_selection_routes.py`, and both `test_db_selection_backoffice.py`
+  to `test_db_selection_routes.py` (`unit/test_db_selection.py` already
+  exists and tests the service).
+- The catalogues were regenerated: only source references moved, no msgid
+  changed.

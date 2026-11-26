@@ -100,8 +100,9 @@ The backoffice replaced an earlier set of signed-in GOV.UK pages under `/assembl
 | `profile`                 | — (mounts at `/profile/...`) | Self-service profile, password change, OAuth linking, 2FA setup                                | Login                | 15     |
 | `admin`                   | `/admin`                     | User and invite management, admin 2FA controls                                                 | Admin                | 11     |
 | `backoffice`              | `/backoffice`                | Assembly dashboard/CRUD, data upload, members, showcase; currently also hosts respondent pages | Login                | 16     |
-| `gsheets`                 | `/backoffice`                | Google Sheets config, selection, replacement, tab management (Tailwind UI)                       | Login + assembly mgr | 19     |
-| `db_selection_backoffice` | `/backoffice`                | Database-driven selection (Tailwind UI)                                                          | Login + assembly mgr | 10     |
+| `selection`               | `/backoffice`                | The Selection page, its history, and the redirects into it (Tailwind UI)                         | Login                | 5      |
+| `gsheet_selection`        | `/backoffice`                | Google Sheets selection, replacement and tab management tasks (Tailwind UI)                      | Login + assembly mgr | 12     |
+| `db_selection`            | `/backoffice`                | Database-driven selection (Tailwind UI)                                                          | Login + assembly mgr | 10     |
 | `targets`                 | `/backoffice`                | Target categories/values, CSV upload, target checking (Tailwind UI)                              | Login + assembly mgr | 14     |
 | `dev`                     | `/backoffice`                | Interactive service-layer docs, frontend pattern showcase (dev builds only)                    | Admin                | 4      |
 
@@ -358,15 +359,15 @@ Celery workers live in `src/opendlp/entrypoints/celery/`.
 
 ```mermaid
 flowchart LR
-    gsheets_bp[gsheets]
-    db_sel_bp[db_selection_* blueprints]
+    gsheet_sel_bp[gsheet_selection]
+    db_sel_bp[db_selection]
     sortition_svc[service_layer/sortition.py]
     tasks[entrypoints/celery/tasks.py]
     worker[Celery worker]
     pg[(PostgreSQL<br/>SelectionRunRecord)]
     redis[(Redis<br/>broker + results)]
 
-    gsheets_bp --> sortition_svc
+    gsheet_sel_bp --> sortition_svc
     db_sel_bp --> sortition_svc
     sortition_svc -->|"delay()"| tasks
     tasks --> worker
@@ -401,8 +402,9 @@ flowchart LR
         profile_bp
         backoffice_bp
         dev_bp
-        gsheets_bp
-        db_sel_bo[db_selection_backoffice]
+        selection_bp
+        gsheet_sel_bp[gsheet_selection]
+        db_sel_bp[db_selection]
         targets_bp
     end
 
@@ -431,8 +433,9 @@ flowchart LR
     backoffice_bp --> assembly_svc & target_svc & user_svc & respondent_svc & permissions_svc
     dev_bp --> assembly_svc & respondent_svc & permissions_svc
 
-    gsheets_bp --> assembly_svc & sortition_svc & respondent_svc & report_xl
-    db_sel_bo --> assembly_svc & respondent_svc & sortition_svc & report_xl
+    selection_bp --> assembly_svc & sortition_svc & respondent_svc & report_xl
+    gsheet_sel_bp --> assembly_svc & sortition_svc & report_xl
+    db_sel_bp --> assembly_svc & respondent_svc & sortition_svc & report_xl
     targets_bp --> assembly_svc & target_svc & target_check_svc
 
 ```
@@ -492,8 +495,9 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 | `main`                    | 3      | —        | The landing page and two redirects from retired addresses.                              |
 | `profile`                 | 15     | 2        | Well-focused.                                                                           |
 | `backoffice`              | 16     | 4        | Currently hosts respondent pages; dedicated `respondents` backoffice blueprint planned. |
-| `gsheets`                 | 19     | 4        | Backoffice UI.                                                                          |
-| `db_selection_backoffice` | 10     | 6        | Backoffice UI.                                                                          |
+| `selection`               | 5      | 4        | Backoffice UI. Holds the page renderer both task blueprints call.                       |
+| `gsheet_selection`        | 12     | 3        | Backoffice UI.                                                                          |
+| `db_selection`            | 10     | 6        | Backoffice UI.                                                                          |
 | `targets`                 | 14     | 2        | Backoffice UI.                                                                          |
 | `dev`                     | 4      | 3        | Non-production only; admin-guarded.                                                     |
 | `health`                  | 3      | —        | Public; includes `/health/monitor_selection` (focused, returns 500 on `NOT_CONFIGURED`).|

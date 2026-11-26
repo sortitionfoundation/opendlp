@@ -25,7 +25,7 @@ The solution uses a **multi-layered approach**:
 
 ## Component 1: Enhanced Progress Endpoint (REQUIRED)
 
-### Changes to the progress endpoints (`gsheets.selection_progress_modal()` and its siblings)
+### Changes to the progress endpoints (`gsheet_selection.selection_progress_modal()` and its siblings)
 
 **Current behavior:** Simply reads SelectionRunRecord from database and renders template
 
@@ -706,11 +706,11 @@ The timeout checking is built into the health check, so no dangerous Celery time
 - `check_and_update_task_health()` function in `src/opendlp/service_layer/sortition.py`
 - `get_task_timeout_hours()` config function in `src/opendlp/config.py`
 - Helper functions `_mark_task_as_failed()` and `_extract_exception_info()`
-- Updated progress endpoints in `src/opendlp/entrypoints/blueprints/gsheets.py`:
+- Updated progress endpoints in `src/opendlp/entrypoints/blueprints/gsheet_selection.py`:
   - `selection_progress_modal()`
   - `replacement_progress_modal()`
   - `manage_tabs_progress()`
-- And in `src/opendlp/entrypoints/blueprints/db_selection_backoffice.py`:
+- And in `src/opendlp/entrypoints/blueprints/db_selection.py`:
   - `db_selection_progress_modal()`
 - Unit tests in `tests/unit/test_config.py` and `tests/unit/test_sortition_service.py`
 - All 331 unit tests passing
