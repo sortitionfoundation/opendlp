@@ -1691,7 +1691,6 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py
 #: src/opendlp/entrypoints/blueprints/gsheets.py
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py
 #: src/opendlp/entrypoints/blueprints/respondents.py
@@ -2144,25 +2143,6 @@ msgstr "Adatforrás-beállítások mentve"
 #: src/opendlp/entrypoints/blueprints/data_source.py
 msgid "An error occurred while saving the Google Sheets configuration"
 msgstr "Hiba történt a Google Táblázat beállításainak mentése közben"
-
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py
-msgid "Please review and save the selection settings before checking data"
-msgstr ""
-"Az adatok ellenőrzése előtt nézd át és mentsd el a kiválasztási "
-"beállításokat"
-
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py
-#, python-format
-msgid ""
-"Data validation passed: %(features)s targets, %(people)s respondents "
-"ready for selection"
-msgstr ""
-"Az adatok ellenőrzése sikeres: %(features)s kiválasztási szempont, "
-"%(people)s jelentkező áll készen a kiválasztásra"
-
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py
-msgid "An unexpected error occurred while checking data"
-msgstr "Váratlan hiba történt az adatok ellenőrzése közben"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py
 #: src/opendlp/entrypoints/blueprints/targets.py

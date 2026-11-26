@@ -41,7 +41,6 @@ from opendlp.service_layer.selection_report import (
 from opendlp.service_layer.sortition import (
     cancel_task,
     check_and_update_task_health,
-    check_db_selection_data,
     generate_selection_csvs,
     get_selected_respondents,
     get_selection_run_status,
@@ -54,50 +53,6 @@ from opendlp.translations import gettext as _
 db_selection_backoffice_bp = Blueprint("db_selection_backoffice", __name__)
 
 logger = structlog.get_logger(__name__)
-
-
-@db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/check", methods=["POST"])
-@login_required
-@require_assembly_management
-def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Validate database data before running selection."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
-
-        if not csv_config.settings_confirmed:
-            flash(_("Please review and save the selection settings before checking data"), "warning")
-            return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, settings=1))
-
-        with uow:
-            check_result = check_db_selection_data(uow=uow, user_id=current_user.id, assembly_id=assembly_id)
-
-        if check_result.success:
-            flash(
-                _(
-                    "Data validation passed: %(features)s targets, %(people)s respondents ready for selection",
-                    features=check_result.num_features,
-                    people=check_result.num_people,
-                ),
-                "success",
-            )
-        else:
-            for error in check_result.errors:
-                flash(error, "error")
-
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
-
-    except NotFoundError:
-        flash(_("Project not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except InsufficientPermissions:
-        flash(_("You don't have permission to view this project"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except Exception as e:
-        logger.exception("Check DB data error", assembly_id=str(assembly_id), error=str(e))
-        flash(_("An unexpected error occurred while checking data"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 
 @db_selection_backoffice_bp.route("/project/<uuid:assembly_id>/selection/db/run", methods=["POST"])

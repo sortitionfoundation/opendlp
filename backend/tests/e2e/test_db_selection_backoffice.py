@@ -13,7 +13,6 @@ from opendlp.service_layer import respondent_service, target_csv_import
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection
 from opendlp.service_layer.replacement_targets import build_replacement_plan
-from opendlp.service_layer.sortition import CheckDataResult
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
@@ -117,35 +116,6 @@ def assembly_with_csv_config_unconfirmed(postgres_session_factory, admin_user):
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         a = uow.assemblies.get(assembly_id)
         return a.create_detached_copy()
-
-
-class TestCsvSelectionCheckData:
-    """CSRF-exercising smoke for the CSV check data endpoint."""
-
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.check_db_selection_data")
-    def test_check_csv_data_success(self, mock_check, logged_in_admin, assembly_with_csv_config):
-        """Test successful data validation shows success message."""
-        assembly = assembly_with_csv_config
-        mock_check.return_value = CheckDataResult(
-            success=True,
-            errors=[],
-            features_report_html="<p>Features OK</p>",
-            people_report_html="<p>People OK</p>",
-            num_features=5,
-            num_people=50,
-        )
-
-        csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
-        response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/selection/db/check",
-            data={"csrf_token": csrf_token},
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"Data validation passed" in response.data
-        assert b"5 targets" in response.data
-        assert b"50 respondents" in response.data
 
 
 class TestCsvSelectionRun:

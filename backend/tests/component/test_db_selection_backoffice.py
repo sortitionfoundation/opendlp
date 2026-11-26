@@ -14,7 +14,6 @@ from opendlp.domain.value_objects import AssemblyRole, RespondentStatus, Selecti
 from opendlp.service_layer import respondent_service, target_csv_import
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection, NotFoundError
-from opendlp.service_layer.sortition import CheckDataResult
 from opendlp.service_layer.user_service import assign_assembly_role
 from tests.fakes import FakeUnitOfWork
 
@@ -151,82 +150,6 @@ def _set_statuses(fake_store, assembly_id, statuses: list[RespondentStatus]) -> 
         for respondent, status in zip(respondents, statuses, strict=False):
             respondent.selection_status = status
         uow.commit()
-
-
-class TestCsvSelectionCheckData:
-    """Tests for the CSV check data endpoint."""
-
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.check_db_selection_data")
-    def test_check_csv_data_failure(self, mock_check, logged_in_admin, assembly_with_csv_config):
-        """Failed data validation shows error messages."""
-        assembly = assembly_with_csv_config
-        mock_check.return_value = CheckDataResult(
-            success=False,
-            errors=["Missing target category: Age"],
-            features_report_html="",
-            people_report_html="",
-            num_features=0,
-            num_people=0,
-        )
-
-        response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/selection/db/check",
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"Missing target category" in response.data
-
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.check_db_selection_data")
-    def test_check_csv_data_multiline_error_has_no_html_tags(
-        self, mock_check, logged_in_admin, assembly_with_csv_config
-    ):
-        """Multi-line validation errors are plain text with newlines, never <br /> tags (issue in PR #195)."""
-        assembly = assembly_with_csv_config
-        mock_check.return_value = CheckDataResult(
-            success=False,
-            errors=[
-                (
-                    "Maximum for feature age_bracket (0) is less than number to select (23)\n"
-                    "Maximum for feature gender (0) is less than number to select (23)"
-                )
-            ],
-            features_report_html="",
-            people_report_html="",
-            num_features=0,
-            num_people=0,
-        )
-
-        response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/selection/db/check",
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"age_bracket" in response.data
-        assert b"gender" in response.data
-        # The literal tag would be escaped by Jinja and show as text in the alert
-        assert b"&lt;br" not in response.data
-
-    def test_check_csv_data_requires_settings_confirmed(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
-        """Check data requires settings to be confirmed first."""
-        assembly = assembly_with_csv_config_unconfirmed
-
-        response = logged_in_admin.post(
-            f"/backoffice/project/{assembly.id}/selection/db/check",
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        assert b"review and save" in response.data.lower() or b"settings" in response.data.lower()
-
-    def test_check_csv_data_requires_auth(self, client, assembly_with_csv_config):
-        """Check endpoint requires authentication."""
-        assembly = assembly_with_csv_config
-        response = client.post(f"/backoffice/project/{assembly.id}/selection/db/check")
-
-        assert response.status_code == 302
-        assert "login" in response.location
 
 
 class TestCsvSelectionRun:
@@ -521,7 +444,6 @@ class TestCsvSelectionPageIntegration:
         assert b"Check Spreadsheet" not in response.data
         # The database check runs implicitly; there is no button for it
         assert b"Check Data" not in response.data
-        assert f"/backoffice/project/{assembly.id}/selection/db/check".encode() not in response.data
 
     def test_selection_page_shows_view_running_button_when_db_task_running(
         self, logged_in_admin, assembly_with_csv_config, fake_store
@@ -543,7 +465,6 @@ class TestCsvSelectionPageIntegration:
         assert response.status_code == 200
         assert b"View Running Selection" in response.data
         assert f"current_selection={run_id}".encode() in response.data
-        assert f"/backoffice/project/{assembly.id}/selection/db/check".encode() not in response.data
         assert f"/backoffice/project/{assembly.id}/selection/db/start".encode() not in response.data
 
     def test_selection_page_shows_csv_progress_modal_when_running(
