@@ -623,13 +623,24 @@ in section 2.4, so not deleted):
   url_generator)` (`service_layer/user_service.py`): only the legacy members
   route passed the adapters. The backoffice sends the email itself with
   `send_assembly_role_assigned_email`, so the three parameters and the branch
-  that uses them are dead.
+  that uses them are dead. **Done:** the parameters and the branch are gone.
 - `POST /backoffice/project/<id>/selection/db/check`
   (`db_selection_backoffice.check_db_data`): a live route with tests, but
-  nothing in the interface posts to it.
+  nothing in the interface posts to it. **Done:** the route and its tests are
+  gone. The service function `check_db_selection_data` stays, called by tests
+  only.
 - `tests/unit/test_env_scrub.py::test_the_declared_test_flags_are_on` passes
   vacuously while `TEST_FEATURE_FLAGS` is empty. It guards the mechanism Q10
   kept, so it stays.
+
+**Found after the first PR, and fixed:**
+
+- `templates/backoffice/service_docs/_selection.html` and
+  `../docs/task_monitoring.md` still named the `/assemblies/<id>/db_select/...`
+  routes and the deleted progress endpoints.
+- `gsheets.start_replacement_load`, `start_replacement_run` and
+  `cancel_replacement_run` had no `@require_assembly_management`, relying on
+  the service layer's check alone. They now refuse a non-manager with 403.
 
 I stop and ask, rather than decide, if any of these turns up:
 
