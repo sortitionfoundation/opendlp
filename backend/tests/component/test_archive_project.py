@@ -40,11 +40,25 @@ def _set_status(fake_store: FakeStore, assembly: Assembly, status: AssemblyStatu
         uow.commit()
 
 
-def _seed_page(fake_store: FakeStore, assembly: Assembly, name: str, status: RegistrationPageStatus) -> None:
-    page = RegistrationPage(assembly_id=assembly.id, name=name, url_slug=name.lower(), status=status)
+def _seed_page(
+    fake_store: FakeStore, assembly: Assembly, name: str, status: RegistrationPageStatus
+) -> RegistrationPage:
+    page = RegistrationPage(assembly_id=assembly.id, name=name, url_slug=name.lower().replace(" ", "-"), status=status)
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.registration_pages.add(page)
         uow.commit()
+    return page
+
+
+def _page_status(fake_store: FakeStore, page: RegistrationPage) -> RegistrationPageStatus:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return uow.registration_pages.get(page.id).status
+
+
+def _force_box(row: str) -> str:
+    """The opening tag of the dialog's checkbox, or "" when it has none."""
+    match = re.search(r'<input\s+type="checkbox"[^>]*name="force"[^>]*>', row)
+    return match.group(0) if match else ""
 
 
 def _with_role(fake_store: FakeStore, client: FlaskClient, user, assembly: Assembly, role: AssemblyRole):
@@ -86,6 +100,10 @@ class TestArchiveButton:
         assert "It will no longer appear in project lists." in row
         assert "Nothing is deleted, and you can unarchive it at any time." in row
         assert _button_tags(row, "Keep it active")
+        # With nothing published there is no box to tick, and nothing to wait for.
+        assert _force_box(row) == ""
+        assert "Close the published registration page" not in row
+        assert ":disabled" not in confirm
 
     @pytest.mark.parametrize("role", [AssemblyRole.READ_ONLY, AssemblyRole.CONFIRMATION_CALLER])
     def test_other_team_members_get_the_status_alone(
@@ -99,33 +117,63 @@ class TestArchiveButton:
         assert "Archive project" not in row
         assert "/archive" not in row
 
-    def test_a_published_page_disables_it_and_says_why(
+    def test_a_published_page_is_named_in_a_box_that_archiving_waits_for(
         self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
         _seed_page(fake_store, existing_assembly, "English", RegistrationPageStatus.PUBLISHED)
 
         row = _status_row(logged_in_admin.get(_details(existing_assembly)).data.decode())
 
-        [button] = _button_tags(row, "Archive project")
-        assert 'disabled aria-disabled="true"' in button
-        assert 'aria-describedby="archive-blocked-reason"' in button
-        assert 'id="archive-blocked-reason"' in row
-        assert "A registration page is published. Close it before archiving the project." in row
-        assert f'href="{_details(existing_assembly)}/registration"' in row
-        assert "Go to Registration" in row
-        assert "/archive" not in row
-        assert "confirmDialog" not in row
+        # The button opens the confirmation, as it does with nothing published.
+        [opener, confirm] = _button_tags(row, "Archive project")
+        assert "disabled" not in opener
+        assert 'aria-haspopup="dialog"' in opener
+        assert f'action="{_details(existing_assembly)}/archive"' in row
+        # The dialog names the page in a box that posts force=1 with the form.
+        box = _force_box(row)
+        assert 'value="1"' in box
+        assert 'id="archive-force-close"' in box
+        assert 'x-model="ticked"' in box
+        assert 'aria-describedby="archive-force-close-hint"' in box
+        assert "checked" not in box
+        assert "Close the published registration page &#39;English&#39;" in row
+        assert 'id="archive-force-close-hint"' in row
+        assert (
+            "A project can't be archived while a registration page is published. Closing it stops new registrations."
+        ) in row
+        # Archiving waits for the tick, and its description says why.
+        assert ':disabled="!ticked"' in confirm
+        assert 'aria-describedby="archive-force-close-hint"' in confirm
+        assert "archive-blocked-reason" not in row
+
+    def test_several_published_pages_are_named_together_and_no_other_page_is(
+        self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        _seed_page(fake_store, existing_assembly, "English", RegistrationPageStatus.PUBLISHED)
+        _seed_page(fake_store, existing_assembly, "Welsh", RegistrationPageStatus.PUBLISHED)
+        _seed_page(fake_store, existing_assembly, "Draft", RegistrationPageStatus.TEST)
+        _seed_page(fake_store, existing_assembly, "Last year", RegistrationPageStatus.CLOSED)
+
+        row = _status_row(logged_in_admin.get(_details(existing_assembly)).data.decode())
+
+        assert "Close the published registration pages &#39;English&#39;, &#39;Welsh&#39;" in row
+        assert "Closing them stops new registrations." in row
+        assert "Draft" not in row
+        assert "Last year" not in row
 
     @pytest.mark.parametrize("status", [RegistrationPageStatus.TEST, RegistrationPageStatus.CLOSED])
-    def test_test_and_closed_pages_leave_it_enabled(
+    def test_test_and_closed_pages_ask_for_no_box(
         self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly, status
     ) -> None:
         _seed_page(fake_store, existing_assembly, "English", status)
 
         row = _status_row(logged_in_admin.get(_details(existing_assembly)).data.decode())
 
-        assert "archive-blocked-reason" not in row
+        [_opener, confirm] = _button_tags(row, "Archive project")
         assert f'action="{_details(existing_assembly)}/archive"' in row
+        assert _force_box(row) == ""
+        assert "English" not in row
+        assert ":disabled" not in confirm
 
     def test_an_archived_project_reads_archived_in_grey_with_no_button(
         self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
@@ -147,8 +195,72 @@ class TestArchiveRoute:
         response = manager.post(f"{_details(existing_assembly)}/archive", follow_redirects=True)
 
         assert response.request.path == _details(existing_assembly)
-        assert "Project archived" in response.data.decode()
+        html = response.data.decode()
+        assert "Project archived" in html
+        assert "Project archived, and" not in html
         assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ARCHIVED
+
+    def test_force_closes_the_published_pages_and_archives_the_project(
+        self, fake_store: FakeStore, manager: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        english = _seed_page(fake_store, existing_assembly, "English", RegistrationPageStatus.PUBLISHED)
+        draft = _seed_page(fake_store, existing_assembly, "Draft", RegistrationPageStatus.TEST)
+
+        response = manager.post(f"{_details(existing_assembly)}/archive", data={"force": "1"}, follow_redirects=True)
+
+        assert response.request.path == _details(existing_assembly)
+        assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ARCHIVED
+        assert _page_status(fake_store, english) == RegistrationPageStatus.CLOSED
+        assert _page_status(fake_store, draft) == RegistrationPageStatus.TEST
+
+    @pytest.mark.parametrize(
+        ("published", "message"),
+        [
+            (["English"], "Project archived, and its published registration page closed"),
+            (["English", "Welsh"], "Project archived, and its published registration pages closed"),
+        ],
+    )
+    def test_the_flash_says_whether_force_closed_one_page_or_several(
+        self,
+        fake_store: FakeStore,
+        manager: FlaskClient,
+        existing_assembly: Assembly,
+        published: list[str],
+        message: str,
+    ) -> None:
+        pages = [
+            _seed_page(fake_store, existing_assembly, name, RegistrationPageStatus.PUBLISHED) for name in published
+        ]
+
+        response = manager.post(f"{_details(existing_assembly)}/archive", data={"force": "1"}, follow_redirects=True)
+
+        html = response.data.decode()
+        assert message in html
+        assert html.count("Project archived, and its published registration") == 1
+        assert [_page_status(fake_store, page) for page in pages] == [RegistrationPageStatus.CLOSED] * len(pages)
+
+    def test_force_with_nothing_published_says_only_that_the_project_is_archived(
+        self, fake_store: FakeStore, manager: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        _seed_page(fake_store, existing_assembly, "Draft", RegistrationPageStatus.TEST)
+
+        response = manager.post(f"{_details(existing_assembly)}/archive", data={"force": "1"}, follow_redirects=True)
+
+        html = response.data.decode()
+        assert "Project archived" in html
+        assert "Project archived, and" not in html
+        assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ARCHIVED
+
+    def test_force_does_not_get_a_reader_past_the_refusal(
+        self, fake_store: FakeStore, reader: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        english = _seed_page(fake_store, existing_assembly, "English", RegistrationPageStatus.PUBLISHED)
+
+        response = reader.post(f"{_details(existing_assembly)}/archive", data={"force": "1"}, follow_redirects=True)
+
+        assert "You don&#39;t have permission to archive this project" in response.data.decode()
+        assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ACTIVE
+        assert _page_status(fake_store, english) == RegistrationPageStatus.PUBLISHED
 
     def test_it_redirects_to_the_project(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         response = logged_in_admin.post(f"{_details(existing_assembly)}/archive")
@@ -163,11 +275,12 @@ class TestArchiveRoute:
         assert "You don&#39;t have permission to archive this project" in response.data.decode()
         assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ACTIVE
 
-    def test_a_published_page_is_refused_by_name(
+    def test_without_force_a_published_page_is_refused_by_name(
         self, fake_store: FakeStore, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        _seed_page(fake_store, existing_assembly, "Welsh", RegistrationPageStatus.PUBLISHED)
+        welsh = _seed_page(fake_store, existing_assembly, "Welsh", RegistrationPageStatus.PUBLISHED)
 
+        # An unticked box posts nothing.
         response = logged_in_admin.post(f"{_details(existing_assembly)}/archive", follow_redirects=True)
 
         assert response.request.path == _details(existing_assembly)
@@ -176,6 +289,7 @@ class TestArchiveRoute:
             in response.data.decode()
         )
         assert _stored(fake_store, existing_assembly).status == AssemblyStatus.ACTIVE
+        assert _page_status(fake_store, welsh) == RegistrationPageStatus.PUBLISHED
 
     def test_an_unknown_project_goes_back_to_your_projects(self, logged_in_admin: FlaskClient) -> None:
         response = logged_in_admin.post(

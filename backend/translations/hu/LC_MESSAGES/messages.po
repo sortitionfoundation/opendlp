@@ -1797,6 +1797,13 @@ msgstr "Hiba történt a felhasználó projektből való eltávolítása közben
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py
 #, fuzzy
+msgid "Project archived, and its published registration page closed"
+msgid_plural "Project archived, and its published registration pages closed"
+msgstr[0] "Projekt archiválva, a közzétett regisztrációs oldala lezárva"
+msgstr[1] "Projekt archiválva, a közzétett regisztrációs oldalai lezárva"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py
+#, fuzzy
 msgid "Project archived"
 msgstr "Projekt archiválva"
 
@@ -7808,18 +7815,6 @@ msgstr "Projekt archiválása"
 
 #: templates/backoffice/project_details/_archive_control.html
 #, fuzzy
-msgid "A registration page is published. Close it before archiving the project."
-msgstr ""
-"Egy regisztrációs oldal közzé van téve. Zárd le, mielőtt archiválod a "
-"projektet."
-
-#: templates/backoffice/project_details/_archive_control.html
-#, fuzzy
-msgid "Go to Registration"
-msgstr "Tovább a Regisztráció fülre"
-
-#: templates/backoffice/project_details/_archive_control.html
-#, fuzzy
 msgid "Archive this project?"
 msgstr "Archiválod ezt a projektet?"
 
@@ -7831,6 +7826,28 @@ msgid ""
 msgstr ""
 "Nem jelenik meg többé a projektlistákban. Semmi sem törlődik, és az "
 "archiválást bármikor visszavonhatod."
+
+#: templates/backoffice/project_details/_archive_control.html
+#, fuzzy, python-format
+msgid "Close the published registration page %(names)s"
+msgid_plural "Close the published registration pages %(names)s"
+msgstr[0] "Zárd le a közzétett %(names)s regisztrációs oldalt"
+msgstr[1] "Zárd le a közzétett %(names)s regisztrációs oldalakat"
+
+#: templates/backoffice/project_details/_archive_control.html
+#, fuzzy
+msgid ""
+"A project can't be archived while a registration page is published. "
+"Closing it stops new registrations."
+msgid_plural ""
+"A project can't be archived while a registration page is published. "
+"Closing them stops new registrations."
+msgstr[0] ""
+"Amíg egy regisztrációs oldal közzé van téve, a projekt nem archiválható. "
+"Ha lezárod, leállnak az új jelentkezések."
+msgstr[1] ""
+"Amíg egy regisztrációs oldal közzé van téve, a projekt nem archiválható. "
+"Ha lezárod őket, leállnak az új jelentkezések."
 
 #: templates/backoffice/project_details/_archive_control.html
 #, fuzzy

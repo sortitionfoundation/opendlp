@@ -61,6 +61,7 @@ from opendlp.service_layer.user_service import (
     search_assembly_candidate_users,
 )
 from opendlp.translations import gettext as _
+from opendlp.translations import ngettext
 
 backoffice_bp = Blueprint("backoffice", __name__)
 
@@ -182,9 +183,10 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             created_by_name=created_by_name,
             project_dialog=project_dialog,
             can_manage_project=can_manage_project,
-            # The service refuses to archive while a page is published, so the
-            # button says so before anyone tries.
-            archive_blocked=bool(published_registration_pages(registration_pages)),
+            # A published page refuses archiving unless archiving closes it as
+            # well, so the Archive dialog names the published pages in a box
+            # to tick.
+            published_pages=published_registration_pages(registration_pages),
             csv_settings_confirmed=bool(nav.csv_status.csv_config and nav.csv_status.csv_config.settings_confirmed),
             targets_row=targets_row(nav.assembly, nav.csv_status.targets_count),
             respondents_row=respondents_row(nav.assembly, nav.csv_status.respondents_count),
@@ -631,15 +633,34 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
 def archive_project(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Archive a project, from the Status row on its details page.
 
-    Nothing is deleted: the project only leaves the project lists. A refusal,
-    such as a registration page that is still published, comes back as a flash.
+    Nothing is deleted: the project only leaves the project lists. force=1,
+    posted by the dialog's checkbox, closes its published registration pages
+    as well, and the flash says whether it closed one or several. Without it,
+    a published page refuses archiving, and the refusal comes back as a flash.
     """
     project_url = url_for("backoffice.view_assembly", assembly_id=assembly_id)
+    force = request.form.get("force") == "1"
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            archive_assembly(uow, assembly_id, current_user.id)
-        flash(_("Project archived"), "success")
+            # Counted before archiving closes them, for the flash.
+            closing = (
+                published_registration_pages(list_registration_pages(uow, current_user.id, assembly_id))
+                if force
+                else []
+            )
+            archive_assembly(uow, assembly_id, current_user.id, force=force)
+        if closing:
+            flash(
+                ngettext(
+                    "Project archived, and its published registration page closed",
+                    "Project archived, and its published registration pages closed",
+                    len(closing),
+                ),
+                "success",
+            )
+        else:
+            flash(_("Project archived"), "success")
     except CannotArchiveWithPublishedPages as e:
         logger.info("Refused to archive assembly with a published page", assembly_id=str(assembly_id))
         flash(e.user_msg(), "error")

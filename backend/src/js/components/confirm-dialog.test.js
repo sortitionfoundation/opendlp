@@ -1,5 +1,5 @@
 // ABOUTME: Unit tests for the confirmDialog Alpine component
-// ABOUTME: Covers opening and cancelling the confirmation, and where the focus goes each time
+// ABOUTME: Covers opening and cancelling the confirmation, where the focus goes each time, and its box
 
 import { describe, expect, it, vi } from "vitest";
 
@@ -30,6 +30,21 @@ describe("confirmDialog", () => {
     expect(state.$refs.opener.focus).not.toHaveBeenCalled();
   });
 
+  it("starts with its box unticked", () => {
+    expect(buildDialog().ticked).toBe(false);
+  });
+
+  it("unticks a box left ticked by an earlier opening", () => {
+    const state = buildDialog();
+    state.open();
+    state.ticked = true;
+    state.cancel();
+
+    state.open();
+
+    expect(state.ticked).toBe(false);
+  });
+
   it("closes on cancel and gives the focus back to the opener", () => {
     const state = buildDialog();
     state.open();
@@ -38,6 +53,22 @@ describe("confirmDialog", () => {
 
     expect(state.isOpen).toBe(false);
     expect(state.$refs.opener.focus).toHaveBeenCalled();
+  });
+
+  it("finds the opener while the dialog is still there", () => {
+    // Alpine resolves $refs from the element a call came from. cancel() comes
+    // from inside the dialog, and once the dialog is gone that element can no
+    // longer reach any ref - as this $refs, empty while closed, stands in for.
+    const state = buildDialog();
+    const refs = state.$refs;
+    Object.defineProperty(state, "$refs", {
+      get: () => (state.isOpen ? refs : {}),
+    });
+    state.open();
+
+    state.cancel();
+
+    expect(refs.opener.focus).toHaveBeenCalled();
   });
 
   it("survives a missing ref rather than throwing", () => {

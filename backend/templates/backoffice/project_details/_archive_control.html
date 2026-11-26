@@ -1,44 +1,52 @@
 {#
 ABOUTME: The Archive project button beside the Status tag on the project details page, for its managers
-ABOUTME: Asks for confirmation first, and is disabled, saying why, while a registration page is published
+ABOUTME: Asks for confirmation first, and while a registration page is published, for a tick to close it as well
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import checkbox %}
 {% from "backoffice/components/modal.html" import controlled_alert_dialog %}
 {#
-    Included in the Status row, whose <dd> lays its items out in a wrapping
-    row: the reason a disabled button gives takes a line of its own under it.
+    Included in the Status row of the project details page.
 
     Context:
         assembly: an active project the viewer manages
-        archive_blocked: a registration page is published, and archiving would be refused
+        published_pages: its published registration pages. Archiving is refused
+            while one is, so the dialog names them in a checkbox that closes them
+            as well (force=1), and the Archive button waits for the tick.
 #}
-{% if archive_blocked %}
-    {{ button(_("Archive project"), variant="secondary", disabled=true, aria_describedby="archive-blocked-reason") }}
-    <p id="archive-blocked-reason"
-       class="w-full text-body-sm"
-       style="color: var(--color-secondary-text)">
-        {{ _("A registration page is published. Close it before archiving the project.") }}
-        <a href="{{ url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) }}"
-           class="underline"
-           style="color: var(--color-links)">{{ _("Go to Registration") }}</a>
-    </p>
-{% else %}
-    {# Archiving takes the project out of every list, so it is confirmed first. As
-       in the registration editor's close confirmation, the safe action is the
-       primary on the right and takes the focus; the action itself is red. #}
-    <div x-data="confirmDialog">
-        {{ button(_("Archive project"), variant="secondary", aria_haspopup="dialog", attrs='x-ref="opener" @click="open()"') }}
-        {% call controlled_alert_dialog(id="archive-project-dialog",
-        title=_("Archive this project?"),
-        description=_("It will no longer appear in project lists. Nothing is deleted, and you can unarchive it at any time."),
-        open_expr="isOpen",
-        close_expr="cancel()") %}
-        <form method="post"
-              action="{{ url_for('backoffice.archive_project', assembly_id=assembly.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            {{ button(_("Archive project"), type="submit", variant="danger") }}
-        </form>
-        {{ button(_("Keep it active"), variant="primary", attrs='x-ref="safeAction" @click="cancel()"') }}
-{% endcall %}
+{# Archiving takes the project out of every list, so it is confirmed first. As
+   in the registration editor's close confirmation, the safe action is the
+   primary on the right and takes the focus; the action itself is red. #}
+<div x-data="confirmDialog">
+    {{ button(_("Archive project"), variant="secondary", aria_haspopup="dialog", attrs='x-ref="opener" @click="open()"') }}
+    {% call controlled_alert_dialog(id="archive-project-dialog",
+    title=_("Archive this project?"),
+    description=_("It will no longer appear in project lists. Nothing is deleted, and you can unarchive it at any time."),
+    open_expr="isOpen",
+    close_expr="cancel()") %}
+    {# The form holds both buttons as well as the checkbox, so the checkbox has a
+       line of its own above them. Shift+Tab from the focused safe action passes
+       over the Archive button while it waits, and reaches the checkbox. #}
+    <form method="post"
+          action="{{ url_for('backoffice.archive_project', assembly_id=assembly.id) }}"
+          class="flex flex-col gap-4 w-full">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        {% if published_pages %}
+            {% set page_count = published_pages | length %}
+            {% set page_names = "'" ~ (published_pages | map(attribute="name") | join("', '")) ~ "'" %}
+            {{ checkbox("force",
+            label=ngettext("Close the published registration page %(names)s", "Close the published registration pages %(names)s", page_count, names=page_names),
+            hint=ngettext("A project can't be archived while a registration page is published. Closing it stops new registrations.", "A project can't be archived while a registration page is published. Closing them stops new registrations.", page_count),
+            value="1",
+            id="archive-force-close",
+            attrs='x-model="ticked"') }}
+        {% endif %}
+        <div class="flex justify-end gap-2">
+            {{ button(_("Archive project"), type="submit", variant="danger",
+            alpine_disabled="!ticked" if published_pages else "",
+            aria_describedby="archive-force-close-hint" if published_pages else "") }}
+            {{ button(_("Keep it active"), variant="primary", attrs='x-ref="safeAction" @click="cancel()"') }}
+        </div>
+    </form>
+    {% endcall %}
 </div>
-{% endif %}

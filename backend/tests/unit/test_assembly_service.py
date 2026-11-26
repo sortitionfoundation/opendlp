@@ -7,7 +7,7 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
-from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageAction, RegistrationPageStatus
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User, UserAssemblyRole
@@ -647,6 +647,116 @@ class TestArchiveAssembly:
 
         with pytest.raises(AssemblyNotFoundError):
             assembly_service.archive_assembly(uow=uow, assembly_id=uuid.uuid4(), user_id=admin.id)
+
+
+class TestArchiveAssemblyWithForce:
+    """force=True closes the published registration pages, then archives."""
+
+    def test_it_closes_the_published_pages_and_archives_the_project(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Still recruiting")
+        uow.assemblies.add(assembly)
+        english = _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+        welsh = _registration_page(uow, assembly, "Welsh", RegistrationPageStatus.PUBLISHED)
+
+        archived = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id, force=True)
+
+        assert archived.status == AssemblyStatus.ARCHIVED
+        assert uow.assemblies.get(assembly.id).status == AssemblyStatus.ARCHIVED
+        assert uow.registration_pages.get(english.id).status == RegistrationPageStatus.CLOSED
+        assert uow.registration_pages.get(welsh.id).status == RegistrationPageStatus.CLOSED
+
+    def test_each_page_records_who_closed_it_and_why(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Still recruiting")
+        uow.assemblies.add(assembly)
+        english = _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+
+        assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id, force=True)
+
+        [entry] = uow.registration_pages.get(english.id).activity
+        assert entry.action is RegistrationPageAction.CLOSE
+        assert entry.author_id == admin.id
+        assert entry.text == "Closed when the project was archived"
+
+    def test_test_and_closed_pages_stay_as_they_are_with_their_addresses(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Still recruiting")
+        uow.assemblies.add(assembly)
+        _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+        draft = _registration_page(uow, assembly, "Draft", RegistrationPageStatus.TEST)
+        closed = _registration_page(uow, assembly, "Last year", RegistrationPageStatus.CLOSED)
+
+        assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id, force=True)
+
+        for page, status, url_slug in [
+            (draft, RegistrationPageStatus.TEST, "draft"),
+            (closed, RegistrationPageStatus.CLOSED, "last-year"),
+        ]:
+            stored = uow.registration_pages.get(page.id)
+            assert stored.status == status
+            assert stored.url_slug == url_slug
+            assert stored.activity == []
+
+    def test_the_projects_manager_can_force_it(self, uow):
+        assembly = Assembly(title="Still recruiting")
+        uow.assemblies.add(assembly)
+        english = _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+        manager = _member(uow, assembly, AssemblyRole.ASSEMBLY_MANAGER)
+
+        archived = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=manager.id, force=True)
+
+        assert archived.status == AssemblyStatus.ARCHIVED
+        assert uow.registration_pages.get(english.id).status == RegistrationPageStatus.CLOSED
+
+    @pytest.mark.parametrize("role", [AssemblyRole.CONFIRMATION_CALLER, AssemblyRole.READ_ONLY])
+    def test_other_team_members_are_refused_and_close_nothing(self, uow, role):
+        assembly = Assembly(title="Not theirs to archive")
+        uow.assemblies.add(assembly)
+        english = _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+        member = _member(uow, assembly, role)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=member.id, force=True)
+
+        assert uow.assemblies.get(assembly.id).status == AssemblyStatus.ACTIVE
+        assert uow.registration_pages.get(english.id).status == RegistrationPageStatus.PUBLISHED
+
+    def test_without_it_a_published_page_still_refuses_and_stays_published(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Still recruiting")
+        uow.assemblies.add(assembly)
+        english = _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+
+        with pytest.raises(CannotArchiveWithPublishedPages):
+            assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id, force=False)
+
+        assert uow.assemblies.get(assembly.id).status == AssemblyStatus.ACTIVE
+        assert uow.registration_pages.get(english.id).status == RegistrationPageStatus.PUBLISHED
+        assert uow.registration_pages.get(english.id).activity == []
+
+    def test_with_nothing_published_it_archives_as_usual(self, uow):
+        admin = _admin(uow)
+        assembly = Assembly(title="Done recruiting")
+        uow.assemblies.add(assembly)
+
+        archived = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id, force=True)
+
+        assert archived.status == AssemblyStatus.ARCHIVED
+
+    def test_an_archived_project_and_its_pages_are_left_as_they_are(self, uow):
+        """Nothing stops a page being published after archiving yet; force does not reach it."""
+        admin = _admin(uow)
+        archived_at = datetime(2026, 1, 1, tzinfo=UTC)
+        assembly = Assembly(title="Archived already", status=AssemblyStatus.ARCHIVED, updated_at=archived_at)
+        uow.assemblies.add(assembly)
+        english = _registration_page(uow, assembly, "English", RegistrationPageStatus.PUBLISHED)
+
+        result = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin.id, force=True)
+
+        assert result.status == AssemblyStatus.ARCHIVED
+        assert uow.assemblies.get(assembly.id).updated_at == archived_at
+        assert uow.registration_pages.get(english.id).status == RegistrationPageStatus.PUBLISHED
 
 
 class TestUnarchiveAssembly:
