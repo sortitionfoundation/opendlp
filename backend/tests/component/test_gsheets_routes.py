@@ -51,6 +51,22 @@ class TestReplacementLegacyRoutes:
         assert "max_select=20" in response.location
 
 
+class TestReplacementRoutesRequireAssemblyManagement:
+    """The replacement task routes refuse someone who cannot manage the assembly."""
+
+    @pytest.mark.parametrize("path", ["replacement/load", "replacement/run", "replacement/{run_id}/cancel"])
+    def test_a_user_without_a_role_is_forbidden(self, logged_in_user, assembly_with_gsheet, path):
+        assembly, _gsheet = assembly_with_gsheet
+
+        response = logged_in_user.post(
+            f"/backoffice/project/{assembly.id}/" + path.format(run_id=uuid.uuid4()),
+            data={"number_to_select": "3"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 403
+
+
 class TestStartReplacementRunValidation:
     """Test number_to_select validation in start_replacement_run before task dispatch."""
 
