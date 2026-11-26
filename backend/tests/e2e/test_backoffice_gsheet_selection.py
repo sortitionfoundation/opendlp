@@ -434,9 +434,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_report = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.selection.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.selection.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):
@@ -451,7 +451,7 @@ class TestBackofficeSelectionTab:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health",
+            "opendlp.entrypoints.blueprints.selection.check_and_update_task_health",
             side_effect=NotFoundError("Task not found"),
         ):
             response = logged_in_admin.get(
@@ -639,9 +639,9 @@ class TestBackofficeSelectionTab:
         mock_result.run_report = None
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.selection.check_and_update_task_health"),
             patch(
-                "opendlp.entrypoints.blueprints.gsheets.get_selection_run_status",
+                "opendlp.entrypoints.blueprints.selection.get_selection_run_status",
                 return_value=mock_result,
             ),
         ):

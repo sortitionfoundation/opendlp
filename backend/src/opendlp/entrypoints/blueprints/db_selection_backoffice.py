@@ -10,7 +10,7 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_url_generator
-from opendlp.entrypoints.blueprints.gsheets import (
+from opendlp.entrypoints.blueprints.selection import (
     redirect_to_running_task,
     render_selection_page,
     unbound_selection_settings_form,
