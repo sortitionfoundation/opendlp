@@ -4,7 +4,7 @@
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom, table_cell_status %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, progress_indicator, collapsible_section %}
-{% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
+{% set close_url = url_for('selection.view_assembly_selection', assembly_id=assembly.id) %}
 {% set can_close = run_record.has_finished %}
 {% set htmx_poll_url = url_for('db_selection_backoffice.db_selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
 {% set is_test_selection = run_record.task_type.value == 'test_select_from_db' %}

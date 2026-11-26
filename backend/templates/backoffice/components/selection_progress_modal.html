@@ -3,9 +3,9 @@
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, progress_indicator, collapsible_section %}
-{% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
+{% set close_url = url_for('selection.view_assembly_selection', assembly_id=assembly.id) %}
 {% set can_close = run_record.has_finished %}
-{% set htmx_poll_url = url_for('gsheets.selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
+{% set htmx_poll_url = url_for('gsheet_selection.selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
 {% call progress_modal(
 id="selection-progress-modal",
 title=_("Task progress"),
@@ -78,7 +78,7 @@ classes="max-w-3xl"
         </p>
         <div class="flex gap-2 justify-end">
             <form method="post"
-                  action="{{ url_for('gsheets.cancel_selection_run', assembly_id=assembly.id, run_id=current_selection) }}"
+                  action="{{ url_for('gsheet_selection.cancel_selection_run', assembly_id=assembly.id, run_id=current_selection) }}"
                   class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {{ button(_("Cancel Task") , type="submit", variant="secondary") }}

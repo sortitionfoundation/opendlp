@@ -2,7 +2,7 @@
 {# ABOUTME: Pure HTMX approach - server controls all state, no Alpine.js dependency #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value, collapsible_section %}
-{% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
+{% set close_url = url_for('selection.view_assembly_selection', assembly_id=assembly.id) %}
 {% set features_pending = replacement_features_pending|default(false) %}
 {# features_pending: postgres has the load task as COMPLETED but Celery's result
    backend hasn't surfaced features yet, so min/max can't be computed. Treat as
@@ -11,7 +11,7 @@
 {% set task_finished = replacement_run_record and replacement_run_record.has_finished and not features_pending %}
 {% set has_min_max = replacement_min_select and replacement_max_select %}
 {% set can_close = not is_task_running %}
-{% set htmx_poll_url = url_for('gsheets.replacement_progress_modal', assembly_id=assembly.id, run_id=current_replacement) if is_task_running else "" %}
+{% set htmx_poll_url = url_for('gsheet_selection.replacement_progress_modal', assembly_id=assembly.id, run_id=current_replacement) if is_task_running else "" %}
 {#
 State logic:
 1. No run_record: show initial form (Check Spreadsheet)
@@ -39,7 +39,7 @@ htmx_poll_url=htmx_poll_url
         {{ _("First check the spreadsheet to see how many replacements can be selected.") }}
     </p>
     <form method="post"
-          action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}">
+          action="{{ url_for('gsheet_selection.start_replacement_load', assembly_id=assembly.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ button(_("Check Spreadsheet") , type="submit", variant="primary") }}
     </form>
@@ -64,7 +64,7 @@ htmx_poll_url=htmx_poll_url
         </div>
     </div>
     <form method="post"
-          action="{{ url_for('gsheets.start_replacement_run', assembly_id=assembly.id, min_select=replacement_min_select, max_select=replacement_max_select) }}">
+          action="{{ url_for('gsheet_selection.start_replacement_run', assembly_id=assembly.id, min_select=replacement_min_select, max_select=replacement_max_select) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-4">
             <label class="text-label-lg mb-2 block"
@@ -89,7 +89,7 @@ htmx_poll_url=htmx_poll_url
     </form>
         {# Re-check spreadsheet as separate form #}
     <form method="post"
-          action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}"
+          action="{{ url_for('gsheet_selection.start_replacement_load', assembly_id=assembly.id) }}"
           class="mt-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {{ button(_("Re-check Spreadsheet") , type="submit", variant="outline") }}
@@ -156,7 +156,7 @@ htmx_poll_url=htmx_poll_url
         </p>
         <div class="flex gap-2 justify-end">
             <form method="post"
-                  action="{{ url_for('gsheets.cancel_replacement_run', assembly_id=assembly.id, run_id=current_replacement) }}"
+                  action="{{ url_for('gsheet_selection.cancel_replacement_run', assembly_id=assembly.id, run_id=current_replacement) }}"
                   class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {{ button(_("Cancel Task") , type="submit", variant="secondary") }}

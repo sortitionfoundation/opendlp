@@ -242,7 +242,7 @@ def check_monitor_selection(uow: AbstractUnitOfWork) -> MonitorSelectionStatus:
 def _safe_run_url(assembly_id: uuid.UUID, task_id: uuid.UUID) -> str:
     try:
         return url_for(
-            "gsheets.view_assembly_selection_with_run",
+            "selection.view_assembly_selection_with_run",
             assembly_id=assembly_id,
             run_id=task_id,
             _external=True,

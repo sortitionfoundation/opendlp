@@ -4,7 +4,7 @@ ABOUTME: Provides the /backoffice/project/*/selection/*, replacement/* and manag
 import uuid
 
 import structlog
-from flask import flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
@@ -13,7 +13,6 @@ from opendlp import bootstrap
 from opendlp.entrypoints.blueprints.selection import (
     load_features_pending,
     redirect_to_running_task,
-    selection_bp,
 )
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.service_layer.assembly_service import (
@@ -40,12 +39,12 @@ from opendlp.service_layer.sortition import (
 from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
 from opendlp.translations import gettext as _
 
-gsheets_bp = selection_bp
+gsheet_selection_bp = Blueprint("gsheet_selection", __name__)
 
 logger = structlog.get_logger(__name__)
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/selection/modal-progress/<uuid:run_id>")
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/selection/modal-progress/<uuid:run_id>")
 @login_required
 def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return modal progress HTML fragment for HTMX polling of selection task status."""
@@ -94,7 +93,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
         return "", 500
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/selection/replacement-modal-progress/<uuid:run_id>")
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/selection/replacement-modal-progress/<uuid:run_id>")
 @login_required
 def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return replacement modal progress HTML fragment for HTMX polling."""
@@ -155,7 +154,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
         return "", 500
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/selection/load", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/selection/load", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -167,7 +166,7 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(
             url_for(
-                "gsheets.view_assembly_selection",
+                "selection.view_assembly_selection",
                 assembly_id=assembly_id,
                 current_selection=task_id,
             )
@@ -175,18 +174,18 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for load task", error=str(e))
         flash(_("Please configure Google Sheets first"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for load task", error=str(e))
         flash(_("You don't have permission to run selection"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Start selection load error", error=str(e))
         flash(_("An error occurred while starting the validation task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/selection/run", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/selection/run", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -201,7 +200,7 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(
             url_for(
-                "gsheets.view_assembly_selection",
+                "selection.view_assembly_selection",
                 assembly_id=assembly_id,
                 current_selection=task_id,
             )
@@ -211,18 +210,18 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for selection task", error=str(e))
         flash(_("Please configure Google Sheets first"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for selection task", error=str(e))
         flash(_("You don't have permission to run selection"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Start selection run error", error=str(e))
         flash(_("An error occurred while starting the selection task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/selection/<uuid:run_id>/cancel", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/selection/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -235,7 +234,7 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         flash(_("Task cancelled"), "info")
         return redirect(
             url_for(
-                "gsheets.view_assembly_selection",
+                "selection.view_assembly_selection",
                 assembly_id=assembly_id,
                 current_selection=run_id,
             )
@@ -243,25 +242,25 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
     except InvalidSelection as e:
         logger.warning("Cannot cancel task", error=str(e))
         flash(_("Cannot cancel task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning("Task not found for cancel", error=str(e))
         flash(_("Task not found"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions to cancel task", error=str(e))
         flash(_("You don't have permission to cancel this task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Cancel selection run error", error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 # --- Manage tabs views ---
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/manage-tabs/start-list", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/manage-tabs/start-list", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -272,23 +271,23 @@ def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
             task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=True)
 
         return redirect(
-            url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
+            url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
         )
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for manage tabs list", error=str(e))
         flash(_("Please configure Google Sheets first"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for manage tabs list", error=str(e))
         flash(_("You don't have permission to manage tabs"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Start manage tabs list error", error=str(e))
         flash(_("An error occurred while starting the list tabs task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/manage-tabs/start-delete", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/manage-tabs/start-delete", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -299,25 +298,25 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
             task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=False)
 
         return redirect(
-            url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
+            url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
         )
     except SelectionAlreadyRunning as e:
         return redirect_to_running_task(assembly_id, e)
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for manage tabs delete", error=str(e))
         flash(_("Please configure Google Sheets first"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for manage tabs delete", error=str(e))
         flash(_("You don't have permission to manage tabs"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Start manage tabs delete error", error=str(e))
         flash(_("An error occurred while starting the delete tabs task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/progress")
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/progress")
 @login_required
 @require_assembly_management
 def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -369,7 +368,7 @@ def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
         return "", 500
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/cancel", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/manage-tabs/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -382,7 +381,7 @@ def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRet
         flash(_("Task cancelled"), "info")
         return redirect(
             url_for(
-                "gsheets.view_assembly_selection",
+                "selection.view_assembly_selection",
                 assembly_id=assembly_id,
                 current_manage_tabs=run_id,
             )
@@ -390,25 +389,25 @@ def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRet
     except InvalidSelection as e:
         logger.warning("Cannot cancel manage tabs task", error=str(e))
         flash(_("Cannot cancel task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning("Manage tabs task not found for cancel", error=str(e))
         flash(_("Task not found"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions to cancel manage tabs task", error=str(e))
         flash(_("You don't have permission to cancel this task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Cancel manage tabs error", error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 # --- Replacement views ---
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/replacement/load", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/replacement/load", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -418,17 +417,19 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
 
-        return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=task_id))
+        return redirect(
+            url_for("selection.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=task_id)
+        )
 
     except InvalidSelection as e:
         logger.warning("Invalid selection attempted with replacement load", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not start task to read the spreadsheet: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
 
     except NotFoundError as e:
         logger.warning("Failed to start replacement load for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         logger.warning(
@@ -443,10 +444,10 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.error("Error starting replacement load for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the loading task"), "error")
-        return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/replacement/run", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/replacement/run", methods=["POST"])
 @login_required
 @require_assembly_management
 def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -459,16 +460,16 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         number_to_select_str = request.form.get("number_to_select")
         if not number_to_select_str:
             flash(_("Number of people to select is required"), "error")
-            return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+            return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
 
         try:
             number_to_select = int(number_to_select_str)
             if number_to_select <= 0:
                 flash(_("Number of people to select must be greater than zero"), "error")
-                return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+                return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
         except ValueError:
             flash(_("Number of people to select must be a valid integer"), "error")
-            return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+            return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
 
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -476,7 +477,7 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         return redirect(
             url_for(
-                "gsheets.view_assembly_replacement_with_run",
+                "selection.view_assembly_replacement_with_run",
                 assembly_id=assembly_id,
                 run_id=task_id,
                 num_to_select=number_to_select,
@@ -491,7 +492,7 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except NotFoundError as e:
         logger.warning("Failed to start replacement for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Failed to start replacement task: %(error)s", error=str(e)), "error")
-        return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
         logger.warning(
@@ -506,10 +507,10 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.error("Error starting replacement for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the replacement task"), "error")
-        return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
 
 
-@gsheets_bp.route("/project/<uuid:assembly_id>/replacement/<uuid:run_id>/cancel", methods=["POST"])
+@gsheet_selection_bp.route("/project/<uuid:assembly_id>/replacement/<uuid:run_id>/cancel", methods=["POST"])
 @login_required
 @require_assembly_management
 def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
@@ -520,19 +521,19 @@ def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
             cancel_task(uow, current_user.id, assembly_id, run_id)
 
         flash(_("Task has been cancelled"), "success")
-        return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(url_for("selection.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
 
     except NotFoundError as e:
         logger.warning(
             "Task not found for cancellation", run_id=str(run_id), user_id=str(current_user.id), error=str(e)
         )
         flash(_("Task not found"), "error")
-        return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
 
     except InvalidSelection as e:
         logger.warning("Cannot cancel task", run_id=str(run_id), error=str(e))
         flash(str(e), "error")
-        return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(url_for("selection.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
 
     except InsufficientPermissions as e:
         logger.warning(
@@ -547,4 +548,4 @@ def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
     except Exception as e:
         logger.error("Error cancelling task", run_id=str(run_id), error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
-        return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
+        return redirect(url_for("selection.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))

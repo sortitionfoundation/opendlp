@@ -55,7 +55,7 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     {
     "key": "selection",
     "label": _("Select and Replace"),
-    "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id),
+    "href": url_for('selection.view_assembly_selection', assembly_id=assembly.id),
     "active": active_tab == "selection",
     "disabled": not selection_enabled
     }

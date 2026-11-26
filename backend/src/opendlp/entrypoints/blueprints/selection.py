@@ -53,7 +53,7 @@ from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.writing_guard import SelectionAlreadyRunning, running_task_query_param
 from opendlp.translations import gettext as _
 
-selection_bp = Blueprint("gsheets", __name__)
+selection_bp = Blueprint("selection", __name__)
 
 logger = structlog.get_logger(__name__)
 
@@ -482,7 +482,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @login_required
 def view_assembly_selection_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Legacy route - redirects to query parameter version for backwards compatibility."""
-    return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
+    return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id))
 
 
 def redirect_to_running_task(assembly_id: uuid.UUID, running: SelectionAlreadyRunning) -> ResponseReturnValue:
@@ -498,7 +498,7 @@ def redirect_to_running_task(assembly_id: uuid.UUID, running: SelectionAlreadyRu
         "info",
     )
     params: dict[str, Any] = {running_task_query_param(running.task_type): running.task_id}
-    return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, **params))
+    return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, **params))
 
 
 # --- Selection history ---
@@ -522,18 +522,18 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
 
             if not run_record:
                 flash(_("Selection run not found"), "error")
-                return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+                return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
             # Validate the run belongs to this assembly
             if run_record.assembly_id != assembly_id:
                 flash(_("Selection run does not belong to this project"), "error")
-                return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+                return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
             # For now, redirect back to selection page with current_selection parameter
             # This will show the task progress modal
             # TODO: Create dedicated detail pages for completed runs with full report
             return redirect(
-                url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id)
+                url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_selection=run_id)
             )
 
     except NotFoundError as e:
@@ -547,7 +547,7 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
     except Exception as e:
         logger.exception("View run details error", assembly_id=str(assembly_id), run_id=str(run_id), error=str(e))
         flash(_("An error occurred while loading the run details"), "error")
-        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
 
 
 # --- Replacement views ---
@@ -557,7 +557,7 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
 @login_required
 def view_assembly_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Legacy route - redirects to selection page with replacement modal open."""
-    return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
+    return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
 
 
 @selection_bp.route("/project/<uuid:assembly_id>/replacement/<uuid:run_id>")
@@ -569,7 +569,7 @@ def view_assembly_replacement_with_run(assembly_id: uuid.UUID, run_id: uuid.UUID
     max_select = request.args.get("max_select")
     return redirect(
         url_for(
-            "gsheets.view_assembly_selection",
+            "selection.view_assembly_selection",
             assembly_id=assembly_id,
             current_replacement=run_id,
             min_select=min_select,

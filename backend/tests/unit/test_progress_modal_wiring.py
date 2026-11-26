@@ -58,7 +58,7 @@ def _make_app() -> Flask:
     # Map to the real endpoint names the templates expect via url_for.
     app.add_url_rule(
         "/gsheets/view_selection/<uuid:assembly_id>",
-        endpoint="gsheets.view_assembly_selection",
+        endpoint="selection.view_assembly_selection",
         view_func=lambda assembly_id: "",
     )
     app.add_url_rule(
@@ -89,7 +89,7 @@ def _make_app() -> Flask:
     )
     app.add_url_rule(
         "/gsheets/modal-progress/<uuid:assembly_id>/<uuid:run_id>",
-        endpoint="gsheets.selection_progress_modal",
+        endpoint="gsheet_selection.selection_progress_modal",
         view_func=lambda assembly_id, run_id: "",
     )
     app.add_url_rule(
@@ -99,7 +99,7 @@ def _make_app() -> Flask:
     )
     app.add_url_rule(
         "/gsheets/cancel/<uuid:assembly_id>/<uuid:run_id>",
-        endpoint="gsheets.cancel_selection_run",
+        endpoint="gsheet_selection.cancel_selection_run",
         view_func=lambda assembly_id, run_id: "",
         methods=["POST"],
     )
