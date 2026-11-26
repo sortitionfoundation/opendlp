@@ -57,7 +57,7 @@
                     {{ alert(ngettext("%(num)s place is to be filled, but the replacement targets only allow between %(min)s and %(max)s. Edit the targets below so that %(num)s is within the range, or the assembly will not be the size it needs.", "%(num)s places are to be filled, but the replacement targets only allow between %(min)s and %(max)s. Edit the targets below so that %(num)s is within the range, or the assembly will not be the size it needs.", plan.calculated_number, min=plan.min_select, max=plan.max_select), variant="warning") }}
                 {% endif %}
                 <form method="post"
-                      action="{{ url_for('db_selection_backoffice.start_db_replacement', assembly_id=assembly.id) }}"
+                      action="{{ url_for('db_selection.start_db_replacement', assembly_id=assembly.id) }}"
                       id="db-replacement-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-6" id="number_to_select-section" x-show="numberEditing" x-cloak>

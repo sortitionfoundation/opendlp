@@ -78,7 +78,7 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                         {# Someone holds a place, so the only way to a fresh selection is a reset #}
                         {# TODO: Replace browser confirm with proper JS confirmation dialog #}
                         <form method="post"
-                              action="{{ url_for('db_selection_backoffice.reset_db_selection', assembly_id=assembly.id) }}"
+                              action="{{ url_for('db_selection.reset_db_selection', assembly_id=assembly.id) }}"
                               class="inline"
                               x-data
                               @submit.prevent="$confirm('{{ _("Are you sure you want to reset all selected respondents to the pool? This action cannot be undone.") }}', $el)">
@@ -94,7 +94,7 @@ ABOUTME: Database rows show the held count and only the actions that apply; Goog
                                 {{ button(_("Check Spreadsheet") , type="submit", variant="secondary") }}
                             </form>
                         {% endif %}
-                        {% set run_url = url_for('db_selection_backoffice.start_db_selection', assembly_id=assembly.id) if is_db else url_for('gsheet_selection.start_selection_run', assembly_id=assembly.id) %}
+                        {% set run_url = url_for('db_selection.start_db_selection', assembly_id=assembly.id) if is_db else url_for('gsheet_selection.start_selection_run', assembly_id=assembly.id) %}
                         <form method="post" action="{{ run_url }}?test=1" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Run Test Selection") , type="submit", variant="secondary", disabled=waiting) }}

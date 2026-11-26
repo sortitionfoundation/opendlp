@@ -121,7 +121,7 @@ def assembly_with_csv_config_unconfirmed(postgres_session_factory, admin_user):
 class TestCsvSelectionRun:
     """Celery dispatch seam for the CSV selection run endpoint."""
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_select_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection.start_db_select_task")
     def test_start_csv_selection_success(self, mock_start, logged_in_admin, assembly_with_csv_config):
         """Test successfully starting a CSV selection task."""
         assembly = assembly_with_csv_config
@@ -143,7 +143,7 @@ class TestCsvSelectionRun:
         call_kwargs = mock_start.call_args[1] or {}
         assert call_kwargs.get("test_selection", False) is False
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_select_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection.start_db_select_task")
     def test_start_csv_test_selection_success(self, mock_start, logged_in_admin, assembly_with_csv_config):
         """Test successfully starting a CSV test selection task."""
         assembly = assembly_with_csv_config
@@ -163,7 +163,7 @@ class TestCsvSelectionRun:
         call_kwargs = mock_start.call_args[1] or {}
         assert call_kwargs.get("test_selection", False) is True
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_select_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection.start_db_select_task")
     def test_start_csv_selection_handles_invalid_selection_error(
         self, mock_start, logged_in_admin, assembly_with_csv_config
     ):
@@ -185,7 +185,7 @@ class TestCsvSelectionRun:
 class TestCsvSelectionCancel:
     """Celery revoke seam for the CSV selection cancel endpoint."""
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.cancel_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection.cancel_task")
     def test_cancel_csv_selection_success(self, mock_cancel, logged_in_admin, assembly_with_csv_config):
         """Test successfully cancelling a running CSV selection task."""
         assembly = assembly_with_csv_config
@@ -202,7 +202,7 @@ class TestCsvSelectionCancel:
         assert "selection" in response.location
         mock_cancel.assert_called_once()
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.cancel_task")
+    @patch("opendlp.entrypoints.blueprints.db_selection.cancel_task")
     def test_cancel_csv_selection_handles_invalid_selection(
         self, mock_cancel, logged_in_admin, assembly_with_csv_config
     ):

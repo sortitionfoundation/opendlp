@@ -63,28 +63,28 @@ def _make_app() -> Flask:
     )
     app.add_url_rule(
         "/db/modal-progress/<uuid:assembly_id>/<uuid:run_id>",
-        endpoint="db_selection_backoffice.db_selection_progress_modal",
+        endpoint="db_selection.db_selection_progress_modal",
         view_func=lambda assembly_id, run_id: "",
     )
     app.add_url_rule(
         "/db/cancel/<uuid:assembly_id>/<uuid:run_id>",
-        endpoint="db_selection_backoffice.cancel_db_selection",
+        endpoint="db_selection.cancel_db_selection",
         view_func=lambda assembly_id, run_id: "",
         methods=["POST"],
     )
     app.add_url_rule(
         "/db/download-selected/<uuid:assembly_id>/<uuid:run_id>",
-        endpoint="db_selection_backoffice.download_db_selected",
+        endpoint="db_selection.download_db_selected",
         view_func=lambda assembly_id, run_id: "",
     )
     app.add_url_rule(
         "/db/download-remaining/<uuid:assembly_id>/<uuid:run_id>",
-        endpoint="db_selection_backoffice.download_db_remaining",
+        endpoint="db_selection.download_db_remaining",
         view_func=lambda assembly_id, run_id: "",
     )
     app.add_url_rule(
         "/db/download-report/<uuid:assembly_id>/<uuid:run_id>",
-        endpoint="db_selection_backoffice.download_db_selection_report",
+        endpoint="db_selection.download_db_selection_report",
         view_func=lambda assembly_id, run_id: "",
     )
     app.add_url_rule(
