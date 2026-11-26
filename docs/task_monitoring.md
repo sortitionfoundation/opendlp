@@ -25,7 +25,7 @@ The solution uses a **multi-layered approach**:
 
 ## Component 1: Enhanced Progress Endpoint (REQUIRED)
 
-### Changes to `gsheet_select_progress()` (gsheets.py:237)
+### Changes to the progress endpoints (`gsheets.selection_progress_modal()` and its siblings)
 
 **Current behavior:** Simply reads SelectionRunRecord from database and renders template
 
@@ -39,7 +39,7 @@ The solution uses a **multi-layered approach**:
 ### Implementation Details
 
 ```python
-def gsheet_select_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
+def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturnValue:
     """Return progress fragment for HTMX polling of Google Sheets selection task status."""
     try:
         uow = bootstrap.bootstrap()
@@ -707,9 +707,11 @@ The timeout checking is built into the health check, so no dangerous Celery time
 - `get_task_timeout_hours()` config function in `src/opendlp/config.py`
 - Helper functions `_mark_task_as_failed()` and `_extract_exception_info()`
 - Updated progress endpoints in `src/opendlp/entrypoints/blueprints/gsheets.py`:
-  - `gsheet_select_progress()`
-  - `gsheet_replace_progress()`
-  - `gsheet_manage_tabs_progress()`
+  - `selection_progress_modal()`
+  - `replacement_progress_modal()`
+  - `manage_tabs_progress()`
+- And in `src/opendlp/entrypoints/blueprints/db_selection_backoffice.py`:
+  - `db_selection_progress_modal()`
 - Unit tests in `tests/unit/test_config.py` and `tests/unit/test_sortition_service.py`
 - All 331 unit tests passing
 
