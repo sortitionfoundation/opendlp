@@ -832,9 +832,6 @@ def grant_user_assembly_role(
     assembly_id: uuid.UUID,
     role: AssemblyRole,
     current_user: User,
-    email_adapter: EmailAdapter | None = None,
-    template_renderer: TemplateRenderer | None = None,
-    url_generator: URLGenerator | None = None,
 ) -> tuple[UserAssemblyRole, User]:
     """
     Grant or update a user's role on an assembly.
@@ -845,9 +842,6 @@ def grant_user_assembly_role(
         assembly_id: ID of assembly
         role: Role to assign
         current_user: User performing the action (must have permission)
-        email_adapter: Optional email adapter for sending notification emails
-        template_renderer: Optional template renderer for rendering email templates
-        url_generator: Optional URL generator for creating assembly URLs
 
     Returns:
         Tuple of (created or updated UserAssemblyRole, detached copy of target User)
@@ -895,8 +889,6 @@ def grant_user_assembly_role(
         None,
     )
 
-    is_new_role = existing_role is None
-
     if existing_role:
         # Update existing role
         assert isinstance(existing_role, UserAssemblyRole)
@@ -912,20 +904,7 @@ def grant_user_assembly_role(
         uow.user_assembly_roles.add(assembly_role)
         target_user.assembly_roles.append(assembly_role)
 
-    detached_user = target_user.create_detached_copy()
-
-    # Send email notification if this is a new role assignment and all adapters are provided
-    if is_new_role and email_adapter and template_renderer and url_generator:
-        send_assembly_role_assigned_email(
-            email_adapter=email_adapter,
-            template_renderer=template_renderer,
-            url_generator=url_generator,
-            user=detached_user,
-            assembly=assembly,
-            role=role,
-        )
-
-    return assembly_role, detached_user
+    return assembly_role, target_user.create_detached_copy()
 
 
 def holds_assembly_role(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
