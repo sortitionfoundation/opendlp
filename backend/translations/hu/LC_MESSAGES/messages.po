@@ -2100,6 +2100,7 @@ msgid "Image not found"
 msgstr "A kép nem található"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py
+#: templates/register/not_found.html
 msgid "Registration page not found"
 msgstr "A regisztrációs oldal nem található"
 
@@ -4952,9 +4953,7 @@ msgid "Close menu"
 msgstr "Menü bezárása"
 
 #: templates/backoffice/dashboard.html templates/base.html
-#: templates/errors/400.html templates/errors/403.html
-#: templates/errors/404.html templates/errors/413.html
-#: templates/errors/500.html templates/public/_hero_demo.html
+#: templates/errors/base.html templates/public/_hero_demo.html
 msgid "Your projects"
 msgstr "Projektjeid"
 
@@ -4982,9 +4981,7 @@ msgstr "Fiókom"
 msgid "Sign out"
 msgstr "Kilépés"
 
-#: templates/base.html templates/errors/400.html templates/errors/403.html
-#: templates/errors/404.html templates/errors/413.html
-#: templates/errors/500.html templates/public/forgot_password.html
+#: templates/base.html templates/public/forgot_password.html
 #: templates/public/home.html templates/public/login.html
 #: templates/public/register.html templates/public/resend_confirmation.html
 msgid "Sign in"
@@ -10875,89 +10872,92 @@ msgstr ""
 "az e-mailt."
 
 #: templates/errors/400.html
-msgid "Form Expired"
+#, fuzzy
+msgid "The form has expired"
 msgstr "Az űrlap lejárt"
 
 #: templates/errors/400.html
+#, fuzzy
 msgid ""
-"The form could not be submitted because it had been open too long or\n"
-"                    could not be verified for security reasons. Please go"
-" back, reload the page,\n"
-"                    and try again."
+"The form could not be submitted because it had been open too long or "
+"could not be verified for security reasons. Please go back, reload the "
+"page, and try again."
 msgstr ""
 "Az űrlapot nem sikerült beküldeni, mert túl sokáig volt nyitva, vagy "
 "biztonsági okokból nem lehetett ellenőrizni. Menj vissza, töltsd újra az "
 "oldalt, és próbáld újra."
 
-#: templates/errors/400.html templates/errors/403.html
-#: templates/errors/404.html templates/errors/500.html
-msgid "Go Home"
-msgstr "Vissza a főoldalra"
+#: templates/errors/403.html
+#, fuzzy
+msgid "You don't have access to this page"
+msgstr "Nincs hozzáférésed ehhez az oldalhoz"
 
 #: templates/errors/403.html
-msgid "Access Denied"
-msgstr "Hozzáférés megtagadva"
+#, fuzzy
+msgid "Your account doesn't have the role this page needs."
+msgstr "A fiókod nem rendelkezik az oldalhoz szükséges szerepkörrel."
 
 #: templates/errors/403.html
+#, fuzzy, python-format
 msgid ""
-"You don't have permission to access this resource. This could be because\n"
-"                    you need to sign in or you don't have the required "
-"role for this assembly."
+"If you think you should have access, contact %(link_start)sOpenDLP "
+"support%(link_end)s."
 msgstr ""
-"Nincs jogosultságod az erőforrás eléréséhez. Ennek az lehet az oka, hogy "
-"be kell jelentkezned, vagy nincs meg a szükséges szerepköröd ehhez a "
-"közösségi gyűléshez."
-
-#: templates/errors/403.html
-msgid "If you believe this is an error, please contact an administrator."
-msgstr "Ha úgy gondolod, hogy ez hiba, lépj kapcsolatba egy adminisztrátorral."
+"Ha úgy gondolod, hogy hozzá kellene férned, lépj kapcsolatba "
+"%(link_start)saz OpenDLP ügyfélszolgálatával%(link_end)s."
 
 #: templates/errors/404.html
-msgid "Page Not Found"
-msgstr "Az oldal nem elérhető"
+#, fuzzy
+msgid "Page not found"
+msgstr "Az oldal nem található"
 
 #: templates/errors/404.html
-msgid ""
-"Sorry, the page you're looking for doesn't exist. It may have been moved,"
-"\n"
-"                    deleted, or you may have entered an incorrect URL."
-msgstr ""
-"Sajnos a keresett oldal nem létezik. Lehet, hogy áthelyezték, törölték, "
-"vagy hibás URL-t adtál meg."
+#, fuzzy
+msgid "Check the web address is correct."
+msgstr "Ellenőrizd, hogy helyes-e a webcím."
+
+#: templates/errors/404.html
+#, fuzzy
+msgid "If you followed a link, the page may have been moved or deleted."
+msgstr "Ha egy linket követtél, lehet, hogy az oldalt áthelyezték vagy törölték."
 
 #: templates/errors/413.html
-msgid "File Too Large"
+#, fuzzy
+msgid "The file is too large"
 msgstr "A fájl túl nagy"
 
 #: templates/errors/413.html
+#, fuzzy
 msgid ""
-"The file you tried to upload exceeds the maximum allowed size of 10 MB. "
-"Please try again with a smaller file."
+"The file you tried to upload is larger than OpenDLP accepts. Try again "
+"with a smaller file."
 msgstr ""
-"A feltölteni kívánt fájl meghaladja a megengedett legnagyobb, 10 MB-os "
-"méretet. Próbáld újra egy kisebb fájllal."
+"A feltölteni kívánt fájl nagyobb, mint amit az OpenDLP elfogad. Próbáld "
+"újra egy kisebb fájllal."
 
 #: templates/errors/500.html
-msgid "Server Error"
-msgstr "Szerver hiba"
+#, fuzzy
+msgid "Sorry, something went wrong"
+msgstr "Sajnáljuk, valami hiba történt"
 
 #: templates/errors/500.html
-msgid "Internal Server Error"
-msgstr "Belső szerver hiba"
+#, fuzzy
+msgid "The problem is on our end. Please try again in a few minutes."
+msgstr "A hiba nálunk történt. Kérjük, próbáld újra néhány perc múlva."
 
 #: templates/errors/500.html
+#, fuzzy, python-format
 msgid ""
-"Something went wrong on our end. We're working to fix this issue.\n"
-"                    Please try again in a few moments."
+"If the problem keeps happening, contact %(link_start)sOpenDLP "
+"support%(link_end)s."
 msgstr ""
-"Valami hiba történt nálunk. Dolgozunk a javításán. Kérjük, próbáld újra "
-"néhány pillanat múlva."
+"Ha a hiba továbbra is fennáll, lépj kapcsolatba %(link_start)saz OpenDLP "
+"ügyfélszolgálatával%(link_end)s."
 
-#: templates/errors/500.html
-msgid "If this problem persists, please contact your system administrator."
-msgstr ""
-"Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a "
-"rendszergazdáddal."
+#: templates/errors/base.html
+#, fuzzy
+msgid "Go to the home page"
+msgstr "Tovább a főoldalra"
 
 #: templates/gsheets/create_config.html templates/main/view_assembly_data.html
 msgid "Configure Google Sheets"
@@ -11997,6 +11997,25 @@ msgid ""
 msgstr ""
 "Ez a regisztrációs oldal még nem éles – teszt alatt áll. A beküldött "
 "adatokat nem használjuk fel a kiválasztásoknál."
+
+#: templates/register/not_found.html
+#, fuzzy
+msgid "If you typed the web address, check it is correct."
+msgstr "Ha begépelte a webcímet, ellenőrizze, hogy helyes-e."
+
+#: templates/register/not_found.html
+#, fuzzy
+msgid "If you pasted the web address, check you copied the entire address."
+msgstr "Ha bemásolta a webcímet, ellenőrizze, hogy a teljes címet másolta-e ki."
+
+#: templates/register/not_found.html
+#, fuzzy
+msgid ""
+"If the web address is correct, or you followed a link, contact the event "
+"organisers."
+msgstr ""
+"Ha a webcím helyes, vagy egy linket követett, forduljon az esemény "
+"szervezőihez."
 
 #: templates/register/thank_you.html templates/register/thank_you_default.html
 msgid "Thank You"

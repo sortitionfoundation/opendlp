@@ -1,0 +1,43 @@
+{#
+ABOUTME: Layout of the error pages: a plain heading, a message saying what to do next, and a way back
+ABOUTME: On the public layout, as the visitor may not be signed in; the way back is Your projects when signed in, else the home page
+#}
+{#
+   A page sets the title block, which is its heading as well as its browser
+   title, and the message block. Where the reader may need a person, it sets
+   the support block too, linking the support address with
+   support_link_start and support_link_end.
+
+   Nothing here may read the database: the 500 page has to render when the
+   database is what failed. current_user is safe to ask for, as the 500
+   handler settles it before rendering - see render_server_error_page() in
+   flask_app.py.
+
+   Tailwind scans this folder for the classes used here, as it does
+   templates/public/ (see tailwind.config.js).
+#}
+{% extends "public/base.html" %}
+{% from "backoffice/components/button.html" import button %}
+{% from "public/_page_heading.html" import page_heading %}
+{% set support_link_start = ('<a href="mailto:%s" class="underline font-semibold" style="color: var(--color-links);">' | format(support_email_address | e)) | safe %}
+{% set support_link_end = "</a>" | safe %}
+{% block content %}
+    {% set message = self.message() %}
+    {% set support = self.support() %}
+    <div class="flex flex-col gap-10">
+        {% call page_heading(self.title()) %}
+            <div class="flex flex-col gap-4 text-body-md"
+                 style="color: var(--color-body-text)">{{ message }}</div>
+        {% endcall %}
+        {% if current_user.is_authenticated %}
+            {{ button(_("Your projects"), variant="primary", href=url_for("backoffice.dashboard"), full_width=true) }}
+        {% else %}
+            {{ button(_("Go to the home page"), variant="primary", href=url_for("main.index"), full_width=true) }}
+        {% endif %}
+        {% if support | trim %}
+            <p class="text-body-md text-center" style="color: var(--color-body-text);">{{ support }}</p>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block message %}{% endblock %}
+{% block support %}{% endblock %}

@@ -10,8 +10,9 @@ ABOUTME: Logo+help header, centred narrow content column, floating flash alerts,
 
    Templates under templates/public/ are scanned by Tailwind (tailwind.config.js),
    so pages extending this layout must live in this folder for their utility
-   classes to survive the build. Extra per-page scripts (e.g. Turnstile) go in
-   the inherited "head" block. #}
+   classes to survive the build - or in templates/errors/, which is scanned for
+   the error pages. Extra per-page scripts (e.g. Turnstile) go in the inherited
+   "head" block. #}
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/navigation.html" import navigation %}
 {% from "backoffice/components/floating_alerts.html" import floating_alerts %}

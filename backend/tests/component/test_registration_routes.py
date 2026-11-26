@@ -18,6 +18,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus
 from opendlp.entrypoints.blueprints.registration import (
+    is_registration_path,
     registration_url,
     registration_url_prefix,
     short_url,
@@ -456,6 +457,61 @@ class TestRegistrationClosed:
         assert b"Registration Closed" in response.data
 
 
+class TestRegistrationPageNotFound:
+    """A missing page at a registration address gets the registration pages' own
+    page, in their GOV.UK look, not the error page the rest of the app shows."""
+
+    def _assert_registration_not_found(self, response) -> None:  # type: ignore[no-untyped-def]
+        assert response.status_code == 404
+        body = response.get_data(as_text=True)
+        assert '<h1 class="govuk-heading-l">Registration page not found</h1>' in body
+        assert "contact the event organisers" in body
+        # base_public.html, the registration pages' own base
+        assert "register-page" in body
+        assert "backoffice/dist/main.css" not in body
+        assert '<meta name="robots" content="noindex, nofollow">' in body
+        footer = body.split('<footer class="govuk-footer"', 1)[1]
+        assert "Cookies" in footer
+        assert "User Data Agreement" not in footer
+
+    def test_an_unknown_page(self, client: FlaskClient) -> None:
+        self._assert_registration_not_found(client.get("/register/nonexistent"))
+
+    def test_an_unknown_short_url(self, client: FlaskClient) -> None:
+        self._assert_registration_not_found(client.get("/r/nonexistent"))
+
+    def test_an_unknown_thank_you_page(self, client: FlaskClient) -> None:
+        self._assert_registration_not_found(client.get("/register/nonexistent/thank-you"))
+
+    @pytest.mark.parametrize("path", ["/register/nonexistent/", "/register/a/b/c", "/r/nonexistent/more"])
+    def test_an_address_no_route_matches(self, client: FlaskClient, path: str) -> None:
+        """No registration route sees these, as none matches: the app's 404 handler decides by the path."""
+        self._assert_registration_not_found(client.get(path))
+
+    def test_with_registration_pages_switched_off(self, client_with_feature_disabled: FlaskClient) -> None:
+        self._assert_registration_not_found(client_with_feature_disabled.get("/register/test-slug"))
+
+    @pytest.mark.parametrize("path", ["/no-such-page", "/register", "/registration", "/r", "/rabbit/hole"])
+    def test_other_addresses_get_the_usual_page(self, client: FlaskClient, path: str) -> None:
+        response = client.get(path)
+
+        assert response.status_code == 404
+        body = response.get_data(as_text=True)
+        assert "Page not found" in body
+        assert "Registration page not found" not in body
+        assert "govuk-" not in body
+
+    def test_a_closed_page_still_redirects(self, client: FlaskClient, fake_store, admin_user: User) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            close_registration_page(uow, admin_user.id, page.id)
+
+        response = client.get(f"/r/{page.short_url_slug}", follow_redirects=True)
+
+        assert response.status_code == 200
+        assert b"Registration Closed" in response.data
+
+
 class TestRegistrationFooter:
     """The public registration pages' footer keeps the cookies link but drops the
     User Data Agreement, which is for platform users, not respondents."""
@@ -488,3 +544,19 @@ class TestUrlHelpers:
         with app.test_request_context("http://example.org/"):
             assert registration_url_prefix() == "http://example.org/register/"
             assert short_url_prefix() == "http://example.org/r/"
+
+    @pytest.mark.parametrize(
+        ("path", "expected"),
+        [
+            ("/register/my-slug", True),
+            ("/register/my-slug/thank-you", True),
+            ("/r/ma26", True),
+            ("/register", False),
+            ("/registration-closed", False),
+            ("/register-assets/images/x.png", False),
+            ("/r", False),
+            ("/auth/register", False),
+        ],
+    )
+    def test_registration_paths_are_those_under_register_and_r(self, path: str, expected: bool) -> None:
+        assert is_registration_path(path) is expected
