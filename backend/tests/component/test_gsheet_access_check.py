@@ -41,7 +41,9 @@ def cache(_in_memory_gsheet_access_cache: FakeRedis) -> FakeRedis:
 
 @pytest.fixture
 def service_account(monkeypatch) -> None:
-    monkeypatch.setattr("opendlp.entrypoints.blueprints.gsheets.get_service_account_email", lambda: _SERVICE_ACCOUNT)
+    monkeypatch.setattr(
+        "opendlp.entrypoints.blueprints.data_source.get_service_account_email", lambda: _SERVICE_ACCOUNT
+    )
 
 
 @pytest.fixture
@@ -242,7 +244,7 @@ class TestCheckRouteRefusals:
     def test_no_service_account_does_not_call_google(
         self, logged_in_admin: FlaskClient, assembly_with_gsheet, google, monkeypatch
     ):
-        monkeypatch.setattr("opendlp.entrypoints.blueprints.gsheets.get_service_account_email", lambda: "")
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.data_source.get_service_account_email", lambda: "")
         client = google(FakeGSpreadClient())
 
         response = logged_in_admin.post(_check_url(assembly_with_gsheet.id), headers=_HTMX)

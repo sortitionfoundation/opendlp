@@ -14,7 +14,7 @@ Variables:
 {% set result = gsheet_access_result if gsheet_access_result is defined else none %}
 {% set auto_check = gsheet_access_auto_check if gsheet_access_auto_check is defined else false %}
 {% set can_check = can_check_gsheet_access if can_check_gsheet_access is defined else false %}
-{% set check_url = url_for('gsheets.check_gsheet_access_route', assembly_id=gsheet_access_assembly_id) %}
+{% set check_url = url_for('data_source.check_gsheet_access_route', assembly_id=gsheet_access_assembly_id) %}
 {% set variant_styles = {
 "success": {"bg": "var(--color-success-100)", "border": "var(--color-success-400)", "text": "var(--color-success-600)"},
 "warning": {"bg": "var(--color-warning-100)", "border": "var(--color-warning-400)", "text": "var(--color-warning-600)"},

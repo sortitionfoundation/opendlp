@@ -12,7 +12,7 @@ _SHEET_URL = "https://docs.google.com/spreadsheets/d/1234567890abcdef/edit"
 @pytest.fixture(autouse=True)
 def _service_account_configured(monkeypatch):
     monkeypatch.setattr(
-        "opendlp.entrypoints.blueprints.gsheets.get_service_account_email",
+        "opendlp.entrypoints.blueprints.data_source.get_service_account_email",
         lambda: "sheets-reader@example.iam.gserviceaccount.com",
     )
 
