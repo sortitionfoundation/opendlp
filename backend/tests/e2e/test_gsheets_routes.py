@@ -59,8 +59,8 @@ class TestReplacementProgressModal:
         mock_result = _make_mock_result(mock_record, log_messages=["Loading replacement data..."])
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(
                 f"/backoffice/project/{assembly.id}/selection/replacement-modal-progress/{run_id}"
@@ -85,8 +85,8 @@ class TestReplacementProgressModal:
         mock_result = _make_mock_result(mock_record, log_messages=["Done"])
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(
                 f"/backoffice/project/{assembly.id}/selection/replacement-modal-progress/{run_id}"
@@ -103,8 +103,8 @@ class TestReplacementProgressModal:
         mock_result = _make_mock_result(None)
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(
                 f"/backoffice/project/{assembly.id}/selection/replacement-modal-progress/{run_id}"
@@ -120,8 +120,8 @@ class TestReplacementProgressModal:
         mock_result = _make_mock_result(mock_record)
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(
                 f"/backoffice/project/{assembly.id}/selection/replacement-modal-progress/{run_id}"
@@ -133,7 +133,7 @@ class TestReplacementProgressModal:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.get_assembly_with_permissions",
+            "opendlp.entrypoints.blueprints.gsheet_selection.get_assembly_with_permissions",
             side_effect=InsufficientPermissions("No access"),
         ):
             response = logged_in_admin.get(
@@ -151,7 +151,7 @@ class TestStartReplacementLoad:
         mock_task_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_replace_load_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.start_gsheet_replace_load_task",
             return_value=mock_task_id,
         ) as mock_start:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -170,7 +170,7 @@ class TestStartReplacementLoad:
         assembly, _gsheet = assembly_with_gsheet
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_replace_load_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.start_gsheet_replace_load_task",
             side_effect=NotFoundError("GSheet not found"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -188,7 +188,7 @@ class TestStartReplacementLoad:
         assembly, _gsheet = assembly_with_gsheet
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_replace_load_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.start_gsheet_replace_load_task",
             side_effect=InvalidSelection("No initial selection found"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -209,7 +209,7 @@ class TestStartReplacementRun:
         mock_task_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_replace_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.start_gsheet_replace_task",
             return_value=mock_task_id,
         ) as mock_start:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -234,7 +234,7 @@ class TestCancelReplacementRun:
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
-        with patch("opendlp.entrypoints.blueprints.gsheets.cancel_task") as mock_cancel:
+        with patch("opendlp.entrypoints.blueprints.gsheet_selection.cancel_task") as mock_cancel:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
                 f"/backoffice/project/{assembly.id}/replacement/{run_id}/cancel",
@@ -252,7 +252,7 @@ class TestCancelReplacementRun:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.cancel_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.cancel_task",
             side_effect=NotFoundError("Task not found"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -271,7 +271,7 @@ class TestCancelReplacementRun:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.cancel_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.cancel_task",
             side_effect=InvalidSelection("Cannot cancel completed task"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -294,7 +294,7 @@ class TestStartManageTabsList:
         mock_task_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_manage_tabs_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.start_gsheet_manage_tabs_task",
             return_value=mock_task_id,
         ) as mock_start:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -316,7 +316,7 @@ class TestStartManageTabsList:
         assembly, _gsheet = assembly_with_gsheet
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_manage_tabs_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.start_gsheet_manage_tabs_task",
             side_effect=NotFoundError("GSheet not found"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -337,7 +337,7 @@ class TestStartManageTabsDelete:
         mock_task_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_manage_tabs_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.start_gsheet_manage_tabs_task",
             return_value=mock_task_id,
         ) as mock_start:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -359,7 +359,7 @@ class TestStartManageTabsDelete:
         assembly, _gsheet = assembly_with_gsheet
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.start_gsheet_manage_tabs_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.start_gsheet_manage_tabs_task",
             side_effect=NotFoundError("GSheet not found"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -391,10 +391,10 @@ class TestManageTabsProgress:
         mock_result.tab_names = []
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.get_selection_run_status", return_value=mock_result),
             patch(
-                "opendlp.entrypoints.blueprints.gsheets.get_manage_old_tabs_status",
+                "opendlp.entrypoints.blueprints.gsheet_selection.get_manage_old_tabs_status",
                 return_value=ManageOldTabsStatus(ManageOldTabsState.LIST_RUNNING),
             ),
         ):
@@ -423,10 +423,10 @@ class TestManageTabsProgress:
         mock_result.tab_names = ["Old Tab 1", "Old Tab 2"]
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.get_selection_run_status", return_value=mock_result),
             patch(
-                "opendlp.entrypoints.blueprints.gsheets.get_manage_old_tabs_status",
+                "opendlp.entrypoints.blueprints.gsheet_selection.get_manage_old_tabs_status",
                 return_value=ManageOldTabsStatus(ManageOldTabsState.LIST_COMPLETED),
             ),
         ):
@@ -446,8 +446,8 @@ class TestManageTabsProgress:
         mock_result = _make_mock_result(None)
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/progress")
             assert response.status_code == 404
@@ -461,8 +461,8 @@ class TestManageTabsProgress:
         mock_result = _make_mock_result(mock_record)
 
         with (
-            patch("opendlp.entrypoints.blueprints.gsheets.check_and_update_task_health"),
-            patch("opendlp.entrypoints.blueprints.gsheets.get_selection_run_status", return_value=mock_result),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.check_and_update_task_health"),
+            patch("opendlp.entrypoints.blueprints.gsheet_selection.get_selection_run_status", return_value=mock_result),
         ):
             response = logged_in_admin.get(f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/progress")
             assert response.status_code == 404
@@ -472,7 +472,7 @@ class TestManageTabsProgress:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.get_assembly_with_permissions",
+            "opendlp.entrypoints.blueprints.gsheet_selection.get_assembly_with_permissions",
             side_effect=InsufficientPermissions("No access"),
         ):
             response = logged_in_admin.get(f"/backoffice/project/{existing_assembly.id}/manage-tabs/{run_id}/progress")
@@ -487,7 +487,7 @@ class TestCancelManageTabs:
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
-        with patch("opendlp.entrypoints.blueprints.gsheets.cancel_task") as mock_cancel:
+        with patch("opendlp.entrypoints.blueprints.gsheet_selection.cancel_task") as mock_cancel:
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
             response = logged_in_admin.post(
                 f"/backoffice/project/{assembly.id}/manage-tabs/{run_id}/cancel",
@@ -505,7 +505,7 @@ class TestCancelManageTabs:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.cancel_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.cancel_task",
             side_effect=NotFoundError("Task not found"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")
@@ -522,7 +522,7 @@ class TestCancelManageTabs:
         run_id = uuid.uuid4()
 
         with patch(
-            "opendlp.entrypoints.blueprints.gsheets.cancel_task",
+            "opendlp.entrypoints.blueprints.gsheet_selection.cancel_task",
             side_effect=InvalidSelection("Cannot cancel completed task"),
         ):
             csrf_token = get_csrf_token(logged_in_admin, f"/backoffice/project/{assembly.id}/selection")

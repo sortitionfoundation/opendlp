@@ -185,7 +185,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.backoffice_registration import backoffice_registration_bp  # noqa: PLC0415
     from .blueprints.data_source import data_source_bp  # noqa: PLC0415
     from .blueprints.db_selection_backoffice import db_selection_backoffice_bp  # noqa: PLC0415
-    from .blueprints.gsheets import gsheets_bp  # noqa: PLC0415
+    from .blueprints.gsheet_selection import gsheets_bp  # noqa: PLC0415
     from .blueprints.health import health_bp  # noqa: PLC0415
     from .blueprints.main import main_bp  # noqa: PLC0415
     from .blueprints.profile import profile_bp  # noqa: PLC0415
