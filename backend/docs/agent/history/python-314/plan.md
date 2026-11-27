@@ -363,3 +363,35 @@ smoke test already prints it and imports the app.
 ## Open questions
 
 None — all answered. Ready to implement on your go-ahead.
+
+## Follow-up done (2026-11-27)
+
+The follow-up that Q4, Q5, Q6 and Q10 deferred, on the
+`drop-python-312-313` branch:
+
+- **`requires-python`** is `>=3.14`. The re-lock removed only the markers and
+  wheels for 3.12 and 3.13; no package version changed.
+- **CI matrix** is `["3.14"]`, kept as a one-entry matrix so adding 3.15 is a
+  one-line change. No 3.15 leg yet (Q10): the locked `highspy` 1.15.1,
+  `cvxpy` 1.9.3, `osqp` 1.1.3 and `sparsediffpy` 0.6.1 have no cp315 wheels.
+- **ruff target** is `py314` (Q6). `TC001`–`TC003` are ignored, for the
+  reason given above. ruff unquoted annotations, shortened `Generator` type
+  arguments, and — not anticipated above — the formatter now writes
+  `except A, B:` without parentheses (PEP 758). There is no option to turn
+  that off; Doctor Chewie accepted it.
+- **`from __future__ import annotations`** is removed from all 52 files.
+  This was not free: `SqlAlchemyUnitOfWork._close_repositories` read
+  `AbstractUnitOfWork.__annotations__` for the repository names, and without
+  the import that evaluates types imported only under `TYPE_CHECKING` —
+  `NameError`, 148 failures and 624 errors. It now asks `annotationlib` for
+  the `STRING` format. Anything new that reads `__annotations__` or calls
+  `typing.get_type_hints` on a class with typing-only imports will hit the
+  same thing.
+
+Still open: `COVERAGE_CORE=sysmon` (its own branch), and a 3.15 leg once the
+numeric libraries publish wheels.
+
+Trap for next time: `ruff format .` from `backend/` also reformats Python
+code blocks in 61 Markdown files under `docs/`, which the pre-commit hook
+does not touch. Format `src tests migrations features scripts` instead, or
+revert `docs/` afterwards.
