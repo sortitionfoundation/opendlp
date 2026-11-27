@@ -64,7 +64,21 @@ _HAND_ROLLED_FAKES = (
         re.compile(r"\.send_email\.(return_value|side_effect|assert_\w+|call_args|called)\b|Mock\(spec=EmailAdapter"),
         "mocks an email adapter - use FakeEmailAdapter, or the email_outbox fixture in a Flask test",
     ),
+    (
+        re.compile(r"(patch|setattr)(\.object)?\([^)]*\b(delay|apply_async)\b"),
+        "patches a Celery dispatch - assert on task_runner.submitted (the task_runner fixture)",
+    ),
+    (
+        re.compile(r"(patch|setattr)(\.object)?\([^)]*\b(AsyncResult|revoke)\b"),
+        "patches a Celery result or revoke - use task_runner.finish/fail/set_state and task_runner.revoked",
+    ),
 )
+# Test files that must reach the real boundary, so may do what the patterns
+# forbid: the adapters' own tests.
+_HAND_ROLLED_FAKES_ALLOWED = frozenset({
+    # CeleryTaskRunner is the adapter over apply_async, AsyncResult and revoke.
+    "/tests/unit/test_celery_task_runner.py",
+})
 
 
 def pytest_collection_modifyitems(config, items):
@@ -83,9 +97,10 @@ def pytest_collection_modifyitems(config, items):
         if source is None:
             source = item.path.read_text()
             source_cache[path] = source
-            fake_errors.extend(
-                f"{path}: {message}" for pattern, message in _HAND_ROLLED_FAKES if pattern.search(source)
-            )
+            if not path.endswith(tuple(_HAND_ROLLED_FAKES_ALLOWED)):
+                fake_errors.extend(
+                    f"{path}: {message}" for pattern, message in _HAND_ROLLED_FAKES if pattern.search(source)
+                )
         if "/tests/unit/" in path and _DISGUISED_ROUTE_TEST.search(source):
             placement_errors.append(
                 f"{path}: patches a blueprint's get_flask_uow — this is a disguised route "
