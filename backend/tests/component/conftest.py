@@ -15,7 +15,7 @@ from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer import sortition
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.user_service import create_user
-from tests.conftest import restore_flask_app_state
+from tests.conftest import install_email_outbox, restore_flask_app_state
 from tests.data import VALID_GSHEET_URL
 from tests.fakes import FakeRedis, FakeStore, FakeUnitOfWork
 
@@ -165,11 +165,12 @@ def _component_app_and_store_holder():
 
 
 @pytest.fixture
-def app(_component_app_and_store_holder, fake_store):
+def app(_component_app_and_store_holder, fake_store, email_outbox):
     """Flask app whose UnitOfWork factory is backed by the shared FakeStore.
 
     No PostgreSQL and no Redis: routes resolve get_flask_uow() to a
     FakeUnitOfWork over fake_store, and sessions use an in-memory cachelib cache.
+    Email goes to the test's email_outbox.
 
     The Flask app instance is shared across tests; only the store is per-test.
     A test that needs a differently *constructed* app overrides this fixture
@@ -178,6 +179,7 @@ def app(_component_app_and_store_holder, fake_store):
     """
     app, holder = _component_app_and_store_holder
     holder["store"] = fake_store
+    install_email_outbox(app, email_outbox)
     yield app
     # Empty the holder so a request served outside any test that set up a store
     # fails loudly on the missing key rather than silently reading stale data.

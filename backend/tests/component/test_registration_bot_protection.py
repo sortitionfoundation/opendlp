@@ -27,6 +27,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page_html,
 )
 from opendlp.service_layer.user_service import create_user
+from tests.conftest import install_email_outbox
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -88,8 +89,10 @@ def admin_user(fake_store):
 
 
 @pytest.fixture
-def app(fake_store, monkeypatch: pytest.MonkeyPatch):
-    return create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+def app(fake_store, monkeypatch: pytest.MonkeyPatch, email_outbox):
+    app = create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    install_email_outbox(app, email_outbox)
+    return app
 
 
 @pytest.fixture

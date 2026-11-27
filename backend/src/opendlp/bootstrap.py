@@ -2,7 +2,7 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
-from flask import Flask, current_app
+from flask import Flask, current_app, has_app_context
 from sortition_algorithms import adapters
 from sqlalchemy.orm import sessionmaker
 
@@ -126,7 +126,21 @@ def update_data_source_from_assembly_gsheet(
 
 
 def get_email_adapter() -> EmailAdapter:
-    """Get the configured email adapter based on application configuration.
+    """Get the email adapter for the current request or process.
+
+    Inside a Flask app context this calls the app's ``email_adapter_factory``,
+    which ``create_app`` sets to ``email_adapter_from_config`` and tests replace
+    with a fake. Outside one (CLI commands, Celery tasks) it builds the adapter
+    from configuration directly.
+    """
+    if has_app_context():
+        factory: Callable[[], EmailAdapter] = current_app.extensions["email_adapter_factory"]
+        return factory()
+    return email_adapter_from_config()
+
+
+def email_adapter_from_config() -> EmailAdapter:
+    """Build the email adapter that EMAIL_ADAPTER names.
 
     Returns:
         EmailAdapter instance (ConsoleEmailAdapter or SMTPEmailAdapter)

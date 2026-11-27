@@ -33,22 +33,6 @@ def _second_client(app: Flask, user: User | None = None) -> FlaskClient:
     return other
 
 
-@pytest.fixture
-def fake_email(monkeypatch: pytest.MonkeyPatch) -> FakeEmailAdapter:
-    """Capture the emails the admin routes send instead of writing them to the console."""
-    adapter = FakeEmailAdapter()
-    monkeypatch.setattr("opendlp.entrypoints.blueprints.admin.get_email_adapter", lambda: adapter)
-    return adapter
-
-
-@pytest.fixture
-def failing_email(monkeypatch: pytest.MonkeyPatch) -> FakeEmailAdapter:
-    """An email adapter that reports failure, for the path where we cannot reach the user."""
-    adapter = FakeEmailAdapter(succeed=False)
-    monkeypatch.setattr("opendlp.entrypoints.blueprints.admin.get_email_adapter", lambda: adapter)
-    return adapter
-
-
 def _seed_user(
     fake_store: FakeStore,
     email: str,
@@ -642,7 +626,7 @@ class TestAdminDisableAccount:
         assert "login" in response.location
 
     def test_the_cancelled_session_stays_cancelled_after_re_enabling(
-        self, logged_in_admin: FlaskClient, app: Flask, fake_store: FakeStore, fake_email: FakeEmailAdapter
+        self, logged_in_admin: FlaskClient, app: Flask, fake_store: FakeStore, email_outbox: FakeEmailAdapter
     ) -> None:
         """The whole point: an attacker's browser must not come back to life."""
         victim = _seed_user(fake_store, "victim@example.com", GlobalRole.USER)
@@ -678,7 +662,7 @@ class TestAdminDisableAccount:
         assert b"Invalid email or password" in response.data
 
     def test_the_old_password_still_fails_once_the_account_is_enabled_again(
-        self, logged_in_admin: FlaskClient, app: Flask, fake_store: FakeStore, fake_email: FakeEmailAdapter
+        self, logged_in_admin: FlaskClient, app: Flask, fake_store: FakeStore, email_outbox: FakeEmailAdapter
     ) -> None:
         """With the account active again, only the destroyed password stands between them."""
         victim = _seed_user(fake_store, "victim@example.com", GlobalRole.USER)
@@ -771,15 +755,15 @@ class TestAdminEnableAccount:
             assert uow.users.get(user.id).is_active is True
 
     def test_enabling_emails_the_user_a_route_to_a_new_password(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore, fake_email: FakeEmailAdapter
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, email_outbox: FakeEmailAdapter
     ) -> None:
         user = _seed_user(fake_store, "back@example.com", GlobalRole.USER)
         logged_in_admin.post(f"/admin/users/{user.id}/disable")
 
         logged_in_admin.post(f"/admin/users/{user.id}/enable")
 
-        assert len(fake_email.sent) == 1
-        sent = fake_email.sent[0]
+        assert len(email_outbox.sent) == 1
+        sent = email_outbox.sent[0]
         assert sent["to"] == ["back@example.com"]
         assert "Re-enabled" in sent["subject"]
         # No token in the email - it points at the page that mints one
@@ -787,7 +771,7 @@ class TestAdminEnableAccount:
         assert "/auth/forgot-password" in sent["html_body"]
 
     def test_a_user_whose_2fa_was_cleared_is_told_to_set_it_up_again(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore, fake_email: FakeEmailAdapter
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, email_outbox: FakeEmailAdapter
     ) -> None:
         user = _seed_user(fake_store, "twofactor@example.com", GlobalRole.USER)
         with FakeUnitOfWork(store=fake_store) as uow:
@@ -797,22 +781,22 @@ class TestAdminEnableAccount:
 
         logged_in_admin.post(f"/admin/users/{user.id}/enable")
 
-        sent = fake_email.sent[0]
+        sent = email_outbox.sent[0]
         assert "Two-factor authentication was also switched off" in sent["text_body"]
         assert "Two-factor authentication was also switched off" in sent["html_body"]
 
     def test_a_user_who_never_had_2fa_is_not_told_about_it(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore, fake_email: FakeEmailAdapter
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, email_outbox: FakeEmailAdapter
     ) -> None:
         user = _seed_user(fake_store, "back@example.com", GlobalRole.USER)
         logged_in_admin.post(f"/admin/users/{user.id}/disable")
 
         logged_in_admin.post(f"/admin/users/{user.id}/enable")
 
-        assert "Two-factor authentication" not in fake_email.sent[0]["text_body"]
+        assert "Two-factor authentication" not in email_outbox.sent[0]["text_body"]
 
     def test_an_oauth_user_is_not_told_to_reset_a_password(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore, fake_email: FakeEmailAdapter
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, email_outbox: FakeEmailAdapter
     ) -> None:
         with FakeUnitOfWork(store=fake_store) as uow:
             oauth_user = User(
@@ -828,12 +812,13 @@ class TestAdminEnableAccount:
 
         logged_in_admin.post(f"/admin/users/{user_id}/enable")
 
-        assert "/auth/forgot-password" not in fake_email.sent[0]["text_body"]
-        assert "/auth/login" in fake_email.sent[0]["text_body"]
+        assert "/auth/forgot-password" not in email_outbox.sent[0]["text_body"]
+        assert "/auth/login" in email_outbox.sent[0]["text_body"]
 
     def test_the_admin_is_told_when_the_email_could_not_be_sent(
-        self, logged_in_admin: FlaskClient, fake_store: FakeStore, failing_email: FakeEmailAdapter
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, email_outbox: FakeEmailAdapter
     ) -> None:
+        email_outbox.succeed = False
         user = _seed_user(fake_store, "back@example.com", GlobalRole.USER, is_active=False)
 
         response = logged_in_admin.post(f"/admin/users/{user.id}/enable", follow_redirects=True)

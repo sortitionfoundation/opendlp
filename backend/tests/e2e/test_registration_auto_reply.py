@@ -2,7 +2,6 @@
 ABOUTME: Submits the public form and checks a RespondentEmailSendRecord is written"""
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import patch
 
 import pytest
 from babel.dates import format_date
@@ -179,7 +178,9 @@ def _only_record(session_factory, assembly_id):  # type: ignore[no-untyped-def]
         return records[0].create_detached_copy()
 
 
-def test_template_reply_to_is_used_for_the_send(client: FlaskClient, admin_user, postgres_session_factory) -> None:
+def test_template_reply_to_is_used_for_the_send(
+    client: FlaskClient, admin_user, postgres_session_factory, email_outbox: FakeEmailAdapter
+) -> None:
     """The page's own reply-to wins over the assembly's, and the record keeps the one used."""
     page = _build_published_page_with_auto_reply(
         postgres_session_factory,
@@ -187,9 +188,8 @@ def test_template_reply_to_is_used_for_the_send(client: FlaskClient, admin_user,
         template_reply_to_name="Page Team",
         template_reply_to_email="page-team@example.com",
     )
-    adapter = FakeEmailAdapter()
-    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
-        _submit(client, page, "ada-page-reply@example.com")
+    adapter = email_outbox
+    _submit(client, page, "ada-page-reply@example.com")
 
     assert adapter.sent[0]["reply_to"] == ("Page Team", "page-team@example.com")
     assert adapter.sent[0]["on_behalf_of"] == "Page Team"
@@ -197,12 +197,13 @@ def test_template_reply_to_is_used_for_the_send(client: FlaskClient, admin_user,
     assert record.reply_to_email == "page-team@example.com"
 
 
-def test_assembly_reply_to_is_the_fallback(client: FlaskClient, admin_user, postgres_session_factory) -> None:
+def test_assembly_reply_to_is_the_fallback(
+    client: FlaskClient, admin_user, postgres_session_factory, email_outbox: FakeEmailAdapter
+) -> None:
     """With no reply-to on the page's template, the assembly's reply-to is used."""
     page = _build_published_page_with_auto_reply(postgres_session_factory, admin_user.id)
-    adapter = FakeEmailAdapter()
-    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
-        _submit(client, page, "ada-assembly-reply@example.com")
+    adapter = email_outbox
+    _submit(client, page, "ada-assembly-reply@example.com")
 
     assert adapter.sent[0]["reply_to"] == ("The Team", "team@example.com")
     assert adapter.sent[0]["on_behalf_of"] == "The Team"
@@ -211,7 +212,7 @@ def test_assembly_reply_to_is_the_fallback(client: FlaskClient, admin_user, post
 
 
 def test_a_sole_email_question_receives_the_auto_reply(
-    client: FlaskClient, admin_user, postgres_session_factory
+    client: FlaskClient, admin_user, postgres_session_factory, email_outbox: FakeEmailAdapter
 ) -> None:
     """Without the fixed email field, the page's one question of type Email is where the
     auto-reply goes, and a form asking only for a name greets the respondent by it."""
@@ -220,12 +221,11 @@ def test_a_sole_email_question_receives_the_auto_reply(
     )
     form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
     csrf_token = get_csrf_token(client, form_url)
-    adapter = FakeEmailAdapter()
-    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
-        response = client.post(
-            form_url,
-            data={"csrf_token": csrf_token, "name": "Ada Lovelace", "contact_address": "ada-question@example.com"},
-        )
+    adapter = email_outbox
+    response = client.post(
+        form_url,
+        data={"csrf_token": csrf_token, "name": "Ada Lovelace", "contact_address": "ada-question@example.com"},
+    )
     assert response.status_code == 302
 
     assert adapter.sent[0]["to"] == ["ada-question@example.com"]
@@ -235,7 +235,7 @@ def test_a_sole_email_question_receives_the_auto_reply(
 
 
 def test_first_assembly_date_is_written_in_the_respondents_language(
-    app: Flask, client: FlaskClient, admin_user, postgres_session_factory
+    app: Flask, client: FlaskClient, admin_user, postgres_session_factory, email_outbox: FakeEmailAdapter
 ) -> None:
     """The auto-reply is sent while the respondent's request is open, so a date in it
     follows the language they registered in."""
@@ -253,25 +253,23 @@ def test_first_assembly_date_is_written_in_the_respondents_language(
     form_url = route_url(client, "registration.show_registration_form", url_slug=page.url_slug)
     client.get(f"{form_url}?lang=de")
     csrf_token = get_csrf_token(client, form_url)
-    adapter = FakeEmailAdapter()
-    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
-        response = client.post(form_url, data={"csrf_token": csrf_token, "name": "Ada", "email": "ada-de@example.com"})
+    adapter = email_outbox
+    response = client.post(form_url, data={"csrf_token": csrf_token, "name": "Ada", "email": "ada-de@example.com"})
     assert response.status_code == 302
 
     assert f"We start on {format_date(first_date, 'long', locale='de')}." in adapter.sent[0]["html_body"]
 
 
 def test_no_email_and_no_record_when_the_page_has_its_auto_reply_off(
-    client: FlaskClient, admin_user, postgres_session_factory
+    client: FlaskClient, admin_user, postgres_session_factory, email_outbox: FakeEmailAdapter
 ) -> None:
     """Someone registering through a page with its auto-reply turned off is recorded, and sent nothing."""
     page = _build_published_page_with_auto_reply(postgres_session_factory, admin_user.id)
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         set_auto_reply_enabled(uow, admin_user.id, page.id, False)
-    adapter = FakeEmailAdapter()
+    adapter = email_outbox
 
-    with patch("opendlp.entrypoints.blueprints.registration.bootstrap.get_email_adapter", return_value=adapter):
-        _submit(client, page, "ada-off@example.com")
+    _submit(client, page, "ada-off@example.com")
 
     assert adapter.sent == []
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:

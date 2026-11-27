@@ -27,7 +27,7 @@ from opendlp.feature_flags import reload_flags
 from opendlp.logging import pre_chain
 from opendlp.service_layer import security, totp_service
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from tests.fakes import FakeUnitOfWork
+from tests.fakes import FakeEmailAdapter, FakeUnitOfWork
 
 # the plugins have to be defined at the top level, even though they only apply to the BDD tests.
 # https://daobook.github.io/pytest/how-to/writing_plugins.html#requiring-loading-plugins-in-a-test-module-or-conftest-file
@@ -48,10 +48,27 @@ _REQUIRES_REDIS_DIRS = ("/tests/e2e/", "/tests/bdd/")
 # real fake-backed seam, not in tests/unit/.
 _DISGUISED_ROUTE_TEST = re.compile(r"blueprints\.[\w.]*get_flask_uow")
 
+# Boundaries that have a fake, and the ways of faking them by hand that the fake
+# replaces. Each pattern is a regex over the test file's source, paired with
+# what to use instead. Like the disguised-route check, a regex over source is
+# crude: it misses a patch built from a variable and catches a commented-out
+# line. It has still been worth having.
+_HAND_ROLLED_FAKES = (
+    (
+        re.compile(r"(patch|setattr)\([^)]*get_email_adapter"),
+        "patches get_email_adapter - use the email_outbox fixture (tests/conftest.py)",
+    ),
+    (
+        re.compile(r"\.send_email\.(return_value|side_effect|assert_\w+|call_args|called)\b|Mock\(spec=EmailAdapter"),
+        "mocks an email adapter - use FakeEmailAdapter, or the email_outbox fixture in a Flask test",
+    ),
+)
+
 
 def pytest_collection_modifyitems(config, items):
     """Auto-apply infra markers by directory and enforce test placement."""
     placement_errors = []
+    fake_errors = []
     source_cache: dict[str, str] = {}
     for item in items:
         path = str(item.path)
@@ -60,16 +77,18 @@ def pytest_collection_modifyitems(config, items):
         if any(directory in path for directory in _REQUIRES_REDIS_DIRS):
             item.add_marker(pytest.mark.requires_redis)
 
-        if "/tests/unit/" in path:
-            source = source_cache.get(path)
-            if source is None:
-                source = item.path.read_text()
-                source_cache[path] = source
-            if _DISGUISED_ROUTE_TEST.search(source):
-                placement_errors.append(
-                    f"{path}: patches a blueprint's get_flask_uow — this is a disguised route "
-                    "test and belongs in tests/component/, not tests/unit/"
-                )
+        source = source_cache.get(path)
+        if source is None:
+            source = item.path.read_text()
+            source_cache[path] = source
+            fake_errors.extend(
+                f"{path}: {message}" for pattern, message in _HAND_ROLLED_FAKES if pattern.search(source)
+            )
+        if "/tests/unit/" in path and _DISGUISED_ROUTE_TEST.search(source):
+            placement_errors.append(
+                f"{path}: patches a blueprint's get_flask_uow — this is a disguised route "
+                "test and belongs in tests/component/, not tests/unit/"
+            )
         if "/tests/component/" in path and item.get_closest_marker("db_semantics"):
             placement_errors.append(
                 f"{path}: marked db_semantics but lives in tests/component/ — db_semantics tests "
@@ -78,6 +97,10 @@ def pytest_collection_modifyitems(config, items):
 
     if placement_errors:
         raise pytest.UsageError("Test placement errors:\n" + "\n".join(sorted(set(placement_errors))))
+    if fake_errors:
+        raise pytest.UsageError(
+            "Test double errors (see Mocking Policy in docs/testing.md):\n" + "\n".join(sorted(fake_errors))
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -457,6 +480,22 @@ def restore_flask_app_state(app):
     app.config.update(saved_config)
     app.extensions.clear()
     app.extensions.update(saved_extensions)
+
+
+@pytest.fixture
+def email_outbox() -> FakeEmailAdapter:
+    """The FakeEmailAdapter that the shared component and e2e apps send through.
+
+    Assert on ``email_outbox.sent``; set ``email_outbox.succeed = False`` to
+    drive the "we could not email them" path. A test that builds its own app
+    installs it with install_email_outbox().
+    """
+    return FakeEmailAdapter()
+
+
+def install_email_outbox(app, outbox: FakeEmailAdapter) -> None:
+    """Make get_email_adapter() return ``outbox`` for requests to ``app``."""
+    app.extensions["email_adapter_factory"] = lambda: outbox
 
 
 @pytest.fixture
