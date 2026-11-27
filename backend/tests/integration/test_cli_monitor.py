@@ -1,8 +1,6 @@
 """ABOUTME: Integration tests for the `opendlp monitor` CLI subgroup
 ABOUTME: Patches run_monitoring_selection to drive each branch of run-selection"""
 
-from __future__ import annotations
-
 import uuid
 from unittest.mock import patch
 

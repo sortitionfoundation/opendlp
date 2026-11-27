@@ -1,9 +1,8 @@
 """ABOUTME: Unit of Work pattern implementation for transaction management
 ABOUTME: Coordinates repository operations within database transactions"""
 
-from __future__ import annotations
-
 import abc
+import annotationlib
 from typing import TYPE_CHECKING, Any, Self
 
 from sqlalchemy import text
@@ -250,7 +249,11 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self._close_repositories()
 
     def _close_repositories(self) -> None:
-        for name in AbstractUnitOfWork.__annotations__:
+        # Only the names are wanted. The repository types are imported under
+        # TYPE_CHECKING, so evaluating the annotations would raise NameError;
+        # the STRING format never evaluates them.
+        repository_names = annotationlib.get_annotations(AbstractUnitOfWork, format=annotationlib.Format.STRING)
+        for name in repository_names:
             setattr(self, name, ClosedRepository(name))
 
     @property

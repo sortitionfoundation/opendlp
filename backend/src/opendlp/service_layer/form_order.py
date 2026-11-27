@@ -1,8 +1,6 @@
 """ABOUTME: Shared helpers for the one ordered list of registration questions and content blocks.
 ABOUTME: Where a new item goes, and recording that the questions changed; kept apart to avoid import cycles."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 from opendlp.domain.registration_content_block import FormItem, form_items

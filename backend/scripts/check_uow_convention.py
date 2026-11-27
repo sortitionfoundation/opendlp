@@ -1,8 +1,6 @@
 """ABOUTME: Fails the build when a function handed a UnitOfWork opens its own context
 ABOUTME: Only entrypoints - the code that builds the UnitOfWork - may open `with uow:`"""
 
-from __future__ import annotations
-
 import argparse
 import ast
 import pathlib

@@ -1,8 +1,6 @@
 """ABOUTME: Replacement selection over the database: the targets still to fill, and the organiser's edits to them
 ABOUTME: Builds the review plan from the stored targets and respondent statuses, then validates the submitted numbers"""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 

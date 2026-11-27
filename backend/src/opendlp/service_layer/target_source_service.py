@@ -7,8 +7,6 @@ target, links the feeding field via ``target_category_id``, and recomputes the
 pool. ``derivation_service`` keeps owning the derivation mechanics; this module
 only composes it with the field schema and the target categories."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING

@@ -1,8 +1,6 @@
 """ABOUTME: The events and after-commit callbacks of one UnitOfWork's work in progress
 ABOUTME: Dispatches recorded events to handlers and holds callbacks until the commit succeeds"""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any
 
 import structlog

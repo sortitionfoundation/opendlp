@@ -1,8 +1,6 @@
 """ABOUTME: Service-layer orchestration for the end-to-end selection-monitoring feature
 ABOUTME: Wraps start_gsheet_select_task in a polled wrapper used by health checks, CLI, and Celery beat"""
 
-from __future__ import annotations
-
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta

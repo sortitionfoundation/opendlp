@@ -1,8 +1,6 @@
 """ABOUTME: The registry of event handlers - which functions run when each domain event is recorded
 ABOUTME: The one place to look to find out what recording an event causes"""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 from opendlp.domain import events

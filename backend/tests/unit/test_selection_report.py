@@ -1,8 +1,6 @@
 """ABOUTME: Unit tests for the selection summary report builder
 ABOUTME: Covers happy path, multi-category, deleted respondents, edge cases, and errors"""
 
-from __future__ import annotations
-
 import uuid
 from typing import TYPE_CHECKING, Any
 

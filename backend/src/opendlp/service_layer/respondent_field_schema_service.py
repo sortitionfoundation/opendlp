@@ -1,8 +1,6 @@
 """ABOUTME: Service layer for the per-assembly RespondentFieldDefinition schema and the blocks among it.
 ABOUTME: Read, populate, edit, order and initialise the questions, and add, edit and remove content blocks."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING

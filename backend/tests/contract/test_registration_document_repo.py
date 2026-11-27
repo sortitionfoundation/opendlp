@@ -1,8 +1,6 @@
 """ABOUTME: Contract tests for RegistrationDocumentRepository.
 ABOUTME: Runs against both fake and SQL backends, plus SQL-only constraint/cascade checks."""
 
-from __future__ import annotations
-
 import uuid
 from datetime import UTC, datetime
 

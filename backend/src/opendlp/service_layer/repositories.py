@@ -1,8 +1,6 @@
 """ABOUTME: Abstract repository interfaces for domain objects
 ABOUTME: Defines repository contracts to abstract database operations from business logic"""
 
-from __future__ import annotations
-
 import abc
 from typing import TYPE_CHECKING, Any
 

@@ -1,8 +1,6 @@
 """ABOUTME: Schedules and runs the automatic respondent export to Google Sheets
 ABOUTME: Debounces requests through Redis and hands the export to a Celery task"""
 
-from __future__ import annotations
-
 from functools import partial
 from typing import TYPE_CHECKING
 

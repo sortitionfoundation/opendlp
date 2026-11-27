@@ -1,8 +1,6 @@
 """ABOUTME: Service layer for the assembly results dashboard (ticket 886).
 ABOUTME: Headline respondent counts, the per-category results table, and its export."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 

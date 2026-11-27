@@ -1,8 +1,6 @@
 """ABOUTME: Contract tests for TargetCategoryRepository.
 ABOUTME: Each test runs against both fake and SQL backends to verify identical behaviour."""
 
-from __future__ import annotations
-
 import uuid
 from typing import TYPE_CHECKING
 

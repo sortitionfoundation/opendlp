@@ -5,8 +5,6 @@ The spec answers the two questions a script outside the app has to ask before it
 can write a respondent CSV: which columns does this assembly expect, and what
 values are valid in each. See docs/respondent_field_spec.md."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any
 
 from opendlp.service_layer.exceptions import AssemblyNotFoundError

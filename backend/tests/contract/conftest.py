@@ -1,8 +1,6 @@
 """ABOUTME: Shared fixtures for contract tests that run against both fake and SQL repositories.
 ABOUTME: Provides a parameterized backend abstraction so each test suite runs with both implementations."""
 
-from __future__ import annotations
-
 import uuid
 from dataclasses import dataclass
 from datetime import date, timedelta

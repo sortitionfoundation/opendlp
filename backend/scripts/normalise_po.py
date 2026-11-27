@@ -1,8 +1,6 @@
 """ABOUTME: Rewrites gettext catalogues through Babel's writer so every tool's output shares one format
 ABOUTME: Also clears fuzzy flags on request, which is how a reviewed translation is accepted"""
 
-from __future__ import annotations
-
 import argparse
 import pathlib
 import sys

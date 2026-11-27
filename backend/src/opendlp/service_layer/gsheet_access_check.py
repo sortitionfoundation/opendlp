@@ -1,8 +1,6 @@
 """ABOUTME: Checks what the service account can do with a Google Sheet, and caches the answer briefly
 ABOUTME: Reports access (ok, read-only, not shared, not found...), the title, and configured tabs that are missing"""
 
-from __future__ import annotations
-
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
