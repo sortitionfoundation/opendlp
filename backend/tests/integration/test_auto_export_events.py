@@ -3,7 +3,7 @@ ABOUTME: The export is queued once the change commits and never for a change tha
 
 import uuid
 from collections.abc import Iterator
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -14,20 +14,16 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import GSheetExportKind
 from opendlp.service_layer import respondent_auto_export
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from tests.fakes import FakeRedis
+from tests.fakes import FakeRedis, RecordingTaskRunner
 
 _SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
-_DISPATCH = "opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async"
 
 
 @pytest.fixture
-def dispatch() -> Iterator[MagicMock]:
-    """The Celery dispatch, patched out, with Redis replaced by a fresh in-memory fake."""
-    with (
-        patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()),
-        patch(_DISPATCH) as mock,
-    ):
-        yield mock
+def dispatch(task_runner: RecordingTaskRunner) -> Iterator[RecordingTaskRunner]:
+    """The task runner the export is sent to, with Redis replaced by a fresh in-memory fake."""
+    with patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()):
+        yield task_runner
 
 
 def _assembly(session_factory, *, auto_export: bool) -> uuid.UUID:
@@ -58,15 +54,16 @@ class TestRecordedEventsScheduleTheExport:
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             uow.record(event_class(assembly_id))
-            dispatch.assert_not_called()
+            assert dispatch.submitted == []
 
-        dispatch.assert_called_once()
-        assert dispatch.call_args.kwargs["kwargs"] == {"assembly_id": assembly_id}
+        assert len(dispatch.submitted) == 1
+        assert dispatch.submitted[0].kwargs == {"assembly_id": assembly_id}
 
     def test_the_change_is_committed_by_the_time_the_export_is_queued(self, postgres_session_factory, dispatch):
         assembly_id = _assembly(postgres_session_factory, auto_export=True)
         seen = []
-        dispatch.side_effect = lambda **kwargs: seen.append(_respondent_count(postgres_session_factory, assembly_id))
+
+        dispatch.on_dispatch = lambda task: seen.append(_respondent_count(postgres_session_factory, assembly_id))
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             uow.respondents.add(Respondent(assembly_id=assembly_id, external_id="R1"))
@@ -82,7 +79,7 @@ class TestRecordedEventsScheduleTheExport:
             uow.record(RespondentsChanged(assembly_id))
             raise ValueError("boom")
 
-        dispatch.assert_not_called()
+        assert dispatch.submitted == []
         assert _respondent_count(postgres_session_factory, assembly_id) == 0
 
     def test_nothing_is_queued_when_auto_export_is_off(self, postgres_session_factory, dispatch):
@@ -91,7 +88,7 @@ class TestRecordedEventsScheduleTheExport:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             uow.record(RespondentsChanged(assembly_id))
 
-        dispatch.assert_not_called()
+        assert dispatch.submitted == []
 
     def test_several_changes_in_one_block_queue_one_export(self, postgres_session_factory, dispatch):
         assembly_id = _assembly(postgres_session_factory, auto_export=True)
@@ -100,4 +97,4 @@ class TestRecordedEventsScheduleTheExport:
             uow.record(RespondentsChanged(assembly_id))
             uow.record(RespondentSchemaChanged(assembly_id))
 
-        dispatch.assert_called_once()
+        assert len(dispatch.submitted) == 1

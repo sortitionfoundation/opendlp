@@ -66,6 +66,7 @@ from opendlp.service_layer.target_service import (
     save_all_targets,
 )
 from opendlp.service_layer.target_suggestions import accept_all_suggestions, accept_suggestion
+from opendlp.service_layer.task_runner import TaskDispatchError
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
@@ -424,11 +425,22 @@ def _start_rerun(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, run: Selection
         flash(_("Please review and save the selection settings before running selection"), "warning")
         return None
     try:
-        task_id: uuid.UUID = start_db_select_task(uow, current_user.id, assembly_id, test_selection=_is_test_run(run))
+        task_id: uuid.UUID = start_db_select_task(
+            uow,
+            current_user.id,
+            assembly_id,
+            test_selection=_is_test_run(run),
+            task_runner=bootstrap.get_task_runner(),
+        )
     except InvalidSelection as e:
         # SelectionAlreadyRunning is an InvalidSelection too. Both are raised before
         # the run record is written, so the session is clean and the targets commit.
         flash(_("Could not start selection task: %(error)s", error=str(e)), "error")
+        return None
+    except TaskDispatchError as e:
+        # The run record and the target changes are committed, and the record
+        # is marked failed, so there is nothing to roll back.
+        flash(e.user_msg(), "error")
         return None
     return task_id
 

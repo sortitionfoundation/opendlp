@@ -1,5 +1,5 @@
 # ABOUTME: Unit tests for scheduling and running the automatic respondent export
-# ABOUTME: Fake UnitOfWork, an in-memory Redis stand-in and a patched Celery dispatch
+# ABOUTME: Fake UnitOfWork, an in-memory Redis stand-in and the recording task runner
 
 import uuid
 from unittest.mock import patch
@@ -21,10 +21,9 @@ from opendlp.service_layer.respondent_auto_export import (
     run_auto_export,
     schedule_auto_export,
 )
-from tests.fakes import FakeGSheetExportTarget, FakeRedis, FakeStore, FakeUnitOfWork
+from tests.fakes import FakeGSheetExportTarget, FakeRedis, FakeStore, FakeUnitOfWork, SubmittedTask
 
 _SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
-_DISPATCH = "opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async"
 
 
 class _BrokenRedis:
@@ -53,13 +52,10 @@ def _add_respondent(uow: FakeUnitOfWork, assembly: Assembly, external_id: str, s
 
 
 @pytest.fixture
-def scheduling():
-    """Redis replaced by a fresh in-memory fake and the Celery dispatch patched out; yields the dispatch."""
-    with (
-        patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()),
-        patch(_DISPATCH) as dispatch,
-    ):
-        yield dispatch
+def scheduling(task_runner):
+    """Redis replaced by a fresh in-memory fake; yields the task runner the export is sent to."""
+    with patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()):
+        yield task_runner
 
 
 class TestHandleRespondentsChanged:
@@ -69,118 +65,125 @@ class TestHandleRespondentsChanged:
     def test_schedules_the_export_once_the_work_commits(self, uow, scheduling, event_class):
         assembly = _assembly_with_config(uow, auto_export=True)
 
-        handle_respondents_changed(event_class(assembly.id), uow)
+        handle_respondents_changed(event_class(assembly.id), uow, task_runner=scheduling)
 
-        scheduling.assert_not_called()
+        assert scheduling.submitted == []
         uow.commit()
-        scheduling.assert_called_once()
-        assert scheduling.call_args.kwargs["kwargs"] == {"assembly_id": assembly.id}
+        assert len(scheduling.submitted) == 1
+        assert scheduling.submitted[0].kwargs == {"assembly_id": assembly.id}
 
     def test_schedules_nothing_when_the_work_rolls_back(self, scheduling):
         uow = FakeUnitOfWork(FakeStore())
         with uow:
             assembly = _assembly_with_config(uow, auto_export=True)
             uow.commit()
-            handle_respondents_changed(RespondentsChanged(assembly.id), uow)
+            handle_respondents_changed(RespondentsChanged(assembly.id), uow, task_runner=scheduling)
             uow.rollback()
             uow.commit()
 
-        scheduling.assert_not_called()
+        assert scheduling.submitted == []
 
     def test_no_config_schedules_nothing(self, uow, scheduling):
         assembly = Assembly(title="Test Assembly")
         uow.assemblies.add(assembly)
 
-        handle_respondents_changed(RespondentsChanged(assembly.id), uow)
+        handle_respondents_changed(RespondentsChanged(assembly.id), uow, task_runner=scheduling)
         uow.commit()
 
-        scheduling.assert_not_called()
+        assert scheduling.submitted == []
 
     def test_auto_export_off_schedules_nothing(self, uow, scheduling):
         assembly = _assembly_with_config(uow, auto_export=False)
 
-        handle_respondents_changed(RespondentsChanged(assembly.id), uow)
+        handle_respondents_changed(RespondentsChanged(assembly.id), uow, task_runner=scheduling)
         uow.commit()
 
-        scheduling.assert_not_called()
+        assert scheduling.submitted == []
 
     def test_several_changes_in_one_unit_of_work_schedule_one_export(self, uow, scheduling):
         assembly = _assembly_with_config(uow, auto_export=True)
 
-        handle_respondents_changed(RespondentsChanged(assembly.id), uow)
-        handle_respondents_changed(RespondentSchemaChanged(assembly.id), uow)
+        handle_respondents_changed(RespondentsChanged(assembly.id), uow, task_runner=scheduling)
+        handle_respondents_changed(RespondentSchemaChanged(assembly.id), uow, task_runner=scheduling)
         uow.commit()
 
-        scheduling.assert_called_once()
+        assert len(scheduling.submitted) == 1
 
     @pytest.mark.parametrize("event_class", [RespondentsChanged, RespondentSchemaChanged])
-    def test_is_registered_for_the_event(self, event_class):
-        assert handlers.EVENT_HANDLERS[event_class] == [handle_respondents_changed]
+    def test_is_registered_for_the_event(self, task_runner, event_class):
+        (handler,) = handlers.build_event_handlers(task_runner)[event_class]
+        assert handler.func is handle_respondents_changed
+        assert handler.keywords == {"task_runner": task_runner}
 
     def test_recording_the_event_with_the_application_handlers_schedules_the_export(self, scheduling):
-        uow = FakeUnitOfWork(event_handlers=handlers.EVENT_HANDLERS)
+        uow = FakeUnitOfWork(event_handlers=handlers.build_event_handlers(scheduling))
 
         with uow:
             assembly = _assembly_with_config(uow, auto_export=True)
             uow.record(RespondentsChanged(assembly.id))
-            scheduling.assert_not_called()
+            assert scheduling.submitted == []
 
-        scheduling.assert_called_once()
+        assert len(scheduling.submitted) == 1
 
 
 class TestScheduleAutoExport:
-    def test_queues_the_task_with_a_delay_and_marks_it_pending(self):
+    def test_queues_the_task_with_a_delay_and_marks_it_pending(self, task_runner):
         assembly_id = uuid.uuid4()
         redis = FakeRedis()
 
-        with patch(_DISPATCH) as dispatch:
-            assert schedule_auto_export(assembly_id, redis_client=redis) is True
+        assert schedule_auto_export(assembly_id, task_runner, redis_client=redis) is True
 
-        dispatch.assert_called_once_with(kwargs={"assembly_id": assembly_id}, countdown=AUTO_EXPORT_DELAY_SECONDS)
+        assert task_runner.submitted == [
+            SubmittedTask(
+                name="auto_export_respondents",
+                kwargs={"assembly_id": assembly_id},
+                options={"countdown": AUTO_EXPORT_DELAY_SECONDS},
+            )
+        ]
         assert redis.get(pending_key(assembly_id)) is not None
 
-    def test_a_second_request_while_one_is_pending_queues_nothing(self):
+    def test_a_second_request_while_one_is_pending_queues_nothing(self, task_runner):
         assembly_id = uuid.uuid4()
         redis = FakeRedis()
 
-        with patch(_DISPATCH) as dispatch:
-            schedule_auto_export(assembly_id, redis_client=redis)
-            assert schedule_auto_export(assembly_id, redis_client=redis) is False
+        schedule_auto_export(assembly_id, task_runner, redis_client=redis)
+        assert schedule_auto_export(assembly_id, task_runner, redis_client=redis) is False
 
-        dispatch.assert_called_once()
+        assert len(task_runner.submitted) == 1
 
-    def test_assemblies_are_debounced_separately(self):
+    def test_assemblies_are_debounced_separately(self, task_runner):
         redis = FakeRedis()
 
-        with patch(_DISPATCH) as dispatch:
-            schedule_auto_export(uuid.uuid4(), redis_client=redis)
-            schedule_auto_export(uuid.uuid4(), redis_client=redis)
+        schedule_auto_export(uuid.uuid4(), task_runner, redis_client=redis)
+        schedule_auto_export(uuid.uuid4(), task_runner, redis_client=redis)
 
-        assert dispatch.call_count == 2
+        assert len(task_runner.submitted) == 2
 
-    def test_redis_failure_is_logged_and_swallowed(self):
-        with patch(_DISPATCH) as dispatch, structlog.testing.capture_logs() as logs:
-            assert schedule_auto_export(uuid.uuid4(), redis_client=_BrokenRedis()) is False
+    def test_redis_failure_is_logged_and_swallowed(self, task_runner):
+        with structlog.testing.capture_logs() as logs:
+            assert schedule_auto_export(uuid.uuid4(), task_runner, redis_client=_BrokenRedis()) is False
 
-        dispatch.assert_not_called()
+        assert task_runner.submitted == []
         assert [(log["event"], log["error"]) for log in logs] == [
             ("Could not schedule automatic export", "redis is down")
         ]
 
-    def test_broker_failure_is_logged_and_swallowed(self):
-        with patch(_DISPATCH, side_effect=OSError("broker unreachable")), structlog.testing.capture_logs() as logs:
-            assert schedule_auto_export(uuid.uuid4(), redis_client=FakeRedis()) is False
+    def test_broker_failure_is_logged_and_swallowed(self, task_runner):
+        task_runner.fail_dispatch = OSError("broker unreachable")
+
+        with structlog.testing.capture_logs() as logs:
+            assert schedule_auto_export(uuid.uuid4(), task_runner, redis_client=FakeRedis()) is False
 
         assert [(log["event"], log["error"]) for log in logs] == [
             ("Could not schedule automatic export", "broker unreachable")
         ]
 
-    def test_uses_the_configured_redis_when_none_is_given(self):
+    def test_uses_the_configured_redis_when_none_is_given(self, task_runner):
         assembly_id = uuid.uuid4()
         redis = FakeRedis()
 
-        with patch.object(respondent_auto_export, "_get_redis", return_value=redis), patch(_DISPATCH):
-            assert schedule_auto_export(assembly_id) is True
+        with patch.object(respondent_auto_export, "_get_redis", return_value=redis):
+            assert schedule_auto_export(assembly_id, task_runner) is True
 
         assert redis.get(pending_key(assembly_id)) is not None
 

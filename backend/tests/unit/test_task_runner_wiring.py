@@ -7,7 +7,9 @@ import uuid
 import pytest
 
 from opendlp import bootstrap
+from opendlp.domain import events
 from opendlp.entrypoints.celery.runner import CeleryTaskRunner
+from opendlp.service_layer import handlers, respondent_auto_export
 from opendlp.service_layer.task_runner import TaskStatus
 from tests.fakes import RecordingTaskRunner, SubmittedTask
 
@@ -30,6 +32,22 @@ class TestProcessTaskRunner:
         bootstrap.set_task_runner(other)
 
         assert bootstrap.get_task_runner() is other
+
+
+class TestEventHandlersGetTheRunner:
+    @pytest.mark.parametrize("event_class", [events.RespondentsChanged, events.RespondentSchemaChanged])
+    def test_each_handler_is_given_the_runner(self, event_class):
+        runner = RecordingTaskRunner()
+
+        (handler,) = handlers.build_event_handlers(runner)[event_class]
+
+        assert handler.func is respondent_auto_export.handle_respondents_changed
+        assert handler.keywords == {"task_runner": runner}
+
+    def test_the_default_handlers_use_the_process_runner(self, task_runner):
+        (handler,) = bootstrap.default_event_handlers()[events.RespondentsChanged]
+
+        assert handler.keywords == {"task_runner": task_runner}
 
 
 class TestRecordingTaskRunner:

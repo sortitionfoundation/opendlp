@@ -11,8 +11,8 @@ import pytest
 import structlog
 from sqlalchemy.orm import Session, sessionmaker
 
+from opendlp import bootstrap
 from opendlp.domain.events import Event, RespondentsChanged, RespondentSchemaChanged
-from opendlp.service_layer import handlers
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork, UnitOfWorkError
 from opendlp.service_layer.unit_of_work_events import MAX_EVENT_CHAIN_DEPTH, EventChainError, UnitOfWorkEvents
 from tests.fakes import FakeUnitOfWork
@@ -111,9 +111,11 @@ class TestUnitOfWorkEvents:
             events.record(Ping(), object())
         events.record(RespondentsChanged(uuid.uuid4()), object())
 
-    def test_with_no_handlers_given_the_application_registry_is_used(self, monkeypatch):
+    def test_with_no_handlers_given_the_application_handlers_are_used(self, monkeypatch):
         calls = []
-        monkeypatch.setitem(handlers.EVENT_HANDLERS, Ping, [lambda event, uow: calls.append(event)])
+        monkeypatch.setattr(
+            bootstrap, "default_event_handlers", lambda: {Ping: [lambda event, uow: calls.append(event)]}
+        )
 
         UnitOfWorkEvents().record(Ping(), object())
 
@@ -257,7 +259,9 @@ class TestRecord:
 
     def test_the_fake_runs_no_handlers_unless_given_some(self, monkeypatch):
         calls = []
-        monkeypatch.setitem(handlers.EVENT_HANDLERS, Ping, [lambda event, uow: calls.append(event)])
+        monkeypatch.setattr(
+            bootstrap, "default_event_handlers", lambda: {Ping: [lambda event, uow: calls.append(event)]}
+        )
         uow = FakeUnitOfWork()
 
         with uow:
@@ -265,9 +269,11 @@ class TestRecord:
 
         assert calls == []
 
-    def test_the_real_unit_of_work_uses_the_application_registry_by_default(self, monkeypatch):
+    def test_the_real_unit_of_work_uses_the_application_handlers_by_default(self, monkeypatch):
         calls = []
-        monkeypatch.setitem(handlers.EVENT_HANDLERS, Ping, [lambda event, uow: calls.append(event)])
+        monkeypatch.setattr(
+            bootstrap, "default_event_handlers", lambda: {Ping: [lambda event, uow: calls.append(event)]}
+        )
         uow, _session = _sql_uow()
 
         with uow:

@@ -47,6 +47,7 @@ from opendlp.service_layer.sortition import (
     start_db_replace_task,
     start_db_select_task,
 )
+from opendlp.service_layer.task_runner import TaskDispatchError
 from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
 from opendlp.translations import gettext as _
 
@@ -71,7 +72,9 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 flash(_("Please review and save the selection settings before running selection"), "warning")
                 return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id, settings=1))
 
-            task_id = start_db_select_task(uow, current_user.id, assembly_id, test_selection=test_mode)
+            task_id = start_db_select_task(
+                uow, current_user.id, assembly_id, test_selection=test_mode, task_runner=bootstrap.get_task_runner()
+            )
 
         return redirect(
             url_for(
@@ -92,6 +95,9 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions:
         flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
+    except TaskDispatchError as e:
+        flash(e.user_msg(), "error")
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Error starting DB selection", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the selection task"), "error")
@@ -131,6 +137,7 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     validation.number_to_select,
                     validation.targets_snapshot,
                     plan.replacement_info(validation.number_to_select, validation.edited),
+                    task_runner=bootstrap.get_task_runner(),
                 )
 
         if task_id is None:
@@ -156,6 +163,9 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions:
         flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
+    except TaskDispatchError as e:
+        flash(e.user_msg(), "error")
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Error starting DB replacement selection", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the replacement selection"), "error")
@@ -173,10 +183,10 @@ def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
             # Check task health
-            check_and_update_task_health(uow, run_id)
+            check_and_update_task_health(uow, run_id, task_runner=bootstrap.get_task_runner())
 
             # Get run status
-            result = get_selection_run_status(uow, run_id)
+            result = get_selection_run_status(uow, run_id, task_runner=bootstrap.get_task_runner())
 
             if result.run_record is None:
                 return "", 404
@@ -224,7 +234,7 @@ def cancel_db_selection(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRe
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            cancel_task(uow, current_user.id, assembly_id, run_id)
+            cancel_task(uow, current_user.id, assembly_id, run_id, task_runner=bootstrap.get_task_runner())
 
         flash(_("Task cancelled"), "info")
         return redirect(

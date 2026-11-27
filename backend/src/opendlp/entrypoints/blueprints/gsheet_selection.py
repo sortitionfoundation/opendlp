@@ -36,6 +36,7 @@ from opendlp.service_layer.sortition import (
     start_gsheet_replace_task,
     start_gsheet_select_task,
 )
+from opendlp.service_layer.task_runner import TaskDispatchError
 from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
 from opendlp.translations import gettext as _
 
@@ -55,10 +56,10 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
             # Check task health
-            check_and_update_task_health(uow, run_id)
+            check_and_update_task_health(uow, run_id, task_runner=bootstrap.get_task_runner())
 
             # Get run status
-            result = get_selection_run_status(uow, run_id)
+            result = get_selection_run_status(uow, run_id, task_runner=bootstrap.get_task_runner())
             run_names = name_history(uow.selection_run_records.get_history_summaries(assembly_id)).names
 
         if result.run_record is None:
@@ -104,10 +105,10 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
             # Check task health
-            check_and_update_task_health(uow, run_id)
+            check_and_update_task_health(uow, run_id, task_runner=bootstrap.get_task_runner())
 
             # Get run status
-            result = get_selection_run_status(uow, run_id)
+            result = get_selection_run_status(uow, run_id, task_runner=bootstrap.get_task_runner())
             run_names = name_history(uow.selection_run_records.get_history_summaries(assembly_id)).names
 
         if result.run_record is None:
@@ -162,7 +163,7 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            task_id = start_gsheet_load_task(uow, current_user.id, assembly_id)
+            task_id = start_gsheet_load_task(uow, current_user.id, assembly_id, task_runner=bootstrap.get_task_runner())
 
         return redirect(
             url_for(
@@ -178,6 +179,9 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for load task", error=str(e))
         flash(_("You don't have permission to run selection"), "error")
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
+    except TaskDispatchError as e:
+        flash(e.user_msg(), "error")
         return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Start selection load error", error=str(e))
@@ -196,7 +200,9 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         uow = bootstrap.get_flask_uow()
         with uow:
-            task_id = start_gsheet_select_task(uow, current_user.id, assembly_id, test_selection=test_mode)
+            task_id = start_gsheet_select_task(
+                uow, current_user.id, assembly_id, test_selection=test_mode, task_runner=bootstrap.get_task_runner()
+            )
 
         return redirect(
             url_for(
@@ -215,6 +221,9 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning("Insufficient permissions for selection task", error=str(e))
         flash(_("You don't have permission to run selection"), "error")
         return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
+    except TaskDispatchError as e:
+        flash(e.user_msg(), "error")
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Start selection run error", error=str(e))
         flash(_("An error occurred while starting the selection task"), "error")
@@ -229,7 +238,7 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            cancel_task(uow, current_user.id, assembly_id, run_id)
+            cancel_task(uow, current_user.id, assembly_id, run_id, task_runner=bootstrap.get_task_runner())
 
         flash(_("Task cancelled"), "info")
         return redirect(
@@ -268,7 +277,9 @@ def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=True)
+            task_id = start_gsheet_manage_tabs_task(
+                uow, current_user.id, assembly_id, dry_run=True, task_runner=bootstrap.get_task_runner()
+            )
 
         return redirect(
             url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
@@ -280,6 +291,9 @@ def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for manage tabs list", error=str(e))
         flash(_("You don't have permission to manage tabs"), "error")
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
+    except TaskDispatchError as e:
+        flash(e.user_msg(), "error")
         return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Start manage tabs list error", error=str(e))
@@ -295,7 +309,9 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            task_id = start_gsheet_manage_tabs_task(uow, current_user.id, assembly_id, dry_run=False)
+            task_id = start_gsheet_manage_tabs_task(
+                uow, current_user.id, assembly_id, dry_run=False, task_runner=bootstrap.get_task_runner()
+            )
 
         return redirect(
             url_for("selection.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
@@ -309,6 +325,9 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for manage tabs delete", error=str(e))
         flash(_("You don't have permission to manage tabs"), "error")
+        return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
+    except TaskDispatchError as e:
+        flash(e.user_msg(), "error")
         return redirect(url_for("selection.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
         logger.exception("Start manage tabs delete error", error=str(e))
@@ -328,10 +347,10 @@ def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
             # Check task health
-            check_and_update_task_health(uow, run_id)
+            check_and_update_task_health(uow, run_id, task_runner=bootstrap.get_task_runner())
 
             # Get run status
-            result = get_selection_run_status(uow, run_id)
+            result = get_selection_run_status(uow, run_id, task_runner=bootstrap.get_task_runner())
 
         if result.run_record is None:
             return "", 404
@@ -376,7 +395,7 @@ def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRet
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            cancel_task(uow, current_user.id, assembly_id, run_id)
+            cancel_task(uow, current_user.id, assembly_id, run_id, task_runner=bootstrap.get_task_runner())
 
         flash(_("Task cancelled"), "info")
         return redirect(
@@ -415,7 +434,9 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            task_id = start_gsheet_replace_load_task(uow, current_user.id, assembly_id)
+            task_id = start_gsheet_replace_load_task(
+                uow, current_user.id, assembly_id, task_runner=bootstrap.get_task_runner()
+            )
 
         return redirect(
             url_for("selection.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=task_id)
@@ -441,6 +462,9 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
+    except TaskDispatchError as e:
+        flash(e.user_msg(), "error")
+        return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
     except Exception as e:
         logger.error("Error starting replacement load for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the loading task"), "error")
@@ -473,7 +497,9 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         uow = bootstrap.get_flask_uow()
         with uow:
-            task_id = start_gsheet_replace_task(uow, current_user.id, assembly_id, number_to_select)
+            task_id = start_gsheet_replace_task(
+                uow, current_user.id, assembly_id, number_to_select, task_runner=bootstrap.get_task_runner()
+            )
 
         return redirect(
             url_for(
@@ -504,6 +530,9 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("You don't have permission to manage this project"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
+    except TaskDispatchError as e:
+        flash(e.user_msg(), "error")
+        return redirect(url_for("selection.view_assembly_replacement", assembly_id=assembly_id))
     except Exception as e:
         logger.error("Error starting replacement for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the replacement task"), "error")
@@ -518,7 +547,7 @@ def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            cancel_task(uow, current_user.id, assembly_id, run_id)
+            cancel_task(uow, current_user.id, assembly_id, run_id, task_runner=bootstrap.get_task_runner())
 
         flash(_("Task has been cancelled"), "success")
         return redirect(url_for("selection.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))

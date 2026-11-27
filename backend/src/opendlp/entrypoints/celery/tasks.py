@@ -33,19 +33,21 @@ from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
 from opendlp.adapters.sortition_progress import DatabaseProgressReporter
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, ExportTargetError
-from opendlp.bootstrap import bootstrap
+from opendlp.bootstrap import bootstrap, get_task_runner
 from opendlp.config import RedisCfg
 from opendlp.domain.events import RespondentsChanged
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
-from opendlp.service_layer import password_reset_service
+from opendlp.service_layer import password_reset_service, respondent_auto_export
 from opendlp.service_layer.error_translation import (
     translate_not_native_gsheet,
     translate_sortition_error,
     translate_sortition_error_to_html,
 )
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
+from opendlp.service_layer.monitoring import run_monitoring_selection
+from opendlp.service_layer.sortition import check_and_update_task_health
 from opendlp.service_layer.writing_guard import unfinished_writing_runs
 from opendlp.translations import gettext as _
 from opendlp.translations import ngettext
@@ -1051,14 +1053,11 @@ def auto_export_respondents(
     key before reading, so a change that lands mid-export schedules a follow-up
     rather than being lost. Returns whether a write happened.
     """
-    # Imported here because respondent_auto_export dispatches this task.
-    from opendlp.service_layer import respondent_auto_export  # noqa: PLC0415
-
     r = redis_client or RedisCfg.from_env().create_client()
     lock = r.lock(respondent_auto_export.lock_key(assembly_id), timeout=respondent_auto_export.LOCK_TIMEOUT_SECONDS)
     if not lock.acquire(blocking=False):
         r.delete(respondent_auto_export.pending_key(assembly_id))
-        respondent_auto_export.schedule_auto_export(assembly_id, redis_client=r)
+        respondent_auto_export.schedule_auto_export(assembly_id, get_task_runner(), redis_client=r)
         return False
     try:
         r.delete(respondent_auto_export.pending_key(assembly_id))
@@ -1246,9 +1245,6 @@ def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[
     Returns:
         Dict with counts: {'checked': int, 'marked_failed': int, 'errors': int}
     """
-    # Import here to avoid circular import (sortition.py imports from tasks.py)
-    from opendlp.service_layer.sortition import check_and_update_task_health  # noqa: PLC0415
-
     checked = 0
     marked_failed = 0
     errors = 0
@@ -1267,7 +1263,7 @@ def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[
                     status_before = record.status
 
                     # Check and update task health (will mark as FAILED if needed)
-                    check_and_update_task_health(uow, record.task_id)
+                    check_and_update_task_health(uow, record.task_id, task_runner=get_task_runner())
                     checked += 1
 
                     # Reload record to see if it was updated
@@ -1298,10 +1294,8 @@ def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[
 @app.task
 def monitor_selection_periodic(session_factory: sessionmaker | None = None) -> dict[str, Any]:
     """Periodic heartbeat — run one full monitor selection (every 15 minutes)."""
-    from opendlp.service_layer.monitoring import run_monitoring_selection  # noqa: PLC0415
-
     with bootstrap(session_factory=session_factory) as uow:
-        result = run_monitoring_selection(uow)
+        result = run_monitoring_selection(uow, get_task_runner())
 
     logger.info(
         "monitor selection completed: success=%s, message=%s",

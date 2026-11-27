@@ -3,7 +3,7 @@
 
 from collections.abc import Iterator
 from datetime import date
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -48,20 +48,16 @@ from opendlp.service_layer.respondent_service import (
     transition_respondent_status,
     update_respondent,
 )
-from tests.fakes import FakeRedis, FakeUnitOfWork
+from tests.fakes import FakeRedis, FakeUnitOfWork, RecordingTaskRunner
 
 _SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
-_DISPATCH = "opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async"
 
 
 @pytest.fixture
-def dispatch() -> Iterator[MagicMock]:
-    """The Celery dispatch, patched out, with Redis replaced by a fresh in-memory fake."""
-    with (
-        patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()),
-        patch(_DISPATCH) as mock,
-    ):
-        yield mock
+def dispatch(task_runner: RecordingTaskRunner) -> Iterator[RecordingTaskRunner]:
+    """The task runner the export is sent to, with Redis replaced by a fresh in-memory fake."""
+    with patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()):
+        yield task_runner
 
 
 def _seed(uow: FakeUnitOfWork, *, with_fixed_schema: bool = False) -> tuple[User, Assembly]:
@@ -276,18 +272,18 @@ class TestRecordedEventsReachTheExport:
     """One service end to end with the application's handlers; the handler itself is tested on its own."""
 
     def test_a_respondent_change_schedules_the_export_once_committed(self, dispatch):
-        with FakeUnitOfWork(event_handlers=handlers.EVENT_HANDLERS) as uow:
+        with FakeUnitOfWork(event_handlers=handlers.build_event_handlers(dispatch)) as uow:
             user, assembly = _seed(uow)
 
             create_respondent(uow, user.id, assembly.id, "R1", {})
 
-            dispatch.assert_not_called()
+            assert dispatch.submitted == []
             uow.commit()
 
-        dispatch.assert_called_once()
+        assert len(dispatch.submitted) == 1
 
     def test_a_respondent_change_on_an_assembly_without_auto_export_schedules_nothing(self, dispatch):
-        with FakeUnitOfWork(event_handlers=handlers.EVENT_HANDLERS) as uow:
+        with FakeUnitOfWork(event_handlers=handlers.build_event_handlers(dispatch)) as uow:
             user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
             uow.users.add(user)
             assembly = Assembly(title="No auto export")
@@ -295,4 +291,4 @@ class TestRecordedEventsReachTheExport:
 
             create_respondent(uow, user.id, assembly.id, "R1", {})
 
-        dispatch.assert_not_called()
+        assert dispatch.submitted == []

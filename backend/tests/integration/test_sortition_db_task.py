@@ -244,7 +244,7 @@ class TestInternalWriteDbResults:
             assert record.remaining_ids is not None
             assert len(record.remaining_ids) == 2
 
-    def test_writing_results_requests_an_auto_export(self, postgres_session_factory, assembly_with_data):
+    def test_writing_results_requests_an_auto_export(self, postgres_session_factory, assembly_with_data, task_runner):
         """Marking respondents selected is a change the auto-export must pick up."""
         assembly_id = assembly_with_data
         task_id = _make_run_record(assembly_id, postgres_session_factory)
@@ -259,10 +259,7 @@ class TestInternalWriteDbResults:
             )
             uow.commit()
 
-        with (
-            patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()),
-            patch("opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async") as dispatch,
-        ):
+        with patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()):
             _internal_write_db_results(
                 task_id=task_id,
                 assembly_id=assembly_id,
@@ -271,8 +268,9 @@ class TestInternalWriteDbResults:
                 session_factory=postgres_session_factory,
             )
 
-        dispatch.assert_called_once()
-        assert dispatch.call_args.kwargs["kwargs"] == {"assembly_id": assembly_id}
+        assert [task.kwargs for task in task_runner.submitted_named("auto_export_respondents")] == [
+            {"assembly_id": assembly_id}
+        ]
 
 
 class TestGenerateSelectionCsvs:

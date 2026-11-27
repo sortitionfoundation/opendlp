@@ -23,7 +23,8 @@ from opendlp.service_layer.monitoring import (
     get_latest_monitor_run,
     run_monitoring_selection,
 )
-from tests.fakes import FakeUnitOfWork
+from opendlp.service_layer.task_runner import TaskDispatchError, TaskStatus
+from tests.fakes import FakeUnitOfWork, RecordingTaskRunner
 
 
 class _FakeClock:
@@ -49,7 +50,7 @@ def _make_record(assembly_id: uuid.UUID, status: SelectionRunStatus) -> Selectio
 
 
 class TestNotConfigured:
-    def test_returns_not_configured_when_assembly_id_missing(self, clear_env_vars):
+    def test_returns_not_configured_when_assembly_id_missing(self, task_runner, clear_env_vars):
         clear_env_vars("MONITOR_ASSEMBLY_ID", "MONITOR_USER_ID")
 
         select_calls: list[tuple] = []
@@ -65,6 +66,7 @@ class TestNotConfigured:
 
         result = run_monitoring_selection(
             FakeUnitOfWork(),
+            task_runner,
             start_select_fn=spy_select,
             start_cleanup_fn=spy_cleanup,
         )
@@ -76,18 +78,18 @@ class TestNotConfigured:
         assert select_calls == []
         assert cleanup_calls == []
 
-    def test_returns_not_configured_when_only_user_id_missing(self, temp_env_vars, clear_env_vars):
+    def test_returns_not_configured_when_only_user_id_missing(self, task_runner, temp_env_vars, clear_env_vars):
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(uuid.uuid4()))
         clear_env_vars("MONITOR_USER_ID")
 
-        result = run_monitoring_selection(FakeUnitOfWork())
+        result = run_monitoring_selection(FakeUnitOfWork(), task_runner)
 
         assert result.success is False
         assert result.not_configured is True
 
 
 class TestHappyPath:
-    def test_dispatches_select_polls_and_runs_cleanup(self, uow, temp_env_vars):
+    def test_dispatches_select_polls_and_runs_cleanup(self, task_runner, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         user_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(user_id))
@@ -112,7 +114,7 @@ class TestHappyPath:
             cleanup_calls.append({"user_id": user_arg, "assembly_id": assembly_arg, **kwargs})
             return uuid.uuid4()
 
-        def spy_health(uow_arg: Any, task_id: uuid.UUID) -> None:
+        def spy_health(uow_arg: Any, task_id: uuid.UUID, **kwargs: Any) -> None:
             return None
 
         def spy_sleep(seconds: float) -> None:
@@ -127,6 +129,7 @@ class TestHappyPath:
 
         result = run_monitoring_selection(
             uow,
+            task_runner,
             start_select_fn=spy_select,
             start_cleanup_fn=spy_cleanup,
             health_check_fn=spy_health,
@@ -136,7 +139,9 @@ class TestHappyPath:
         )
 
         assert len(select_calls) == 1
-        assert select_calls[0].get("celery_apply_kwargs") == {"time_limit": 300, "soft_time_limit": 270}
+        assert select_calls[0]["time_limit"] == 300
+        assert select_calls[0]["soft_time_limit"] == 270
+        assert select_calls[0]["task_runner"] is task_runner
 
         assert result.success is True
         assert result.task_id is not None
@@ -145,10 +150,11 @@ class TestHappyPath:
         assert len(cleanup_calls) == 1
         assert cleanup_calls[0]["dry_run"] is False
         assert cleanup_calls[0]["assembly_id"] == assembly_id
+        assert cleanup_calls[0]["task_runner"] is task_runner
 
 
 class TestWrapperTimeout:
-    def test_returns_timeout_when_record_never_finishes(self, uow, temp_env_vars):
+    def test_returns_timeout_when_record_never_finishes(self, task_runner, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         user_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(user_id))
@@ -166,12 +172,13 @@ class TestWrapperTimeout:
             cleanup_calls.append((args, kwargs))
             return uuid.uuid4()
 
-        def spy_health(uow_arg: Any, task_id: uuid.UUID) -> None:
+        def spy_health(uow_arg: Any, task_id: uuid.UUID, **kwargs: Any) -> None:
             health_calls.append(task_id)
 
         # Record stays RUNNING forever — no sleep_fn hook needed to mutate state.
         result = run_monitoring_selection(
             uow,
+            task_runner,
             start_select_fn=spy_select,
             start_cleanup_fn=spy_cleanup,
             health_check_fn=spy_health,
@@ -192,7 +199,7 @@ class TestServiceFunctionExceptions:
         "exc_cls",
         [AssemblyNotFoundError, GoogleSheetConfigNotFoundError, InvalidSelection, InsufficientPermissions],
     )
-    def test_typed_exceptions_become_failure_results(self, temp_env_vars, exc_cls):
+    def test_typed_exceptions_become_failure_results(self, task_runner, temp_env_vars, exc_cls):
         assembly_id = uuid.uuid4()
         user_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(user_id))
@@ -205,12 +212,36 @@ class TestServiceFunctionExceptions:
 
         result = run_monitoring_selection(
             FakeUnitOfWork(),
+            task_runner,
             start_select_fn=bad_select,
             start_cleanup_fn=spy_cleanup,
         )
 
         assert result.success is False
         assert exc_cls.__name__ in result.message
+
+    def test_a_task_that_could_not_be_sent_becomes_a_failure_result(self, task_runner, temp_env_vars):
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(uuid.uuid4()), MONITOR_USER_ID=str(uuid.uuid4()))
+
+        def undispatchable_select(*args: Any, **kwargs: Any) -> uuid.UUID:
+            raise TaskDispatchError()
+
+        result = run_monitoring_selection(
+            FakeUnitOfWork(),
+            task_runner,
+            start_select_fn=undispatchable_select,
+            start_cleanup_fn=lambda *args, **kwargs: uuid.uuid4(),
+        )
+
+        assert result.success is False
+        assert "TaskDispatchError" in result.message
+
+
+class _NoStatusTaskRunner(RecordingTaskRunner):
+    """A task runner that fails the test if anything asks it for a task's status."""
+
+    def status(self, celery_task_id: str) -> TaskStatus:
+        raise AssertionError("monitor must not ask the task backend for a status")
 
 
 class TestPollLoopAvoidsCeleryResultBackend:
@@ -238,24 +269,19 @@ class TestPollLoopAvoidsCeleryResultBackend:
         def spy_cleanup(*args: Any, **kwargs: Any) -> uuid.UUID:
             return uuid.uuid4()
 
-        def spy_health(uow_arg: Any, task_id: uuid.UUID) -> None:
+        def spy_health(uow_arg: Any, task_id: uuid.UUID, **kwargs: Any) -> None:
             return None
 
         # If the poll path ever reaches for the Celery result backend or
         # get_selection_run_status, these patches fail the test instead of
         # letting the regression slip through silently.
-        with (
-            patch(
-                "opendlp.service_layer.sortition.app.app.AsyncResult",
-                side_effect=AssertionError("monitor must not call AsyncResult"),
-            ),
-            patch(
-                "opendlp.service_layer.sortition.get_selection_run_status",
-                side_effect=AssertionError("monitor must not call get_selection_run_status"),
-            ),
+        with patch(
+            "opendlp.service_layer.sortition.get_selection_run_status",
+            side_effect=AssertionError("monitor must not call get_selection_run_status"),
         ):
             result = run_monitoring_selection(
                 uow,
+                _NoStatusTaskRunner(),
                 start_select_fn=spy_select,
                 start_cleanup_fn=spy_cleanup,
                 health_check_fn=spy_health,

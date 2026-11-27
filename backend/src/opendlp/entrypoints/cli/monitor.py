@@ -4,7 +4,7 @@ ABOUTME: Provides `opendlp monitor run-selection` for deploy-time gating and ad-
 import click
 from click.exceptions import Exit
 
-from opendlp.bootstrap import bootstrap
+from opendlp.bootstrap import bootstrap, get_task_runner
 from opendlp.service_layer.monitoring import run_monitoring_selection
 
 
@@ -27,7 +27,7 @@ def run_selection(ctx: click.Context, strict: bool) -> None:
     session_factory = ctx.obj.get("session_factory") if ctx.obj else None
     uow = bootstrap(session_factory=session_factory)
     with uow:
-        result = run_monitoring_selection(uow)
+        result = run_monitoring_selection(uow, get_task_runner())
 
     if result.not_configured:
         click.echo(

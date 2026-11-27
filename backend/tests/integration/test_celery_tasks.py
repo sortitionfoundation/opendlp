@@ -1169,7 +1169,7 @@ class TestOnTaskFailure:
 class TestCleanupOrphanedTasks:
     """Test the cleanup_orphaned_tasks periodic task."""
 
-    def test_cleanup_finds_and_fixes_orphaned_running_tasks(self, postgres_session_factory):
+    def test_cleanup_finds_and_fixes_orphaned_running_tasks(self, postgres_session_factory, task_runner):
         """Test that cleanup finds RUNNING tasks with no Celery record and marks them FAILED."""
         task1_id = uuid.uuid4()
         task2_id = uuid.uuid4()
@@ -1218,23 +1218,12 @@ class TestCleanupOrphanedTasks:
             uow.selection_run_records.add(record3)
             uow.commit()
 
-        # Mock Celery AsyncResult to simulate dead task
-        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
+        # Celery has forgotten the dead task, so it reports PENDING; the active one is STARTED
+        task_runner.set_state("dead-celery-task-123", "PENDING")
+        task_runner.set_state("active-task-789", "STARTED")
 
-            def mock_result_factory(celery_task_id):
-                mock_result = Mock()
-                if celery_task_id == "dead-celery-task-123":
-                    mock_result.state = "PENDING"  # Celery forgot about it
-                elif celery_task_id == "active-task-789":
-                    mock_result.state = "STARTED"  # Still running
-                else:
-                    mock_result.state = "SUCCESS"  # Completed
-                return mock_result
-
-            mock_async_result.side_effect = mock_result_factory
-
-            # Run the cleanup task
-            result = cleanup_orphaned_tasks(session_factory=postgres_session_factory)
+        # Run the cleanup task
+        result = cleanup_orphaned_tasks(session_factory=postgres_session_factory)
 
         # Verify results
         assert result["checked"] == 2  # Two unfinished tasks checked
@@ -1284,9 +1273,8 @@ class TestCleanupOrphanedTasks:
             )
             uow.commit()
 
-        with patch("opendlp.service_layer.sortition.app.app.AsyncResult") as mock_async_result:
-            mock_async_result.return_value = Mock(state="PENDING", info={})
-            result = cleanup_orphaned_tasks(session_factory=postgres_session_factory)
+        # The task runner reports PENDING for both, as Celery does for a message no worker has taken
+        result = cleanup_orphaned_tasks(session_factory=postgres_session_factory)
 
         assert result == {"checked": 2, "marked_failed": 1, "errors": 0}
         with bootstrap(session_factory=postgres_session_factory) as uow:
@@ -1319,7 +1307,7 @@ class TestMonitorBeatTasks:
 
         fake_task_id = uuid.uuid4()
         with patch(
-            "opendlp.service_layer.monitoring.run_monitoring_selection",
+            "opendlp.entrypoints.celery.tasks.run_monitoring_selection",
             return_value=MonitorResult(
                 success=True,
                 task_id=fake_task_id,

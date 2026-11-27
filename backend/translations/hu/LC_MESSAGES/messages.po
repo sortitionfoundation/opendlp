@@ -4163,6 +4163,11 @@ msgid "signup"
 msgstr "regisztráció"
 
 #: src/opendlp/service_layer/sortition.py
+#: src/opendlp/service_layer/task_runner.py
+msgid "The task could not be started. Please try again."
+msgstr ""
+
+#: src/opendlp/service_layer/sortition.py
 msgid "The project needs a panel size above zero before a selection can run"
 msgstr ""
 "Kiválasztás futtatása előtt a projekt kiválasztandó létszámának nullánál "

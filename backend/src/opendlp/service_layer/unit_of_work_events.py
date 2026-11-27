@@ -43,8 +43,8 @@ class UnitOfWorkEvents:
         """
         Args:
             handlers: the handlers to call for each recorded event. Left as
-                None, the application's registry in
-                ``service_layer/handlers.py`` is used.
+                None, the application's handlers are used, as
+                ``bootstrap.default_event_handlers()`` builds them.
         """
         self.events: list[Event] = []
         self._handlers: EventHandlers | None = handlers
@@ -78,12 +78,11 @@ class UnitOfWorkEvents:
 
     def _handlers_for(self, event: Event) -> Sequence[EventHandler]:
         if self._handlers is None:
-            # Imported here because the handlers reach modules that import the
-            # UnitOfWork, which imports this module:
-            # handlers -> services -> celery tasks -> bootstrap -> unit_of_work.
-            from opendlp.service_layer import handlers  # noqa: PLC0415
+            # Imported here because bootstrap builds the handlers and imports
+            # the UnitOfWork, which imports this module.
+            from opendlp import bootstrap  # noqa: PLC0415
 
-            self._handlers = handlers.EVENT_HANDLERS
+            self._handlers = bootstrap.default_event_handlers()
         return self._handlers.get(type(event), ())
 
     def after_commit(self, callback: Callable[[], object]) -> None:

@@ -70,8 +70,8 @@ def _get_manage_tabs_context(
 
     try:
         current_manage_tabs = uuid.UUID(manage_tabs_param)
-        check_and_update_task_health(uow, current_manage_tabs)
-        result = get_selection_run_status(uow, current_manage_tabs)
+        check_and_update_task_health(uow, current_manage_tabs, task_runner=bootstrap.get_task_runner())
+        result = get_selection_run_status(uow, current_manage_tabs, task_runner=bootstrap.get_task_runner())
         if result.run_record and result.run_record.assembly_id == assembly_id:
             tab_names = result.tab_names if isinstance(result, TabManagementResult) else []
             return current_manage_tabs, result.run_record, tab_names, get_manage_old_tabs_status(result)
@@ -95,8 +95,8 @@ def _get_selection_modal_context(
 
     try:
         current_selection = uuid.UUID(selection_param)
-        check_and_update_task_health(uow, current_selection)
-        result = get_selection_run_status(uow, current_selection)
+        check_and_update_task_health(uow, current_selection, task_runner=bootstrap.get_task_runner())
+        result = get_selection_run_status(uow, current_selection, task_runner=bootstrap.get_task_runner())
 
         if result.run_record and result.run_record.assembly_id == assembly_id:
             selected_respondents = (
@@ -150,8 +150,8 @@ def _get_replacement_modal_context(
 
     try:
         current_replacement = uuid.UUID(replacement_param)
-        check_and_update_task_health(uow, current_replacement)
-        result = get_selection_run_status(uow, current_replacement)
+        check_and_update_task_health(uow, current_replacement, task_runner=bootstrap.get_task_runner())
+        result = get_selection_run_status(uow, current_replacement, task_runner=bootstrap.get_task_runner())
 
         if result.run_record and result.run_record.assembly_id == assembly_id:
             min_select = initial_min_select

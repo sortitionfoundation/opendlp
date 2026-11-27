@@ -22,12 +22,14 @@ from opendlp.service_layer.sortition import (
     start_gsheet_manage_tabs_task,
     start_gsheet_select_task,
 )
+from opendlp.service_layer.task_runner import TaskDispatchError
 
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Callable
 
     from opendlp.domain.assembly import SelectionRunRecord
+    from opendlp.service_layer.task_runner import TaskRunner
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 logger = structlog.get_logger(__name__)
@@ -258,6 +260,7 @@ def _poll_until_finished(
     wrapper_timeout_seconds: int,
     poll_interval_seconds: float,
     health_check_fn: Callable[..., None],
+    task_runner: TaskRunner,
     now_fn: Callable[[], datetime],
     sleep_fn: Callable[[float], None],
 ) -> tuple[SelectionRunRecord | None, float, bool]:
@@ -272,7 +275,7 @@ def _poll_until_finished(
         elapsed = (now_fn() - start_time).total_seconds()
         if elapsed >= wrapper_timeout_seconds:
             try:
-                health_check_fn(uow, task_id)
+                health_check_fn(uow, task_id, task_runner=task_runner)
             except Exception as exc:
                 logger.warning("monitor health check on timeout failed", error=str(exc))
             return None, elapsed, True
@@ -280,7 +283,7 @@ def _poll_until_finished(
         if not half_budget_hit and elapsed >= wrapper_timeout_seconds / 2:
             half_budget_hit = True
             try:
-                health_check_fn(uow, task_id)
+                health_check_fn(uow, task_id, task_runner=task_runner)
             except Exception as exc:
                 logger.warning("monitor mid-run health check failed", error=str(exc))
 
@@ -303,17 +306,19 @@ def _start_select_or_failure(
     assembly_id: uuid.UUID,
     *,
     start_select_fn: Callable[..., uuid.UUID],
-    apply_kwargs: dict[str, int],
+    task_runner: TaskRunner,
+    time_limits: dict[str, int],
     start_time: datetime,
     now_fn: Callable[[], datetime],
 ) -> tuple[uuid.UUID | None, MonitorResult | None]:
     try:
-        task_id = start_select_fn(uow, user_id, assembly_id, celery_apply_kwargs=apply_kwargs)
+        task_id = start_select_fn(uow, user_id, assembly_id, task_runner=task_runner, **time_limits)
     except (
         AssemblyNotFoundError,
         GoogleSheetConfigNotFoundError,
         InvalidSelection,
         InsufficientPermissions,
+        TaskDispatchError,
     ) as exc:
         elapsed = (now_fn() - start_time).total_seconds()
         cls_name = type(exc).__name__
@@ -329,6 +334,7 @@ def _start_select_or_failure(
 
 def run_monitoring_selection(
     uow: AbstractUnitOfWork,
+    task_runner: TaskRunner,
     *,
     start_select_fn: Callable[..., uuid.UUID] = start_gsheet_select_task,
     start_cleanup_fn: Callable[..., uuid.UUID] = start_gsheet_manage_tabs_task,
@@ -356,7 +362,7 @@ def run_monitoring_selection(
         )
 
     start_time = now_fn()
-    apply_kwargs = {
+    time_limits = {
         "time_limit": celery_time_limit_seconds,
         "soft_time_limit": max(1, celery_time_limit_seconds - _SOFT_TIME_LIMIT_GAP_SECONDS),
     }
@@ -366,7 +372,8 @@ def run_monitoring_selection(
         user_id,
         assembly_id,
         start_select_fn=start_select_fn,
-        apply_kwargs=apply_kwargs,
+        task_runner=task_runner,
+        time_limits=time_limits,
         start_time=start_time,
         now_fn=now_fn,
     )
@@ -381,6 +388,7 @@ def run_monitoring_selection(
         wrapper_timeout_seconds=wrapper_timeout_seconds,
         poll_interval_seconds=poll_interval_seconds,
         health_check_fn=health_check_fn,
+        task_runner=task_runner,
         now_fn=now_fn,
         sleep_fn=sleep_fn,
     )
@@ -407,7 +415,7 @@ def run_monitoring_selection(
 
     if record.is_completed:
         try:
-            start_cleanup_fn(uow, user_id, assembly_id, dry_run=False)
+            start_cleanup_fn(uow, user_id, assembly_id, dry_run=False, task_runner=task_runner)
         except Exception as exc:
             logger.warning("monitor cleanup dispatch failed", error=str(exc))
         return MonitorResult(

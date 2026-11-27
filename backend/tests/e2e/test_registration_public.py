@@ -22,7 +22,7 @@ from opendlp.service_layer.registration_page_service import (
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token, route_url
-from tests.fakes import FakeRedis
+from tests.fakes import FakeRedis, RecordingTaskRunner
 
 
 def _page_id(uow, assembly_id):  # type: ignore[no-untyped-def]
@@ -166,9 +166,6 @@ def nonce_probe_registration_page(postgres_session_factory, admin_user) -> Regis
         return publish_registration_page(uow, admin_user.id, _page_id(uow, assembly_id))
 
 
-_AUTO_EXPORT_DISPATCH = "opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async"
-
-
 def _enable_auto_export(session_factory, assembly_id) -> None:  # type: ignore[no-untyped-def]
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         uow.assembly_export_gsheets.add(
@@ -286,14 +283,18 @@ class TestRegistrationFormSubmission:
             assert len(respondents) == initial_count + 1
 
     def test_submission_to_an_auto_exporting_assembly_queues_the_export_after_it_commits(
-        self, client: FlaskClient, published_registration_page: RegistrationPage, postgres_session_factory
+        self,
+        client: FlaskClient,
+        published_registration_page: RegistrationPage,
+        postgres_session_factory,
+        task_runner: RecordingTaskRunner,
     ) -> None:
         """The submission records RespondentsChanged; its handler queues the export once the respondent is saved."""
         assembly_id = published_registration_page.assembly_id
         _enable_auto_export(postgres_session_factory, assembly_id)
         counts_when_queued = []
 
-        def count_respondents(**kwargs: object) -> None:
+        def count_respondents(task: object) -> None:
             with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
                 counts_when_queued.append(uow.respondents.count_by_assembly_id(assembly_id))
 
@@ -301,18 +302,15 @@ class TestRegistrationFormSubmission:
             client, "registration.show_registration_form", url_slug=published_registration_page.url_slug
         )
         csrf_token = get_csrf_token(client, form_url)
-        with (
-            patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()),
-            patch(_AUTO_EXPORT_DISPATCH, side_effect=count_respondents) as dispatch,
-        ):
+        task_runner.on_dispatch = count_respondents
+        with patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()):
             response = client.post(
                 form_url,
                 data={"csrf_token": csrf_token, "name": "Auto Export User", "email": "auto-export@example.com"},
             )
 
         assert response.status_code == 302
-        dispatch.assert_called_once()
-        assert dispatch.call_args.kwargs["kwargs"] == {"assembly_id": assembly_id}
+        assert [task.kwargs for task in task_runner.submitted] == [{"assembly_id": assembly_id}]
         assert counts_when_queued == [1]
 
     def test_test_mode_submission_creates_test_respondent(

@@ -17,7 +17,9 @@ class FakeRepository(AbstractRepository):
         self._items = list(items) if items else []
 
     def add(self, item: Any) -> None:
-        """Add an item to the repository."""
+        """Add an item to the repository. Adding one it already holds does nothing, as on a SQLAlchemy session."""
+        if any(existing is item for existing in self._items):
+            return
         self._items.append(item)
 
     def get(self, item_id: uuid.UUID) -> Any | None:

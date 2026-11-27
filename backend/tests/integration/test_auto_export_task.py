@@ -2,7 +2,6 @@
 # ABOUTME: Runs the task function against Postgres and the test Redis with a fake sheet target
 
 import uuid
-from unittest.mock import patch
 
 import pytest
 
@@ -20,7 +19,6 @@ from tests.fakes import FakeGSheetExportTarget
 pytestmark = pytest.mark.requires_redis
 
 _SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
-_DISPATCH = "opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async"
 
 
 @pytest.fixture
@@ -95,7 +93,7 @@ class TestAutoExportRespondentsTask:
             assert config.spreadsheet_title == "Live Data"
 
     def test_lock_held_requests_another_run_instead_of_writing(
-        self, auto_export_assembly, postgres_session_factory, redis
+        self, auto_export_assembly, postgres_session_factory, redis, task_runner
     ):
         """A second run for the same assembly re-queues itself rather than interleaving writes."""
         redis.set(lock_key(auto_export_assembly), "held")
@@ -105,17 +103,16 @@ class TestAutoExportRespondentsTask:
             targets.append(FakeGSheetExportTarget())
             return targets[-1]
 
-        with patch(_DISPATCH) as dispatch:
-            result = auto_export_respondents(
-                assembly_id=auto_export_assembly,
-                session_factory=postgres_session_factory,
-                target_factory=factory,
-                redis_client=redis,
-            )
+        result = auto_export_respondents(
+            assembly_id=auto_export_assembly,
+            session_factory=postgres_session_factory,
+            target_factory=factory,
+            redis_client=redis,
+        )
 
         assert result is False
         assert targets == []
-        dispatch.assert_called_once()
+        assert [task.name for task in task_runner.submitted] == ["auto_export_respondents"]
         assert redis.get(pending_key(auto_export_assembly)) is not None
         # The lock belongs to the other run and is left alone.
         assert redis.get(lock_key(auto_export_assembly)) == "held"

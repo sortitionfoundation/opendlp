@@ -10,7 +10,6 @@ from io import StringIO
 from typing import Any
 
 import structlog
-from celery.result import AsyncResult
 from sortition_algorithms import RunReport, adapters
 from sortition_algorithms.errors import SortitionBaseError
 from sortition_algorithms.features import FeatureCollection
@@ -30,7 +29,6 @@ from opendlp.domain.value_objects import (
     SelectionRunStatus,
     SelectionTaskType,
 )
-from opendlp.entrypoints.celery import app, tasks
 from opendlp.service_layer.error_translation import translate_sortition_error
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -41,6 +39,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_export_service import respondent_export_table
+from opendlp.service_layer.task_runner import Dispatch, TaskDispatchError, TaskRunner, TaskStatus
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.writing_guard import refuse_if_writing_run_unfinished
 from opendlp.translations import gettext as _
@@ -72,8 +71,35 @@ def _get_selection_settings(assembly: Assembly) -> SelectionSettings:
     return SelectionSettings.for_assembly(assembly)
 
 
+def _commit_and_dispatch(uow: AbstractUnitOfWork, record: SelectionRunRecord, dispatch: Dispatch) -> None:
+    """Commit the new run record, then send its task.
+
+    The commit comes first so the worker can find the record the task reports
+    into. If sending fails, the record is marked FAILED - so the assembly is not
+    held for a task that will never run - and TaskDispatchError is raised for
+    the route to show.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    uow.selection_run_records.add(record)
+    uow.commit()
+    try:
+        dispatch()
+    except Exception as exc:
+        _mark_task_as_failed(
+            uow,
+            record,
+            error_msg=_("The task could not be started. Please try again."),
+            technical_msg=f"Dispatch failed: {exc!r}",
+            celery_state="DISPATCH_FAILED",
+        )
+        raise TaskDispatchError() from exc
+
+
 @require_assembly_permission(can_manage_assembly)
-def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> uuid.UUID:
+def start_gsheet_load_task(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, *, task_runner: TaskRunner
+) -> uuid.UUID:
     """
     Start a Google Sheets load task for an assembly.
 
@@ -81,6 +107,7 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
         uow: Unit of work for database operations
         user_id: ID of user requesting the task (checked for permissions)
         assembly_id: ID of assembly to load data for
+        task_runner: Sends the task to a worker
 
     Returns:
         task_id: UUID of the created task for tracking
@@ -101,41 +128,26 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
     if not gsheet:
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
-    # Create unique task ID
-    task_id = uuid.uuid4()
-
-    # Create SelectionRunRecord for tracking
     sel_settings = _get_selection_settings(assembly)
-
-    record = SelectionRunRecord(
-        assembly_id=assembly_id,
-        task_id=task_id,
-        task_type=SelectionTaskType.LOAD_GSHEET,
-        status=SelectionRunStatus.PENDING,
-        log_messages=["Task submitted for Google Sheets loading"],
-        settings_used=gsheet.dict_for_json(),
-        user_id=user_id,
-    )
-    uow.selection_run_records.add(record)
-    uow.commit()
-
-    # Submit Celery task
-    # TODO: should this be behind another adapter? That comes from bootstrap?
-    # would be handy for unit tests
     try:
         data_source = gsheet.to_data_source(for_replacements=False, id_column=sel_settings.id_column)
         settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
-    result = tasks.load_gsheet.delay(
+    task_id = uuid.uuid4()
+    dispatch = task_runner.load_gsheet(task_id=task_id, data_source=data_source, settings=settings_obj)
+    record = SelectionRunRecord(
+        assembly_id=assembly_id,
         task_id=task_id,
-        data_source=data_source,
-        settings=settings_obj,
+        celery_task_id=str(task_id),
+        task_type=SelectionTaskType.LOAD_GSHEET,
+        status=SelectionRunStatus.PENDING,
+        log_messages=["Task submitted for Google Sheets loading"],
+        settings_used=gsheet.dict_for_json(),
+        user_id=user_id,
     )
-    record.celery_task_id = str(result.id)
-    uow.selection_run_records.add(record)
-    uow.commit()
+    _commit_and_dispatch(uow, record, dispatch)
 
     return task_id
 
@@ -146,8 +158,18 @@ def start_gsheet_select_task(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     test_selection: bool = False,
-    celery_apply_kwargs: dict[str, Any] | None = None,
+    *,
+    task_runner: TaskRunner,
+    time_limit: int | None = None,
+    soft_time_limit: int | None = None,
 ) -> uuid.UUID:
+    """Start a Google Sheets selection task for an assembly.
+
+    ``time_limit`` and ``soft_time_limit`` (seconds) bound how long the worker
+    lets the task run; the monitor sets them so a stuck run cannot outlive it.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
@@ -163,7 +185,12 @@ def start_gsheet_select_task(
     sel_settings = _get_selection_settings(assembly)
     refuse_if_writing_run_unfinished(uow, assembly_id)
 
-    # Create unique task ID
+    try:
+        data_source = gsheet.to_data_source(for_replacements=False, id_column=sel_settings.id_column)
+        settings_obj = sel_settings.to_settings()
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
+
     task_id = uuid.uuid4()
     task_type = SelectionTaskType.TEST_SELECT_GSHEET if test_selection else SelectionTaskType.SELECT_GSHEET
     log_msg = (
@@ -171,48 +198,35 @@ def start_gsheet_select_task(
         if test_selection
         else "Task submitted for Google Sheets selection"
     )
-
-    # Create SelectionRunRecord for tracking
+    dispatch = task_runner.run_select(
+        task_id=task_id,
+        data_source=data_source,
+        number_people_wanted=assembly.number_to_select,
+        settings=settings_obj,
+        test_selection=test_selection,
+        gen_rem_tab=gsheet.generate_remaining_tab,
+        time_limit=time_limit,
+        soft_time_limit=soft_time_limit,
+    )
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
+        celery_task_id=str(task_id),
         task_type=task_type,
         status=SelectionRunStatus.PENDING,
         log_messages=[log_msg],
         settings_used=gsheet.dict_for_json(),
         user_id=user_id,
     )
-    uow.selection_run_records.add(record)
-    uow.commit()
-
-    # Submit Celery task
-    # TODO: should this be behind another adapter? That comes from bootstrap?
-    # would be handy for unit tests
-    try:
-        data_source = gsheet.to_data_source(for_replacements=False, id_column=sel_settings.id_column)
-        settings_obj = sel_settings.to_settings()
-    except SortitionBaseError as e:
-        raise InvalidSelection(str(e)) from e
-
-    apply_kwargs = celery_apply_kwargs or {}
-    celery_kwargs = {
-        "task_id": task_id,
-        "data_source": data_source,
-        "number_people_wanted": assembly.number_to_select,
-        "settings": settings_obj,
-        "test_selection": test_selection,
-        "gen_rem_tab": gsheet.generate_remaining_tab,
-    }
-    result = tasks.run_select.apply_async(kwargs=celery_kwargs, **apply_kwargs)
-    record.celery_task_id = str(result.id)
-    uow.selection_run_records.add(record)
-    uow.commit()
+    _commit_and_dispatch(uow, record, dispatch)
 
     return task_id
 
 
 @require_assembly_permission(can_manage_assembly)
-def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> uuid.UUID:
+def start_gsheet_replace_load_task(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, *, task_runner: TaskRunner
+) -> uuid.UUID:
     """
     Start a Google Sheets load task for an assembly's replacement data.
 
@@ -220,6 +234,7 @@ def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, 
         uow: Unit of work for database operations
         user_id: ID of user requesting the task (checked for permissions)
         assembly_id: ID of assembly to load replacement data for
+        task_runner: Sends the task to a worker
 
     Returns:
         task_id: UUID of the created task for tracking
@@ -241,45 +256,37 @@ def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, 
         raise GoogleSheetConfigNotFoundError(f"No Google Sheets configuration found for assembly {assembly_id}")
 
     sel_settings = _get_selection_settings(assembly)
-
-    # Create unique task ID
-    task_id = uuid.uuid4()
-
-    # Create SelectionRunRecord for tracking
-    record = SelectionRunRecord(
-        assembly_id=assembly_id,
-        task_id=task_id,
-        task_type=SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
-        status=SelectionRunStatus.PENDING,
-        log_messages=["Task submitted for Google Sheets replacement data loading"],
-        settings_used=gsheet.dict_for_json(),
-        user_id=user_id,
-    )
-    uow.selection_run_records.add(record)
-    uow.commit()
-
-    # Submit Celery task
     try:
         data_source = gsheet.to_data_source(for_replacements=True, id_column=sel_settings.id_column)
         settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
-    result = tasks.load_gsheet.delay(
+    task_id = uuid.uuid4()
+    dispatch = task_runner.load_gsheet(task_id=task_id, data_source=data_source, settings=settings_obj)
+    record = SelectionRunRecord(
+        assembly_id=assembly_id,
         task_id=task_id,
-        data_source=data_source,
-        settings=settings_obj,
+        celery_task_id=str(task_id),
+        task_type=SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
+        status=SelectionRunStatus.PENDING,
+        log_messages=["Task submitted for Google Sheets replacement data loading"],
+        settings_used=gsheet.dict_for_json(),
+        user_id=user_id,
     )
-    record.celery_task_id = str(result.id)
-    uow.selection_run_records.add(record)
-    uow.commit()
+    _commit_and_dispatch(uow, record, dispatch)
 
     return task_id
 
 
 @require_assembly_permission(can_manage_assembly)
 def start_gsheet_replace_task(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, number_to_select: int
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    number_to_select: int,
+    *,
+    task_runner: TaskRunner,
 ) -> uuid.UUID:
     """
     Start a Google Sheets replacement selection task for an assembly.
@@ -289,6 +296,7 @@ def start_gsheet_replace_task(
         user_id: ID of user requesting the task (checked for permissions)
         assembly_id: ID of assembly to run replacement selection for
         number_to_select: Number of people to select in the replacement selection
+        task_runner: Sends the task to a worker
 
     Returns:
         task_id: UUID of the created task for tracking
@@ -312,30 +320,14 @@ def start_gsheet_replace_task(
     sel_settings = _get_selection_settings(assembly)
     refuse_if_writing_run_unfinished(uow, assembly_id)
 
-    # Create unique task ID
-    task_id = uuid.uuid4()
-
-    # Create SelectionRunRecord for tracking
-    record = SelectionRunRecord(
-        assembly_id=assembly_id,
-        task_id=task_id,
-        task_type=SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
-        status=SelectionRunStatus.PENDING,
-        log_messages=[f"Task submitted for Google Sheets replacement selection of {number_to_select} people"],
-        settings_used=gsheet.dict_for_json(),
-        user_id=user_id,
-    )
-    uow.selection_run_records.add(record)
-    uow.commit()
-
-    # Submit Celery task
     try:
         data_source = gsheet.to_data_source(for_replacements=True, id_column=sel_settings.id_column)
         settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
-    result = tasks.run_select.delay(
+    task_id = uuid.uuid4()
+    dispatch = task_runner.run_select(
         task_id=task_id,
         data_source=data_source,
         number_people_wanted=number_to_select,
@@ -344,16 +336,29 @@ def start_gsheet_replace_task(
         gen_rem_tab=gsheet.generate_remaining_tab,
         for_replacements=True,
     )
-    record.celery_task_id = str(result.id)
-    uow.selection_run_records.add(record)
-    uow.commit()
+    record = SelectionRunRecord(
+        assembly_id=assembly_id,
+        task_id=task_id,
+        celery_task_id=str(task_id),
+        task_type=SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
+        status=SelectionRunStatus.PENDING,
+        log_messages=[f"Task submitted for Google Sheets replacement selection of {number_to_select} people"],
+        settings_used=gsheet.dict_for_json(),
+        user_id=user_id,
+    )
+    _commit_and_dispatch(uow, record, dispatch)
 
     return task_id
 
 
 @require_assembly_permission(can_manage_assembly)
 def start_gsheet_manage_tabs_task(
-    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, dry_run: bool = True
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    dry_run: bool = True,
+    *,
+    task_runner: TaskRunner,
 ) -> uuid.UUID:
     """
     Start a Google Sheets tab management task for an assembly.
@@ -363,6 +368,7 @@ def start_gsheet_manage_tabs_task(
         user_id: ID of user requesting the task (checked for permissions)
         assembly_id: ID of assembly to manage tabs for
         dry_run: If True, list tabs without deleting. If False, delete them.
+        task_runner: Sends the task to a worker
 
     Returns:
         task_id: UUID of the created task for tracking
@@ -386,38 +392,26 @@ def start_gsheet_manage_tabs_task(
     if not dry_run:
         refuse_if_writing_run_unfinished(uow, assembly_id)
 
-    # Create unique task ID
-    task_id = uuid.uuid4()
+    try:
+        data_source = gsheet.to_data_source(for_replacements=False)
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
 
-    # Create SelectionRunRecord for tracking
+    task_id = uuid.uuid4()
+    dispatch = task_runner.manage_old_tabs(task_id=task_id, data_source=data_source, dry_run=dry_run)
     action = "listing" if dry_run else "deleting"
     task_type = SelectionTaskType.LIST_OLD_TABS if dry_run else SelectionTaskType.DELETE_OLD_TABS
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
+        celery_task_id=str(task_id),
         task_type=task_type,
         status=SelectionRunStatus.PENDING,
         log_messages=[f"Task submitted for {action} old output tabs"],
         settings_used=gsheet.dict_for_json(),
         user_id=user_id,
     )
-    uow.selection_run_records.add(record)
-    uow.commit()
-
-    # Submit Celery task
-    try:
-        data_source = gsheet.to_data_source(for_replacements=False)
-    except SortitionBaseError as e:
-        raise InvalidSelection(str(e)) from e
-
-    result = tasks.manage_old_tabs.delay(
-        task_id=task_id,
-        data_source=data_source,
-        dry_run=dry_run,
-    )
-    record.celery_task_id = str(result.id)
-    uow.selection_run_records.add(record)
-    uow.commit()
+    _commit_and_dispatch(uow, record, dispatch)
 
     return task_id
 
@@ -501,6 +495,8 @@ def start_db_select_task(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     test_selection: bool = False,
+    *,
+    task_runner: TaskRunner,
 ) -> uuid.UUID:
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
@@ -524,9 +520,17 @@ def start_db_select_task(
     )
 
     target_categories = uow.target_categories.get_by_assembly_id(assembly_id)
+    dispatch = task_runner.run_select_from_db(
+        task_id=task_id,
+        assembly_id=assembly_id,
+        number_people_wanted=assembly.number_to_select,
+        settings=settings_obj,
+        test_selection=test_selection,
+    )
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
+        celery_task_id=str(task_id),
         task_type=task_type,
         status=SelectionRunStatus.PENDING,
         log_messages=[log_msg],
@@ -540,19 +544,7 @@ def start_db_select_task(
         targets_used=target_categories_to_snapshot(target_categories),
         user_id=user_id,
     )
-    uow.selection_run_records.add(record)
-    uow.commit()
-
-    result = tasks.run_select_from_db.delay(
-        task_id=task_id,
-        assembly_id=assembly_id,
-        number_people_wanted=assembly.number_to_select,
-        settings=settings_obj,
-        test_selection=test_selection,
-    )
-    record.celery_task_id = str(result.id)
-    uow.selection_run_records.add(record)
-    uow.commit()
+    _commit_and_dispatch(uow, record, dispatch)
 
     return task_id
 
@@ -565,6 +557,8 @@ def start_db_replace_task(
     number_to_select: int,
     targets_snapshot: list[dict[str, Any]],
     replacement_info: dict[str, Any],
+    *,
+    task_runner: TaskRunner,
 ) -> uuid.UUID:
     """Start a replacement selection over the database.
 
@@ -592,9 +586,18 @@ def start_db_replace_task(
     refuse_if_writing_run_unfinished(uow, assembly_id)
 
     task_id = uuid.uuid4()
+    dispatch = task_runner.run_select_from_db(
+        task_id=task_id,
+        assembly_id=assembly_id,
+        number_people_wanted=number_to_select,
+        settings=settings_obj,
+        test_selection=False,
+        targets_snapshot=targets_snapshot,
+    )
     record = SelectionRunRecord(
         assembly_id=assembly_id,
         task_id=task_id,
+        celery_task_id=str(task_id),
         task_type=SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
         status=SelectionRunStatus.PENDING,
         log_messages=[f"Task submitted for database replacement selection of {number_to_select} people"],
@@ -609,20 +612,7 @@ def start_db_replace_task(
         targets_used=targets_snapshot,
         user_id=user_id,
     )
-    uow.selection_run_records.add(record)
-    uow.commit()
-
-    result = tasks.run_select_from_db.delay(
-        task_id=task_id,
-        assembly_id=assembly_id,
-        number_people_wanted=number_to_select,
-        settings=settings_obj,
-        test_selection=False,
-        targets_snapshot=targets_snapshot,
-    )
-    record.celery_task_id = str(result.id)
-    uow.selection_run_records.add(record)
-    uow.commit()
+    _commit_and_dispatch(uow, record, dispatch)
 
     return task_id
 
@@ -697,15 +687,9 @@ class TabManagementResult(RunResult):
     tab_names: list[str] = field(default_factory=list)
 
 
-def _process_celery_final_result(celery_result: AsyncResult, run_record: SelectionRunRecord) -> RunResult:
-    # Calls AsyncResult.get(), which Celery forbids inside a worker task — it
-    # raises RuntimeError('Never call result.get() within a task!'). Callers
-    # invoked from a Celery worker must read state from SelectionRunRecord
-    # instead of going through get_selection_run_status.
-    # Callers only reach this once successful() is True, so the value is
-    # already in the result backend; the timeout guards against a stalled
-    # Redis holding the request open, not against a still-running task.
-    final_result = celery_result.get(timeout=10)
+def _process_final_result(task_status: TaskStatus, run_record: SelectionRunRecord) -> RunResult:
+    """Turn a successful task's return value into the RunResult for its task type."""
+    final_result = task_status.value
     assert final_result
     if run_record.task_type in (
         SelectionTaskType.LOAD_GSHEET,
@@ -753,13 +737,14 @@ def _process_celery_final_result(celery_result: AsyncResult, run_record: Selecti
     )
 
 
-def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> RunResult:
+def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID, *, task_runner: TaskRunner) -> RunResult:
     """
     Get the status of a selection run task.
 
     Args:
         uow: Unit of work for database operations
         task_id: UUID of the task to check - this is the SelectionRunRecord task_id
+        task_runner: Asked for a finished task's return value
 
     Returns:
         SelectionRunRecord with current status, or None if not found
@@ -772,18 +757,18 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
     if run_record:
         # The DB record is the authoritative source for log messages — every
         # _append_run_log call commits an update — so always read from there
-        # first. Celery's AsyncResult is only consulted to detect a successful
+        # first. The task runner is only consulted to detect a successful
         # task whose final return value still lives in the result backend.
         result.log_messages = list(run_record.log_messages)
 
-        # A record has no Celery id if creating the task failed. Building an
-        # AsyncResult for an empty id raises when it is garbage-collected.
+        # Old records whose task could not be created have no Celery id, and
+        # there is nothing to ask the backend about.
         if run_record.celery_task_id:
-            celery_result = app.app.AsyncResult(run_record.celery_task_id)
-            if celery_result.successful():
-                # Celery still has the result — pull the typed final value out so
+            task_status = task_runner.status(run_record.celery_task_id)
+            if task_status.successful:
+                # The backend still has the result — pull the typed final value out so
                 # the caller gets features/people/selected_ids etc.
-                return _process_celery_final_result(celery_result, run_record)
+                return _process_final_result(task_status, run_record)
 
         if run_record.run_report:
             result.run_report = run_record.run_report
@@ -796,7 +781,14 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
 
 
 @require_assembly_permission(can_manage_assembly)
-def cancel_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, task_id: uuid.UUID) -> None:
+def cancel_task(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    task_id: uuid.UUID,
+    *,
+    task_runner: TaskRunner,
+) -> None:
     """
     Cancel a running or pending task.
 
@@ -805,6 +797,7 @@ def cancel_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.U
         user_id: ID of user requesting the cancellation (checked for permissions)
         assembly_id: ID of assembly (for permission checking)
         task_id: UUID of the task to cancel
+        task_runner: Stops the task if a worker has it
 
     Raises:
         NotFoundError: If task not found
@@ -830,7 +823,7 @@ def cancel_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.U
 
     # Revoke the Celery task
     try:
-        app.app.control.revoke(run_record.celery_task_id, terminate=True)
+        task_runner.revoke(run_record.celery_task_id)
         logger.info(f"Successfully revoked Celery task {run_record.celery_task_id}")
     except Exception as e:
         # Log the error but continue - we still want to mark as CANCELLED in DB
@@ -944,18 +937,6 @@ def get_selection_to_rerun(
     return record.create_detached_copy()
 
 
-def _extract_exception_info(celery_result: AsyncResult) -> str:
-    """Extract exception information from a failed Celery result."""
-    try:
-        if celery_result.info and isinstance(celery_result.info, Exception):
-            return str(celery_result.info)
-        if celery_result.info and isinstance(celery_result.info, dict):
-            return str(celery_result.info.get("exc_message", "No exception message"))
-        return "No exception info available"
-    except Exception:
-        return "Could not extract exception info"
-
-
 def _mark_task_as_failed(
     uow: AbstractUnitOfWork,
     run_record: SelectionRunRecord,
@@ -999,7 +980,7 @@ def _mark_task_as_failed(
     uow.commit()
 
 
-def _get_celery_task_state(run_record: SelectionRunRecord, task_id: uuid.UUID) -> tuple[AsyncResult | None, str]:
+def _get_task_status(run_record: SelectionRunRecord, task_id: uuid.UUID, task_runner: TaskRunner) -> TaskStatus | None:
     # Check if celery_task_id is valid before querying Celery
     if not run_record.celery_task_id:
         # Task was created without a Celery task ID (shouldn't happen in production)
@@ -1009,13 +990,12 @@ def _get_celery_task_state(run_record: SelectionRunRecord, task_id: uuid.UUID) -
             run_id=task_id,
             db_status=run_record.status.value,
         )
-        return None, ""  # Can't check Celery without a task ID
+        return None  # Can't check Celery without a task ID
 
     # Query Celery for task state
     try:
-        celery_result = app.app.AsyncResult(run_record.celery_task_id)
-        return celery_result, celery_result.state
-    except (ValueError, Exception) as exc:
+        return task_runner.status(run_record.celery_task_id)
+    except Exception as exc:
         # Handle invalid celery_task_id or other Celery errors
         logger.error(
             "Error querying Celery for task state",
@@ -1023,7 +1003,7 @@ def _get_celery_task_state(run_record: SelectionRunRecord, task_id: uuid.UUID) -
             celery_id=run_record.celery_task_id,
             error=str(exc),
         )
-        return None, ""  # Can't determine health if Celery query fails
+        return None  # Can't determine health if Celery query fails
 
 
 def _fail_if_timed_out(uow: AbstractUnitOfWork, run_record: SelectionRunRecord, timeout_hours: int | None) -> bool:
@@ -1075,6 +1055,8 @@ def check_and_update_task_health(
     task_id: uuid.UUID,
     timeout_hours: int | None = None,
     pending_timeout_minutes: int | None = None,
+    *,
+    task_runner: TaskRunner,
 ) -> None:
     """
     Check if a task is still alive and update its status if it has died.
@@ -1092,6 +1074,7 @@ def check_and_update_task_health(
         task_id: UUID of the task (SelectionRunRecord.task_id)
         timeout_hours: Optional timeout in hours (overrides env config)
         pending_timeout_minutes: Optional pending timeout in minutes (overrides the config constant)
+        task_runner: Asked what the task backend knows about the task
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -1104,10 +1087,11 @@ def check_and_update_task_health(
     if _fail_if_timed_out(uow, run_record, timeout_hours):
         return
 
-    celery_result, celery_state = _get_celery_task_state(run_record, task_id)
+    task_status = _get_task_status(run_record, task_id, task_runner)
+    celery_state = task_status.state if task_status else ""
     if _fail_if_stuck_pending(uow, run_record, pending_timeout_minutes, celery_state):
         return
-    if not celery_result:
+    if not task_status:
         return
 
     # Log current state for debugging
@@ -1123,7 +1107,7 @@ def check_and_update_task_health(
     if run_record.is_pending:
         if celery_state in ("FAILURE", "REVOKED", "REJECTED"):
             # Task failed before it even started running
-            exc_info = _extract_exception_info(celery_result)
+            exc_info = task_status.error
             _mark_task_as_failed(
                 uow,
                 run_record,
@@ -1135,7 +1119,7 @@ def check_and_update_task_health(
     elif run_record.is_running:
         if celery_state in ("FAILURE", "REVOKED", "REJECTED"):
             # Task crashed or was killed
-            exc_info = _extract_exception_info(celery_result)
+            exc_info = task_status.error
             _mark_task_as_failed(
                 uow,
                 run_record,

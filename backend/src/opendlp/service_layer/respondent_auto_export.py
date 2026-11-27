@@ -1,5 +1,5 @@
 """ABOUTME: Schedules and runs the automatic respondent export to Google Sheets
-ABOUTME: Debounces requests through Redis and hands the export to a Celery task"""
+ABOUTME: Debounces requests through Redis and hands the export to a background task"""
 
 from functools import partial
 from typing import TYPE_CHECKING
@@ -8,7 +8,6 @@ import structlog
 
 from opendlp.config import RedisCfg
 from opendlp.domain.value_objects import GSheetExportKind
-from opendlp.entrypoints.celery import tasks
 from opendlp.service_layer.respondent_export_service import resolve_status_filter, write_respondent_export
 
 if TYPE_CHECKING:
@@ -19,6 +18,7 @@ if TYPE_CHECKING:
 
     from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
     from opendlp.domain.events import RespondentsChanged, RespondentSchemaChanged
+    from opendlp.service_layer.task_runner import TaskRunner
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 logger = structlog.get_logger(__name__)
@@ -54,7 +54,9 @@ def lock_key(assembly_id: uuid.UUID) -> str:
     return f"{_LOCK_KEY_PREFIX}{assembly_id}"
 
 
-def handle_respondents_changed(event: RespondentsChanged | RespondentSchemaChanged, uow: AbstractUnitOfWork) -> None:
+def handle_respondents_changed(
+    event: RespondentsChanged | RespondentSchemaChanged, uow: AbstractUnitOfWork, *, task_runner: TaskRunner
+) -> None:
     """Have the assembly's respondents exported again once this change commits, if auto-export is on.
 
     The handler for both events that change what the export would contain: the
@@ -67,10 +69,10 @@ def handle_respondents_changed(event: RespondentsChanged | RespondentSchemaChang
     config = uow.assembly_export_gsheets.get_by_assembly_and_kind(event.assembly_id, EXPORT_KIND)
     if config is None or not config.auto_export:
         return
-    uow.after_commit(partial(schedule_auto_export, event.assembly_id))
+    uow.after_commit(partial(schedule_auto_export, event.assembly_id, task_runner))
 
 
-def schedule_auto_export(assembly_id: uuid.UUID, redis_client: Redis | None = None) -> bool:
+def schedule_auto_export(assembly_id: uuid.UUID, task_runner: TaskRunner, redis_client: Redis | None = None) -> bool:
     """Queue the export task for the assembly unless one is already pending.
 
     Does not look at the config: the task re-reads it and does nothing if
@@ -84,9 +86,7 @@ def schedule_auto_export(assembly_id: uuid.UUID, redis_client: Redis | None = No
         r = redis_client or _get_redis()
         if not r.set(pending_key(assembly_id), "1", nx=True, ex=_PENDING_TTL_SECONDS):
             return False
-        tasks.auto_export_respondents.apply_async(
-            kwargs={"assembly_id": assembly_id}, countdown=AUTO_EXPORT_DELAY_SECONDS
-        )
+        task_runner.auto_export_respondents(assembly_id=assembly_id, countdown=AUTO_EXPORT_DELAY_SECONDS)()
     except Exception as exc:
         # A failed export must never fail the change that asked for it; the next
         # change will ask again, and the pending key expires on its own.

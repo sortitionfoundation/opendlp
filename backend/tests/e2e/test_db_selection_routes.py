@@ -424,12 +424,10 @@ class TestCsvReplacementSelection:
         assert "4 people are selected or confirmed" in html
         assert "6 places are to be filled" in html
 
-    @patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay")
     def test_start_replacement_records_the_run_and_dispatches(
-        self, mock_delay, logged_in_admin, assembly_after_withdrawal, postgres_session_factory, admin_user
+        self, task_runner, logged_in_admin, assembly_after_withdrawal, postgres_session_factory, admin_user
     ):
-        """Only the Celery dispatch is patched, so the run record makes the round trip through Postgres."""
-        mock_delay.return_value.id = "celery-task-id"
+        """Only the task is faked, so the run record makes the round trip through Postgres."""
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             plan = build_replacement_plan(uow, admin_user.id, assembly_after_withdrawal.id)
         form = {"number_to_select": str(plan.calculated_number)}
@@ -448,8 +446,8 @@ class TestCsvReplacementSelection:
         )
 
         assert response.status_code == 302
-        mock_delay.assert_called_once()
-        dispatched = mock_delay.call_args.kwargs
+        assert len(task_runner.submitted) == 1
+        dispatched = task_runner.submitted[0].kwargs
         task_id = dispatched["task_id"]
         assert f"current_selection={task_id}" in response.headers["Location"]
         assert dispatched["number_people_wanted"] == 6
@@ -459,7 +457,7 @@ class TestCsvReplacementSelection:
             assert record is not None
             assert record.task_type == SelectionTaskType.SELECT_REPLACEMENT_FROM_DB
             assert record.status == SelectionRunStatus.PENDING
-            assert record.celery_task_id == "celery-task-id"
+            assert record.celery_task_id == str(task_id)
             assert record.user_id == admin_user.id
             assert record.settings_used["replacement"] == {
                 "number_to_select_overall": 10,

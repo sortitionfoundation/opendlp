@@ -144,7 +144,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
 
     With no ``event_handlers`` it runs none: a recorded event lands on
     ``uow.events`` for the test to assert on and nothing else happens. Pass
-    ``handlers.EVENT_HANDLERS`` to run the application's handlers.
+    ``handlers.build_event_handlers(task_runner)`` to run the application's handlers.
     """
 
     def __init__(self, store: FakeStore | None = None, event_handlers: EventHandlers | None = None) -> None:

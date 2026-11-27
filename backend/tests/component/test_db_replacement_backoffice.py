@@ -4,7 +4,6 @@
 import re
 import uuid
 from datetime import UTC, datetime, timedelta
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -277,14 +276,14 @@ def _indexes(text: str, needle: str) -> list[int]:
 
 
 class TestStartReplacement:
-    def test_valid_submission_starts_the_task(self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user):
+    def test_valid_submission_starts_the_task(
+        self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user, task_runner
+    ):
         form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, **{"min__Age__31-50": "1"})
 
-        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
-            mock_delay.return_value = Mock(id="celery-id")
-            response = logged_in_admin.post(
-                f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
-            )
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+        )
 
         assert response.status_code == 302
         assert "current_selection=" in response.headers["Location"]
@@ -303,7 +302,7 @@ class TestStartReplacement:
         age = next(c for c in record.targets_used if c["name"] == "Age")
         middle = next(v for v in age["values"] if v["value"] == "31-50")
         assert (middle["min"], middle["calculated_min"], middle["held"], middle["overall_min"]) == (1, 2, 1, 3)
-        assert mock_delay.call_args.kwargs["targets_snapshot"] == record.targets_used
+        assert task_runner.submitted[0].kwargs["targets_snapshot"] == record.targets_used
 
     def test_pool_shortfall_is_shown_beside_the_cell(
         self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user
@@ -376,17 +375,18 @@ class TestStartReplacement:
         assert response.status_code == 302
         assert "/auth/login" in response.headers["Location"]
 
-    def test_requires_assembly_management(self, logged_in_user, assembly_after_withdrawal, fake_store, admin_user):
+    def test_requires_assembly_management(
+        self, logged_in_user, assembly_after_withdrawal, fake_store, admin_user, task_runner
+    ):
         """A form that would start a run for a manager starts nothing for anyone else."""
         form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, **{"min__Age__31-50": "1"})
 
-        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
-            response = logged_in_user.post(
-                f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
-            )
+        response = logged_in_user.post(
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+        )
 
         assert response.status_code == 403
-        mock_delay.assert_not_called()
+        assert task_runner.submitted == []
         assert _run_records(fake_store, assembly_after_withdrawal.id) == []
 
 
@@ -484,7 +484,7 @@ class TestFeasibilityInDialog:
         assert "class=" not in wrapper
 
     def test_recheck_shows_suggestions_at_the_top_and_beside_the_cell(
-        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user, task_runner
     ):
         """Capping 18-30 at 1 leaves only four people outside it, so six cannot be chosen; the algorithm suggests raising it."""
         form = _plan_form(
@@ -492,13 +492,12 @@ class TestFeasibilityInDialog:
         )
         form["action"] = "recheck"
 
-        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
-            response = logged_in_admin.post(
-                f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
-            )
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+        )
 
         assert response.status_code == 200
-        mock_delay.assert_not_called()
+        assert task_runner.submitted == []
         html = response.data.decode()
         assert "feasibility-suggestions" in html
         assert "Age: 18-30, maximum 1 to 3" in html
@@ -546,7 +545,7 @@ class TestFeasibilityInDialog:
         assert "feasibility-suggestions" not in html
 
     def test_run_does_not_block_on_infeasible_targets(
-        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user, task_runner
     ):
         """Running skips the solver check, so targets that cannot be met still start the task."""
         form = _plan_form(
@@ -554,15 +553,13 @@ class TestFeasibilityInDialog:
         )
         form["action"] = "run"
 
-        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
-            mock_delay.return_value = Mock(id="celery-id")
-            response = logged_in_admin.post(
-                f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
-            )
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+        )
 
         assert response.status_code == 302
         assert "current_selection=" in response.headers["Location"]
-        mock_delay.assert_called_once()
+        assert len(task_runner.submitted) == 1
 
 
 class TestViewerWithoutManagement:
@@ -630,7 +627,7 @@ class TestDialogNotes:
 
 class TestReplacementRefusedWhileAnotherTaskWrites:
     def test_valid_submission_lands_in_the_running_tasks_modal(
-        self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user
+        self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user, task_runner
     ):
         """A replacement submitted during a running selection starts nothing and opens that selection."""
         running_id = uuid.uuid4()
@@ -646,12 +643,11 @@ class TestReplacementRefusedWhileAnotherTaskWrites:
             uow.commit()
         form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, **{"min__Age__31-50": "1"})
 
-        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
-            response = logged_in_admin.post(
-                f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
-            )
+        response = logged_in_admin.post(
+            f"/backoffice/project/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+        )
 
-        mock_delay.assert_not_called()
+        assert task_runner.submitted == []
         assert response.status_code == 302
         assert response.headers["Location"].endswith(f"/selection?current_selection={running_id}")
         page = logged_in_admin.get(response.headers["Location"])

@@ -3,7 +3,6 @@ ABOUTME: Every writing start and the reset refuse while a writing run is unfinis
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -69,59 +68,75 @@ def _add_record(uow: FakeUnitOfWork, assembly_id, task_type, status, minutes_ago
     return record
 
 
-# Each writing start: a label, the call, and the Celery entry point it dispatches through.
+# Each writing start: the call, and the name of the task it sends.
 STARTS = [
     pytest.param(
-        lambda uow, admin, assembly: sortition.start_gsheet_select_task(uow, admin.id, assembly.id),
-        "opendlp.service_layer.sortition.tasks.run_select.apply_async",
+        lambda uow, admin, assembly, runner: sortition.start_gsheet_select_task(
+            uow, admin.id, assembly.id, task_runner=runner
+        ),
+        "run_select",
         id="gsheet_select",
     ),
     pytest.param(
-        lambda uow, admin, assembly: sortition.start_gsheet_select_task(uow, admin.id, assembly.id, True),
-        "opendlp.service_layer.sortition.tasks.run_select.apply_async",
+        lambda uow, admin, assembly, runner: sortition.start_gsheet_select_task(
+            uow, admin.id, assembly.id, True, task_runner=runner
+        ),
+        "run_select",
         id="gsheet_test_select",
     ),
     pytest.param(
-        lambda uow, admin, assembly: sortition.start_gsheet_replace_task(uow, admin.id, assembly.id, 3),
-        "opendlp.service_layer.sortition.tasks.run_select.delay",
+        lambda uow, admin, assembly, runner: sortition.start_gsheet_replace_task(
+            uow, admin.id, assembly.id, 3, task_runner=runner
+        ),
+        "run_select",
         id="gsheet_replace",
     ),
     pytest.param(
-        lambda uow, admin, assembly: sortition.start_gsheet_manage_tabs_task(uow, admin.id, assembly.id, False),
-        "opendlp.service_layer.sortition.tasks.manage_old_tabs.delay",
+        lambda uow, admin, assembly, runner: sortition.start_gsheet_manage_tabs_task(
+            uow, admin.id, assembly.id, False, task_runner=runner
+        ),
+        "manage_old_tabs",
         id="gsheet_delete_tabs",
     ),
     pytest.param(
-        lambda uow, admin, assembly: sortition.start_db_select_task(uow, admin.id, assembly.id),
-        "opendlp.service_layer.sortition.tasks.run_select_from_db.delay",
+        lambda uow, admin, assembly, runner: sortition.start_db_select_task(
+            uow, admin.id, assembly.id, task_runner=runner
+        ),
+        "run_select_from_db",
         id="db_select",
     ),
     pytest.param(
-        lambda uow, admin, assembly: sortition.start_db_select_task(uow, admin.id, assembly.id, True),
-        "opendlp.service_layer.sortition.tasks.run_select_from_db.delay",
+        lambda uow, admin, assembly, runner: sortition.start_db_select_task(
+            uow, admin.id, assembly.id, True, task_runner=runner
+        ),
+        "run_select_from_db",
         id="db_test_select",
     ),
     pytest.param(
-        lambda uow, admin, assembly: sortition.start_db_replace_task(uow, admin.id, assembly.id, 4, SNAPSHOT, INFO),
-        "opendlp.service_layer.sortition.tasks.run_select_from_db.delay",
+        lambda uow, admin, assembly, runner: sortition.start_db_replace_task(
+            uow, admin.id, assembly.id, 4, SNAPSHOT, INFO, task_runner=runner
+        ),
+        "run_select_from_db",
         id="db_replace",
     ),
 ]
 
 
-@pytest.mark.parametrize(("start", "dispatch"), STARTS)
+@pytest.mark.parametrize(("start", "task_name"), STARTS)
 class TestWritingStartsRefuseWhileAWritingRunIsUnfinished:
     @pytest.mark.parametrize("blocking_type", sorted(WRITING_TASK_TYPES, key=lambda t: t.value))
     @pytest.mark.parametrize("blocking_status", UNFINISHED)
-    def test_refused_adds_no_record_and_dispatches_nothing(self, uow, start, dispatch, blocking_type, blocking_status):
+    def test_refused_adds_no_record_and_dispatches_nothing(
+        self, uow, task_runner, start, task_name, blocking_type, blocking_status
+    ):
         """Any unfinished writing run on the assembly refuses the start, and nothing else happens."""
         admin, assembly = _setup(uow)
         blocking = _add_record(uow, assembly.id, blocking_type, blocking_status)
 
-        with patch(dispatch) as mock_dispatch, pytest.raises(SelectionAlreadyRunning) as exc_info:
-            start(uow, admin, assembly)
+        with pytest.raises(SelectionAlreadyRunning) as exc_info:
+            start(uow, admin, assembly, task_runner)
 
-        mock_dispatch.assert_not_called()
+        assert task_runner.submitted == []
         assert len(uow.fake_selection_run_records._items) == 1
         assert exc_info.value.task_id == blocking.task_id
         assert exc_info.value.task_type == blocking_type
@@ -129,53 +144,45 @@ class TestWritingStartsRefuseWhileAWritingRunIsUnfinished:
         assert uow.locked_assembly_ids == [assembly.id]
 
     @pytest.mark.parametrize("blocking_type", sorted(READ_ONLY_TASK_TYPES, key=lambda t: t.value))
-    def test_runs_alongside_a_read_only_task(self, uow, start, dispatch, blocking_type):
+    def test_runs_alongside_a_read_only_task(self, uow, task_runner, start, task_name, blocking_type):
         """A pending read-only task on the assembly never blocks a writer."""
         admin, assembly = _setup(uow)
         _add_record(uow, assembly.id, blocking_type, SelectionRunStatus.RUNNING)
 
-        with patch(dispatch) as mock_dispatch:
-            mock_dispatch.return_value = Mock(id="celery-id")
-            start(uow, admin, assembly)
+        start(uow, admin, assembly, task_runner)
 
-        mock_dispatch.assert_called_once()
+        assert [task.name for task in task_runner.submitted] == [task_name]
 
     @pytest.mark.parametrize("blocking_status", FINISHED)
-    def test_runs_after_a_writing_run_has_finished(self, uow, start, dispatch, blocking_status):
+    def test_runs_after_a_writing_run_has_finished(self, uow, task_runner, start, task_name, blocking_status):
         """A finished writing run, whatever its outcome, no longer holds the assembly."""
         admin, assembly = _setup(uow)
         _add_record(uow, assembly.id, SelectionTaskType.SELECT_FROM_DB, blocking_status)
 
-        with patch(dispatch) as mock_dispatch:
-            mock_dispatch.return_value = Mock(id="celery-id")
-            start(uow, admin, assembly)
+        start(uow, admin, assembly, task_runner)
 
-        mock_dispatch.assert_called_once()
+        assert [task.name for task in task_runner.submitted] == [task_name]
 
-    def test_runs_while_another_assembly_is_writing(self, uow, start, dispatch):
+    def test_runs_while_another_assembly_is_writing(self, uow, task_runner, start, task_name):
         """A running selection on a different assembly is not this assembly's business."""
         admin, assembly = _setup(uow)
         _add_record(uow, uuid.uuid4(), SelectionTaskType.SELECT_FROM_DB, SelectionRunStatus.RUNNING)
 
-        with patch(dispatch) as mock_dispatch:
-            mock_dispatch.return_value = Mock(id="celery-id")
-            start(uow, admin, assembly)
+        start(uow, admin, assembly, task_runner)
 
-        mock_dispatch.assert_called_once()
+        assert [task.name for task in task_runner.submitted] == [task_name]
         assert uow.locked_assembly_ids == [assembly.id]
 
 
 class TestListingOldTabsIsNeverRefused:
-    def test_dry_run_list_runs_during_a_selection(self, uow):
+    def test_dry_run_list_runs_during_a_selection(self, uow, task_runner):
         """Listing old tabs only reads the spreadsheet, so a running selection does not stop it."""
         admin, assembly = _setup(uow)
         _add_record(uow, assembly.id, SelectionTaskType.SELECT_GSHEET, SelectionRunStatus.RUNNING)
 
-        with patch("opendlp.service_layer.sortition.tasks.manage_old_tabs.delay") as mock_dispatch:
-            mock_dispatch.return_value = Mock(id="celery-id")
-            sortition.start_gsheet_manage_tabs_task(uow, admin.id, assembly.id, dry_run=True)
+        sortition.start_gsheet_manage_tabs_task(uow, admin.id, assembly.id, dry_run=True, task_runner=task_runner)
 
-        mock_dispatch.assert_called_once()
+        assert [task.name for task in task_runner.submitted] == ["manage_old_tabs"]
         assert uow.locked_assembly_ids == []
 
 

@@ -1,6 +1,7 @@
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from flask import Flask, current_app, has_app_context
 from sortition_algorithms import adapters
@@ -13,8 +14,11 @@ from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.adapters.template_renderer import FlaskTemplateRenderer, TemplateRenderer
 from opendlp.adapters.url_generator import FlaskURLGenerator, URLGenerator
 from opendlp.config import SMTPEmailCfg, get_config, get_db_uri
-from opendlp.service_layer import unit_of_work
+from opendlp.service_layer import handlers, unit_of_work
 from opendlp.service_layer.task_runner import TaskRunner
+
+if TYPE_CHECKING:
+    from opendlp.service_layer.unit_of_work_events import EventHandlers
 
 _session_factory_cache: dict[str, sessionmaker] = {}
 
@@ -63,7 +67,7 @@ def bootstrap(
     session_factory = bootstrap_session_factory(start_orm, session_factory)
 
     if uow is None:
-        uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
+        uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory, event_handlers=default_event_handlers())
 
     return uow
 
@@ -91,12 +95,17 @@ def set_task_runner(runner: TaskRunner | None) -> None:
         _task_runner["runner"] = runner
 
 
+def default_event_handlers() -> EventHandlers:
+    """The application's event handlers, with their adapters supplied."""
+    return handlers.build_event_handlers(get_task_runner())
+
+
 UowFactory = Callable[[], unit_of_work.AbstractUnitOfWork]
 
 
 def default_uow_factory() -> unit_of_work.AbstractUnitOfWork:
     """Production UnitOfWork factory: a SqlAlchemyUnitOfWork over the cached session factory."""
-    return unit_of_work.SqlAlchemyUnitOfWork(bootstrap_session_factory())
+    return unit_of_work.SqlAlchemyUnitOfWork(bootstrap_session_factory(), event_handlers=default_event_handlers())
 
 
 def get_flask_uow() -> unit_of_work.AbstractUnitOfWork:

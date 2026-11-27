@@ -178,6 +178,31 @@ class TestCsvSelectionRun:
         assert "login" in response.location
 
 
+class TestCsvSelectionRunThatCannotBeSent:
+    def test_the_organiser_is_told_and_the_run_is_failed_so_they_can_retry(
+        self, logged_in_admin, assembly_with_csv_config, fake_store, task_runner
+    ):
+        """A broker failure fails the run straight away rather than leaving it pending for an hour."""
+        assembly = assembly_with_csv_config
+        task_runner.fail_dispatch = ConnectionError("broker down")
+
+        response = logged_in_admin.post(f"/backoffice/project/{assembly.id}/selection/db/run")
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/project/{assembly.id}/selection")
+        html = logged_in_admin.get(response.location).data.decode()
+        assert "The task could not be started. Please try again." in html
+        assert task_runner.submitted == []
+        with FakeUnitOfWork(store=fake_store) as uow:
+            (record,) = uow.selection_run_records.get_by_assembly_id(assembly.id)
+            assert record.status == SelectionRunStatus.FAILED
+
+        retry = logged_in_admin.post(f"/backoffice/project/{assembly.id}/selection/db/run")
+
+        assert "current_selection=" in retry.location
+        assert [task.name for task in task_runner.submitted] == ["run_select_from_db"]
+
+
 class TestCsvSelectionProgressModal:
     """Tests for the CSV selection progress modal endpoint."""
 
@@ -1346,16 +1371,15 @@ class TestWritingRoutesLandInTheRunningTasksModal:
         return run_id
 
     def test_run_selection_redirects_into_the_running_modal(
-        self, logged_in_admin, assembly_with_csv_config, fake_store
+        self, logged_in_admin, assembly_with_csv_config, fake_store, task_runner
     ):
         """The POST starts nothing and sends the user to the running selection, cancel button and all."""
         assembly = assembly_with_csv_config
         run_id = self._running_selection(fake_store, assembly.id)
 
-        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
-            response = logged_in_admin.post(f"/backoffice/project/{assembly.id}/selection/db/run")
+        response = logged_in_admin.post(f"/backoffice/project/{assembly.id}/selection/db/run")
 
-        mock_delay.assert_not_called()
+        assert task_runner.submitted == []
         assert response.status_code == 302
         assert response.location.endswith(f"/selection?current_selection={run_id}")
 
