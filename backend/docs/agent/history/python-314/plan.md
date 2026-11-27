@@ -388,8 +388,24 @@ The follow-up that Q4, Q5, Q6 and Q10 deferred, on the
   `typing.get_type_hints` on a class with typing-only imports will hit the
   same thing.
 
-Still open: `COVERAGE_CORE=sysmon` (its own branch), and a 3.15 leg once the
-numeric libraries publish wheels.
+**`COVERAGE_CORE=sysmon` needed no change** (Q7's deferred item). Coverage
+7.17 already picks the `sys.monitoring` core on 3.14, with branch measurement
+on, so the saving arrived with the 3.14 move. Measured on the non-BDD suite
+(8195 tests, 4 workers, one run each, so rough):
+
+| Run | Time | Overhead |
+|---|---|---|
+| No coverage (`just test-nobdd`) | 59s | – |
+| Coverage, default core (`SysMonitor`) | 92s | about 56% |
+| Coverage, `COVERAGE_CORE=ctrace` (the old core) | 125s | about 110% |
+
+The ctrace and sysmon reports agree on missing lines and branches in all 509
+files. The BDD subprocess coverage path was not measured. Decisions: coverage
+stays out of `just test-nobdd` (33 seconds per edit-test loop is still too
+much), and the core is not pinned in `[tool.coverage.run]` — the default is
+already right.
+
+Still open: a 3.15 leg once the numeric libraries publish wheels.
 
 Trap for next time: `ruff format .` from `backend/` also reformats Python
 code blocks in 61 Markdown files under `docs/`, which the pre-commit hook
