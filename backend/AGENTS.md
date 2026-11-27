@@ -43,7 +43,7 @@ No additional system dependencies are required. The sortition-algorithms library
 just test
 
 # Run all non-BDD tests with up to 8 parallel processes. No coverage - it adds
-# ~70% to the run; CI and `just test` still measure it, and
+# ~55% to the run; CI and `just test` still measure it, and
 # `just test-nobdd-cov` produces a local HTML report.
 just test-nobdd
 # which is

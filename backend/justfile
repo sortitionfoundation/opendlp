@@ -45,7 +45,7 @@ test-xml: test-js build-all translate-compile
 # Test the code with pytest, headless BDD, HTML report
 test: test-html
 
-# Fast non-BDD tests, no coverage (measuring adds ~70%; see test-nobdd-cov)
+# Fast non-BDD tests, no coverage (measuring adds ~55%; see test-nobdd-cov)
 test-nobdd: test-js translate-compile
   @echo "🚀 Testing code: Running pytest (no coverage - use test-nobdd-cov for a report)"
   uv run python -m pytest --tb=short --ignore=tests/bdd -n auto --maxprocesses=8
