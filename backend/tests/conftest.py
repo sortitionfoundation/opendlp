@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import time
 import urllib.request
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -21,13 +22,14 @@ from sqlalchemy.orm import sessionmaker
 from tenacity import Retrying, retry, stop_after_delay
 from werkzeug.security import generate_password_hash
 
+from opendlp import bootstrap
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 from opendlp.feature_flags import reload_flags
 from opendlp.logging import pre_chain
 from opendlp.service_layer import security, totp_service
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from tests.fakes import FakeEmailAdapter, FakeUnitOfWork
+from tests.fakes import FakeEmailAdapter, FakeUnitOfWork, RecordingTaskRunner
 
 # the plugins have to be defined at the top level, even though they only apply to the BDD tests.
 # https://daobook.github.io/pytest/how-to/writing_plugins.html#requiring-loading-plugins-in-a-test-module-or-conftest-file
@@ -480,6 +482,21 @@ def restore_flask_app_state(app):
     app.config.update(saved_config)
     app.extensions.clear()
     app.extensions.update(saved_extensions)
+
+
+@pytest.fixture(autouse=True)
+def task_runner() -> Iterator[RecordingTaskRunner]:
+    """The RecordingTaskRunner that every service, route and event handler in the test sends tasks to.
+
+    Installed as the process's runner (bootstrap.set_task_runner), so a test
+    that never mentions it still sends nothing to Celery. Assert on
+    ``task_runner.submitted``; drive a task's outcome with ``finish``, ``fail``
+    and ``set_state``.
+    """
+    runner = RecordingTaskRunner()
+    bootstrap.set_task_runner(runner)
+    yield runner
+    bootstrap.set_task_runner(None)
 
 
 @pytest.fixture

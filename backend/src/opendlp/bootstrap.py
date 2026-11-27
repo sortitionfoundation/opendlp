@@ -14,8 +14,13 @@ from opendlp.adapters.template_renderer import FlaskTemplateRenderer, TemplateRe
 from opendlp.adapters.url_generator import FlaskURLGenerator, URLGenerator
 from opendlp.config import SMTPEmailCfg, get_config, get_db_uri
 from opendlp.service_layer import unit_of_work
+from opendlp.service_layer.task_runner import TaskRunner
 
 _session_factory_cache: dict[str, sessionmaker] = {}
+
+# The process's TaskRunner, built on first use. Kept in a dict so it can be
+# replaced without a global statement.
+_task_runner: dict[str, TaskRunner] = {}
 
 
 def bootstrap_session_factory(
@@ -61,6 +66,29 @@ def bootstrap(
         uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
 
     return uow
+
+
+def get_task_runner() -> TaskRunner:
+    """The TaskRunner that entrypoints pass to the services: Celery, unless set_task_runner() chose another."""
+    runner = _task_runner.get("runner")
+    if runner is None:
+        # Imported here because the Celery runner imports the tasks, and the
+        # tasks import this module.
+        from opendlp.entrypoints.celery.runner import CeleryTaskRunner  # noqa: PLC0415
+
+        runner = _task_runner["runner"] = CeleryTaskRunner()
+    return runner
+
+
+def set_task_runner(runner: TaskRunner | None) -> None:
+    """Make get_task_runner() return ``runner`` for the rest of the process. None goes back to Celery.
+
+    Tests install a fake here, so every service, route and event handler in the
+    test reaches the same one.
+    """
+    _task_runner.pop("runner", None)
+    if runner is not None:
+        _task_runner["runner"] = runner
 
 
 UowFactory = Callable[[], unit_of_work.AbstractUnitOfWork]

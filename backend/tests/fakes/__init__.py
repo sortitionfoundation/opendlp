@@ -1,4 +1,4 @@
-"""ABOUTME: In-memory test doubles: repositories, FakeUnitOfWork, and fakes for email, Google, Redis and rendering
+"""ABOUTME: In-memory test doubles: repositories, FakeUnitOfWork, and fakes for email, tasks, Google, Redis, rendering
 ABOUTME: Re-exports every public fake, so tests can keep importing from tests.fakes"""
 
 from tests.fakes.email import FakeEmailAdapter
@@ -40,6 +40,7 @@ from tests.fakes.repositories import (
     FakeUserRepository,
     FakeUserSignupSurveyRepository,
 )
+from tests.fakes.tasks import RecordingTaskRunner, SubmittedTask
 from tests.fakes.uow import ClosedRepository, FakeStore, FakeUnitOfWork
 
 __all__ = [
@@ -81,5 +82,7 @@ __all__ = [
     "FakeUserInviteRepository",
     "FakeUserRepository",
     "FakeUserSignupSurveyRepository",
+    "RecordingTaskRunner",
+    "SubmittedTask",
     "google_api_error",
 ]

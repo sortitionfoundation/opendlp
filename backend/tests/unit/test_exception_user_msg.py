@@ -53,6 +53,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.tabular_data import TableProblem, TabularDataError
 from opendlp.service_layer.target_csv_import import TargetsCsvError
 from opendlp.service_layer.target_service import TargetLinkedError, TargetsNotSaved
+from opendlp.service_layer.task_runner import TaskDispatchError
 from opendlp.service_layer.writing_guard import SelectionAlreadyRunning
 
 _RUNNING_SELECTION = SelectionRunRecord(
@@ -83,6 +84,7 @@ CURATED = [
     FieldDefinitionConflictError("A choice field must keep at least one option"),
     ContentBlockInvalidError("Add a heading, some text, or both"),
     SelectionAlreadyRunning(_RUNNING_SELECTION),
+    TaskDispatchError(),
     TabularDataError([TableProblem(kind="empty", message="The file is empty or has no header row.")]),
     AssemblyTitleTaken("Climate Assembly"),
     CannotCloneGSheetAssembly(),
