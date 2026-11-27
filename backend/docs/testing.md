@@ -68,7 +68,7 @@ class TestGetByEmail:
 
 **When to promote a SQL-only method:**
 
-If a method only exists on the SQL implementation but could reasonably be tested against a fake, add it to the abstract interface in `repositories.py`, implement the fake in `tests/fakes.py`, then add a contract test.
+If a method only exists on the SQL implementation but could reasonably be tested against a fake, add it to the abstract interface in `repositories.py`, implement the fake in the matching module under `tests/fakes/repositories/`, then add a contract test.
 
 ### Integration Tests (`tests/integration/`)
 

@@ -71,7 +71,7 @@ service, so it is fully exercised by the normal tests and needs no seam. The
 **Google Sheets target is injected** through an app factory
 (`gsheet_export_target_factory`, registered in `flask_app.py`): writing to it
 calls the real Google Sheets API, so tests override the factory with
-`FakeGSheetExportTarget` (in `tests/fakes.py`) and no real Google access is
+`FakeGSheetExportTarget` (in `tests/fakes/google.py`) and no real Google access is
 needed.
 
 When a Google Sheets write fails — most commonly because the sheet has not been
