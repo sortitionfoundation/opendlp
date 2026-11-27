@@ -145,6 +145,7 @@ class TestInjectTemplateGlobals:
         assert (
             context["help_site_data_agreement"] == "https://docs.democraticlottery.org/data-and-legal/data-agreement/"
         )
+        assert context["help_site_terms"] == "https://docs.democraticlottery.org/data-and-legal/terms/"
         assert context["help_site_cookies"] == "https://docs.democraticlottery.org/data-and-legal/cookies/"
 
 
@@ -163,12 +164,18 @@ class TestGetHelpSiteUrls:
 
         assert urls.home == "https://docs.democraticlottery.org/help/"
         assert urls.data_agreement == "https://docs.democraticlottery.org/data-and-legal/data-agreement/"
+        assert urls.terms == "https://docs.democraticlottery.org/data-and-legal/terms/"
         assert urls.cookies == "https://docs.democraticlottery.org/data-and-legal/cookies/"
 
     def test_cookies_url_can_be_overridden_by_environment(self):
         """Test that HELP_SITE_COOKIES overrides the default cookies page URL."""
         with patch.dict(os.environ, {"HELP_SITE_COOKIES": "https://example.com/cookies/"}):
             assert get_help_site_urls().cookies == "https://example.com/cookies/"
+
+    def test_terms_url_can_be_overridden_by_environment(self):
+        """HELP_SITE_TERMS points the sign-up page's terms link somewhere else."""
+        with patch.dict(os.environ, {"HELP_SITE_TERMS": "https://example.com/terms/"}):
+            assert get_help_site_urls().terms == "https://example.com/terms/"
 
 
 class TestGetOpendlpVersion:

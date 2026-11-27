@@ -9,6 +9,7 @@ import structlog
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.template_renderer import TemplateRenderer
 from opendlp.adapters.url_generator import URLGenerator
+from opendlp.config import get_data_agreement_version, get_terms_version
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.users import User, UserAssemblyRole
@@ -57,6 +58,7 @@ def create_user(
     is_active: bool = True,
     accept_data_agreement: bool = False,
     auto_confirm_email: bool = False,
+    accept_terms: bool = False,
 ) -> tuple[User, EmailConfirmationToken | None]:
     """
     Create a new user with proper validation.
@@ -71,9 +73,12 @@ def create_user(
         oauth_id: OAuth provider user ID
         invite_code: invite code for registration
         global_role: role for the user
-        accept_data_agreement: whether user has accepted data agreement
+        accept_data_agreement: whether the user agreed to the data agreement;
+            recorded with the time and the version in force now
         auto_confirm_email: if True, mark email as confirmed immediately
             (used for CLI-created users where no confirmation email is sent)
+        accept_terms: whether the user agreed to the Terms and Conditions;
+            recorded with the time and the version in force now
 
     Returns:
         Tuple of (User instance, EmailConfirmationToken or None)
@@ -128,9 +133,11 @@ def create_user(
         email_confirmed_at=email_confirmed_at,
     )
 
-    # Mark data agreement as accepted if provided
+    # Record what the user agreed to, each document with the version in force now
     if accept_data_agreement:
-        user.mark_data_agreement_agreed()
+        user.mark_data_agreement_agreed(get_data_agreement_version())
+    if accept_terms:
+        user.mark_terms_agreed(get_terms_version())
 
     uow.users.add(user)
 
@@ -355,6 +362,7 @@ def find_or_create_oauth_user(
     invite_code: str | None = None,
     accept_data_agreement: bool = False,
     open_signup: bool = False,
+    accept_terms: bool = False,
 ) -> tuple[User, bool]:
     """
     Find existing OAuth user or create new one.
@@ -372,9 +380,12 @@ def find_or_create_oauth_user(
         first_name: User's first name from OAuth
         last_name: User's last name from OAuth
         invite_code: Required for new user creation unless open_signup is True
-        accept_data_agreement: whether user has accepted data agreement
+        accept_data_agreement: whether the user agreed to the data agreement;
+            recorded on a new user only
         open_signup: when True, a new user may be created without an invite code
             (and is given the organiser role, mirroring email open signup)
+        accept_terms: whether the user agreed to the Terms and Conditions;
+            recorded on a new user only
 
     Returns:
         Tuple of (User, created_flag) where created_flag is True if user was created
@@ -415,6 +426,7 @@ def find_or_create_oauth_user(
         oauth_provider=provider,
         oauth_id=oauth_id,
         accept_data_agreement=accept_data_agreement,
+        accept_terms=accept_terms,
         **role_kwargs,
     )
     # Token will be None for OAuth users (they're auto-confirmed)

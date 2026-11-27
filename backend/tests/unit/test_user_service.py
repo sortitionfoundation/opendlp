@@ -139,6 +139,62 @@ class TestCreateUser:
             )
 
 
+class TestCreateUserAgreements:
+    """What a new user agreed to is recorded with the time, and the version of each document in force."""
+
+    def _create(self, uow, **agreements):
+        user, _token = user_service.create_user(
+            uow=uow,
+            email="agrees@example.com",
+            password="StrongPass123",  # pragma: allowlist secret
+            global_role=GlobalRole.ORGANISER,
+            **agreements,
+        )
+        return user
+
+    def test_agreeing_to_both_records_each_with_its_version(self, uow, patch_password_hashing):
+        before = datetime.now(UTC)
+        user = self._create(uow, accept_terms=True, accept_data_agreement=True)
+        after = datetime.now(UTC)
+
+        assert before <= user.terms_agreed_at <= after
+        assert user.terms_version == "1"
+        assert before <= user.user_data_agreement_agreed_at <= after
+        assert user.user_data_agreement_version == "1"
+
+    def test_the_versions_are_the_configured_ones(self, uow, patch_password_hashing, monkeypatch):
+        monkeypatch.setenv("TERMS_VERSION", "2026-12")
+        monkeypatch.setenv("DATA_AGREEMENT_VERSION", "4")
+
+        user = self._create(uow, accept_terms=True, accept_data_agreement=True)
+
+        assert user.terms_version == "2026-12"
+        assert user.user_data_agreement_version == "4"
+
+    def test_the_record_is_saved_not_only_returned(self, uow, patch_password_hashing):
+        user = self._create(uow, accept_terms=True, accept_data_agreement=True)
+
+        saved = uow.users.get(user.id)
+        assert saved.terms_version == "1"
+        assert saved.user_data_agreement_version == "1"
+
+    def test_without_agreeing_nothing_is_recorded(self, uow, patch_password_hashing):
+        """A user made by an admin, from the command line say, has agreed to nothing."""
+        user = self._create(uow)
+
+        assert user.terms_agreed_at is None
+        assert user.terms_version is None
+        assert user.user_data_agreement_agreed_at is None
+        assert user.user_data_agreement_version is None
+
+    def test_the_data_agreement_alone_leaves_the_terms_unagreed(self, uow, patch_password_hashing):
+        user = self._create(uow, accept_data_agreement=True)
+
+        assert user.user_data_agreement_version == "1"
+        assert user.terms_agreed_at is None
+        assert user.terms_version is None
+
+
 class TestAuthenticateUser:
     """Test user authentication functionality."""
 
@@ -416,6 +472,56 @@ class TestFindOrCreateOAuthUser:
         assert user.oauth_provider == "google"
         assert user.oauth_id == "google123"
         assert created is True
+
+    def test_a_new_oauth_user_is_recorded_with_what_they_agreed_to(self, uow):
+        """The agreement carried across the provider's redirect reaches the new account."""
+        user, created = user_service.find_or_create_oauth_user(
+            uow=uow,
+            provider="microsoft",
+            oauth_id="microsoft123",
+            email="agrees@example.com",
+            accept_terms=True,
+            accept_data_agreement=True,
+            open_signup=True,
+        )
+
+        assert created is True
+        assert user.terms_agreed_at is not None
+        assert user.terms_version == "1"
+        assert user.user_data_agreement_agreed_at is not None
+        assert user.user_data_agreement_version == "1"
+
+    def test_a_new_oauth_user_who_agreed_to_nothing_has_nothing_recorded(self, uow):
+        """Signing in with a provider for the first time, without the sign-up page, records no agreement."""
+        user, created = user_service.find_or_create_oauth_user(
+            uow=uow, provider="google", oauth_id="google123", email="new@example.com", open_signup=True
+        )
+
+        assert created is True
+        assert user.terms_agreed_at is None
+        assert user.user_data_agreement_agreed_at is None
+
+    def test_an_existing_user_signing_in_is_not_recorded_as_agreeing(self, uow):
+        """Only a new account takes the agreement; an existing one keeps the record it has."""
+        existing_user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(existing_user)
+
+        user, created = user_service.find_or_create_oauth_user(
+            uow=uow,
+            provider="google",
+            oauth_id="google123",
+            email="test@example.com",
+            accept_terms=True,
+            accept_data_agreement=True,
+        )
+
+        assert created is False
+        assert user.terms_agreed_at is None
+        assert user.user_data_agreement_agreed_at is None
 
 
 class TestGetUserAssemblies:

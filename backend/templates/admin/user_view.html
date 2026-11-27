@@ -1,5 +1,5 @@
 {#
-ABOUTME: Site Admin page for one user - their details, signup survey answers and account actions
+ABOUTME: Site Admin page for one user - their details, what they agreed to, signup survey answers and account actions
 ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling and 2FA off are confirmed in one
 #}
 {% extends "backoffice/base_page.html" %}
@@ -46,6 +46,20 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
 
 {% macro missing(text) %}
     <dd class="text-body-md flex-1" style="color: var(--color-secondary-text);">{{ text }}</dd>
+{% endmacro %}
+
+{# When the user agreed to one document, and which version. Someone who agreed
+   before versions were recorded has a time and no version. #}
+{% macro agreement_row(term, agreed_at, version) %}
+    {% call detail_row(term) %}
+        {% if agreed_at and version %}
+            {{ detail_value(_("Agreed on %(date)s, version %(version)s", date=agreed_at|datetimeformat('long'), version=version)) }}
+        {% elif agreed_at %}
+            {{ detail_value(_("Agreed on %(date)s", date=agreed_at|datetimeformat('long'))) }}
+        {% else %}
+            {{ missing(_("Not agreed")) }}
+        {% endif %}
+    {% endcall %}
 {% endmacro %}
 
 {% block page_content %}
@@ -103,13 +117,8 @@ ABOUTME: Names are edited in place and the role in a dialog; disabling, enabling
                         {% endif %}
                     </dd>
                 {% endcall %}
-                {% call detail_row(_("Data agreement")) %}
-                    {% if user.user_data_agreement_agreed_at %}
-                        {{ detail_value(_("Agreed on %(date)s", date=user.user_data_agreement_agreed_at|datetimeformat('long'))) }}
-                    {% else %}
-                        {{ missing(_("Not agreed")) }}
-                    {% endif %}
-                {% endcall %}
+                {{ agreement_row(_("Terms and conditions"), user.terms_agreed_at, user.terms_version) }}
+                {{ agreement_row(_("Data agreement"), user.user_data_agreement_agreed_at, user.user_data_agreement_version) }}
                 {% call detail_row(_("Account created")) %}{{ detail_value(user.created_at|datetimeformat('long')) }}{% endcall %}
             </dl>
         {% endcall %}

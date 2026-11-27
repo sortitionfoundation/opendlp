@@ -276,7 +276,11 @@ users = Table(
     Column("global_role", EnumAsString(GlobalRole, 50), nullable=False),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("is_active", Boolean, nullable=False, default=True),
+    # What the user agreed to at sign-up, when, and which version of each document
     Column("user_data_agreement_agreed_at", TZAwareDatetime(), nullable=True),
+    Column("user_data_agreement_version", String(50), nullable=True),
+    Column("terms_agreed_at", TZAwareDatetime(), nullable=True),
+    Column("terms_version", String(50), nullable=True),
     # Two-factor authentication fields
     Column("totp_secret_encrypted", String(255), nullable=True),
     Column("totp_enabled", Boolean, nullable=False, default=False),

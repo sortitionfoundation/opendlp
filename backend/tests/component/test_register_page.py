@@ -1,13 +1,16 @@
 """ABOUTME: Component tests for the words around the sign-up page's fields
-ABOUTME: Invite code help, password rules, the survey's sources question and the beta disclaimer's text"""
+ABOUTME: Invite code help, password rules, the survey's sources question, the agreement and the beta disclaimer"""
 
+import html as html_module
 import re
+from datetime import UTC, datetime
 from itertools import pairwise
 
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
+from opendlp.entrypoints import context_processors
 from opendlp.feature_flags import reload_flags
 from tests.fakes import FakeStore, FakeUnitOfWork
 
@@ -138,7 +141,7 @@ def _text(html: str) -> str:
 
 
 class TestBetaDisclaimer:
-    """The beta disclaimer is text under the data agreement, with nothing to tick."""
+    """The beta disclaimer is text under the agreement, with nothing to tick."""
 
     def test_the_disclaimer_reads_as_written(self, client: FlaskClient):
         paragraph = _tag(_disclaimer(_page(client)), r"<p[^>]*>[\s\S]*?</p>")
@@ -167,23 +170,21 @@ class TestBetaDisclaimer:
         # No level is skipped on the way down
         assert all(later <= earlier + 1 for earlier, later in pairwise(levels))
 
-    def test_it_sits_under_the_data_agreement_and_above_the_submit_buttons(self, client: FlaskClient):
+    def test_it_sits_under_the_agreement_and_above_the_submit_buttons(self, client: FlaskClient):
         html = _page(client)
 
-        data_agreement = html.find('name="accept_data_agreement"')
+        agreement = html.find('name="accept_terms_and_data_agreement"')
         disclaimer = html.find(_disclaimer(html))
-        assert -1 not in (data_agreement, disclaimer)
-        assert data_agreement < disclaimer < html.find('value="email"', disclaimer)
+        assert -1 not in (agreement, disclaimer)
+        assert agreement < disclaimer < html.find('value="email"', disclaimer)
 
     def test_there_is_nothing_to_tick(self, client: FlaskClient):
-        """The data agreement's tickbox is the only one on the page."""
+        """The agreement's tickbox is the only one on the page."""
         tickboxes = re.findall(r'<input[^>]*type="checkbox"[^>]*>', _page(client))
 
-        assert [_tag(tickbox, r'name="[^"]*"') for tickbox in tickboxes] == ['name="accept_data_agreement"']
+        assert [_tag(tickbox, r'name="[^"]*"') for tickbox in tickboxes] == ['name="accept_terms_and_data_agreement"']
 
-    def test_a_sign_up_by_email_needs_only_the_data_agreement(
-        self, client: FlaskClient, fake_store: FakeStore, open_signup
-    ):
+    def test_a_sign_up_by_email_needs_only_the_agreement(self, client: FlaskClient, fake_store: FakeStore, open_signup):
         response = client.post(
             "/auth/register",
             data={
@@ -192,7 +193,7 @@ class TestBetaDisclaimer:
                 "email": "newuser@example.com",
                 "password": "securepassword123",  # pragma: allowlist secret
                 "password_confirm": "securepassword123",  # pragma: allowlist secret
-                "accept_data_agreement": "y",
+                "accept_terms_and_data_agreement": "y",
             },
         )
 
@@ -201,3 +202,122 @@ class TestBetaDisclaimer:
             user = uow.users.get_by_email("newuser@example.com")
             assert user is not None
             assert user.user_data_agreement_agreed_at is not None
+            assert user.terms_agreed_at is not None
+
+
+AGREEMENT_LABEL = "I agree to the Terms and Conditions and the Data Agreement"
+EMAILS_SENTENCE = "We'll email you about important changes to OpenDLP and to these documents."
+TERMS_URL = "https://docs.democraticlottery.org/data-and-legal/terms/"
+DATA_AGREEMENT_URL = "https://docs.democraticlottery.org/data-and-legal/data-agreement/"
+
+
+def _agreement(html: str) -> str:
+    """The fieldset holding the agreement, from its legend to its end."""
+    return _tag(html, r"<fieldset[^>]*>\s*<legend[^>]*>\s*Terms and data agreement\s*</legend>[\s\S]*?</fieldset>")
+
+
+def _sign_up_by_email(client: FlaskClient, **extra) -> object:
+    data = {
+        "first_name": "New",
+        "last_name": "User",
+        "email": "newuser@example.com",
+        "password": "securepassword123",  # pragma: allowlist secret
+        "password_confirm": "securepassword123",  # pragma: allowlist secret
+    }
+    return client.post("/auth/register", data=data | extra)
+
+
+class TestTermsAndDataAgreement:
+    """One required tickbox agrees to the Terms and Conditions and the data agreement together."""
+
+    def test_the_agreement_has_its_own_heading(self, client: FlaskClient):
+        legend = _tag(_agreement(_page(client)), r"<legend[^>]*>[\s\S]*?</legend>")
+
+        assert _text(legend) == "Terms and data agreement"
+
+    def test_one_tickbox_names_both_documents(self, client: FlaskClient):
+        agreement = _agreement(_page(client))
+
+        tickboxes = re.findall(r'<input[^>]*type="checkbox"[^>]*>', agreement)
+        assert len(tickboxes) == 1
+        assert 'name="accept_terms_and_data_agreement"' in tickboxes[0]
+        label = _tag(agreement, r'<span class="checkbox-label">[\s\S]*?</span>\s*</label>')
+        # The label, then the star that marks it required
+        assert _text(label).removesuffix("*").strip() == AGREEMENT_LABEL
+
+    def test_each_document_has_a_link_that_opens_in_a_new_tab(self, client: FlaskClient):
+        agreement = _agreement(_page(client))
+
+        terms = _tag(agreement, r"<a [^>]*>View terms and conditions</a>")
+        data_agreement = _tag(agreement, r"<a [^>]*>View data agreement</a>")
+        assert f'href="{TERMS_URL}"' in terms
+        assert f'href="{DATA_AGREEMENT_URL}"' in data_agreement
+        for link in (terms, data_agreement):
+            assert 'target="_blank"' in link
+            assert 'rel="noopener noreferrer"' in link
+            assert "color: var(--color-links);" in link
+
+    def test_the_links_sit_outside_the_label(self, client: FlaskClient):
+        """Following a link must not tick the box."""
+        label = _tag(_agreement(_page(client)), r"<label[\s\S]*?</label>")
+
+        assert "<a " not in label
+
+    @pytest.fixture
+    def terms_elsewhere(self, monkeypatch):
+        """HELP_SITE_TERMS set, and the cached help site URLs read again before and after."""
+        monkeypatch.setenv("HELP_SITE_TERMS", "https://example.org/terms/")
+        context_processors.get_help_site_urls.cache_clear()
+        yield
+        context_processors.get_help_site_urls.cache_clear()
+
+    def test_the_terms_link_follows_its_setting(self, client: FlaskClient, terms_elsewhere):
+        link = _tag(_agreement(_page(client)), r"<a [^>]*>View terms and conditions</a>")
+
+        assert 'href="https://example.org/terms/"' in link
+
+    def test_the_sentence_about_emails_describes_the_tickbox(self, client: FlaskClient):
+        """The notice is read out with the tickbox, and asks nothing of its own."""
+        agreement = _agreement(_page(client))
+
+        hint = _tag(agreement, r'<p id="accept_terms_and_data_agreement-hint"[^>]*>[^<]*</p>')
+        assert html_module.unescape(_text(hint)) == EMAILS_SENTENCE
+        tickbox = _tag(agreement, r'<input[^>]*name="accept_terms_and_data_agreement"[^>]*>')
+        assert 'aria-describedby="accept_terms_and_data_agreement-hint"' in tickbox
+
+    def test_the_sentence_shows_with_open_signup_too(self, client: FlaskClient, open_signup):
+        assert 'id="accept_terms_and_data_agreement-hint"' in _agreement(_page(client))
+
+    def test_signing_up_by_email_without_the_tickbox_is_refused(
+        self, client: FlaskClient, fake_store: FakeStore, open_signup
+    ):
+        response = _sign_up_by_email(client)
+
+        assert response.status_code == 200
+        agreement = _agreement(response.get_data(as_text=True))
+        error = _tag(agreement, r'<p id="accept_terms_and_data_agreement-error"[^>]*>[^<]*</p>')
+        assert _text(error) == "You must accept the terms and the data agreement to register"
+        tickbox = _tag(agreement, r'<input[^>]*name="accept_terms_and_data_agreement"[^>]*>')
+        assert 'aria-invalid="true"' in tickbox
+        assert (
+            'aria-describedby="accept_terms_and_data_agreement-hint accept_terms_and_data_agreement-error"' in tickbox
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get_by_email("newuser@example.com") is None
+
+    def test_signing_up_by_email_records_both_documents_with_their_versions(
+        self, client: FlaskClient, fake_store: FakeStore, open_signup, monkeypatch
+    ):
+        monkeypatch.setenv("TERMS_VERSION", "2")
+        monkeypatch.setenv("DATA_AGREEMENT_VERSION", "5")
+        before = datetime.now(UTC)
+
+        response = _sign_up_by_email(client, accept_terms_and_data_agreement="y")
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user = uow.users.get_by_email("newuser@example.com")
+            assert before <= user.terms_agreed_at <= datetime.now(UTC)
+            assert user.terms_version == "2"
+            assert before <= user.user_data_agreement_agreed_at <= datetime.now(UTC)
+            assert user.user_data_agreement_version == "5"

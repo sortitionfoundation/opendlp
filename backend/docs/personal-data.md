@@ -183,6 +183,38 @@ When adding a table that holds personal data, add a corresponding `DELETE` to
 `_delete_all_test_data()` in `tests/conftest.py` and to `delete_all_except_standard_users()` in
 `tests/bdd/conftest.py`, respecting foreign-key ordering.
 
+## What sign-up records
+
+The sign-up page (`/auth/register`) makes a user row holding the email address, the first and
+last name, and a password hash or the ID of the Google or Microsoft account. With open sign-up,
+the optional survey's answers go in `user_signup_surveys`, as JSON.
+
+It also records what the person agreed to. One required tickbox, "I agree to the Terms and
+Conditions and the Data Agreement", agrees to both documents, each linked above it
+(`HELP_SITE_TERMS`, `HELP_SITE_DATA_AGREEMENT`). Every way of signing up there needs it: email,
+and the Google and Microsoft buttons, which carry it in the session across the provider's
+redirect. The user row keeps the time and the version of each:
+
+| Column                          | Holds                                                             |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `terms_agreed_at`               | When the Terms and Conditions were agreed to                      |
+| `terms_version`                 | Which version: `TERMS_VERSION` when the account was made          |
+| `user_data_agreement_agreed_at` | When the data agreement was agreed to                             |
+| `user_data_agreement_version`   | Which version: `DATA_AGREEMENT_VERSION` when the account was made |
+
+- Raising a version changes what later sign-ups record, and asks nobody to agree again. See
+  [Configuration](configuration.md#versions-of-the-terms-and-conditions-and-the-data-agreement).
+- An account made before versions were recorded has its data agreement time, no version, and
+  no terms.
+- An account made another way has agreed to nothing: one added with `opendlp users add`, or one
+  that the sign-in page's Google or Microsoft button makes, with open sign-up on, for an email
+  OpenDLP does not know yet.
+- "We'll email you about important changes to OpenDLP and to these documents." stands under
+  the tickbox as a notice. Those emails go to account holders about the service itself; nothing
+  is ticked or stored for them.
+
+The Site Admin user page shows each document's time and version, or "Not agreed".
+
 ## Who can look up a user account
 
 Adding someone to an assembly means finding their account, and finding an account means
@@ -281,6 +313,7 @@ need a decision, not a commit.
 - [docs/bot-protection.md](bot-protection.md) — honeypot, timing token, rate limits
 - [docs/translations.md](translations.md) — language detection and the session preference
 - [docs/agent/code_quality_rules.md](agent/code_quality_rules.md#logging-pii--secrets) — how to write a safe log call
-- [docs/configuration.md](configuration.md) — `SESSION_COOKIE_*`, `REMEMBER_COOKIE_*`, `HELP_SITE_COOKIES`
+- [docs/configuration.md](configuration.md) — `SESSION_COOKIE_*`, `REMEMBER_COOKIE_*`, `HELP_SITE_COOKIES`,
+  and the documents sign-up agrees to: `HELP_SITE_TERMS`, `TERMS_VERSION`, `DATA_AGREEMENT_VERSION`
 - [docs/account-lockout.md](account-lockout.md) — what disabling a user account does to their sessions, password and 2FA
 - [docs/roles-and-permissions.md](roles-and-permissions.md) — who can see which assemblies, and who can look up a user

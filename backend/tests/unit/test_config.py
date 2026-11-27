@@ -17,6 +17,7 @@ from opendlp.config import (
     dev_tools_enabled,
     get_application_url,
     get_config,
+    get_data_agreement_version,
     get_max_content_length,
     get_max_csv_upload_bytes,
     get_max_csv_upload_mb,
@@ -35,6 +36,7 @@ from opendlp.config import (
     get_registration_thank_you_html_max_bytes,
     get_secret_key,
     get_task_timeout_hours,
+    get_terms_version,
     to_bool,
 )
 
@@ -247,6 +249,26 @@ class TestGetApplicationUrl:
     def test_strips_trailing_slash_and_whitespace(self, temp_env_vars):
         temp_env_vars(APPLICATION_URL=" https://opendlp.example.org/ ")
         assert get_application_url() == "https://opendlp.example.org"
+
+
+@pytest.mark.parametrize(
+    ("getter", "env_key"),
+    [(get_terms_version, "TERMS_VERSION"), (get_data_agreement_version, "DATA_AGREEMENT_VERSION")],
+)
+class TestDocumentVersions:
+    """The versions of the Terms and Conditions and the data agreement that sign-up records."""
+
+    def test_the_first_version_when_unset(self, clear_env_vars, getter, env_key):
+        clear_env_vars(env_key)
+        assert getter() == "1"
+
+    def test_the_configured_version(self, temp_env_vars, getter, env_key):
+        temp_env_vars(**{env_key: " 2026-12 "})
+        assert getter() == "2026-12"
+
+    def test_a_blank_version_counts_as_unset(self, temp_env_vars, getter, env_key):
+        temp_env_vars(**{env_key: "  "})
+        assert getter() == "1"
 
 
 class TestGetTaskTimeoutHours:

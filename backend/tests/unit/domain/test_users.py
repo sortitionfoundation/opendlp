@@ -158,13 +158,49 @@ class TestUser:
         user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
         assert user.user_data_agreement_agreed_at is None
+        assert user.user_data_agreement_version is None
 
         before_time = datetime.now(UTC)
-        user.mark_data_agreement_agreed()
+        user.mark_data_agreement_agreed("3")
         after_time = datetime.now(UTC)
 
         assert user.user_data_agreement_agreed_at is not None
         assert before_time <= user.user_data_agreement_agreed_at <= after_time
+        assert user.user_data_agreement_version == "3"
+
+    def test_mark_terms_agreed(self):
+        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+
+        assert user.terms_agreed_at is None
+        assert user.terms_version is None
+
+        before_time = datetime.now(UTC)
+        user.mark_terms_agreed("2")
+        after_time = datetime.now(UTC)
+
+        assert user.terms_agreed_at is not None
+        assert before_time <= user.terms_agreed_at <= after_time
+        assert user.terms_version == "2"
+
+    def test_agreeing_to_one_document_leaves_the_other_alone(self):
+        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+
+        user.mark_terms_agreed("1")
+
+        assert user.user_data_agreement_agreed_at is None
+        assert user.user_data_agreement_version is None
+
+    def test_a_detached_copy_keeps_what_was_agreed(self):
+        user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        user.mark_data_agreement_agreed("4")
+        user.mark_terms_agreed("2")
+
+        copy = user.create_detached_copy()
+
+        assert copy.user_data_agreement_agreed_at == user.user_data_agreement_agreed_at
+        assert copy.user_data_agreement_version == "4"
+        assert copy.terms_agreed_at == user.terms_agreed_at
+        assert copy.terms_version == "2"
 
     def test_create_user_with_data_agreement_time(self):
         agreement_time = datetime.now(UTC)

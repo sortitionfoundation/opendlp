@@ -262,10 +262,10 @@ class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any
         render_kw={"autocomplete": "new-password"},
     )
 
-    accept_data_agreement = BooleanField(
-        _l("Accept Data Agreement"),
-        validators=[DataRequired(message=_l("You must accept the data agreement to register"))],
-        description=_l("I agree to the data agreement"),
+    # One tickbox agrees to both documents, whichever way the account is made.
+    accept_terms_and_data_agreement = BooleanField(
+        _l("I agree to the Terms and Conditions and the Data Agreement"),
+        validators=[DataRequired(message=_l("You must accept the terms and the data agreement to register"))],
     )
 
     def validate_invite_code(self, invite_code: StringField) -> None:
@@ -278,7 +278,8 @@ class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any
         The same form serves all three signup buttons. An OAuth provider supplies
         the email, name and identity on the way back, so its fields are neither
         needed nor shown for that path — only the shared invite code, survey and
-        data agreement are collected here and carried across the redirect.
+        agreement to the terms and the data agreement are collected here and
+        carried across the redirect.
         """
         for field in (self.email, self.password, self.password_confirm, self.first_name, self.last_name):
             field.validators = [Optional()]

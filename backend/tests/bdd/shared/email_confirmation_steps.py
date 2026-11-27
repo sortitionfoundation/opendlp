@@ -45,7 +45,7 @@ def _(page: Page, user_invite: str):
     page.fill('input[name="email"]', NEWUSER_EMAIL)
     page.fill('input[name="password"]', FRESH_PASSWORD)
     page.fill('input[name="password_confirm"]', FRESH_PASSWORD)
-    page.get_by_role("checkbox", name="Accept Data Agreement").check()
+    page.get_by_role("checkbox", name="I agree to the Terms and Conditions and the Data Agreement").check()
     # The registration form also carries Google/Microsoft submit buttons, so
     # target the email button by name rather than the first submit button.
     page.get_by_role("button", name="Create Account with email").click()

@@ -286,7 +286,8 @@ description, provisioning steps, and operator runbook.
 ### Help Site URLs
 
 External help site URLs linked from base templates (header "Help" link, and the footer
-"User Data Agreement" and "Cookies" links):
+"User Data Agreement" and "Cookies" links), and from the sign-up page, which links to
+the two documents it asks people to agree to:
 
 ```bash
 # Help site landing page (replaces the in-app support page)
@@ -294,6 +295,10 @@ HELP_SITE_HOME=https://docs.democraticlottery.org/help/
 
 # Data agreement page (replaces the in-app user data agreement page)
 HELP_SITE_DATA_AGREEMENT=https://docs.democraticlottery.org/data-and-legal/data-agreement/
+
+# Terms and Conditions page. The sign-up page links to it beside the data
+# agreement, and its one tickbox agrees to both.
+HELP_SITE_TERMS=https://docs.democraticlottery.org/data-and-legal/terms/
 
 # Cookies page, linked from the footer of every page including the public
 # registration form. Must accurately list the cookies we set - see
@@ -304,6 +309,29 @@ HELP_SITE_COOKIES=https://docs.democraticlottery.org/data-and-legal/cookies/
 # a placeholder until the hub is published.
 KNOWLEDGE_HUB_URL=https://docs.democraticlottery.org/
 ```
+
+### Versions of the Terms and Conditions and the Data Agreement
+
+Signing up agrees to the Terms and Conditions and the data agreement with one
+tickbox. Each new user is recorded with the time they agreed and the version of
+each document in force then, so that once a document changes it is clear who
+agreed to which text. See
+[What sign-up records](personal-data.md#what-sign-up-records).
+
+```bash
+# The version of the Terms and Conditions that sign-up records (default: 1)
+# TERMS_VERSION=1
+
+# The version of the data agreement that sign-up records (default: 1)
+# DATA_AGREEMENT_VERSION=1
+```
+
+A version is a short label of at most 50 characters; a blank value counts as
+unset. Raise a document's version when its published text changes, for example
+to `2`, at the time the new text goes up: people who sign up from then on are
+recorded with the new version, and everyone before keeps the version they agreed
+to. Version 1 is the text in force when sign-up began recording versions.
+Raising a version does not ask anyone who already has an account to agree again.
 
 ### Session and cookie lifetimes
 

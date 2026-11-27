@@ -111,6 +111,24 @@ def get_application_url() -> str:
     return os.environ.get("APPLICATION_URL", "").strip().rstrip("/")
 
 
+def get_terms_version() -> str:
+    """The version of the Terms and Conditions that someone signing up agrees to.
+
+    A short label, at most 50 characters, recorded with the time on each user
+    who agrees. Raise it whenever the published text changes. A blank value
+    counts as unset. Environment variable: ``TERMS_VERSION``.
+    """
+    return os.environ.get("TERMS_VERSION", "").strip() or "1"
+
+
+def get_data_agreement_version() -> str:
+    """The version of the data agreement that someone signing up agrees to.
+
+    As ``get_terms_version()``. Environment variable: ``DATA_AGREEMENT_VERSION``.
+    """
+    return os.environ.get("DATA_AGREEMENT_VERSION", "").strip() or "1"
+
+
 def get_google_auth_json_path() -> Path:
     return Path(os.environ.get("GOOGLE_AUTH_JSON_PATH", "/no-such-file"))
 
@@ -541,6 +559,11 @@ class FlaskBaseConfig:
         self.HELP_SITE_HOME: str = os.environ.get("HELP_SITE_HOME", "https://docs.democraticlottery.org/help/")
         self.HELP_SITE_DATA_AGREEMENT: str = os.environ.get(
             "HELP_SITE_DATA_AGREEMENT", "https://docs.democraticlottery.org/data-and-legal/data-agreement/"
+        )
+        # The Terms and Conditions, which the sign-up page asks people to agree to
+        # together with the data agreement
+        self.HELP_SITE_TERMS: str = os.environ.get(
+            "HELP_SITE_TERMS", "https://docs.democraticlottery.org/data-and-legal/terms/"
         )
         self.HELP_SITE_COOKIES: str = os.environ.get(
             "HELP_SITE_COOKIES", "https://docs.democraticlottery.org/data-and-legal/cookies/"

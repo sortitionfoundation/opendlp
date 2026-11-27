@@ -10,6 +10,7 @@ from flask.testing import FlaskClient
 from opendlp.adapters import database
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.entrypoints.blueprints.auth import OAUTH_AGREED_SESSION_KEY
 from opendlp.entrypoints.extensions import OAUTH_HTTP_TIMEOUT_SECONDS, oauth
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.feature_flags import reload_flags
@@ -198,7 +199,7 @@ class TestOAuthRegistrationForms:
         """Invalid invite re-renders the form without reaching OAuth."""
         response = client.post(
             "/auth/register",
-            data={"action": "google", "invite_code": "INVALID_CODE", "accept_data_agreement": "y"},
+            data={"action": "google", "invite_code": "INVALID_CODE", "accept_terms_and_data_agreement": "y"},
             follow_redirects=False,
         )
 
@@ -207,20 +208,90 @@ class TestOAuthRegistrationForms:
             assert b"Invalid" in response.data or b"error" in response.data.lower()
 
     @pytest.mark.parametrize("provider", ["google", "microsoft"])
-    def test_a_provider_sign_up_starts_with_only_the_data_agreement(
-        self, client: FlaskClient, open_signup, provider: str
-    ):
-        """The beta disclaimer is text with nothing to tick, so the data agreement is all the hand-off needs."""
+    def test_a_provider_sign_up_starts_with_only_the_agreement(self, client: FlaskClient, open_signup, provider: str):
+        """The beta disclaimer is text with nothing to tick, so the one agreement is all the hand-off needs."""
         response = client.post(
             "/auth/register",
-            data={"action": provider, "invite_code": "", "accept_data_agreement": "y"},
+            data={"action": provider, "invite_code": "", "accept_terms_and_data_agreement": "y"},
             follow_redirects=False,
         )
 
         assert response.status_code == 302
         assert response.headers["Location"] == f"/auth/login/{provider}"
         with client.session_transaction() as session:
-            assert session["oauth_accept_agreement"] is True
+            assert session[OAUTH_AGREED_SESSION_KEY] is True
+
+
+def _provider_token(provider: str) -> dict:
+    """The token shape authlib hands back from either provider's callback, for someone new."""
+    return {
+        "access_token": "mock_access_token",  # pragma: allowlist secret
+        "token_type": "Bearer",
+        "userinfo": {
+            "sub": f"{provider}-new-person",
+            "email": f"new-{provider}@example.com",
+            "given_name": "New",
+            "family_name": "Person",
+        },
+    }
+
+
+def _finish_with_provider(client: FlaskClient, provider: str):
+    """Come back from the provider to its callback, as authlib would."""
+    with patch(f"opendlp.entrypoints.blueprints.auth.oauth.{provider}") as mock_provider:
+        mock_provider.authorize_access_token.return_value = _provider_token(provider)
+        return client.get(f"/auth/login/{provider}/callback", follow_redirects=False)
+
+
+@pytest.mark.parametrize("provider", ["google", "microsoft"])
+class TestProviderSignUpAgreement:
+    """The Google and Microsoft buttons on the sign-up page need the one tickbox, and carry it to the new account."""
+
+    def test_without_the_tickbox_nothing_is_handed_to_the_provider(
+        self, client: FlaskClient, open_signup, provider: str
+    ):
+        response = client.post("/auth/register", data={"action": provider, "invite_code": ""}, follow_redirects=False)
+
+        assert response.status_code == 200
+        assert b"You must accept the terms and the data agreement to register" in response.data
+        with client.session_transaction() as session:
+            assert OAUTH_AGREED_SESSION_KEY not in session
+
+    def test_the_new_account_records_both_documents_with_their_versions(
+        self, client: FlaskClient, fake_store: FakeStore, open_signup, provider: str, monkeypatch
+    ):
+        monkeypatch.setenv("TERMS_VERSION", "2")
+        monkeypatch.setenv("DATA_AGREEMENT_VERSION", "5")
+        client.post(
+            "/auth/register",
+            data={"action": provider, "invite_code": "", "accept_terms_and_data_agreement": "y"},
+            follow_redirects=False,
+        )
+
+        response = _finish_with_provider(client, provider)
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user = uow.users.get_by_email(f"new-{provider}@example.com")
+            assert user.oauth_provider == provider
+            assert user.terms_agreed_at is not None
+            assert user.terms_version == "2"
+            assert user.user_data_agreement_agreed_at is not None
+            assert user.user_data_agreement_version == "5"
+        with client.session_transaction() as session:
+            assert OAUTH_AGREED_SESSION_KEY not in session
+
+    def test_signing_in_from_the_sign_in_page_records_no_agreement(
+        self, client: FlaskClient, fake_store: FakeStore, open_signup, provider: str
+    ):
+        """Only the sign-up page asks for the agreement, so an account made without it has none recorded."""
+        response = _finish_with_provider(client, provider)
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user = uow.users.get_by_email(f"new-{provider}@example.com")
+            assert user.terms_agreed_at is None
+            assert user.user_data_agreement_agreed_at is None
 
 
 class TestOAuthLoginPage:
