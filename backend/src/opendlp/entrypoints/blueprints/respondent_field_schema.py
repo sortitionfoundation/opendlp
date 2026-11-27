@@ -1200,7 +1200,7 @@ def _move_item(assembly_id: uuid.UUID, ref: FormItemRef) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             position, total = move_form_item(uow, current_user.id, assembly_id, ref, direction)
-    except (FieldDefinitionNotFoundError, ContentBlockNotFoundError):
+    except FieldDefinitionNotFoundError, ContentBlockNotFoundError:
         flash(_("That question or heading is no longer on the list"), "error")
         return _schema_page_redirect(assembly_id)
     except InsufficientPermissions:

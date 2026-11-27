@@ -719,7 +719,7 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         with uow:
             fields, report = configure_target_source(uow, current_user.id, assembly_id, category_id, spec)
             page_ctx = _page_context(uow, assembly_id)
-    except (FixedFieldError, DerivedFieldError, TargetLinkedFieldError):
+    except FixedFieldError, DerivedFieldError, TargetLinkedFieldError:
         # Domain guards the form cannot trip; their messages are written for a developer.
         logger.exception("Target source set-up refused by a domain guard", assembly_id=str(assembly_id))
         return _setup_error_response(
@@ -773,7 +773,7 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
     except FieldDefinitionConflictError as e:
         flash(e.user_msg(), "error")
         return redirect(_sources_url(assembly_id))
-    except (ValueError, FieldDefinitionNotFoundError):
+    except ValueError, FieldDefinitionNotFoundError:
         # A malformed id, or one the service does not know; its message names internal ids.
         flash(_("Question not found"), "error")
         return redirect(_sources_url(assembly_id))

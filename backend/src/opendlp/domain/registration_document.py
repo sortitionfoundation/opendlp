@@ -58,7 +58,7 @@ class RegistrationDocument:
         created_by: uuid.UUID | None = None,
         original_filename: str = "",
         label: str = "",
-    ) -> "RegistrationDocument":
+    ) -> RegistrationDocument:
         return cls(
             assembly_id=assembly_id,
             byte_size=validated.byte_size,
@@ -69,7 +69,7 @@ class RegistrationDocument:
             created_by=created_by,
         )
 
-    def create_detached_copy(self) -> "RegistrationDocument":
+    def create_detached_copy(self) -> RegistrationDocument:
         return RegistrationDocument(
             assembly_id=self.assembly_id,
             byte_size=self.byte_size,

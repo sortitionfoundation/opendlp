@@ -47,7 +47,7 @@ class AssemblyContext:
         return self.first_assembly_date_text
 
     @classmethod
-    def from_assembly(cls, assembly: "Assembly", locale: str = "en") -> "AssemblyContext":
+    def from_assembly(cls, assembly: Assembly, locale: str = "en") -> AssemblyContext:
         """``locale`` is the language the email is read in, such as "hu" or "en_GB"."""
         first_date = assembly.first_assembly_date
         return cls(
@@ -103,7 +103,7 @@ class RespondentContext:
         self._first, self._last, self._full = _derive_names(self.attributes)
 
     @classmethod
-    def from_respondent(cls, respondent: "Respondent") -> "RespondentContext":
+    def from_respondent(cls, respondent: Respondent) -> RespondentContext:
         return cls(email=respondent.email, attributes=respondent.attributes)
 
     @property

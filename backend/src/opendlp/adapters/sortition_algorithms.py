@@ -36,23 +36,19 @@ class CSVGSheetDataSource(AbstractDataSource):
         return self.gsheet_data_source.already_selected_data_container
 
     @contextmanager
-    def read_feature_data(
-        self, report: RunReport
-    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
+    def read_feature_data(self, report: RunReport) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]]]:
         with self.csv_data_source.read_feature_data(report) as feature_data:
             yield feature_data
 
     @contextmanager
-    def read_people_data(
-        self, report: RunReport
-    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
+    def read_people_data(self, report: RunReport) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]]]:
         with self.csv_data_source.read_people_data(report) as people_data:
             yield people_data
 
     @contextmanager
     def read_already_selected_data(
         self, report: RunReport
-    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
+    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]]]:
         with self.csv_data_source.read_already_selected_data(report) as people_data:
             yield people_data
 

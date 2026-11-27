@@ -257,7 +257,7 @@ def _check_form_tokens(
             )
             _record_submission(ip_address, email)
             return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
-        except (SignatureExpired, BadSignature):
+        except SignatureExpired, BadSignature:
             return _rerender_form_with_values(
                 uow,
                 url_slug,

@@ -123,7 +123,7 @@ class AgeBracketRule:
         }
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> "AgeBracketRule":
+    def from_config(cls, config: dict[str, Any]) -> AgeBracketRule:
         raw_date = config.get("as_of_date")
         if not raw_date:
             raise ValueError("as_of_date is required in an age bracket config")
@@ -233,7 +233,7 @@ class SmallMappingRule:
         return {"mapping": dict(self.mapping), "fallback": self.fallback}
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> "SmallMappingRule":
+    def from_config(cls, config: dict[str, Any]) -> SmallMappingRule:
         return cls(mapping=config.get("mapping", {}), fallback=config.get("fallback", DEFAULT_FALLBACK))
 
 
@@ -262,7 +262,7 @@ class LargeMappingRule:
         return {"fallback": self.fallback}
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> "LargeMappingRule":
+    def from_config(cls, config: dict[str, Any]) -> LargeMappingRule:
         return cls(fallback=config.get("fallback", DEFAULT_FALLBACK))
 
 

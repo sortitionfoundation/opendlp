@@ -81,9 +81,7 @@ class OpenDLPDataAdapter(AbstractDataSource):
         ]
 
     @contextmanager
-    def read_feature_data(
-        self, report: RunReport
-    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
+    def read_feature_data(self, report: RunReport) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]]]:
         """Load target categories from database as feature data."""
         # Note: We don't add a message here as custom codes aren't supported
 
@@ -116,9 +114,7 @@ class OpenDLPDataAdapter(AbstractDataSource):
         yield headers, rows
 
     @contextmanager
-    def read_people_data(
-        self, report: RunReport
-    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
+    def read_people_data(self, report: RunReport) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]]]:
         """Load respondents from database as people data."""
         # Note: We don't add a message here as custom codes aren't supported
 
@@ -162,7 +158,7 @@ class OpenDLPDataAdapter(AbstractDataSource):
     @contextmanager
     def read_already_selected_data(
         self, report: RunReport
-    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]], None, None]:
+    ) -> Generator[tuple[Iterable[str], Iterable[dict[str, str]]]]:
         """Load the respondents who already hold a place: selected or confirmed.
 
         The library uses them to keep a replacement selection away from the

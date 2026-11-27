@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 MANAGE_ROLE = "assembly-manager or admin"
 
 
-def load_user_and_assembly(uow: "AbstractUnitOfWork", user_id: Any, assembly_id: Any) -> tuple[User, Assembly]:
+def load_user_and_assembly(uow: AbstractUnitOfWork, user_id: Any, assembly_id: Any) -> tuple[User, Assembly]:
     """Fetch a user and assembly by id, raising the not-found errors services expect.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).

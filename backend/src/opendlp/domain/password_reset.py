@@ -71,7 +71,7 @@ class PasswordResetToken:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def create_detached_copy(self) -> "PasswordResetToken":
+    def create_detached_copy(self) -> PasswordResetToken:
         """Create a detached copy of this token for use outside SQLAlchemy sessions"""
         return PasswordResetToken(
             user_id=self.user_id,

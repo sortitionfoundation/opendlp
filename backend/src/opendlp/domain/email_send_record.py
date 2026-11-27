@@ -38,7 +38,7 @@ class RespondentEmailSendRecord:
         self.missing_variables = list(missing_variables) if missing_variables else []
         self.created_at = created_at or datetime.now(UTC)
 
-    def create_detached_copy(self) -> "RespondentEmailSendRecord":
+    def create_detached_copy(self) -> RespondentEmailSendRecord:
         """Create a detached copy for use outside SQLAlchemy sessions."""
         return RespondentEmailSendRecord(
             respondent_id=self.respondent_id,

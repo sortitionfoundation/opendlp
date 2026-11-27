@@ -214,7 +214,7 @@ class User:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def create_detached_copy(self) -> "User":
+    def create_detached_copy(self) -> User:
         """Create a detached copy of this user for use outside SQLAlchemy sessions"""
         detached_user = User(
             email=self.email,
@@ -278,7 +278,7 @@ class UserAssemblyRole:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def create_detached_copy(self) -> "UserAssemblyRole":
+    def create_detached_copy(self) -> UserAssemblyRole:
         return UserAssemblyRole(
             user_id=self.user_id,
             assembly_id=self.assembly_id,

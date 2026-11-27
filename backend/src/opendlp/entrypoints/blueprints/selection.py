@@ -75,7 +75,7 @@ def _get_manage_tabs_context(
         if result.run_record and result.run_record.assembly_id == assembly_id:
             tab_names = result.tab_names if isinstance(result, TabManagementResult) else []
             return current_manage_tabs, result.run_record, tab_names, get_manage_old_tabs_status(result)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         # Invalid or malformed manage_tabs_param - ignore and return defaults
         pass
     return None, None, [], None
@@ -109,7 +109,7 @@ def _get_selection_modal_context(
                 translate_run_report_to_html(result.run_report) if result.run_report else "",
                 selected_respondents,
             )
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         logger.debug("Invalid selection_param for _get_selection_modal_context: %r", selection_param)
 
     return None, None, [], "", []
@@ -170,7 +170,7 @@ def _get_replacement_modal_context(
                 max_select,
                 load_features_pending(result.run_record, result),
             )
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         logger.debug("Invalid replacement_param for _get_replacement_modal_context: %r", replacement_param)
 
     return None, None, [], "", initial_min_select, initial_max_select, False

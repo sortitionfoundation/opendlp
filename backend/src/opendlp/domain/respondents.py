@@ -43,7 +43,7 @@ class RespondentComment:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "RespondentComment":
+    def from_dict(cls, data: dict[str, Any]) -> RespondentComment:
         run_id_raw = data.get("selection_run_id")
         return cls(
             text=data["text"],
@@ -422,7 +422,7 @@ class Respondent:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def create_detached_copy(self) -> "Respondent":
+    def create_detached_copy(self) -> Respondent:
         """Create a detached copy for use outside SQLAlchemy sessions."""
         return Respondent(
             assembly_id=self.assembly_id,

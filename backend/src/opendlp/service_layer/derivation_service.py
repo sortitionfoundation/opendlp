@@ -156,7 +156,7 @@ def _validate_source(source: RespondentFieldDefinition | None, source_field_key:
         )
 
 
-def _options_for(rule: DerivationRule, output_values: list[str] | None) -> "list[Any]":
+def _options_for(rule: DerivationRule, output_values: list[str] | None) -> list[Any]:
     try:
         return output_options(rule, declared_outputs=output_values)
     except ValueError as exc:

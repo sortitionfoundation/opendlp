@@ -64,7 +64,7 @@ def _translate_line_to_html(line_level: RunLineLevel, include_logged: bool) -> s
     if line_level.message_code:
         try:
             message_text = _(REPORT_MESSAGES[line_level.message_code]) % line_level.message_params
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             # Fallback to English if translation fails
             message_text = line_level.line
     else:

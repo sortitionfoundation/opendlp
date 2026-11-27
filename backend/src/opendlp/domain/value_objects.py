@@ -271,7 +271,7 @@ class RespondentStatus(Enum):
     DELETED = "DELETED"
 
     @classmethod
-    def from_str(cls, value: str) -> "RespondentStatus | None":
+    def from_str(cls, value: str) -> RespondentStatus | None:
         """Parse a string to RespondentStatus, returning None for invalid values."""
         if not value:
             return None
@@ -300,7 +300,7 @@ respondent_status_labels = {
 # and a deleted one has had its details blanked. Written as the statuses that do
 # count rather than the ones that do not, so a status added later has to be
 # considered rather than quietly counted.
-COUNTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
+COUNTED_RESPONDENT_STATUSES: list[RespondentStatus] = [
     RespondentStatus.POOL,
     RespondentStatus.SELECTED,
     RespondentStatus.CONFIRMED,
@@ -311,7 +311,7 @@ COUNTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
 # longer part of the pool a target is measured against, but it is still a
 # registration that happened, so a headline "how many people registered" figure
 # has to count it. Test submissions were never real and deleted details are gone.
-HEADLINE_RESPONDENT_STATUSES: list["RespondentStatus"] = [
+HEADLINE_RESPONDENT_STATUSES: list[RespondentStatus] = [
     RespondentStatus.POOL,
     RespondentStatus.SELECTED,
     RespondentStatus.CONFIRMED,
@@ -328,7 +328,7 @@ def headline_registration_count(status_counts: dict[RespondentStatus, int]) -> i
 
 
 # Confirmed is selected and then confirmed, so both count as selected.
-SELECTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
+SELECTED_RESPONDENT_STATUSES: list[RespondentStatus] = [
     RespondentStatus.SELECTED,
     RespondentStatus.CONFIRMED,
 ]
@@ -340,7 +340,7 @@ SELECTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
 # TEST_SUBMISSION moves only to and from POOL, so a real registration marked
 # as a test can be promoted, and a test registration left in the pool can be
 # marked as a test.
-ALLOWED_SELECTION_STATUS_TRANSITIONS: dict["RespondentStatus", list["RespondentStatus"]] = {
+ALLOWED_SELECTION_STATUS_TRANSITIONS: dict[RespondentStatus, list[RespondentStatus]] = {
     RespondentStatus.TEST_SUBMISSION: [RespondentStatus.POOL],
     RespondentStatus.POOL: [
         RespondentStatus.SELECTED,

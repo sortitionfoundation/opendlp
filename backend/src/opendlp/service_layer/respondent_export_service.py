@@ -268,7 +268,7 @@ def get_respondent_gsheet_config(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
-) -> "AssemblyExportGSheet | None":
+) -> AssemblyExportGSheet | None:
     """Return the saved respondent-export sheet config, or None. Manage-gated.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).

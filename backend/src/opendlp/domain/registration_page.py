@@ -111,7 +111,7 @@ class RegistrationPageActivity:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "RegistrationPageActivity":
+    def from_dict(cls, data: dict[str, Any]) -> RegistrationPageActivity:
         try:
             action = RegistrationPageAction(data.get("action", RegistrationPageAction.EDIT.value))
         except ValueError:
@@ -408,7 +408,7 @@ class RegistrationPage:
             return False
         return self.status in (RegistrationPageStatus.TEST, RegistrationPageStatus.PUBLISHED)
 
-    def create_detached_copy(self) -> "RegistrationPage":
+    def create_detached_copy(self) -> RegistrationPage:
         """Create a detached copy for use outside SQLAlchemy sessions."""
         return RegistrationPage(
             assembly_id=self.assembly_id,
@@ -521,7 +521,7 @@ class RegistrationPageHtml:
             if token not in referenced
         ]
 
-    def create_detached_copy(self) -> "RegistrationPageHtml":
+    def create_detached_copy(self) -> RegistrationPageHtml:
         """Create a detached copy for use outside SQLAlchemy sessions."""
         return RegistrationPageHtml(
             registration_page_id=self.registration_page_id,

@@ -14,13 +14,13 @@ if TYPE_CHECKING:
 
 
 def save_export_gsheet_config(
-    uow: "AbstractUnitOfWork",
-    assembly_id: "uuid.UUID",
-    export_kind: "GSheetExportKind",
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    export_kind: GSheetExportKind,
     *,
     spreadsheet_url: str,
     worksheet_name: str,
-    target: "AbstractGSheetExportTarget",
+    target: AbstractGSheetExportTarget,
     auto_export: bool | None = None,
     auto_export_status_filter: str = "",
 ) -> None:

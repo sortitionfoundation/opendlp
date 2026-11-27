@@ -169,7 +169,7 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
 
                 return f(*args, **kwargs)
 
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 abort(400)
 
         return decorated_function  # type: ignore[return-value]

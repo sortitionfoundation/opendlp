@@ -142,7 +142,7 @@ class EmailTemplate:
             self.reply_to_email = reply_to_email.strip()
         self.updated_at = datetime.now(UTC)
 
-    def create_detached_copy(self) -> "EmailTemplate":
+    def create_detached_copy(self) -> EmailTemplate:
         """Create a detached copy for use outside SQLAlchemy sessions."""
         return EmailTemplate(
             assembly_id=self.assembly_id,

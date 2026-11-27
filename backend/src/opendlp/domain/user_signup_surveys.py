@@ -154,7 +154,7 @@ class UserSignupSurvey:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def create_detached_copy(self) -> "UserSignupSurvey":
+    def create_detached_copy(self) -> UserSignupSurvey:
         """Create a detached copy of this survey for use outside SQLAlchemy sessions"""
         return UserSignupSurvey(
             user_id=self.user_id,
