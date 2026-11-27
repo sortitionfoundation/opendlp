@@ -2,7 +2,6 @@
 ABOUTME: Submits a registration then sends the templated auto-reply and checks the record."""
 
 import uuid
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -77,8 +76,7 @@ def _build(uow, status: RegistrationPageStatus) -> tuple[FakeUnitOfWork, str]:
 
 def test_live_submission_sends_auto_reply_and_records_it(uow) -> None:
     _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
-    adapter = MagicMock()
-    adapter.send_email.return_value = True
+    adapter = FakeEmailAdapter()
 
     result = submit_registration(
         uow,
@@ -95,7 +93,7 @@ def test_live_submission_sends_auto_reply_and_records_it(uow) -> None:
     stored = uow.respondent_email_send_records.list_by_respondent(result.respondent.id)
     assert len(stored) == 1
 
-    kwargs = adapter.send_email.call_args.kwargs
+    kwargs = adapter.sent[-1]
     assert kwargs["to"] == ["ada@example.com"]
     assert kwargs["subject"] == "Thanks Ada"
     assert kwargs["reply_to"] == ("The Team", "team@example.com")
@@ -104,8 +102,7 @@ def test_live_submission_sends_auto_reply_and_records_it(uow) -> None:
 
 def test_autoescapes_untrusted_respondent_name(uow) -> None:
     _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
-    adapter = MagicMock()
-    adapter.send_email.return_value = True
+    adapter = FakeEmailAdapter()
 
     result = submit_registration(
         uow,
@@ -115,7 +112,7 @@ def test_autoescapes_untrusted_respondent_name(uow) -> None:
 
     send_registration_auto_reply(uow, adapter, respondent=result.respondent)
 
-    html_body = adapter.send_email.call_args.kwargs["html_body"]
+    html_body = adapter.sent[-1]["html_body"]
     assert "<script>bad()</script>" not in html_body
     assert "&lt;script&gt;" in html_body
 
@@ -148,14 +145,13 @@ def _admin(uow) -> User:
 def test_test_send_uses_sample_respondent_and_writes_no_record(uow) -> None:
     _build(uow, RegistrationPageStatus.TEST)
     admin = _admin(uow)
-    adapter = MagicMock()
-    adapter.send_email.return_value = True
+    adapter = FakeEmailAdapter()
 
     result = send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=_page(uow).id, to_email="manager@example.com")
 
     assert result.sent is True
     assert result.missing_variables == []
-    kwargs = adapter.send_email.call_args.kwargs
+    kwargs = adapter.sent[-1]
     assert kwargs["to"] == ["manager@example.com"]
     assert kwargs["subject"] == "Thanks Alex"
     assert kwargs["reply_to"] == ("The Team", "team@example.com")
@@ -170,13 +166,12 @@ def test_test_send_uses_template_reply_to(uow) -> None:
     page = _page(uow)
     template = uow.email_templates.get(page.auto_reply_email_template_id)
     template.update(reply_to_name="Page Team", reply_to_email="page@example.com")
-    adapter = MagicMock()
-    adapter.send_email.return_value = True
+    adapter = FakeEmailAdapter()
 
     send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=page.id, to_email="manager@example.com")
 
-    assert adapter.send_email.call_args.kwargs["reply_to"] == ("Page Team", "page@example.com")
-    assert adapter.send_email.call_args.kwargs["on_behalf_of"] == "Page Team"
+    assert adapter.sent[-1]["reply_to"] == ("Page Team", "page@example.com")
+    assert adapter.sent[-1]["on_behalf_of"] == "Page Team"
 
 
 def test_test_send_reports_missing_variables(uow) -> None:
@@ -185,8 +180,7 @@ def test_test_send_reports_missing_variables(uow) -> None:
     page = _page(uow)
     template = uow.email_templates.get(page.auto_reply_email_template_id)
     template.subject = "Hi {{ nonexistent_variable }}"
-    adapter = MagicMock()
-    adapter.send_email.return_value = True
+    adapter = FakeEmailAdapter()
 
     result = send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=page.id, to_email="manager@example.com")
 
@@ -197,8 +191,7 @@ def test_test_send_reports_missing_variables(uow) -> None:
 def test_test_send_reports_adapter_failure(uow) -> None:
     _build(uow, RegistrationPageStatus.TEST)
     admin = _admin(uow)
-    adapter = MagicMock()
-    adapter.send_email.return_value = False
+    adapter = FakeEmailAdapter(succeed=False)
 
     result = send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=_page(uow).id, to_email="manager@example.com")
 
@@ -209,23 +202,23 @@ def test_test_send_requires_manage_permission(uow) -> None:
     _build(uow, RegistrationPageStatus.TEST)
     user = User(email="plain@example.com", global_role=GlobalRole.USER, password_hash="hash")
     uow.users.add(user)
-    adapter = MagicMock()
+    adapter = FakeEmailAdapter()
 
     with pytest.raises(InsufficientPermissions):
         send_test_auto_reply(uow, adapter, user_id=user.id, page_id=_page(uow).id, to_email="manager@example.com")
-    adapter.send_email.assert_not_called()
+    assert adapter.sent == []
 
 
 def test_test_send_with_unknown_user_or_page_raises(uow) -> None:
     _build(uow, RegistrationPageStatus.TEST)
     admin = _admin(uow)
-    adapter = MagicMock()
+    adapter = FakeEmailAdapter()
 
     with pytest.raises(UserNotFoundError):
         send_test_auto_reply(uow, adapter, user_id=uuid.uuid4(), page_id=_page(uow).id, to_email="m@example.com")
     with pytest.raises(RegistrationPageNotFoundError):
         send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=uuid.uuid4(), to_email="m@example.com")
-    adapter.send_email.assert_not_called()
+    assert adapter.sent == []
 
 
 def test_test_send_with_missing_assembly_raises(uow) -> None:
@@ -234,7 +227,7 @@ def test_test_send_with_missing_assembly_raises(uow) -> None:
     uow.registration_pages.add(orphan)
 
     with pytest.raises(AssemblyNotFoundError):
-        send_test_auto_reply(uow, MagicMock(), user_id=admin.id, page_id=orphan.id, to_email="m@example.com")
+        send_test_auto_reply(uow, FakeEmailAdapter(), user_id=admin.id, page_id=orphan.id, to_email="m@example.com")
 
 
 def test_test_send_with_dangling_template_id_raises(uow) -> None:
@@ -244,14 +237,13 @@ def test_test_send_with_dangling_template_id_raises(uow) -> None:
     page.auto_reply_email_template_id = uuid.uuid4()
 
     with pytest.raises(EmailTemplateNotFoundError):
-        send_test_auto_reply(uow, MagicMock(), user_id=admin.id, page_id=page.id, to_email="m@example.com")
+        send_test_auto_reply(uow, FakeEmailAdapter(), user_id=admin.id, page_id=page.id, to_email="m@example.com")
 
 
 def test_test_send_survives_adapter_exception(uow) -> None:
     _build(uow, RegistrationPageStatus.TEST)
     admin = _admin(uow)
-    adapter = MagicMock()
-    adapter.send_email.side_effect = RuntimeError("smtp down")
+    adapter = FakeEmailAdapter(error=RuntimeError("smtp down"))
 
     result = send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=_page(uow).id, to_email="m@example.com")
 
@@ -263,17 +255,16 @@ def test_test_send_without_template_raises(uow) -> None:
     admin = _admin(uow)
     page = _page(uow)
     page.auto_reply_email_template_id = None
-    adapter = MagicMock()
+    adapter = FakeEmailAdapter()
 
     with pytest.raises(EmailTemplateNotFoundError):
         send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=page.id, to_email="manager@example.com")
-    adapter.send_email.assert_not_called()
+    assert adapter.sent == []
 
 
 def test_test_submission_sends_auto_reply(uow) -> None:
     _, slug = _build(uow, RegistrationPageStatus.TEST)
-    adapter = MagicMock()
-    adapter.send_email.return_value = True
+    adapter = FakeEmailAdapter()
 
     result = submit_registration(
         uow,
@@ -285,14 +276,14 @@ def test_test_submission_sends_auto_reply(uow) -> None:
 
     assert record is not None
     assert record.outcome is EmailSendOutcome.SENT
-    adapter.send_email.assert_called_once()
+    assert len(adapter.sent) == 1
 
 
 def test_no_auto_reply_when_the_page_has_it_turned_off(uow) -> None:
     """The template is kept but nothing is sent and nothing is recorded."""
     _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
     _page(uow).set_auto_reply_enabled(False)
-    adapter = MagicMock()
+    adapter = FakeEmailAdapter()
 
     result = submit_registration(
         uow,
@@ -302,7 +293,7 @@ def test_no_auto_reply_when_the_page_has_it_turned_off(uow) -> None:
     record = send_registration_auto_reply(uow, adapter, respondent=result.respondent)
 
     assert record is None
-    adapter.send_email.assert_not_called()
+    assert adapter.sent == []
     assert uow.respondent_email_send_records.list_by_respondent(result.respondent.id) == []
 
 
@@ -311,13 +302,12 @@ def test_test_send_still_works_with_the_auto_reply_turned_off(uow) -> None:
     _build(uow, RegistrationPageStatus.TEST)
     _page(uow).set_auto_reply_enabled(False)
     admin = _admin(uow)
-    adapter = MagicMock()
-    adapter.send_email.return_value = True
+    adapter = FakeEmailAdapter()
 
     result = send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=_page(uow).id, to_email="manager@example.com")
 
     assert result.sent is True
-    adapter.send_email.assert_called_once()
+    assert len(adapter.sent) == 1
 
 
 def _use_reply_to_email_in_body(uow) -> EmailTemplate:

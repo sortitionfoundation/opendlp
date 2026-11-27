@@ -17,7 +17,7 @@ from opendlp.domain.registration_page import (
 from opendlp.entrypoints.blueprints import backoffice_registration as be_reg
 from opendlp.service_layer.exceptions import EmailTemplateNotFoundError
 from opendlp.service_layer.registration_page_service import page_for_assembly
-from tests.fakes import FakeEmailAdapter, FakeUnitOfWork
+from tests.fakes import FakeUnitOfWork
 
 
 def _seed_page(
@@ -612,7 +612,7 @@ class TestVisualEditor:
         assert "readonly" in _body_textarea(body)
 
     def test_test_send_of_editor_list_has_bullets_in_its_plain_text(
-        self, logged_in_admin, fake_store, assembly_id, monkeypatch
+        self, logged_in_admin, fake_store, assembly_id, email_outbox
     ):
         """The visual editor wraps list items in <p>; the plain-text part must still read as a list."""
         template = _seed_template(
@@ -621,8 +621,7 @@ class TestVisualEditor:
             body_html="<p>Bring:</p>\n<ul>\n  <li>\n    <p>A pen</p>\n  </li>\n  <li>\n    <p>Your letter</p>\n  </li>\n</ul>",
         )
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
-        adapter = FakeEmailAdapter()
-        monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
+        adapter = email_outbox
 
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly_id}/registration/my-slug/email/send-test",
@@ -659,7 +658,7 @@ class TestReplyTo:
         assert saved.reply_to_email == "team@example.com"
 
     def test_test_send_is_sent_on_behalf_of_the_reply_to_name(
-        self, logged_in_admin, fake_store, assembly_id, monkeypatch
+        self, logged_in_admin, fake_store, assembly_id, email_outbox
     ):
         """The reply-to name is passed on as the sender's name, beside the Reply-To itself."""
         template = _seed_template(fake_store, assembly_id)
@@ -667,8 +666,7 @@ class TestReplyTo:
             uow.email_templates.get(template.id).update(reply_to_name="The Team", reply_to_email="team@example.com")
             uow.commit()
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
-        adapter = FakeEmailAdapter()
-        monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
+        adapter = email_outbox
 
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly_id}/registration/my-slug/email/send-test",
@@ -680,13 +678,13 @@ class TestReplyTo:
         assert adapter.sent[0]["on_behalf_of"] == "The Team"
 
     def test_test_send_reply_to_email_falls_back_to_the_sending_address(
-        self, logged_in_admin, fake_store, assembly_id, monkeypatch
+        self, logged_in_admin, fake_store, assembly_id, email_outbox
     ):
         """With no reply-to set, {{ reply_to_email }} is the address the email adapter sends from."""
         template = _seed_template(fake_store, assembly_id, body_html="<p>Write to {{ reply_to_email }}.</p>")
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
-        adapter = FakeEmailAdapter(sender="noreply@example.com")
-        monkeypatch.setattr(be_reg.bootstrap, "get_email_adapter", lambda: adapter)
+        adapter = email_outbox
+        adapter.sender = "noreply@example.com"
 
         response = logged_in_admin.post(
             f"/backoffice/project/{assembly_id}/registration/my-slug/email/send-test",

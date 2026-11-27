@@ -5,7 +5,6 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from opendlp import bootstrap
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.respondent_field_schema import (
     FieldOnRegistrationPage,
@@ -20,7 +19,6 @@ from opendlp.service_layer.assembly_service import create_assembly, update_assem
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
 from opendlp.service_layer.registration_page_service import page_for_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from tests.fakes import FakeEmailAdapter
 
 
 @pytest.fixture(autouse=True)
@@ -217,7 +215,7 @@ def test_admin_walks_every_step_and_publishes(logged_in_admin, admin_user, postg
     assert f"Thanks for joining {assembly_title}" in body
 
 
-def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_session_factory, monkeypatch):
+def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_session_factory, monkeypatch, email_outbox):
     """Each failure mode of the test-send route surfaces as the right flash message."""
     assembly_id = _seed_assembly_with_required_email(postgres_session_factory, admin_user.id)
     response = logged_in_admin.post(f"/backoffice/project/{assembly_id}/registration/create")
@@ -239,9 +237,10 @@ def test_send_test_email_error_paths(logged_in_admin, admin_user, postgres_sessi
     assert "bogus_name" in text
 
     # The adapter declining the send surfaces as an error flash.
-    monkeypatch.setattr(bootstrap, "get_email_adapter", lambda: FakeEmailAdapter(succeed=False))
+    email_outbox.succeed = False
     text = logged_in_admin.post(send_test_url, data=data, follow_redirects=True).get_data(as_text=True)
     assert "The test email could not be sent" in text
+    email_outbox.succeed = True
     monkeypatch.undo()
 
     # An unexpected service error lands in the generic handler.

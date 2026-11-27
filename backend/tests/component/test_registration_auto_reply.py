@@ -28,6 +28,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page_html,
 )
 from opendlp.service_layer.user_service import create_user
+from tests.conftest import install_email_outbox
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -89,11 +90,13 @@ def admin_user(fake_store):
 
 
 @pytest.fixture
-def app(fake_store, monkeypatch: pytest.MonkeyPatch):
+def app(fake_store, monkeypatch: pytest.MonkeyPatch, email_outbox):
     monkeypatch.setenv("FF_REGISTRATION_PAGE", "true")
     reload_flags()
     with FakeUnitOfWork(store=fake_store) as uow:
-        return create_app("testing_component", uow_factory=lambda: uow)
+        app = create_app("testing_component", uow_factory=lambda: uow)
+        install_email_outbox(app, email_outbox)
+        return app
 
 
 @pytest.fixture

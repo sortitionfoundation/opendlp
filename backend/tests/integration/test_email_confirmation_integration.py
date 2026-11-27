@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -18,7 +17,7 @@ from opendlp.service_layer.email_confirmation_service import (
 )
 from opendlp.service_layer.exceptions import EmailNotConfirmed, InvalidConfirmationToken, RateLimitExceeded
 from opendlp.service_layer.user_service import authenticate_user, create_user, find_or_create_oauth_user
-from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
+from tests.fakes import FakeEmailAdapter, FakeTemplateRenderer, FakeURLGenerator
 
 
 class TestEmailConfirmationIntegration:
@@ -137,8 +136,7 @@ class TestEmailConfirmationIntegration:
         )
 
         # Resend confirmation
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = True
+        email_adapter = FakeEmailAdapter()
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()
         resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)
@@ -187,8 +185,7 @@ class TestEmailConfirmationIntegration:
         )
 
         # Request 2 more times (total 3)
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = True
+        email_adapter = FakeEmailAdapter()
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()
         resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)

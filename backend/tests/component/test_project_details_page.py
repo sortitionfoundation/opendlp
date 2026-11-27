@@ -730,22 +730,16 @@ class TestAddingATeamMember:
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.users.get(regular_user.id).get_assembly_role(existing_assembly.id) == AssemblyRole.READ_ONLY
 
-    @pytest.fixture
-    def fake_email(self, monkeypatch: pytest.MonkeyPatch) -> FakeEmailAdapter:
-        adapter = FakeEmailAdapter()
-        monkeypatch.setattr("opendlp.entrypoints.blueprints.project_details.get_email_adapter", lambda: adapter)
-        return adapter
-
     def test_someone_new_to_the_team_is_emailed(
-        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user, fake_email: FakeEmailAdapter
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, regular_user, email_outbox: FakeEmailAdapter
     ) -> None:
         self._add(logged_in_admin, existing_assembly, regular_user.id)
 
-        assert len(fake_email.sent) == 1
-        assert fake_email.sent[0]["to"] == [regular_user.email]
-        assert existing_assembly.title in fake_email.sent[0]["subject"]
-        assert f"/backoffice/project/{existing_assembly.id}" in fake_email.sent[0]["text_body"]
-        assert "/assemblies/" not in fake_email.sent[0]["text_body"]
+        assert len(email_outbox.sent) == 1
+        assert email_outbox.sent[0]["to"] == [regular_user.email]
+        assert existing_assembly.title in email_outbox.sent[0]["subject"]
+        assert f"/backoffice/project/{existing_assembly.id}" in email_outbox.sent[0]["text_body"]
+        assert "/assemblies/" not in email_outbox.sent[0]["text_body"]
 
     def test_someone_already_on_the_team_is_not_emailed_again(
         self,
@@ -753,7 +747,7 @@ class TestAddingATeamMember:
         logged_in_admin: FlaskClient,
         existing_assembly: Assembly,
         regular_user,
-        fake_email: FakeEmailAdapter,
+        email_outbox: FakeEmailAdapter,
     ) -> None:
         with FakeUnitOfWork(store=fake_store) as uow:
             assign_assembly_role(uow, regular_user.id, existing_assembly.id, AssemblyRole.READ_ONLY)
@@ -761,20 +755,17 @@ class TestAddingATeamMember:
         response = self._add(logged_in_admin, existing_assembly, regular_user.id, role="CONFIRMATION_CALLER")
 
         assert response.status_code == 200
-        assert fake_email.sent == []
+        assert email_outbox.sent == []
 
     def test_an_email_that_cannot_be_sent_does_not_undo_the_role(
         self,
-        monkeypatch: pytest.MonkeyPatch,
         fake_store: FakeStore,
         logged_in_admin: FlaskClient,
         existing_assembly: Assembly,
         regular_user,
+        email_outbox: FakeEmailAdapter,
     ) -> None:
-        monkeypatch.setattr(
-            "opendlp.entrypoints.blueprints.project_details.get_email_adapter",
-            lambda: FakeEmailAdapter(succeed=False),
-        )
+        email_outbox.succeed = False
 
         response = self._add(logged_in_admin, existing_assembly, regular_user.id)
 

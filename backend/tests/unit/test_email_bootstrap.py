@@ -6,10 +6,14 @@ from io import StringIO
 from unittest.mock import patch
 
 import pytest
+from flask import Flask
 
+from opendlp import bootstrap
 from opendlp.adapters.email import ConsoleEmailAdapter, SMTPEmailAdapter
 from opendlp.bootstrap import get_email_adapter
 from opendlp.config import InvalidConfig
+from opendlp.entrypoints.flask_app import create_app
+from tests.fakes import FakeEmailAdapter
 
 
 class TestEmailAdapterBootstrap:
@@ -143,3 +147,24 @@ class TestEmailAdapterSendingIntegration:
         with patch.dict(os.environ, {"EMAIL_ADAPTER": "  console  "}, clear=False):
             adapter = get_email_adapter()
             assert isinstance(adapter, ConsoleEmailAdapter)
+
+
+class TestEmailAdapterFactoryOnTheApp:
+    """get_email_adapter() asks the app's factory when there is an app context."""
+
+    def test_create_app_registers_the_config_driven_factory(self) -> None:
+        app = create_app("testing")
+
+        assert app.extensions["email_adapter_factory"] is bootstrap.email_adapter_from_config
+
+    def test_uses_the_app_factory_inside_an_app_context(self) -> None:
+        app = Flask(__name__)
+        fake = FakeEmailAdapter()
+        app.extensions["email_adapter_factory"] = lambda: fake
+
+        with app.app_context():
+            assert get_email_adapter() is fake
+
+    def test_builds_from_config_outside_an_app_context(self) -> None:
+        with patch.dict(os.environ, {"EMAIL_ADAPTER": "console"}, clear=False):
+            assert isinstance(get_email_adapter(), ConsoleEmailAdapter)

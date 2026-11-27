@@ -1,7 +1,7 @@
 """Unit tests for email confirmation service layer."""
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -10,7 +10,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import email_confirmation_service
 from opendlp.service_layer.exceptions import InvalidConfirmationToken, RateLimitExceeded
-from tests.fakes import FakeTemplateRenderer, FakeUnitOfWork, FakeURLGenerator
+from tests.fakes import FakeEmailAdapter, FakeTemplateRenderer, FakeUnitOfWork, FakeURLGenerator
 
 
 @pytest.fixture
@@ -154,8 +154,7 @@ class TestSendConfirmationEmail:
 
     def test_sends_email_successfully(self, unconfirmed_user):
         """Should send email successfully."""
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = True
+        email_adapter = FakeEmailAdapter()
 
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()
@@ -165,15 +164,14 @@ class TestSendConfirmationEmail:
         )
 
         assert result is True
-        email_adapter.send_email.assert_called_once()
-        call_args = email_adapter.send_email.call_args[1]
+        assert len(email_adapter.sent) == 1
+        call_args = email_adapter.sent[-1]
         assert call_args["to"] == [unconfirmed_user.email]
         assert "Confirm" in call_args["subject"]
 
     def test_handles_email_failure(self, unconfirmed_user):
         """Should handle email sending failure."""
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = False
+        email_adapter = FakeEmailAdapter(succeed=False)
 
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()
@@ -285,8 +283,7 @@ class TestResendConfirmationEmail:
 
     def test_creates_token_for_unconfirmed_user(self, uow, unconfirmed_user):
         """Should create token for unconfirmed user."""
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = True
+        email_adapter = FakeEmailAdapter()
 
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()
@@ -309,8 +306,7 @@ class TestResendConfirmationEmail:
 
     def test_returns_true_for_nonexistent_email(self, uow):
         """Should return true but not create token for nonexistent email (anti-enumeration)."""
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = True
+        email_adapter = FakeEmailAdapter()
 
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()
@@ -320,7 +316,7 @@ class TestResendConfirmationEmail:
         )
 
         assert result is True
-        email_adapter.send_email.assert_not_called()
+        assert email_adapter.sent == []
 
         # Check no token was created
         tokens = list(uow.email_confirmation_tokens.all())
@@ -328,8 +324,7 @@ class TestResendConfirmationEmail:
 
     def test_returns_true_for_confirmed_user(self, uow, confirmed_user):
         """Should return true but not create token for already confirmed user."""
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = True
+        email_adapter = FakeEmailAdapter()
 
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()
@@ -339,7 +334,7 @@ class TestResendConfirmationEmail:
         )
 
         assert result is True
-        email_adapter.send_email.assert_not_called()
+        assert email_adapter.sent == []
 
         # Check no token was created
         tokens = list(uow.email_confirmation_tokens.all())
@@ -347,8 +342,7 @@ class TestResendConfirmationEmail:
 
     def test_returns_true_for_inactive_user(self, uow, inactive_user):
         """Should return true but not create token for inactive user."""
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = True
+        email_adapter = FakeEmailAdapter()
 
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()
@@ -358,7 +352,7 @@ class TestResendConfirmationEmail:
         )
 
         assert result is True
-        email_adapter.send_email.assert_not_called()
+        assert email_adapter.sent == []
 
         # Check no token was created
         tokens = list(uow.email_confirmation_tokens.all())
@@ -366,8 +360,7 @@ class TestResendConfirmationEmail:
 
     def test_rate_limit_exceeded(self, uow, unconfirmed_user):
         """Should raise RateLimitExceeded if too many requests."""
-        email_adapter = MagicMock()
-        email_adapter.send_email.return_value = True
+        email_adapter = FakeEmailAdapter()
 
         template_renderer = FakeTemplateRenderer()
         url_generator = FakeURLGenerator()

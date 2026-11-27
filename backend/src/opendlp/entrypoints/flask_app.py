@@ -111,6 +111,10 @@ def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None =
     # Tests override this to inject a fake client instead of talking to Google.
     app.extensions["gsheet_access_client_factory"] = default_gsheet_access_client_factory
 
+    # Factory building the email adapter that get_email_adapter() returns.
+    # Tests override this to inject a FakeEmailAdapter instead of sending mail.
+    app.extensions["email_adapter_factory"] = bootstrap.email_adapter_from_config
+
     # Register context processors
     register_context_processors(app)
 

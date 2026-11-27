@@ -10,7 +10,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.exceptions import InvalidResetToken, PasswordTooWeak, RateLimitExceeded
-from tests.fakes import FakeUnitOfWork
+from tests.fakes import FakeEmailAdapter, FakeUnitOfWork
 
 
 @pytest.fixture
@@ -364,11 +364,6 @@ class TestCleanupExpiredTokens:
         assert count == 1
 
 
-class _FakeAdapter:
-    def send_email(self, **kwargs: object) -> bool:
-        return True
-
-
 class _FakeRenderer:
     def render_template(self, name: str, **ctx: object) -> str:
         return "body"
@@ -384,7 +379,7 @@ class TestSendPasswordResetEmailLogging:
 
     def test_logs_user_id_not_email(self, active_user, capture_json_handler) -> None:
         result = password_reset_service.send_password_reset_email(
-            email_adapter=_FakeAdapter(),
+            email_adapter=FakeEmailAdapter(),
             template_renderer=_FakeRenderer(),
             url_generator=_FakeUrlGenerator(),
             user=active_user,

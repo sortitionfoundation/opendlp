@@ -10,7 +10,7 @@ from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
-from tests.conftest import restore_flask_app_state
+from tests.conftest import install_email_outbox, restore_flask_app_state
 from tests.e2e.helpers import get_csrf_token
 
 
@@ -46,14 +46,16 @@ def app(worker_db_url, test_redis_client):
 
 
 @pytest.fixture(autouse=True)
-def _restore_shared_app_state(app):
+def _restore_shared_app_state(app, email_outbox):
     """Undo app.config / extension mutations a test makes on the shared app.
 
     The app outlives each test, so mutations would leak into every later test
     in the worker (e.g. test_csrf_protection_enabled flips WTF_CSRF_ENABLED,
-    which would 400 every later POST).
+    which would 400 every later POST). Inside the restore, email goes to the
+    test's email_outbox.
     """
     with restore_flask_app_state(app):
+        install_email_outbox(app, email_outbox)
         yield
 
 

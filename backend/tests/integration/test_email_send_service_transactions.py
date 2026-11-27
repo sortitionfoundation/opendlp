@@ -2,7 +2,6 @@
 ABOUTME: The send record must belong to the caller's transaction, not commit itself behind the caller's back"""
 
 import uuid
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -11,12 +10,7 @@ from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.respondents import Respondent
 from opendlp.service_layer.email_send_service import send_templated_email
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-
-
-def _sending_adapter() -> MagicMock:
-    adapter = MagicMock()
-    adapter.send_email.return_value = True
-    return adapter
+from tests.fakes import FakeEmailAdapter
 
 
 @pytest.fixture
@@ -43,7 +37,7 @@ def _send(uow, ids):
     assembly_id, template_id, respondent_id = ids
     send_templated_email(
         uow,
-        _sending_adapter(),
+        FakeEmailAdapter(),
         template=uow.email_templates.get(template_id),
         assembly=uow.assemblies.get(assembly_id),
         respondent=uow.respondents.get(respondent_id),

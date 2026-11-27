@@ -1,9 +1,6 @@
 """ABOUTME: Integration tests for attributing a submission to the registration page it came through
 ABOUTME: Covers respondent provenance and the auto-reply picking that page's own template"""
 
-from typing import Any
-
-from opendlp.adapters.email import EmailAdapter
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
@@ -15,27 +12,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.value_objects import AssemblyStatus
 from opendlp.service_layer.email_send_service import send_registration_auto_reply
 from opendlp.service_layer.registration_submission_service import submit_registration
-from tests.fakes import FakeUnitOfWork
-
-
-class _RecordingEmailAdapter(EmailAdapter):
-    """Captures what would have been sent so a test can assert on it."""
-
-    def __init__(self) -> None:
-        self.sent: list[dict[str, Any]] = []
-
-    def send_email(
-        self,
-        to: list[str | tuple[str, str]],
-        subject: str,
-        text_body: str,
-        html_body: str | None = None,
-        from_email: str | tuple[str, str] | None = None,
-        reply_to: str | tuple[str, str] | None = None,
-        on_behalf_of: str = "",
-    ) -> bool:
-        self.sent.append({"to": to, "subject": subject, "html_body": html_body})
-        return True
+from tests.fakes import FakeEmailAdapter, FakeUnitOfWork
 
 
 def _assembly_with_two_pages(uow: FakeUnitOfWork) -> tuple[Assembly, RegistrationPage, RegistrationPage]:
@@ -120,7 +97,7 @@ class TestAutoReplyFollowsTheSubmittingPage:
         result = submit_registration(uow, url_slug="climate-es", form_data={"email": "grace@example.com"})
         assert result.respondent is not None
 
-        adapter = _RecordingEmailAdapter()
+        adapter = FakeEmailAdapter()
         send_registration_auto_reply(uow, adapter, respondent=result.respondent)
 
         assert len(adapter.sent) == 1
@@ -137,7 +114,7 @@ class TestAutoReplyFollowsTheSubmittingPage:
         result = submit_registration(uow, url_slug="climate-es", form_data={"email": "grace@example.com"})
         assert result.respondent is not None
 
-        adapter = _RecordingEmailAdapter()
+        adapter = FakeEmailAdapter()
         record = send_registration_auto_reply(uow, adapter, respondent=result.respondent)
 
         assert record is None
@@ -156,7 +133,7 @@ class TestAutoReplyFollowsTheSubmittingPage:
         assert result.respondent is not None
         result.respondent.registration_page_id = None
 
-        adapter = _RecordingEmailAdapter()
+        adapter = FakeEmailAdapter()
         record = send_registration_auto_reply(uow, adapter, respondent=result.respondent)
 
         assert record is None

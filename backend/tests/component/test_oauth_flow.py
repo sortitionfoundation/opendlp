@@ -14,6 +14,7 @@ from opendlp.entrypoints.extensions import OAUTH_HTTP_TIMEOUT_SECONDS, oauth
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.user_service import create_user
+from tests.conftest import install_email_outbox
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -34,13 +35,15 @@ def open_signup(monkeypatch):
 
 
 @pytest.fixture
-def app(fake_store, monkeypatch):
+def app(fake_store, monkeypatch, email_outbox):
     """OAuth-enabled component app so link/register routes behave."""
     monkeypatch.setenv("OAUTH_GOOGLE_CLIENT_ID", "test-client-id-oauth")  # pragma: allowlist secret
     monkeypatch.setenv("OAUTH_GOOGLE_CLIENT_SECRET", "test-client-secret-oauth")  # pragma: allowlist secret
     monkeypatch.setenv("OAUTH_MICROSOFT_CLIENT_ID", "test-ms-client-id-oauth")  # pragma: allowlist secret
     monkeypatch.setenv("OAUTH_MICROSOFT_CLIENT_SECRET", "test-ms-client-secret-oauth")  # pragma: allowlist secret
-    return create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    app = create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    install_email_outbox(app, email_outbox)
+    return app
 
 
 @pytest.fixture
