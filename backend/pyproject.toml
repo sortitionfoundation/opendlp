@@ -41,7 +41,7 @@ dependencies = [
 opendlp = "opendlp.entrypoints.cli:cli"
 
 [project.optional-dependencies]
-production = ["gunicorn>=23.0.0"]
+production = ["gunicorn>=27.0.0"]
 
 [build-system]
 requires = ["uv_build>=0.13.7,<1.0"]
