@@ -207,8 +207,11 @@ How it works:
 - `domain/events.py` holds the events: frozen dataclasses, named in the past
   tense, carrying ids and small values and never personal data.
 - A service says something happened with `uow.record(event)`. The handlers
-  registered for that event's exact type in `service_layer/handlers.py` run
+  listed for that event's exact type in `service_layer/handlers.py` run
   there and then as `handler(event, uow)`, inside the caller's transaction.
+  `build_event_handlers(task_runner)` builds that table with the adapters the
+  handlers need already supplied, and `bootstrap.default_event_handlers()`
+  gives it to every UnitOfWork that is not handed its own.
   What a handler writes commits or rolls back with the change that caused the
   event, and an exception from a handler fails the request.
 - A handler that needs something done outside the database registers it with
@@ -216,8 +219,8 @@ How it works:
   at the end of the block, or at a commit in the middle of it - and are dropped
   on rollback. A callback that raises is logged and never fails the request. A
   callback must not touch the database; the UnitOfWork refuses one that leaves
-  work in the session. Work that needs the database goes in a Celery task the
-  callback queues.
+  work in the session. Work that needs the database goes in a background task
+  the callback queues through the `TaskRunner`.
 - A callback is run at most once: a process that dies between the commit and
   the callback loses it. Nothing here guarantees delivery.
 - `AbstractUnitOfWork` only declares `record`, `after_commit` and `events`. The
@@ -260,7 +263,7 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 | `respondent_service`         | Respondent CRUD, CSV/row import, attribute analysis                                                | CSV parsing, permissions                                                    |
 | `respondent_export_service`  | Build tabular respondent data and export it to CSV or Google Sheets, with status filtering         | `tabular_export`, `gsheet_export`, permissions                              |
 | `target_export_service`      | Export targets to CSV or Google Sheets in the columns the targets CSV import reads                 | `tabular_export`, `gsheet_export`, permissions                              |
-| `sortition`                  | Celery task dispatch for GSheet + DB selection workflows; run status/cancellation/health           | `celery`, `sortition-algorithms`, `error_translation`, `report_translation` |
+| `sortition`                  | Background task dispatch for GSheet + DB selection workflows; run status/cancellation/health       | `task_runner`, `sortition-algorithms`, `error_translation`, `report_translation` |
 | `replacement_targets`        | Replacement selection over the database: the places still to fill, validation, feasibility check  | `sortition-algorithms`, `sortition_data_adapter`, `error_translation`       |
 | `user_service`               | User lifecycle, authentication, OAuth linking, assembly role management, profile updates           | email adapter, template renderer, URL generator, `security`                 |
 | `invite_service`             | Invite generation (single/batch), validation, revocation, cleanup                                  | user domain, permissions                                                    |
@@ -308,14 +311,14 @@ Target management used to live here too. It now has its own module.
 
 ### sortition
 
-`sortition.py` orchestrates Celery work for two workflows.
+`sortition.py` orchestrates background tasks for two workflows. It reaches them through the `TaskRunner` port (`service_layer/task_runner.py`), which each function takes as `task_runner=`, and never imports Celery.
 
 - **Google Sheets:** `start_gsheet_load_task`, `start_gsheet_select_task`, `start_gsheet_replace_load_task`, `start_gsheet_replace_task`, `start_gsheet_manage_tabs_task`
 - **Database selection:** `start_db_select_task`, `start_db_replace_task`, `check_db_selection_data`, `generate_selection_csvs`
 - **Replacement targets** (in `replacement_targets.py`): `build_replacement_plan` derives the seats still to fill from the stored targets and who already holds a place; `validate_replacement_form` checks the organiser's edits through the library's own rules before a run starts. With `check_feasibility` it also loads what the solver needs, and `run_feasibility_check` then asks the solver whether the targets can be met together from the pool, with the households of people already selected removed, and collects the relaxations it suggests. The solver is slow, so `run_feasibility_check` takes no `uow` and the route calls it after its `with uow:` block has closed. `check_replacement_plan` validates the calculated targets for the dialog as it opens. The verdict informs rather than blocks: the dialog's "Recheck feasibility" button re-runs it over the edited numbers, and "Run Replacement Selection" starts the task regardless
 - **Status / control:** `get_selection_run_status`, `get_manage_old_tabs_status`, `cancel_task`, `check_and_update_task_health`, `get_latest_run_for_assembly`
 
-Each start function creates a `SelectionRunRecord` and dispatches a Celery task; see [Background Tasks](#background-tasks).
+Each start function creates a `SelectionRunRecord` and dispatches a task; see [Background Tasks](#background-tasks) and [Dispatching a task](background_tasks.md#dispatching-a-task).
 
 ### user_service
 
@@ -350,6 +353,8 @@ Roughly grouped:
 `bootstrap.py` wires these together: it calls `start_mappers()`, builds a session factory, and returns a `SqlAlchemyUnitOfWork` along with an email adapter / template renderer / URL generator selected from config.
 
 It also provides the seam web entrypoints use to obtain a UnitOfWork. `default_uow_factory()` builds a `SqlAlchemyUnitOfWork` over the cached session factory; `create_app(uow_factory=…)` registers a factory on the app (`app.extensions["uow_factory"]`, defaulting to `default_uow_factory`); and routes/decorators/forms call `get_flask_uow()` (or `get_flask_uow_factory()`) to resolve that factory for the current request. Tests can inject a fake factory through `create_app`. CLI and Celery code run outside an app context and instead call `bootstrap()` with an explicit `session_factory`.
+
+`get_task_runner()` returns the process's `TaskRunner`: a `CeleryTaskRunner` (`entrypoints/celery/runner.py`, which only bootstrap imports), unless `set_task_runner()` installed another. Entrypoints pass it to the services; `default_event_handlers()` passes it to the event handlers. Tests install a `RecordingTaskRunner` there for every test.
 
 ---
 

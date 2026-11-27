@@ -435,10 +435,12 @@ Python_, without the message bus.
 - Each `start_*_task`, `cancel_task`, `get_selection_run_status` and
   `check_and_update_task_health` takes `task_runner: TaskRunner`. So do the
   monitoring functions that call them.
-- Entrypoints get it from `bootstrap.get_task_runner()`. In an app context that
-  reads `app.extensions["task_runner"]`, set by `create_app`. Outside one (CLI,
-  Celery worker) it returns the process's `CeleryTaskRunner`. This mirrors
-  `get_flask_uow()`.
+- Entrypoints get it from `bootstrap.get_task_runner()`, which returns the
+  process's runner: a `CeleryTaskRunner`, unless `set_task_runner()` installed
+  another. As built, there is no `app.extensions["task_runner"]` layer as first
+  planned: no production app needs a runner of its own, and one process-wide
+  runner means a test that builds its own app gets the fake too, without the
+  per-fixture install that email needs.
 - Roughly 20 blueprint call sites, the CLI monitor command, and the Celery
   tasks that call `check_and_update_task_health` / `run_monitoring_selection`
   pass it.
@@ -480,8 +482,7 @@ Python_, without the message bus.
   above).
 - **Tests**: an autouse fixture in `tests/conftest.py` replaces bootstrap's
   process-wide default runner with a `RecordingTaskRunner`, exposed as a
-  `task_runner` fixture. The Flask `app` fixtures put the same object in
-  `app.extensions["task_runner"]`. Every test, including the ones that build
+  `task_runner` fixture. Every test, including the ones that build
   `SqlAlchemyUnitOfWork` directly, then gets the fake without being edited, and
   the route and handlers in one test share it. Integration and e2e tests that
   want tasks to run override the fixture with a `BlockingTaskRunner`.

@@ -152,6 +152,57 @@ Automatically detects and marks failed tasks as FAILED.
 
 **Purpose:** Catches tasks that crashed without updating their status
 
+## Dispatching a task
+
+The service layer never imports Celery. It starts tasks through the
+`TaskRunner` port in `src/opendlp/service_layer/task_runner.py`, which has one
+method per task, so mypy checks every argument. Services take it as a
+`task_runner=` parameter, entrypoints pass `bootstrap.get_task_runner()`, and
+event handlers get it from `bootstrap.default_event_handlers()`. The real
+adapter is `CeleryTaskRunner` in `src/opendlp/entrypoints/celery/runner.py`.
+
+**A task method does not send anything.** It pickles its arguments there and
+then, and returns a `Dispatch`: a function that publishes the task when called.
+A task argument that cannot be pickled therefore raises in the service, inside
+the request's transaction, rather than on the way to the broker. Nothing
+reaches the broker until the `Dispatch` is called.
+
+**Our id is the Celery id.** A start function sets
+`record.celery_task_id = str(task_id)` and the runner publishes with
+`task_id=str(task_id)`, so the record is written once. Rows from before this
+have their own Celery-generated ids, which is why `status()` and `revoke()`
+still read `celery_task_id` rather than deriving it.
+
+**When the task is sent** depends on whether someone is waiting on it:
+
+- **A task a user started** (the `start_*` functions in `sortition.py`) goes
+  through `_commit_and_dispatch(uow, record, dispatch)`. It commits the
+  `SelectionRunRecord` - so the worker can find it - then calls the dispatch.
+  If publishing fails, it marks the record FAILED in the same unit of work and
+  raises `TaskDispatchError`, whose message the route flashes. The assembly is
+  not held by a task that will never run, and the organiser can try again.
+- **A side effect nobody waits on** (the automatic respondent export) is sent
+  from a `uow.after_commit` callback, so it only goes if the change commits,
+  and a failure is logged and swallowed rather than failing someone else's
+  request.
+
+A publish can only fail on the way to Redis: Redis unreachable (Celery retries
+the publish for about a second first), a misconfigured broker, or an argument
+that will not pickle - and that last one is caught when the task is prepared. A
+dead or stuck worker is not a dispatch failure: the publish succeeds and the
+record waits in PENDING until the cleanup job fails it.
+
+**Asking after a task:** `task_runner.status(celery_task_id)` returns a
+`TaskStatus` (`state`, `value` once it has succeeded, `error` once it has
+failed). It reads the stored result rather than calling `AsyncResult.get()`,
+so it is safe from inside a worker. `task_runner.revoke(celery_task_id)` stops
+one.
+
+**Adding a task** means a method on `TaskRunner`, on `CeleryTaskRunner`, and on
+`RecordingTaskRunner` in `tests/fakes/tasks.py`. Tests use the
+`RecordingTaskRunner` every test is given; see the Mocking Policy in
+[testing.md](testing.md#mocking-policy).
+
 ## One writing task per assembly
 
 Two background tasks that write to the same assembly must never run at the

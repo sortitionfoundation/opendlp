@@ -196,9 +196,11 @@ the request.
   `events.RespondentsChanged(assembly_id)`; one that changes the respondent
   fields must record `events.RespondentSchemaChanged(assembly_id)`. The
   automatic Google Sheets export depends on it.
-- Anything outside the database (queueing a Celery task, a Redis key) goes in
-  `uow.after_commit(callback)`, so it only happens if the change commits. A
-  callback must not touch the database.
+- Anything outside the database (queueing a background task, a Redis key) goes
+  in `uow.after_commit(callback)`, so it only happens if the change commits. A
+  callback must not touch the database. The exception is a task a user started
+  and is waiting on, which `_commit_and_dispatch` sends straight after its
+  commit - see [docs/background_tasks.md](docs/background_tasks.md#dispatching-a-task).
 - In a unit test, `FakeUnitOfWork` runs no handlers: assert on `uow.events`.
 
 See [docs/architecture.md](docs/architecture.md#domain-events-and-after-commit-side-effects).
@@ -206,8 +208,19 @@ See [docs/architecture.md](docs/architecture.md#domain-events-and-after-commit-s
 ### Faking boundaries in tests
 
 In tests, fake email with `FakeEmailAdapter`, or the `email_outbox` fixture in a
-Flask test; never patch `get_email_adapter` or mock `send_email`. See the
-Mocking Policy in [docs/testing.md](docs/testing.md#mocking-policy).
+Flask test; never patch `get_email_adapter` or mock `send_email`. Celery is faked
+by the `task_runner` fixture (a `RecordingTaskRunner` every test already has);
+never patch `.delay`, `.apply_async`, `AsyncResult` or `revoke`. See the Mocking
+Policy in [docs/testing.md](docs/testing.md#mocking-policy).
+
+### Background tasks
+
+The service layer starts Celery tasks only through the `TaskRunner` port
+(`service_layer/task_runner.py`), passed in as `task_runner=`; entrypoints get
+it from `bootstrap.get_task_runner()`. Nothing under `service_layer/` imports
+`opendlp.entrypoints`. A new task needs a method on the port, on
+`CeleryTaskRunner` and on `RecordingTaskRunner`. See
+[docs/background_tasks.md](docs/background_tasks.md#dispatching-a-task).
 
 ### Database Patterns
 

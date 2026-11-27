@@ -120,8 +120,10 @@ per route in `tests/e2e/`; put the richer behavioural coverage here.
 
 **When NOT to use:** anything whose value is real database behaviour
 (constraints, cascades, JSON operators — mark those `db_semantics` and keep them
-in `tests/e2e/` or `tests/integration/`), anything dispatching Celery, or
-anything asserting real cross-process visibility.
+in `tests/e2e/` or `tests/integration/`), anything that needs a background
+task to actually run (an integration test calls the task function directly), or
+anything asserting real cross-process visibility. A route that only *starts* a
+task belongs here: assert on `task_runner.submitted`.
 
 ```python
 # tests/component/test_create_project_dialog.py drives the real routes over a FakeStore
@@ -598,6 +600,7 @@ def test_user_can_delete_assembly():
 | Boundary      | Fake                                          | Fixture        |
 | ------------- | --------------------------------------------- | -------------- |
 | Email         | `FakeEmailAdapter`                            | `email_outbox` |
+| Celery        | `RecordingTaskRunner`                         | `task_runner`  |
 | UnitOfWork    | `FakeUnitOfWork` over a `FakeStore`           | `fake_store`   |
 | Google Sheets | `FakeGSheetExportTarget`, `FakeGSpreadClient` | (per test)     |
 
@@ -608,12 +611,21 @@ build `FakeEmailAdapter(error=...)`) to drive the paths where sending fails. A
 test that builds its own app calls `install_email_outbox(app, email_outbox)`.
 Collection fails if a test patches `get_email_adapter` or mocks `send_email`.
 
+Every test gets a fresh `RecordingTaskRunner` as the process's task runner,
+so the services, routes and event handlers in a test all send to it and nothing
+reaches Celery. Assert on `task_runner.submitted` (each has a `name`, the
+`kwargs` a worker would receive and the publish `options`); drive what a task
+reports with `task_runner.finish(task_id, value=...)`, `fail(task_id, error=...)`
+and `set_state(task_id, "STARTED")`; set `task_runner.fail_dispatch` to an
+exception to test a broker failure. Collection fails if a test patches
+`.delay`, `.apply_async`, `AsyncResult` or `revoke`, except in the adapter's own
+tests.
+
 When you add an adapter for a new boundary, write its fake in `tests/fakes/`,
 give it a fixture, and add a row here.
 
 **Mock only at the boundary.** Where there is no fake, mock things the system
-genuinely talks to over a boundary: Celery dispatch
-(`.delay`/`.apply_async`/`AsyncResult`/`control.revoke`), OAuth providers, the
+genuinely talks to over a boundary: OAuth providers, the
 `sortition-algorithms` library, the clock, and (where unavoidable) the password
 hasher. **Never** mock the UnitOfWork, a repository, or an internal service
 function — drive the real code over a `FakeUnitOfWork` instead.
