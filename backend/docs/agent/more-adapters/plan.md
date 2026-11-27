@@ -553,7 +553,7 @@ file's source (`_DISGUISED_ROUTE_TEST`). Do the same here (D9).
   that a route dispatched a task. What it still can't do is *run* the task,
   so "anything that needs a task to run" moves to integration and e2e, with
   `BlockingTaskRunner`.
-- **`CLAUDE.md`:** one line under Development Patterns, because agents are the
+- **`AGENTS.md`:** one line under Development Patterns, because agents are the
   most likely to reach for `MagicMock` or `patch(".delay")` from habit:
   "In tests, fake email and Celery with the `email_outbox` and `task_runner`
   fixtures; never patch `get_email_adapter`, `.delay`, `.apply_async` or
@@ -599,7 +599,7 @@ Each step is its own PR and leaves the suite green.
 0. **Split `tests/fakes.py`** into the package. No behaviour change.
 1. **Email wiring** (E1 + E4). Small, independent, removes the import-site
    patches. Lands the email patterns of the collection-time guard, the email
-   row of the Mocking Policy table, and the `CLAUDE.md` line (D9).
+   row of the Mocking Policy table, and the `AGENTS.md` line (D9).
 2. **`TaskRunner` port, `CeleryTaskRunner`, `RecordingTaskRunner`, and A1 + A3
    wiring.** `sortition.py` and `respondent_auto_export.py` switch over. Our id
    becomes the Celery id. User-started tasks use `_commit_and_dispatch`, which
@@ -660,7 +660,7 @@ Future work, not scheduled:
 - **D8. The layering check goes into the existing AST script**, renamed
   `check_architecture.py`. No `import-linter`.
 - **D9. Old test patterns are kept out by docs and a guard.** `docs/testing.md`
-  (Mocking Policy and Component Tests), `CLAUDE.md` and
+  (Mocking Policy and Component Tests), `AGENTS.md` and
   `docs/background_tasks.md` are updated. A collection-time guard in
   `tests/conftest.py`, like the disguised-route guard, rejects patches of
   `get_email_adapter`, `MagicMock` email adapters, and patches of Celery
