@@ -1,8 +1,6 @@
 """ABOUTME: Refuses a task that would write to an assembly while another writing task is unfinished
 ABOUTME: Shared by the selection starts, the worker claim and the reset, so it is a leaf module"""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 from opendlp.domain.value_objects import WRITING_TASK_TYPES, SelectionTaskType

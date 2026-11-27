@@ -1,8 +1,6 @@
 """ABOUTME: Importing target categories and values from a CSV or spreadsheet
 ABOUTME: Parsing the extra columns, deriving percentages, and turning it all into TargetCategory objects"""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from sortition_algorithms.errors import SortitionBaseError

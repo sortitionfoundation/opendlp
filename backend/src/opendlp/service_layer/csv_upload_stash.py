@@ -1,8 +1,6 @@
 """ABOUTME: Redis-backed temporary stash for pending respondent CSV uploads.
 ABOUTME: Holds the raw CSV between the upload-begin and upload-confirm-diff steps."""
 
-from __future__ import annotations
-
 import json
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING

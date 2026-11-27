@@ -1,8 +1,6 @@
 """ABOUTME: Names an assembly's selection runs by their place in its history
 ABOUTME: Groups runs into eras started by a completed initial selection or a reset, and numbers replacement rounds"""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 

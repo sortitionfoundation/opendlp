@@ -1,8 +1,6 @@
 """ABOUTME: End-to-end tests for monitor selection health checks
 ABOUTME: Exercises /health and /health/monitor_selection across all monitor states"""
 
-from __future__ import annotations
-
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import TYPE_CHECKING

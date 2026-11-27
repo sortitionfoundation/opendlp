@@ -1,8 +1,6 @@
 """ABOUTME: Dynamic Flask-WTF form builder for the edit-respondent page.
 ABOUTME: Fields are constructed per-request from the per-assembly field schema."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any
 
 from flask_wtf import FlaskForm

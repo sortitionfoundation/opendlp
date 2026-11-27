@@ -1,8 +1,6 @@
 """ABOUTME: Unit tests for the run_monitoring_selection service function
 ABOUTME: Uses FakeUnitOfWork plus injected fakes/spies — no Celery, no DB"""
 
-from __future__ import annotations
-
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any

@@ -1,8 +1,6 @@
 """ABOUTME: SQLAlchemy implementations of repository interfaces
 ABOUTME: Provides concrete database operations using SQLAlchemy sessions"""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 

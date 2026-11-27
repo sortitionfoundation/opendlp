@@ -1,8 +1,6 @@
 """ABOUTME: CLI commands for the end-to-end selection-monitoring feature
 ABOUTME: Provides `opendlp monitor run-selection` for deploy-time gating and ad-hoc checks"""
 
-from __future__ import annotations
-
 import click
 from click.exceptions import Exit
 

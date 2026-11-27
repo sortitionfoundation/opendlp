@@ -1,8 +1,6 @@
 """ABOUTME: Service for building the selection summary report from a SelectionRunRecord
 ABOUTME: Computes target / pool / selected breakdowns per target category"""
 
-from __future__ import annotations
-
 import csv
 from dataclasses import dataclass, field
 from io import StringIO
