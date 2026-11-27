@@ -31,7 +31,7 @@ So the constraint lives here, where someone who greps `docs/` for "analytics" wi
 before they find the lawyer.
 
 Full reasoning, including what each analytics path would cost us:
-[docs/agent/656-cookies/research.md §7](agent/656-cookies/research.md).
+[docs/agent/history/656-cookies/research.md §7](agent/history/656-cookies/research.md).
 
 ## Related documentation
 
