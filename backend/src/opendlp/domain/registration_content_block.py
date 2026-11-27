@@ -65,7 +65,7 @@ class RegistrationContentBlock:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def create_detached_copy(self) -> "RegistrationContentBlock":
+    def create_detached_copy(self) -> RegistrationContentBlock:
         """Create a detached copy for use outside SQLAlchemy sessions."""
         return RegistrationContentBlock(
             assembly_id=self.assembly_id,
@@ -101,7 +101,7 @@ class FormItemRef:
         return f"{self.kind.value}:{self.item_id}"
 
     @classmethod
-    def parse(cls, raw: str) -> "FormItemRef | None":
+    def parse(cls, raw: str) -> FormItemRef | None:
         kind_value, _sep, id_value = raw.partition(":")
         try:
             return cls(FormItemKind(kind_value), uuid.UUID(id_value))

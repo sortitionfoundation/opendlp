@@ -286,7 +286,7 @@ class TargetCategory:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def create_detached_copy(self) -> "TargetCategory":
+    def create_detached_copy(self) -> TargetCategory:
         """Create a detached copy for use outside SQLAlchemy sessions"""
         return TargetCategory(
             assembly_id=self.assembly_id,

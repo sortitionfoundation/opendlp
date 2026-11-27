@@ -35,6 +35,6 @@ class AssemblyCSV:
         if self.updated_at is None:
             self.updated_at = datetime.now(UTC)
 
-    def create_detached_copy(self) -> "AssemblyCSV":
+    def create_detached_copy(self) -> AssemblyCSV:
         """Create a detached copy for use outside SQLAlchemy sessions"""
         return AssemblyCSV(**asdict(self))

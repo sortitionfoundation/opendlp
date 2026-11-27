@@ -790,7 +790,7 @@ def _html_preview(html: str) -> str:
     return html[:200] + "..." if len(html) > 200 else html
 
 
-def _serialise_html_source(html: "RegistrationPageHtml") -> dict[str, Any]:
+def _serialise_html_source(html: RegistrationPageHtml) -> dict[str, Any]:
     return {
         "id": str(html.id),
         "intro_html_preview": _html_preview(html.intro_html),
@@ -1033,7 +1033,7 @@ def _handle_add_registration_image(uow: Any, params: dict[str, Any]) -> dict[str
         raw_b64 = raw_b64.split(",", 1)[1]
     try:
         raw_bytes = base64.b64decode(raw_b64, validate=True)
-    except (binascii.Error, ValueError):
+    except binascii.Error, ValueError:
         return {"status": "error", "error": "image_base64 is not valid base64", "error_type": "ValidationError"}
     if not raw_bytes:
         return {"status": "error", "error": "image_base64 is empty", "error_type": "ValidationError"}
@@ -1188,7 +1188,7 @@ def _handle_add_registration_document(uow: Any, params: dict[str, Any]) -> dict[
         raw_b64 = raw_b64.split(",", 1)[1]
     try:
         raw_bytes = base64.b64decode(raw_b64, validate=True)
-    except (binascii.Error, ValueError):
+    except binascii.Error, ValueError:
         return {"status": "error", "error": "pdf_base64 is not valid base64", "error_type": "ValidationError"}
     if not raw_bytes:
         return {"status": "error", "error": "pdf_base64 is empty", "error_type": "ValidationError"}

@@ -154,7 +154,7 @@ def _reset_csv_files(csv_file_dir: Path) -> None:
 
 
 @pytest.fixture(scope="session")
-def csv_test_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
+def csv_test_data_dir(tmp_path_factory) -> Generator[Path]:
     """
     Create a temporary directory with the original CSV files in
     """
@@ -164,7 +164,7 @@ def csv_test_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def reset_csv_data_dir(csv_test_data_dir: Path) -> Generator[Path, None, None]:
+def reset_csv_data_dir(csv_test_data_dir: Path) -> Generator[Path]:
     """
     A per-test fixture which re-copies the CSV files in to reset
     the state after a test - so that an individual test could put

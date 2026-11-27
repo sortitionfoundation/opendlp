@@ -29,7 +29,7 @@ class URLGenerator(ABC):
 class FlaskURLGenerator(URLGenerator):
     """Flask-based URL generator using Flask's url_for."""
 
-    def __init__(self, app: "Flask"):
+    def __init__(self, app: Flask):
         """
         Initialize with Flask app.
 

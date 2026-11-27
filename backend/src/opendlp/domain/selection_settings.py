@@ -87,7 +87,7 @@ class SelectionSettings:
     selection_algorithm: str = "maximin"
 
     @classmethod
-    def for_assembly(cls, assembly: "Assembly") -> "SelectionSettings":
+    def for_assembly(cls, assembly: Assembly) -> SelectionSettings:
         """Build the default settings for an assembly that has none saved yet.
 
         A Google Sheet assembly gets the team address columns applied when its
@@ -115,7 +115,7 @@ class SelectionSettings:
             solver_backend=config.get_solver_backend(),
         )
 
-    def create_detached_copy(self) -> "SelectionSettings":
+    def create_detached_copy(self) -> SelectionSettings:
         return SelectionSettings(**asdict(self))
 
     @property

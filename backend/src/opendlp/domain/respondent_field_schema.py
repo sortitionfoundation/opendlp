@@ -152,7 +152,7 @@ FIXED_FIELD_ON_REGISTRATION_PAGE: dict[str, FieldOnRegistrationPage] = {
 }
 
 
-def _validate_type_and_options(field_type: "FieldType", options: "list[ChoiceOption] | None") -> None:
+def _validate_type_and_options(field_type: FieldType, options: list[ChoiceOption] | None) -> None:
     if field_type in CHOICE_TYPES:
         if not options:
             raise ValueError(_("A choice field needs at least one option"))
@@ -173,7 +173,7 @@ class ChoiceOption:
         return {"value": self.value, "help_text": self.help_text}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ChoiceOption":
+    def from_dict(cls, data: dict[str, Any]) -> ChoiceOption:
         return cls(value=data["value"], help_text=data.get("help_text", ""))
 
 
@@ -292,7 +292,7 @@ class RespondentFieldDefinition:
         self,
         derivation_type: DerivationType,
         derivation_config: dict[str, Any],
-        options: "list[ChoiceOption]",
+        options: list[ChoiceOption],
     ) -> None:
         """Replace the derivation and its generated options in one step.
 
@@ -308,7 +308,7 @@ class RespondentFieldDefinition:
         self.options = list(options)
         self.updated_at = datetime.now(UTC)
 
-    def resync_options(self, options: "list[ChoiceOption]") -> None:
+    def resync_options(self, options: list[ChoiceOption]) -> None:
         """Replace a target-linked choice field's options from its target's values.
 
         The resync write path: ``update()`` locks option values while linked,
@@ -325,7 +325,7 @@ class RespondentFieldDefinition:
         self.options = list(options)
         self.updated_at = datetime.now(UTC)
 
-    def _update_type_and_options(self, field_type: FieldType | None, options: "list[ChoiceOption] | None") -> None:
+    def _update_type_and_options(self, field_type: FieldType | None, options: list[ChoiceOption] | None) -> None:
         if self.is_fixed:
             raise FixedFieldError("Cannot change field_type or options on a fixed field")
         if self.is_derived:
@@ -341,7 +341,7 @@ class RespondentFieldDefinition:
         self.field_type = new_type
         self.options = list(new_options) if new_options else None
 
-    def _reject_target_linked_change(self, new_type: FieldType, new_options: "list[ChoiceOption] | None") -> None:
+    def _reject_target_linked_change(self, new_type: FieldType, new_options: list[ChoiceOption] | None) -> None:
         """Refuse type/option-value changes on a target-linked field.
 
         The radio<->dropdown presentation swap is allowed, as is an options
@@ -364,7 +364,7 @@ class RespondentFieldDefinition:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def create_detached_copy(self) -> "RespondentFieldDefinition":
+    def create_detached_copy(self) -> RespondentFieldDefinition:
         """Create a detached copy for use outside SQLAlchemy sessions."""
         return RespondentFieldDefinition(
             assembly_id=self.assembly_id,

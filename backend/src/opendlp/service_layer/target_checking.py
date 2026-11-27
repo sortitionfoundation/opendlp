@@ -257,9 +257,9 @@ def _annotations_from_infeasible_quotas(
 
 def _run_feasibility_check(
     features: FeatureCollection,
-    people: "People",
+    people: People,
     number_to_select: int,
-    settings_obj: "Settings",
+    settings_obj: Settings,
     result: DetailedCheckResult,
 ) -> None:
     # With fewer people in the pool than the number to select no committee exists
@@ -293,7 +293,7 @@ def _run_feasibility_check(
 
 
 def _annotations_from_percentage_totals(
-    categories: "list[TargetCategory]",
+    categories: list[TargetCategory],
     category_annotations: CategoryAnnotationsDict,
 ) -> None:
     """Warn when a category's percentages do not add up to about 100.

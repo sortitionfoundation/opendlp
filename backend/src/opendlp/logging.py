@@ -112,7 +112,7 @@ class GunicornLogger:  # pragma: no cover
     Modified from http://stevetarver.github.io/2017/05/10/python-falcon-logging.html
     """
 
-    def __init__(self, cfg: "gunicorn.config.Config") -> None:
+    def __init__(self, cfg: gunicorn.config.Config) -> None:
         log_level = config.get_log_level()
         self._error_logger = structlog.get_logger("gunicorn.error")
         self._error_logger.setLevel(log_level)
@@ -153,8 +153,8 @@ class GunicornLogger:  # pragma: no cover
 
     def access(
         self,
-        resp: "gunicorn.http.wsgi.Response",
-        req: "gunicorn.http.Request",
+        resp: gunicorn.http.wsgi.Response,
+        req: gunicorn.http.Request,
         environ: dict[str, object],
         request_time: timedelta,
     ) -> None:

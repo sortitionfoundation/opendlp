@@ -246,7 +246,7 @@ class FakeUserRepository(FakeRepository, UserRepository):
 class FakeAssemblyRepository(FakeRepository, AssemblyRepository):
     """Fake implementation of AssemblyRepository."""
 
-    def __init__(self, users: "FakeUserRepository") -> None:
+    def __init__(self, users: FakeUserRepository) -> None:
         super().__init__()
         # Required, not optional: assembly roles hang off the User in the fake,
         # so get_assemblies_for_user cannot be answered without it. Defaulting it
@@ -347,7 +347,7 @@ class FakeUserAssemblyRoleRepository(FakeRepository, UserAssemblyRoleRepository)
     created through the service - so every query reads the union.
     """
 
-    def __init__(self, users: "FakeUserRepository", items: list[Any] | None = None) -> None:
+    def __init__(self, users: FakeUserRepository, items: list[Any] | None = None) -> None:
         super().__init__(items)
         self._users = users
 
@@ -1245,7 +1245,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
     ``handlers.EVENT_HANDLERS`` to run the application's handlers.
     """
 
-    def __init__(self, store: FakeStore | None = None, event_handlers: "EventHandlers | None" = None) -> None:
+    def __init__(self, store: FakeStore | None = None, event_handlers: EventHandlers | None = None) -> None:
         self._events = UnitOfWorkEvents(event_handlers if event_handlers is not None else {})
         self._shared = store is not None
         self._store = store if store is not None else FakeStore()
@@ -1290,13 +1290,13 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self._bind_repositories(open_context=False)
 
     @property
-    def events(self) -> "list[Event]":
+    def events(self) -> list[Event]:
         return self._events.events
 
-    def record(self, event: "Event") -> None:
+    def record(self, event: Event) -> None:
         self._events.record(event, self)
 
-    def after_commit(self, callback: "Callable[[], object]") -> None:
+    def after_commit(self, callback: Callable[[], object]) -> None:
         self._events.after_commit(callback)
 
     def _take_snapshot(self) -> None:

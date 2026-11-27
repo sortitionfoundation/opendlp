@@ -95,6 +95,6 @@ class AssemblyExportGSheet:
             setattr(self, field_name, value)
         self.updated_at = datetime.now(UTC)
 
-    def create_detached_copy(self) -> "AssemblyExportGSheet":
+    def create_detached_copy(self) -> AssemblyExportGSheet:
         """Create a detached copy for use outside SQLAlchemy sessions."""
         return AssemblyExportGSheet(**asdict(self))

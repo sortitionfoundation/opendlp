@@ -28,7 +28,7 @@ class TemplateRenderer(ABC):
 class FlaskTemplateRenderer(TemplateRenderer):
     """Flask-based template renderer using Flask's template engine."""
 
-    def __init__(self, app: "Flask"):
+    def __init__(self, app: Flask):
         """
         Initialize with Flask app.
 

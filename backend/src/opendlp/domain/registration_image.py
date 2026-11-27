@@ -78,7 +78,7 @@ class RegistrationImage:
         created_by: uuid.UUID | None = None,
         alt: str = "",
         original_filename: str = "",
-    ) -> "RegistrationImage":
+    ) -> RegistrationImage:
         return cls(
             assembly_id=assembly_id,
             byte_size=processed.byte_size,
@@ -91,7 +91,7 @@ class RegistrationImage:
             created_by=created_by,
         )
 
-    def create_detached_copy(self) -> "RegistrationImage":
+    def create_detached_copy(self) -> RegistrationImage:
         return RegistrationImage(
             assembly_id=self.assembly_id,
             byte_size=self.byte_size,

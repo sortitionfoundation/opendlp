@@ -52,7 +52,7 @@ def generate_csp_nonce() -> str:
     return secrets.token_urlsafe(16)
 
 
-def default_gsheet_export_target_factory(spreadsheet_url: str) -> "AbstractGSheetExportTarget":
+def default_gsheet_export_target_factory(spreadsheet_url: str) -> AbstractGSheetExportTarget:
     """Build a real gspread-backed export target for a spreadsheet URL."""
     from opendlp.adapters.gsheet_export import GSheetExportTarget  # noqa: PLC0415
 

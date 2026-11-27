@@ -19,7 +19,7 @@ def parse_as_of_date(values: dict[str, Any]) -> date:
     """The date respondent age is calculated on, from its day, month and year inputs. Raises ValueError."""
     try:
         as_of = date(int(values["as_of_year"]), int(values["as_of_month"]), int(values["as_of_day"]))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         raise ValueError(_("Enter a valid date to calculate respondent age on (day, month and year)")) from None
     # The as-of date is usually the first assembly date, so it is always near
     # today. A year outside this window is a typo, and a silent one: the

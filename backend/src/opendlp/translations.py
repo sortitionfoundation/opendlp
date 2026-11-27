@@ -30,7 +30,7 @@ def _get_text_fallback(message: str, **kwargs: Any) -> str:
     if kwargs:
         try:
             return translated % kwargs
-        except (KeyError, ValueError, TypeError):
+        except KeyError, ValueError, TypeError:
             # If substitution fails, return the original message
             return message % kwargs if kwargs else message
 
@@ -44,7 +44,7 @@ def gettext(message: str, **kwargs: Any) -> str:
             # Check if babel extension is initialized
             if hasattr(current_app, "extensions") and "babel" in current_app.extensions:
                 return str(flask_gettext(message, **kwargs))
-        except (ImportError, KeyError):  # pragma: no cover
+        except ImportError, KeyError:  # pragma: no cover
             # Flask-Babel not available or not initialized
             pass
 
@@ -62,7 +62,7 @@ def ngettext(singular: str, plural: str, num: int, **kwargs: Any) -> str:
             # Check if babel extension is initialized
             if hasattr(current_app, "extensions") and "babel" in current_app.extensions:
                 return str(flask_ngettext(singular, plural, num, **kwargs))
-        except (ImportError, KeyError):  # pragma: no cover
+        except ImportError, KeyError:  # pragma: no cover
             # Flask-Babel not available or not initialized
             pass
 

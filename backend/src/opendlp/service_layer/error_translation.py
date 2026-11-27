@@ -88,7 +88,7 @@ def _translate_simple_error(error: SortitionBaseError) -> str:
         # Translate using the error code and parameters
         try:
             return _(ERROR_MESSAGES[error.error_code]) % error.error_params
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             # Fallback if translation fails
             return str(error)
     else:
@@ -119,7 +119,7 @@ def translate_error_code(error_code: str, error_params: Mapping[str, str | int])
         )
     try:
         return _(ERROR_MESSAGES[error_code]) % error_params
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         # an unknown code or mismatched parameters: the caller shows its own fallback
         return ""
 
@@ -133,7 +133,7 @@ def _translate_parse_table_multi_error_lines(error: ParseTableMultiError) -> lis
             # Translate core message
             try:
                 core_msg = _(ERROR_MESSAGES[sub_error.error_code]) % sub_error.error_params
-            except (KeyError, TypeError, ValueError):
+            except KeyError, TypeError, ValueError:
                 # Fallback to original message if translation fails
                 core_msg = sub_error.msg
 
@@ -152,7 +152,7 @@ def _translate_parse_table_multi_error_lines(error: ParseTableMultiError) -> lis
                         "key": sub_error.key,
                     }
                 translated_lines.append(context)
-            except (KeyError, TypeError, ValueError):
+            except KeyError, TypeError, ValueError:
                 # Fallback if context formatting fails
                 translated_lines.append(str(sub_error))
         else:

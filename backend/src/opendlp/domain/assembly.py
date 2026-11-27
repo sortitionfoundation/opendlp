@@ -52,11 +52,11 @@ class Assembly:
         number_to_select: int = 0,
         assembly_id: uuid.UUID | None = None,
         status: AssemblyStatus = AssemblyStatus.ACTIVE,
-        gsheet: "AssemblyGSheet | None" = None,
-        csv: "AssemblyCSV | None" = None,
-        selection_settings: "SelectionSettings | None" = None,
-        target_categories: list["TargetCategory"] | None = None,
-        respondents: list["Respondent"] | None = None,
+        gsheet: AssemblyGSheet | None = None,
+        csv: AssemblyCSV | None = None,
+        selection_settings: SelectionSettings | None = None,
+        target_categories: list[TargetCategory] | None = None,
+        respondents: list[Respondent] | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
         reply_to_name: str = "",
@@ -211,7 +211,7 @@ class Assembly:
     def mark_questions_changed(self) -> None:
         self.questions_updated_at = datetime.now(UTC)
 
-    def create_detached_copy(self) -> "Assembly":
+    def create_detached_copy(self) -> Assembly:
         """Create a detached copy of this assembly for use outside SQLAlchemy sessions"""
         detached_assembly = Assembly(
             title=self.title,
@@ -307,7 +307,7 @@ class AssemblyGSheet:
     def targets_tab(self, for_replacements: bool = False) -> str:
         return self.replace_targets_tab if for_replacements else self.select_targets_tab
 
-    def create_detached_copy(self) -> "AssemblyGSheet":
+    def create_detached_copy(self) -> AssemblyGSheet:
         """Create a detached copy of this assembly gsheet for use outside SQLAlchemy sessions"""
         return AssemblyGSheet(**asdict(self))
 
@@ -359,7 +359,7 @@ class SelectionRunRecord:
         if self.created_at is None:
             self.created_at = datetime.now(UTC)
 
-    def create_detached_copy(self) -> "SelectionRunRecord":
+    def create_detached_copy(self) -> SelectionRunRecord:
         """Create a detached copy of this assembly gsheet for use outside SQLAlchemy sessions"""
         return SelectionRunRecord(**asdict(self))
 

@@ -771,7 +771,7 @@ def _save_one_category(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
     category_edit: TargetCategoryEdit,
-    naming: "_CategoryNaming",
+    naming: _CategoryNaming,
     number_to_select: int,
     now: datetime,
     errors: list[TargetEditError],

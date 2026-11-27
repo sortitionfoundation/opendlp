@@ -79,7 +79,7 @@ class PostgresCfg:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
 
     @classmethod
-    def from_env(cls, default_db_name: str = "opendlp", default_user: str = "opendlp") -> "PostgresCfg":
+    def from_env(cls, default_db_name: str = "opendlp", default_user: str = "opendlp") -> PostgresCfg:
         host = os.environ.get("DB_HOST", "localhost")
         default_port = 54321 if host == "localhost" else 5432
         return PostgresCfg(
@@ -143,7 +143,7 @@ class RedisCfg:
         )
 
     @classmethod
-    def from_env(cls) -> "RedisCfg":
+    def from_env(cls) -> RedisCfg:
         host = os.environ.get("REDIS_HOST", "localhost")
         default_port = 63791 if host == "localhost" else 6379
         port = int(os.environ.get("REDIS_PORT", default_port))
@@ -158,7 +158,7 @@ class EmailCfg:
     http_port: int
 
     @classmethod
-    def get(cls) -> "EmailCfg":
+    def get(cls) -> EmailCfg:
         host = os.environ.get("EMAIL_HOST", "localhost")
         port = 11025 if host == "localhost" else 1025
         http_port = 18025 if host == "localhost" else 8025
@@ -178,7 +178,7 @@ class SMTPEmailCfg:
     from_name: str
 
     @classmethod
-    def from_env(cls) -> "SMTPEmailCfg":
+    def from_env(cls) -> SMTPEmailCfg:
         """Load SMTP configuration from environment variables."""
         return SMTPEmailCfg(
             host=os.environ.get("SMTP_HOST", ""),
@@ -430,7 +430,7 @@ def get_max_documents_per_assembly() -> int:
     return _clamped_int_env("MAX_DOCUMENTS_PER_ASSEMBLY", 5, 1, 20)
 
 
-def _get_monitor_uuid_env(env_key: str) -> "uuid.UUID | None":
+def _get_monitor_uuid_env(env_key: str) -> uuid.UUID | None:
     value = os.environ.get(env_key, "").strip()
     if not value:
         return None
@@ -441,7 +441,7 @@ def _get_monitor_uuid_env(env_key: str) -> "uuid.UUID | None":
         return None
 
 
-def get_monitor_assembly_id() -> "uuid.UUID | None":
+def get_monitor_assembly_id() -> uuid.UUID | None:
     """
     Get the UUID of the monitor assembly from the environment.
     Returns None if unset or invalid (monitoring disabled).
@@ -451,7 +451,7 @@ def get_monitor_assembly_id() -> "uuid.UUID | None":
     return _get_monitor_uuid_env("MONITOR_ASSEMBLY_ID")
 
 
-def get_monitor_user_id() -> "uuid.UUID | None":
+def get_monitor_user_id() -> uuid.UUID | None:
     """
     Get the UUID of the monitor user from the environment.
     Returns None if unset or invalid (monitoring disabled).
