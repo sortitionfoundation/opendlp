@@ -593,12 +593,30 @@ def test_user_can_delete_assembly():
 
 ### Mocking Policy
 
-**Mock only at the boundary.** Mock things the system genuinely talks to over a
-boundary: Celery dispatch (`.delay`/`.apply_async`/`AsyncResult`/`control.revoke`),
-SMTP/email sending, OAuth providers, Google Sheets / the `sortition-algorithms`
-library, the clock, and (where unavoidable) the password hasher. **Never** mock
-the UnitOfWork, a repository, or an internal service function — drive the real
-code over a `FakeUnitOfWork` instead.
+**Some boundaries have fakes: use them.** Don't mock these by hand:
+
+| Boundary      | Fake                                          | Fixture        |
+| ------------- | --------------------------------------------- | -------------- |
+| Email         | `FakeEmailAdapter`                            | `email_outbox` |
+| UnitOfWork    | `FakeUnitOfWork` over a `FakeStore`           | `fake_store`   |
+| Google Sheets | `FakeGSheetExportTarget`, `FakeGSpreadClient` | (per test)     |
+
+A service test passes a `FakeEmailAdapter()` and asserts on its `.sent` list. A
+Flask test asserts on `email_outbox.sent`: the component and e2e apps send
+through it, so nothing needs patching. Set `email_outbox.succeed = False` (or
+build `FakeEmailAdapter(error=...)`) to drive the paths where sending fails. A
+test that builds its own app calls `install_email_outbox(app, email_outbox)`.
+Collection fails if a test patches `get_email_adapter` or mocks `send_email`.
+
+When you add an adapter for a new boundary, write its fake in `tests/fakes/`,
+give it a fixture, and add a row here.
+
+**Mock only at the boundary.** Where there is no fake, mock things the system
+genuinely talks to over a boundary: Celery dispatch
+(`.delay`/`.apply_async`/`AsyncResult`/`control.revoke`), OAuth providers, the
+`sortition-algorithms` library, the clock, and (where unavoidable) the password
+hasher. **Never** mock the UnitOfWork, a repository, or an internal service
+function — drive the real code over a `FakeUnitOfWork` instead.
 
 **Prefer state-based over interaction-based assertions.** Assert on the resulting
 state (the `FakeStore`, the rendered response) rather than `mock.assert_called_with(...)`.

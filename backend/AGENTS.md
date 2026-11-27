@@ -203,6 +203,12 @@ the request.
 
 See [docs/architecture.md](docs/architecture.md#domain-events-and-after-commit-side-effects).
 
+### Faking boundaries in tests
+
+In tests, fake email with `FakeEmailAdapter`, or the `email_outbox` fixture in a
+Flask test; never patch `get_email_adapter` or mock `send_email`. See the
+Mocking Policy in [docs/testing.md](docs/testing.md#mocking-policy).
+
 ### Database Patterns
 
 - Foreign keys are regular UUID columns (not SQLAlchemy relationships in domain)
